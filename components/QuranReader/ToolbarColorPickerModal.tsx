@@ -25,6 +25,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
     
     // State for the edit modal
     const [editConfig, setEditConfig] = useState({ bg: '#ffffff', text: '#000000', border: '#cccccc', font: '' });
+    const [activeColorField, setActiveColorField] = useState<'bg' | 'text' | 'border' | null>(null);
 
     useEffect(() => {
         const interceptor = () => {
@@ -37,6 +38,18 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
         const unregister = registerBackInterceptor(interceptor);
         return unregister;
     }, [editingType]);
+
+    useEffect(() => {
+        setActiveColorField(null);
+    }, [editingType]);
+
+    const PREDEFINED_COLORS = [
+        '#ffffff', '#f3f4f6', '#9ca3af', '#4b5563', '#000000',
+        '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
+        '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
+        '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
+        '#f43f5e', '#78716c', '#57534e', 'transparent'
+    ];
 
     const toggleTransparentMode = (checked: boolean) => {
         setIsTransparentMode(checked);
@@ -168,27 +181,87 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                                 </div>
                             </div>
                         )}
-                        <div className={`grid grid-cols-3 gap-3 ${isLandscape && editingType.includes('toolbar') ? 'col-span-2' : isLandscape ? 'col-span-1' : ''}`}>
+                        <div className={`grid gap-3 ${isLandscape && editingType.includes('toolbar') ? 'col-span-2 grid-cols-3' : 'grid-cols-1'}`}>
                             <div className="flex flex-col">
                                 <label className="text-xs font-bold text-gray-500 mb-1">خلفية</label>
-                                <div className="relative h-10 w-full rounded-lg overflow-hidden border border-gray-300 shadow-sm">
-                                    <input type="color" value={editConfig.bg} onChange={e => setEditConfig({...editConfig, bg: e.target.value})} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0"/>
+                                <div className="flex items-center gap-2">
+                                    <div 
+                                        className={`h-10 w-10 rounded-lg border shadow-sm cursor-pointer flex-shrink-0 ${activeColorField === 'bg' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                        style={renderCheckerboard(editConfig.bg)}
+                                        onClick={() => setActiveColorField(activeColorField === 'bg' ? null : 'bg')}
+                                    ></div>
+                                    <input 
+                                        type="text" 
+                                        value={editConfig.bg}
+                                        onChange={e => setEditConfig({...editConfig, bg: e.target.value})}
+                                        className="w-full h-10 border border-gray-300 rounded-lg px-2 text-xs font-mono dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                                        dir="ltr"
+                                        placeholder="#FFFFFF"
+                                    />
                                 </div>
                             </div>
                             {!editingType.includes('toolbar') && (
                                 <div className="flex flex-col">
                                     <label className="text-xs font-bold text-gray-500 mb-1">نص/أيقونة</label>
-                                    <div className="relative h-10 w-full rounded-lg overflow-hidden border border-gray-300 shadow-sm">
-                                        <input type="color" value={editConfig.text} onChange={e => setEditConfig({...editConfig, text: e.target.value})} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0"/>
+                                    <div className="flex items-center gap-2">
+                                        <div 
+                                            className={`h-10 w-10 rounded-lg border shadow-sm cursor-pointer flex-shrink-0 ${activeColorField === 'text' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                            style={renderCheckerboard(editConfig.text)}
+                                            onClick={() => setActiveColorField(activeColorField === 'text' ? null : 'text')}
+                                        ></div>
+                                        <input 
+                                            type="text" 
+                                            value={editConfig.text}
+                                            onChange={e => setEditConfig({...editConfig, text: e.target.value})}
+                                            className="w-full h-10 border border-gray-300 rounded-lg px-2 text-xs font-mono dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                                            dir="ltr"
+                                            placeholder="#FFFFFF"
+                                        />
                                     </div>
                                 </div>
                             )}
                             <div className="flex flex-col">
                                 <label className="text-xs font-bold text-gray-500 mb-1">حدود</label>
-                                <div className="relative h-10 w-full rounded-lg overflow-hidden border border-gray-300 shadow-sm">
-                                    <input type="color" value={editConfig.border} onChange={e => setEditConfig({...editConfig, border: e.target.value})} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0"/>
+                                <div className="flex items-center gap-2">
+                                    <div 
+                                        className={`h-10 w-10 rounded-lg border shadow-sm cursor-pointer flex-shrink-0 ${activeColorField === 'border' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                        style={renderCheckerboard(editConfig.border)}
+                                        onClick={() => setActiveColorField(activeColorField === 'border' ? null : 'border')}
+                                    ></div>
+                                    <input 
+                                        type="text" 
+                                        value={editConfig.border}
+                                        onChange={e => setEditConfig({...editConfig, border: e.target.value})}
+                                        className="w-full h-10 border border-gray-300 rounded-lg px-2 text-xs font-mono dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                                        dir="ltr"
+                                        placeholder="#FFFFFF"
+                                    />
                                 </div>
                             </div>
+                            
+                            {activeColorField && (
+                                <div className="col-span-full bg-gray-50 dark:bg-gray-800/80 p-3 rounded-xl border border-gray-200 dark:border-gray-700 mt-2 animate-fadeIn">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                                            اختر لون {activeColorField === 'bg' ? 'الخلفية' : activeColorField === 'text' ? 'النص/الأيقونة' : 'الحدود'}
+                                        </span>
+                                        <button onClick={() => setActiveColorField(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                                            <i className="fa-solid fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
+                                        {PREDEFINED_COLORS.map(c => (
+                                            <button
+                                                key={c}
+                                                onClick={() => setEditConfig({...editConfig, [activeColorField]: c})}
+                                                className={`h-8 rounded-md border shadow-sm transition-transform hover:scale-110 ${editConfig[activeColorField] === c ? 'ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-gray-800' : 'border-gray-200 dark:border-gray-600'}`}
+                                                style={renderCheckerboard(c)}
+                                                title={c}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <button onClick={saveElementChanges} className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 ${isLandscape ? 'col-span-2' : 'w-full'}`}>تطبيق التغييرات</button>
                     </div>

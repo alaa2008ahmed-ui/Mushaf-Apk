@@ -39,7 +39,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
     });
     const [useTajweed, setUseTajweed] = useState(() => localStorage.getItem('use_tajweed_quran' + modeSuffix) === 'true');
 
+    const [activeColorField, setActiveColorField] = useState<'textColor' | 'bgColor' | 'highlightTextColor' | null>(null);
 
+    const PREDEFINED_COLORS = [
+        '#ffffff', '#f3f4f6', '#9ca3af', '#4b5563', '#000000',
+        '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
+        '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
+        '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
+        '#f43f5e', '#78716c', '#57534e', 'transparent'
+    ];
+
+    const renderCheckerboard = (color: string) => {
+        if (color === 'transparent' || color === 'rgba(0, 0, 0, 0)') {
+            return {
+                backgroundColor: '#ffffff',
+                backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%)',
+                backgroundSize: '8px 8px'
+            };
+        }
+        return { backgroundColor: color };
+    };
 
     const updateSetting = (key: string, value: any) => {
         const newSettings = { ...settings, [key]: value };
@@ -98,23 +117,47 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         <input type="range" min="0.5" max="4.5" step="0.1" value={settings.fontSize} onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value))} className="w-full h-1.5 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
                     </div>
 
-                    <div className={`${isLandscape ? 'col-span-2 grid grid-cols-3 gap-3' : 'grid grid-cols-3 gap-3'} border-b pb-2 border-gray-200 dark:border-gray-700`}>
-                        <div className={`${isLandscape ? 'flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg border border-gray-100 dark:border-gray-700' : ''}`}>
-                            <label className={`${isLandscape ? 'text-xs' : 'text-[10px] sm:text-xs block mb-1'} font-bold opacity-80 truncate`}>لون النص</label>
-                            <div className={`h-8 ${isLandscape ? 'w-12' : 'w-full'} rounded border border-gray-300 relative overflow-hidden`}>
-                                <input type="color" value={settings.textColor} onChange={(e) => updateSetting('textColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
+                    <div className={`${isLandscape ? 'col-span-2 grid grid-cols-3 gap-3' : 'grid grid-cols-1 gap-3'} border-b pb-2 border-gray-200 dark:border-gray-700`}>
+                        <div className="flex flex-col">
+                            <label className="text-xs font-bold opacity-80 mb-1">لون النص</label>
+                            <div className="flex items-center gap-2">
+                                <div 
+                                    className={`h-8 w-8 rounded border shadow-sm cursor-pointer flex-shrink-0 ${activeColorField === 'textColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                    style={renderCheckerboard(settings.textColor)}
+                                    onClick={() => setActiveColorField(activeColorField === 'textColor' ? null : 'textColor')}
+                                ></div>
+                                <input 
+                                    type="text" 
+                                    value={settings.textColor}
+                                    onChange={e => updateSetting('textColor', e.target.value)}
+                                    className="w-full h-8 border border-gray-300 rounded px-2 text-xs font-mono dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                                    dir="ltr"
+                                    placeholder="#FFFFFF"
+                                />
                             </div>
                         </div>
-                        <div className={`${isLandscape ? 'flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg border border-gray-100 dark:border-gray-700' : ''}`}>
-                            <label className={`${isLandscape ? 'text-xs' : 'text-[10px] sm:text-xs block mb-1'} font-bold opacity-80 truncate`}>لون الخلفية</label>
-                            <div className={`h-8 ${isLandscape ? 'w-12' : 'w-full'} rounded border border-gray-300 relative overflow-hidden`}>
-                                <input type="color" value={settings.bgColor} onChange={(e) => updateSetting('bgColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
+                        <div className="flex flex-col">
+                            <label className="text-xs font-bold opacity-80 mb-1">لون الخلفية</label>
+                            <div className="flex items-center gap-2">
+                                <div 
+                                    className={`h-8 w-8 rounded border shadow-sm cursor-pointer flex-shrink-0 ${activeColorField === 'bgColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                    style={renderCheckerboard(settings.bgColor)}
+                                    onClick={() => setActiveColorField(activeColorField === 'bgColor' ? null : 'bgColor')}
+                                ></div>
+                                <input 
+                                    type="text" 
+                                    value={settings.bgColor}
+                                    onChange={e => updateSetting('bgColor', e.target.value)}
+                                    className="w-full h-8 border border-gray-300 rounded px-2 text-xs font-mono dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                                    dir="ltr"
+                                    placeholder="#FFFFFF"
+                                />
                             </div>
                         </div>
-                        <div className={`${isLandscape ? 'flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg border border-gray-100 dark:border-gray-700' : ''}`}>
-                            <div className="flex flex-col items-start">
-                                <label className={`${isLandscape ? 'text-xs' : 'text-[10px] sm:text-xs block mb-1'} font-bold opacity-80 truncate`}>لون التحديد</label>
-                                <div className="flex items-center mt-1 gap-1">
+                        <div className="flex flex-col">
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="text-xs font-bold opacity-80">لون التحديد</label>
+                                <div className="flex items-center gap-1">
                                     <input 
                                         type="checkbox" 
                                         id="lock-highlight-color" 
@@ -125,10 +168,46 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                     <label htmlFor="lock-highlight-color" className="text-[9px] font-bold opacity-70 cursor-pointer">قفل</label>
                                 </div>
                             </div>
-                            <div className={`h-8 ${isLandscape ? 'w-12' : 'w-full'} rounded border border-gray-300 relative overflow-hidden`}>
-                                <input type="color" value={settings.highlightTextColor || THEMES['default'].highlightText} onChange={(e) => updateSetting('highlightTextColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
+                            <div className="flex items-center gap-2">
+                                <div 
+                                    className={`h-8 w-8 rounded border shadow-sm cursor-pointer flex-shrink-0 ${activeColorField === 'highlightTextColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                    style={renderCheckerboard(settings.highlightTextColor || THEMES['default'].highlightText)}
+                                    onClick={() => setActiveColorField(activeColorField === 'highlightTextColor' ? null : 'highlightTextColor')}
+                                ></div>
+                                <input 
+                                    type="text" 
+                                    value={settings.highlightTextColor || THEMES['default'].highlightText}
+                                    onChange={e => updateSetting('highlightTextColor', e.target.value)}
+                                    className="w-full h-8 border border-gray-300 rounded px-2 text-xs font-mono dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                                    dir="ltr"
+                                    placeholder="#FFFFFF"
+                                />
                             </div>
                         </div>
+                        
+                        {activeColorField && (
+                            <div className="col-span-full bg-gray-50 dark:bg-gray-800/80 p-3 rounded-xl border border-gray-200 dark:border-gray-700 mt-2 animate-fadeIn">
+                                <div className="flex justify-between items-center mb-3">
+                                    <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                                        اختر لون {activeColorField === 'bgColor' ? 'الخلفية' : activeColorField === 'textColor' ? 'النص' : 'التحديد'}
+                                    </span>
+                                    <button onClick={() => setActiveColorField(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                                        <i className="fa-solid fa-times"></i>
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
+                                    {PREDEFINED_COLORS.map(c => (
+                                        <button
+                                            key={c}
+                                            onClick={() => updateSetting(activeColorField, c)}
+                                            className={`h-8 rounded-md border shadow-sm transition-transform hover:scale-110 ${settings[activeColorField] === c ? 'ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-gray-800' : 'border-gray-200 dark:border-gray-600'}`}
+                                            style={renderCheckerboard(c)}
+                                            title={c}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="border-b border-gray-200 dark:border-gray-700 py-1">
