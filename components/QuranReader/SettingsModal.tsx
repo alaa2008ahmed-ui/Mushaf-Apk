@@ -120,39 +120,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     <div className={`${isLandscape ? 'col-span-2 grid grid-cols-3 gap-3' : 'grid grid-cols-1 gap-3'} border-b pb-2 border-gray-200 dark:border-gray-700`}>
                         <div className="flex flex-col">
                             <label className="text-xs font-bold opacity-80 mb-1">لون النص</label>
-                            <div className="flex items-center gap-2">
-                                <div 
-                                    className={`h-8 w-8 rounded border shadow-sm cursor-pointer flex-shrink-0 ${activeColorField === 'textColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                    style={renderCheckerboard(settings.textColor)}
-                                    onClick={() => setActiveColorField(activeColorField === 'textColor' ? null : 'textColor')}
-                                ></div>
-                                <input 
-                                    type="text" 
-                                    value={settings.textColor}
-                                    onChange={e => updateSetting('textColor', e.target.value)}
-                                    className="w-full h-8 border border-gray-300 rounded px-2 text-xs font-mono dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                                    dir="ltr"
-                                    placeholder="#FFFFFF"
-                                />
-                            </div>
+                            <div 
+                                className={`h-8 w-full rounded border shadow-sm cursor-pointer ${activeColorField === 'textColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                style={renderCheckerboard(settings.textColor)}
+                                onClick={() => setActiveColorField(activeColorField === 'textColor' ? null : 'textColor')}
+                            ></div>
                         </div>
                         <div className="flex flex-col">
                             <label className="text-xs font-bold opacity-80 mb-1">لون الخلفية</label>
-                            <div className="flex items-center gap-2">
-                                <div 
-                                    className={`h-8 w-8 rounded border shadow-sm cursor-pointer flex-shrink-0 ${activeColorField === 'bgColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                    style={renderCheckerboard(settings.bgColor)}
-                                    onClick={() => setActiveColorField(activeColorField === 'bgColor' ? null : 'bgColor')}
-                                ></div>
-                                <input 
-                                    type="text" 
-                                    value={settings.bgColor}
-                                    onChange={e => updateSetting('bgColor', e.target.value)}
-                                    className="w-full h-8 border border-gray-300 rounded px-2 text-xs font-mono dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                                    dir="ltr"
-                                    placeholder="#FFFFFF"
-                                />
-                            </div>
+                            <div 
+                                className={`h-8 w-full rounded border shadow-sm cursor-pointer ${activeColorField === 'bgColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                style={renderCheckerboard(settings.bgColor)}
+                                onClick={() => setActiveColorField(activeColorField === 'bgColor' ? null : 'bgColor')}
+                            ></div>
                         </div>
                         <div className="flex flex-col">
                             <div className="flex items-center justify-between mb-1">
@@ -168,21 +148,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                     <label htmlFor="lock-highlight-color" className="text-[9px] font-bold opacity-70 cursor-pointer">قفل</label>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div 
-                                    className={`h-8 w-8 rounded border shadow-sm cursor-pointer flex-shrink-0 ${activeColorField === 'highlightTextColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                    style={renderCheckerboard(settings.highlightTextColor || THEMES['default'].highlightText)}
-                                    onClick={() => setActiveColorField(activeColorField === 'highlightTextColor' ? null : 'highlightTextColor')}
-                                ></div>
-                                <input 
-                                    type="text" 
-                                    value={settings.highlightTextColor || THEMES['default'].highlightText}
-                                    onChange={e => updateSetting('highlightTextColor', e.target.value)}
-                                    className="w-full h-8 border border-gray-300 rounded px-2 text-xs font-mono dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                                    dir="ltr"
-                                    placeholder="#FFFFFF"
-                                />
-                            </div>
+                            <div 
+                                className={`h-8 w-full rounded border shadow-sm cursor-pointer ${activeColorField === 'highlightTextColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                style={renderCheckerboard(settings.highlightTextColor || THEMES['default'].highlightText)}
+                                onClick={() => setActiveColorField(activeColorField === 'highlightTextColor' ? null : 'highlightTextColor')}
+                            ></div>
                         </div>
                         
                         {activeColorField && (

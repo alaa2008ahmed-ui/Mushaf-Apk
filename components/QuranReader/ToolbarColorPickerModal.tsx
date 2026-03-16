@@ -184,59 +184,29 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                         <div className={`grid gap-3 ${isLandscape && editingType.includes('toolbar') ? 'col-span-2 grid-cols-3' : 'grid-cols-1'}`}>
                             <div className="flex flex-col">
                                 <label className="text-xs font-bold text-gray-500 mb-1">خلفية</label>
-                                <div className="flex items-center gap-2">
-                                    <div 
-                                        className={`h-10 w-10 rounded-lg border shadow-sm cursor-pointer flex-shrink-0 ${activeColorField === 'bg' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                        style={renderCheckerboard(editConfig.bg)}
-                                        onClick={() => setActiveColorField(activeColorField === 'bg' ? null : 'bg')}
-                                    ></div>
-                                    <input 
-                                        type="text" 
-                                        value={editConfig.bg}
-                                        onChange={e => setEditConfig({...editConfig, bg: e.target.value})}
-                                        className="w-full h-10 border border-gray-300 rounded-lg px-2 text-xs font-mono dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                                        dir="ltr"
-                                        placeholder="#FFFFFF"
-                                    />
-                                </div>
+                                <div 
+                                    className={`h-10 w-full rounded-lg border shadow-sm cursor-pointer ${activeColorField === 'bg' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                    style={renderCheckerboard(editConfig.bg)}
+                                    onClick={() => setActiveColorField(activeColorField === 'bg' ? null : 'bg')}
+                                ></div>
                             </div>
                             {!editingType.includes('toolbar') && (
                                 <div className="flex flex-col">
                                     <label className="text-xs font-bold text-gray-500 mb-1">نص/أيقونة</label>
-                                    <div className="flex items-center gap-2">
-                                        <div 
-                                            className={`h-10 w-10 rounded-lg border shadow-sm cursor-pointer flex-shrink-0 ${activeColorField === 'text' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                            style={renderCheckerboard(editConfig.text)}
-                                            onClick={() => setActiveColorField(activeColorField === 'text' ? null : 'text')}
-                                        ></div>
-                                        <input 
-                                            type="text" 
-                                            value={editConfig.text}
-                                            onChange={e => setEditConfig({...editConfig, text: e.target.value})}
-                                            className="w-full h-10 border border-gray-300 rounded-lg px-2 text-xs font-mono dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                                            dir="ltr"
-                                            placeholder="#FFFFFF"
-                                        />
-                                    </div>
+                                    <div 
+                                        className={`h-10 w-full rounded-lg border shadow-sm cursor-pointer ${activeColorField === 'text' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                        style={renderCheckerboard(editConfig.text)}
+                                        onClick={() => setActiveColorField(activeColorField === 'text' ? null : 'text')}
+                                    ></div>
                                 </div>
                             )}
                             <div className="flex flex-col">
                                 <label className="text-xs font-bold text-gray-500 mb-1">حدود</label>
-                                <div className="flex items-center gap-2">
-                                    <div 
-                                        className={`h-10 w-10 rounded-lg border shadow-sm cursor-pointer flex-shrink-0 ${activeColorField === 'border' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                        style={renderCheckerboard(editConfig.border)}
-                                        onClick={() => setActiveColorField(activeColorField === 'border' ? null : 'border')}
-                                    ></div>
-                                    <input 
-                                        type="text" 
-                                        value={editConfig.border}
-                                        onChange={e => setEditConfig({...editConfig, border: e.target.value})}
-                                        className="w-full h-10 border border-gray-300 rounded-lg px-2 text-xs font-mono dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                                        dir="ltr"
-                                        placeholder="#FFFFFF"
-                                    />
-                                </div>
+                                <div 
+                                    className={`h-10 w-full rounded-lg border shadow-sm cursor-pointer ${activeColorField === 'border' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                    style={renderCheckerboard(editConfig.border)}
+                                    onClick={() => setActiveColorField(activeColorField === 'border' ? null : 'border')}
+                                ></div>
                             </div>
                             
                             {activeColorField && (
