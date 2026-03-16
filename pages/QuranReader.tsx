@@ -30,6 +30,22 @@ declare var window: any;
 
 const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ onBack, initialLandscape = false }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
+    
+    // Auto-detect orientation
+    useEffect(() => {
+        const handleResize = () => {
+            const isL = window.innerWidth > window.innerHeight;
+            if (isL !== isLandscapeRef.current) {
+                setIsLandscape(isL);
+            }
+        };
+        
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Initial check
+        
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const modeSuffix = isLandscape ? '_h' : '_v';
 
     const [useTajweed, setUseTajweed] = useState(() => localStorage.getItem('use_tajweed_quran' + modeSuffix) === 'true');

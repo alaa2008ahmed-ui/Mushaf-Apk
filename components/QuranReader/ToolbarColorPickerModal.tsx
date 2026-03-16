@@ -131,14 +131,14 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
     if (editingType) {
         return (
             <div className="fixed inset-0 z-[220] bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={() => setEditingType(null)}>
-                <div className={`bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full ${isLandscape ? 'max-w-xl' : 'max-w-sm'} overflow-hidden animate-modal-enter flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
+                <div className={`bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full ${isLandscape ? 'max-w-2xl' : 'max-w-sm'} overflow-hidden animate-modal-enter flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
                     <div className="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center flex-none">
                         <h3 className="font-bold text-lg">تخصيص: {getName(editingType)}</h3>
                         <button onClick={() => setEditingType(null)} className="text-white hover:bg-white/20 rounded-full p-1">✕</button>
                     </div>
-                    <div className="p-5 space-y-4 overflow-y-auto flex-1">
+                    <div className={`p-5 overflow-y-auto flex-1 ${isLandscape ? 'grid grid-cols-2 gap-6 items-start' : 'space-y-4'}`}>
                         {!editingType.includes('toolbar') && (
-                            <div id="modal-font-section">
+                            <div id="modal-font-section" className={isLandscape ? 'col-span-1' : ''}>
                                 <label className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 block">نوع الخط</label>
                                 <div className="custom-select-wrapper">
                                     <select value={editConfig.font} onChange={e => setEditConfig({...editConfig, font: e.target.value})} className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:text-white">
@@ -168,7 +168,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                                 </div>
                             </div>
                         )}
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className={`grid grid-cols-3 gap-3 ${isLandscape && editingType.includes('toolbar') ? 'col-span-2' : isLandscape ? 'col-span-1' : ''}`}>
                             <div className="flex flex-col">
                                 <label className="text-xs font-bold text-gray-500 mb-1">خلفية</label>
                                 <div className="relative h-10 w-full rounded-lg overflow-hidden border border-gray-300 shadow-sm">
@@ -190,7 +190,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                                 </div>
                             </div>
                         </div>
-                        <button onClick={saveElementChanges} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95">تطبيق التغييرات</button>
+                        <button onClick={saveElementChanges} className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 ${isLandscape ? 'col-span-2' : 'w-full'}`}>تطبيق التغييرات</button>
                     </div>
                 </div>
             </div>
@@ -201,7 +201,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
 
     return (
         <div className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-fadeIn`} onClick={handleClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-5xl' : 'max-w-md'} rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
                 <div className="p-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white flex justify-between items-center shadow-md flex-none theme-header-bg">
                     <h3 className="text-lg font-extrabold flex items-center">
                         <i className="fa-solid fa-palette ml-2"></i>
