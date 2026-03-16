@@ -131,7 +131,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
     if (editingType) {
         return (
             <div className="fixed inset-0 z-[220] bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={() => setEditingType(null)}>
-                <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-modal-enter flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                <div className={`bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full ${isLandscape ? 'max-w-xl' : 'max-w-sm'} overflow-hidden animate-modal-enter flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
                     <div className="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center flex-none">
                         <h3 className="font-bold text-lg">تخصيص: {getName(editingType)}</h3>
                         <button onClick={() => setEditingType(null)} className="text-white hover:bg-white/20 rounded-full p-1">✕</button>
@@ -201,7 +201,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
 
     return (
         <div className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-fadeIn`} onClick={handleClose}>
-            <div className={`modal-skinned w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
                 <div className="p-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white flex justify-between items-center shadow-md flex-none theme-header-bg">
                     <h3 className="text-lg font-extrabold flex items-center">
                         <i className="fa-solid fa-palette ml-2"></i>
@@ -215,8 +215,8 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                         </div>
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
-                    <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div className={`flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900 ${isLandscape ? 'grid grid-cols-2 gap-4' : 'space-y-4'}`}>
+                    <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700 shadow-sm h-fit">
                         <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 text-center border-b pb-2 border-gray-300 dark:border-gray-600">الأشرطة الرئيسية</h4>
                         <div className="grid grid-cols-2 gap-3">
                             <button data-type="top-toolbar" onClick={() => openEditModal('top-toolbar')} className="color-option-btn group shadow-sm h-12 relative overflow-hidden flex items-center justify-between p-0">
@@ -231,7 +231,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                             </button>
                         </div>
                     </div>
-                    <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700 shadow-sm relative">
+                    <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700 shadow-sm relative h-fit">
                         <div className="flex justify-between items-center mb-3 border-b pb-2 border-gray-300 dark:border-gray-600">
                             <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 w-full text-center">أزرار الشريط العلوى</h4>
                             <div className="flex items-center gap-3 absolute left-3 top-3">
@@ -253,7 +253,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                             })}
                         </div>
                     </div>
-                    <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700 shadow-sm relative">
+                    <div className={`bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700 shadow-sm relative h-fit ${isLandscape ? 'col-span-1' : ''}`}>
                         <div className="flex justify-between items-center mb-3 border-b pb-2 border-gray-300 dark:border-gray-600">
                             <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 w-full text-center">أزرار الشريط السفلى</h4>
                             <div className="flex items-center gap-3 absolute left-3 top-3">
@@ -275,7 +275,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                             })}
                         </div>
                     </div>
-                    <div className="mt-2">
+                    <div className={`${isLandscape ? 'col-span-1 flex items-center justify-center' : 'mt-2'}`}>
                          <button onClick={() => openEditModal('all')} className="w-full py-2 bg-indigo-100 dark:bg-indigo-900/30 border-2 border-dashed border-indigo-400 rounded-lg text-indigo-700 dark:text-indigo-300 font-bold hover:bg-indigo-200 transition text-sm">تطبيق لون موحد لجميع الأزرار</button>
                     </div>
                 </div>
