@@ -62,7 +62,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         const defaultTheme = THEMES['default'];
         const initialSettings = savedSettings ? JSON.parse(savedSettings) : {
             fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
-            reader: 'Alafasy_128kbps', theme: 'default', scrollMinutes: 20, tafseer: 'ar.jalalayn'
+            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'default', scrollMinutes: 20, tafseer: 'ar.jalalayn'
         };
         setSettings(initialSettings);
 
@@ -226,7 +226,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         return saved ? JSON.parse(saved) : {
             fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
             highlightTextColor: defaultTheme.highlightText || defaultTheme.accent,
-            reader: 'Alafasy_128kbps', theme: 'default', scrollMinutes: 20, tafseer: 'ar.jalalayn',
+            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'default', scrollMinutes: 20, tafseer: 'ar.jalalayn',
             hideUIOnAutoScroll: false,
             lockHighlightColor: false
         };
@@ -627,14 +627,8 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             autoScrollStateRef.current = newState;
             setAutoScrollState(newState);
             
-            // Force immediate UI showing/hiding on tap
-            const container = document.getElementById('app-container');
-            const header = document.getElementById('header');
-            const bottomBar = document.getElementById('bottom-bar');
-            
-            // If we are pausing, ensure UI is visible in landscape mode
-            if (newPausedState && isLandscapeRef.current) {
-                setIsLandscapeUIHidden(false);
+            if (isLandscapeRef.current) {
+                setIsLandscapeUIHidden(!newPausedState);
             }
         } else if (isLandscapeRef.current) {
             setIsLandscapeUIHidden(prev => !prev);
@@ -953,10 +947,6 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     
         const handleScroll = () => {
             const { scrollTop, scrollHeight, clientHeight } = contentEl;
-            
-            if (isLandscapeRef.current && !isLandscapeUIHiddenRef.current) {
-                setIsLandscapeUIHidden(true);
-            }
 
             if (scrollTop < clientHeight) {
                 setVisiblePages(prev => {
@@ -1333,14 +1323,8 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         autoScrollStateRef.current = newState;
         setAutoScrollState(newState);
         
-        // Force immediate UI showing/hiding on tap
-        const container = document.getElementById('app-container');
-        const header = document.getElementById('header');
-        const bottomBar = document.getElementById('bottom-bar');
-        
-        // If we are pausing, ensure UI is visible in landscape mode
-        if (newPausedState && isLandscape) {
-            setIsLandscapeUIHidden(false);
+        if (isLandscape) {
+            setIsLandscapeUIHidden(!newPausedState);
         }
       } else if (isLandscape) {
           setIsLandscapeUIHidden(prev => !prev);
