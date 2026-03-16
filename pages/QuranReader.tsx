@@ -633,12 +633,24 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             
             if (newPausedState) {
                 if (container) container.classList.remove('fullscreen-active');
-                if (header) header.classList.remove('hidden');
-                if (bottomBar) bottomBar.classList.remove('hidden');
+                if (header) {
+                    header.classList.remove('hidden');
+                    header.style.display = '';
+                }
+                if (bottomBar) {
+                    bottomBar.classList.remove('hidden');
+                    bottomBar.style.display = '';
+                }
             } else if (settingsRef.current.hideUIOnAutoScroll) {
                 if (container) container.classList.add('fullscreen-active');
-                if (header) header.classList.add('hidden');
-                if (bottomBar) bottomBar.classList.add('hidden');
+                if (header) {
+                    header.classList.add('hidden');
+                    header.style.display = 'none';
+                }
+                if (bottomBar) {
+                    bottomBar.classList.add('hidden');
+                    bottomBar.style.display = 'none';
+                }
             }
             
             // If we are pausing, ensure UI is visible in landscape mode
@@ -1206,17 +1218,18 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             if (parts.length === 3) {
                 const s = parseInt(parts[1]); const a = parseInt(parts[2]);
                 if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
-                    // If there is a highlighted ayah, we only update currentAyah if it's NOT the highlighted one
-                    // and we've moved away from it. This prevents jumping selection on start.
+                    // If there is a highlighted ayah, we only update currentAyah if it's NOT visible
+                    // This prevents jumping selection on start and keeps the focus on the selected ayah.
                     const highlightedId = highlightedAyahIdRef.current;
                     if (highlightedId) {
-                        const hParts = highlightedId.split('-');
-                        const hs = parseInt(hParts[1]);
-                        const ha = parseInt(hParts[2]);
-                        // If we are still very close to the highlighted ayah, don't update currentAyah yet
-                        // This preserves the "selection" in the header if it's what's being viewed.
-                        if (Math.abs(s - hs) === 0 && Math.abs(a - ha) < 3) {
-                            return;
+                        const hEl = document.getElementById(highlightedId);
+                        if (hEl) {
+                            const rect = hEl.getBoundingClientRect();
+                            const contentRect = content.getBoundingClientRect();
+                            // If highlighted ayah is visible in the content area, don't update header
+                            if (rect.top < contentRect.bottom && rect.bottom > contentRect.top) {
+                                return;
+                            }
                         }
                     }
 
@@ -1247,8 +1260,14 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         if (container) container.classList.remove('fullscreen-active');
         const header = document.getElementById('header');
         const bottomBar = document.getElementById('bottom-bar');
-        if (header) header.classList.remove('hidden');
-        if (bottomBar) bottomBar.classList.remove('hidden');
+        if (header) {
+            header.classList.remove('hidden');
+            header.style.display = '';
+        }
+        if (bottomBar) {
+            bottomBar.classList.remove('hidden');
+            bottomBar.style.display = '';
+        }
 
         const newState = { isActive: false, isPaused: false, elapsedTime: autoScrollStateRef.current.elapsedTime };
         autoScrollStateRef.current = newState;
@@ -1261,6 +1280,10 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     const startAutoScroll = () => {
         if (!mushafContentRef.current) return;
         
+        // Close any open menus/settings first to ensure bars can hide
+        setIsAutoScrollSettingsOpen(false);
+        setIsFloatingMenuOpen(false);
+
         // Clear any existing auto-scroll without triggering a full stop state update
         if (autoScrollFrameRef.current) cancelAnimationFrame(autoScrollFrameRef.current);
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -1281,8 +1304,14 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             // Also hide them directly to ensure no delay
             const header = document.getElementById('header');
             const bottomBar = document.getElementById('bottom-bar');
-            if (header) header.classList.add('hidden');
-            if (bottomBar) bottomBar.classList.add('hidden');
+            if (header) {
+                header.classList.add('hidden');
+                header.style.display = 'none';
+            }
+            if (bottomBar) {
+                bottomBar.classList.add('hidden');
+                bottomBar.style.display = 'none';
+            }
             
             if (isLandscape) {
                 setIsLandscapeUIHidden(true);
@@ -1365,12 +1394,24 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         
         if (newPausedState) {
             if (container) container.classList.remove('fullscreen-active');
-            if (header) header.classList.remove('hidden');
-            if (bottomBar) bottomBar.classList.remove('hidden');
+            if (header) {
+                header.classList.remove('hidden');
+                header.style.display = '';
+            }
+            if (bottomBar) {
+                bottomBar.classList.remove('hidden');
+                bottomBar.style.display = '';
+            }
         } else if (settingsRef.current.hideUIOnAutoScroll) {
             if (container) container.classList.add('fullscreen-active');
-            if (header) header.classList.add('hidden');
-            if (bottomBar) bottomBar.classList.add('hidden');
+            if (header) {
+                header.classList.add('hidden');
+                header.style.display = 'none';
+            }
+            if (bottomBar) {
+                bottomBar.classList.add('hidden');
+                bottomBar.style.display = 'none';
+            }
         }
 
         // If we are pausing, ensure UI is visible in landscape mode
