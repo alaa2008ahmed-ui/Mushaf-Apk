@@ -12,6 +12,21 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
     const currentThemeId = localStorage.getItem('current_theme_id' + modeSuffix) || 'default';
     const activeTheme = THEMES[currentThemeId as keyof typeof THEMES] || THEMES['default'];
 
+    const [lockHighlightColor, setLockHighlightColor] = React.useState(() => {
+        const saved = JSON.parse(localStorage.getItem('quran_settings' + modeSuffix) || '{}');
+        return saved.lockHighlightColor || false;
+    });
+
+    const toggleLockHighlightColor = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const newValue = !lockHighlightColor;
+        setLockHighlightColor(newValue);
+        const saved = JSON.parse(localStorage.getItem('quran_settings' + modeSuffix) || '{}');
+        const updated = { ...saved, lockHighlightColor: newValue };
+        localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(updated));
+        showToast(newValue ? 'تم قفل لون التحديد' : 'تم إلغاء قفل لون التحديد');
+    };
+
     const applyTheme = (themeId: string) => {
         const theme = THEMES[themeId as keyof typeof THEMES];
         if (!theme) return;
@@ -74,7 +89,7 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
             bgColor: theme.bg,
             textColor: theme.text,
             fontFamily: theme.font,
-            highlightTextColor: theme.highlightText || theme.accent,
+            ...(savedSettings.lockHighlightColor ? {} : { highlightTextColor: theme.highlightText || theme.accent }),
             theme: themeId
         };
         localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(updatedSettings));
@@ -91,7 +106,17 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl flex flex-col max-h-[85vh] shadow-2xl`} onClick={e => e.stopPropagation()}>
                 <div className="p-4 rounded-t-2xl flex justify-between items-center shadow-md theme-header-bg">
                     <h3 className="font-bold text-lg">اختر الثيم</h3>
-                    <button onClick={onClose} className="text-2xl hover:opacity-80 transition">&times;</button>
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={toggleLockHighlightColor}
+                            className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-all ${lockHighlightColor ? 'bg-amber-500 text-white shadow-lg' : 'bg-white/20 text-white'}`}
+                            title="قفل لون التحديد الحالي"
+                        >
+                            <i className={`fa-solid ${lockHighlightColor ? 'fa-lock' : 'fa-lock-open'}`}></i>
+                            <span>قفل لون التحديد</span>
+                        </button>
+                        <button onClick={onClose} className="text-2xl hover:opacity-80 transition">&times;</button>
+                    </div>
                 </div>
                 <div className={`overflow-y-auto p-4 grid ${isLandscape ? 'grid-cols-3 sm:grid-cols-4' : 'grid-cols-2'} gap-3 flex-1`} style={{ '--theme-card-border-color': activeTheme.accent, '--theme-card-shadow-color': `${activeTheme.accent}4D` } as React.CSSProperties}>
                     {Object.entries(THEMES).map(([key, t]: [string, any]) => (

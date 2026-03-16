@@ -227,7 +227,8 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
             highlightTextColor: defaultTheme.highlightText || defaultTheme.accent,
             reader: 'Alafasy_128kbps', theme: 'default', scrollMinutes: 20, tafseer: 'ar.jalalayn',
-            hideUIOnAutoScroll: false
+            hideUIOnAutoScroll: false,
+            lockHighlightColor: false
         };
     });
 
@@ -630,28 +631,6 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             const container = document.getElementById('app-container');
             const header = document.getElementById('header');
             const bottomBar = document.getElementById('bottom-bar');
-            
-            if (newPausedState) {
-                if (container) container.classList.remove('fullscreen-active');
-                if (header) {
-                    header.classList.remove('hidden');
-                    header.style.display = '';
-                }
-                if (bottomBar) {
-                    bottomBar.classList.remove('hidden');
-                    bottomBar.style.display = '';
-                }
-            } else if (settingsRef.current.hideUIOnAutoScroll) {
-                if (container) container.classList.add('fullscreen-active');
-                if (header) {
-                    header.classList.add('hidden');
-                    header.style.display = 'none';
-                }
-                if (bottomBar) {
-                    bottomBar.classList.add('hidden');
-                    bottomBar.style.display = 'none';
-                }
-            }
             
             // If we are pausing, ensure UI is visible in landscape mode
             if (newPausedState && isLandscapeRef.current) {
@@ -1096,7 +1075,10 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         }
     }, [quranData, handleAyahClick, stopAudio, scrollToAyah]);
 
+    const hasJumpedRef = useRef(false);
     useEffect(() => {
+        if (hasJumpedRef.current) return;
+        hasJumpedRef.current = true;
         const key = initialLandscape ? 'last_pos_landscape' : 'last_pos';
         const lastPos = JSON.parse(localStorage.getItem(key) || '{}');
         setTimeout(() => {
@@ -1254,20 +1236,6 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         autoScrollFrameRef.current = null;
         timerIntervalRef.current = null;
         autoScrollPausedRef.current = false;
-        
-        // Force immediate UI showing
-        const container = document.getElementById('app-container');
-        if (container) container.classList.remove('fullscreen-active');
-        const header = document.getElementById('header');
-        const bottomBar = document.getElementById('bottom-bar');
-        if (header) {
-            header.classList.remove('hidden');
-            header.style.display = '';
-        }
-        if (bottomBar) {
-            bottomBar.classList.remove('hidden');
-            bottomBar.style.display = '';
-        }
 
         const newState = { isActive: false, isPaused: false, elapsedTime: autoScrollStateRef.current.elapsedTime };
         autoScrollStateRef.current = newState;
@@ -1295,28 +1263,6 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         const initialState = { isActive: true, isPaused: false, elapsedTime: 0 };
         autoScrollStateRef.current = initialState;
         setAutoScrollState(initialState);
-        
-        // Force immediate UI hiding for better responsiveness on mobile
-        if (settingsRef.current.hideUIOnAutoScroll) {
-            const container = document.getElementById('app-container');
-            if (container) container.classList.add('fullscreen-active');
-            
-            // Also hide them directly to ensure no delay
-            const header = document.getElementById('header');
-            const bottomBar = document.getElementById('bottom-bar');
-            if (header) {
-                header.classList.add('hidden');
-                header.style.display = 'none';
-            }
-            if (bottomBar) {
-                bottomBar.classList.add('hidden');
-                bottomBar.style.display = 'none';
-            }
-            
-            if (isLandscape) {
-                setIsLandscapeUIHidden(true);
-            }
-        }
         
         // Delay to let layout stabilize after UI might hide
         setTimeout(() => {
@@ -1392,28 +1338,6 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         const header = document.getElementById('header');
         const bottomBar = document.getElementById('bottom-bar');
         
-        if (newPausedState) {
-            if (container) container.classList.remove('fullscreen-active');
-            if (header) {
-                header.classList.remove('hidden');
-                header.style.display = '';
-            }
-            if (bottomBar) {
-                bottomBar.classList.remove('hidden');
-                bottomBar.style.display = '';
-            }
-        } else if (settingsRef.current.hideUIOnAutoScroll) {
-            if (container) container.classList.add('fullscreen-active');
-            if (header) {
-                header.classList.add('hidden');
-                header.style.display = 'none';
-            }
-            if (bottomBar) {
-                bottomBar.classList.add('hidden');
-                bottomBar.style.display = 'none';
-            }
-        }
-
         // If we are pausing, ensure UI is visible in landscape mode
         if (newPausedState && isLandscape) {
             setIsLandscapeUIHidden(false);
@@ -1555,8 +1479,8 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     }, [activeModals, tafseerInfo.isOpen, tafseerSelectionInfo.isOpen]);
 
     return (
-        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${autoScrollState.isActive && !autoScrollState.isPaused && settings.hideUIOnAutoScroll ? 'fullscreen-active' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
-            <header id="header" className={`header-default flex-none z-50 flex items-center px-4 justify-between border-b shadow-xl w-full gap-2 ${autoScrollState.isActive && !autoScrollState.isPaused && settings.hideUIOnAutoScroll && !isAutoScrollSettingsOpen ? 'hidden' : ''}`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
+        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
+            <header id="header" className={`header-default flex-none z-50 flex items-center px-4 justify-between border-b shadow-xl w-full gap-2`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
                 <button 
                     id="surah-name-header" 
                     onClick={() => openModal('surah-modal')}
@@ -1623,7 +1547,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                  <button onClick={() => { openModal('themes-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green w-full justify-between mb-2" style={getToolbarStyle('btn-themes', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>الثيمات</span><i className="fa-solid fa-palette"></i></button>
                  <button onClick={() => { openModal('settings-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green w-full justify-between" style={getToolbarStyle('btn-settings', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>الإعدادات</span><i className="fa-solid fa-cog"></i></button>
             </div>
-            <footer id="bottom-bar" className={`footer-default flex-none border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-10 flex justify-around items-center px-1 py-1 w-full ${autoScrollState.isActive && !autoScrollState.isPaused && settings.hideUIOnAutoScroll && !isAutoScrollSettingsOpen ? 'hidden' : ''}`} style={getToolbarStyle('bottom-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
+            <footer id="bottom-bar" className={`footer-default flex-none border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-10 flex justify-around items-center px-1 py-1 w-full`} style={getToolbarStyle('bottom-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
                 <button ref={menuButtonRef} id="btn-menu" onClick={() => setIsFloatingMenuOpen(p => !p)} className="bottom-bar-button btn-purple flex-1 mx-1" style={getToolbarStyle('btn-menu', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><i className="fa-solid fa-bars"></i><span className="hidden sm:inline">القائمة</span></button>
                 <button 
                     id="btn-bookmark" 

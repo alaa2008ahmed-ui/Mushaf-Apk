@@ -29,7 +29,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             theme: 'default',
             scrollMinutes: 20,
             tafseer: 'ar.jalalayn',
-            hideUIOnAutoScroll: false
+            lockHighlightColor: false
         };
     });
     
@@ -116,6 +116,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                             <div className="h-8 w-full rounded border border-gray-300 relative overflow-hidden">
                                 <input type="color" value={settings.highlightTextColor || THEMES['default'].highlightText} onChange={(e) => updateSetting('highlightTextColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
                             </div>
+                            <div className="flex items-center justify-center mt-1 gap-1">
+                                <input 
+                                    type="checkbox" 
+                                    id="lock-highlight-color" 
+                                    checked={settings.lockHighlightColor} 
+                                    onChange={(e) => updateSetting('lockHighlightColor', e.target.checked)} 
+                                    className="w-3 h-3 accent-emerald-500"
+                                />
+                                <label htmlFor="lock-highlight-color" className="text-[9px] font-bold opacity-70 cursor-pointer">قفل اللون</label>
+                            </div>
                         </div>
                     </div>
 
@@ -160,18 +170,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                             </button>
                         </div>
                     </div>
-
-                    {!isLandscape && (
-                        <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-bold opacity-80">إخفاء الأشرطة أثناء التمرير التلقائي</label>
-                                <div className="relative inline-block w-10 align-middle select-none">
-                                    <input type="checkbox" id="hide-ui-autoscroll" checked={settings.hideUIOnAutoScroll} onChange={(e) => updateSetting('hideUIOnAutoScroll', e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                                    <label htmlFor="hide-ui-autoscroll" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${settings.hideUIOnAutoScroll ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
                         <div className="flex items-center justify-between">

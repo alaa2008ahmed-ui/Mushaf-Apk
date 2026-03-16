@@ -13,9 +13,13 @@ const ReciterSelectModal: React.FC<ReciterSelectModalProps> = ({ onClose, curren
     const selectedRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
-        if (selectedRef.current) {
-            selectedRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        // Use a timeout to ensure the modal animation doesn't interfere with scrolling
+        const timer = setTimeout(() => {
+            if (selectedRef.current) {
+                selectedRef.current.scrollIntoView({ behavior: 'auto', block: 'center' });
+            }
+        }, 150);
+        return () => clearTimeout(timer);
     }, []);
 
     const handleClose = () => {
