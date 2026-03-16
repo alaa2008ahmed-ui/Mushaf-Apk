@@ -126,7 +126,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             const currentY = e.touches[0].clientY;
             
             if (!isScrolling) {
-                if (Math.abs(currentX - touchStartX) > 5 || Math.abs(currentY - touchStartY) > 5) {
+                if (Math.abs(currentX - touchStartX) > 20 || Math.abs(currentY - touchStartY) > 20) {
                     isScrolling = true;
                     // Don't update lastTouch yet so the initial delta is applied
                 } else {
@@ -1355,6 +1355,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
 
     const handlePageButtonClick = () => {
         if (autoScrollState.isActive && !autoScrollState.isPaused) {
+            autoScrollPausedRef.current = true;
             setAutoScrollState(p => ({ ...p, isPaused: true }));
         }
         setIsPageInputActive(true);

@@ -552,7 +552,7 @@
 }
 
 .quran-reader-container.landscape-mode {
-    touch-action: auto;
+    touch-action: manipulation;
 }
 .quran-reader-container.landscape-mode #mushaf-content {
     /* Keep padding constant so text doesn't jump when toggling UI */
