@@ -98,36 +98,77 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         <input type="range" min="0.5" max="4.5" step="0.1" value={settings.fontSize} onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value))} className="w-full h-1.5 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 border-b pb-2 border-gray-200 dark:border-gray-700">
-                        <div>
-                            <label className="text-[10px] sm:text-xs font-bold block mb-1 opacity-80 truncate">لون النص</label>
-                            <div className="h-8 w-full rounded border border-gray-300 relative overflow-hidden">
-                                <input type="color" value={settings.textColor} onChange={(e) => updateSetting('textColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
+                    {!isLandscape ? (
+                        <div className="grid grid-cols-3 gap-3 border-b pb-2 border-gray-200 dark:border-gray-700">
+                            <div>
+                                <label className="text-[10px] sm:text-xs font-bold block mb-1 opacity-80 truncate">لون النص</label>
+                                <div className="h-8 w-full rounded border border-gray-300 relative overflow-hidden">
+                                    <input type="color" value={settings.textColor} onChange={(e) => updateSetting('textColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] sm:text-xs font-bold block mb-1 opacity-80 truncate">لون الخلفية</label>
+                                <div className="h-8 w-full rounded border border-gray-300 relative overflow-hidden">
+                                    <input type="color" value={settings.bgColor} onChange={(e) => updateSetting('bgColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] sm:text-xs font-bold block mb-1 opacity-80 truncate">لون التحديد</label>
+                                <div className="h-8 w-full rounded border border-gray-300 relative overflow-hidden">
+                                    <input type="color" value={settings.highlightTextColor || THEMES['default'].highlightText} onChange={(e) => updateSetting('highlightTextColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
+                                </div>
+                                <div className="flex items-center justify-center mt-1 gap-1">
+                                    <input 
+                                        type="checkbox" 
+                                        id="lock-highlight-color" 
+                                        checked={settings.lockHighlightColor} 
+                                        onChange={(e) => updateSetting('lockHighlightColor', e.target.checked)} 
+                                        className="w-3 h-3 accent-emerald-500"
+                                    />
+                                    <label htmlFor="lock-highlight-color" className="text-[9px] font-bold opacity-70 cursor-pointer">قفل اللون</label>
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <label className="text-[10px] sm:text-xs font-bold block mb-1 opacity-80 truncate">لون الخلفية</label>
-                            <div className="h-8 w-full rounded border border-gray-300 relative overflow-hidden">
-                                <input type="color" value={settings.bgColor} onChange={(e) => updateSetting('bgColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
+                    ) : (
+                        <>
+                            <div className="border-b border-gray-200 dark:border-gray-700 py-1">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-bold opacity-80">لون النص</label>
+                                    <div className="h-8 w-16 rounded border border-gray-300 relative overflow-hidden">
+                                        <input type="color" value={settings.textColor} onChange={(e) => updateSetting('textColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <label className="text-[10px] sm:text-xs font-bold block mb-1 opacity-80 truncate">لون التحديد</label>
-                            <div className="h-8 w-full rounded border border-gray-300 relative overflow-hidden">
-                                <input type="color" value={settings.highlightTextColor || THEMES['default'].highlightText} onChange={(e) => updateSetting('highlightTextColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
+                            <div className="border-b border-gray-200 dark:border-gray-700 py-1">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-bold opacity-80">لون الخلفية</label>
+                                    <div className="h-8 w-16 rounded border border-gray-300 relative overflow-hidden">
+                                        <input type="color" value={settings.bgColor} onChange={(e) => updateSetting('bgColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex items-center justify-center mt-1 gap-1">
-                                <input 
-                                    type="checkbox" 
-                                    id="lock-highlight-color" 
-                                    checked={settings.lockHighlightColor} 
-                                    onChange={(e) => updateSetting('lockHighlightColor', e.target.checked)} 
-                                    className="w-3 h-3 accent-emerald-500"
-                                />
-                                <label htmlFor="lock-highlight-color" className="text-[9px] font-bold opacity-70 cursor-pointer">قفل اللون</label>
+                            <div className="border-b border-gray-200 dark:border-gray-700 py-1">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex flex-col items-start">
+                                        <label className="text-xs font-bold opacity-80">لون التحديد</label>
+                                        <div className="flex items-center mt-1 gap-1">
+                                            <input 
+                                                type="checkbox" 
+                                                id="lock-highlight-color" 
+                                                checked={settings.lockHighlightColor} 
+                                                onChange={(e) => updateSetting('lockHighlightColor', e.target.checked)} 
+                                                className="w-3 h-3 accent-emerald-500"
+                                            />
+                                            <label htmlFor="lock-highlight-color" className="text-[9px] font-bold opacity-70 cursor-pointer">قفل اللون</label>
+                                        </div>
+                                    </div>
+                                    <div className="h-8 w-16 rounded border border-gray-300 relative overflow-hidden">
+                                        <input type="color" value={settings.highlightTextColor || THEMES['default'].highlightText} onChange={(e) => updateSetting('highlightTextColor', e.target.value)} className="absolute -top-2 -left-2 w-[150%] h-[150%] cursor-pointer p-0 border-0" />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        </>
+                    )}
 
                     <div className="border-b border-gray-200 dark:border-gray-700 py-1">
                         <label className="text-xs font-bold block opacity-80">نوع الخط</label>

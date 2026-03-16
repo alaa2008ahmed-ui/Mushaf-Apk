@@ -26,11 +26,11 @@ const VideoSplash: React.FC<VideoSplashProps> = ({ onEnded }) => {
 
   return (
     <div 
-      className={`fixed inset-0 z-[9999] bg-white flex items-center justify-center overflow-hidden transition-opacity duration-500 ${isFading ? 'opacity-0' : 'opacity-100'}`}
+      className={`fixed inset-0 z-[9999] bg-black flex items-center justify-center overflow-hidden transition-opacity duration-500 ${isFading ? 'opacity-0' : 'opacity-100'}`}
     >
       <video
         ref={videoRef}
-        className={`w-full h-full object-contain pointer-events-none transition-opacity duration-500 ${isReady ? 'opacity-100' : 'opacity-0'}`}
+        className={`w-full h-full object-cover pointer-events-none transition-opacity duration-500 ${isReady ? 'opacity-100' : 'opacity-0'}`}
         src="/splash.mp4"
         autoPlay
         muted
