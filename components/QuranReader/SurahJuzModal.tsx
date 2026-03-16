@@ -15,10 +15,13 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
     const selectedRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
-        if (selectedRef.current) {
-            selectedRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }, []);
+        // استخدام requestAnimationFrame لضمان أن القائمة قد ظهرت تماماً قبل التمرير
+        requestAnimationFrame(() => {
+            if (selectedRef.current) {
+                selectedRef.current.scrollIntoView({ behavior: 'auto', block: 'center' });
+            }
+        });
+    }, [type]); // التمرير عند تغيير النوع أيضاً
 
     const removeDiacritics = (text: string) => {
         if (!text) return "";
@@ -78,7 +81,7 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                                         key={s.number} 
                                         ref={currentSelection === s.number ? selectedRef : null}
                                         onClick={() => onSelect(s.number, 1)} 
-                                        className={`p-2.5 rounded-lg transition text-right font-bold border flex justify-between items-center group ${currentSelection === s.number ? 'theme-accent-btn' : 'theme-btn-bg'}`}
+                                        className={`p-2.5 rounded-lg transition text-right font-bold border flex justify-between items-center group ${currentSelection === s.number ? 'bg-orange-500 text-white border-orange-600 shadow-xl scale-[1.03] ring-2 ring-orange-300 z-10' : 'theme-btn-bg'}`}
                                     >
                                         <span>
                                             <span className="opacity-80">{toArabic(s.number)}.</span> 
@@ -100,7 +103,7 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                                     key={j.j} 
                                     ref={currentSelection === j.j ? selectedRef : null}
                                     onClick={() => onSelect(j.j)} 
-                                    className={`p-2.5 rounded-lg transition font-bold border flex flex-col items-center justify-center text-center ${currentSelection === j.j ? 'theme-accent-btn' : 'theme-btn-bg'}`}
+                                    className={`p-2.5 rounded-lg transition font-bold border flex flex-col items-center justify-center text-center ${currentSelection === j.j ? 'bg-orange-500 text-white border-orange-600 shadow-xl scale-[1.03] ring-2 ring-orange-300 z-10' : 'theme-btn-bg'}`}
                                 >
                                     <span className="text-lg mb-1">الجزء {toArabic(j.j)}</span>
                                     <span className="text-xs font-normal opacity-80" style={{ fontFamily: 'var(--font-amiri)' }}>

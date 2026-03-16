@@ -509,6 +509,7 @@
 .quran-reader-container.fullscreen-active #header,
 .quran-reader-container.fullscreen-active #bottom-bar {
     display: none !important;
+    transition: none !important;
 }
 .quran-reader-container.fullscreen-active #floating-menu {
     display: none !important;

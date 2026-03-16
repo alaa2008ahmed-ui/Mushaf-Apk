@@ -74,6 +74,7 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
             bgColor: theme.bg,
             textColor: theme.text,
             fontFamily: theme.font,
+            highlightTextColor: theme.highlightText || theme.accent,
             theme: themeId
         };
         localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(updatedSettings));

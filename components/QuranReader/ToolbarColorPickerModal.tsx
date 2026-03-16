@@ -63,7 +63,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
 
         return {
             bg: config?.bg || defaults.bg,
-            text: config?.text || defaults.text,
+            text: defaults.text,
             border: config?.border || defaults.border,
             font: config?.font || defaults.font
         };
