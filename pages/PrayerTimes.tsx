@@ -267,7 +267,7 @@ function PrayerTimes({ onBack }) {
     };
 
     return (
-        <div className="h-screen w-screen flex flex-col" style={{ backgroundColor: theme.bg, color: theme.textColor }}>
+        <div className="h-screen w-screen flex flex-col" style={{ backgroundColor: theme.bgColor || '#0D1B2A', color: theme.textColor }}>
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
                     <div className="flex items-center justify-center gap-2">
@@ -297,7 +297,7 @@ function PrayerTimes({ onBack }) {
                     </div>
 
                      <div className="flex items-center justify-center gap-3 mb-5 px-1">
-                        <button onClick={handleManualSearch} className="themed-card text-sm font-black px-3 py-1.5 rounded-lg shadow-sm active:scale-95" style={{ color: primaryColor }}>بحث</button>
+                        <button onClick={handleManualSearch} className="themed-card text-sm font-black px-3 py-1.5 rounded-lg shadow-sm active:scale-95 hover:bg-card-bg-hover" style={{ color: primaryColor }}>بحث</button>
                         <div className="flex-1 relative themed-card rounded-xl overflow-hidden shadow-sm">
                             <input type="text" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleManualSearch()} placeholder="عن مدينة أو محافظة..." 
                                 className="w-full bg-transparent py-2.5 px-4 pr-10 text-xs outline-none transition-all" style={{ color: primaryColor }}/>
@@ -335,7 +335,7 @@ function PrayerTimes({ onBack }) {
                                         {key !== 'Sunrise' ? (
                                             <div className="flex flex-col items-center gap-2">
                                                 <div onClick={() => togglePrayerSound(key)} className={`toggle-dot ${isMuted ? 'bg-red-500' : 'bg-green-500'}`} style={{borderColor: primaryColor}}></div>
-                                                <button onClick={() => openSettings(key)} className="settings-btn shadow-sm" style={{ color: primaryColor }}><i className="fa-solid fa-sliders"></i></button>
+                                                <button onClick={() => openSettings(key)} className="settings-btn shadow-sm hover:opacity-80" style={{ color: primaryColor }}><i className="fa-solid fa-sliders"></i></button>
                                             </div>
                                         ) : <div className="w-12"></div>}
                                         <div className="w-10 h-10 rounded-2xl themed-bg-alt flex items-center justify-center border" style={{color: idx % 2 === 0 ? primaryColor : secondaryColor, borderColor: 'var(--card-border)'}}>
@@ -360,8 +360,8 @@ function PrayerTimes({ onBack }) {
 
              {isModalOpen && currentEditingKey && (
                  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-6 scale-in">
-                    <div className="themed-card rounded-[2.5rem] w-full max-w-xs p-6 shadow-2xl">
-                         <div className="flex justify-between items-center mb-6 pb-2 border-b themed-text-muted/20">
+                    <div className="rounded-[2.5rem] w-full max-w-xs p-6 shadow-2xl" style={{ backgroundColor: 'var(--modal-bg)', color: 'var(--modal-text)' }}>
+                         <div className="flex justify-between items-center mb-6 pb-2 border-b" style={{ borderColor: 'var(--card-border)' }}>
                             <h3 className="font-black text-sm" style={{ color: primaryColor }}>إعدادات صلاة {prayerNamesAr[currentEditingKey]}</h3>
                             <button onClick={closeModal} className="hover:text-red-500" style={{ color: secondaryColor }}><i className="fa-solid fa-circle-xmark text-2xl"></i></button>
                         </div>

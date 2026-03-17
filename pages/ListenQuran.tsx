@@ -64,7 +64,8 @@ function ListenQuran({ onBack, onOpenThemes }) {
     useEffect(() => {
         const root = document.documentElement;
         const t = theme;
-        const isDark = !t.bgColor || ['#191D3A', '#0c0a09', '#000000', '#4c1d95', '#7c2d12', '#1e40af', '#1e1b4b', '#1c1917', '#0b0f19', '#3e2723', '#450a0a', '#064e3b', '#0f766e', '#155e75', '#581c87', '#0F172A'].includes(t.bgColor);
+        const isDark = !t.bgColor || 
+            ['#191D3A', '#0C0A09', '#000000', '#4C1D95', '#7C2D12', '#1E40AF', '#1E1B4B', '#1C1917', '#0B0F19', '#3E2723', '#450A0A', '#064E3B', '#0F766E', '#155E75', '#581C87', '#0F172A', '#2E1065', '#0B0F19', '#022C22'].includes(t.bgColor.toUpperCase());
 
         root.style.setProperty('--qr-bg', t.bgColor || '#0D1B2A');
         root.style.setProperty('--qr-text', t.textColor);
@@ -217,7 +218,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
     const surahName = SURAH_LIST.find(s => s.number === surahNumber)?.name || 'غير معروفة';
 
     return (
-        <div className="h-screen flex flex-col font-cairo overflow-hidden" style={{ backgroundColor: theme.bg, color: theme.textColor }}>
+        <div className="h-screen flex flex-col font-cairo overflow-hidden" style={{ backgroundColor: theme.bgColor || '#0D1B2A', color: theme.textColor }}>
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
                     <h1 className="app-top-bar__title text-2xl font-kufi">الاستماع للقرآن</h1>

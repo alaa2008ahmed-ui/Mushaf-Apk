@@ -35,13 +35,14 @@ interface NavButtonProps {
     onResize?: (e: React.MouseEvent) => void;
 }
 
-const NavButton: React.FC<NavButtonProps & { isGlass?: boolean }> = ({ label, onClick, className, color, border, isEditMode, onResize, isGlass }) => (
+const NavButton: React.FC<NavButtonProps & { isGlass?: boolean, btnText?: string }> = ({ label, onClick, className, color, border, isEditMode, onResize, isGlass, btnText }) => (
     <div className={`h-full ${className} relative group`}>
         <button 
             onClick={onClick} 
-            className={`btn-3d-effect w-full rounded-2xl py-3 px-1 font-bold text-white relative text-sm h-full ${isEditMode ? 'cursor-move animate-pulse' : ''}`}
+            className={`btn-3d-effect w-full rounded-2xl py-3 px-1 font-bold relative text-sm h-full ${isEditMode ? 'cursor-move animate-pulse' : ''}`}
             style={{ 
                 background: isGlass ? 'transparent' : color, 
+                color: btnText || '#FFFFFF',
                 border: border || (isGlass ? '1px solid rgba(255, 255, 255, 0.3)' : 'none'),
                 boxShadow: isGlass ? '0 2px 10px rgba(0,0,0,0.1)' : undefined,
                 textShadow: isGlass ? '0 2px 4px rgba(0,0,0,0.8)' : undefined
@@ -406,6 +407,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
                             isEditMode={isEditMode}
                             onResize={(e) => handleResize(item.id, e)}
                             isGlass={theme.isGlass}
+                            btnText={theme.btnText}
                           />
                           {item.id === 'quran' && !isEditMode && (
                               <button

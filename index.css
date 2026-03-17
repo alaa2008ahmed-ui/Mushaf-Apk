@@ -64,6 +64,11 @@
 @theme {
   --color-primary: var(--color-primary, #10b981);
   --color-secondary: var(--color-secondary, #8b5cf6);
+  --color-card-bg: var(--card-bg, #ffffff);
+  --color-card-border: var(--card-border, #e2e8f0);
+  --color-modal-bg: var(--modal-bg, #ffffff);
+  --color-modal-text: var(--modal-text, #000000);
+  --color-modal-border: var(--modal-border, #10b981);
   --color-bg-light: var(--color-bg-light, #f3f4f6);
   --color-quran-text: var(--color-quran-text, #065f46);
   --color-brand-purple: var(--color-brand-purple, #7c3aed);

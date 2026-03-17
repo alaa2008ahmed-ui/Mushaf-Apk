@@ -126,7 +126,7 @@ function AdkarSabahMasaa({ onBack }) {
                                 
                                 {dhikr.source && <p className="text-xs mt-2 text-center themed-text-muted opacity-80 font-cairo">{dhikr.source}</p>}
                                 <div className="flex justify-center mt-3">
-                                    <button onClick={(e) => { e.stopPropagation(); openZoomModal(dhikr); }} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                                    <button onClick={(e) => { e.stopPropagation(); openZoomModal(dhikr); }} className="p-2 rounded-full hover:bg-card-bg-hover transition-colors">
                                         <i className="fa-solid fa-magnifying-glass-plus text-lg"></i>
                                     </button>
                                 </div>
@@ -143,7 +143,7 @@ function AdkarSabahMasaa({ onBack }) {
 
             {zoomedDhikr && (
                 <div className="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center p-4 backdrop-blur-sm" onClick={closeZoomModal}>
-                    <div className="bg-white text-gray-900 p-8 rounded-3xl w-full max-w-2xl text-center relative scale-in shadow-2xl border-2" style={{ borderColor: theme.palette[0], fontFamily: theme.font }} onClick={e => e.stopPropagation()}>
+                    <div className="bg-modal-bg text-modal-text p-8 rounded-3xl w-full max-w-2xl text-center relative scale-in shadow-2xl border-2 border-modal-border" style={{ fontFamily: theme.font }} onClick={e => e.stopPropagation()}>
                         <p className="text-3xl md:text-4xl leading-relaxed">
                             {zoomedDhikr.text}
                         </p>

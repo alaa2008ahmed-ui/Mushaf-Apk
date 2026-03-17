@@ -103,7 +103,7 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         root.style.setProperty('--color-secondary', theme.palette[1]);
         
         const isDark = !theme.bgColor || 
-            ['#191D3A', '#0c0a09', '#000000', '#4c1d95', '#7c2d12', '#1e40af', '#1e1b4b', '#1c1917', '#0b0f19', '#3e2723', '#450a0a', '#064e3b', '#0f766e', '#155e75', '#581c87', '#0F172A'].includes(theme.bgColor);
+            ['#191D3A', '#0c0a09', '#000000', '#4c1d95', '#7c2d12', '#1e40af', '#1e1b4b', '#1c1917', '#0b0f19', '#3e2723', '#450a0a', '#064e3b', '#0f766e', '#155e75', '#581c87', '#0F172A', '#2E1065', '#0B0F19', '#022C22'].includes(theme.bgColor.toUpperCase());
 
         // Apply shared colors/styles
         root.style.setProperty('--text-color', theme.textColor);
@@ -119,6 +119,11 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         root.style.setProperty('--qr-bar-border', barBorderColor);
         root.style.setProperty('--card-bg', isDark ? '#1e293b' : '#ffffff');
         root.style.setProperty('--card-border', isDark ? '#334155' : '#e2e8f0');
+        
+        // Modal styles
+        root.style.setProperty('--modal-bg', isDark ? '#1e293b' : '#ffffff');
+        root.style.setProperty('--modal-text', theme.textColor);
+        root.style.setProperty('--modal-border', theme.palette[0]);
 
         root.style.setProperty('--card-bg-hover', isDark ? '#334155' : '#f8fafc');
         root.style.setProperty('--card-shadow', isDark

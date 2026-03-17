@@ -65,7 +65,7 @@ const ModalWrapper = ({ children, onClose, isOpen }: { children?: React.ReactNod
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4 backdrop-blur-sm" onClick={onClose}>
-            <div className="p-6 rounded-2xl w-full max-w-xs space-y-4 bg-white text-gray-900 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="p-6 rounded-2xl w-full max-w-xs space-y-4 bg-modal-bg text-modal-text shadow-2xl border border-modal-border" onClick={e => e.stopPropagation()}>
                 {children}
             </div>
         </div>
@@ -303,55 +303,55 @@ function Tasbeeh({ onBack }) {
             
             {/* Modals */}
             <ModalWrapper isOpen={modals.target} onClose={() => setModals(p => ({...p, target: false}))}>
-                <h3 className="text-xl font-bold text-center border-b pb-2 text-gray-900 border-gray-200">تعيين الهدف</h3>
-                <p className='text-sm text-center text-gray-600'>أدخل العدد المستهدف (مثل 33). أدخل 0 للإلغاء.</p>
+                <h3 className="text-xl font-bold text-center border-b pb-2 border-modal-border">تعيين الهدف</h3>
+                <p className='text-sm text-center opacity-80'>أدخل العدد المستهدف (مثل 33). أدخل 0 للإلغاء.</p>
                 <input ref={targetInputRef} id="target-input" type="text" inputMode="numeric" dir="rtl" defaultValue={toArabicNumerals(target > 0 ? target : '')}
                     onInput={(e) => (e.target as HTMLInputElement).value = (e.target as HTMLInputElement).value.replace(/[^0-9٠-٩]/g, '')}
-                    className="w-full p-3 rounded-xl text-center text-2xl font-bold focus:outline-none focus:ring-2 bg-gray-50 text-gray-900 border border-gray-200"/>
+                    className="w-full p-3 rounded-xl text-center text-2xl font-bold focus:outline-none focus:ring-2 bg-card-bg-hover text-modal-text border border-modal-border"/>
                 <div className="flex gap-3 pt-2">
-                    <button onClick={() => setModals(p => ({...p, target: false}))} className="flex-1 py-2 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">إلغاء</button>
+                    <button onClick={() => setModals(p => ({...p, target: false}))} className="flex-1 py-2 rounded-lg bg-gray-500/20 text-modal-text font-bold hover:bg-gray-500/30 transition-colors">إلغاء</button>
                     <button onClick={handleSetTarget} className="flex-1 py-2 rounded-lg text-white font-bold" style={{backgroundColor: theme.palette[0]}}>حفظ</button>
                 </div>
             </ModalWrapper>
 
             <ModalWrapper isOpen={modals.add} onClose={() => setModals(p => ({...p, add: false}))}>
-                 <h3 className="text-xl font-bold text-center border-b pb-2 text-gray-900 border-gray-200">إضافة تسبيح</h3>
-                 <input ref={newPhraseInputRef} id="new-phrase-input" type="text" placeholder="اكتب الذكر هنا..." dir="rtl" className="w-full p-3 rounded-xl text-right text-lg focus:outline-none focus:ring-2 bg-gray-50 text-gray-900 border border-gray-200"/>
+                 <h3 className="text-xl font-bold text-center border-b pb-2 border-modal-border">إضافة تسبيح</h3>
+                 <input ref={newPhraseInputRef} id="new-phrase-input" type="text" placeholder="اكتب الذكر هنا..." dir="rtl" className="w-full p-3 rounded-xl text-right text-lg focus:outline-none focus:ring-2 bg-card-bg-hover text-modal-text border border-modal-border"/>
                 <div className="flex gap-3 pt-2">
-                    <button onClick={() => setModals(p => ({...p, add: false}))} className="flex-1 py-2 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">إلغاء</button>
+                    <button onClick={() => setModals(p => ({...p, add: false}))} className="flex-1 py-2 rounded-lg bg-gray-500/20 text-modal-text font-bold hover:bg-gray-500/30 transition-colors">إلغاء</button>
                     <button onClick={() => handleAddPhrase(newPhraseInputRef.current?.value || '')} className="flex-1 py-2 rounded-lg text-white font-bold" style={{backgroundColor: theme.palette[0]}}>إضافة</button>
                 </div>
             </ModalWrapper>
             
             <ModalWrapper isOpen={modals.delete} onClose={() => setModals(p => ({...p, delete: false}))}>
-                 <h3 className="text-xl font-bold text-center border-b pb-3 text-gray-900 border-gray-200">حذف تسبيح</h3>
+                 <h3 className="text-xl font-bold text-center border-b pb-3 border-modal-border">حذف تسبيح</h3>
                  <div className="space-y-3 overflow-y-auto max-h-60 pr-2">
                     {phrases.length > 0 ? (
                          phrases.map(p => (
-                             <div key={p.id} className="p-2 rounded-lg flex items-center justify-between bg-gray-50 border border-gray-100">
-                                 <span className="text-right text-base flex-grow pl-2 font-amiri text-gray-900">{p.text}</span>
+                             <div key={p.id} className="p-2 rounded-lg flex items-center justify-between bg-card-bg-hover border border-modal-border">
+                                 <span className="text-right text-base flex-grow pl-2 font-amiri text-modal-text">{p.text}</span>
                                  <button onClick={() => handleDeletePhrase(p.text)} className="w-14 h-8 text-xs font-bold rounded-md bg-red-500 text-white flex-shrink-0 hover:bg-red-600 transition-colors">حذف</button>
                              </div>
                          ))
                     ) : (
-                        <p className="text-center text-gray-500 py-4">لا يوجد أذكار لحذفها.</p>
+                        <p className="text-center opacity-60 py-4">لا يوجد أذكار لحذفها.</p>
                     )}
                  </div>
-                 <div className="pt-4 mt-2 border-t border-gray-200">
-                     <button onClick={() => setModals(p => ({...p, delete: false}))} className="w-full py-2 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">
+                 <div className="pt-4 mt-2 border-t border-modal-border">
+                     <button onClick={() => setModals(p => ({...p, delete: false}))} className="w-full py-2 rounded-lg bg-gray-500/20 text-modal-text font-bold hover:bg-gray-500/30 transition-colors">
                          إغلاق
                      </button>
                  </div>
             </ModalWrapper>
 
             <ModalWrapper isOpen={modals.phrase} onClose={() => setModals(p => ({...p, phrase: false}))}>
-                <h3 className="text-xl font-bold text-center border-b pb-3 text-gray-900 border-gray-200">اختر الذكر</h3>
+                <h3 className="text-xl font-bold text-center border-b pb-3 border-modal-border">اختر الذكر</h3>
                 <div className="space-y-3 overflow-y-auto max-h-60 pr-2">
                     {phrases.map(p => (
                         <div key={p.id} onClick={() => { setActivePhrase(p.text); handleReset(); setModals(p => ({...p, phrase: false})); }}
-                             className={`p-3 rounded-xl cursor-pointer flex items-center justify-between border-2 ${activePhrase === p.text ? 'border-green-500 bg-green-50' : 'border-transparent hover:bg-gray-100 bg-gray-50'}`}>
-                            <span className="text-right text-lg font-amiri text-gray-900">{p.text}</span>
-                            {activePhrase === p.text && <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>}
+                             className={`p-3 rounded-xl cursor-pointer flex items-center justify-between border-2 ${activePhrase === p.text ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-card-bg-hover bg-card-bg-hover/50'}`}>
+                            <span className="text-right text-lg font-amiri text-modal-text">{p.text}</span>
+                            {activePhrase === p.text && <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0"></div>}
                         </div>
                     ))}
                 </div>
@@ -359,19 +359,19 @@ function Tasbeeh({ onBack }) {
             
             {/* FIX: Added a new modal for selecting the counter color. */}
             <ModalWrapper isOpen={modals.color} onClose={() => setModals(p => ({...p, color: false}))}>
-                <h3 className="text-xl font-bold text-center border-b pb-2 text-gray-900 border-gray-200">اختر لون العداد</h3>
+                <h3 className="text-xl font-bold text-center border-b pb-2 border-modal-border">اختر لون العداد</h3>
                 <div className="grid grid-cols-4 gap-4 pt-4 justify-items-center">
                     {colorOptions.map(color => (
                         <button
                             key={color}
                             onClick={() => handleSetCounterColor(color)}
-                            className={`w-12 h-12 rounded-full border-4 transition-transform transform active:scale-90 ${counterColor === color ? 'ring-2 ring-offset-2 ring-offset-white ring-blue-500' : ''}`}
+                            className={`w-12 h-12 rounded-full border-4 transition-transform transform active:scale-90 ${counterColor === color ? 'ring-2 ring-offset-2 ring-offset-modal-bg ring-primary' : ''}`}
                             style={{ backgroundColor: color, borderColor: 'rgba(255,255,255,0.5)' }}
                         />
                     ))}
                 </div>
-                <div className="pt-4 mt-2 border-t border-gray-200">
-                    <button onClick={() => setModals(p => ({...p, color: false}))} className="w-full py-2 rounded-lg bg-gray-200 text-gray-800 font-bold hover:bg-gray-300 transition-colors">
+                <div className="pt-4 mt-2 border-t border-modal-border">
+                    <button onClick={() => setModals(p => ({...p, color: false}))} className="w-full py-2 rounded-lg bg-gray-500/20 text-modal-text font-bold hover:bg-gray-500/30 transition-colors">
                         إغلاق
                     </button>
                 </div>

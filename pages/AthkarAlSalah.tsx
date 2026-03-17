@@ -128,23 +128,23 @@ function AthkarAlSalah({ onBack }) {
                                     <i className="fa-solid fa-mosque text-xs ml-2"></i> سنن الصلوات (الرواتب)
                                 </h3>
                                 <div className="space-y-2 text-sm font-amiri themed-text-muted" dir="rtl">
-                                    <div className="flex justify-between border-b border-black/5 dark:border-white/5 pb-1">
+                                    <div className="flex justify-between border-b border-card-border pb-1">
                                         <span>صلاة الفجر:</span>
                                         <span className="font-bold">2 ركعة قبلية</span>
                                     </div>
-                                    <div className="flex justify-between border-b border-black/5 dark:border-white/5 pb-1">
+                                    <div className="flex justify-between border-b border-card-border pb-1">
                                         <span>صلاة الظهر:</span>
                                         <span className="font-bold">4 قبلية و 2 بعدية</span>
                                     </div>
-                                    <div className="flex justify-between border-b border-black/5 dark:border-white/5 pb-1">
+                                    <div className="flex justify-between border-b border-card-border pb-1">
                                         <span>صلاة العصر:</span>
                                         <span className="opacity-60 italic">ليس لها سنة راتبة</span>
                                     </div>
-                                    <div className="flex justify-between border-b border-black/5 dark:border-white/5 pb-1">
+                                    <div className="flex justify-between border-b border-card-border pb-1">
                                         <span>صلاة المغرب:</span>
                                         <span className="font-bold">2 ركعة بعدية</span>
                                     </div>
-                                    <div className="flex justify-between border-b border-black/5 dark:border-white/5 pb-1">
+                                    <div className="flex justify-between border-b border-card-border pb-1">
                                         <span>صلاة العشاء:</span>
                                         <span className="font-bold">2 ركعة بعدية</span>
                                     </div>
@@ -152,7 +152,7 @@ function AthkarAlSalah({ onBack }) {
                                         المجموع: 12 ركعة في اليوم
                                     </div>
                                 </div>
-                                <div className="flex justify-center mt-3 pt-2 border-t border-black/5 dark:border-white/5">
+                                <div className="flex justify-center mt-3 pt-2 border-t border-card-border">
                                     <button 
                                         onClick={() => setZoomedZikr({
                                             title: "سنن الصلوات (الرواتب)",
@@ -167,7 +167,7 @@ function AthkarAlSalah({ onBack }) {
                                             `,
                                             note: "الرواتب المؤكدة"
                                         })} 
-                                        className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                        className="p-2 rounded-full hover:bg-card-bg-hover transition-colors"
                                     >
                                         <i className="fa-solid fa-magnifying-glass-plus text-lg themed-text-muted"></i>
                                     </button>
@@ -182,35 +182,35 @@ function AthkarAlSalah({ onBack }) {
                                     <i className="fa-solid fa-scroll text-xs ml-2"></i> أحاديث في فضل السنن
                                 </h3>
                                 <div className="space-y-4 text-sm font-amiri themed-text-muted" dir="rtl">
-                                    <div className="bg-black/5 dark:bg-white/5 p-3 rounded-lg border-r-2" style={{ borderRightColor: theme.palette[0] }}>
+                                    <div className="bg-card-bg-hover p-3 rounded-lg border-r-2" style={{ borderRightColor: theme.palette[0] }}>
                                         <p className="leading-relaxed">
                                             عن أم حبيبة رضي الله عنها قالت: سمعت رسول الله ﷺ يقول: <span className="text-primary font-bold">"مَنْ صَلَّى فِي يَوْمٍ وَلَيْلَةٍ ثِنْتَيْ عَشْرَةَ رَكْعَةً بُنِيَ لَهُ بَيْتٌ فِي الْجَنَّةِ"</span>.
                                         </p>
                                         <p className="text-left text-[10px] mt-1 opacity-70">- رواه مسلم</p>
                                     </div>
                                     
-                                    <div className="bg-black/5 dark:bg-white/5 p-3 rounded-lg border-r-2" style={{ borderRightColor: theme.palette[1] }}>
+                                    <div className="bg-card-bg-hover p-3 rounded-lg border-r-2" style={{ borderRightColor: theme.palette[1] }}>
                                         <p className="leading-relaxed">
                                             عن عائشة رضي الله عنها عن النبي ﷺ قال: <span className="text-secondary font-bold">"رَكْعَتَا الْفَجْرِ خَيْرٌ مِنَ الدُّنْيَا وَمَا فِيهَا"</span>.
                                         </p>
                                         <p className="text-left text-[10px] mt-1 opacity-70">- رواه مسلم</p>
                                     </div>
 
-                                    <div className="bg-black/5 dark:bg-white/5 p-3 rounded-lg border-r-2" style={{ borderRightColor: theme.palette[0] }}>
+                                    <div className="bg-card-bg-hover p-3 rounded-lg border-r-2" style={{ borderRightColor: theme.palette[0] }}>
                                         <p className="leading-relaxed">
                                             عن ابن عمر رضي الله عنهما أن النبي ﷺ قال: <span className="text-primary font-bold">"رَحِمَ اللَّهُ امْرَأً صَلَّى قَبْلَ الْعَصْرِ أَرْبَعًا"</span>.
                                         </p>
                                         <p className="text-left text-[10px] mt-1 opacity-70">- رواه الترمذي وأبو داود</p>
                                     </div>
 
-                                    <div className="bg-black/5 dark:bg-white/5 p-3 rounded-lg border-r-2" style={{ borderRightColor: theme.palette[1] }}>
+                                    <div className="bg-card-bg-hover p-3 rounded-lg border-r-2" style={{ borderRightColor: theme.palette[1] }}>
                                         <p className="leading-relaxed">
                                             عن أم حبيبة رضي الله عنها قالت: قال رسول الله ﷺ: <span className="text-secondary font-bold">"مَنْ حَافَظَ عَلَى أَرْبَعِ رَكَعَاتٍ قَبْلَ الظُّهْرِ وَأَرْبَعٍ بَعْدَهَا حَرَّمَهُ اللَّهُ عَلَى النَّارِ"</span>.
                                         </p>
                                         <p className="text-left text-[10px] mt-1 opacity-70">- رواه الترمذي وأبو داود</p>
                                     </div>
                                 </div>
-                                <div className="flex justify-center mt-3 pt-2 border-t border-black/5 dark:border-white/5">
+                                <div className="flex justify-center mt-3 pt-2 border-t border-card-border">
                                     <button 
                                         onClick={() => setZoomedZikr({
                                             title: "أحاديث في فضل السنن",
@@ -224,7 +224,7 @@ function AthkarAlSalah({ onBack }) {
                                             `,
                                             note: "أحاديث صحيحة"
                                         })} 
-                                        className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                        className="p-2 rounded-full hover:bg-card-bg-hover transition-colors"
                                     >
                                         <i className="fa-solid fa-magnifying-glass-plus text-lg themed-text-muted"></i>
                                     </button>
@@ -255,7 +255,7 @@ function AthkarAlSalah({ onBack }) {
                                                 e.stopPropagation();
                                                 setZoomedZikr(zikr);
                                             }} 
-                                            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                            className="p-2 rounded-full hover:bg-card-bg-hover transition-colors"
                                         >
                                             <i className="fa-solid fa-magnifying-glass-plus text-lg themed-text-muted"></i>
                                         </button>
@@ -274,7 +274,7 @@ function AthkarAlSalah({ onBack }) {
 
             {zoomedZikr && (
                 <div className="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center p-4 backdrop-blur-sm" onClick={() => setZoomedZikr(null)}>
-                    <div className="bg-white text-gray-900 p-8 rounded-3xl w-full max-w-2xl text-center relative scale-in shadow-2xl border-2" style={{ borderColor: theme.palette[0], fontFamily: theme.font }} onClick={e => e.stopPropagation()}>
+                    <div className="bg-modal-bg text-modal-text p-8 rounded-3xl w-full max-w-2xl text-center relative scale-in shadow-2xl border-2 border-modal-border" style={{ fontFamily: theme.font }} onClick={e => e.stopPropagation()}>
                         {zoomedZikr.title && <h3 className="text-xl font-bold mb-4" style={{ color: theme.palette[1] }}>{zoomedZikr.title}</h3>}
                         <div 
                             className="text-3xl md:text-4xl leading-relaxed"
