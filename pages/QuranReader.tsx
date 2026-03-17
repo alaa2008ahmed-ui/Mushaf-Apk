@@ -1471,11 +1471,11 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             border = currentTheme.barBorder?.split(' ')[2] || "#e5e7eb";
         }
 
-        // Apply transparency if enabled (only for main bars)
+        // Apply transparency if enabled
         let finalBg = bg;
-        let backdrop = isTransparentMode ? 'blur(12px)' : 'none';
+        let backdrop = 'none';
         let finalShadow: string | undefined = undefined;
-        if (isTransparentMode && (type === 'top-toolbar' || type === 'bottom-toolbar')) {
+        if (isTransparentMode) {
             finalBg = 'transparent';
             border = 'transparent';
             finalShadow = 'none';
