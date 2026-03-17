@@ -6,9 +6,10 @@ interface ReciterSelectModalProps {
     currentReader: string;
     onSelect: (readerId: string) => void;
     isLandscape?: boolean;
+    readersList?: { id: string, name: string }[];
 }
 
-const ReciterSelectModal: React.FC<ReciterSelectModalProps> = ({ onClose, currentReader, onSelect, isLandscape }) => {
+const ReciterSelectModal: React.FC<ReciterSelectModalProps> = ({ onClose, currentReader, onSelect, isLandscape, readersList = READERS }) => {
     const [isClosing, setIsClosing] = useState(false);
     const selectedRef = useRef<HTMLButtonElement>(null);
 
@@ -39,7 +40,7 @@ const ReciterSelectModal: React.FC<ReciterSelectModalProps> = ({ onClose, curren
                     <button onClick={handleClose} className="hover:opacity-80 rounded-full bg-white/20 w-8 h-8 flex items-center justify-center">✕</button>
                 </div>
                 <div className={`p-3 overflow-y-auto flex-1 grid ${isLandscape ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2'}`}>
-                    {READERS.map(r => (
+                    {readersList.map(r => (
                         <button 
                             key={r.id} 
                             ref={currentReader === r.id ? selectedRef : null}

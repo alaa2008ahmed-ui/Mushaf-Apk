@@ -2,8 +2,21 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import { RECITERS, SURAH_LIST } from '../data/listenQuranData';
+import ReciterSelectModal from '../components/QuranReader/ReciterSelectModal';
+import ListenSurahSelectModal from '../components/QuranReader/ListenSurahSelectModal';
+import { SURAH_INFO } from '../components/QuranReader/constants';
+import './QuranReader.css';
 
 const STORAGE_KEY = 'listen_quran_state_v7';
+
+const mockQuranData = {
+    surahs: SURAH_LIST.map(s => ({
+        number: s.number,
+        name: s.name,
+        revelationType: SURAH_INFO[s.number]?.type === 'مكية' ? 'Meccan' : 'Medinan',
+        ayahs: new Array(SURAH_INFO[s.number]?.ayahs || 0)
+    }))
+};
 
 // FIX: Correctly convert digits to numbers for array indexing.
 const toArabicNumerals = (numStr) => String(numStr).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d]);
@@ -15,7 +28,7 @@ function formatTime(seconds) {
     return toArabicNumerals(`${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
 }
 
-function ListenQuran({ onBack }) {
+function ListenQuran({ onBack, onOpenThemes }) {
     const { theme } = useTheme();
     const [reciterId, setReciterId] = useState(RECITERS[0].id);
     const [surahNumber, setSurahNumber] = useState(1);
@@ -25,6 +38,8 @@ function ListenQuran({ onBack }) {
     const [currentTime, setCurrentTime] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showReciterModal, setShowReciterModal] = useState(false);
+    const [showSurahModal, setShowSurahModal] = useState(false);
     
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const autoPlayNextRef = useRef(false);
@@ -45,6 +60,29 @@ function ListenQuran({ onBack }) {
 
     const handleNextSurah = useCallback(() => setSurahNumber(s => s === 114 ? 1 : s + 1), []);
     const handlePrevSurah = useCallback(() => setSurahNumber(s => s === 1 ? 114 : s - 1), []);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        const t = theme;
+        const isDark = !t.bgColor || ['#191D3A', '#0c0a09', '#000000', '#4c1d95', '#7c2d12', '#1e40af', '#1e1b4b', '#1c1917', '#0b0f19', '#3e2723', '#450a0a', '#064e3b', '#0f766e', '#155e75', '#581c87', '#0F172A'].includes(t.bgColor);
+
+        root.style.setProperty('--qr-bg', t.bgColor || '#0D1B2A');
+        root.style.setProperty('--qr-text', t.textColor);
+        root.style.setProperty('--qr-bar-bg', t.barBg || (isDark ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.7)'));
+        root.style.setProperty('--qr-bar-text', t.textColor);
+        root.style.setProperty('--qr-bar-border', t.barBorder || 'transparent');
+        root.style.setProperty('--qr-btn-bg', t.palette[0]);
+        root.style.setProperty('--qr-btn-text', '#ffffff');
+        root.style.setProperty('--qr-accent', t.palette[1] || t.palette[0]);
+        root.style.setProperty('--qr-accent-text', '#ffffff');
+        root.style.setProperty('--qr-modal-bg', t.bgColor || '#0D1B2A');
+        root.style.setProperty('--qr-modal-text', t.textColor);
+        root.style.setProperty('--qr-header-bg', t.palette[0]);
+        root.style.setProperty('--qr-header-text', '#ffffff');
+        root.style.setProperty('--qr-card-bg', isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)');
+        root.style.setProperty('--qr-card-text', t.textColor);
+        root.style.setProperty('--qr-card-border', isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.07)');
+    }, [theme]);
 
     useEffect(() => {
         audioRef.current = new Audio();
@@ -190,12 +228,20 @@ function ListenQuran({ onBack }) {
             <main className="w-full max-w-md mx-auto flex-1 flex flex-col p-4 z-10">
 
                 <div className="space-y-3 flex-shrink-0 py-4">
-                    <select id="reciter-select" value={reciterId} onChange={(e) => setReciterId(e.target.value)} className="w-full p-3 text-center rounded-xl border font-bold appearance-none themed-card">
-                        {RECITERS.map(r => <option key={r.id} value={r.id} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{r.name}</option>)}
-                    </select>
-                    <select id="surah-select" value={surahNumber} onChange={(e) => setSurahNumber(Number(e.target.value))} className="w-full p-3 text-center rounded-xl border font-bold appearance-none themed-card">
-                        {SURAH_LIST.map(s => <option key={s.number} value={s.number} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">{s.number} - {s.name}</option>)}
-                    </select>
+                    <button 
+                        onClick={() => setShowReciterModal(true)} 
+                        className="w-full p-3 text-center rounded-xl border font-bold themed-card flex justify-between items-center"
+                    >
+                        <span>{reciterName}</span>
+                        <i className="fa-solid fa-chevron-down opacity-50"></i>
+                    </button>
+                    <button 
+                        onClick={() => setShowSurahModal(true)} 
+                        className="w-full p-3 text-center rounded-xl border font-bold themed-card flex justify-between items-center"
+                    >
+                        <span>{surahNumber} - {surahName}</span>
+                        <i className="fa-solid fa-chevron-down opacity-50"></i>
+                    </button>
                 </div>
 
 
@@ -252,7 +298,27 @@ function ListenQuran({ onBack }) {
                 </div>
             </main>
 
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={onBack} onThemesClick={onOpenThemes} showThemes={false} />
+
+            {showReciterModal && (
+                <ReciterSelectModal
+                    onClose={() => setShowReciterModal(false)}
+                    currentReader={reciterId}
+                    onSelect={(id) => setReciterId(id)}
+                    readersList={RECITERS}
+                />
+            )}
+            {showSurahModal && (
+                <ListenSurahSelectModal
+                    surahsList={SURAH_LIST}
+                    onSelect={(surah) => {
+                        setSurahNumber(surah);
+                        setShowSurahModal(false);
+                    }}
+                    onClose={() => setShowSurahModal(false)}
+                    currentSurah={surahNumber}
+                />
+            )}
         </div>
     );
 }

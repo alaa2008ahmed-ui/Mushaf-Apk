@@ -32,7 +32,7 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
       case 'calendar':
         return <HijriCalendar onBack={onBack} />;
       case 'listen':
-        return <ListenQuran onBack={onBack} />;
+        return <ListenQuran onBack={onBack} onOpenThemes={onOpenThemes} />;
       case 'tasbeeh':
         return <Tasbeeh onBack={onBack} />;
       case 'hajj-umrah':

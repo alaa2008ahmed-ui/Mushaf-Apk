@@ -44,7 +44,6 @@ export const READERS = [
     { id: 'Abdul_Basit_Mujawwad_128kbps', name: 'عبدالباسط عبدالصمد (مجود)' },
     { id: 'Abdul_Basit_Murattal_192kbps', name: 'عبدالباسط عبدالصمد (مرتل)' },
     { id: 'Abdurrahmaan_As-Sudais_192kbps', name: 'عبدالرحمن السديس' },
-    { id: 'Abdullaah_3awwaad_Al-Juhaynee_128kbps', name: 'عبدالله الجهني' },
     { id: 'Abdullah_Basfar_192kbps', name: 'عبدالله بصفر' },
     { id: 'Abdullah_Matroud_128kbps', name: 'عبدالله مطرود' },
     { id: 'Hudhaify_128kbps', name: 'علي الحذيفي' },
