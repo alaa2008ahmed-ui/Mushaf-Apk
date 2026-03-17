@@ -64,6 +64,37 @@
 
 .quran-reader-container.dark { background-color: #000; color: #fff; }
 
+.quran-reader-container.is-transparent-mode:not(.landscape-mode) #header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background-color: transparent !important;
+    border-bottom-color: transparent !important;
+    box-shadow: none !important;
+    padding-top: var(--logical-safe-top) !important;
+    height: calc(50px + var(--logical-safe-top));
+}
+
+.quran-reader-container.is-transparent-mode:not(.landscape-mode) #bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background-color: transparent !important;
+    border-top-color: transparent !important;
+    box-shadow: none !important;
+    padding-bottom: var(--logical-safe-bottom) !important;
+    height: calc(48px + var(--logical-safe-bottom));
+}
+
+.quran-reader-container.is-transparent-mode:not(.landscape-mode) #mushaf-content {
+    padding-top: calc(50px + var(--logical-safe-top)) !important;
+    padding-bottom: calc(48px + var(--logical-safe-bottom)) !important;
+}
+
 .quran-reader-container .header-default, .quran-reader-container .footer-default { 
     background-color: #ffffff; 
     border-color: #e5e7eb; 
