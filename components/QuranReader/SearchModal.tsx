@@ -9,12 +9,19 @@ interface SearchModalProps {
 }
 
 const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose, isLandscape }) => {
-    const [query, setQuery] = useState('');
+    const modeSuffix = isLandscape ? '_h' : '_v';
+    const [query, setQuery] = useState(() => localStorage.getItem('search_query' + modeSuffix) || '');
     const [results, setResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchStats, setSearchStats] = useState('');
     const [searchJobId, setSearchJobId] = useState(0);
     const searchTimeoutRef = useRef<any>(null);
+
+    useEffect(() => {
+        if (query.trim() !== '') {
+            performSearch(query);
+        }
+    }, []);
 
     const stripTajweedTags = (text: string) => {
         if (!text) return '';
@@ -32,6 +39,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
 
     const handleSearchInput = (q: string) => {
         setQuery(q);
+        localStorage.setItem('search_query' + modeSuffix, q);
         if (q.trim() !== '') {
             setSearchStats('جاري الكتابة...');
         } else {

@@ -17,6 +17,19 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
         return saved.lockHighlightColor || false;
     });
 
+    const [isTransparent, setIsTransparent] = React.useState(() => {
+        return localStorage.getItem('transparent_mode' + modeSuffix) === 'true';
+    });
+
+    const toggleTransparency = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const newValue = !isTransparent;
+        setIsTransparent(newValue);
+        localStorage.setItem('transparent_mode' + modeSuffix, String(newValue));
+        window.dispatchEvent(new Event('theme-change'));
+        showToast(newValue ? 'تم تفعيل الشفافية' : 'تم تعطيل الشفافية');
+    };
+
     const toggleLockHighlightColor = (e: React.MouseEvent) => {
         e.stopPropagation();
         const newValue = !lockHighlightColor;
@@ -105,14 +118,22 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl flex flex-col max-h-[85vh] shadow-2xl`} onClick={e => e.stopPropagation()}>
                 <div className="p-4 rounded-t-2xl flex justify-between items-center shadow-md theme-header-bg">
                     <h3 className="font-bold text-lg">اختر الثيم</h3>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={toggleTransparency}
+                            className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-all ${isTransparent ? 'bg-blue-500 text-white shadow-lg' : 'bg-white/20 text-white'}`}
+                            title="تفعيل/تعطيل شفافية الأشرطة"
+                        >
+                            <i className={`fa-solid ${isTransparent ? 'fa-eye' : 'fa-eye-slash'}`}></i>
+                            <span>شفافية</span>
+                        </button>
                         <button 
                             onClick={toggleLockHighlightColor}
                             className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-all ${lockHighlightColor ? 'bg-amber-500 text-white shadow-lg' : 'bg-white/20 text-white'}`}
                             title="قفل لون التحديد الحالي"
                         >
                             <i className={`fa-solid ${lockHighlightColor ? 'fa-lock' : 'fa-lock-open'}`}></i>
-                            <span>قفل لون التحديد</span>
+                            <span>قفل</span>
                         </button>
                         <button onClick={onClose} className="text-2xl hover:opacity-80 transition">&times;</button>
                     </div>

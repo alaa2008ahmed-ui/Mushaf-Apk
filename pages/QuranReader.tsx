@@ -57,12 +57,21 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     const [visiblePages, setVisiblePages] = useState<number[]>([1, 2, 3]);
     const [currentAyah, setCurrentAyah] = useState<{ s: number; a: number }>({ s: 1, a: 1 });
     const [highlightedAyahId, setHighlightedAyahId] = useState<string | null>(null);
+    const [isTransparentMode, setIsTransparentMode] = useState(() => localStorage.getItem('transparent_mode' + modeSuffix) === 'true');
 
     const [activeModals, setActiveModals] = useState<string[]>([]);
     const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
-    const [isLandscapeUIHidden, setIsLandscapeUIHidden] = useState(initialLandscape);
+    const [isLandscapeUIHidden, setIsLandscapeUIHidden] = useState(() => {
+        if (!initialLandscape) return false;
+        return localStorage.getItem('is_landscape_ui_hidden') === 'true';
+    });
     const isLandscapeUIHiddenRef = useRef(false);
-    useEffect(() => { isLandscapeUIHiddenRef.current = isLandscapeUIHidden; }, [isLandscapeUIHidden]);
+    useEffect(() => { 
+        isLandscapeUIHiddenRef.current = isLandscapeUIHidden; 
+        if (isLandscapeRef.current) {
+            localStorage.setItem('is_landscape_ui_hidden', String(isLandscapeUIHidden));
+        }
+    }, [isLandscapeUIHidden]);
     const isLandscapeRef = useRef(false);
     useEffect(() => { isLandscapeRef.current = isLandscape; }, [isLandscape]);
 
@@ -85,6 +94,36 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         const themeId = localStorage.getItem('current_theme_id' + mode) || 'default';
         const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['default'];
         setCurrentTheme(newTheme);
+        
+        const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
+        setIsTransparentMode(transSetting);
+
+        const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + mode);
+        setBookmarks(savedBookmarks ? JSON.parse(savedBookmarks) : []);
+
+        const savedSajdah = localStorage.getItem('show_sajdah_card' + mode);
+        setShowSajdahCard(savedSajdah !== null ? savedSajdah === 'true' : true);
+
+        if (mode === '_h') {
+            setIsLandscapeUIHidden(localStorage.getItem('is_landscape_ui_hidden') === 'true');
+        } else {
+            setIsLandscapeUIHidden(false);
+        }
+
+        const posKey = mode === '_h' ? 'last_pos_h' : 'last_pos_v';
+        const lastPos = JSON.parse(localStorage.getItem(posKey) || '{}');
+        
+        // Stop dynamic activities on orientation change
+        stopAudio();
+        setAutoScrollState({ isActive: false, isPaused: false, elapsedTime: 0 });
+        setActiveModals([]);
+        setIsFloatingMenuOpen(false);
+
+        if (lastPos.s && lastPos.a) {
+            setTimeout(() => {
+                jumpToAyah(lastPos.s, lastPos.a, true);
+            }, 100);
+        }
 
         const savedToolbarColors = localStorage.getItem('toolbar_colors' + mode);
         if (savedToolbarColors) {
@@ -213,14 +252,18 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     const [markerNotification, setMarkerNotification] = useState<{ show: boolean, type: 'juz' | 'quarter' | 'sajda' | 'surah', text: string }>({ show: false, type: 'juz', text: '' });
     const lastNotifiedQuarter = useRef<number | null>(null);
     const lastNotifiedJuz = useRef<number | null>(null);
-    const [bookmarks, setBookmarks] = useState([]);
+    const [bookmarks, setBookmarks] = useState(() => {
+        const mode = initialLandscape ? '_h' : '_v';
+        return JSON.parse(localStorage.getItem('quran_bookmarks_list' + mode) || '[]');
+    });
 
     const [sajdahInfo, setSajdahInfo] = useState<{ show: boolean; surah?: string; ayah?: number }>({ show: false });
     const [sajdahCardInfo, setSajdahCardInfo] = useState({ show: false, surah: '', ayah: 0, juz: 0, page: 0, wasAutoscrolling: false, wasPlaying: false });
 
     const [autoScrollState, setAutoScrollState] = useState({ isActive: false, isPaused: false, elapsedTime: 0 });
     const [showSajdahCard, setShowSajdahCard] = useState(() => {
-        const saved = localStorage.getItem('show_sajdah_card');
+        const mode = initialLandscape ? '_h' : '_v';
+        const saved = localStorage.getItem('show_sajdah_card' + mode);
         return saved !== null ? saved === 'true' : true;
     });
 
@@ -636,7 +679,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     const handleAyahClick = useCallback((s, a) => {
         setHighlightedAyahId(`ayah-${s}-${a}`);
         setCurrentAyah({ s, a });
-        const key = isLandscapeRef.current ? 'last_pos_landscape' : 'last_pos';
+        const key = isLandscapeRef.current ? 'last_pos_h' : 'last_pos_v';
         localStorage.setItem(key, JSON.stringify({ s, a }));
     }, []);
 
@@ -862,6 +905,25 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                     'btn-search': { bg: purple, text: white, border: purpleBorder }
                 });
             }
+
+            const tajweedSetting = localStorage.getItem('use_tajweed_quran' + mode) === 'true';
+            setUseTajweed(tajweedSetting);
+            setQuranData(tajweedSetting ? quranTajweedJson.data : quranUthmaniJson.data);
+
+            const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
+            setIsTransparentMode(transSetting);
+
+            const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + mode);
+            setBookmarks(savedBookmarks ? JSON.parse(savedBookmarks) : []);
+
+            const savedSajdah = localStorage.getItem('show_sajdah_card' + mode);
+            setShowSajdahCard(savedSajdah !== null ? savedSajdah === 'true' : true);
+
+            if (mode === '_h') {
+                setIsLandscapeUIHidden(localStorage.getItem('is_landscape_ui_hidden') === 'true');
+            } else {
+                setIsLandscapeUIHidden(false);
+            }
         };
         const handleSettingsChange = () => {
             const mode = isLandscapeRef.current ? '_h' : '_v';
@@ -905,12 +967,24 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                 });
             }
             
-            const savedSajdah = localStorage.getItem('show_sajdah_card');
-            setShowSajdahCard(savedSajdah !== null ? savedSajdah === 'true' : true);
-            
             const tajweedSetting = localStorage.getItem('use_tajweed_quran' + mode) === 'true';
             setUseTajweed(tajweedSetting);
             setQuranData(tajweedSetting ? quranTajweedJson.data : quranUthmaniJson.data);
+            
+            const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
+            setIsTransparentMode(transSetting);
+
+            const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + mode);
+            setBookmarks(savedBookmarks ? JSON.parse(savedBookmarks) : []);
+
+            const savedSajdah = localStorage.getItem('show_sajdah_card' + mode);
+            setShowSajdahCard(savedSajdah !== null ? savedSajdah === 'true' : true);
+
+            if (mode === '_h') {
+                setIsLandscapeUIHidden(localStorage.getItem('is_landscape_ui_hidden') === 'true');
+            } else {
+                setIsLandscapeUIHidden(false);
+            }
         };
         window.addEventListener('theme-change', handleThemeChange);
         window.addEventListener('settings-change', handleSettingsChange);
@@ -1090,7 +1164,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     useEffect(() => {
         if (hasJumpedRef.current) return;
         hasJumpedRef.current = true;
-        const key = initialLandscape ? 'last_pos_landscape' : 'last_pos';
+        const key = initialLandscape ? 'last_pos_h' : 'last_pos_v';
         const lastPos = JSON.parse(localStorage.getItem(key) || '{}');
         setTimeout(() => {
             jumpToAyah(lastPos.s || 1, lastPos.a || 1, true);
@@ -1118,7 +1192,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
 
     const saveBookmark = () => { 
         if (!currentAyah) { showToast('اختر آية أولاً'); return; } 
-        const stored = JSON.parse(localStorage.getItem('quran_bookmarks_list') || '[]'); 
+        const stored = JSON.parse(localStorage.getItem('quran_bookmarks_list' + modeSuffix) || '[]'); 
         const date = new Date(); 
         const newBookmark = { 
             id: Date.now(), 
@@ -1129,11 +1203,15 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             time: date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) 
         }; 
         const newBookmarks = [newBookmark, ...stored]; 
-        localStorage.setItem('quran_bookmarks_list', JSON.stringify(newBookmarks)); 
+        localStorage.setItem('quran_bookmarks_list' + modeSuffix, JSON.stringify(newBookmarks)); 
         setBookmarks(newBookmarks); 
         showToast(`تم حفظ الإشارة (${isLandscapeRef.current ? 'أفقي' : 'رأسي'})`); 
     };
-    const deleteBookmark = (id:number) => { const newBookmarks = bookmarks.filter((b:any) => b.id !== id); localStorage.setItem('quran_bookmarks_list', JSON.stringify(newBookmarks)); setBookmarks(newBookmarks); };
+    const deleteBookmark = (id:number) => { 
+        const newBookmarks = bookmarks.filter((b:any) => b.id !== id); 
+        localStorage.setItem('quran_bookmarks_list' + modeSuffix, JSON.stringify(newBookmarks)); 
+        setBookmarks(newBookmarks); 
+    };
 
     const bookmarkButtonTimerRef = useRef<number | null>(null);
     const handleBookmarkButtonPointerDown = () => {
@@ -1396,14 +1474,28 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             border = currentTheme.barBorder?.split(' ')[2] || "#e5e7eb";
         }
 
+        // Apply transparency if enabled (only for main bars)
+        let finalBg = bg;
+        let backdrop = 'none';
+        if (isTransparentMode && (type === 'top-toolbar' || type === 'bottom-toolbar')) {
+            // Convert hex to rgba(r,g,b,0.7)
+            if (bg.startsWith('#')) {
+                const r = parseInt(bg.slice(1, 3), 16);
+                const g = parseInt(bg.slice(3, 5), 16);
+                const b = parseInt(bg.slice(5, 7), 16);
+                finalBg = `rgba(${r}, ${g}, ${b}, 0.7)`;
+                backdrop = 'blur(10px)';
+            }
+        }
+
         return { 
-            backgroundColor: bg, 
+            backgroundColor: finalBg, 
             color: defaultText, 
             borderColor: border, 
             fontFamily: config?.font || 'inherit',
             opacity: 1,
-            backdropFilter: 'none',
-            WebkitBackdropFilter: 'none'
+            backdropFilter: backdrop,
+            WebkitBackdropFilter: backdrop
         };
     };
 
