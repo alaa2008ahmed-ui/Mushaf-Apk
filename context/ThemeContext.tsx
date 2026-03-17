@@ -89,15 +89,10 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
             // Handle theme background
             if (videoBg) videoBg.style.display = 'none';
             document.body.style.backgroundColor = theme.bgColor || '#0D1B2A';
-            if (theme.bgGradient) {
-                document.body.style.backgroundImage = theme.bgGradient;
-                document.body.style.backgroundAttachment = 'fixed';
-            } else {
-                document.body.style.backgroundImage = theme.isOriginal ? `
-                    radial-gradient(circle at 15% 25%, rgba(20, 184, 166, 0.1), transparent 30%),
-                    radial-gradient(circle at 85% 75%, rgba(124, 58, 237, 0.1), transparent 30%)
-                ` : 'none';
-            }
+            document.body.style.backgroundImage = theme.isOriginal ? `
+                radial-gradient(circle at 15% 25%, rgba(20, 184, 166, 0.1), transparent 30%),
+                radial-gradient(circle at 85% 75%, rgba(124, 58, 237, 0.1), transparent 30%)
+            ` : 'none';
         }
 
         // Apply common theme properties
@@ -120,6 +115,8 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         root.style.setProperty('--bottom-bar-bg', theme.barBg || (isDark ? '#1e293b' : '#ffffff'));
         const barBorderColor = theme.barBorder ? theme.barBorder.split(' ')[2] : (isDark ? '#334155' : '#e2e8f0');
         root.style.setProperty('--bottom-bar-border', barBorderColor);
+        root.style.setProperty('--qr-bar-bg', theme.barBg || (isDark ? '#1e293b' : '#ffffff'));
+        root.style.setProperty('--qr-bar-border', barBorderColor);
         root.style.setProperty('--card-bg', isDark ? '#1e293b' : '#ffffff');
         root.style.setProperty('--card-border', isDark ? '#334155' : '#e2e8f0');
 

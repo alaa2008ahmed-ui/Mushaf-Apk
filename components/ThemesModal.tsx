@@ -69,7 +69,6 @@ function ThemeSelector({ onClose }) {
                                 style={{
                                     animationDelay: `${index * 0.04}s`,
                                     backgroundColor: themeOption.bgColor || '#fff',
-                                    backgroundImage: themeOption.bgGradient || 'none',
                                     backgroundSize: 'cover',
                                     color: themeOption.textColor || '#000',
                                     borderColor: themeKey === key ? theme.palette[1] : themeOption.palette[0],

@@ -1385,17 +1385,15 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
 
     const getToolbarStyle = (type: string, defaultBg: string, defaultText: string, defaultBorder: string) => {
         const config = toolbarColors[type];
-        let bg = defaultBg;
-        let border = defaultBorder;
-
-        if (config) {
-            bg = config.bg;
-            border = config.border;
-        }
+        let bg = config?.bg || defaultBg || "#ffffff";
+        let border = config?.border || defaultBorder || "#e5e7eb";
 
         // Final safety check: if bg is rgba or transparent, use a solid fallback
-        if (bg.includes('rgba') || bg === 'transparent') {
+        if (!bg || bg.includes('rgba') || bg === 'transparent') {
             bg = currentTheme.barBg || "#ffffff";
+        }
+        if (!border || border.includes('rgba') || border === 'transparent') {
+            border = currentTheme.barBorder?.split(' ')[2] || "#e5e7eb";
         }
 
         return { 
