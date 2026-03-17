@@ -1,5 +1,5 @@
 import React from 'react';
-import { THEMES } from './constants';
+import { THEMES, DEFAULT_SETTINGS } from './constants';
 
 interface ThemesModalProps {
     onClose: () => void;
@@ -96,12 +96,13 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
 
         // Update quran_settings to match the theme's colors and font
         const savedSettings = JSON.parse(localStorage.getItem('quran_settings' + modeSuffix) || '{}');
+        const baseSettings = { ...DEFAULT_SETTINGS, ...savedSettings };
         const updatedSettings = {
-            ...savedSettings,
+            ...baseSettings,
             bgColor: theme.bg,
             textColor: theme.text,
             fontFamily: theme.font,
-            ...(savedSettings.lockHighlightColor ? {} : { highlightTextColor: theme.highlightText || theme.accent }),
+            ...(baseSettings.lockHighlightColor ? {} : { highlightTextColor: theme.highlightText || theme.accent }),
             theme: themeId
         };
         localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(updatedSettings));
@@ -125,7 +126,7 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
                             title="تفعيل/تعطيل شفافية الأشرطة"
                         >
                             <i className={`fa-solid ${isTransparent ? 'fa-eye' : 'fa-eye-slash'}`}></i>
-                            <span>شفافية</span>
+                            <span>شفافية الأشرطة</span>
                         </button>
                         <button 
                             onClick={toggleLockHighlightColor}
@@ -133,7 +134,7 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
                             title="قفل لون التحديد الحالي"
                         >
                             <i className={`fa-solid ${lockHighlightColor ? 'fa-lock' : 'fa-lock-open'}`}></i>
-                            <span>قفل</span>
+                            <span>لون التحديد</span>
                         </button>
                         <button onClick={onClose} className="text-2xl hover:opacity-80 transition">&times;</button>
                     </div>

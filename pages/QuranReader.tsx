@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, FC } from 'react';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import './QuranReader.css'; 
-import { JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS } from '../components/QuranReader/constants';
+import { JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, DEFAULT_SETTINGS } from '../components/QuranReader/constants';
 import SearchModal from '../components/QuranReader/SearchModal';
 import ThemesModal from '../components/QuranReader/ThemesModal';
 import SettingsModal from '../components/QuranReader/SettingsModal';
@@ -58,6 +58,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     const [currentAyah, setCurrentAyah] = useState<{ s: number; a: number }>({ s: 1, a: 1 });
     const [highlightedAyahId, setHighlightedAyahId] = useState<string | null>(null);
     const [isTransparentMode, setIsTransparentMode] = useState(() => localStorage.getItem('transparent_mode' + modeSuffix) === 'true');
+    const [isHideToolbarsEnabled, setIsHideToolbarsEnabled] = useState(() => localStorage.getItem('hide_toolbars_enabled' + modeSuffix) === 'true');
 
     const [activeModals, setActiveModals] = useState<string[]>([]);
     const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
@@ -84,11 +85,8 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         setQuranData(tajweedSetting ? quranTajweedJson.data : quranUthmaniJson.data);
 
         const savedSettings = localStorage.getItem('quran_settings' + mode);
-        const defaultTheme = THEMES['default'];
-        const initialSettings = savedSettings ? JSON.parse(savedSettings) : {
-            fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
-            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'default', scrollMinutes: 20, tafseer: 'ar.jalalayn'
-        };
+        const baseSettings = savedSettings ? JSON.parse(savedSettings) : {};
+        const initialSettings = { ...DEFAULT_SETTINGS, ...baseSettings };
         setSettings(initialSettings);
 
         const themeId = localStorage.getItem('current_theme_id' + mode) || 'default';
@@ -685,6 +683,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
 
     const handleAyahTextClick = useCallback((s: number, a: number) => {
         handleAyahClick(s, a);
+        setIsFloatingMenuOpen(false);
         
         if (autoScrollStateRef.current.isActive) {
             const newPausedState = !autoScrollStateRef.current.isPaused;
@@ -858,15 +857,9 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             
             const savedSettings = localStorage.getItem('quran_settings' + mode);
             if (savedSettings) {
-                setSettings(JSON.parse(savedSettings));
+                setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) });
             } else {
-                setSettings(prev => ({ 
-                    ...prev, 
-                    bgColor: newTheme.bg, 
-                    textColor: newTheme.text, 
-                    fontFamily: newTheme.font,
-                    highlightTextColor: (newTheme as any).highlightText || newTheme.accent
-                }));
+                setSettings(DEFAULT_SETTINGS);
             }
             
             const savedToolbarColors = localStorage.getItem('toolbar_colors' + mode);
@@ -973,6 +966,9 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             
             const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
             setIsTransparentMode(transSetting);
+
+            const hideToolbarsSetting = localStorage.getItem('hide_toolbars_enabled' + mode) === 'true';
+            setIsHideToolbarsEnabled(hideToolbarsSetting);
 
             const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + mode);
             setBookmarks(savedBookmarks ? JSON.parse(savedBookmarks) : []);
@@ -1415,6 +1411,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         else { startAutoScroll(); showToast('تم تفعيل التمرير التلقائي'); }
     };
     const handleScreenTap = () => {
+      setIsFloatingMenuOpen(false);
       if (autoScrollStateRef.current.isActive) {
         const newPausedState = !autoScrollStateRef.current.isPaused;
         autoScrollPausedRef.current = newPausedState;
@@ -1477,15 +1474,11 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         // Apply transparency if enabled (only for main bars)
         let finalBg = bg;
         let backdrop = 'none';
+        let finalShadow: string | undefined = undefined;
         if (isTransparentMode && (type === 'top-toolbar' || type === 'bottom-toolbar')) {
-            // Convert hex to rgba(r,g,b,0.7)
-            if (bg.startsWith('#')) {
-                const r = parseInt(bg.slice(1, 3), 16);
-                const g = parseInt(bg.slice(3, 5), 16);
-                const b = parseInt(bg.slice(5, 7), 16);
-                finalBg = `rgba(${r}, ${g}, ${b}, 0.7)`;
-                backdrop = 'blur(10px)';
-            }
+            finalBg = 'transparent';
+            border = 'transparent';
+            finalShadow = 'none';
         }
 
         return { 
@@ -1495,7 +1488,8 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             fontFamily: config?.font || 'inherit',
             opacity: 1,
             backdropFilter: backdrop,
-            WebkitBackdropFilter: backdrop
+            WebkitBackdropFilter: backdrop,
+            ...(finalShadow && { boxShadow: finalShadow })
         };
     };
 
@@ -1595,7 +1589,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     }, [activeModals, tafseerInfo.isOpen, tafseerSelectionInfo.isOpen]);
 
     return (
-        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
+        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused ? 'hide-toolbars-autoscroll' : ''} ${!initialLandscape ? 'vertical-page' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
             <header id="header" className={`header-default flex-none z-50 flex items-center px-4 justify-between border-b shadow-xl w-full gap-2`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
                 <button 
                     id="surah-name-header" 

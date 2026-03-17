@@ -388,12 +388,14 @@
     padding-top: var(--logical-safe-top) !important;
     padding-left: var(--logical-safe-left) !important;
     padding-right: var(--logical-safe-right) !important;
+    transition: transform 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
 }
 #bottom-bar {
     height: calc(3.5rem + var(--logical-safe-bottom));
     padding-bottom: var(--logical-safe-bottom) !important;
     padding-left: var(--logical-safe-left) !important;
     padding-right: var(--logical-safe-right) !important;
+    transition: transform 0.3s ease, opacity 0.3s ease, margin-bottom 0.3s ease;
 }
 #mushaf-content {
     padding-left: var(--logical-safe-left) !important;
@@ -619,18 +621,26 @@
     font-size: 1.1rem;
     margin-bottom: 0;
 }
-.quran-reader-container.landscape-mode.landscape-ui-hidden #header {
-    transform: translateY(-100%);
-    opacity: 0;
-    pointer-events: none;
+.quran-reader-container.landscape-mode.landscape-ui-hidden #header,
+.quran-reader-container.hide-toolbars-autoscroll #header {
+    transform: translateY(-100%) !important;
+    margin-top: calc(-3.5rem - var(--logical-safe-top)) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
-.quran-reader-container.landscape-mode.landscape-ui-hidden #bottom-bar {
-    transform: translateY(100%);
-    opacity: 0;
-    pointer-events: none;
+.quran-reader-container.landscape-mode.landscape-ui-hidden #bottom-bar,
+.quran-reader-container.hide-toolbars-autoscroll #bottom-bar {
+    transform: translateY(100%) !important;
+    margin-bottom: calc(-3.5rem - var(--logical-safe-bottom)) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
-.quran-reader-container.landscape-mode.landscape-ui-hidden #floating-menu {
-    display: none !important;
+.quran-reader-container.landscape-mode.landscape-ui-hidden #floating-menu,
+.quran-reader-container.hide-toolbars-autoscroll #floating-menu {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transform: translateY(20px) scale(0.95) !important;
 }
 
 /* Smart Notification Toast */

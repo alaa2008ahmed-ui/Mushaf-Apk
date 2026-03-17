@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { READERS, TAFSEERS, THEMES } from './constants';
+import { READERS, TAFSEERS, THEMES, DEFAULT_SETTINGS } from './constants';
 
 interface SettingsModalProps {
     onClose: () => void;
@@ -18,26 +18,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
 
     const [settings, setSettings] = useState(() => {
         const saved = localStorage.getItem('quran_settings' + modeSuffix);
-        const defaultTheme = THEMES['default'];
-        return saved ? JSON.parse(saved) : {
-            fontSize: 1.7,
-            fontFamily: defaultTheme.font,
-            textColor: defaultTheme.text,
-            bgColor: defaultTheme.bg,
-            highlightTextColor: defaultTheme.highlightText || defaultTheme.accent,
-            reader: 'Abu_Bakr_Ash-Shaatree_128kbps',
-            theme: 'default',
-            scrollMinutes: 20,
-            tafseer: 'ar.jalalayn',
-            lockHighlightColor: false
-        };
+        const baseSettings = saved ? JSON.parse(saved) : {};
+        return { ...DEFAULT_SETTINGS, ...baseSettings };
     });
     
+    useEffect(() => {
+        const handleThemeChange = () => {
+            const saved = localStorage.getItem('quran_settings' + modeSuffix);
+            const baseSettings = saved ? JSON.parse(saved) : {};
+            setSettings({ ...DEFAULT_SETTINGS, ...baseSettings });
+        };
+        window.addEventListener('theme-change', handleThemeChange);
+        return () => window.removeEventListener('theme-change', handleThemeChange);
+    }, [modeSuffix]);
+
     const [showSajdahCard, setShowSajdahCard] = useState(() => {
         const saved = localStorage.getItem('show_sajdah_card');
         return saved !== null ? saved === 'true' : true;
     });
     const [useTajweed, setUseTajweed] = useState(() => localStorage.getItem('use_tajweed_quran' + modeSuffix) === 'true');
+    const [isHideToolbarsEnabled, setIsHideToolbarsEnabled] = useState(() => localStorage.getItem('hide_toolbars_enabled' + modeSuffix) === 'true');
 
     const [activeColorField, setActiveColorField] = useState<'textColor' | 'bgColor' | 'highlightTextColor' | null>(null);
 
@@ -80,6 +80,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         localStorage.setItem('use_tajweed_quran' + modeSuffix, String(checked));
         window.dispatchEvent(new Event('settings-change'));
         showToast(checked ? 'تم تفعيل المصحف المجود' : 'تم إيقاف المصحف المجود');
+    };
+
+    const handleHideToolbarsToggle = (checked: boolean) => {
+        setIsHideToolbarsEnabled(checked);
+        localStorage.setItem('hide_toolbars_enabled' + modeSuffix, String(checked));
+        window.dispatchEvent(new Event('settings-change'));
+        showToast(checked ? 'تم تفعيل إخفاء الأشرطة' : 'تم تعطيل إخفاء الأشرطة');
     };
 
 
@@ -238,6 +245,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                             <div className="relative inline-block w-10 align-middle select-none">
                                 <input type="checkbox" id="use-tajweed" checked={useTajweed} onChange={(e) => handleTajweedToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
                                 <label htmlFor="use-tajweed" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${useTajweed ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
+                        <div className="flex items-center justify-between">
+                            <label className="text-sm font-bold opacity-80">إخفاء الأشرطة أثناء التمرير</label>
+                            <div className="relative inline-block w-10 align-middle select-none">
+                                <input type="checkbox" id="hide-toolbars" checked={isHideToolbarsEnabled} onChange={(e) => handleHideToolbarsToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
+                                <label htmlFor="hide-toolbars" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${isHideToolbarsEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
                             </div>
                         </div>
                     </div>
