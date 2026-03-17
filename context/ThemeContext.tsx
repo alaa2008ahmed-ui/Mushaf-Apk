@@ -108,36 +108,25 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         root.style.setProperty('--color-secondary', theme.palette[1]);
         
         const isDark = !theme.bgColor || 
-            ['#191D3A', '#0c0a09', '#000000', '#4c1d95', '#7c2d12', '#1e40af', '#1e1b4b', '#1c1917', '#0b0f19', '#3e2723', '#450a0a', '#064e3b', '#0f766e', '#155e75', '#581c87', '#0F172A'].includes(theme.bgColor) ||
-            (theme.isGlass && theme.textColor === '#FFFFFF') ||
-            (theme.isGlass && theme.textColor === '#FEF3C7') ||
-            (theme.isGlass && theme.textColor === '#F1F5F9');
+            ['#191D3A', '#0c0a09', '#000000', '#4c1d95', '#7c2d12', '#1e40af', '#1e1b4b', '#1c1917', '#0b0f19', '#3e2723', '#450a0a', '#064e3b', '#0f766e', '#155e75', '#581c87', '#0F172A'].includes(theme.bgColor);
 
         // Apply shared colors/styles
         root.style.setProperty('--text-color', theme.textColor);
-        root.style.setProperty('--text-color-muted', isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)');
+        root.style.setProperty('--text-color-muted', isDark ? '#94a3b8' : '#64748b');
 
-        // Bar and Card styles (glassmorphism if custom bg or isGlass)
-        if (settings.customBg || theme.isGlass) {
-            root.style.setProperty('--top-bar-rgb', isDark ? '26, 35, 50' : '255, 255, 255');
-            root.style.setProperty('--bottom-bar-bg', isDark ? 'rgba(30, 41, 59, 0.2)' : 'rgba(255, 255, 255, 0.2)');
-            root.style.setProperty('--bottom-bar-border', isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.07)');
-            root.style.setProperty('--card-bg', 'transparent');
-            root.style.setProperty('--card-border', isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)');
-        } else {
-            const topBarRgb = hexToRgb(theme.isOriginal ? '#1a2233' : (theme.barBg || theme.palette[0]));
-            root.style.setProperty('--top-bar-rgb', topBarRgb || '26, 35, 50');
-            root.style.setProperty('--bottom-bar-bg', theme.barBg || (isDark ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.7)'));
-            const barBorderColor = theme.barBorder ? theme.barBorder.split(' ')[2] : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.07)');
-            root.style.setProperty('--bottom-bar-border', barBorderColor);
-            root.style.setProperty('--card-bg', isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)');
-            root.style.setProperty('--card-border', isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.07)');
-        }
+        // Bar and Card styles (solid colors)
+        const topBarRgb = hexToRgb(theme.isOriginal ? '#1a2233' : (theme.barBg || theme.palette[0]));
+        root.style.setProperty('--top-bar-rgb', topBarRgb || '26, 35, 50');
+        root.style.setProperty('--bottom-bar-bg', theme.barBg || (isDark ? '#1e293b' : '#ffffff'));
+        const barBorderColor = theme.barBorder ? theme.barBorder.split(' ')[2] : (isDark ? '#334155' : '#e2e8f0');
+        root.style.setProperty('--bottom-bar-border', barBorderColor);
+        root.style.setProperty('--card-bg', isDark ? '#1e293b' : '#ffffff');
+        root.style.setProperty('--card-border', isDark ? '#334155' : '#e2e8f0');
 
-        root.style.setProperty('--card-bg-hover', isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.7)');
+        root.style.setProperty('--card-bg-hover', isDark ? '#334155' : '#f8fafc');
         root.style.setProperty('--card-shadow', isDark
-            ? '0 8px 16px -4px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.15)'
-            : '0 8px 16px -4px rgba(30,41,59,0.08), 0 4px 6px -2px rgba(30,41,59,0.04)');
+            ? '0 8px 16px -4px rgba(0,0,0,0.4), 0 4px 6px -2px rgba(0,0,0,0.3)'
+            : '0 8px 16px -4px rgba(30,41,59,0.1), 0 4px 6px -2px rgba(30,41,59,0.05)');
             
         root.style.setProperty('--badge-finished-bg', isDark ? 'rgba(74, 222, 128, 0.15)' : 'rgba(34, 197, 94, 0.1)');
         root.style.setProperty('--badge-finished-text', isDark ? '#4ade80' : '#16a34a');

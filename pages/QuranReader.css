@@ -65,10 +65,8 @@
 .quran-reader-container.dark { background-color: #000; color: #fff; }
 
 .quran-reader-container .header-default, .quran-reader-container .footer-default { 
-    background-color: white; 
+    background-color: #ffffff; 
     border-color: #e5e7eb; 
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     transition: transform 0.3s ease-in-out;
 }
 
@@ -80,7 +78,7 @@
     pointer-events: auto !important;
 }
 .quran-reader-container.dark .header-default, .quran-reader-container.dark .footer-default { 
-    background-color: rgba(31, 41, 55, 0.8); 
+    background-color: #1f2937; 
     border-color: #374151; 
 }
 
@@ -188,7 +186,7 @@
     text-rendering: optimizeLegibility;
 }
 @media (hover: hover) {
-    .ayah-text-block:hover { background-color: rgba(16, 185, 129, 0.1); }
+    .ayah-text-block:hover { background-color: #ecfdf5; }
 }
 .ayah-text-block.highlighted { 
     background-color: transparent !important;
@@ -484,7 +482,7 @@
     top: 60px;
     left: 50%;
     transform: translateX(-50%) translateY(-50px);
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: #000000;
     color: white;
     padding: 6px 16px;
     border-radius: 20px;

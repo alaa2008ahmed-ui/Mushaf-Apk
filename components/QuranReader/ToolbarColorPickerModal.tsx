@@ -18,7 +18,6 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
     const handleClose = () => {
         onClose();
     };
-    const [isTransparentMode, setIsTransparentMode] = useState(() => localStorage.getItem('transparent_mode' + modeSuffix) === 'true');
     const [headerSync, setHeaderSync] = useState(false);
     const [footerSync, setFooterSync] = useState(false);
     const [editingType, setEditingType] = useState<string | null>(null);
@@ -48,15 +47,8 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
         '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
         '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
         '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
-        '#f43f5e', '#78716c', '#57534e', 'transparent'
+        '#f43f5e', '#78716c', '#57534e'
     ];
-
-    const toggleTransparentMode = (checked: boolean) => {
-        setIsTransparentMode(checked);
-        localStorage.setItem('transparent_mode' + modeSuffix, String(checked));
-        window.dispatchEvent(new Event('theme-change')); // Trigger theme re-application
-        showToast(checked ? 'تم تفعيل وضع الأشرطة العائمة' : 'تم إلغاء وضع الأشرطة العائمة');
-    };
 
     const getStyleForType = useCallback((type: string) => {
         const config = toolbarColors[type];
@@ -131,19 +123,12 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
     };
 
     const renderCheckerboard = (color: string) => {
-        if (color === 'transparent' || color === 'rgba(0, 0, 0, 0)') {
-            return {
-                backgroundColor: '#ffffff',
-                backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%)',
-                backgroundSize: '8px 8px'
-            };
-        }
         return { backgroundColor: color };
     };
 
     if (editingType) {
         return (
-            <div className="fixed inset-0 z-[220] bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={() => setEditingType(null)}>
+            <div className="fixed inset-0 z-[220] bg-black/70 flex items-center justify-center p-4 animate-fadeIn" onClick={() => setEditingType(null)}>
                 <div className={`bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full ${isLandscape ? 'max-w-2xl' : 'max-w-sm'} overflow-hidden animate-modal-enter flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
                     <div className="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center flex-none">
                         <h3 className="font-bold text-lg">تخصيص: {getName(editingType)}</h3>
@@ -250,13 +235,6 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                         <i className="fa-solid fa-palette ml-2"></i>
                         تصميم الواجهة
                     </h3>
-                    <div className="flex items-center">
-                        <span className="ml-2 text-xs font-bold opacity-90">وضع شفاف</span>
-                        <div className="relative inline-block w-8 align-middle select-none transition duration-200 ease-in">
-                            <input type="checkbox" checked={isTransparentMode} onChange={e => toggleTransparentMode(e.target.checked)} className="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                            <label className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${isTransparentMode ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
-                        </div>
-                    </div>
                 </div>
                 <div className={`flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900 ${isLandscape ? 'grid grid-cols-2 gap-4' : 'space-y-4'}`}>
                     <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700 shadow-sm h-fit">
@@ -265,12 +243,12 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                             <button data-type="top-toolbar" onClick={() => openEditModal('top-toolbar')} className="color-option-btn group shadow-sm h-12 relative overflow-hidden flex items-center justify-between p-0">
                                 <span className="relative z-10 font-bold text-xs px-3" style={{ color: getStyleForType('top-toolbar').text }}>الشريط العلوى</span>
                                 <div className="color-preview-dot mr-3 z-10 relative" style={renderCheckerboard(getStyleForType('top-toolbar').bg)}></div>
-                                <div className="absolute top-0 left-0 w-full h-full border-b-4 opacity-80 group-hover:opacity-100 transition" style={{backgroundColor: getStyleForType('top-toolbar').bg, borderColor: getStyleForType('top-toolbar').border}}></div>
+                                <div className="absolute top-0 left-0 w-full h-full border-b-4 transition" style={{backgroundColor: getStyleForType('top-toolbar').bg, borderColor: getStyleForType('top-toolbar').border}}></div>
                             </button>
                             <button data-type="bottom-toolbar" onClick={() => openEditModal('bottom-toolbar')} className="color-option-btn group shadow-sm h-12 relative overflow-hidden flex items-center justify-between p-0">
                                 <span className="relative z-10 font-bold text-xs px-3" style={{ color: getStyleForType('bottom-toolbar').text }}>الشريط السفلى</span>
                                 <div className="color-preview-dot mr-3 z-10 relative" style={renderCheckerboard(getStyleForType('bottom-toolbar').bg)}></div>
-                                <div className="absolute bottom-0 left-0 w-full h-full border-t-4 opacity-80 group-hover:opacity-100 transition" style={{backgroundColor: getStyleForType('bottom-toolbar').bg, borderColor: getStyleForType('bottom-toolbar').border}}></div>
+                                <div className="absolute bottom-0 left-0 w-full h-full border-t-4 transition" style={{backgroundColor: getStyleForType('bottom-toolbar').bg, borderColor: getStyleForType('bottom-toolbar').border}}></div>
                             </button>
                         </div>
                     </div>

@@ -71,8 +71,8 @@
       .font-scheherazade { font-family: 'Scheherazade New', serif; }
       
       .app-top-bar {
-          background: rgba(var(--top-bar-rgb, 26, 34, 51), 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-          color: var(--text-color, #ffffff); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgb(var(--top-bar-rgb, 26, 34, 51));
+          color: var(--text-color, #ffffff); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); border-bottom: 1px solid #334155;
           position: sticky; top: 0; z-index: 40;
           padding-top: env(safe-area-inset-top);
       }
@@ -83,10 +83,9 @@
       .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       .app-bottom-bar {
           position: fixed; bottom: 0; left: 0; right: 0;
-          background-color: var(--bottom-bar-bg);
-          border-top: 1px solid var(--bottom-bar-border);
-          backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-          box-shadow: 0 -8px 20px rgba(15, 23, 42, 0.12); z-index: 50; padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
+          background-color: var(--bottom-bar-bg, #1e293b);
+          border-top: 1px solid var(--bottom-bar-border, #334155);
+          box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.3); z-index: 50; padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
           transition: background-color 0.15s ease, border-top 0.15s ease;
       }
       main {
@@ -94,7 +93,7 @@
       }
       .app-bottom-bar__inner { max-width: 900px; margin: 0 auto; display: flex; justify-content: center; align-items: center; gap: 1rem; }
       .bar-button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; border-radius: 999px; padding: 0.75rem 1rem; transition: all 0.15s ease; box-shadow: 0 5px 15px -3px rgba(0,0,0,0.15); }
-      .themed-card { background-color: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-color); transition: background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; box-shadow: var(--card-shadow); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+      .themed-card { background-color: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-color); transition: background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; box-shadow: var(--card-shadow); }
       .themed-card:hover { background-color: var(--card-bg-hover); }
       .themed-text { color: var(--text-color); }
       .themed-text-muted { color: var(--text-color-muted); }

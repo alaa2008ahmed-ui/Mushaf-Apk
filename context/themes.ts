@@ -3,14 +3,16 @@ export interface Theme {
     name: string;
     bgColor: string | null;
     isOriginal?: boolean;
-    isGlass?: boolean;
-    bgGradient?: string;
     textColor: string;
     font: string;
     palette: string[];
     barBg?: string;
     barBorder?: string;
     btnBorder?: string;
+    btnBg?: string;
+    btnText?: string;
+    accent?: string;
+    highlightText?: string;
 }
 
 export const presetThemes: { [key: string]: Theme } = {
@@ -207,45 +209,37 @@ export const presetThemes: { [key: string]: Theme } = {
     crystal_glass: {
         name: "كريستال شفاف",
         bgColor: "#FFFFFF",
-        isGlass: true,
-        bgGradient: "linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%)",
         textColor: "#0369A1",
         font: "'Cairo', sans-serif",
         palette: ["#0EA5E9", "#38BDF8", "#FFFFFF"],
-        barBg: "rgba(255, 255, 255, 0.2)",
-        barBorder: "1px solid rgba(255, 255, 255, 0.4)"
+        barBg: "#E0F2FE",
+        barBorder: "1px solid #38BDF8"
     },
     frosted_emerald: {
         name: "زمرد زجاجي",
         bgColor: "#ECFDF5",
-        isGlass: true,
-        bgGradient: "linear-gradient(135deg, #064E3B 0%, #065F46 100%)",
         textColor: "#FFFFFF",
         font: "'Cairo', sans-serif",
         palette: ["#10B981", "#34D399", "#064E3B"],
-        barBg: "rgba(6, 78, 59, 0.2)",
-        barBorder: "1px solid rgba(16, 185, 129, 0.2)"
+        barBg: "#10B981",
+        barBorder: "1px solid #34D399"
     },
     midnight_glass: {
         name: "زجاج ليلي",
         bgColor: "#0F172A",
-        isGlass: true,
-        bgGradient: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
         textColor: "#F1F5F9",
         font: "'Cairo', sans-serif",
         palette: ["#3B82F6", "#60A5FA", "#0F172A"],
-        barBg: "rgba(15, 23, 42, 0.2)",
-        barBorder: "1px solid rgba(255, 255, 255, 0.1)"
+        barBg: "#1E293B",
+        barBorder: "1px solid #3B82F6"
     },
     golden_glass: {
         name: "زجاج ذهبي",
         bgColor: "#FFFBEB",
-        isGlass: true,
-        bgGradient: "linear-gradient(135deg, #78350f 0%, #451a03 100%)",
         textColor: "#FEF3C7",
         font: "'Amiri', serif",
         palette: ["#D97706", "#F59E0B", "#78350f"],
-        barBg: "rgba(120, 53, 15, 0.2)",
-        barBorder: "1px solid rgba(217, 119, 6, 0.2)"
+        barBg: "#D97706",
+        barBorder: "1px solid #F59E0B"
     }
 };

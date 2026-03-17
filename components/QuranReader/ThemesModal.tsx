@@ -80,7 +80,6 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
         }
 
         localStorage.setItem('toolbar_colors' + modeSuffix, JSON.stringify(themeColors));
-        localStorage.setItem('transparent_mode' + modeSuffix, 'false');
 
         // Update quran_settings to match the theme's colors and font
         const savedSettings = JSON.parse(localStorage.getItem('quran_settings' + modeSuffix) || '{}');
@@ -102,7 +101,7 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
     };
 
     return (
-        <div className="fixed inset-0 z-[190] bg-black/30 flex justify-center items-center px-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
+        <div className="fixed inset-0 z-[190] bg-black/60 flex justify-center items-center px-4 animate-fadeIn" onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl flex flex-col max-h-[85vh] shadow-2xl`} onClick={e => e.stopPropagation()}>
                 <div className="p-4 rounded-t-2xl flex justify-between items-center shadow-md theme-header-bg">
                     <h3 className="font-bold text-lg">اختر الثيم</h3>
@@ -128,7 +127,7 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
                         >
                             <div className="font-bold mb-2 text-sm">{t.name}</div>
                             <div className="w-full h-20 rounded-lg p-2 shadow-inner flex flex-col justify-between" style={{ backgroundColor: t.bg }}>
-                                <div className="w-full h-5 rounded-sm" style={{ backgroundColor: t.barBg, opacity: t.isGlass ? 0.7 : 1 }}></div>
+                                <div className="w-full h-5 rounded-sm" style={{ backgroundColor: t.barBg }}></div>
                                 <p className="text-xs truncate" style={{ color: t.text, fontFamily: t.font }}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
                                 <div className="flex items-center justify-end gap-1 mt-1">
                                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.btnBg }}></div>
