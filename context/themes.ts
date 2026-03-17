@@ -53,15 +53,6 @@ export const presetThemes: { [key: string]: Theme } = {
         barBg: "#FEF3C7",
         barBorder: "1px solid #FDE68A"
     },
-    midnight_prayer: {
-        name: "قيام الليل",
-        bgColor: "#0F172A",
-        textColor: "#F1F5F9",
-        font: "'Amiri', serif",
-        palette: ["#3B82F6", "#60A5FA", "#94A3B8"],
-        barBg: "#1E293B",
-        barBorder: "1px solid #334155"
-    },
     olive_grove: {
         name: "الزيتون المبارك",
         bgColor: "#F7FEE7",
@@ -125,23 +116,41 @@ export const presetThemes: { [key: string]: Theme } = {
         barBg: "#E2E8F0",
         barBorder: "1px solid #CBD5E1"
     },
-    sunset_dua: {
-        name: "دعاء الغروب",
-        bgColor: "#450A0A",
-        textColor: "#FEF2F2",
+    autumn_warmth: {
+        name: "دفء الخريف",
+        bgColor: "#78350F",
+        textColor: "#FEF3C7",
         font: "'Amiri', serif",
-        palette: ["#B91C1C", "#C2410C", "#A21CAF"],
-        barBg: "#7F1D1D",
-        barBorder: "1px solid #B91C1C"
+        palette: ["#D97706", "#B45309", "#92400E"],
+        barBg: "#92400E",
+        barBorder: "1px solid #D97706"
     },
-    emerald_islam: {
-        name: "زمرد إسلامي",
-        bgColor: "#064E3B",
-        textColor: "#ECFDF5",
+    sakura_breeze: {
+        name: "نسيم الساكورا",
+        bgColor: "#FFF1F2",
+        textColor: "#9D174D",
         font: "'Cairo', sans-serif",
-        palette: ["#059669", "#10B981", "#047857"],
-        barBg: "#065F46",
-        barBorder: "1px solid #10B981"
+        palette: ["#F472B6", "#EC4899", "#DB2777"],
+        barBg: "#FFE4E6",
+        barBorder: "1px solid #FBCFE8"
+    },
+    midnight_neon: {
+        name: "نيون منتصف الليل",
+        bgColor: "#0F172A",
+        textColor: "#F8FAFC",
+        font: "'Cairo', sans-serif",
+        palette: ["#06B6D4", "#D946EF", "#8B5CF6"],
+        barBg: "#1E293B",
+        barBorder: "1px solid #06B6D4"
+    },
+    royal_maroon: {
+        name: "عنابي ملكي",
+        bgColor: "#450A0A",
+        textColor: "#FEE2E2",
+        font: "'Amiri', serif",
+        palette: ["#991B1B", "#7F1D1D", "#B91C1C"],
+        barBg: "#7F1D1D",
+        barBorder: "1px solid #991B1B"
     },
     royal_purple: {
         name: "أرجواني ملكي",
@@ -232,14 +241,5 @@ export const presetThemes: { [key: string]: Theme } = {
         palette: ["#3B82F6", "#60A5FA", "#0F172A"],
         barBg: "#1E293B",
         barBorder: "1px solid #3B82F6"
-    },
-    golden_glass: {
-        name: "زجاج ذهبي",
-        bgColor: "#FFFBEB",
-        textColor: "#92400E",
-        font: "'Amiri', serif",
-        palette: ["#D97706", "#F59E0B", "#78350f"],
-        barBg: "#FEF3C7",
-        barBorder: "1px solid #D97706"
     }
 };
