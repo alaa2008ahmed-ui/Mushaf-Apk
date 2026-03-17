@@ -116,14 +116,23 @@ export const presetThemes: { [key: string]: Theme } = {
         barBg: "#E2E8F0",
         barBorder: "1px solid #CBD5E1"
     },
-    autumn_warmth: {
-        name: "دفء الخريف",
-        bgColor: "#78350F",
-        textColor: "#FEF3C7",
-        font: "'Amiri', serif",
-        palette: ["#D97706", "#B45309", "#92400E"],
-        barBg: "#92400E",
-        barBorder: "1px solid #D97706"
+    modern_blue: {
+        name: "أزرق عصري",
+        bgColor: "#FFFFFF",
+        textColor: "#1E293B",
+        font: "'Cairo', sans-serif",
+        palette: ["#3B82F6", "#6366F1", "#2563EB"],
+        barBg: "#F8FAFC",
+        barBorder: "1px solid #E2E8F0"
+    },
+    electric_violet: {
+        name: "بنفسجي كهربائي",
+        bgColor: "#0F172A",
+        textColor: "#F8FAFC",
+        font: "'Cairo', sans-serif",
+        palette: ["#A855F7", "#D946EF", "#7C3AED"],
+        barBg: "#1E1B4B",
+        barBorder: "1px solid #A855F7"
     },
     sakura_breeze: {
         name: "نسيم الساكورا",
@@ -142,15 +151,6 @@ export const presetThemes: { [key: string]: Theme } = {
         palette: ["#06B6D4", "#D946EF", "#8B5CF6"],
         barBg: "#1E293B",
         barBorder: "1px solid #06B6D4"
-    },
-    royal_maroon: {
-        name: "عنابي ملكي",
-        bgColor: "#450A0A",
-        textColor: "#FEE2E2",
-        font: "'Amiri', serif",
-        palette: ["#991B1B", "#7F1D1D", "#B91C1C"],
-        barBg: "#7F1D1D",
-        barBorder: "1px solid #991B1B"
     },
     royal_purple: {
         name: "أرجواني ملكي",
