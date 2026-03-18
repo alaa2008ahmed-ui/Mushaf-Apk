@@ -582,7 +582,7 @@
 .quran-reader-container.landscape-mode .modal-skinned {
     max-height: 95% !important;
     width: 95% !important;
-    max-width: 500px !important;
+    max-width: 800px !important;
 }
 
 .quran-reader-container.landscape-mode .modal-skinned > div:nth-child(2) {
