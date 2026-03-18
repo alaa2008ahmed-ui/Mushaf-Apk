@@ -7,29 +7,24 @@ interface BookmarksModalProps {
     onSelect: (surah: number, ayah: number, isLandscape: boolean) => void;
     onDelete: (id: number) => void;
     onClose: () => void;
-    filterLandscape?: boolean | null;
     isLandscape?: boolean;
 }
 
-const BookmarksModal: React.FC<BookmarksModalProps> = ({ bookmarks, quranData, onSelect, onDelete, onClose, filterLandscape = null, isLandscape }) => {
-    const filteredBookmarks = filterLandscape !== null 
-        ? bookmarks.filter(b => !!b.isLandscape === filterLandscape)
-        : bookmarks;
-
+const BookmarksModal: React.FC<BookmarksModalProps> = ({ bookmarks, quranData, onSelect, onDelete, onClose, isLandscape }) => {
     return (
         <div className="fixed inset-0 z-[100] bg-black/30 flex justify-center pt-10 px-4 animate-fadeIn backdrop-blur-sm" onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-2xl'} rounded-t-2xl flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
                 <div className="p-4 theme-header-bg rounded-t-2xl flex justify-between items-center">
                     <h3 className="font-bold text-lg">
-                        {filterLandscape === true ? 'الإشارات (الوضع الأفقي)' : filterLandscape === false ? 'الإشارات (الوضع الرأسي)' : 'الإشارات المرجعية'}
+                        الإشارات المرجعية
                     </h3>
                     <button onClick={onClose} className="text-2xl">&times;</button>
                 </div>
                 <div className="overflow-y-auto p-4 flex-1 flex flex-col gap-3">
-                    {filteredBookmarks.length === 0 ? (
+                    {bookmarks.length === 0 ? (
                         <div className="col-span-full text-center p-4 font-bold">لا توجد إشارات مرجعية محفوظة</div>
                     ) : (
-                        filteredBookmarks.map(b => {
+                        bookmarks.map(b => {
                             const surahName = quranData?.surahs[b.s - 1]?.name.replace('سورة','').trim() || '';
                             return (
                                 <div key={b.id} className={`w-full flex flex-col justify-between p-3 rounded-lg border transition themed-card-bg`}>
@@ -39,9 +34,6 @@ const BookmarksModal: React.FC<BookmarksModalProps> = ({ bookmarks, quranData, o
                                         </div>
                                         <div className="flex justify-between items-center mt-1">
                                             <div className="text-xs font-bold opacity-70">{b.date} | {b.time}</div>
-                                            <div className="text-[10px] font-bold px-2 py-0.5 rounded bg-black/10">
-                                                {b.isLandscape ? 'وضع أفقي' : 'وضع رأسي'}
-                                            </div>
                                         </div>
                                     </div>
                                     <div className="flex justify-end mt-2">
