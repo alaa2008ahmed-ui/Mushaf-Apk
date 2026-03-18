@@ -33,7 +33,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
     }, [modeSuffix]);
 
     const [showSajdahCard, setShowSajdahCard] = useState(() => {
-        const saved = localStorage.getItem('show_sajdah_card');
+        const saved = localStorage.getItem('show_sajdah_card' + modeSuffix);
         return saved !== null ? saved === 'true' : true;
     });
     const [useTajweed, setUseTajweed] = useState(() => localStorage.getItem('use_tajweed_quran' + modeSuffix) === 'true');
@@ -70,7 +70,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
 
     const handleSajdahCardToggle = (checked: boolean) => {
         setShowSajdahCard(checked);
-        localStorage.setItem('show_sajdah_card', String(checked));
+        localStorage.setItem('show_sajdah_card' + modeSuffix, String(checked));
         window.dispatchEvent(new Event('settings-change'));
         showToast(checked ? 'تم تفعيل بطاقة السجدة الكبرى' : 'تم إيقاف بطاقة السجدة الكبرى');
     };
