@@ -1858,7 +1858,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                 <button 
                     id="btn-home" 
                     onClick={onBack} 
-                    className="bottom-bar-button btn-green mx-1 px-4 min-w-[60px]" 
+                    className="bottom-bar-button btn-green flex-1 mx-1" 
                     style={getToolbarStyle('btn-home', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}
                 >
                     <i className="fa-solid fa-house text-red-500"></i>

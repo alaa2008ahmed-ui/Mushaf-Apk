@@ -57,7 +57,7 @@ const InteractiveBackground: React.FC = () => {
                 this.y = y;
                 this.baseX = x;
                 this.baseY = y;
-                this.size = Math.random() * 6 + 3; 
+                this.size = Math.random() * 4 + 2; 
                 this.density = (Math.random() * 20) + 2;
                 this.alpha = Math.random() * 0.6 + 0.4; 
                 this.color = themeColors[Math.floor(Math.random() * themeColors.length)];
@@ -108,7 +108,7 @@ const InteractiveBackground: React.FC = () => {
 
         const initParticles = () => {
             particles = [];
-            const numberOfParticles = (canvas.width * canvas.height) / 5000;
+            const numberOfParticles = (canvas.width * canvas.height) / 15000;
             for (let i = 0; i < numberOfParticles; i++) {
                 const x = Math.random() * canvas.width;
                 const y = Math.random() * canvas.height;
