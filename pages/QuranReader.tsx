@@ -62,7 +62,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
 
     const [activeModals, setActiveModals] = useState<string[]>([]);
     const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
-    const [ayahContextMenu, setAyahContextMenu] = useState<{isOpen: boolean, x: number, y: number, s: number, a: number}>({isOpen: false, x: 0, y: 0, s: 0, a: 0});
+    const [ayahContextMenu, setAyahContextMenu] = useState<{isOpen: boolean, x: number, y: number, s: number, a: number, tempSettings: any}>({isOpen: false, x: 0, y: 0, s: 0, a: 0, tempSettings: DEFAULT_SETTINGS});
     const [ayahContextColorField, setAyahContextColorField] = useState<'textColor' | 'bgColor' | 'highlightTextColor' | null>(null);
 
     const PREDEFINED_COLORS = [
@@ -782,7 +782,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
 
     const handleAyahLongPress = useCallback((s: number, a: number, x: number, y: number) => {
         if (isLandscapeRef.current) return;
-        setAyahContextMenu({ isOpen: true, x, y, s, a });
+        setAyahContextMenu({ isOpen: true, x, y, s, a, tempSettings: { ...settingsRef.current } });
     }, []);
 
     const handleTafseerSelect = useCallback((tafseerId: string) => {
@@ -1717,7 +1717,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             {ayahContextMenu.isOpen && !initialLandscape && (
                 <div className="fixed inset-0 z-[200] bg-black/30 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm animate-fadeIn" onClick={() => setAyahContextMenu(p => ({...p, isOpen: false}))}>
                     <div 
-                        className="modal-skinned w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-slide-up sm:animate-modal-enter" 
+                        className="ayah-context-menu modal-skinned w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-slide-up sm:animate-modal-enter" 
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="p-3 flex justify-between items-center h-12 flex-none theme-header-bg rounded-t-2xl">
@@ -1732,7 +1732,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                                     <label className="text-xs font-bold opacity-80 mb-1 text-center">لون النص</label>
                                     <div 
                                         className={`h-8 w-full rounded border shadow-sm cursor-pointer ${ayahContextColorField === 'textColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                        style={renderCheckerboard(settings.textColor)}
+                                        style={renderCheckerboard(ayahContextMenu.tempSettings.textColor)}
                                         onClick={() => setAyahContextColorField(ayahContextColorField === 'textColor' ? null : 'textColor')}
                                     ></div>
                                 </div>
@@ -1740,7 +1740,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                                     <label className="text-xs font-bold opacity-80 mb-1 text-center">لون الخلفية</label>
                                     <div 
                                         className={`h-8 w-full rounded border shadow-sm cursor-pointer ${ayahContextColorField === 'bgColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                        style={renderCheckerboard(settings.bgColor)}
+                                        style={renderCheckerboard(ayahContextMenu.tempSettings.bgColor)}
                                         onClick={() => setAyahContextColorField(ayahContextColorField === 'bgColor' ? null : 'bgColor')}
                                     ></div>
                                 </div>
@@ -1748,7 +1748,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                                     <label className="text-xs font-bold opacity-80 mb-1 text-center">لون التحديد</label>
                                     <div 
                                         className={`h-8 w-full rounded border shadow-sm cursor-pointer ${ayahContextColorField === 'highlightTextColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                        style={renderCheckerboard(settings.highlightTextColor || THEMES['default'].highlightText)}
+                                        style={renderCheckerboard(ayahContextMenu.tempSettings.highlightTextColor || THEMES['default'].highlightText)}
                                         onClick={() => setAyahContextColorField(ayahContextColorField === 'highlightTextColor' ? null : 'highlightTextColor')}
                                     ></div>
                                 </div>
@@ -1767,8 +1767,11 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                                             {PREDEFINED_COLORS.map(c => (
                                                 <button
                                                     key={c}
-                                                    onClick={() => updateSetting(ayahContextColorField, c)}
-                                                    className={`h-8 rounded-md border shadow-sm transition-transform hover:scale-110 ${settings[ayahContextColorField] === c ? 'ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-gray-800' : 'border-gray-200 dark:border-gray-600'}`}
+                                                    onClick={() => setAyahContextMenu(prev => ({
+                                                        ...prev,
+                                                        tempSettings: { ...prev.tempSettings, [ayahContextColorField!]: c }
+                                                    }))}
+                                                    className={`h-8 rounded-md border shadow-sm transition-transform hover:scale-110 ${ayahContextMenu.tempSettings[ayahContextColorField!] === c ? 'ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-gray-800' : 'border-gray-200 dark:border-gray-600'}`}
                                                     style={renderCheckerboard(c)}
                                                     title={c}
                                                 />
@@ -1785,16 +1788,38 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                                     {FONTS.map(f => (
                                         <button 
                                             key={f.id} 
-                                            onClick={() => updateSetting('fontFamily', f.id)} 
-                                            className={`w-full p-2 rounded-xl text-center font-bold transition flex flex-col justify-center items-center gap-1 ${settings.fontFamily === f.id ? 'theme-accent-btn' : 'hover:opacity-80'}`} 
-                                            style={settings.fontFamily !== f.id ? { backgroundColor: 'var(--qr-card-bg)', color: 'var(--qr-card-text)', border: '1px solid var(--qr-card-border)', fontFamily: f.id } : { fontFamily: f.id }}
+                                            onClick={() => setAyahContextMenu(prev => ({
+                                                ...prev,
+                                                tempSettings: { ...prev.tempSettings, fontFamily: f.id }
+                                            }))} 
+                                            className={`w-full p-2 rounded-xl text-center font-bold transition flex flex-col justify-center items-center gap-1 ${ayahContextMenu.tempSettings.fontFamily === f.id ? 'theme-accent-btn' : 'hover:opacity-80'}`} 
+                                            style={ayahContextMenu.tempSettings.fontFamily !== f.id ? { backgroundColor: 'var(--qr-card-bg)', color: 'var(--qr-card-text)', border: '1px solid var(--qr-card-border)', fontFamily: f.id } : { fontFamily: f.id }}
                                         >
                                             <span className="text-sm">{f.name}</span>
                                             <span className="text-[10px] opacity-70">﴿بِسْمِ اللَّهِ﴾</span>
-                                            {settings.fontFamily === f.id && <i className="fa-solid fa-check text-xs mt-1"></i>}
+                                            {ayahContextMenu.tempSettings.fontFamily === f.id && <i className="fa-solid fa-check text-xs mt-1"></i>}
                                         </button>
                                     ))}
                                 </div>
+                            </div>
+
+                            {/* Save and Close Button */}
+                            <div className="pt-4">
+                                <button 
+                                    onClick={() => {
+                                        const modeSuffix = isLandscapeRef.current ? '_h' : '_v';
+                                        const newSettings = { ...settings, ...ayahContextMenu.tempSettings };
+                                        setSettings(newSettings);
+                                        localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
+                                        window.dispatchEvent(new Event('settings-change'));
+                                        setAyahContextMenu(p => ({ ...p, isOpen: false }));
+                                        showToast('تم حفظ وتطبيق التغييرات');
+                                    }}
+                                    className="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold shadow-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <i className="fa-solid fa-save"></i>
+                                    <span>حفظ وإغلاق</span>
+                                </button>
                             </div>
                         </div>
                     </div>
