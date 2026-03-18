@@ -1781,24 +1781,17 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                                 )}
                             </div>
 
-                            {/* Fonts Section - Dropdown */}
+                            {/* Fonts Section - Modal Trigger */}
                             <div className="flex items-center justify-between gap-5">
                                 <label className="text-base font-bold opacity-80 whitespace-nowrap">نوع الخط:</label>
-                                <select 
-                                    value={ayahContextMenu.tempSettings.fontFamily}
-                                    onChange={(e) => setAyahContextMenu(prev => ({
-                                        ...prev,
-                                        tempSettings: { ...prev.tempSettings, fontFamily: e.target.value }
-                                    }))}
-                                    className="flex-1 p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-base font-bold outline-none focus:ring-2 focus:ring-indigo-500"
+                                <button 
+                                    onClick={() => openModal('ayah-font-modal')}
+                                    className="flex-1 p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-base font-bold outline-none focus:ring-2 focus:ring-indigo-500 text-right flex justify-between items-center"
                                     style={{ fontFamily: ayahContextMenu.tempSettings.fontFamily }}
                                 >
-                                    {FONTS.map(f => (
-                                        <option key={f.id} value={f.id} style={{ fontFamily: f.id }}>
-                                            {f.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <span>{FONTS.find(f => f.id === ayahContextMenu.tempSettings.fontFamily)?.name || 'اختر الخط'}</span>
+                                    <i className="fa-solid fa-chevron-down text-xs opacity-50"></i>
+                                </button>
                             </div>
 
                             {/* Save and Close Button */}
@@ -1903,6 +1896,21 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                 showToast('تم تغيير الخط بنجاح');
                 closeModal('font-modal');
             }} />}
+            {activeModals.includes('ayah-font-modal') && (
+                <FontSelectModal 
+                    isOpen={true} 
+                    onClose={() => closeModal('ayah-font-modal')} 
+                    isLandscape={isLandscape} 
+                    currentFontId={ayahContextMenu.tempSettings.fontFamily} 
+                    onSelect={(id) => {
+                        setAyahContextMenu(prev => ({
+                            ...prev,
+                            tempSettings: { ...prev.tempSettings, fontFamily: id }
+                        }));
+                        closeModal('ayah-font-modal');
+                    }} 
+                />
+            )}
             {activeModals.includes('scroll-speed-modal') && <ScrollSpeedModal isOpen={true} onClose={() => closeModal('scroll-speed-modal')} isLandscape={isLandscape} currentMinutes={settings.scrollMinutes} onSelect={(m) => {
                 const newSettings = { ...settings, scrollMinutes: m };
                 setSettings(newSettings);

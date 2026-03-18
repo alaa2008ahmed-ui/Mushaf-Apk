@@ -12,6 +12,11 @@ const VideoSplash: React.FC<VideoSplashProps> = ({ onEnded }) => {
 
   useEffect(() => {
     if (videoRef.current) {
+      // If video is already loaded enough, show it
+      if (videoRef.current.readyState >= 2) {
+        setIsReady(true);
+      }
+      
       videoRef.current.play().catch(error => {
         console.error("Video play failed:", error);
         onEnded();
@@ -21,16 +26,18 @@ const VideoSplash: React.FC<VideoSplashProps> = ({ onEnded }) => {
 
   const handleEnded = () => {
     setIsFading(true);
-    setTimeout(onEnded, 500); // Match transition duration
+    // Remove the splash slightly before the fade ends to ensure the home page is visible
+    setTimeout(onEnded, 450); 
   };
 
   return (
     <div 
       className={`fixed inset-0 z-[9999] bg-black flex items-center justify-center overflow-hidden transition-opacity duration-500 ${isFading ? 'opacity-0' : 'opacity-100'}`}
+      style={{ backgroundColor: 'black' }}
     >
       <video
         ref={videoRef}
-        className={`w-full h-full object-cover pointer-events-none transition-opacity duration-500 ${isReady ? 'opacity-100' : 'opacity-0'}`}
+        className={`w-full h-full object-cover pointer-events-none transition-opacity duration-300 ${isReady ? 'opacity-100' : 'opacity-0'}`}
         src="/splash.mp4"
         autoPlay
         muted
@@ -40,8 +47,12 @@ const VideoSplash: React.FC<VideoSplashProps> = ({ onEnded }) => {
         disablePictureInPicture
         controls={false}
         onLoadedData={() => setIsReady(true)}
+        onCanPlay={() => setIsReady(true)}
         onEnded={handleEnded}
-        style={{ WebkitMaskImage: '-webkit-radial-gradient(white, black)' }} // Fix for some mobile clipping issues
+        style={{ 
+          WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+          backgroundColor: 'black'
+        }} 
       />
       
       {isReady && !isFading && (

@@ -102,6 +102,7 @@ function PrayerTimes({ onBack }) {
     const isBlackAndWhite = themeKey === 'black_and_white';
     const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
     const secondaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[1];
+    const topBarTextColor = theme.topBarText || (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentEditingKey, setCurrentEditingKey] = useState(null);
@@ -271,11 +272,11 @@ function PrayerTimes({ onBack }) {
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
                     <div className="flex items-center justify-center gap-2">
-                        <i onClick={handleRefreshLocation} className="text-xl cursor-pointer active:rotate-180 duration-700 fa-solid fa-location-crosshairs" style={{ color: primaryColor }}></i>
-                        <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi truncate" style={{ color: primaryColor }}>{config.location.cityGov}</h1>
+                        <i onClick={handleRefreshLocation} className="text-xl cursor-pointer active:rotate-180 duration-700 fa-solid fa-location-crosshairs" style={{ color: topBarTextColor }}></i>
+                        <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi truncate" style={{ color: topBarTextColor }}>{config.location.cityGov}</h1>
                     </div>
                      <div className="flex items-center justify-center gap-2" dir="rtl">
-                        <p className="text-xs font-bold" style={{ color: primaryColor }}>{config.location.fullCountry}</p>
+                        <p className="text-xs font-bold" style={{ color: topBarTextColor }}>{config.location.fullCountry}</p>
                         {config.location.combinedCode && (
                             <span className="text-xs font-black text-white bg-black/20 px-2 py-0.5 rounded-md border border-white/20" dir="ltr">{config.location.combinedCode}</span>
                         )}

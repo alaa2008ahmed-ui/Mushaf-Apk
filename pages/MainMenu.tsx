@@ -64,10 +64,41 @@ const NavButton: React.FC<NavButtonProps & { isGlass?: boolean, btnText?: string
 );
 
 function MainMenu({ onNavigate, onOpenThemes }) {
-  const [currentVerse, setCurrentVerse] = useState(verses[0]);
+  const [currentVerse] = useState(() => {
+    const randomIndex = Math.floor(Math.random() * verses.length);
+    return verses[randomIndex];
+  });
   const { theme, themeKey } = useTheme();
-  const [visibleItems, setVisibleItems] = useState<string[]>([]);
-  const [menuItems, setMenuItems] = useState(DEFAULT_MENU_ITEMS);
+  const [visibleItems, setVisibleItems] = useState<string[]>(() => {
+    const savedVisible = localStorage.getItem('visibleMenuItems');
+    return savedVisible ? JSON.parse(savedVisible) : DEFAULT_MENU_ITEMS.map(i => i.id);
+  });
+  const [menuItems, setMenuItems] = useState(() => {
+    const savedLayout = localStorage.getItem('menuLayout');
+    if (savedLayout) {
+        try {
+            const parsed = JSON.parse(savedLayout);
+            const updated = parsed.map((item: any) => {
+                if (item.id === 'calculators' || item.id === 'calendar') {
+                    const { customColor, ...rest } = item;
+                    return rest;
+                }
+                return item;
+            });
+            
+            const qiblaIndex = updated.findIndex((i: any) => i.id === 'qibla');
+            const hisnIndex = updated.findIndex((i: any) => i.id === 'hisn-muslim');
+            
+            if (hisnIndex > qiblaIndex + 2) {
+                return DEFAULT_MENU_ITEMS;
+            }
+            return updated;
+        } catch (e) {
+            return DEFAULT_MENU_ITEMS;
+        }
+    }
+    return DEFAULT_MENU_ITEMS;
+  });
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [verseFontSize, setVerseFontSize] = useState(() => {
@@ -82,47 +113,29 @@ function MainMenu({ onNavigate, onOpenThemes }) {
   const initialFontSizeRef = useRef<number>(1.25);
 
   useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * verses.length);
-    setCurrentVerse(verses[randomIndex]);
-
-    // Load saved preferences
-    const savedVisible = localStorage.getItem('visibleMenuItems');
-    if (savedVisible) {
-        setVisibleItems(JSON.parse(savedVisible));
-    } else {
-        setVisibleItems(DEFAULT_MENU_ITEMS.map(i => i.id));
-    }
-
+    // Check if we need to update layout in storage (migration/fix)
     const savedLayout = localStorage.getItem('menuLayout');
     if (savedLayout) {
         try {
             const parsed = JSON.parse(savedLayout);
             let changed = false;
             const updated = parsed.map((item: any) => {
-                // Remove hardcoded custom colors to allow theme colors to take effect
                 if (item.id === 'calculators' || item.id === 'calendar') {
-                    const { customColor, ...rest } = item;
-                    return rest;
+                    if (item.customColor) {
+                        const { customColor, ...rest } = item;
+                        changed = true;
+                        return rest;
+                    }
                 }
                 return item;
             });
             
-            const qiblaIndex = updated.findIndex((i: any) => i.id === 'qibla');
-            const hisnIndex = updated.findIndex((i: any) => i.id === 'hisn-muslim');
-            
-            // If hisn-muslim is not right after qibla, force reset to apply new order
-            if (hisnIndex > qiblaIndex + 2) {
-                localStorage.removeItem('menuLayout');
-                setMenuItems(DEFAULT_MENU_ITEMS);
-                return;
-            }
-
             if (changed) {
                 localStorage.setItem('menuLayout', JSON.stringify(updated));
+                setMenuItems(updated);
             }
-            setMenuItems(updated);
         } catch (e) {
-            setMenuItems(DEFAULT_MENU_ITEMS);
+            // Error handled in initializer
         }
     }
   }, []);
@@ -309,10 +322,10 @@ function MainMenu({ onNavigate, onOpenThemes }) {
   };
 
   return (
-    <>
+    <div className="fade-in">
       <InteractiveBackground />
       <div className="h-screen w-full flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-hidden pb-32 fade-in">
+        <div className="flex-1 overflow-hidden pb-32">
           <div className="main-layout px-4 h-full flex flex-col" style={{ fontFamily: theme.font }}>
               
               {/* Verse Section */}
@@ -395,6 +408,9 @@ function MainMenu({ onNavigate, onOpenThemes }) {
                             onClick={() => !isEditMode && onNavigate(item.id)} 
                             className="w-full h-full"
                             color={
+                                (item.id === 'quran' && themeKey === 'default') ? '#059669' : 
+                                (item.id === 'listen' && themeKey === 'default') ? '#059669' : 
+                                (item.id === 'prayer-times' && themeKey === 'default') ? '#059669' : 
                                 (item.id === 'tasbeeh' && themeKey === 'default') ? '#10b981' : 
                                 (item.id === 'calendar' && themeKey === 'default') ? '#10b981' : 
                                 (item.id === 'qibla' && themeKey === 'default') ? '#8b5cf6' : 
@@ -452,7 +468,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         visibleIds={visibleItems}
         onSave={handleSaveCustomization}
       />
-    </>
+    </div>
   );
 }
 

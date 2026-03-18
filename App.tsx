@@ -61,7 +61,7 @@ function App() {
 
   return (
     <PrayerTimesProvider>
-      <div className="animate-fadeIn">
+      <div>
         <AppRouter 
           page={page} 
           onBack={navigateBack} 
