@@ -74,30 +74,30 @@ export const READERS = [
 export const TAFSEERS = [{ id: 'ar.jalalayn', name: 'تفسير الجلالين' }, { id: 'ar.muyassar', name: 'التفسير الميسر' }, { id: 'ar.baghawi', name: 'تفسير البغوي' }, { id: 'ar.qurtubi', name: 'تفسير القرطبي' }, { id: 'ar.waseet', name: 'التفسير الوسيط' }];
 
 export const FONTS = [
-    { id: "var(--font-amiri-quran)", name: "حفص" },
     { id: "var(--font-amiri)", name: "نسخ" },
-    { id: "var(--font-scheherazade)", name: "مجود" },
-    { id: "var(--font-lateef)", name: "تراثي" },
-    { id: "var(--font-harmattan)", name: "ورش" },
-    { id: "var(--font-aref)", name: "رقعة" },
-    { id: "var(--font-gulzar)", name: "نستعليق" },
-    { id: "var(--font-kufi)", name: "كوفي" },
-    { id: "var(--font-kufam)", name: "كوفي حديث" },
     { id: "var(--font-noto)", name: "نسخ حديث" },
+    { id: "var(--font-gulzar)", name: "نستعليق" },
     { id: "var(--font-cairo)", name: "القاهرة" },
     { id: "var(--font-messiri)", name: "المسيري" },
-    { id: "var(--font-rakkas)", name: "رقاص" },
-    { id: "var(--font-lalezar)", name: "لالزار" },
-    { id: "var(--font-katibeh)", name: "قطيبة" },
+    { id: "var(--font-lateef)", name: "تراثي" },
     { id: "var(--font-tajawal)", name: "تجوّل" },
-    { id: "var(--font-changa)", name: "شنقة" },
-    { id: "var(--font-mirza)", name: "ميرزا" },
-    { id: "var(--font-qalam)", name: "قلم" },
     { id: "var(--font-thuluth)", name: "ثلوث" },
     { id: "var(--font-digital)", name: "رقمي" },
+    { id: "var(--font-rakkas)", name: "رقاص" },
+    { id: "var(--font-aref)", name: "رقعة" },
+    { id: "var(--font-changa)", name: "شنقة" },
+    { id: "var(--font-harmattan)", name: "ورش" },
+    { id: "var(--font-amiri-quran)", name: "حفص" },
+    { id: "'Me Quran'", name: "خط المصحف" },
+    { id: "var(--font-katibeh)", name: "قطيبة" },
+    { id: "var(--font-qalam)", name: "قلم" },
+    { id: "var(--font-kufi)", name: "كوفي" },
+    { id: "var(--font-kufam)", name: "كوفي حديث" },
+    { id: "var(--font-lalezar)", name: "لالزار" },
     { id: "'KFGQPC Uthman Taha Naskh'", name: "مجمع الملك فهد" },
-    { id: "'Me Quran'", name: "خط المصحف" }
-];
+    { id: "var(--font-scheherazade)", name: "مجود" },
+    { id: "var(--font-mirza)", name: "ميرزا" }
+].sort((a, b) => a.name.localeCompare(b.name, 'ar'));
 
 export const SURAH_INFO: Record<number, { ayahs: number, type: string }> = {
     1: { ayahs: 7, type: "مكية" },
