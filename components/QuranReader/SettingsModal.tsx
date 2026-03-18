@@ -219,7 +219,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
 
                     <div className="border-b pb-2 border-gray-200 dark:border-gray-700 space-y-2">
                         <div className="flex items-center justify-between mt-1">
-                            <label className="text-sm font-bold opacity-80">سرعة التمرير (وقت الجزء)</label>
+                            <label className="text-sm font-bold opacity-80">سرعة التمرير</label>
                         </div>
                         <div className="mt-1">
                             <button onClick={() => onOpenModal('scroll-speed-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
@@ -241,7 +241,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
 
                     <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
                         <div className="flex items-center justify-between">
-                            <label className="text-sm font-bold opacity-80">تفعيل المصحف المجود (ملون)</label>
+                            <label className="text-sm font-bold opacity-80">المصحف المجود</label>
                             <div className="relative inline-block w-10 align-middle select-none">
                                 <input type="checkbox" id="use-tajweed" checked={useTajweed} onChange={(e) => handleTajweedToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
                                 <label htmlFor="use-tajweed" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${useTajweed ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
@@ -251,7 +251,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
 
                     <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
                         <div className="flex items-center justify-between">
-                            <label className="text-sm font-bold opacity-80">إخفاء الأشرطة أثناء التمرير</label>
+                            <label className="text-sm font-bold opacity-80">إخفاء الأشرطة</label>
                             <div className="relative inline-block w-10 align-middle select-none">
                                 <input type="checkbox" id="hide-toolbars" checked={isHideToolbarsEnabled} onChange={(e) => handleHideToolbarsToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
                                 <label htmlFor="hide-toolbars" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${isHideToolbarsEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>

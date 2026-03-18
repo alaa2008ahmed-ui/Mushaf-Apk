@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, FC } from 'react';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import './QuranReader.css'; 
-import { JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, DEFAULT_SETTINGS } from '../components/QuranReader/constants';
+import { JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, DEFAULT_SETTINGS, FONTS } from '../components/QuranReader/constants';
 import SearchModal from '../components/QuranReader/SearchModal';
 import ThemesModal from '../components/QuranReader/ThemesModal';
 import SettingsModal from '../components/QuranReader/SettingsModal';
@@ -63,6 +63,26 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     const [activeModals, setActiveModals] = useState<string[]>([]);
     const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
     const [ayahContextMenu, setAyahContextMenu] = useState<{isOpen: boolean, x: number, y: number, s: number, a: number}>({isOpen: false, x: 0, y: 0, s: 0, a: 0});
+    const [ayahContextColorField, setAyahContextColorField] = useState<'textColor' | 'bgColor' | 'highlightTextColor' | null>(null);
+
+    const PREDEFINED_COLORS = [
+        '#ffffff', '#f3f4f6', '#9ca3af', '#4b5563', '#000000',
+        '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
+        '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
+        '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
+        '#f43f5e', '#78716c', '#57534e', 'transparent'
+    ];
+
+    const renderCheckerboard = (color: string) => {
+        if (color === 'transparent' || color === 'rgba(0, 0, 0, 0)') {
+            return {
+                backgroundColor: '#ffffff',
+                backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%)',
+                backgroundSize: '8px 8px'
+            };
+        }
+        return { backgroundColor: color };
+    };
     
     // Close context menu on outside click
     useEffect(() => {
@@ -1695,52 +1715,88 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             <MarkerNotification isVisible={markerNotification.show} type={markerNotification.type} text={markerNotification.text} />
             
             {ayahContextMenu.isOpen && !initialLandscape && (
-                <div 
-                    className="ayah-context-menu absolute z-[100] bg-white dark:bg-gray-800 shadow-2xl rounded-xl p-3 flex flex-col gap-3 border border-gray-200 dark:border-gray-700"
-                    style={{ 
-                        top: Math.min(ayahContextMenu.y, window.innerHeight - 200), 
-                        left: Math.max(10, Math.min(ayahContextMenu.x - 100, window.innerWidth - 210)),
-                        width: '200px'
-                    }}
-                >
-                    <div className="flex justify-between items-center">
-                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">تخصيص الآية</span>
-                        <button onClick={() => setAyahContextMenu(p => ({...p, isOpen: false}))} className="text-gray-500 hover:text-red-500">
-                            <i className="fa-solid fa-times"></i>
-                        </button>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                        <label className="text-xs text-gray-600 dark:text-gray-400">لون النص</label>
-                        <input type="color" value={settings.textColor} onChange={(e) => updateSetting('textColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                        <label className="text-xs text-gray-600 dark:text-gray-400">لون الخلفية</label>
-                        <input type="color" value={settings.bgColor} onChange={(e) => updateSetting('bgColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                        <label className="text-xs text-gray-600 dark:text-gray-400">لون التحديد</label>
-                        <input type="color" value={settings.highlightTextColor} onChange={(e) => updateSetting('highlightTextColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
-                    </div>
-                    
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs text-gray-600 dark:text-gray-400">نوع الخط</label>
-                        <select 
-                            value={settings.fontFamily} 
-                            onChange={(e) => updateSetting('fontFamily', e.target.value)}
-                            className="w-full text-xs p-1 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        >
-                            <option value="var(--font-amiri)">أميري</option>
-                            <option value="var(--font-amiri-quran)">أميري قرآن</option>
-                            <option value="var(--font-hafs)">حفص</option>
-                            <option value="var(--font-tajawal)">تجوال</option>
-                            <option value="var(--font-aref)">عارف رقعة</option>
-                            <option value="var(--font-scheherazade)">شهرزاد</option>
-                            <option value="var(--font-qalam)">قلم</option>
-                            <option value="var(--font-gulzar)">جلزار</option>
-                        </select>
+                <div className="fixed inset-0 z-[200] bg-black/30 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm animate-fadeIn" onClick={() => setAyahContextMenu(p => ({...p, isOpen: false}))}>
+                    <div 
+                        className="modal-skinned w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-slide-up sm:animate-modal-enter" 
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="p-3 flex justify-between items-center h-12 flex-none theme-header-bg rounded-t-2xl">
+                            <h2 className="text-lg font-bold">تخصيص الآية</h2>
+                            <button onClick={() => setAyahContextMenu(p => ({...p, isOpen: false}))} className="hover:opacity-80 rounded-full bg-white/20 w-8 h-8 flex items-center justify-center">✕</button>
+                        </div>
+                        
+                        <div className="p-4 overflow-y-auto flex-1 space-y-4">
+                            {/* Colors Section */}
+                            <div className="grid grid-cols-3 gap-3 border-b pb-4 border-gray-200 dark:border-gray-700">
+                                <div className="flex flex-col">
+                                    <label className="text-xs font-bold opacity-80 mb-1 text-center">لون النص</label>
+                                    <div 
+                                        className={`h-8 w-full rounded border shadow-sm cursor-pointer ${ayahContextColorField === 'textColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                        style={renderCheckerboard(settings.textColor)}
+                                        onClick={() => setAyahContextColorField(ayahContextColorField === 'textColor' ? null : 'textColor')}
+                                    ></div>
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="text-xs font-bold opacity-80 mb-1 text-center">لون الخلفية</label>
+                                    <div 
+                                        className={`h-8 w-full rounded border shadow-sm cursor-pointer ${ayahContextColorField === 'bgColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                        style={renderCheckerboard(settings.bgColor)}
+                                        onClick={() => setAyahContextColorField(ayahContextColorField === 'bgColor' ? null : 'bgColor')}
+                                    ></div>
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="text-xs font-bold opacity-80 mb-1 text-center">لون التحديد</label>
+                                    <div 
+                                        className={`h-8 w-full rounded border shadow-sm cursor-pointer ${ayahContextColorField === 'highlightTextColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                        style={renderCheckerboard(settings.highlightTextColor || THEMES['default'].highlightText)}
+                                        onClick={() => setAyahContextColorField(ayahContextColorField === 'highlightTextColor' ? null : 'highlightTextColor')}
+                                    ></div>
+                                </div>
+                                
+                                {ayahContextColorField && (
+                                    <div className="col-span-3 bg-gray-50 dark:bg-gray-800/80 p-3 rounded-xl border border-gray-200 dark:border-gray-700 mt-2 animate-fadeIn">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                                                اختر لون {ayahContextColorField === 'bgColor' ? 'الخلفية' : ayahContextColorField === 'textColor' ? 'النص' : 'التحديد'}
+                                            </span>
+                                            <button onClick={() => setAyahContextColorField(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                                                <i className="fa-solid fa-times"></i>
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
+                                            {PREDEFINED_COLORS.map(c => (
+                                                <button
+                                                    key={c}
+                                                    onClick={() => updateSetting(ayahContextColorField, c)}
+                                                    className={`h-8 rounded-md border shadow-sm transition-transform hover:scale-110 ${settings[ayahContextColorField] === c ? 'ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-gray-800' : 'border-gray-200 dark:border-gray-600'}`}
+                                                    style={renderCheckerboard(c)}
+                                                    title={c}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Fonts Section */}
+                            <div>
+                                <label className="text-sm font-bold block opacity-80 mb-3 text-center">نوع الخط</label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    {FONTS.map(f => (
+                                        <button 
+                                            key={f.id} 
+                                            onClick={() => updateSetting('fontFamily', f.id)} 
+                                            className={`w-full p-2 rounded-xl text-center font-bold transition flex flex-col justify-center items-center gap-1 ${settings.fontFamily === f.id ? 'theme-accent-btn' : 'hover:opacity-80'}`} 
+                                            style={settings.fontFamily !== f.id ? { backgroundColor: 'var(--qr-card-bg)', color: 'var(--qr-card-text)', border: '1px solid var(--qr-card-border)', fontFamily: f.id } : { fontFamily: f.id }}
+                                        >
+                                            <span className="text-sm">{f.name}</span>
+                                            <span className="text-[10px] opacity-70">﴿بِسْمِ اللَّهِ﴾</span>
+                                            {settings.fontFamily === f.id && <i className="fa-solid fa-check text-xs mt-1"></i>}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

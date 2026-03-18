@@ -16,8 +16,8 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
         const activeEl = document.getElementById(`theme-btn-${currentThemeId}`);
         if (activeEl) {
             setTimeout(() => {
-                activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 100);
+                activeEl.scrollIntoView({ behavior: 'auto', block: 'center' });
+            }, 10);
         }
     }, [currentThemeId]);
 
@@ -128,25 +128,26 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl flex flex-col max-h-[85vh] shadow-2xl`} onClick={e => e.stopPropagation()}>
                 <div className="p-4 rounded-t-2xl flex justify-between items-center shadow-md theme-header-bg">
                     <h3 className="font-bold text-lg">اختر الثيم</h3>
-                    <div className="flex items-center gap-2">
-                        <button 
-                            onClick={toggleTransparency}
-                            className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-all ${isTransparent ? 'bg-blue-500 text-white shadow-lg' : 'bg-white/20 text-white'}`}
-                            title="تفعيل/تعطيل شفافية الأشرطة"
-                        >
-                            <i className={`fa-solid ${isTransparent ? 'fa-eye' : 'fa-eye-slash'}`}></i>
-                            <span>شفافية الأشرطة</span>
-                        </button>
-                        <button 
-                            onClick={toggleLockHighlightColor}
-                            className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold transition-all ${lockHighlightColor ? 'bg-amber-500 text-white shadow-lg' : 'bg-white/20 text-white'}`}
-                            title="قفل لون التحديد الحالي"
-                        >
-                            <i className={`fa-solid ${lockHighlightColor ? 'fa-lock' : 'fa-lock-open'}`}></i>
-                            <span>لون التحديد</span>
-                        </button>
-                        <button onClick={onClose} className="text-2xl hover:opacity-80 transition">&times;</button>
-                    </div>
+                    <button onClick={onClose} className="text-2xl hover:opacity-80 transition">&times;</button>
+                </div>
+                
+                <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-wrap gap-3 justify-center bg-gray-100 dark:bg-gray-800/90">
+                    <button 
+                        onClick={toggleTransparency}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${isTransparent ? 'bg-indigo-600 text-white border-indigo-700 shadow-lg' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                        title="تفعيل/تعطيل شفافية الأشرطة"
+                    >
+                        <i className={`fa-solid ${isTransparent ? 'fa-eye' : 'fa-eye-slash'}`}></i>
+                        <span>شفافية الأشرطة</span>
+                    </button>
+                    <button 
+                        onClick={toggleLockHighlightColor}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${lockHighlightColor ? 'bg-amber-600 text-white border-amber-700 shadow-lg' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                        title="قفل لون التحديد الحالي"
+                    >
+                        <i className={`fa-solid ${lockHighlightColor ? 'fa-lock' : 'fa-lock-open'}`}></i>
+                        <span>قفل لون التحديد</span>
+                    </button>
                 </div>
                 <div className={`overflow-y-auto p-4 grid ${isLandscape ? 'grid-cols-3 sm:grid-cols-4' : 'grid-cols-2'} gap-3 flex-1`} style={{ '--theme-card-border-color': activeTheme.accent, '--theme-card-shadow-color': `${activeTheme.accent}4D` } as React.CSSProperties}>
                     {Object.entries(THEMES).map(([key, t]: [string, any]) => (
