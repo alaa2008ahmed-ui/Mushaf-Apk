@@ -21,6 +21,7 @@ export const presetThemes: { [key: string]: Theme } = {
     default: {
         name: "الافتراضي",
         bgColor: "#FFFFFF",
+        isOriginal: true,
         textColor: "#000000",
         font: "'Cairo', sans-serif",
         palette: ["#14b8a6", "#7C3AED", "#0d9488"],

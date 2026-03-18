@@ -57,9 +57,9 @@ const InteractiveBackground: React.FC = () => {
                 this.y = y;
                 this.baseX = x;
                 this.baseY = y;
-                this.size = Math.random() * 3 + 1; 
+                this.size = Math.random() * 6 + 3; 
                 this.density = (Math.random() * 20) + 2;
-                this.alpha = Math.random() * 0.3 + 0.1; 
+                this.alpha = Math.random() * 0.6 + 0.4; 
                 this.color = themeColors[Math.floor(Math.random() * themeColors.length)];
             }
 
@@ -68,8 +68,11 @@ const InteractiveBackground: React.FC = () => {
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.closePath();
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = `rgba(${this.color}, ${this.alpha})`;
                 ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
                 ctx.fill();
+                ctx.shadowBlur = 0; // Reset for next draw
             }
 
             update() {
@@ -105,7 +108,7 @@ const InteractiveBackground: React.FC = () => {
 
         const initParticles = () => {
             particles = [];
-            const numberOfParticles = (canvas.width * canvas.height) / 8000;
+            const numberOfParticles = (canvas.width * canvas.height) / 5000;
             for (let i = 0; i < numberOfParticles; i++) {
                 const x = Math.random() * canvas.width;
                 const y = Math.random() * canvas.height;
@@ -161,7 +164,7 @@ const InteractiveBackground: React.FC = () => {
         <canvas
             ref={canvasRef}
             className="fixed inset-0 z-[-1] pointer-events-none"
-            style={{ opacity: theme.isGlass ? 0.9 : 0.6 }}
+            style={{ opacity: theme.isGlass ? 1.0 : 0.8 }}
         />
     );
 };

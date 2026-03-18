@@ -90,8 +90,8 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
             if (videoBg) videoBg.style.display = 'none';
             document.body.style.backgroundColor = theme.bgColor || '#0D1B2A';
             document.body.style.backgroundImage = theme.isOriginal ? `
-                radial-gradient(circle at 15% 25%, rgba(20, 184, 166, 0.1), transparent 30%),
-                radial-gradient(circle at 85% 75%, rgba(124, 58, 237, 0.1), transparent 30%)
+                radial-gradient(circle at 15% 25%, rgba(20, 184, 166, 0.5), transparent 50%),
+                radial-gradient(circle at 85% 75%, rgba(124, 58, 237, 0.5), transparent 50%)
             ` : 'none';
         }
 

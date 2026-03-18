@@ -340,7 +340,7 @@
     height: 40px; 
     z-index: 60; 
     pointer-events: auto; 
-    padding: 0 8px 1px; 
+    padding: 0 8px; 
     font-family: var(--font-ui);
     text-align: center;
 }
@@ -370,7 +370,8 @@
 #surah-name-header { background: #fff; color: #10b981; border-color: #10b981; flex: 1; min-width: 0; margin: 0 4px; font-size: 1rem; }
 #juz-number-header { background: #fff; color: #6d28d9; border-color: #6d28d9; width: auto; min-width: 60px; padding: 0 10px; flex-shrink: 0; font-size: 0.8rem; }
 #header-page { background: #fff; color: #6d28d9; border-color: #6d28d9; width: 80px; min-width: 80px; box-sizing: border-box; padding: 0 10px; flex-shrink: 0; font-size: 0.8rem; }
-#btn-play { background: #fff; color: #10b981; border-color: #10b981; width: 44px; flex-shrink: 0; }
+#btn-play { background: #fff; color: #10b981; border-color: #10b981; width: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 0; }
+#btn-play i { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
 
 .dark #surah-name-header { background-color: #1f2937; color: #34d399; border-color: #34d399; }
 .dark #juz-number-header { background-color: #1f2937; color: #a78bfa; border-color: #a78bfa; }

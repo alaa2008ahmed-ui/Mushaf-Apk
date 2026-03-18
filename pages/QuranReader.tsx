@@ -1632,9 +1632,9 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     const tafseerName = TAFSEERS.find(t => t.id === settings.tafseer)?.name || 'التفسير';
 
     const renderPlayButtonIcon = () => {
-        if (isAudioLoading) return <span className="text-emerald-500 font-bold animate-pulse text-xs">جاري..</span>;
-        if (isPlaying) return <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>;
-        return <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>;
+        if (isAudioLoading) return <i className="fa-solid fa-spinner fa-spin text-emerald-500 text-xl"></i>;
+        if (isPlaying) return <i className="fa-solid fa-circle-pause text-red-500 text-2xl"></i>;
+        return <i className="fa-solid fa-circle-play text-emerald-600 text-2xl"></i>;
     };
 
     const handleInteractionStart = useCallback(() => {
@@ -1693,10 +1693,10 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                         onPointerDown={handlePlayButtonPointerDown}
                         onPointerUp={handlePlayButtonPointerUp}
                         onPointerLeave={handlePlayButtonPointerLeave}
-                        className="top-bar-text-button" 
+                        className="top-bar-text-button flex items-center justify-center" 
                         style={{...getToolbarStyle('audio', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder), touchAction: 'none'}}
                     >
-                        <span id="play-icon-svg">{renderPlayButtonIcon()}</span>
+                        {renderPlayButtonIcon()}
                     </button>
                     {reciterToast.show && (
                         <div className="absolute top-full left-0 mt-2 px-3 py-1 text-xs rounded-lg shadow-lg whitespace-nowrap z-[100] animate-fadeIn font-bold pointer-events-none"
@@ -1818,15 +1818,15 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             )}
 
             <div id="floating-menu" className={isFloatingMenuOpen ? 'open' : ''} ref={floatingMenuRef}>
-                 <button onClick={() => { openModal('bookmarks-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green w-full justify-between mb-2" style={getToolbarStyle('btn-bookmarks-list', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>قائمة الإشارات</span><i className="fa-solid fa-list"></i></button>
+                 <button onClick={() => { openModal('bookmarks-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green w-full justify-between mb-2" style={getToolbarStyle('btn-bookmarks-list', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>قائمة الإشارات</span><i className="fa-solid fa-bookmark text-amber-500"></i></button>
                  {!initialLandscape && (
-                     <button onClick={() => { openModal('search-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-purple w-full justify-between mb-2" style={getToolbarStyle('btn-search', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>البحث</span><i className="fa-solid fa-search"></i></button>
+                     <button onClick={() => { openModal('search-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-purple w-full justify-between mb-2" style={getToolbarStyle('btn-search', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>البحث</span><i className="fa-solid fa-magnifying-glass text-sky-500"></i></button>
                  )}
-                 <button onClick={() => { openModal('themes-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green w-full justify-between mb-2" style={getToolbarStyle('btn-themes', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>الثيمات</span><i className="fa-solid fa-palette"></i></button>
-                 <button onClick={() => { openModal('settings-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green w-full justify-between" style={getToolbarStyle('btn-settings', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>الإعدادات</span><i className="fa-solid fa-cog"></i></button>
+                 <button onClick={() => { openModal('themes-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green w-full justify-between mb-2" style={getToolbarStyle('btn-themes', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>الثيمات</span><i className="fa-solid fa-palette text-pink-500"></i></button>
+                 <button onClick={() => { openModal('settings-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green w-full justify-between" style={getToolbarStyle('btn-settings', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>الإعدادات</span><i className="fa-solid fa-sliders text-slate-500"></i></button>
             </div>
             <footer id="bottom-bar" className={`footer-default flex-none border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 flex justify-around items-center px-1 py-1 w-full`} style={getToolbarStyle('bottom-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
-                <button ref={menuButtonRef} id="btn-menu" onClick={() => setIsFloatingMenuOpen(p => !p)} className="bottom-bar-button btn-purple flex-1 mx-1" style={getToolbarStyle('btn-menu', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><i className="fa-solid fa-bars"></i><span className="hidden sm:inline">القائمة</span></button>
+                <button ref={menuButtonRef} id="btn-menu" onClick={() => setIsFloatingMenuOpen(p => !p)} className="bottom-bar-button btn-purple flex-1 mx-1" style={getToolbarStyle('btn-menu', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><i className="fa-solid fa-grip-vertical text-indigo-500"></i><span className="hidden sm:inline">القائمة</span></button>
                 <button 
                     id="btn-bookmark" 
                     onPointerDown={handleBookmarkButtonPointerDown}
@@ -1838,7 +1838,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                     className="bottom-bar-button btn-green flex-1 mx-1" 
                     style={{...getToolbarStyle('btn-bookmark', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg), touchAction: 'none'}}
                 >
-                    <i className="fa-solid fa-bookmark"></i>
+                    <i className="fa-solid fa-star text-yellow-500"></i>
                     <span className="hidden sm:inline">حفظ</span>
                 </button>
                 <button 
@@ -1852,10 +1852,18 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
                     className="bottom-bar-button btn-purple flex-1 mx-1" 
                     style={{...getToolbarStyle('btn-autoscroll', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg), touchAction: 'none'}}
                 >
-                    {autoScrollState.isActive ? <i className="fa-solid fa-pause icon-autoscroll-active"></i> : <i className="fa-solid fa-arrow-down"></i>}
+                    {autoScrollState.isActive ? <i className="fa-solid fa-circle-pause text-red-500 icon-autoscroll-active"></i> : <i className="fa-solid fa-angles-down text-blue-500"></i>}
                     <span className="hidden sm:inline">{autoScrollState.isActive ? "إيقاف" : "تمرير"}</span>
                 </button>
-                <button id="btn-home" onClick={onBack} className="bottom-bar-button btn-green flex-1 mx-1" style={getToolbarStyle('btn-home', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><i className="fa-solid fa-home"></i><span className="hidden sm:inline">الرئيسية</span></button>
+                <button 
+                    id="btn-home" 
+                    onClick={onBack} 
+                    className="bottom-bar-button btn-green mx-1 px-4 min-w-[60px]" 
+                    style={getToolbarStyle('btn-home', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}
+                >
+                    <i className="fa-solid fa-house text-red-500"></i>
+                    <span className="hidden sm:inline">الرئيسية</span>
+                </button>
             </footer>
             {isAutoScrollSettingsOpen && (
             <AutoScrollSettingsModal

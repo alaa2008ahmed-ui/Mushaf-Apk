@@ -6,8 +6,8 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
     const { theme, themeKey } = useTheme();
 
     const isSingleButton = !showHome || !showThemes;
-    const homeButtonClass = `bar-button btn-3d-effect ${isSingleButton ? 'w-full max-w-xs mx-auto py-2.5 px-12 rounded-xl shadow-lg' : 'max-w-[140px]'}`;
-    const themesButtonClass = `bar-button btn-3d-effect ${isSingleButton ? 'w-full max-w-xs mx-auto py-2.5 px-12 rounded-xl shadow-lg' : 'max-w-[140px]'}`;
+    const homeButtonClass = `bar-button btn-3d-effect ${isSingleButton ? 'w-full max-w-[160px] mx-auto py-2.5 px-4 rounded-xl shadow-lg' : 'max-w-[120px]'}`;
+    const themesButtonClass = `bar-button btn-3d-effect ${isSingleButton ? 'w-full max-w-[160px] mx-auto py-2.5 px-4 rounded-xl shadow-lg' : 'max-w-[120px]'}`;
 
     return (
         <nav className="app-bottom-bar">
