@@ -87,7 +87,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     // Close context menu on outside click
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-            if (ayahContextMenu.isOpen) {
+            if (ayahContextMenu.isOpen && activeModals.length === 0) {
                 const target = e.target as HTMLElement;
                 if (!target.closest('.ayah-context-menu')) {
                     setAyahContextMenu(prev => ({ ...prev, isOpen: false }));
@@ -100,7 +100,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('touchstart', handleClickOutside);
         };
-    }, [ayahContextMenu.isOpen]);
+    }, [ayahContextMenu.isOpen, activeModals]);
 
     const updateSetting = (key: string, value: any) => {
         const modeSuffix = isLandscapeRef.current ? '_h' : '_v';
@@ -1709,7 +1709,24 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
                 <div id="pages-container" className="full-mushaf-container">
-                   {[...new Set(visiblePages)].sort((a: number, b: number) => a - b).map(pageNum => (<MushafPage key={pageNum} pageNum={pageNum} pageData={getPageData(pageNum)} highlightedAyahId={highlightedAyahId} onAyahClick={handleAyahTextClick} onVerseClick={handleVerseClick} onVerseLongPress={handleVerseLongPress} onAyahLongPress={handleAyahLongPress} onInteractionStart={handleInteractionStart} onInteractionEnd={handleInteractionEnd} settings={settings} />))}
+                   {[...new Set(visiblePages)].sort((a: number, b: number) => a - b).map(pageNum => {
+                       const displaySettings = ayahContextMenu.isOpen ? { ...settings, ...ayahContextMenu.tempSettings } : settings;
+                       return (
+                           <MushafPage 
+                               key={pageNum} 
+                               pageNum={pageNum} 
+                               pageData={getPageData(pageNum)} 
+                               highlightedAyahId={highlightedAyahId} 
+                               onAyahClick={handleAyahTextClick} 
+                               onVerseClick={handleVerseClick} 
+                               onVerseLongPress={handleVerseLongPress} 
+                               onAyahLongPress={handleAyahLongPress} 
+                               onInteractionStart={handleInteractionStart} 
+                               onInteractionEnd={handleInteractionEnd} 
+                               settings={displaySettings} 
+                           />
+                       );
+                   })}
                 </div>
             </div>
             <MarkerNotification isVisible={markerNotification.show} type={markerNotification.type} text={markerNotification.text} />
