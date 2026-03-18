@@ -1715,9 +1715,9 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             <MarkerNotification isVisible={markerNotification.show} type={markerNotification.type} text={markerNotification.text} />
             
             {ayahContextMenu.isOpen && !initialLandscape && (
-                <div className="fixed inset-0 z-[200] bg-black/30 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm animate-fadeIn" onClick={() => setAyahContextMenu(p => ({...p, isOpen: false}))}>
+                <div className="fixed inset-0 z-[200] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={() => setAyahContextMenu(p => ({...p, isOpen: false}))}>
                     <div 
-                        className="ayah-context-menu modal-skinned w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-slide-up sm:animate-modal-enter" 
+                        className="ayah-context-menu modal-skinned w-full max-w-sm rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-modal-enter" 
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="p-2 flex justify-between items-center h-10 flex-none theme-header-bg rounded-t-2xl">
