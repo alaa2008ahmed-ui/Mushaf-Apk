@@ -8,6 +8,7 @@ interface MushafPageProps {
     onAyahClick: (surah: number, ayah: number) => void;
     onVerseClick: (surah: number, ayah: number, event: React.MouseEvent) => void;
     onVerseLongPress?: (surah: number, ayah: number) => void;
+    onAyahLongPress?: (surah: number, ayah: number, x: number, y: number) => void;
     onInteractionStart?: () => void;
     onInteractionEnd?: () => void;
     settings?: {
@@ -48,10 +49,42 @@ const renderTajweedText = (text: string) => {
     return parts;
 };
 
-const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onInteractionStart, onInteractionEnd, settings }) => {
+const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings }) => {
     const pageRef = useRef<HTMLDivElement | null>(null);
     const longPressTimer = useRef<number | null>(null);
     const isLongPressTriggered = useRef(false);
+    const touchStartPos = useRef<{x: number, y: number} | null>(null);
+
+    const handleAyahTouchStart = (s: number, a: number, e: React.TouchEvent | React.MouseEvent) => {
+        if ('touches' in e && e.touches.length > 1) return; // Ignore multi-touch
+        e.stopPropagation();
+        if (onInteractionStart) onInteractionStart();
+        isLongPressTriggered.current = false;
+        
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        touchStartPos.current = { x: clientX, y: clientY };
+
+        longPressTimer.current = window.setTimeout(() => {
+            if (onAyahLongPress) {
+                onAyahLongPress(s, a, clientX, clientY);
+                isLongPressTriggered.current = true;
+            }
+            longPressTimer.current = null;
+        }, 600);
+    };
+
+    const handleAyahTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
+        if (!touchStartPos.current || !longPressTimer.current) return;
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        
+        // If moved more than 10px, cancel long press
+        if (Math.abs(clientX - touchStartPos.current.x) > 10 || Math.abs(clientY - touchStartPos.current.y) > 10) {
+            clearTimeout(longPressTimer.current);
+            longPressTimer.current = null;
+        }
+    };
 
     const handleVersePointerDown = (s: number, a: number, e: React.PointerEvent) => {
         e.stopPropagation();
@@ -155,8 +188,13 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                         onAyahClick(ayah.sNum, ayah.numberInSurah);
                                     }
                                 }}
-                                onPointerUp={handlePointerUp}
-                                onPointerLeave={handlePointerLeave}
+                                onTouchStart={(e) => handleAyahTouchStart(ayah.sNum, ayah.numberInSurah, e)}
+                                onTouchMove={handleAyahTouchMove}
+                                onTouchEnd={handlePointerUp}
+                                onMouseDown={(e) => handleAyahTouchStart(ayah.sNum, ayah.numberInSurah, e)}
+                                onMouseMove={handleAyahTouchMove}
+                                onMouseUp={handlePointerUp}
+                                onMouseLeave={handlePointerLeave}
                                 onContextMenu={(e) => e.preventDefault()}
                                 data-sajdah={isSajdah} 
                                 data-snum={ayah.sNum}

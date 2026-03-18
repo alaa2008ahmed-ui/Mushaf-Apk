@@ -219,9 +219,6 @@
     -webkit-font-variant-ligatures: common-ligatures discretionary-ligatures;
     text-rendering: optimizeLegibility;
 }
-@media (hover: hover) {
-    .ayah-text-block:hover { background-color: #ecfdf5; }
-}
 .ayah-text-block.highlighted { 
     background-color: transparent !important;
     color: var(--qr-highlight-text, #d97706) !important;
@@ -254,7 +251,6 @@
 }
 
 .verse-container { cursor: pointer; display: inline-block; }
-.verse-container:hover .verse-num-inner { color: #ea580c; }
 .verse-bracket { color: #059669; font-weight: bold; font-family: var(--font-hafs); font-size: 0.8em; }
 .verse-num-inner { color: #b91c1c; font-weight: bold; font-family: var(--font-hafs); padding: 0 1px; transition: color 0.2s; font-size: 0.8em; }
 .dark .verse-bracket { color: #34d399; }

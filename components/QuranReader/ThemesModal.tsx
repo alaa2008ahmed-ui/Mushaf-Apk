@@ -12,6 +12,15 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
     const currentThemeId = localStorage.getItem('current_theme_id' + modeSuffix) || 'default';
     const activeTheme = THEMES[currentThemeId as keyof typeof THEMES] || THEMES['default'];
 
+    React.useEffect(() => {
+        const activeEl = document.getElementById(`theme-btn-${currentThemeId}`);
+        if (activeEl) {
+            setTimeout(() => {
+                activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
+    }, [currentThemeId]);
+
     const [lockHighlightColor, setLockHighlightColor] = React.useState(() => {
         const saved = JSON.parse(localStorage.getItem('quran_settings' + modeSuffix) || '{}');
         return saved.lockHighlightColor || false;
@@ -142,18 +151,31 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
                 <div className={`overflow-y-auto p-4 grid ${isLandscape ? 'grid-cols-3 sm:grid-cols-4' : 'grid-cols-2'} gap-3 flex-1`} style={{ '--theme-card-border-color': activeTheme.accent, '--theme-card-shadow-color': `${activeTheme.accent}4D` } as React.CSSProperties}>
                     {Object.entries(THEMES).map(([key, t]: [string, any]) => (
                         <button 
+                            id={`theme-btn-${key}`}
                             key={key} 
                             onClick={() => applyTheme(key)} 
-                            className={`theme-card text-center ${currentThemeId === key ? 'selected' : ''}`}
-                            style={{ backgroundColor: 'var(--qr-card-bg)', color: 'var(--qr-card-text)', borderColor: 'var(--qr-card-border)' }}
+                            className={`theme-card text-center ${currentThemeId === key ? 'selected ring-2 ring-offset-2' : ''}`}
+                            style={currentThemeId === key ? { 
+                                backgroundColor: t.accent, 
+                                color: t.accentText, 
+                                borderColor: t.accent,
+                                '--tw-ring-color': t.accent
+                            } as React.CSSProperties : { 
+                                backgroundColor: 'var(--qr-card-bg)', 
+                                color: 'var(--qr-card-text)', 
+                                borderColor: 'var(--qr-card-border)' 
+                            }}
                         >
-                            <div className="font-bold mb-2 text-sm">{t.name}</div>
+                            <div className="font-bold mb-2 text-sm flex items-center justify-center gap-2">
+                                {currentThemeId === key && <i className="fa-solid fa-check-circle"></i>}
+                                <span>{t.name}</span>
+                            </div>
                             <div className="w-full h-20 rounded-lg p-2 shadow-inner flex flex-col justify-between" style={{ backgroundColor: t.bg }}>
                                 <div className="w-full h-5 rounded-sm" style={{ backgroundColor: t.barBg }}></div>
                                 <p className="text-xs truncate" style={{ color: t.text, fontFamily: t.font }}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
                                 <div className="flex items-center justify-end gap-1 mt-1">
-                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.btnBg }}></div>
-                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.accent }}></div>
+                                    <div className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: t.btnBg }}></div>
+                                    <div className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: t.accent }}></div>
                                 </div>
                             </div>
                         </button>

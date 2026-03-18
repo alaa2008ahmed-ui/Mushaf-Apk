@@ -62,6 +62,33 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
 
     const [activeModals, setActiveModals] = useState<string[]>([]);
     const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
+    const [ayahContextMenu, setAyahContextMenu] = useState<{isOpen: boolean, x: number, y: number, s: number, a: number}>({isOpen: false, x: 0, y: 0, s: 0, a: 0});
+    
+    // Close context menu on outside click
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+            if (ayahContextMenu.isOpen) {
+                const target = e.target as HTMLElement;
+                if (!target.closest('.ayah-context-menu')) {
+                    setAyahContextMenu(prev => ({ ...prev, isOpen: false }));
+                }
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
+    }, [ayahContextMenu.isOpen]);
+
+    const updateSetting = (key: string, value: any) => {
+        const modeSuffix = isLandscapeRef.current ? '_h' : '_v';
+        const newSettings = { ...settings, [key]: value };
+        setSettings(newSettings);
+        localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
+        window.dispatchEvent(new Event('settings-change'));
+    };
     const [isLandscapeUIHidden, setIsLandscapeUIHidden] = useState(() => {
         if (!initialLandscape) return false;
         return localStorage.getItem('is_landscape_ui_hidden') === 'true';
@@ -459,7 +486,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
     }, []);
 
     const handleSajdahVisible = useCallback((surahName: string, sNum: number, ayahNum: number) => {
-        if (markerNotification.show || sajdahCardInfoRef.current.show) return;
+        if (sajdahCardInfoRef.current.show) return;
 
         showMarkerNotification('sajda', `سجدة تلاوة: سورة ${surahName} - آية ${toArabic(ayahNum)}`);
 
@@ -731,6 +758,11 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             autoScrollStateRef.current = { ...autoScrollStateRef.current, isPaused: true };
         }
         setTafseerSelectionInfo({ isOpen: true, s, a, wasAutoscrolling });
+    }, []);
+
+    const handleAyahLongPress = useCallback((s: number, a: number, x: number, y: number) => {
+        if (isLandscapeRef.current) return;
+        setAyahContextMenu({ isOpen: true, x, y, s, a });
     }, []);
 
     const handleTafseerSelect = useCallback((tafseerId: string) => {
@@ -1070,7 +1102,7 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             lastScrollUpdateTime.current = now;
     
             const x = window.innerWidth / 2;
-            const y = contentEl.getBoundingClientRect().top + (contentEl.clientHeight / 2);
+            const y = window.innerHeight / 2;
             
             const el = document.elementFromPoint(x, y);
             if (!el) return;
@@ -1286,9 +1318,10 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
         const content = mushafContentRef.current;
         if (!content) return;
         
-        // Use a point slightly above the center if bars are hidden to avoid jumping
-        const centerY = content.getBoundingClientRect().top + (content.clientHeight / 2);
-        const el = document.elementFromPoint(window.innerWidth / 2, centerY); 
+        // Use the center of the screen
+        const x = window.innerWidth / 2;
+        const y = window.innerHeight / 2;
+        const el = document.elementFromPoint(x, y); 
         if (!el) return;
         const ayahBlock = el.closest('.ayah-text-block');
         if (ayahBlock && ayahBlock.id) {
@@ -1656,10 +1689,62 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
                 <div id="pages-container" className="full-mushaf-container">
-                   {[...new Set(visiblePages)].sort((a: number, b: number) => a - b).map(pageNum => (<MushafPage key={pageNum} pageNum={pageNum} pageData={getPageData(pageNum)} highlightedAyahId={highlightedAyahId} onAyahClick={handleAyahTextClick} onVerseClick={handleVerseClick} onVerseLongPress={handleVerseLongPress} onInteractionStart={handleInteractionStart} onInteractionEnd={handleInteractionEnd} settings={settings} />))}
+                   {[...new Set(visiblePages)].sort((a: number, b: number) => a - b).map(pageNum => (<MushafPage key={pageNum} pageNum={pageNum} pageData={getPageData(pageNum)} highlightedAyahId={highlightedAyahId} onAyahClick={handleAyahTextClick} onVerseClick={handleVerseClick} onVerseLongPress={handleVerseLongPress} onAyahLongPress={handleAyahLongPress} onInteractionStart={handleInteractionStart} onInteractionEnd={handleInteractionEnd} settings={settings} />))}
                 </div>
             </div>
             <MarkerNotification isVisible={markerNotification.show} type={markerNotification.type} text={markerNotification.text} />
+            
+            {ayahContextMenu.isOpen && !initialLandscape && (
+                <div 
+                    className="ayah-context-menu absolute z-[100] bg-white dark:bg-gray-800 shadow-2xl rounded-xl p-3 flex flex-col gap-3 border border-gray-200 dark:border-gray-700"
+                    style={{ 
+                        top: Math.min(ayahContextMenu.y, window.innerHeight - 200), 
+                        left: Math.max(10, Math.min(ayahContextMenu.x - 100, window.innerWidth - 210)),
+                        width: '200px'
+                    }}
+                >
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">تخصيص الآية</span>
+                        <button onClick={() => setAyahContextMenu(p => ({...p, isOpen: false}))} className="text-gray-500 hover:text-red-500">
+                            <i className="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                        <label className="text-xs text-gray-600 dark:text-gray-400">لون النص</label>
+                        <input type="color" value={settings.textColor} onChange={(e) => updateSetting('textColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                        <label className="text-xs text-gray-600 dark:text-gray-400">لون الخلفية</label>
+                        <input type="color" value={settings.bgColor} onChange={(e) => updateSetting('bgColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                        <label className="text-xs text-gray-600 dark:text-gray-400">لون التحديد</label>
+                        <input type="color" value={settings.highlightTextColor} onChange={(e) => updateSetting('highlightTextColor', e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                    </div>
+                    
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-600 dark:text-gray-400">نوع الخط</label>
+                        <select 
+                            value={settings.fontFamily} 
+                            onChange={(e) => updateSetting('fontFamily', e.target.value)}
+                            className="w-full text-xs p-1 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        >
+                            <option value="var(--font-amiri)">أميري</option>
+                            <option value="var(--font-amiri-quran)">أميري قرآن</option>
+                            <option value="var(--font-hafs)">حفص</option>
+                            <option value="var(--font-tajawal)">تجوال</option>
+                            <option value="var(--font-aref)">عارف رقعة</option>
+                            <option value="var(--font-scheherazade)">شهرزاد</option>
+                            <option value="var(--font-qalam)">قلم</option>
+                            <option value="var(--font-gulzar)">جلزار</option>
+                        </select>
+                    </div>
+                </div>
+            )}
+
             <div id="floating-menu" className={isFloatingMenuOpen ? 'open' : ''} ref={floatingMenuRef}>
                  <button onClick={() => { openModal('bookmarks-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green w-full justify-between mb-2" style={getToolbarStyle('btn-bookmarks-list', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>قائمة الإشارات</span><i className="fa-solid fa-list"></i></button>
                  {!initialLandscape && (
