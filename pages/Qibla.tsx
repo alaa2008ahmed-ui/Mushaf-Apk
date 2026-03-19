@@ -204,6 +204,10 @@ function Qibla({ onBack }) {
                         </p>
                     </div>
                 )}
+                
+                <p className="text-center text-[10px] mt-4 opacity-70 themed-text-muted">
+                    (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
+                </p>
 
             </main>
             

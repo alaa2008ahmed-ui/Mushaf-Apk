@@ -356,6 +356,10 @@ function PrayerTimes({ onBack }) {
                             )
                         })}
                     </div>
+                    
+                    <p className="text-center text-[10px] mt-6 opacity-70" style={{ color: secondaryColor }}>
+                        (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
+                    </p>
                 </div>
             </main>
 

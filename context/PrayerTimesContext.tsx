@@ -131,17 +131,6 @@ const getCalculationParams = (date: Date, locationData?: any) => {
         methodId = 1;
     }
 
-    if (code.startsWith('+966') || country.includes('السعودية')) {
-        try {
-            const hijriMonth = new Intl.DateTimeFormat('en-US-u-ca-islamic', { month: 'numeric' }).format(date);
-            if (hijriMonth === '9') {
-                params.ishaInterval = 120;
-            }
-        } catch (e) {
-            console.error("Error formatting Islamic date:", e);
-        }
-    }
-
     return { params, methodId };
 };
 

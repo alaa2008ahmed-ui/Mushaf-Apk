@@ -4,6 +4,7 @@ import ThemeSelector from './components/ThemesModal';
 import ExitConfirmModal from './components/ExitConfirmModal';
 import AppRouter from './router/AppRouter';
 import VideoSplash from './components/VideoSplash';
+import RateUs from './components/RateUs';
 import { useWakeLock } from './hooks/useWakeLock';
 import { useBackButton } from './hooks/useBackButton';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -82,6 +83,8 @@ function App() {
                 onClose={() => setShowExitConfirm(false)}
             />
         )}
+        
+        <RateUs />
       </div>
     </PrayerTimesProvider>
   );
