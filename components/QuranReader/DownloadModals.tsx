@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { READERS, TAFSEERS } from './constants';
+import { READERS, TAFSEERS, JUZ_MAP } from './constants';
 
 interface DownloadModalProps {
     onClose: () => void;
@@ -9,6 +9,35 @@ interface DownloadModalProps {
 }
 
 // --- Helper Functions ---
+
+const getAyahsForJuz = (juzNumber: number, quranData: any) => {
+    const ayahsToDownload: {surah: number, ayah: number}[] = [];
+    const startJuz = JUZ_MAP[juzNumber - 1];
+    const endJuz = juzNumber < 30 ? JUZ_MAP[juzNumber] : null;
+
+    let currentSurah = startJuz.s;
+    let currentAyah = startJuz.a;
+
+    while (true) {
+        if (endJuz && currentSurah === endJuz.s && currentAyah === endJuz.a) {
+            break;
+        }
+        
+        ayahsToDownload.push({surah: currentSurah, ayah: currentAyah});
+        
+        const surahData = quranData.surahs.find((s: any) => s.number === currentSurah);
+        if (!surahData) break;
+        
+        if (currentAyah < surahData.ayahs.length) {
+            currentAyah++;
+        } else {
+            currentSurah++;
+            currentAyah = 1;
+            if (currentSurah > 114) break;
+        }
+    }
+    return ayahsToDownload;
+};
 
 const checkSurahDownloaded = async (readerId: string, surahNumber: number, quranData: any) => {
     try {
@@ -127,14 +156,49 @@ const storeTafsirOffline = (fileName: string, data: any) => {
 
 export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, quranData, showToast, isLandscape }) => {
     const [selectedReader, setSelectedReader] = useState('');
-    const [selectedSurah, setSelectedSurah] = useState('');
+    const [selectedSurahs, setSelectedSurahs] = useState<string[]>([]);
+    const [selectedJuzs, setSelectedJuzs] = useState<string[]>([]);
     const [isDownloading, setIsDownloading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [status, setStatus] = useState('');
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    const downloadSurahAudio = async () => {
-        if (!selectedReader || !selectedSurah) return;
+    const toggleSurah = (surahNum: string) => {
+        if (surahNum === 'all') {
+            if (selectedSurahs.includes('all')) {
+                setSelectedSurahs([]);
+            } else {
+                setSelectedSurahs(['all']);
+                setSelectedJuzs([]);
+            }
+            return;
+        }
+        
+        let newSelection = [...selectedSurahs];
+        if (newSelection.includes('all')) newSelection = newSelection.filter(s => s !== 'all');
+        
+        if (newSelection.includes(surahNum)) {
+            newSelection = newSelection.filter(s => s !== surahNum);
+        } else {
+            newSelection.push(surahNum);
+        }
+        setSelectedSurahs(newSelection);
+    };
+
+    const toggleJuz = (juzNum: string) => {
+        let newSelection = [...selectedJuzs];
+        if (selectedSurahs.includes('all')) setSelectedSurahs(selectedSurahs.filter(s => s !== 'all'));
+        
+        if (newSelection.includes(juzNum)) {
+            newSelection = newSelection.filter(j => j !== juzNum);
+        } else {
+            newSelection.push(juzNum);
+        }
+        setSelectedJuzs(newSelection);
+    };
+
+    const downloadSelected = async () => {
+        if (!selectedReader || (selectedSurahs.length === 0 && selectedJuzs.length === 0)) return;
         
         setIsDownloading(true);
         setStatus('جاري التحضير للتحميل...');
@@ -142,7 +206,7 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
         abortControllerRef.current = new AbortController();
 
         try {
-            if (selectedSurah === 'all') {
+            if (selectedSurahs.includes('all')) {
                 const allDownloaded = await checkAllQuranDownloaded(selectedReader, quranData);
                 if (allDownloaded) {
                     showToast("[صوتي] المصحف الكريم تم تحميله مسبقاً");
@@ -151,14 +215,46 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
                 }
                 await downloadEntireQuran(selectedReader);
             } else {
-                const isDownloaded = await checkSurahDownloaded(selectedReader, parseInt(selectedSurah), quranData);
-                if (isDownloaded) {
-                    const sName = quranData.surahs[parseInt(selectedSurah) - 1].name.replace('سورة', '').trim();
-                    showToast(`[صوتي] سورة ${sName} تم تحميلها مسبقاً`);
-                    setIsDownloading(false);
-                    return;
+                const ayahsToDownload = new Set<string>();
+                
+                for (const surahNumStr of selectedSurahs) {
+                    const surahNum = parseInt(surahNumStr);
+                    const surah = quranData.surahs.find((s: any) => s.number === surahNum);
+                    if (surah) {
+                        for (let i = 1; i <= surah.ayahs.length; i++) {
+                            ayahsToDownload.add(`${surahNum}_${i}`);
+                        }
+                    }
                 }
-                await downloadSpecificSurah(selectedReader, parseInt(selectedSurah));
+                
+                for (const juzNumStr of selectedJuzs) {
+                    const juzNum = parseInt(juzNumStr);
+                    const ayahs = getAyahsForJuz(juzNum, quranData);
+                    for (const a of ayahs) {
+                        ayahsToDownload.add(`${a.surah}_${a.ayah}`);
+                    }
+                }
+                
+                const ayahsList = Array.from(ayahsToDownload).map(s => {
+                    const [surah, ayah] = s.split('_').map(Number);
+                    return { surah, ayah };
+                });
+                
+                ayahsList.sort((a, b) => {
+                    if (a.surah !== b.surah) return a.surah - b.surah;
+                    return a.ayah - b.ayah;
+                });
+                
+                let downloaded = 0;
+                const totalAyahs = ayahsList.length;
+                
+                for (const item of ayahsList) {
+                    if (abortControllerRef.current?.signal.aborted) throw new Error('Aborted');
+                    await downloadAyah(selectedReader, item.surah, item.ayah);
+                    downloaded++;
+                    setProgress((downloaded / totalAyahs) * 100);
+                    setStatus(`جاري التحميل - ${Math.round((downloaded / totalAyahs) * 100)}%`);
+                }
             }
             setStatus('تم التحميل بنجاح!');
             setProgress(100);
@@ -265,28 +361,43 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
                         </div>
 
                         <div className="text-right">
-                            <label className="text-xs font-bold opacity-70 block mb-2">اختر السورة</label>
-                            <div className={`grid ${isLandscape ? 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3'} gap-2 ${isLandscape ? 'max-h-40' : 'max-h-60'} overflow-y-auto p-2 border rounded-lg themed-card-bg custom-scrollbar`} dir="rtl">
+                            <label className="text-xs font-bold opacity-70 block mb-2">اختر السور (يمكنك اختيار أكثر من سورة)</label>
+                            <div className={`grid ${isLandscape ? 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3'} gap-2 ${isLandscape ? 'max-h-32' : 'max-h-40'} overflow-y-auto p-2 border rounded-lg themed-card-bg custom-scrollbar`} dir="rtl">
                                 <button 
-                                    onClick={() => setSelectedSurah('all')}
-                                    className={`text-[10px] sm:text-xs p-2 rounded-md border transition-all font-bold ${selectedSurah === 'all' ? 'theme-btn-bg border-transparent' : 'bg-black/5 border-gray-200 dark:border-gray-700'}`}
+                                    onClick={() => toggleSurah('all')}
+                                    className={`text-[10px] sm:text-xs p-2 rounded-md border transition-all font-bold ${selectedSurahs.includes('all') ? 'theme-btn-bg border-transparent' : 'bg-black/5 border-gray-200 dark:border-gray-700'}`}
                                 >
                                     المصحف كاملاً
                                 </button>
                                 {quranData?.surahs.map((s: any) => (
                                     <button 
                                         key={s.number}
-                                        onClick={() => setSelectedSurah(s.number.toString())}
-                                        className={`text-[10px] sm:text-xs p-2 rounded-md border transition-all font-bold ${selectedSurah === s.number.toString() ? 'theme-btn-bg border-transparent' : 'bg-black/5 border-gray-200 dark:border-gray-700'}`}
+                                        onClick={() => toggleSurah(s.number.toString())}
+                                        className={`text-[10px] sm:text-xs p-2 rounded-md border transition-all font-bold ${selectedSurahs.includes(s.number.toString()) ? 'theme-btn-bg border-transparent' : 'bg-black/5 border-gray-200 dark:border-gray-700'}`}
                                     >
                                         {s.name.replace('سورة', '').trim()}
                                     </button>
                                 ))}
                             </div>
                         </div>
+
+                        <div className="text-right">
+                            <label className="text-xs font-bold opacity-70 block mb-2">اختر الأجزاء (يمكنك اختيار أكثر من جزء)</label>
+                            <div className={`grid ${isLandscape ? 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3'} gap-2 ${isLandscape ? 'max-h-32' : 'max-h-40'} overflow-y-auto p-2 border rounded-lg themed-card-bg custom-scrollbar`} dir="rtl">
+                                {Array.from({length: 30}, (_, i) => i + 1).map(juzNum => (
+                                    <button 
+                                        key={juzNum}
+                                        onClick={() => toggleJuz(juzNum.toString())}
+                                        className={`text-[10px] sm:text-xs p-2 rounded-md border transition-all font-bold ${selectedJuzs.includes(juzNum.toString()) ? 'theme-btn-bg border-transparent' : 'bg-black/5 border-gray-200 dark:border-gray-700'}`}
+                                    >
+                                        الجزء {juzNum}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                         
                         {!isDownloading ? (
-                            <button onClick={downloadSurahAudio} disabled={!selectedReader || !selectedSurah} className={`w-full theme-btn-bg py-2.5 rounded-lg shadow font-bold text-sm ${(!selectedReader || !selectedSurah) ? 'opacity-50 cursor-not-allowed' : ''}`}>تحميل</button>
+                            <button onClick={downloadSelected} disabled={!selectedReader || (selectedSurahs.length === 0 && selectedJuzs.length === 0)} className={`w-full theme-btn-bg py-2.5 rounded-lg shadow font-bold text-sm ${(!selectedReader || (selectedSurahs.length === 0 && selectedJuzs.length === 0)) ? 'opacity-50 cursor-not-allowed' : ''}`}>تحميل</button>
                         ) : (
                             <div className="mt-2">
                                 <div className="text-xs font-bold mb-1">{status}</div>
