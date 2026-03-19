@@ -317,7 +317,7 @@ function HijriCalendar({ onBack }) {
     const hMonthsOpts = hijriMonths.map(m => ({ value: m.id, label: m.name }));
 
     return (
-        <div className={`h-screen flex flex-col`}>
+        <div className={`h-screen flex flex-col bg-transparent`}>
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
                     <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi">التقويم الهجري الذكي</h1>

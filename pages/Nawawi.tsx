@@ -61,7 +61,7 @@ const Nawawi = ({ onBack }) => {
     }, [selectedHadith]);
 
     return (
-        <div className="h-screen flex flex-col font-cairo overflow-hidden" style={{ backgroundColor: theme.bgColor || '#0D1B2A', color: theme.textColor }}>
+        <div className="h-screen flex flex-col font-cairo overflow-hidden" style={{ backgroundColor: 'transparent', color: theme.textColor }}>
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
                     <h1 className="app-top-bar__title text-2xl font-kufi">الأربعون النووية</h1>

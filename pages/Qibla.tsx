@@ -137,7 +137,7 @@ function Qibla({ onBack }) {
     }, [heading, qiblaDirection]);
 
     return (
-        <div className="h-screen w-screen flex flex-col overflow-hidden">
+        <div className="h-screen w-screen flex flex-col overflow-hidden bg-transparent">
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
                     <div className="flex items-center justify-center gap-2">
@@ -205,7 +205,7 @@ function Qibla({ onBack }) {
                     </div>
                 )}
                 
-                <p className="text-center text-[10px] mt-4 opacity-70 themed-text-muted">
+                <p className="text-center text-sm mt-4 opacity-70 themed-text-muted">
                     (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
                 </p>
 

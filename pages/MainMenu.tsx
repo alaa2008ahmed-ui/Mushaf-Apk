@@ -18,8 +18,8 @@ const DEFAULT_MENU_ITEMS = [
     { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-10", colorIndex: 1 },
     { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "h-10", colorIndex: 1 },
     { id: 'tasbeeh', label: "📿 السبحة", className: "h-10", colorIndex: 1 },
-    { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 0 },
-    { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 0 },
+    { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 1 },
+    { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
     { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
@@ -417,7 +417,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
                                 (item.id === 'calculators' && themeKey === 'default') ? '#8b5cf6' : 
                                 (item.id === 'hisn-muslim' && themeKey === 'default') ? '#8b5cf6' : 
                                 (item.id === 'salah-adhkar' && themeKey === 'default') ? '#8b5cf6' : 
-                                (item.customColor || theme.palette[item.colorIndex])
+                                (item.customColor || theme.palette[DEFAULT_MENU_ITEMS.find(d => d.id === item.id)?.colorIndex ?? item.colorIndex])
                             } 
                             border={theme.btnBorder} 
                             isEditMode={isEditMode}

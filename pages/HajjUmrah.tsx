@@ -94,7 +94,7 @@ function HajjUmrah({ onBack }) {
     };
 
     return (
-        <div className="h-screen flex flex-col">
+        <div className="h-screen flex flex-col bg-transparent">
             <header className="app-top-bar">
                 <div className="app-top-bar__inner gap-2">
                     <div className="relative flex items-center justify-center">

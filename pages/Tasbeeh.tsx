@@ -248,7 +248,7 @@ function Tasbeeh({ onBack }) {
     ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 8);
 
     return (
-        <div className="h-screen flex flex-col">
+        <div className="h-screen flex flex-col bg-transparent">
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
                     <h1 className="app-top-bar__title text-2xl font-kufi">السبحة الإلكترونية</h1>

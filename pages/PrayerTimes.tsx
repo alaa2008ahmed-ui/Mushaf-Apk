@@ -268,7 +268,7 @@ function PrayerTimes({ onBack }) {
     };
 
     return (
-        <div className="h-screen w-screen flex flex-col" style={{ backgroundColor: theme.bgColor || '#0D1B2A', color: theme.textColor }}>
+        <div className="h-screen w-screen flex flex-col" style={{ backgroundColor: 'transparent', color: theme.textColor }}>
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
                     <div className="flex items-center justify-center gap-2">
@@ -357,7 +357,7 @@ function PrayerTimes({ onBack }) {
                         })}
                     </div>
                     
-                    <p className="text-center text-[10px] mt-6 opacity-70" style={{ color: secondaryColor }}>
+                    <p className="text-center text-sm mt-6 opacity-70" style={{ color: secondaryColor }}>
                         (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
                     </p>
                 </div>
