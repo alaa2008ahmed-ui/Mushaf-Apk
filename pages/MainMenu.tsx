@@ -411,8 +411,8 @@ function MainMenu({ onNavigate, onOpenThemes }) {
                                 (item.id === 'quran' && themeKey === 'default') ? '#059669' : 
                                 (item.id === 'listen' && themeKey === 'default') ? '#059669' : 
                                 (item.id === 'prayer-times' && themeKey === 'default') ? '#059669' : 
-                                (item.id === 'tasbeeh' && themeKey === 'default') ? '#10b981' : 
-                                (item.id === 'calendar' && themeKey === 'default') ? '#10b981' : 
+                                (item.id === 'tasbeeh' && themeKey === 'default') ? '#8b5cf6' : 
+                                (item.id === 'calendar' && themeKey === 'default') ? '#8b5cf6' : 
                                 (item.id === 'qibla' && themeKey === 'default') ? '#8b5cf6' : 
                                 (item.id === 'calculators' && themeKey === 'default') ? '#8b5cf6' : 
                                 (item.id === 'hisn-muslim' && themeKey === 'default') ? '#8b5cf6' : 
