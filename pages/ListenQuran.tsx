@@ -29,7 +29,7 @@ function formatTime(seconds) {
 }
 
 function ListenQuran({ onBack, onOpenThemes }) {
-    const { theme } = useTheme();
+    const { theme, themeKey } = useTheme();
     const [reciterId, setReciterId] = useState(RECITERS[0].id);
     const [surahNumber, setSurahNumber] = useState(1);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -268,7 +268,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
                         <button onClick={handlePrevSurah} className="w-24 text-center hover:opacity-80 transition-opacity font-bold" style={{ color: theme.textColor }}>
                             السابق
                         </button>
-                        <button onClick={handlePlayPause} disabled={isLoading && !isPlaying} className="bg-white text-slate-900 rounded-full w-20 h-20 flex items-center justify-center shadow-lg active:scale-95 transition disabled:opacity-70" style={{ backgroundColor: theme.palette[0], color: theme.btnText }}>
+                        <button onClick={handlePlayPause} disabled={isLoading && !isPlaying} className="bg-white text-slate-900 rounded-full w-20 h-20 flex items-center justify-center shadow-lg active:scale-95 transition disabled:opacity-70" style={{ backgroundColor: theme.palette[0], color: themeKey === 'black_and_white' ? '#FFFFFF' : theme.btnText }}>
                             {isLoading && !isPlaying ? <i className="fa-solid fa-spinner fa-spin fa-2x"></i> : <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'} fa-2x pl-1`}></i>}
                         </button>
                         <button onClick={handleNextSurah} className="w-24 text-center hover:opacity-80 transition-opacity font-bold" style={{ color: theme.textColor }}>
