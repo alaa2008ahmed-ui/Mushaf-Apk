@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { READERS, TAFSEERS, THEMES, DEFAULT_SETTINGS } from './constants';
+import { READERS, TAFSEERS, THEMES, DEFAULT_SETTINGS, toArabic } from './constants';
 
 interface SettingsModalProps {
     onClose: () => void;
@@ -204,6 +204,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                 <span>{getReaderName(settings.reader)}</span>
                                 <i className="fa-solid fa-chevron-left opacity-50"></i>
                             </button>
+                        </div>
+                    </div>
+
+                    <div className="border-b border-gray-200 dark:border-gray-700 py-2">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-bold opacity-80 text-right">تكرار الآية</label>
+                            <div className="flex items-center gap-1.5 flex-wrap justify-center">
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                                    <button
+                                        key={num}
+                                        onClick={() => updateSetting('ayahRepeatCount', num)}
+                                        className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                                            settings.ayahRepeatCount === num 
+                                            ? 'bg-emerald-500 text-white shadow-md scale-110' 
+                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {toArabic(num)}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
 

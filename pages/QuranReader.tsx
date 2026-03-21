@@ -453,6 +453,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     
     const audioCacheRef = useRef<Record<string, HTMLAudioElement>>({});
     const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+    const currentRepeatCountRef = useRef(0);
 
     const sajdahInfoRef = useRef(sajdahInfo);
     useEffect(() => { sajdahInfoRef.current = sajdahInfo; }, [sajdahInfo]);
@@ -493,6 +494,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             currentAudioRef.current.pause();
             currentAudioRef.current.onended = null;
         }
+        currentRepeatCountRef.current = 0;
         setIsPlaying(false);
         setIsAudioLoading(false);
         setPlayingAyah(null);
@@ -677,7 +679,21 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         audio.onplaying = () => { setIsPlaying(true); setIsAudioLoading(false); };
         audio.onpause = () => setIsPlaying(false);
         audio.onwaiting = () => setIsAudioLoading(true);
-        audio.onended = () => playNextAyahRef.current();
+        audio.onended = () => {
+            const maxRepeat = settings.ayahRepeatCount || 1;
+            currentRepeatCountRef.current += 1;
+            
+            if (currentRepeatCountRef.current < maxRepeat) {
+                audio.currentTime = 0;
+                audio.play().catch(e => {
+                    console.error("Repeat playback failed", e);
+                    playNextAyahRef.current();
+                });
+            } else {
+                currentRepeatCountRef.current = 0;
+                playNextAyahRef.current();
+            }
+        };
         audio.onerror = () => {
             showToast('خطأ في تحميل المقطع الصوتي.');
             stopAudio();
@@ -1760,8 +1776,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 isLandscape={isLandscape}
             />
         )}
-        {activeModals.includes('surah-modal') && <SurahJuzModal type="surah" quranData={quranData} onSelect={(s, a) => { closeModal('surah-modal'); setTimeout(() => jumpToAyah(s, a, true), 0); }} onClose={() => closeModal('surah-modal')} isLandscape={isLandscape} currentSelection={currentAyah.s} />}
-            {activeModals.includes('juz-modal') && <SurahJuzModal type="juz" quranData={quranData} onSelect={(j: number) => { closeModal('juz-modal'); setTimeout(() => jumpToAyah(JUZ_MAP[j - 1].s, JUZ_MAP[j - 1].a, true), 0); }} onClose={() => closeModal('juz-modal')} isLandscape={isLandscape} currentSelection={juz} />}
+        {activeModals.includes('surah-modal') && <SurahJuzModal type="surah" quranData={quranData} onSelect={(s, a) => { closeModal('surah-modal'); setTimeout(() => jumpToAyah(s, a, true), 0); }} onClose={() => closeModal('surah-modal')} isLandscape={isLandscape} currentSelection={currentAyah.s} currentAyah={currentAyah} />}
+            {activeModals.includes('juz-modal') && <SurahJuzModal type="juz" quranData={quranData} onSelect={(s, a) => { closeModal('juz-modal'); setTimeout(() => jumpToAyah(s, a, true), 0); }} onClose={() => closeModal('juz-modal')} isLandscape={isLandscape} currentSelection={juz} currentAyah={currentAyah} />}
             {activeModals.includes('bookmarks-modal') && (
                 <BookmarksModal 
                     bookmarks={bookmarks} 

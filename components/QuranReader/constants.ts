@@ -228,5 +228,6 @@ export const DEFAULT_SETTINGS = {
     theme: 'default',
     scrollMinutes: 20,
     tafseer: 'ar.jalalayn',
-    lockHighlightColor: false
+    lockHighlightColor: false,
+    ayahRepeatCount: 1
 };
