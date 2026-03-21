@@ -23,13 +23,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
     });
     
     useEffect(() => {
-        const handleThemeChange = () => {
+        const handleSettingsUpdate = () => {
             const saved = localStorage.getItem('quran_settings' + modeSuffix);
             const baseSettings = saved ? JSON.parse(saved) : {};
             setSettings({ ...DEFAULT_SETTINGS, ...baseSettings });
         };
-        window.addEventListener('theme-change', handleThemeChange);
-        return () => window.removeEventListener('theme-change', handleThemeChange);
+        window.addEventListener('theme-change', handleSettingsUpdate);
+        window.addEventListener('settings-change', handleSettingsUpdate);
+        return () => {
+            window.removeEventListener('theme-change', handleSettingsUpdate);
+            window.removeEventListener('settings-change', handleSettingsUpdate);
+        };
     }, [modeSuffix]);
 
     const [showSajdahCard, setShowSajdahCard] = useState(() => {
@@ -211,14 +215,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         <div className="flex flex-col gap-2">
                             <label className="text-sm font-bold opacity-80 text-right">تكرار الآية</label>
                             <div className="flex items-center gap-1.5 flex-wrap justify-center">
-                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                                {[1, 2, 3, 4, 5].map(num => (
                                     <button
                                         key={num}
                                         onClick={() => updateSetting('ayahRepeatCount', num)}
                                         className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
                                             settings.ayahRepeatCount === num 
-                                            ? 'bg-emerald-500 text-white shadow-md scale-110' 
-                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+                                            ? 'theme-accent-btn shadow-md scale-110' 
+                                            : 'themed-card-bg border opacity-60 hover:opacity-100'
                                         }`}
                                     >
                                         {toArabic(num)}

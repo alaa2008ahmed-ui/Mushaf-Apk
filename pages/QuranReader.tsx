@@ -681,9 +681,9 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         audio.onwaiting = () => setIsAudioLoading(true);
         audio.onended = () => {
             const maxRepeat = settings.ayahRepeatCount || 1;
-            currentRepeatCountRef.current += 1;
             
-            if (currentRepeatCountRef.current < maxRepeat) {
+            if (currentRepeatCountRef.current < maxRepeat - 1) {
+                currentRepeatCountRef.current += 1;
                 audio.currentTime = 0;
                 audio.play().catch(e => {
                     console.error("Repeat playback failed", e);
