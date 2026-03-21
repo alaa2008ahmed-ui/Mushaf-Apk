@@ -13,6 +13,7 @@ import Adia from '../pages/Adia';
 import Nawawi from '../pages/Nawawi';
 import QuranReader from '../pages/QuranReader';
 import Calculators from '../pages/Calculators';
+import TajweedEducation from '../pages/TajweedEducation';
 
 interface AppRouterProps {
     page: string;
@@ -24,9 +25,11 @@ interface AppRouterProps {
 const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenThemes }) => {
     switch(page) {
       case 'quran':
-        return <QuranReader onBack={onBack} initialLandscape={false} />;
+        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={false} />;
       case 'quran-landscape':
-        return <QuranReader onBack={onBack} initialLandscape={true} />;
+        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={true} />;
+      case 'tajweed-education':
+        return <TajweedEducation onBack={onBack} />;
       case 'salah-adhkar':
         return <AthkarAlSalah onBack={onBack} />;
       case 'calendar':

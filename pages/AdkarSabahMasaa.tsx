@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import BottomBar from '../components/BottomBar';
-import { useTheme } from '../context/ThemeContext';
 import { BASE_ADHKAR_MORNING, BASE_ADHKAR_EVENING } from '../data/adkarSabahMasaaData';
 import { registerBackInterceptor } from '../hooks/useBackButton';
-
-// FIX: Correctly convert digits to numbers for array indexing.
-const toArabicNumerals = (num) => String(num).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
+import AdkarHeader from '../components/AdkarSabahMasaa/AdkarHeader';
+import AdkarTabs from '../components/AdkarSabahMasaa/AdkarTabs';
+import DhikrCard from '../components/AdkarSabahMasaa/DhikrCard';
+import ZoomModal from '../components/AdkarSabahMasaa/ZoomModal';
 
 const ADHKAR_STATUS_KEY = 'sabah_masaa_status_v1';
 
 function AdkarSabahMasaa({ onBack }) {
-    const { theme } = useTheme();
     const [adhkarTab, setAdhkarTab] = useState('morning');
     const [adhkarCounts, setAdhkarCounts] = useState({});
     const [zoomedDhikr, setZoomedDhikr] = useState(null);
@@ -90,50 +89,25 @@ function AdkarSabahMasaa({ onBack }) {
 
     return (
         <div className="h-screen flex flex-col bg-transparent">
-            <header className="app-top-bar">
-                <div className="app-top-bar__inner">
-                    <h1 className="app-top-bar__title text-2xl font-kufi">أذكار الصباح والمساء</h1>
-                    <p className="app-top-bar__subtitle">تابع أذكـارك اليومية مع عداد تفاعلي وواجهة سهلة</p>
-                </div>
-            </header>
+            <AdkarHeader title="أذكار الصباح والمساء" subtitle="تابع أذكـارك اليومية مع عداد تفاعلي وواجهة سهلة" />
 
             <main className="w-full flex-1 flex flex-col items-center overflow-hidden p-4 pb-24">
-                <div className="w-full max-w-lg flex p-1 rounded-xl themed-bg-alt mb-4 text-sm shadow-inner">
-                    <button onClick={() => setAdhkarTab('morning')} className={`flex-1 py-2 sm:py-3 px-1 text-center rounded-lg font-bold transition-all ${adhkarTab === 'morning' ? `shadow-md text-white` : 'themed-text-muted'}`} style={{backgroundColor: adhkarTab === 'morning' ? theme.palette[0] : ''}}>أذكار الصباح</button>
-                    <button onClick={() => setAdhkarTab('evening')} className={`flex-1 py-2 sm:py-3 px-1 text-center rounded-lg font-bold transition-all ${adhkarTab === 'evening' ? `shadow-md text-white` : 'themed-text-muted'}`} style={{backgroundColor: adhkarTab === 'evening' ? theme.palette[0] : ''}}>أذكار المساء</button>
-                </div>
+                <AdkarTabs adhkarTab={adhkarTab} setAdhkarTab={setAdhkarTab} />
+                
                 <div className="w-full max-w-lg flex-1 overflow-y-auto hide-scrollbar pb-6 space-y-3">
                     {currentAdhkar.map((dhikr, index) => {
                         const currentCount = adhkarCounts[adhkarTab]?.[index] ?? dhikr.count;
                         const isFinished = currentCount === 0;
 
                         return (
-                             <div 
-                                key={index} 
-                                className={`themed-card p-5 rounded-2xl border relative overflow-hidden group transition-all duration-300 ${isFinished ? 'opacity-60' : 'cursor-pointer'}`} 
-                                onClick={() => !isFinished && handleDecrement(index)}
-                            >
-                                <div className="flex justify-between items-start mb-2">
-                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold shadow-sm" style={{backgroundColor: theme.palette[1]+'30', color: theme.palette[1]}}>{dhikr.count > 1 ? `يُقرأ ${toArabicNumerals(dhikr.count)} مرات` : 'يُقرأ مرة واحدة'}</span>
-                                    <div className={`count-badge w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-md transform transition-transform`} style={isFinished ? {backgroundColor: 'var(--badge-finished-bg)', color: 'var(--badge-finished-text)'} : {backgroundImage: `linear-gradient(to bottom right, ${theme.palette[0]}, ${theme.palette[1]})`, color: theme.textColor}}>
-                                        {isFinished ? <i className="fa-solid fa-check"></i> : toArabicNumerals(currentCount)}
-                                    </div>
-                                </div>
-
-                                <p className="text-lg leading-relaxed text-center font-amiri select-none">
-                                    {dhikr.text}
-                                </p>
-                                
-                                {dhikr.source && <p className="text-xs mt-2 text-center themed-text-muted opacity-80 font-cairo">{dhikr.source}</p>}
-                                <div className="flex justify-center mt-3">
-                                    <button onClick={(e) => { e.stopPropagation(); openZoomModal(dhikr); }} className="p-2 rounded-full hover:bg-card-bg-hover transition-colors">
-                                        <i className="fa-solid fa-magnifying-glass-plus text-lg"></i>
-                                    </button>
-                                </div>
-                                
-                                {!isFinished && <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition pointer-events-none" style={{backgroundColor: theme.palette[0]+'15'}}></div>}
-                                {!isFinished && <p className="text-xs text-center themed-text-muted mt-4 opacity-0 group-hover:opacity-100 transition-opacity">اضغط للتسبيح</p>}
-                            </div>
+                             <DhikrCard
+                                key={index}
+                                dhikr={dhikr}
+                                currentCount={currentCount}
+                                isFinished={isFinished}
+                                onDecrement={() => !isFinished && handleDecrement(index)}
+                                onZoom={() => openZoomModal(dhikr)}
+                             />
                         );
                     })}
                 </div>
@@ -141,20 +115,7 @@ function AdkarSabahMasaa({ onBack }) {
             
             <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
 
-            {zoomedDhikr && (
-                <div className="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center p-4 backdrop-blur-sm" onClick={closeZoomModal}>
-                    <div className="bg-modal-bg text-modal-text p-8 rounded-3xl w-full max-w-2xl text-center relative scale-in shadow-2xl border-2 border-modal-border" style={{ fontFamily: theme.font }} onClick={e => e.stopPropagation()}>
-                        <p className="text-3xl md:text-4xl leading-relaxed">
-                            {zoomedDhikr.text}
-                        </p>
-                        {zoomedDhikr.source && (
-                            <p className="text-lg mt-6 font-bold" style={{ color: theme.palette[1] }}>
-                                {zoomedDhikr.source}
-                            </p>
-                        )}
-                    </div>
-                </div>
-            )}
+            <ZoomModal zoomedDhikr={zoomedDhikr} onClose={closeZoomModal} />
         </div>
     );
 }

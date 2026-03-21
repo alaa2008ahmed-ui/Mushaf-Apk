@@ -1,40 +1,17 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { READERS } from '../components/QuranReader/constants';
 
-interface UseQuranAudioProps {
-    quranData: any;
-    reader: string;
-    currentAyah: { s: number; a: number };
-    setCurrentAyah: (ayah: { s: number; a: number }) => void;
-    setHighlightedAyahId: (id: string | null) => void;
-    scrollToAyah: (s: number, a: number, instant?: boolean) => void;
-    showToast: (msg: string) => void;
-    openModal: (modalName: string) => void;
-}
-
-export function useQuranAudio({
-    quranData,
-    reader,
-    currentAyah,
-    setCurrentAyah,
-    setHighlightedAyahId,
-    scrollToAyah,
-    showToast,
-    openModal
-}: UseQuranAudioProps) {
+export const useQuranAudio = (settings: any, quranData: any, showToast: (msg: string) => void, scrollToAyah: (s: number, a: number, instant: boolean) => void, setCurrentAyah: (ayah: {s: number, a: number}) => void, setHighlightedAyahId: (id: string) => void) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isAudioLoading, setIsAudioLoading] = useState(false);
     const [playingAyah, setPlayingAyah] = useState<{s: number; a: number} | null>(null);
-    const [reciterToast, setReciterToast] = useState({ show: false, name: '' });
-
-    const audioCacheRef = useRef<Record<string, HTMLAudioElement>>({});
-    const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-    const playButtonTimerRef = useRef<number | null>(null);
-
+    
     const isPlayingRef = useRef(isPlaying);
     useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
     const isAudioLoadingRef = useRef(isAudioLoading);
     useEffect(() => { isAudioLoadingRef.current = isAudioLoading; }, [isAudioLoading]);
+
+    const audioCacheRef = useRef<Record<string, HTMLAudioElement>>({});
+    const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
     const stopAudio = useCallback(() => {
         if (currentAudioRef.current) {
@@ -46,23 +23,11 @@ export function useQuranAudio({
         setPlayingAyah(null);
     }, []);
 
-    const playNextAyah = useCallback(() => {
-        if (!quranData || !playingAyah) return stopAudio();
-        const { s, a } = playingAyah;
-        const surah = quranData.surahs[s - 1];
-        if (!surah) return stopAudio();
-    
-        if (a < surah.ayahs.length) {
-            const nextAyah = { s, a: a + 1 };
-            playAudio(nextAyah.s, nextAyah.a);
-        } else {
+    useEffect(() => {
+        return () => {
             stopAudio();
-            showToast('انتهت السورة');
-        }
-    }, [quranData, playingAyah, stopAudio, showToast]);
-
-    const playNextAyahRef = useRef(playNextAyah);
-    useEffect(() => { playNextAyahRef.current = playNextAyah; }, [playNextAyah]);
+        };
+    }, [stopAudio]);
 
     const manageAudioCache = useCallback((currentS: number, currentA: number) => {
         const keys = Object.keys(audioCacheRef.current);
@@ -87,7 +52,7 @@ export function useQuranAudio({
             if (!audioCacheRef.current[cacheKey]) {
                 const surahStr = String(s).padStart(3, '0');
                 const ayahStr = String(ayahNum).padStart(3, '0');
-                const audioUrl = `https://everyayah.com/data/${reader}/${surahStr}${ayahStr}.mp3`;
+                const audioUrl = `https://everyayah.com/data/${settings.reader}/${surahStr}${ayahStr}.mp3`;
                 
                 try {
                     if ('caches' in window) {
@@ -106,7 +71,7 @@ export function useQuranAudio({
                 } catch (e) { console.warn("Preloading failed", e); }
             }
         }
-    }, [reader, quranData]);
+    }, [settings.reader, quranData]);
 
     const playAudio = useCallback(async (s: number, a: number) => {
         stopAudio();
@@ -125,7 +90,7 @@ export function useQuranAudio({
         } else {
             const surahStr = String(s).padStart(3, '0');
             const ayahStr = String(a).padStart(3, '0');
-            const audioUrl = `https://everyayah.com/data/${reader}/${surahStr}${ayahStr}.mp3`;
+            const audioUrl = `https://everyayah.com/data/${settings.reader}/${surahStr}${ayahStr}.mp3`;
             let audioSrc = audioUrl;
 
             try {
@@ -166,69 +131,43 @@ export function useQuranAudio({
             stopAudio();
             delete audioCacheRef.current[cacheKey];
         }
-    }, [reader, stopAudio, preloadAudioQueue, manageAudioCache, showToast, scrollToAyah, setCurrentAyah, setHighlightedAyahId]);
+    }, [settings.reader, stopAudio, preloadAudioQueue, manageAudioCache, showToast, scrollToAyah, setCurrentAyah, setHighlightedAyahId]);
 
-    const toggleAudio = useCallback(() => {
+    const playNextAyah = useCallback(() => {
+        if (!quranData || !playingAyah) return stopAudio();
+        const { s, a } = playingAyah;
+        const surah = quranData.surahs[s - 1];
+        if (!surah) return stopAudio();
+    
+        if (a < surah.ayahs.length) {
+            const nextAyah = { s, a: a + 1 };
+            playAudio(nextAyah.s, nextAyah.a);
+        } else {
+            stopAudio();
+            showToast('انتهت السورة');
+        }
+    }, [quranData, playingAyah, stopAudio, showToast, playAudio]);
+
+    const playNextAyahRef = useRef(playNextAyah);
+    useEffect(() => { playNextAyahRef.current = playNextAyah; }, [playNextAyah]);
+
+    const toggleAudio = useCallback((currentAyah: {s: number, a: number} | null) => {
         if (isPlaying || isAudioLoading) stopAudio();
         else if (currentAyah) {
             playAudio(currentAyah.s, currentAyah.a);
-            const reciterName = READERS.find(r => r.id === reader)?.name || 'القارئ';
-            setReciterToast({ show: true, name: reciterName });
-            setTimeout(() => setReciterToast(prev => ({ ...prev, show: false })), 2000);
         }
         else showToast('الرجاء اختيار آية للبدء');
-    }, [isPlaying, isAudioLoading, currentAyah, playAudio, stopAudio, reader, showToast]);
+    }, [isPlaying, isAudioLoading, playAudio, stopAudio, showToast]);
 
-    const handlePlayButtonPointerDown = () => {
-        playButtonTimerRef.current = window.setTimeout(() => {
-            playButtonTimerRef.current = null;
-            openModal('reciter-modal');
-        }, 500);
-    };
-
-    const handlePlayButtonPointerUp = () => {
-        if (playButtonTimerRef.current) {
-            clearTimeout(playButtonTimerRef.current);
-            playButtonTimerRef.current = null;
-            toggleAudio();
-        }
-    };
-
-    const handlePlayButtonPointerLeave = () => {
-        if (playButtonTimerRef.current) {
-            clearTimeout(playButtonTimerRef.current);
-            playButtonTimerRef.current = null;
-        }
-    };
-
-    // Stop audio on unmount
-    useEffect(() => {
-        return () => {
-            stopAudio();
-        };
-    }, [stopAudio]);
-
-    // Handle reader change
-    useEffect(() => {
-        audioCacheRef.current = {};
-        if (isPlaying || isAudioLoading) {
-            const target = playingAyah || currentAyah;
-            playAudio(target.s, target.a);
-        }
-    }, [reader]);
+    const playSurah = useCallback((s: number) => {
+        playAudio(s, 1);
+    }, [playAudio]);
 
     return {
-        isPlaying,
-        isAudioLoading,
-        playingAyah,
-        reciterToast,
-        isPlayingRef,
-        isAudioLoadingRef,
-        playAudio,
-        stopAudio,
-        toggleAudio,
-        handlePlayButtonPointerDown,
-        handlePlayButtonPointerUp,
-        handlePlayButtonPointerLeave
+        isPlaying, setIsPlaying, isPlayingRef,
+        isAudioLoading, setIsAudioLoading, isAudioLoadingRef,
+        playingAyah, setPlayingAyah,
+        audioCacheRef, currentAudioRef,
+        stopAudio, playAudio, toggleAudio, playSurah
     };
-}
+};

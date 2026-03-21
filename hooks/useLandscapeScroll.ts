@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
-export function useLandscapeScroll(isLandscape: boolean) {
+export const useLandscapeScroll = (isLandscape: boolean) => {
     useEffect(() => {
         if (!isLandscape) return;
 
@@ -26,10 +26,10 @@ export function useLandscapeScroll(isLandscape: boolean) {
             const currentY = e.touches[0].clientY;
             
             if (!isScrolling) {
-                if (Math.abs(currentX - touchStartX) > 5 || Math.abs(currentY - touchStartY) > 5) {
+                if (Math.abs(currentX - touchStartX) > 20 || Math.abs(currentY - touchStartY) > 20) {
                     isScrolling = true;
                 } else {
-                    return; 
+                    return;
                 }
             }
 
@@ -76,4 +76,4 @@ export function useLandscapeScroll(isLandscape: boolean) {
             document.removeEventListener('touchmove', handleTouchMove);
         };
     }, [isLandscape]);
-}
+};

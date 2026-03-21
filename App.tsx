@@ -41,7 +41,7 @@ function App() {
     const validPages = [
       'quran', 'quran-landscape', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'qibla', 
-      'sabah-masaa', 'adia', 'nawawi', 'calculators'
+      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education'
     ];
 
     if (validPages.includes(pageId)) {

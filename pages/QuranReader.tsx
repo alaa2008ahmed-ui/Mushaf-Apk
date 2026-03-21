@@ -22,13 +22,17 @@ import ScrollSpeedModal from '../components/QuranReader/ScrollSpeedModal';
 import AutoScrollSettingsModal from '../components/QuranReader/AutoScrollSettingsModal';
 import ReadingTimer from '../components/QuranReader/ReadingTimer';
 import MarkerNotification from '../components/QuranReader/MarkerNotification';
+import QuranHeader from '../components/QuranReader/QuranHeader';
+import QuranFooter from '../components/QuranReader/QuranFooter';
+import FloatingMenu from '../components/QuranReader/FloatingMenu';
+import AyahContextMenu from '../components/QuranReader/AyahContextMenu';
 import quranUthmaniJson from '../data/quran-uthmani.json';
 import quranTajweedJson from '../data/quran-tajweed.json';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 
 declare var window: any;
 
-const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ onBack, initialLandscape = false }) => {
+const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean }> = ({ onBack, onNavigate, initialLandscape = false }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
     
     // Auto-detect orientation
@@ -1654,58 +1658,27 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
 
     return (
         <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused ? 'hide-toolbars-autoscroll' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
-            <header id="header" className={`header-default flex-none z-50 flex items-center px-4 justify-between border-b shadow-xl w-full gap-2`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
-                <button 
-                    id="surah-name-header" 
-                    onClick={() => openModal('surah-modal')}
-                    className="top-bar-text-button" 
-                    style={getToolbarStyle('surah', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
-                >
-                    <span>{surahName} - آية {toArabic(currentAyah.a)}</span>
-                </button>
-                <button id="juz-number-header" onClick={() => openModal('juz-modal')} className="top-bar-text-button" style={getToolbarStyle('juz', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>الجزء {toArabic(juz)}</button>
-                {isPageInputActive ? (
-                    <input
-                        ref={pageInputRef}
-                        id="header-page"
-                        type="tel"
-                        value={pageInput}
-                        onChange={handlePageInputChange}
-                        onBlur={handlePageInputBlur}
-                        onKeyDown={handlePageInputKeyDown}
-                        className="top-bar-text-button"
-                        style={getToolbarStyle('page', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
-                        placeholder={`ص ${toArabic(page)}`}
-                    />
-                ) : (
-                    <button 
-                        id="header-page" 
-                        onClick={handlePageButtonClick}
-                        className="top-bar-text-button" 
-                        style={getToolbarStyle('page', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
-                    >
-                        ص {toArabic(page)}
-                    </button>
-                )}
-                <div className="relative flex-shrink-0">
-                    <button 
-                        id="btn-play" 
-                        onPointerDown={handlePlayButtonPointerDown}
-                        onPointerUp={handlePlayButtonPointerUp}
-                        onPointerLeave={handlePlayButtonPointerLeave}
-                        className="top-bar-text-button flex items-center justify-center" 
-                        style={{...getToolbarStyle('audio', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder), touchAction: 'none'}}
-                    >
-                        {renderPlayButtonIcon()}
-                    </button>
-                    {reciterToast.show && (
-                        <div className="absolute top-full left-0 mt-2 px-3 py-1 text-xs rounded-lg shadow-lg whitespace-nowrap z-[100] animate-fadeIn font-bold pointer-events-none"
-                             style={{ backgroundColor: currentTheme.cardBg, color: currentTheme.cardText, border: `1px solid ${currentTheme.cardBorder}` }}>
-                            {reciterToast.name}
-                        </div>
-                    )}
-                </div>
-            </header>
+            <QuranHeader 
+                isPageInputActive={isPageInputActive}
+                pageInputRef={pageInputRef}
+                pageInput={pageInput}
+                handlePageInputChange={handlePageInputChange}
+                handlePageInputBlur={handlePageInputBlur}
+                handlePageInputKeyDown={handlePageInputKeyDown}
+                handlePageButtonClick={handlePageButtonClick}
+                page={page}
+                surahName={surahName}
+                currentAyah={currentAyah}
+                juz={juz}
+                openModal={openModal}
+                currentTheme={currentTheme}
+                getToolbarStyle={getToolbarStyle}
+                handlePlayButtonPointerDown={handlePlayButtonPointerDown}
+                handlePlayButtonPointerUp={handlePlayButtonPointerUp}
+                handlePlayButtonPointerLeave={handlePlayButtonPointerLeave}
+                renderPlayButtonIcon={renderPlayButtonIcon}
+                reciterToast={reciterToast}
+            />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
                 <div id="pages-container" className="full-mushaf-container">
@@ -1731,157 +1704,50 @@ const QuranReader: FC<{ onBack: () => void, initialLandscape?: boolean }> = ({ o
             </div>
             <MarkerNotification isVisible={markerNotification.show} type={markerNotification.type} text={markerNotification.text} />
             
-            {ayahContextMenu.isOpen && !initialLandscape && (
-                <div className="fixed inset-0 z-[200] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={() => setAyahContextMenu(p => ({...p, isOpen: false}))}>
-                    <div 
-                        className="ayah-context-menu modal-skinned w-full max-w-sm rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-modal-enter" 
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div className="p-4 flex justify-between items-center h-14 flex-none theme-header-bg rounded-t-2xl">
-                            <h2 className="text-xl font-bold">تخصيص الآية</h2>
-                            <button onClick={() => setAyahContextMenu(p => ({...p, isOpen: false}))} className="hover:opacity-80 rounded-full bg-white/20 w-9 h-9 flex items-center justify-center text-lg">✕</button>
-                        </div>
-                        
-                        <div className="p-5 overflow-y-auto flex-1 space-y-6">
-                            {/* Colors Section */}
-                            <div className="grid grid-cols-3 gap-5 border-b pb-6 border-gray-200 dark:border-gray-700">
-                                <div className="flex flex-col">
-                                    <label className="text-sm font-bold opacity-80 mb-2 text-center">لون النص</label>
-                                    <div 
-                                        className={`h-12 w-full rounded-xl border shadow-sm cursor-pointer ${ayahContextColorField === 'textColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                        style={renderCheckerboard(ayahContextMenu.tempSettings.textColor)}
-                                        onClick={() => setAyahContextColorField(ayahContextColorField === 'textColor' ? null : 'textColor')}
-                                    ></div>
-                                </div>
-                                <div className="flex flex-col">
-                                    <label className="text-sm font-bold opacity-80 mb-2 text-center">لون الخلفية</label>
-                                    <div 
-                                        className={`h-12 w-full rounded-xl border shadow-sm cursor-pointer ${ayahContextColorField === 'bgColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                        style={renderCheckerboard(ayahContextMenu.tempSettings.bgColor)}
-                                        onClick={() => setAyahContextColorField(ayahContextColorField === 'bgColor' ? null : 'bgColor')}
-                                    ></div>
-                                </div>
-                                <div className="flex flex-col">
-                                    <label className="text-sm font-bold opacity-80 mb-2 text-center">لون التحديد</label>
-                                    <div 
-                                        className={`h-12 w-full rounded-xl border shadow-sm cursor-pointer ${ayahContextColorField === 'highlightTextColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                        style={renderCheckerboard(ayahContextMenu.tempSettings.highlightTextColor || THEMES['default'].highlightText)}
-                                        onClick={() => setAyahContextColorField(ayahContextColorField === 'highlightTextColor' ? null : 'highlightTextColor')}
-                                    ></div>
-                                </div>
-                                
-                                {ayahContextColorField && (
-                                    <div className="col-span-3 bg-gray-50 dark:bg-gray-800/80 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 mt-1 animate-fadeIn">
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                                                اختر لون {ayahContextColorField === 'bgColor' ? 'الخلفية' : ayahContextColorField === 'textColor' ? 'النص' : 'التحديد'}
-                                            </span>
-                                            <button onClick={() => setAyahContextColorField(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                                                <i className="fa-solid fa-times text-sm"></i>
-                                            </button>
-                                        </div>
-                                        <div className="grid grid-cols-8 gap-2">
-                                            {PREDEFINED_COLORS.map(c => (
-                                                <button
-                                                    key={c}
-                                                    onClick={() => setAyahContextMenu(prev => ({
-                                                        ...prev,
-                                                        tempSettings: { ...prev.tempSettings, [ayahContextColorField!]: c }
-                                                    }))}
-                                                    className={`h-8 rounded border shadow-sm transition-transform hover:scale-110 ${ayahContextMenu.tempSettings[ayahContextColorField!] === c ? 'ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-gray-800' : 'border-gray-200 dark:border-gray-600'}`}
-                                                    style={renderCheckerboard(c)}
-                                                    title={c}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+            <AyahContextMenu 
+                isOpen={ayahContextMenu.isOpen && !initialLandscape}
+                tempSettings={ayahContextMenu.tempSettings}
+                ayahContextColorField={ayahContextColorField}
+                setAyahContextColorField={setAyahContextColorField}
+                setAyahContextMenu={setAyahContextMenu}
+                renderCheckerboard={renderCheckerboard}
+                PREDEFINED_COLORS={PREDEFINED_COLORS}
+                openModal={openModal}
+                onSave={() => {
+                    const modeSuffix = isLandscapeRef.current ? '_h' : '_v';
+                    const newSettings = { ...settings, ...ayahContextMenu.tempSettings };
+                    setSettings(newSettings);
+                    localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
+                    window.dispatchEvent(new Event('settings-change'));
+                    setAyahContextMenu(p => ({ ...p, isOpen: false }));
+                    showToast('تم حفظ وتطبيق التغييرات');
+                }}
+            />
 
-                            {/* Fonts Section - Modal Trigger */}
-                            <div className="flex items-center justify-between gap-5">
-                                <label className="text-base font-bold opacity-80 whitespace-nowrap">نوع الخط:</label>
-                                <button 
-                                    onClick={() => openModal('ayah-font-modal')}
-                                    className="flex-1 p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-base font-bold outline-none focus:ring-2 focus:ring-indigo-500 text-right flex justify-between items-center"
-                                    style={{ fontFamily: ayahContextMenu.tempSettings.fontFamily }}
-                                >
-                                    <span>{FONTS.find(f => f.id === ayahContextMenu.tempSettings.fontFamily)?.name || 'اختر الخط'}</span>
-                                    <i className="fa-solid fa-chevron-down text-xs opacity-50"></i>
-                                </button>
-                            </div>
-
-                            {/* Save and Close Button */}
-                            <div className="pt-4">
-                                <button 
-                                    onClick={() => {
-                                        const modeSuffix = isLandscapeRef.current ? '_h' : '_v';
-                                        const newSettings = { ...settings, ...ayahContextMenu.tempSettings };
-                                        setSettings(newSettings);
-                                        localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
-                                        window.dispatchEvent(new Event('settings-change'));
-                                        setAyahContextMenu(p => ({ ...p, isOpen: false }));
-                                        showToast('تم حفظ وتطبيق التغييرات');
-                                    }}
-                                    className="w-full py-4 rounded-2xl bg-emerald-600 text-white text-base font-bold shadow-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-3"
-                                >
-                                    <i className="fa-solid fa-save text-lg"></i>
-                                    <span>حفظ وإغلاق</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div id="floating-menu" className={isFloatingMenuOpen ? 'open' : ''} ref={floatingMenuRef}>
-                 <button onClick={() => { openModal('bookmarks-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green w-full justify-between mb-2" style={getToolbarStyle('btn-bookmarks-list', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>قائمة الإشارات</span><i className="fa-solid fa-bookmark text-amber-500"></i></button>
-                 {!initialLandscape && (
-                     <button onClick={() => { openModal('search-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-purple w-full justify-between mb-2" style={getToolbarStyle('btn-search', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>البحث</span><i className="fa-solid fa-magnifying-glass text-sky-500"></i></button>
-                 )}
-                 <button onClick={() => { openModal('themes-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green w-full justify-between mb-2" style={getToolbarStyle('btn-themes', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>الثيمات</span><i className="fa-solid fa-palette text-pink-500"></i></button>
-                 <button onClick={() => { openModal('settings-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green w-full justify-between" style={getToolbarStyle('btn-settings', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><span>الإعدادات</span><i className="fa-solid fa-sliders text-slate-500"></i></button>
-            </div>
-            <footer id="bottom-bar" className={`footer-default flex-none border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 flex justify-around items-center px-1 py-1 w-full`} style={getToolbarStyle('bottom-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
-                <button ref={menuButtonRef} id="btn-menu" onClick={() => setIsFloatingMenuOpen(p => !p)} className="bottom-bar-button btn-purple flex-1 mx-1" style={getToolbarStyle('btn-menu', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><i className="fa-solid fa-grip-vertical text-indigo-500"></i><span className="hidden sm:inline">القائمة</span></button>
-                <button 
-                    id="btn-bookmark" 
-                    onPointerDown={handleBookmarkButtonPointerDown}
-                    onPointerUp={handleBookmarkButtonPointerUp}
-                    onPointerLeave={handleBookmarkButtonPointerLeave}
-                    onTouchStart={handleBookmarkButtonPointerDown}
-                    onTouchEnd={handleBookmarkButtonPointerUp}
-                    onTouchCancel={handleBookmarkButtonPointerLeave}
-                    className="bottom-bar-button btn-green flex-1 mx-1" 
-                    style={{...getToolbarStyle('btn-bookmark', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg), touchAction: 'none'}}
-                >
-                    <i className="fa-solid fa-star text-yellow-500"></i>
-                    <span className="hidden sm:inline">حفظ</span>
-                </button>
-                <button 
-                    id="btn-autoscroll" 
-                    onPointerDown={handleAutoScrollButtonPointerDown}
-                    onPointerUp={handleAutoScrollButtonPointerUp}
-                    onPointerLeave={handleAutoScrollButtonPointerLeave}
-                    onTouchStart={handleAutoScrollButtonPointerDown}
-                    onTouchEnd={handleAutoScrollButtonPointerUp}
-                    onTouchCancel={handleAutoScrollButtonPointerLeave}
-                    className="bottom-bar-button btn-purple flex-1 mx-1" 
-                    style={{...getToolbarStyle('btn-autoscroll', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg), touchAction: 'none'}}
-                >
-                    {autoScrollState.isActive ? <i className="fa-solid fa-circle-pause text-red-500 icon-autoscroll-active"></i> : <i className="fa-solid fa-angles-down text-blue-500"></i>}
-                    <span className="hidden sm:inline">{autoScrollState.isActive ? "إيقاف" : "تمرير"}</span>
-                </button>
-                <button 
-                    id="btn-home" 
-                    onClick={onBack} 
-                    className="bottom-bar-button btn-green flex-1 mx-1" 
-                    style={getToolbarStyle('btn-home', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}
-                >
-                    <i className="fa-solid fa-house text-red-500"></i>
-                    <span className="hidden sm:inline">الرئيسية</span>
-                </button>
-            </footer>
+            <FloatingMenu 
+                isFloatingMenuOpen={isFloatingMenuOpen}
+                floatingMenuRef={floatingMenuRef}
+                openModal={openModal}
+                setIsFloatingMenuOpen={setIsFloatingMenuOpen}
+                getToolbarStyle={getToolbarStyle}
+                currentTheme={currentTheme}
+                initialLandscape={initialLandscape}
+                onNavigate={onNavigate}
+            />
+            <QuranFooter 
+                currentTheme={currentTheme}
+                getToolbarStyle={getToolbarStyle}
+                setIsFloatingMenuOpen={setIsFloatingMenuOpen}
+                menuButtonRef={menuButtonRef}
+                handleBookmarkButtonPointerDown={handleBookmarkButtonPointerDown}
+                handleBookmarkButtonPointerUp={handleBookmarkButtonPointerUp}
+                handleBookmarkButtonPointerLeave={handleBookmarkButtonPointerLeave}
+                handleAutoScrollButtonPointerDown={handleAutoScrollButtonPointerDown}
+                handleAutoScrollButtonPointerUp={handleAutoScrollButtonPointerUp}
+                handleAutoScrollButtonPointerLeave={handleAutoScrollButtonPointerLeave}
+                autoScrollState={autoScrollState}
+                onBack={onBack}
+            />
             {isAutoScrollSettingsOpen && (
             <AutoScrollSettingsModal
                 isOpen={isAutoScrollSettingsOpen}

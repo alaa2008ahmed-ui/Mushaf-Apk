@@ -1,34 +1,27 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 
-interface UseQuranModalsProps {
-    autoScrollStateRef: React.MutableRefObject<{ isActive: boolean; isPaused: boolean; elapsedTime: number }>;
-    autoScrollPausedRef: React.MutableRefObject<boolean>;
-    setAutoScrollState: React.Dispatch<React.SetStateAction<{ isActive: boolean; isPaused: boolean; elapsedTime: number }>>;
-    setTafseerSelectionInfo: React.Dispatch<React.SetStateAction<{ isOpen: boolean; s: number; a: number; wasAutoscrolling: boolean }>>;
-    stopAudio: () => void;
-}
-
-export function useQuranModals({
-    autoScrollStateRef,
-    autoScrollPausedRef,
-    setAutoScrollState,
-    setTafseerSelectionInfo,
-    stopAudio
-}: UseQuranModalsProps) {
-    const [activeModals, setActiveModals] = useState<string[]>([]);
-    const wasAutoscrollingBeforeModal = useRef(false);
-
+export const useQuranModals = (
+    activeModals: string[],
+    setActiveModals: React.Dispatch<React.SetStateAction<string[]>>,
+    tafseerSelectionInfo: any,
+    setTafseerSelectionInfo: React.Dispatch<React.SetStateAction<any>>,
+    autoScrollStateRef: React.MutableRefObject<any>,
+    autoScrollPausedRef: React.MutableRefObject<boolean>,
+    setAutoScrollState: React.Dispatch<React.SetStateAction<any>>,
+    wasAutoscrollingBeforeModal: React.MutableRefObject<boolean>,
+    stopAudio: () => void
+) => {
     const closeModal = useCallback((modalName: string) => {
         setActiveModals(p => p.filter(m => m !== modalName));
         if (wasAutoscrollingBeforeModal.current) {
             const anyOtherOpen = activeModals.some(m => m !== modalName);
             if (!anyOtherOpen) {
                 autoScrollPausedRef.current = false;
-                setAutoScrollState(p => ({ ...p, isPaused: false }));
+                setAutoScrollState((p: any) => ({ ...p, isPaused: false }));
                 wasAutoscrollingBeforeModal.current = false;
             }
         }
-    }, [activeModals, autoScrollPausedRef, setAutoScrollState]);
+    }, [activeModals, autoScrollPausedRef, setAutoScrollState, wasAutoscrollingBeforeModal, setActiveModals]);
 
     const openModal = useCallback((modalName: string) => { 
         stopAudio(); 
@@ -42,17 +35,11 @@ export function useQuranModals({
             wasScrolling = true;
         }
         if (modalName === 'tafseer-selection-modal') {
-            setTafseerSelectionInfo(p => ({ ...p, isOpen: true, wasAutoscrolling: wasScrolling }));
+            setTafseerSelectionInfo((p: any) => ({ ...p, isOpen: true, wasAutoscrolling: wasScrolling }));
         } else {
             setActiveModals(p => [...p.filter(m => m !== modalName), modalName]); 
         }
-    }, [stopAudio, autoScrollStateRef, autoScrollPausedRef, setAutoScrollState, setTafseerSelectionInfo]);
+    }, [stopAudio, autoScrollStateRef, autoScrollPausedRef, setAutoScrollState, wasAutoscrollingBeforeModal, setTafseerSelectionInfo, setActiveModals]);
 
-    return {
-        activeModals,
-        setActiveModals,
-        closeModal,
-        openModal,
-        wasAutoscrollingBeforeModal
-    };
-}
+    return { closeModal, openModal };
+};

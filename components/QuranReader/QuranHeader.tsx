@@ -2,15 +2,6 @@ import React from 'react';
 import { toArabic } from './constants';
 
 interface QuranHeaderProps {
-    autoScrollState: { isActive: boolean; isPaused: boolean; elapsedTime: number };
-    settings: any;
-    isAutoScrollSettingsOpen: boolean;
-    getToolbarStyle: (type: string, bg: string, text: string, border: string) => React.CSSProperties;
-    currentTheme: any;
-    openModal: (modalName: string) => void;
-    surahName: string;
-    currentAyah: { s: number; a: number };
-    juz: number;
     isPageInputActive: boolean;
     pageInputRef: React.RefObject<HTMLInputElement>;
     pageInput: string;
@@ -19,23 +10,20 @@ interface QuranHeaderProps {
     handlePageInputKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
     handlePageButtonClick: () => void;
     page: number;
-    handlePlayButtonPointerDown: () => void;
-    handlePlayButtonPointerUp: () => void;
+    surahName: string;
+    currentAyah: { s: number; a: number };
+    juz: number;
+    openModal: (modalId: string) => void;
+    currentTheme: any;
+    getToolbarStyle: (id: string, bg: string, text: string, border: string) => React.CSSProperties;
+    handlePlayButtonPointerDown: (e: React.PointerEvent) => void;
+    handlePlayButtonPointerUp: (e: React.PointerEvent) => void;
     handlePlayButtonPointerLeave: () => void;
     renderPlayButtonIcon: () => React.ReactNode;
     reciterToast: { show: boolean; name: string };
 }
 
 const QuranHeader: React.FC<QuranHeaderProps> = ({
-    autoScrollState,
-    settings,
-    isAutoScrollSettingsOpen,
-    getToolbarStyle,
-    currentTheme,
-    openModal,
-    surahName,
-    currentAyah,
-    juz,
     isPageInputActive,
     pageInputRef,
     pageInput,
@@ -44,6 +32,12 @@ const QuranHeader: React.FC<QuranHeaderProps> = ({
     handlePageInputKeyDown,
     handlePageButtonClick,
     page,
+    surahName,
+    currentAyah,
+    juz,
+    openModal,
+    currentTheme,
+    getToolbarStyle,
     handlePlayButtonPointerDown,
     handlePlayButtonPointerUp,
     handlePlayButtonPointerLeave,
@@ -51,7 +45,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = ({
     reciterToast
 }) => {
     return (
-        <header id="header" className={`header-default flex-none z-50 flex items-center px-4 justify-between border-b shadow-xl w-full gap-2 ${autoScrollState.isActive && !autoScrollState.isPaused && settings.hideUIOnAutoScroll && !isAutoScrollSettingsOpen ? 'hidden' : ''}`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
+        <header id="header" className={`header-default flex-none z-50 flex items-center px-4 justify-between border-b shadow-xl w-full gap-2`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
             <button 
                 id="surah-name-header" 
                 onClick={() => openModal('surah-modal')}
@@ -90,10 +84,10 @@ const QuranHeader: React.FC<QuranHeaderProps> = ({
                     onPointerDown={handlePlayButtonPointerDown}
                     onPointerUp={handlePlayButtonPointerUp}
                     onPointerLeave={handlePlayButtonPointerLeave}
-                    className="top-bar-text-button" 
+                    className="top-bar-text-button flex items-center justify-center" 
                     style={{...getToolbarStyle('audio', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder), touchAction: 'none'}}
                 >
-                    <span id="play-icon-svg">{renderPlayButtonIcon()}</span>
+                    {renderPlayButtonIcon()}
                 </button>
                 {reciterToast.show && (
                     <div className="absolute top-full left-0 mt-2 px-3 py-1 text-xs rounded-lg shadow-lg whitespace-nowrap z-[100] animate-fadeIn font-bold pointer-events-none"
