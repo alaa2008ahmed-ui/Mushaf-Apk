@@ -502,14 +502,93 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
 
 export const TafsirDownloadModal: React.FC<DownloadModalProps> = ({ onClose, quranData, showToast, isLandscape }) => {
     const [selectedTafsir, setSelectedTafsir] = useState('');
-    const [selectedSurah, setSelectedSurah] = useState('');
+    const [selectedSurahs, setSelectedSurahs] = useState<string[]>([]);
+    const [selectedJuzs, setSelectedJuzs] = useState<string[]>([]);
+    const [downloadedSurahs, setDownloadedSurahs] = useState<string[]>([]);
+    const [downloadedJuzs, setDownloadedJuzs] = useState<string[]>([]);
     const [isDownloading, setIsDownloading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [status, setStatus] = useState('');
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    const downloadTafsir = async () => {
-        if (!selectedTafsir || !selectedSurah) return;
+    const checkDownloads = useCallback(async () => {
+        if (!selectedTafsir || !quranData) {
+            setDownloadedSurahs([]);
+            setDownloadedJuzs([]);
+            return;
+        }
+        try {
+            const downloadedFiles = JSON.parse(localStorage.getItem('downloaded_tafsir_files') || '[]');
+            const downloadedSet = new Set(downloadedFiles.map((f: any) => f.fileName));
+
+            const dSurahs: string[] = [];
+            for (const surah of quranData.surahs) {
+                if (downloadedSet.has(`${selectedTafsir}_${surah.number}_tafsir.json`)) {
+                    dSurahs.push(surah.number.toString());
+                }
+            }
+
+            const dJuzs: string[] = [];
+            for (let j = 1; j <= 30; j++) {
+                const ayahs = getAyahsForJuz(j, quranData);
+                const surahsInJuz = new Set(ayahs.map(a => a.surah));
+                let allSurahsDownloaded = true;
+                for (const s of surahsInJuz) {
+                    if (!downloadedSet.has(`${selectedTafsir}_${s}_tafsir.json`)) {
+                        allSurahsDownloaded = false;
+                        break;
+                    }
+                }
+                if (allSurahsDownloaded) dJuzs.push(j.toString());
+            }
+
+            setDownloadedSurahs(dSurahs);
+            setDownloadedJuzs(dJuzs);
+        } catch (e) {
+            console.error('Error checking tafsir downloads:', e);
+        }
+    }, [selectedTafsir, quranData]);
+
+    useEffect(() => {
+        checkDownloads();
+    }, [checkDownloads]);
+
+    const toggleSurah = (surahNum: string) => {
+        if (surahNum === 'all') {
+            if (selectedSurahs.includes('all')) {
+                setSelectedSurahs([]);
+            } else {
+                setSelectedSurahs(['all']);
+                setSelectedJuzs([]);
+            }
+            return;
+        }
+        
+        let newSelection = [...selectedSurahs];
+        if (newSelection.includes('all')) newSelection = newSelection.filter(s => s !== 'all');
+        
+        if (newSelection.includes(surahNum)) {
+            newSelection = newSelection.filter(s => s !== surahNum);
+        } else {
+            newSelection.push(surahNum);
+        }
+        setSelectedSurahs(newSelection);
+    };
+
+    const toggleJuz = (juzNum: string) => {
+        let newSelection = [...selectedJuzs];
+        if (selectedSurahs.includes('all')) setSelectedSurahs(selectedSurahs.filter(s => s !== 'all'));
+        
+        if (newSelection.includes(juzNum)) {
+            newSelection = newSelection.filter(j => j !== juzNum);
+        } else {
+            newSelection.push(juzNum);
+        }
+        setSelectedJuzs(newSelection);
+    };
+
+    const downloadSelected = async () => {
+        if (!selectedTafsir || (selectedSurahs.length === 0 && selectedJuzs.length === 0)) return;
         
         setIsDownloading(true);
         setStatus('جاري التحضير للتحميل...');
@@ -517,29 +596,51 @@ export const TafsirDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qur
         abortControllerRef.current = new AbortController();
 
         try {
-            if (selectedSurah === 'all') {
-                const allDownloaded = await checkAllTafsirDownloaded(selectedTafsir, quranData);
-                if (allDownloaded) {
-                    showToast("[تفاسير] التفاسير تم تحميلها مسبقاً");
-                    setIsDownloading(false);
-                    return;
-                }
-                await downloadAllTafsir(selectedTafsir);
+            let surahsToDownload = new Set<number>();
+            
+            if (selectedSurahs.includes('all')) {
+                for (let i = 1; i <= 114; i++) surahsToDownload.add(i);
             } else {
-                const isDownloaded = await checkTafsirDownloaded(selectedTafsir, parseInt(selectedSurah));
-                if (isDownloaded) {
-                    const sName = quranData.surahs[parseInt(selectedSurah) - 1].name.replace('سورة', '').trim();
-                    showToast(`[تفاسير] تفسير سورة ${sName} تم تحميله مسبقاً`);
-                    setIsDownloading(false);
-                    return;
-                }
-                await downloadSpecificTafsir(selectedTafsir, parseInt(selectedSurah));
+                selectedSurahs.forEach(s => surahsToDownload.add(parseInt(s)));
+                selectedJuzs.forEach(j => {
+                    const ayahs = getAyahsForJuz(parseInt(j), quranData);
+                    ayahs.forEach(a => surahsToDownload.add(a.surah));
+                });
             }
+
+            // Filter out already downloaded surahs
+            const finalSurahsToDownload = Array.from(surahsToDownload).filter(s => !downloadedSurahs.includes(s.toString()));
+
+            if (finalSurahsToDownload.length === 0) {
+                showToast('جميع التفاسير المحددة محملة مسبقاً');
+                setIsDownloading(false);
+                return;
+            }
+
+            let completed = 0;
+            const total = finalSurahsToDownload.length;
+
+            for (const surahNum of finalSurahsToDownload) {
+                if (abortControllerRef.current?.signal.aborted) throw new Error('Aborted');
+                
+                setStatus(`جاري تحميل تفسير سورة ${surahNum} (${completed + 1}/${total})`);
+                await downloadSpecificTafsir(selectedTafsir, surahNum);
+                
+                completed++;
+                setProgress((completed / total) * 100);
+                
+                // Small delay to prevent rate limiting
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+
             setStatus('تم التحميل بنجاح!');
             setProgress(100);
             showToast('تم التحميل بنجاح!');
+            checkDownloads();
+            setSelectedSurahs([]);
+            setSelectedJuzs([]);
         } catch (error: any) {
-            if (error.name === 'AbortError') {
+            if (error.name === 'AbortError' || error.message === 'Aborted') {
                 setStatus('تم إيقاف التحميل');
                 showToast('تم إيقاف التحميل');
             } else {
@@ -568,22 +669,9 @@ export const TafsirDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qur
             const data = await response.json();
             
             storeTafsirOffline(fileName, data.data);
-            setProgress(100);
         } catch (e) {
             if ((e as Error).name === 'AbortError') throw e;
             throw new Error('Failed to download tafsir');
-        }
-    };
-
-    const downloadAllTafsir = async (tafsirId: string) => {
-        const totalSurahs = 114;
-        for (let i = 1; i <= totalSurahs; i++) {
-            if (abortControllerRef.current?.signal.aborted) throw new Error('Aborted');
-            await downloadSpecificTafsir(tafsirId, i);
-            setProgress((i / totalSurahs) * 100);
-            setStatus(`جاري تحميل تفسير سورة ${i}/${totalSurahs}`);
-            // Delay to avoid rate limiting
-            await new Promise(r => setTimeout(r, 200));
         }
     };
 
@@ -612,28 +700,54 @@ export const TafsirDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qur
                         </div>
 
                         <div className="text-right">
-                            <label className="text-xs font-bold opacity-70 block mb-2">اختر السورة</label>
-                            <div className={`grid ${isLandscape ? 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3'} gap-2 ${isLandscape ? 'max-h-40' : 'max-h-60'} overflow-y-auto p-2 border rounded-lg themed-card-bg custom-scrollbar`} dir="rtl">
+                            <label className="text-xs font-bold opacity-70 block mb-2">اختر السور (يمكنك اختيار أكثر من سورة)</label>
+                            <div className={`grid ${isLandscape ? 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3'} gap-2 ${isLandscape ? 'max-h-32' : 'max-h-40'} overflow-y-auto p-2 border rounded-lg themed-card-bg custom-scrollbar`} dir="rtl">
                                 <button 
-                                    onClick={() => setSelectedSurah('all')}
-                                    className={`text-[10px] sm:text-xs p-2 rounded-md border transition-all font-bold ${selectedSurah === 'all' ? 'theme-btn-bg border-transparent' : 'bg-black/5 border-gray-200 dark:border-gray-700'}`}
+                                    onClick={() => toggleSurah('all')}
+                                    className={`text-[10px] sm:text-xs p-2 rounded-md border transition-all font-bold flex items-center justify-center gap-1 ${selectedSurahs.includes('all') ? 'theme-btn-bg border-transparent' : downloadedSurahs.length === 114 ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-400 text-emerald-700 dark:text-emerald-400' : 'bg-black/5 border-gray-200 dark:border-gray-700'}`}
                                 >
-                                    تحميل التفاسير كاملاً
+                                    {downloadedSurahs.length === 114 && <i className="fa-solid fa-check text-[10px]"></i>}
+                                    <span>تحديد الكل</span>
                                 </button>
-                                {quranData?.surahs.map((s: any) => (
-                                    <button 
-                                        key={s.number}
-                                        onClick={() => setSelectedSurah(s.number.toString())}
-                                        className={`text-[10px] sm:text-xs p-2 rounded-md border transition-all font-bold ${selectedSurah === s.number.toString() ? 'theme-btn-bg border-transparent' : 'bg-black/5 border-gray-200 dark:border-gray-700'}`}
-                                    >
-                                        {s.name.replace('سورة', '').trim()}
-                                    </button>
-                                ))}
+                                {quranData?.surahs.map((s: any) => {
+                                    const isDownloaded = downloadedSurahs.includes(s.number.toString());
+                                    const isSelected = selectedSurahs.includes(s.number.toString()) || selectedSurahs.includes('all');
+                                    return (
+                                        <button 
+                                            key={s.number}
+                                            onClick={() => toggleSurah(s.number.toString())}
+                                            className={`text-[10px] sm:text-xs p-2 rounded-md border transition-all font-bold flex items-center justify-center gap-1 ${isSelected ? 'theme-btn-bg border-transparent' : isDownloaded ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-400 text-emerald-700 dark:text-emerald-400' : 'bg-black/5 border-gray-200 dark:border-gray-700'}`}
+                                        >
+                                            {isDownloaded && <i className="fa-solid fa-check text-[10px]"></i>}
+                                            <span>{s.name.replace('سورة', '').trim()}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="text-right">
+                            <label className="text-xs font-bold opacity-70 block mb-2">اختر الأجزاء (يمكنك اختيار أكثر من جزء)</label>
+                            <div className={`grid ${isLandscape ? 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3'} gap-2 ${isLandscape ? 'max-h-32' : 'max-h-40'} overflow-y-auto p-2 border rounded-lg themed-card-bg custom-scrollbar`} dir="rtl">
+                                {Array.from({length: 30}, (_, i) => i + 1).map(juzNum => {
+                                    const isDownloaded = downloadedJuzs.includes(juzNum.toString());
+                                    const isSelected = selectedJuzs.includes(juzNum.toString());
+                                    return (
+                                        <button 
+                                            key={juzNum}
+                                            onClick={() => toggleJuz(juzNum.toString())}
+                                            className={`text-[10px] sm:text-xs p-2 rounded-md border transition-all font-bold flex items-center justify-center gap-1 ${isSelected ? 'theme-btn-bg border-transparent' : isDownloaded ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-400 text-emerald-700 dark:text-emerald-400' : 'bg-black/5 border-gray-200 dark:border-gray-700'}`}
+                                        >
+                                            {isDownloaded && <i className="fa-solid fa-check text-[10px]"></i>}
+                                            <span>الجزء {juzNum}</span>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                         
                         {!isDownloading ? (
-                            <button onClick={downloadTafsir} disabled={!selectedTafsir || !selectedSurah} className={`w-full theme-btn-bg py-2.5 rounded-lg shadow font-bold text-sm ${(!selectedTafsir || !selectedSurah) ? 'opacity-50 cursor-not-allowed' : ''}`}>تحميل</button>
+                            <button onClick={downloadSelected} disabled={!selectedTafsir || (selectedSurahs.length === 0 && selectedJuzs.length === 0)} className={`w-full theme-btn-bg py-2.5 rounded-lg shadow font-bold text-sm ${(!selectedTafsir || (selectedSurahs.length === 0 && selectedJuzs.length === 0)) ? 'opacity-50 cursor-not-allowed' : ''}`}>تحميل</button>
                         ) : (
                             <div className="mt-2">
                                 <div className="text-xs font-bold mb-1">{status}</div>

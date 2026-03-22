@@ -394,24 +394,25 @@
 
 #floating-menu {
     position: absolute;
-    bottom: calc(4.5rem + var(--logical-safe-bottom) + 8px);
+    bottom: calc(3.5rem + var(--logical-safe-bottom) + 8px);
     right: calc(16px + var(--logical-safe-right));
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    align-items: flex-end;
+    gap: 12px;
     z-index: 80;
     transform: translateY(20px) scale(0.95);
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    pointer-events: none;
-    width: 160px;
+}
+.quran-reader-container.landscape-mode #floating-menu {
+    bottom: calc(50px + var(--logical-safe-bottom) + 8px);
 }
 #floating-menu.open {
     transform: translateY(0) scale(1);
     opacity: 1;
     visibility: visible;
-    pointer-events: auto;
 }
 
 #header {
