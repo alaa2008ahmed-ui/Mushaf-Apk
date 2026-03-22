@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '../context/ThemeContext';
+import BottomBar from '../components/BottomBar';
 
 interface TajweedExample {
     id: string;
@@ -429,52 +430,56 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
         <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="h-screen bg-stone-50 dark:bg-gray-900 text-stone-800 dark:text-gray-100 flex flex-col overflow-hidden"
+            className="h-screen bg-transparent text-[var(--text-color)] flex flex-col overflow-hidden"
             dir="rtl"
+            style={{ fontFamily: theme.font }}
         >
             {/* Header */}
-            <div className="bg-emerald-800 dark:bg-emerald-950 text-white px-4 py-4 flex flex-col shadow-lg shrink-0">
-                <div className="flex items-center mb-4">
-                    <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full transition-colors ml-2">
-                        <i className="fa-solid fa-arrow-right text-xl"></i>
-                    </button>
-                    <div className="flex flex-col">
+            <div className="px-4 py-4 flex flex-col shadow-lg shrink-0" style={{ backgroundColor: `rgba(var(--top-bar-rgb), 1)`, color: 'var(--top-bar-text)' }}>
+                <div className="flex items-center mb-4 relative">
+                    {onNavigateToMushaf && (
+                        <button onClick={onNavigateToMushaf} className="absolute right-0 p-2 hover:bg-white/10 rounded-full transition-colors z-10" title="العودة للقراءة">
+                            <i className="fa-solid fa-book-quran text-xl"></i>
+                        </button>
+                    )}
+                    <div className="flex flex-col w-full text-center">
                         <h1 className="text-xl font-bold">دورة التجويد التفاعلية</h1>
-                        <span className="text-xs opacity-80">تعلم، استمع، سجل، واختبر نفسك</span>
+                        <span className="text-xs opacity-80 mt-1">تعلم، استمع، سجل، واختبر نفسك</span>
                     </div>
                 </div>
                 
                 {/* Progress Bar */}
                 <div className="w-full bg-black/20 rounded-full h-2.5 mb-1">
-                    <div className="bg-emerald-400 h-2.5 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
+                    <div className="h-2.5 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%`, backgroundColor: theme.palette[0] }}></div>
                 </div>
-                <div className="flex justify-between text-xs font-bold text-emerald-100">
+                <div className="flex justify-between text-xs font-bold opacity-90">
                     <span>مستوى التقدم</span>
                     <span>{progressPercentage}%</span>
                 </div>
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto pb-10 p-4">
+            <div className="flex-1 overflow-y-auto pb-24 p-4">
                 <div className="space-y-4">
                     {TAJWEED_RULES.map((rule) => {
                         const isCompleted = completedRules.includes(rule.id);
                         const isOpen = selectedRule === rule.id;
 
                         return (
-                            <div key={rule.id} className={`bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border ${isCompleted ? 'border-emerald-400' : 'border-stone-200 dark:border-gray-700'}`}>
+                            <div key={rule.id} className="rounded-2xl overflow-hidden shadow-sm border transition-all" style={{ backgroundColor: 'var(--card-bg)', borderColor: isCompleted ? theme.palette[0] : 'var(--card-border)', color: 'var(--text-color)' }}>
                                 <button 
                                     onClick={() => setSelectedRule(isOpen ? null : rule.id)}
-                                    className="w-full flex items-center justify-between p-4 text-right hover:bg-stone-50 dark:hover:bg-gray-750 transition-colors"
+                                    className="w-full flex items-center justify-between p-4 text-right transition-colors"
+                                    style={{ backgroundColor: isOpen ? 'var(--card-bg-hover)' : 'transparent' }}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="w-2 h-10 rounded-full" style={{ backgroundColor: rule.color }}></div>
                                         <div className="flex flex-col">
                                             <span className="font-bold text-lg">{rule.title}</span>
-                                            {isCompleted && <span className="text-xs text-emerald-500 font-bold"><i className="fa-solid fa-check-circle ml-1"></i>مكتمل</span>}
+                                            {isCompleted && <span className="text-xs font-bold" style={{ color: theme.palette[0] }}><i className="fa-solid fa-check-circle ml-1"></i>مكتمل</span>}
                                         </div>
                                     </div>
-                                    <i className={`fa-solid fa-chevron-down text-stone-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}></i>
+                                    <i className={`fa-solid fa-chevron-down opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`}></i>
                                 </button>
 
                                 <AnimatePresence>
@@ -485,38 +490,43 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
                                             exit={{ height: 0, opacity: 0 }}
                                             className="overflow-hidden"
                                         >
-                                            <div className="px-4 pb-6 pt-2 border-t border-stone-100 dark:border-gray-700">
+                                            <div className="px-4 pb-6 pt-2 border-t" style={{ borderColor: 'var(--card-border)' }}>
                                                 
                                                 {/* Description & Poem */}
-                                                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl mb-6">
+                                                <div className="p-4 rounded-xl mb-6" style={{ backgroundColor: `${theme.palette[0]}15` }}>
                                                     <p className="text-sm leading-relaxed mb-3">{rule.description}</p>
                                                     {rule.articulationPoint && (
-                                                        <div className="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400 mb-3 font-bold">
+                                                        <div className="flex items-center gap-2 text-xs mb-3 font-bold" style={{ color: theme.palette[0] }}>
                                                             <i className="fa-solid fa-head-side-cough"></i>
                                                             <span>مخرج الحرف: {rule.articulationPoint}</span>
                                                         </div>
                                                     )}
-                                                    <div className="border-t border-emerald-200 dark:border-emerald-800/50 pt-3 mt-3">
-                                                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-500 block mb-1">من تحفة الأطفال / الجزرية:</span>
-                                                        <p className="text-sm font-serif text-emerald-800 dark:text-emerald-300 whitespace-pre-line leading-loose text-center">{rule.poem}</p>
+                                                    <div className="border-t pt-3 mt-3" style={{ borderColor: `${theme.palette[0]}30` }}>
+                                                        <span className="text-xs font-bold block mb-1" style={{ color: theme.palette[0] }}>من تحفة الأطفال / الجزرية:</span>
+                                                        <p className="text-sm font-serif whitespace-pre-line leading-loose text-center" style={{ color: theme.palette[1] || theme.palette[0] }}>{rule.poem}</p>
                                                     </div>
                                                 </div>
                                                 
                                                 {/* Examples & Recording */}
                                                 <div className="space-y-4 mb-8">
-                                                    <h4 className="text-sm font-bold border-b border-stone-200 dark:border-gray-700 pb-2">التدريب العملي (استمع وسجل)</h4>
+                                                    <h4 className="text-sm font-bold border-b pb-2" style={{ borderColor: 'var(--card-border)' }}>التدريب العملي (استمع وسجل)</h4>
                                                     {rule.examples.map((example) => (
-                                                        <div key={example.id} className="p-4 bg-stone-50 dark:bg-gray-750 rounded-xl border border-stone-200 dark:border-gray-600">
+                                                        <div key={example.id} className="p-4 rounded-xl border" style={{ backgroundColor: 'var(--card-bg-hover)', borderColor: 'var(--card-border)' }}>
                                                             <div className="mb-4 text-center">
                                                                 {renderAyah(example.fullAyah, example.highlightedWord, rule.color)}
-                                                                {example.description && <span className="block text-xs text-stone-500 dark:text-gray-400 mt-2">{example.description}</span>}
+                                                                {example.description && <span className="block text-xs mt-2 opacity-60">{example.description}</span>}
                                                             </div>
                                                             
-                                                            <div className="flex items-center justify-center gap-4 border-t border-stone-200 dark:border-gray-600 pt-3">
+                                                            <div className="flex items-center justify-center gap-4 border-t pt-3" style={{ borderColor: 'var(--card-border)' }}>
                                                                 {/* Play Sheikh Audio */}
                                                                 <button 
                                                                     onClick={() => playAudio(example.audioUrl)}
-                                                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${playingAudio === example.audioUrl ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'}`}
+                                                                    className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all"
+                                                                    style={{ 
+                                                                        backgroundColor: playingAudio === example.audioUrl ? theme.palette[0] : 'var(--card-bg)', 
+                                                                        color: playingAudio === example.audioUrl ? 'white' : theme.palette[0],
+                                                                        border: `1px solid ${theme.palette[0]}`
+                                                                    }}
                                                                 >
                                                                     <i className={`fa-solid ${playingAudio === example.audioUrl ? 'fa-pause' : 'fa-play'}`}></i>
                                                                     الشيخ
@@ -525,7 +535,12 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
                                                                 {/* Record User Audio */}
                                                                 <button 
                                                                     onClick={() => recordingId === example.id ? stopRecording() : startRecording(example.id)}
-                                                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${recordingId === example.id ? 'bg-red-500 text-white animate-pulse' : 'bg-white dark:bg-gray-800 text-red-500 border border-red-200 dark:border-red-900/50'}`}
+                                                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${recordingId === example.id ? 'bg-red-500 text-white animate-pulse' : ''}`}
+                                                                    style={{ 
+                                                                        backgroundColor: recordingId === example.id ? undefined : 'var(--card-bg)', 
+                                                                        color: recordingId === example.id ? undefined : '#ef4444',
+                                                                        border: `1px solid #ef4444`
+                                                                    }}
                                                                 >
                                                                     <i className={`fa-solid ${recordingId === example.id ? 'fa-stop' : 'fa-microphone'}`}></i>
                                                                     {recordingId === example.id ? 'إيقاف' : 'سجل'}
@@ -535,7 +550,12 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
                                                                 {userRecordings[example.id] && (
                                                                     <button 
                                                                         onClick={() => playUserRecording(userRecordings[example.id])}
-                                                                        className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800"
+                                                                        className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold"
+                                                                        style={{ 
+                                                                            backgroundColor: `${theme.palette[1] || theme.palette[0]}20`, 
+                                                                            color: theme.palette[1] || theme.palette[0],
+                                                                            border: `1px solid ${theme.palette[1] || theme.palette[0]}50`
+                                                                        }}
                                                                     >
                                                                         <i className="fa-solid fa-headphones"></i>
                                                                         قراءتك
@@ -547,7 +567,7 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
                                                 </div>
 
                                                 {/* Quiz Section */}
-                                                <div className="bg-stone-100 dark:bg-gray-800 p-5 rounded-xl border border-stone-200 dark:border-gray-700">
+                                                <div className="p-5 rounded-xl border" style={{ backgroundColor: 'var(--card-bg-hover)', borderColor: 'var(--card-border)' }}>
                                                     <h4 className="text-sm font-bold mb-4 flex items-center gap-2">
                                                         <i className="fa-solid fa-clipboard-question text-amber-500"></i>
                                                         اختبر نفسك
@@ -557,13 +577,27 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
                                                         {rule.quiz.options.map((opt, idx) => {
                                                             const isAnswered = quizAnswers[rule.id] !== undefined;
                                                             const isCorrect = idx === rule.quiz.correctAnswer;
-                                                            let btnClass = "w-full text-right p-3 rounded-lg text-sm transition-all border ";
                                                             
-                                                            if (!isAnswered) {
-                                                                btnClass += "bg-white dark:bg-gray-700 border-stone-200 dark:border-gray-600 hover:bg-stone-50 dark:hover:bg-gray-600";
-                                                            } else {
-                                                                if (isCorrect) btnClass += "bg-emerald-100 dark:bg-emerald-900/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 font-bold";
-                                                                else btnClass += "bg-white dark:bg-gray-700 border-stone-200 dark:border-gray-600 opacity-50";
+                                                            let btnStyle: React.CSSProperties = {
+                                                                width: '100%',
+                                                                textAlign: 'right',
+                                                                padding: '0.75rem',
+                                                                borderRadius: '0.5rem',
+                                                                fontSize: '0.875rem',
+                                                                transition: 'all 0.2s',
+                                                                border: '1px solid var(--card-border)',
+                                                                backgroundColor: 'var(--card-bg)',
+                                                                color: 'var(--text-color)'
+                                                            };
+                                                            
+                                                            if (isAnswered) {
+                                                                if (isCorrect) {
+                                                                    btnStyle.backgroundColor = `${theme.palette[0]}30`;
+                                                                    btnStyle.borderColor = theme.palette[0];
+                                                                    btnStyle.fontWeight = 'bold';
+                                                                } else {
+                                                                    btnStyle.opacity = 0.5;
+                                                                }
                                                             }
 
                                                             return (
@@ -571,7 +605,8 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
                                                                     key={idx}
                                                                     disabled={isAnswered}
                                                                     onClick={() => handleQuizAnswer(rule.id, idx, rule.quiz.correctAnswer)}
-                                                                    className={btnClass}
+                                                                    className="hover:opacity-80"
+                                                                    style={btnStyle}
                                                                 >
                                                                     {opt}
                                                                     {isAnswered && isCorrect && <i className="fa-solid fa-check float-left mt-1"></i>}
@@ -583,7 +618,7 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
                                                         <p className="text-xs text-red-500 mt-3 font-bold">إجابة خاطئة، حاول مراجعة الشرح أعلاه.</p>
                                                     )}
                                                     {quizAnswers[rule.id] === true && (
-                                                        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-3 font-bold">أحسنت! إجابة صحيحة.</p>
+                                                        <p className="text-xs mt-3 font-bold" style={{ color: theme.palette[0] }}>أحسنت! إجابة صحيحة.</p>
                                                     )}
                                                 </div>
 
@@ -591,7 +626,8 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
                                                 {onNavigateToMushaf && (
                                                     <button 
                                                         onClick={onNavigateToMushaf}
-                                                        className="w-full mt-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-md"
+                                                        className="w-full mt-4 py-3 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                                                        style={{ backgroundColor: theme.palette[0] }}
                                                     >
                                                         <i className="fa-solid fa-book-open"></i>
                                                         تطبيق عملي في المصحف
@@ -607,6 +643,8 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
                     })}
                 </div>
             </div>
+            
+            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
         </motion.div>
     );
 };

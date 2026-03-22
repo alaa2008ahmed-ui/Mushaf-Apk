@@ -54,7 +54,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = ({
             >
                 <span>{surahName} - آية {toArabic(currentAyah.a)}</span>
             </button>
-            <div id="juz-number-header" className="top-bar-text-button cursor-default" style={{ cursor: 'default', ...getToolbarStyle('juz', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder) }}>الجزء {toArabic(juz)}</div>
+            <div id="juz-number-header" className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 cursor-default flex-shrink-0 aspect-square" style={{ cursor: 'default', ...getToolbarStyle('juz', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder) }}>{toArabic(juz)}</div>
             {isPageInputActive ? (
                 <input
                     ref={pageInputRef}
@@ -64,18 +64,18 @@ const QuranHeader: React.FC<QuranHeaderProps> = ({
                     onChange={handlePageInputChange}
                     onBlur={handlePageInputBlur}
                     onKeyDown={handlePageInputKeyDown}
-                    className="top-bar-text-button"
+                    className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 text-center flex-shrink-0 aspect-square"
                     style={getToolbarStyle('page', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
-                    placeholder={`ص ${toArabic(page)}`}
+                    placeholder={`${toArabic(page)}`}
                 />
             ) : (
                 <button 
                     id="header-page" 
                     onClick={handlePageButtonClick}
-                    className="top-bar-text-button" 
+                    className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 flex-shrink-0 aspect-square" 
                     style={getToolbarStyle('page', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
                 >
-                    ص {toArabic(page)}
+                    {toArabic(page)}
                 </button>
             )}
             <div className="relative flex-shrink-0">
@@ -84,7 +84,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = ({
                     onPointerDown={handlePlayButtonPointerDown}
                     onPointerUp={handlePlayButtonPointerUp}
                     onPointerLeave={handlePlayButtonPointerLeave}
-                    className="top-bar-text-button flex items-center justify-center" 
+                    className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 flex items-center justify-center flex-shrink-0 aspect-square" 
                     style={{...getToolbarStyle('audio', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder), touchAction: 'none'}}
                 >
                     {renderPlayButtonIcon()}

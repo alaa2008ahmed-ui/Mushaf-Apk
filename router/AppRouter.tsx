@@ -29,7 +29,7 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
       case 'quran-landscape':
         return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={true} />;
       case 'tajweed-education':
-        return <TajweedEducation onBack={onBack} />;
+        return <TajweedEducation onBack={onBack} onNavigateToMushaf={() => onNavigate('quran')} />;
       case 'salah-adhkar':
         return <AthkarAlSalah onBack={onBack} />;
       case 'calendar':
