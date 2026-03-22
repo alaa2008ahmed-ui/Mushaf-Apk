@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, FC } from 'react';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import './QuranReader.css'; 
-import { JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, DEFAULT_SETTINGS, FONTS } from '../components/QuranReader/constants';
+import { JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, DEFAULT_SETTINGS, FONTS, SURAH_NAMES_AR } from '../components/QuranReader/constants';
+import VoiceControlModal from '../components/QuranReader/VoiceControlModal';
 import SearchModal from '../components/QuranReader/SearchModal';
 import ThemesModal from '../components/QuranReader/ThemesModal';
 import SettingsModal from '../components/QuranReader/SettingsModal';
@@ -31,6 +32,26 @@ import quranTajweedJson from '../data/quran-tajweed.json';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 
 declare var window: any;
+
+const parseArabicNumber = (text: string): number | null => {
+    const arabicDigits = text.match(/[٠-٩]+/g);
+    if (arabicDigits) {
+        const standard = arabicDigits[0].replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString());
+        return parseInt(standard);
+    }
+    const englishDigits = text.match(/\d+/g);
+    if (englishDigits) return parseInt(englishDigits[0]);
+    
+    const words: Record<string, number> = {
+        'واحد': 1, 'اثنين': 2, 'ثلاثة': 3, 'اربعة': 4, 'خمسة': 5, 'ستة': 6, 'سبعة': 7, 'ثمانية': 8, 'تسعة': 9, 'عشرة': 10,
+        'عشرين': 20, 'ثلاثين': 30, 'اربعين': 40, 'خمسين': 50, 'ستين': 60, 'سبعين': 70, 'ثمانين': 80, 'تسعين': 90, 'مئة': 100, 'مائة': 100
+    };
+    
+    for (const [word, val] of Object.entries(words)) {
+        if (text.includes(word)) return val;
+    }
+    return null;
+};
 
 const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean }> = ({ onBack, onNavigate, initialLandscape = false }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
@@ -1268,6 +1289,86 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
     }, [quranData, jumpToAyah, getPageData, showToast]);
 
+    const handleVoiceCommand = useCallback((text: string) => {
+        const normalized = text.trim().toLowerCase();
+        
+        // Check custom commands
+        const saved = localStorage.getItem('custom_voice_commands');
+        const customCommands = saved ? JSON.parse(saved) : [];
+        const customMatch = customCommands.find((c: any) => normalized.includes(c.phrase));
+        
+        if (customMatch) {
+            const action = customMatch.action;
+            if (action === 'next_page') jumpToPage(Math.min(604, Math.max(...visiblePages) + 1));
+            else if (action === 'prev_page') jumpToPage(Math.max(1, Math.min(...visiblePages) - 1));
+            else if (action === 'play_audio') { handlePlayButtonPointerDown(); handlePlayButtonPointerUp(); }
+            else if (action === 'open_search') openModal('search-modal');
+            else if (action === 'open_settings') openModal('settings-modal');
+            else if (action === 'open_themes') openModal('themes-modal');
+            else if (action === 'go_home') onBack();
+            else if (action === 'go_athkar') onNavigate('athkar');
+            else if (action === 'go_prayer') onNavigate('prayer-times');
+            else if (action === 'go_qibla') onNavigate('qibla');
+            else if (action === 'go_tasbeeh') onNavigate('tasbeeh');
+            else if (action === 'go_tajweed') onNavigate('tajweed-education');
+            return;
+        }
+
+        // Built-in commands
+        if (normalized.includes('سورة')) {
+            const surahName = SURAH_NAMES_AR.find(name => normalized.includes(name));
+            if (surahName) {
+                const surahIndex = SURAH_NAMES_AR.indexOf(surahName) + 1;
+                jumpToAyah(surahIndex, 1, true);
+                return;
+            }
+        }
+
+        if (normalized.includes('صفحة')) {
+            const num = parseArabicNumber(normalized);
+            if (num && num >= 1 && num <= 604) {
+                jumpToPage(num, true);
+                return;
+            }
+        }
+
+        if (normalized.includes('جزء')) {
+            const num = parseArabicNumber(normalized);
+            if (num && num >= 1 && num <= 30) {
+                const juzInfo = JUZ_MAP.find(j => j.j === num);
+                if (juzInfo) {
+                    jumpToAyah(juzInfo.s, juzInfo.a, true);
+                }
+                return;
+            }
+        }
+
+        if (normalized.includes('التالي') || normalized.includes('بعد')) {
+            jumpToPage(Math.min(604, Math.max(...visiblePages) + 1));
+        } else if (normalized.includes('السابق') || normalized.includes('قبل')) {
+            jumpToPage(Math.max(1, Math.min(...visiblePages) - 1));
+        } else if (normalized.includes('أذكار') || normalized.includes('اذكار')) {
+            onNavigate('athkar');
+        } else if (normalized.includes('قبلة') || normalized.includes('القبلة')) {
+            onNavigate('qibla');
+        } else if (normalized.includes('صلاة') || normalized.includes('الصلاة')) {
+            onNavigate('prayer-times');
+        } else if (normalized.includes('مسبحة') || normalized.includes('المسبحة')) {
+            onNavigate('tasbeeh');
+        } else if (normalized.includes('تجويد') || normalized.includes('التجويد')) {
+            onNavigate('tajweed-education');
+        } else if (normalized.includes('ثيم') || normalized.includes('مظهر')) {
+            openModal('themes-modal');
+        } else if (normalized.includes('إعدادات') || normalized.includes('اعدادات')) {
+            openModal('settings-modal');
+        } else if (normalized.includes('بحث')) {
+            openModal('search-modal');
+        } else if (normalized.includes('شغل') || normalized.includes('وقف') || normalized.includes('صوت')) {
+            handlePlayButtonPointerDown();
+            handlePlayButtonPointerUp();
+        }
+    }, [onNavigate, onBack, openModal, jumpToAyah, jumpToPage, visiblePages, handlePlayButtonPointerDown, handlePlayButtonPointerUp]);
+
     const saveBookmark = () => { 
         if (!currentAyah) { showToast('اختر آية أولاً'); return; } 
         const stored = JSON.parse(localStorage.getItem('quran_bookmarks_list' + modeSuffix) || '[]'); 
@@ -1876,6 +1977,12 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 currentType={useTajweed ? 'tajweed' : 'uthmani'}
             />
             <SajdahCardModal info={sajdahCardInfo} onClose={handleCloseSajdahCard} isLandscape={isLandscape} />
+            <VoiceControlModal 
+                isOpen={activeModals.includes('voice-control-modal')}
+                onClose={() => closeModal('voice-control-modal')}
+                currentTheme={currentTheme}
+                onCommand={handleVoiceCommand}
+            />
             <Toast message={toast.message} show={toast.show} onClose={handleToastClose} />
         </div>
     );
