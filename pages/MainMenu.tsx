@@ -25,6 +25,7 @@ const DEFAULT_MENU_ITEMS = [
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
     { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
+    { id: 'tajweed-education', label: "📖 تعليم التجويد", className: "col-span-2 h-10", colorIndex: 0 },
 ];
 
 function MainMenu({ onNavigate, onOpenThemes }) {
@@ -42,7 +43,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
     if (savedLayout) {
         try {
             const parsed = JSON.parse(savedLayout);
-            const updated = parsed.filter((item: any) => item.id !== 'tajweed-education').map((item: any) => {
+            const updated = parsed.map((item: any) => {
                 if (item.id === 'calculators' || item.id === 'calendar') {
                     const { customColor, ...rest } = item;
                     return rest;
@@ -77,13 +78,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         try {
             const parsed = JSON.parse(savedLayout);
             let changed = false;
-            const updated = parsed.filter((item: any) => {
-                if (item.id === 'tajweed-education') {
-                    changed = true;
-                    return false;
-                }
-                return true;
-            }).map((item: any) => {
+            const updated = parsed.map((item: any) => {
                 if (item.id === 'calculators' || item.id === 'calendar') {
                     if (item.customColor) {
                         const { customColor, ...rest } = item;

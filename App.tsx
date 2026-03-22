@@ -9,6 +9,7 @@ import { useWakeLock } from './hooks/useWakeLock';
 import { useBackButton } from './hooks/useBackButton';
 import { App as CapacitorApp } from '@capacitor/app';
 import { PrayerTimesProvider } from './context/PrayerTimesContext';
+import { preloadTajweedAudio } from './utils/audioCache';
 
 // --- Main App Component ---
 function App() {
@@ -16,6 +17,11 @@ function App() {
   const [history, setHistory] = useState(['home']);
   const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  useEffect(() => {
+    // Start preloading tajweed audio in the background
+    preloadTajweedAudio();
+  }, []);
 
   const page = history[history.length - 1];
 

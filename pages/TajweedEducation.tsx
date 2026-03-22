@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '../context/ThemeContext';
 import BottomBar from '../components/BottomBar';
+import { getCachedAudioUrl } from '../utils/audioCache';
 
 interface TajweedExample {
     id: string;
@@ -344,7 +345,7 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
         }
     };
 
-    const playAudio = (url: string) => {
+    const playAudio = async (url: string) => {
         if (!audioRef.current) audioRef.current = new Audio();
         else audioRef.current.pause();
 
@@ -354,7 +355,11 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
         }
 
         setPlayingAudio(url);
-        audioRef.current.src = url;
+        
+        // Try to get from cache first for instant playback
+        const finalUrl = await getCachedAudioUrl(url);
+        audioRef.current.src = finalUrl;
+        
         audioRef.current.play().catch(err => {
             console.error(`Audio playback failed:`, err);
             setPlayingAudio(null);
@@ -427,9 +432,7 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
     const progressPercentage = Math.round((completedRules.length / TAJWEED_RULES.length) * 100);
 
     return (
-        <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+        <div 
             className="h-screen bg-transparent text-[var(--text-color)] flex flex-col overflow-hidden"
             dir="rtl"
             style={{ fontFamily: theme.font }}
@@ -645,7 +648,7 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
             </div>
             
             <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
-        </motion.div>
+        </div>
     );
 };
 
