@@ -54,7 +54,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = ({
             >
                 <span>{surahName} - آية {toArabic(currentAyah.a)}</span>
             </button>
-            <button id="juz-number-header" onClick={() => openModal('juz-modal')} className="top-bar-text-button" style={getToolbarStyle('juz', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>الجزء {toArabic(juz)}</button>
+            <div id="juz-number-header" className="top-bar-text-button cursor-default" style={{ cursor: 'default', ...getToolbarStyle('juz', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder) }}>الجزء {toArabic(juz)}</div>
             {isPageInputActive ? (
                 <input
                     ref={pageInputRef}

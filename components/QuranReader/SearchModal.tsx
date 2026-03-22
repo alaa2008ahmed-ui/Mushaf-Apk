@@ -12,9 +12,10 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
     const modeSuffix = isLandscape ? '_h' : '_v';
     const [query, setQuery] = useState(() => localStorage.getItem('search_query' + modeSuffix) || '');
     const [results, setResults] = useState<any[]>([]);
+    const [visibleCount, setVisibleCount] = useState(100);
     const [isSearching, setIsSearching] = useState(false);
     const [searchStats, setSearchStats] = useState('');
-    const [searchJobId, setSearchJobId] = useState(0);
+    const searchJobIdRef = useRef(0);
     const searchTimeoutRef = useRef<any>(null);
 
     useEffect(() => {
@@ -45,6 +46,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
         } else {
             setSearchStats('');
             setResults([]);
+            setVisibleCount(100);
         }
 
         if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
@@ -54,12 +56,13 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
     const performSearch = (q: string) => {
         if (!quranData) return;
         
-        const newJobId = searchJobId + 1;
-        setSearchJobId(newJobId);
+        searchJobIdRef.current += 1;
+        const newJobId = searchJobIdRef.current;
         
         q = q.trim();
         if (q === '') {
             setResults([]);
+            setVisibleCount(100);
             setSearchStats('');
             setIsSearching(false);
             return;
@@ -67,6 +70,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
 
         setIsSearching(true);
         setSearchStats('...');
+        setVisibleCount(100);
         
         // Use setTimeout to allow UI update before heavy processing
         setTimeout(() => {
@@ -84,7 +88,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
         let aIdx = 0;
 
         const processChunk = () => {
-            if (jobId !== searchJobId && searchJobId > jobId) return; // Cancelled by newer search
+            if (searchJobIdRef.current > jobId) return; // Cancelled by newer search
             
             const start = performance.now();
             while (sIdx < quranData.surahs.length) {
@@ -101,15 +105,11 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                             page: ayah.page,
                             highlightRegex: regex
                         });
-                        if (foundResults.length >= 50) {
-                            setResults(foundResults);
-                            setSearchStats(`النتائج: أكثر من ${toArabic(foundResults.length)}`);
-                            setIsSearching(false);
-                            return;
-                        }
                     }
                     aIdx++;
-                    if (performance.now() - start > 10) {
+                    if (performance.now() - start > 15) {
+                        setResults([...foundResults]);
+                        setSearchStats(`جاري البحث... (${toArabic(foundResults.length)})`);
                         setTimeout(processChunk, 0);
                         return;
                     }
@@ -118,9 +118,11 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                 sIdx++;
             }
             
-            setResults(foundResults);
-            setSearchStats(`النتائج: ${toArabic(foundResults.length)}`);
-            setIsSearching(false);
+            if (searchJobIdRef.current === jobId) {
+                setResults([...foundResults]);
+                setSearchStats(`النتائج: ${toArabic(foundResults.length)}`);
+                setIsSearching(false);
+            }
         };
 
         processChunk();
@@ -140,6 +142,16 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
             </>
         );
     };
+
+    const visibleResults = results.slice(0, visibleCount);
+    const groupedResults = visibleResults.reduce((acc, r) => {
+        if (!acc[r.surah]) {
+            acc[r.surah] = { surahName: r.surahName, ayahs: [] };
+        }
+        acc[r.surah].ayahs.push(r);
+        return acc;
+    }, {} as Record<number, { surahName: string, ayahs: any[] }>);
+    const sortedSurahKeys = Object.keys(groupedResults).map(Number).sort((a, b) => a - b);
 
     return (
         <div className={`fixed inset-0 z-[200] bg-black/30 flex justify-center ${isLandscape ? 'items-start pt-0 px-0' : 'items-center px-4'} backdrop-blur-sm animate-fadeIn`} onClick={onClose}>
@@ -164,7 +176,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                     </div>
                     <div className="text-xs text-center mt-2 opacity-60 font-bold">{searchStats}</div>
                 </div>
-                <div className={`flex-1 overflow-y-auto p-4 relative themed-bg ${isLandscape ? 'grid grid-cols-2 gap-3' : 'space-y-3'}`}>
+                <div className={`flex-1 overflow-y-auto p-4 relative themed-bg space-y-4`}>
                     {isSearching && (
                         <div className="text-center mt-8">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div>
@@ -186,17 +198,32 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                         </div>
                     )}
 
-                    {results.map((r, idx) => (
-                        <div key={idx} className="search-context-block search-main-ayah" onClick={() => { onSelect(r.surah, r.ayah); onClose(); }}>
-                            <div className="search-context-label">{r.surahName} - آية {toArabic(r.ayah)} - صفحة {toArabic(r.page)}</div>
-                            <div className="search-context-ayah">
-                                {highlightText(r.text, r.highlightRegex)}
+                    {sortedSurahKeys.map(surahNum => {
+                        const group = groupedResults[surahNum];
+                        return (
+                            <div key={surahNum} className="mb-6">
+                                <h4 className="font-bold text-emerald-600 dark:text-emerald-400 mb-3 border-b border-emerald-500/30 pb-2 text-lg">{group.surahName}</h4>
+                                <div className={isLandscape ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
+                                    {group.ayahs.map((r, idx) => (
+                                        <div key={idx} className="search-context-block search-main-ayah" onClick={() => { onSelect(r.surah, r.ayah); onClose(); }}>
+                                            <div className="search-context-label">آية {toArabic(r.ayah)} - صفحة {toArabic(r.page)}</div>
+                                            <div className="search-context-ayah">
+                                                {highlightText(r.text, r.highlightRegex)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                     
-                    {!isSearching && results.length >= 50 && (
-                        <div className="text-center text-sm opacity-50 py-2">تم عرض أول {toArabic(results.length)} نتيجة فقط</div>
+                    {!isSearching && results.length > visibleCount && (
+                        <button 
+                            onClick={() => setVisibleCount(prev => prev + 100)}
+                            className="w-full py-3 mt-4 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition shadow-md"
+                        >
+                            عرض المزيد من النتائج ({toArabic(results.length - visibleCount)} متبقية)
+                        </button>
                     )}
                 </div>
             </div>
