@@ -54,7 +54,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = ({
             >
                 <span>{surahName} - آية {toArabic(currentAyah.a)}</span>
             </button>
-            <div id="juz-number-header" className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 cursor-default flex-shrink-0 aspect-square" style={{ cursor: 'default', ...getToolbarStyle('juz', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder) }}>{toArabic(juz)}</div>
+            <div id="juz-number-header" className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 cursor-default flex-shrink-0 aspect-square font-bold text-lg" style={{ cursor: 'default', ...getToolbarStyle('juz', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder) }}>{toArabic(juz)}</div>
             {isPageInputActive ? (
                 <input
                     ref={pageInputRef}
@@ -64,7 +64,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = ({
                     onChange={handlePageInputChange}
                     onBlur={handlePageInputBlur}
                     onKeyDown={handlePageInputKeyDown}
-                    className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 text-center flex-shrink-0 aspect-square"
+                    className="top-bar-text-button !rounded-full !w-9 !h-9 !p-0 text-center flex-shrink-0 aspect-square font-bold"
                     style={getToolbarStyle('page', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
                     placeholder={`${toArabic(page)}`}
                 />
@@ -72,7 +72,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = ({
                 <button 
                     id="header-page" 
                     onClick={handlePageButtonClick}
-                    className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 flex-shrink-0 aspect-square" 
+                    className="top-bar-text-button !rounded-full !w-9 !h-9 !p-0 flex-shrink-0 aspect-square font-bold" 
                     style={getToolbarStyle('page', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
                 >
                     {toArabic(page)}

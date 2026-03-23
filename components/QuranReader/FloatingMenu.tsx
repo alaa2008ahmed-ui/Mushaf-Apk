@@ -1,4 +1,5 @@
 import React from 'react';
+import { Mic, BookMarked, Search, Palette, Settings } from 'lucide-react';
 
 interface FloatingMenuProps {
     isFloatingMenuOpen: boolean;
@@ -23,14 +24,23 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
 }) => {
     return (
         <div id="floating-menu" className={isFloatingMenuOpen ? 'open' : ''} ref={floatingMenuRef}>
-            <button onClick={() => { openModal('voice-control-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-voice-control', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)} title="التحكم الصوتي"><i className="fa-solid fa-microphone-lines text-indigo-500 text-xl"></i></button>
-            <button onClick={() => { onNavigate('tajweed-education'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-bookmarks-list', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><i className="fa-solid fa-book-open text-indigo-500 text-xl"></i></button>
-            <button onClick={() => { openModal('bookmarks-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-bookmarks-list', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><i className="fa-solid fa-bookmark text-indigo-500 text-xl"></i></button>
+            <button onClick={() => { openModal('voice-control-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-voice-control', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)} title="التحكم الصوتي">
+                <Mic size={24} />
+            </button>
+            <button onClick={() => { openModal('bookmarks-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-bookmarks-list', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)} title="العلامات المحفوظة">
+                <BookMarked size={24} />
+            </button>
             {!initialLandscape && (
-                <button onClick={() => { openModal('search-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-purple !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-search', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><i className="fa-solid fa-magnifying-glass text-indigo-500 text-xl"></i></button>
+                <button onClick={() => { openModal('search-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-purple !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-search', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)} title="بحث">
+                    <Search size={24} />
+                </button>
             )}
-            <button onClick={() => { openModal('themes-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-themes', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><i className="fa-solid fa-palette text-indigo-500 text-xl"></i></button>
-            <button onClick={() => { openModal('settings-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-settings', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}><i className="fa-solid fa-sliders text-indigo-500 text-xl"></i></button>
+            <button onClick={() => { openModal('themes-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-themes', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)} title="المظهر">
+                <Palette size={24} />
+            </button>
+            <button onClick={() => { openModal('settings-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-settings', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)} title="الإعدادات">
+                <Settings size={24} />
+            </button>
         </div>
     );
 };

@@ -1,97 +1,36 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState } from 'react';
+import { motion } from 'motion/react';
+import { useVoiceControl, VoiceCommand } from '../../context/VoiceControlContext';
+import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, RotateCcw } from 'lucide-react';
 
 interface VoiceControlModalProps {
     isOpen: boolean;
     onClose: () => void;
     currentTheme: any;
-    onCommand: (command: string) => void;
-}
-
-interface CustomCommand {
-    phrase: string;
-    action: string;
 }
 
 const VoiceControlModal: React.FC<VoiceControlModalProps> = ({
     isOpen,
     onClose,
-    currentTheme,
-    onCommand
+    currentTheme
 }) => {
-    const [isListening, setIsListening] = useState(false);
-    const [transcript, setTranscript] = useState('');
-    const [customCommands, setCustomCommands] = useState<CustomCommand[]>(() => {
-        const saved = localStorage.getItem('custom_voice_commands');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const { 
+        isEnabled, 
+        setIsEnabled, 
+        isListening, 
+        transcript, 
+        commands, 
+        updateCommand, 
+        addCommand, 
+        deleteCommand,
+        resetToDefaults
+    } = useVoiceControl();
+
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editValue, setEditValue] = useState('');
+    const [showAddCommand, setShowAddCommand] = useState(false);
     const [newPhrase, setNewPhrase] = useState('');
     const [newAction, setNewAction] = useState('');
-    const [showAddCommand, setShowAddCommand] = useState(false);
-
-    const recognitionRef = useRef<any>(null);
-
-    useEffect(() => {
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = false;
-            recognitionRef.current.interimResults = true;
-            recognitionRef.current.lang = 'ar-SA';
-
-            recognitionRef.current.onresult = (event: any) => {
-                const current = event.resultIndex;
-                const transcriptText = event.results[current][0].transcript;
-                setTranscript(transcriptText);
-
-                if (event.results[current].isFinal) {
-                    onCommand(transcriptText);
-                    setTimeout(() => {
-                        setIsListening(false);
-                    }, 1000);
-                }
-            };
-
-            recognitionRef.current.onend = () => {
-                setIsListening(false);
-            };
-
-            recognitionRef.current.onerror = (event: any) => {
-                console.error('Speech recognition error', event.error);
-                setIsListening(false);
-            };
-        }
-    }, [onCommand]);
-
-    const toggleListening = () => {
-        if (isListening) {
-            recognitionRef.current?.stop();
-        } else {
-            setTranscript('');
-            recognitionRef.current?.start();
-            setIsListening(true);
-        }
-    };
-
-    const saveCustomCommands = (commands: CustomCommand[]) => {
-        setCustomCommands(commands);
-        localStorage.setItem('custom_voice_commands', JSON.stringify(commands));
-    };
-
-    const addCommand = () => {
-        if (newPhrase && newAction) {
-            const updated = [...customCommands, { phrase: newPhrase.trim().toLowerCase(), action: newAction }];
-            saveCustomCommands(updated);
-            setNewPhrase('');
-            setNewAction('');
-            setShowAddCommand(false);
-        }
-    };
-
-    const deleteCommand = (index: number) => {
-        const updated = customCommands.filter((_, i) => i !== index);
-        saveCustomCommands(updated);
-    };
 
     const AVAILABLE_ACTIONS = [
         { id: 'next_page', name: 'الصفحة التالية' },
@@ -105,8 +44,31 @@ const VoiceControlModal: React.FC<VoiceControlModalProps> = ({
         { id: 'open_prayer', name: 'فتح مواقيت الصلاة' },
         { id: 'open_qibla', name: 'فتح القبلة' },
         { id: 'open_tasbeeh', name: 'فتح المسبحة' },
-        { id: 'play_audio', name: 'تشغيل/إيقاف الصوت' },
+        { id: 'play_audio', name: 'تشغيل الصوت' },
+        { id: 'stop_audio', name: 'إيقاف الصوت' },
+        { id: 'go_home', name: 'الرئيسية' },
     ];
+
+    const handleEdit = (cmd: VoiceCommand) => {
+        setEditingId(cmd.id);
+        setEditValue(cmd.phrase);
+    };
+
+    const handleSaveEdit = (id: string) => {
+        if (editValue.trim()) {
+            updateCommand(id, editValue.trim());
+            setEditingId(null);
+        }
+    };
+
+    const handleAdd = () => {
+        if (newPhrase.trim() && newAction) {
+            addCommand(newPhrase.trim(), newAction);
+            setNewPhrase('');
+            setNewAction('');
+            setShowAddCommand(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -115,67 +77,81 @@ const VoiceControlModal: React.FC<VoiceControlModalProps> = ({
             <motion.div 
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+                className="w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
                 style={{ backgroundColor: currentTheme.modalBg, color: currentTheme.modalText }}
                 onClick={e => e.stopPropagation()}
             >
                 <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: currentTheme.barBorder }}>
                     <h2 className="text-xl font-bold flex items-center gap-2">
-                        <i className="fa-solid fa-microphone-lines text-indigo-500"></i>
+                        <Mic className="text-indigo-500 w-6 h-6" />
                         التحكم الصوتي
                     </h2>
                     <button onClick={onClose} className="p-2 hover:bg-black/10 rounded-full transition-colors">
-                        <i className="fa-solid fa-xmark"></i>
+                        <X className="w-6 h-6" />
                     </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                    {/* Microphone Section */}
-                    <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                    {/* Status Section */}
+                    <div className="flex flex-col items-center justify-center py-4 space-y-4">
                         <button 
-                            onClick={toggleListening}
-                            className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl shadow-xl transition-all ${isListening ? 'animate-pulse scale-110' : 'hover:scale-105'}`}
+                            onClick={() => setIsEnabled(!isEnabled)}
+                            className={`w-20 h-20 rounded-full flex items-center justify-center shadow-xl transition-all ${isEnabled && isListening ? 'animate-pulse scale-105' : 'hover:scale-105'}`}
                             style={{ 
-                                backgroundColor: isListening ? '#ef4444' : currentTheme.accent,
-                                color: isListening ? '#ffffff' : currentTheme.accentText
+                                backgroundColor: isEnabled ? (isListening ? '#ef4444' : '#10b981') : '#9ca3af',
+                                color: '#ffffff'
                             }}
                         >
-                            <i className={`fa-solid ${isListening ? 'fa-stop' : 'fa-microphone'}`}></i>
+                            {isEnabled ? <Mic className="w-10 h-10" /> : <MicOff className="w-10 h-10" />}
                         </button>
-                        <p className="text-sm font-bold opacity-70">
-                            {isListening ? 'جاري الاستماع...' : 'اضغط للتحدث بالأوامر العربية'}
-                        </p>
+                        <div className="text-center">
+                            <p className="text-sm font-bold">
+                                {isEnabled ? (isListening ? 'جاري الاستماع...' : 'التحكم الصوتي مفعل') : 'التحكم الصوتي معطل'}
+                            </p>
+                            <p className="text-[10px] opacity-60 mt-1">
+                                {isEnabled ? 'يمكنك التحدث بالأوامر من أي مكان في التطبيق' : 'اضغط على الزر لتفعيل الاستماع الدائم'}
+                            </p>
+                        </div>
                         
-                        {transcript && (
-                            <div className="p-4 rounded-2xl bg-black/5 w-full text-center italic font-bold">
+                        {transcript && isListening && (
+                            <div className="p-4 rounded-2xl bg-black/5 w-full text-center italic font-bold text-sm">
                                 "{transcript}"
                             </div>
                         )}
                     </div>
 
-                    {/* Custom Commands Section */}
+                    {/* Commands List */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="font-bold text-sm opacity-80">الأوامر المخصصة</h3>
-                            <button 
-                                onClick={() => setShowAddCommand(!showAddCommand)}
-                                className="text-xs font-bold px-3 py-1 rounded-full"
-                                style={{ backgroundColor: currentTheme.accent, color: currentTheme.accentText }}
-                            >
-                                {showAddCommand ? 'إلغاء' : 'إضافة أمر جديد'}
-                            </button>
+                            <h3 className="font-bold text-sm opacity-80">إدارة الأوامر</h3>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={resetToDefaults}
+                                    className="p-2 rounded-full hover:bg-black/5"
+                                    title="إعادة ضبط المصنع"
+                                >
+                                    <RotateCcw className="w-4 h-4 opacity-60" />
+                                </button>
+                                <button 
+                                    onClick={() => setShowAddCommand(!showAddCommand)}
+                                    className="text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"
+                                    style={{ backgroundColor: currentTheme.accent, color: currentTheme.accentText }}
+                                >
+                                    <Plus className="w-3 h-3" />
+                                    {showAddCommand ? 'إلغاء' : 'إضافة'}
+                                </button>
+                            </div>
                         </div>
 
                         {showAddCommand && (
                             <motion.div 
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
-                                className="p-4 rounded-2xl border space-y-3"
-                                style={{ borderColor: currentTheme.barBorder, backgroundColor: 'rgba(0,0,0,0.03)' }}
+                                className="p-4 rounded-2xl border space-y-3 bg-black/5"
+                                style={{ borderColor: currentTheme.barBorder }}
                             >
                                 <div>
-                                    <label className="text-xs font-bold block mb-1">عند سماع نص:</label>
+                                    <label className="text-[10px] font-bold block mb-1">العبارة الصوتية:</label>
                                     <input 
                                         type="text" 
                                         value={newPhrase}
@@ -186,7 +162,7 @@ const VoiceControlModal: React.FC<VoiceControlModalProps> = ({
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold block mb-1">نفذ إجراء:</label>
+                                    <label className="text-[10px] font-bold block mb-1">الإجراء:</label>
                                     <select 
                                         value={newAction}
                                         onChange={e => setNewAction(e.target.value)}
@@ -200,38 +176,59 @@ const VoiceControlModal: React.FC<VoiceControlModalProps> = ({
                                     </select>
                                 </div>
                                 <button 
-                                    onClick={addCommand}
-                                    disabled={!newPhrase || !newAction}
+                                    onClick={handleAdd}
+                                    disabled={!newPhrase.trim() || !newAction}
                                     className="w-full py-2 rounded-xl font-bold text-sm disabled:opacity-50"
                                     style={{ backgroundColor: currentTheme.accent, color: currentTheme.accentText }}
                                 >
-                                    حفظ الأمر
+                                    حفظ الأمر الجديد
                                 </button>
                             </motion.div>
                         )}
 
                         <div className="space-y-2">
-                            {customCommands.length === 0 ? (
-                                <p className="text-xs opacity-50 text-center py-4">لا توجد أوامر مخصصة حالياً</p>
-                            ) : (
-                                customCommands.map((cmd, idx) => (
-                                    <div key={idx} className="flex items-center justify-between p-3 rounded-xl border" style={{ borderColor: currentTheme.barBorder }}>
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-bold">"{cmd.phrase}"</span>
-                                            <span className="text-[10px] opacity-60">{AVAILABLE_ACTIONS.find(a => a.id === cmd.action)?.name}</span>
-                                        </div>
-                                        <button onClick={() => deleteCommand(idx)} className="text-red-500 p-2">
-                                            <i className="fa-solid fa-trash-can"></i>
-                                        </button>
+                            {commands.map((cmd) => (
+                                <div key={cmd.id} className="flex items-center justify-between p-3 rounded-xl border bg-black/5" style={{ borderColor: currentTheme.barBorder }}>
+                                    <div className="flex-1 mr-2">
+                                        {editingId === cmd.id ? (
+                                            <div className="flex items-center gap-2">
+                                                <input 
+                                                    type="text"
+                                                    value={editValue}
+                                                    onChange={e => setEditValue(e.target.value)}
+                                                    className="flex-1 p-1 rounded border bg-white text-sm text-black"
+                                                    autoFocus
+                                                />
+                                                <button onClick={() => handleSaveEdit(cmd.id)} className="text-green-600"><Check className="w-4 h-4" /></button>
+                                                <button onClick={() => setEditingId(null)} className="text-red-600"><X className="w-4 h-4" /></button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold">"{cmd.phrase}"</span>
+                                                <span className="text-[10px] opacity-60">
+                                                    {AVAILABLE_ACTIONS.find(a => a.id === cmd.action)?.name || cmd.action}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
-                                ))
-                            )}
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={() => handleEdit(cmd)} className="p-2 opacity-60 hover:opacity-100">
+                                            <Edit2 className="w-4 h-4" />
+                                        </button>
+                                        {!cmd.isDefault && (
+                                            <button onClick={() => deleteCommand(cmd.id)} className="p-2 text-red-500 opacity-60 hover:opacity-100">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
                     {/* Help Section */}
                     <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
-                        <h4 className="text-xs font-bold text-indigo-500 mb-2">أمثلة للأوامر المدمجة:</h4>
+                        <h4 className="text-xs font-bold text-indigo-500 mb-2">أمثلة للأوامر الذكية:</h4>
                         <ul className="text-[10px] space-y-1 opacity-80 list-disc list-inside">
                             <li>"اذهب إلى سورة الكهف"</li>
                             <li>"اذهب إلى صفحة مئة"</li>

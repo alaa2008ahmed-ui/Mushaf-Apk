@@ -1369,6 +1369,30 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
     }, [onNavigate, onBack, openModal, jumpToAyah, jumpToPage, visiblePages, handlePlayButtonPointerDown, handlePlayButtonPointerUp]);
 
+    // Handle global voice commands
+    useEffect(() => {
+        const handleGlobalVoiceCommand = (e: any) => {
+            const { action, text } = e.detail;
+            if (action === 'quran_navigation' && text) {
+                handleVoiceCommand(text);
+            } else if (action === 'next_page') {
+                jumpToPage(Math.min(604, Math.max(...visiblePages) + 1));
+            } else if (action === 'prev_page') {
+                jumpToPage(Math.max(1, Math.min(...visiblePages) - 1));
+            } else if (action === 'play_audio' || action === 'stop_audio') {
+                handlePlayButtonPointerDown();
+                handlePlayButtonPointerUp();
+            } else if (action === 'open_search') {
+                openModal('search-modal');
+            } else if (action === 'open_settings') {
+                openModal('settings-modal');
+            }
+        };
+
+        window.addEventListener('voice-command', handleGlobalVoiceCommand);
+        return () => window.removeEventListener('voice-command', handleGlobalVoiceCommand);
+    }, [visiblePages, jumpToPage, handlePlayButtonPointerDown, handlePlayButtonPointerUp, openModal, handleVoiceCommand]);
+
     const saveBookmark = () => { 
         if (!currentAyah) { showToast('اختر آية أولاً'); return; } 
         const stored = JSON.parse(localStorage.getItem('quran_bookmarks_list' + modeSuffix) || '[]'); 
@@ -1981,7 +2005,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 isOpen={activeModals.includes('voice-control-modal')}
                 onClose={() => closeModal('voice-control-modal')}
                 currentTheme={currentTheme}
-                onCommand={handleVoiceCommand}
             />
             <Toast message={toast.message} show={toast.show} onClose={handleToastClose} />
         </div>

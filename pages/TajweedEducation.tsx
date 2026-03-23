@@ -378,7 +378,17 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
 
     const startRecording = async (exampleId: string) => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error("Browser does not support microphone access");
+            }
+
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                } 
+            });
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = [];
@@ -396,9 +406,24 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
 
             mediaRecorder.start();
             setRecordingId(exampleId);
-        } catch (err) {
-            console.error("Microphone access denied", err);
-            alert("يرجى السماح بالوصول إلى الميكروفون لتسجيل قراءتك والمقارنة.");
+        } catch (err: any) {
+            console.error("Microphone access error:", err);
+            
+            let errorMessage = "يرجى السماح بالوصول إلى الميكروفون لتسجيل قراءتك والمقارنة.";
+            
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                errorMessage = "تم رفض الوصول للميكروفون. يرجى تفعيل الإذن من إعدادات المتصفح أو التطبيق.";
+            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                errorMessage = "لم يتم العثور على ميكروفون متصل بجهازك.";
+            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                errorMessage = "الميكروفون قيد الاستخدام من قبل تطبيق آخر حالياً.";
+            } else if (err.name === 'SecurityError') {
+                errorMessage = "لا يمكن الوصول للميكروفون بسبب قيود أمنية (تأكد من استخدام HTTPS).";
+            } else {
+                errorMessage = `خطأ في الوصول للميكروفون: ${err.message || 'غير معروف'}`;
+            }
+            
+            alert(errorMessage);
         }
     };
 
