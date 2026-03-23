@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { App as CapacitorApp } from '@capacitor/app';
 
 export interface VoiceCommand {
     id: string;
@@ -104,9 +105,9 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             
             // 1. Safely check and request permissions without blocking
             try {
-                const checkPerm = await SpeechRecognition.hasPermission();
-                if (!checkPerm.permission) {
-                    await SpeechRecognition.requestPermission();
+                const checkPerm = await SpeechRecognition.checkPermissions();
+                if (checkPerm.speechRecognition !== 'granted') {
+                    await SpeechRecognition.requestPermissions();
                 }
             } catch (permError) {
                 console.warn('Permission check error (proceeding anyway):', permError);
@@ -187,6 +188,19 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             stopRecognition();
         }
     }, [isEnabled, startRecognition, stopRecognition]);
+
+    // Disable voice control when app goes to background
+    useEffect(() => {
+        const listener = CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+            if (!isActive && isEnabledRef.current) {
+                setIsEnabled(false);
+            }
+        });
+
+        return () => {
+            listener.then(l => l.remove());
+        };
+    }, []);
 
     const toggleEnabled = useCallback(() => {
         setIsEnabled(prev => !prev);

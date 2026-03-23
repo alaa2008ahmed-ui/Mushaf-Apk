@@ -23,6 +23,25 @@ function App() {
   const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
+  const handleNavigate = useCallback((pageId: string) => {
+    const validPages = [
+      'quran', 'quran-landscape', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
+      'hajj-umrah', 'hisn-muslim', 'prayer-times', 'qibla', 
+      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education', 'voice-control', 'more-menu'
+    ];
+
+    if (validPages.includes(pageId)) {
+      setHistory(prev => {
+        if (prev[prev.length - 1] !== pageId) {
+          return [...prev, pageId];
+        }
+        return prev;
+      });
+    } else {
+      alert(`التنقل إلى قسم "${pageId}" قيد الإنشاء.`);
+    }
+  }, []);
+
   const handleVoiceAction = useCallback((action: string, text: string) => {
     console.log('Voice Action:', action, text);
     
@@ -48,18 +67,19 @@ function App() {
     
     // Quran Specific Actions (Forwarded to QuranReader via Event)
     else if (['next_page', 'prev_page', 'play_audio', 'stop_audio', 'quran_navigation', 'increase_font', 'decrease_font', 'change_theme', 'download_quran', 'show_tafsir', 'open_bookmarks'].includes(action)) {
-      if (history[history.length - 1] === 'quran') {
-        window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text } }));
-      } else {
-        handleNavigate('quran');
-        // Wait for navigation then dispatch? Or just let QuranReader handle it on mount if we pass state?
-        // For now, just dispatch. If QuranReader is not mounted, it won't do anything.
-        setTimeout(() => {
+      setHistory(prev => {
+        if (prev[prev.length - 1] === 'quran') {
           window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text } }));
-        }, 500);
-      }
+          return prev;
+        } else {
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text } }));
+          }, 500);
+          return [...prev, 'quran'];
+        }
+      });
     }
-  }, [history]);
+  }, [handleNavigate]);
 
   useEffect(() => {
     // Start preloading tajweed audio in the background
@@ -84,22 +104,6 @@ function App() {
 
   const handleConfirmExit = () => {
     CapacitorApp.exitApp();
-  };
-
-  const handleNavigate = (pageId: string) => {
-    const validPages = [
-      'quran', 'quran-landscape', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
-      'hajj-umrah', 'hisn-muslim', 'prayer-times', 'qibla', 
-      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education', 'voice-control', 'more-menu'
-    ];
-
-    if (validPages.includes(pageId)) {
-      if (history[history.length - 1] !== pageId) {
-        setHistory(prev => [...prev, pageId]);
-      }
-    } else {
-      alert(`التنقل إلى قسم "${pageId}" قيد الإنشاء.`);
-    }
   };
   
   const toggleThemeSelector = () => setIsThemeSelectorOpen(prev => !prev);
