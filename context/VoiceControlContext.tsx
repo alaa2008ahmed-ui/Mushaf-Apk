@@ -69,21 +69,7 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
     });
 
     const isEnabledRef = useRef(isEnabled);
-
     const isStartingRef = useRef(false);
-
-    useEffect(() => {
-        isEnabledRef.current = isEnabled;
-        localStorage.setItem('voice_control_enabled', isEnabled.toString());
-        // Only start on mount if it was enabled, but we rely on user interaction for subsequent toggles
-    }, [isEnabled]);
-
-    // Start on mount if enabled
-    useEffect(() => {
-        if (isEnabled) {
-            startRecognition();
-        }
-    }, []); // Run once on mount
 
     useEffect(() => {
         localStorage.setItem('voice_commands_v2', JSON.stringify(commands));
@@ -116,33 +102,30 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         try {
             const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
             
-            // Request permission and wait for system response
-            const permissionResult = await SpeechRecognition.requestPermission();
+            // 1. Check availability first
+            const available = await SpeechRecognition.available();
+            if (!available.available) {
+                alert('عذراً، ميزة التعرف على الصوت غير متوفرة في جهازك.');
+                setIsEnabled(false);
+                isStartingRef.current = false;
+                return;
+            }
+
+            // 2. Check and request permission
+            const checkPerm = await SpeechRecognition.hasPermission();
+            if (!checkPerm.permission) {
+                await SpeechRecognition.requestPermission();
+            }
             
-            // Check if permission is granted (handle different possible return formats)
-            let isGranted = false;
-            if (permissionResult === true) isGranted = true;
-            else if (typeof permissionResult === 'object') {
-                if ((permissionResult as any).speechRecognition === 'granted') isGranted = true;
-                else if ((permissionResult as any).permission === true) isGranted = true;
-                else if ((permissionResult as any).granted === true) isGranted = true;
-            }
-
-            // Fallback check if the result format is unknown
-            if (!isGranted) {
-                const checkPerm = await SpeechRecognition.hasPermission();
-                if (checkPerm.permission) {
-                    isGranted = true;
-                }
-            }
-
-            if (!isGranted) {
+            const finalCheck = await SpeechRecognition.hasPermission();
+            if (!finalCheck.permission) {
                 alert('يرجى السماح بالوصول إلى الميكروفون لتفعيل التحكم الصوتي.');
                 setIsEnabled(false);
                 isStartingRef.current = false;
                 return;
             }
 
+            // 3. Start listening loop
             const listenLoop = async () => {
                 if (!isEnabledRef.current) {
                     setIsListening(false);
@@ -153,6 +136,7 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                     setIsListening(true);
                     const result = await SpeechRecognition.start({
                         language: "ar-SA",
+                        maxResults: 1,
                         partialResults: false,
                         popup: false
                     });
@@ -188,23 +172,30 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         try {
             const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
             await SpeechRecognition.stop();
-        } catch (e) {
-            console.error('Error stopping recognition:', e);
+        } catch (e: any) {
+            // Ignore "Method not implemented on web" error as it's expected in browser
+            if (e?.message !== 'Method not implemented on web.') {
+                console.error('Error stopping recognition:', e);
+            }
         }
         setIsListening(false);
     }, []);
 
+    // Sync state changes to refs and trigger start/stop
+    useEffect(() => {
+        isEnabledRef.current = isEnabled;
+        localStorage.setItem('voice_control_enabled', isEnabled.toString());
+        
+        if (isEnabled) {
+            startRecognition();
+        } else {
+            stopRecognition();
+        }
+    }, [isEnabled, startRecognition, stopRecognition]);
+
     const toggleEnabled = useCallback(() => {
-        setIsEnabled(prev => {
-            const nextState = !prev;
-            if (nextState) {
-                startRecognition();
-            } else {
-                stopRecognition();
-            }
-            return nextState;
-        });
-    }, [startRecognition, stopRecognition]);
+        setIsEnabled(prev => !prev);
+    }, []);
 
     const updateCommand = (id: string, phrase: string) => {
         setCommands(prev => prev.map(c => c.id === id ? { ...c, phrase } : c));
