@@ -10,6 +10,7 @@ import { registerBackInterceptor } from '../hooks/useBackButton';
 import VerseSection from '../components/MainMenu/VerseSection';
 import TitleSection from '../components/MainMenu/TitleSection';
 import GridSection from '../components/MainMenu/GridSection';
+import MoreMenuModal from '../components/MoreMenuModal';
 
 const DEFAULT_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
@@ -22,10 +23,8 @@ const DEFAULT_MENU_ITEMS = [
     { id: 'tasbeeh', label: "📿 السبحة", className: "h-10", colorIndex: 1 },
     { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 1 },
     { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
-    { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
-    { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
-    { id: 'tajweed-education', label: "📖 تعليم التجويد", className: "col-span-2 h-10", colorIndex: 0 },
+    { id: 'more', label: "✨ المزيد", className: "h-10", colorIndex: 0 },
 ];
 
 function MainMenu({ onNavigate, onOpenThemes }) {
@@ -66,6 +65,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
   });
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [verseFontSize, setVerseFontSize] = useState(() => {
       const saved = localStorage.getItem('mainMenuVerseFontSize');
       return saved ? parseFloat(saved) : 1.25;
@@ -112,6 +112,10 @@ function MainMenu({ onNavigate, onOpenThemes }) {
 
   useEffect(() => {
       const interceptor = () => {
+          if (isMoreMenuOpen) {
+              setIsMoreMenuOpen(false);
+              return true;
+          }
           if (isCustomizationOpen) {
               setIsCustomizationOpen(false);
               return true;
@@ -124,7 +128,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
       };
       const unregister = registerBackInterceptor(interceptor);
       return unregister;
-  }, [isCustomizationOpen, isEditMode]);
+  }, [isCustomizationOpen, isEditMode, isMoreMenuOpen]);
 
   const handleSaveCustomization = (selectedIds: string[]) => {
       setVisibleItems(selectedIds);
@@ -176,7 +180,10 @@ function MainMenu({ onNavigate, onOpenThemes }) {
                   setMenuItems={setMenuItems}
                   visibleItems={visibleItems}
                   isEditMode={isEditMode}
-                  onNavigate={onNavigate}
+                  onNavigate={(id) => {
+                      if (id === 'more') setIsMoreMenuOpen(true);
+                      else onNavigate(id);
+                  }}
                   theme={theme}
                   themeKey={themeKey}
                   DEFAULT_MENU_ITEMS={DEFAULT_MENU_ITEMS}
@@ -203,6 +210,14 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         allItems={DEFAULT_MENU_ITEMS}
         visibleIds={visibleItems}
         onSave={handleSaveCustomization}
+      />
+
+      <MoreMenuModal 
+        isOpen={isMoreMenuOpen}
+        onClose={() => setIsMoreMenuOpen(false)}
+        onNavigate={onNavigate}
+        theme={theme}
+        themeKey={themeKey}
       />
     </div>
   );

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback, FC } from 'react';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import './QuranReader.css'; 
 import { JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, DEFAULT_SETTINGS, FONTS, SURAH_NAMES_AR } from '../components/QuranReader/constants';
-import VoiceControlModal from '../components/QuranReader/VoiceControlModal';
 import SearchModal from '../components/QuranReader/SearchModal';
 import ThemesModal from '../components/QuranReader/ThemesModal';
 import SettingsModal from '../components/QuranReader/SettingsModal';
@@ -2001,11 +2000,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 currentType={useTajweed ? 'tajweed' : 'uthmani'}
             />
             <SajdahCardModal info={sajdahCardInfo} onClose={handleCloseSajdahCard} isLandscape={isLandscape} />
-            <VoiceControlModal 
-                isOpen={activeModals.includes('voice-control-modal')}
-                onClose={() => closeModal('voice-control-modal')}
-                currentTheme={currentTheme}
-            />
             <Toast message={toast.message} show={toast.show} onClose={handleToastClose} />
         </div>
     );

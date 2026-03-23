@@ -24,9 +24,6 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
 }) => {
     return (
         <div id="floating-menu" className={isFloatingMenuOpen ? 'open' : ''} ref={floatingMenuRef}>
-            <button onClick={() => { openModal('voice-control-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-voice-control', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)} title="التحكم الصوتي">
-                <Mic size={24} />
-            </button>
             <button onClick={() => { openModal('bookmarks-modal'); setIsFloatingMenuOpen(false); }} className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center shadow-lg" style={getToolbarStyle('btn-bookmarks-list', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)} title="العلامات المحفوظة">
                 <BookMarked size={24} />
             </button>

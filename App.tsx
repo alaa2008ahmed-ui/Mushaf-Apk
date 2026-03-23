@@ -13,9 +13,11 @@ import { VoiceControlProvider } from './context/VoiceControlContext';
 import { preloadTajweedAudio } from './utils/audioCache';
 import { Mic, MicOff } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useTheme } from './context/ThemeContext';
 
 // --- Main App Component ---
 function App() {
+  const { theme } = useTheme();
   const [showSplash, setShowSplash] = useState(true);
   const [history, setHistory] = useState(['home']);
   const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
@@ -79,7 +81,7 @@ function App() {
     const validPages = [
       'quran', 'quran-landscape', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'qibla', 
-      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education'
+      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education', 'voice-control'
     ];
 
     if (validPages.includes(pageId)) {
@@ -110,7 +112,7 @@ function App() {
           />
 
           {/* Global Voice Control Toggle */}
-          <VoiceControlToggle />
+          {page === 'home' && <VoiceControlToggle />}
 
           {isThemeSelectorOpen && (
             <ThemeSelector 

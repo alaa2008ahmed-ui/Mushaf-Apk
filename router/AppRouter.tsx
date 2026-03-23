@@ -14,6 +14,7 @@ import Nawawi from '../pages/Nawawi';
 import QuranReader from '../pages/QuranReader';
 import Calculators from '../pages/Calculators';
 import TajweedEducation from '../pages/TajweedEducation';
+import VoiceControlPage from '../pages/VoiceControlPage';
 
 interface AppRouterProps {
     page: string;
@@ -54,6 +55,8 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
         return <Nawawi onBack={onBack} />;
       case 'calculators':
         return <Calculators onBack={onBack} />;
+      case 'voice-control':
+        return <VoiceControlPage onBack={onBack} />;
       case 'home':
       default:
         return <MainMenu onNavigate={onNavigate} onOpenThemes={onOpenThemes} />;

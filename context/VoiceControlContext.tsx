@@ -49,7 +49,10 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
 
     const recognitionRef = useRef<any>(null);
 
+    const isEnabledRef = useRef(isEnabled);
+
     useEffect(() => {
+        isEnabledRef.current = isEnabled;
         localStorage.setItem('voice_control_enabled', isEnabled.toString());
         if (isEnabled) {
             startRecognition();
@@ -64,42 +67,59 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
 
     const startRecognition = useCallback(() => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        if (SpeechRecognition && !recognitionRef.current) {
-            recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = true;
-            recognitionRef.current.interimResults = true;
-            recognitionRef.current.lang = 'ar-SA';
+        
+        if (!SpeechRecognition) {
+            console.warn('Speech Recognition API not supported in this browser.');
+            setIsEnabled(false);
+            return;
+        }
 
-            recognitionRef.current.onstart = () => setIsListening(true);
-            recognitionRef.current.onend = () => {
-                if (isEnabled) {
-                    recognitionRef.current?.start();
-                } else {
-                    setIsListening(false);
-                }
-            };
+        if (!recognitionRef.current) {
+            try {
+                recognitionRef.current = new SpeechRecognition();
+                recognitionRef.current.continuous = true;
+                recognitionRef.current.interimResults = true;
+                recognitionRef.current.lang = 'ar-SA';
 
-            recognitionRef.current.onresult = (event: any) => {
-                let interimTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        const finalTranscript = event.results[i][0].transcript.trim().toLowerCase();
-                        setTranscript(finalTranscript);
-                        handleCommand(finalTranscript);
+                recognitionRef.current.onstart = () => setIsListening(true);
+                recognitionRef.current.onend = () => {
+                    if (isEnabledRef.current) {
+                        try {
+                            recognitionRef.current?.start();
+                        } catch (e) {
+                            console.error('Error restarting recognition:', e);
+                            setIsListening(false);
+                        }
                     } else {
-                        interimTranscript += event.results[i][0].transcript;
+                        setIsListening(false);
                     }
-                }
-            };
+                };
 
-            recognitionRef.current.onerror = (event: any) => {
-                console.error('Speech recognition error', event.error);
-                if (event.error === 'not-allowed') {
-                    setIsEnabled(false);
-                }
-            };
+                recognitionRef.current.onresult = (event: any) => {
+                    let interimTranscript = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) {
+                            const finalTranscript = event.results[i][0].transcript.trim().toLowerCase();
+                            setTranscript(finalTranscript);
+                            handleCommand(finalTranscript);
+                        } else {
+                            interimTranscript += event.results[i][0].transcript;
+                        }
+                    }
+                };
 
-            recognitionRef.current.start();
+                recognitionRef.current.onerror = (event: any) => {
+                    console.error('Speech recognition error', event.error);
+                    if (event.error === 'not-allowed') {
+                        setIsEnabled(false);
+                    }
+                };
+
+                recognitionRef.current.start();
+            } catch (e) {
+                console.error('Error starting recognition:', e);
+                setIsEnabled(false);
+            }
         }
     }, [isEnabled]);
 
