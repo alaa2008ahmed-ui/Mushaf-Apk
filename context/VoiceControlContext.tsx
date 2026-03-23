@@ -68,8 +68,6 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         return DEFAULT_COMMANDS;
     });
 
-    const recognitionRef = useRef<any>(null);
-
     const isEnabledRef = useRef(isEnabled);
 
     const isStartingRef = useRef(false);
@@ -115,85 +113,70 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         if (isStartingRef.current) return;
         isStartingRef.current = true;
 
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        
-        if (!SpeechRecognition) {
-            console.warn('Speech Recognition API not supported in this browser.');
-            alert('عذراً، متصفحك لا يدعم ميزة التحكم الصوتي. يرجى استخدام متصفح جوجل كروم.');
-            setIsEnabled(false);
-            isStartingRef.current = false;
-            return;
-        }
-
         try {
-            // Request native Android microphone permission first using Capacitor
-            const { VoiceRecorder } = await import('capacitor-voice-recorder');
-            const permission = await VoiceRecorder.requestAudioRecordingPermission();
-            if (!permission.value) {
+            const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
+            
+            // Request permission and wait for system response
+            const permissionResult = await SpeechRecognition.requestPermission();
+            
+            // Check if permission is granted (handle different possible return formats)
+            let isGranted = false;
+            if (permissionResult === true) isGranted = true;
+            else if (typeof permissionResult === 'object') {
+                if ((permissionResult as any).speechRecognition === 'granted') isGranted = true;
+                else if ((permissionResult as any).permission === true) isGranted = true;
+                else if ((permissionResult as any).granted === true) isGranted = true;
+            }
+
+            // Fallback check if the result format is unknown
+            if (!isGranted) {
+                const checkPerm = await SpeechRecognition.hasPermission();
+                if (checkPerm.permission) {
+                    isGranted = true;
+                }
+            }
+
+            if (!isGranted) {
                 alert('يرجى السماح بالوصول إلى الميكروفون لتفعيل التحكم الصوتي.');
                 setIsEnabled(false);
                 isStartingRef.current = false;
                 return;
             }
-        } catch (e) {
-            console.warn("Could not request permission via Capacitor", e);
-        }
 
-        if (recognitionRef.current) {
-            try {
-                recognitionRef.current.stop();
-            } catch (e) {}
-            recognitionRef.current = null;
-        }
-
-        try {
-            recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = true;
-            recognitionRef.current.interimResults = true;
-            recognitionRef.current.lang = 'ar-SA';
-
-            recognitionRef.current.onstart = () => {
-                setIsListening(true);
-            };
-            
-            recognitionRef.current.onend = () => {
-                if (isEnabledRef.current) {
-                    try {
-                        recognitionRef.current?.start();
-                    } catch (e) {
-                        console.error('Error restarting recognition:', e);
-                        setIsListening(false);
-                    }
-                } else {
+            const listenLoop = async () => {
+                if (!isEnabledRef.current) {
                     setIsListening(false);
+                    return;
                 }
-            };
+                
+                try {
+                    setIsListening(true);
+                    const result = await SpeechRecognition.start({
+                        language: "ar-SA",
+                        partialResults: false,
+                        popup: false
+                    });
 
-            recognitionRef.current.onresult = (event: any) => {
-                let interimTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        const finalTranscript = event.results[i][0].transcript.trim().toLowerCase();
+                    if (result && result.matches && result.matches.length > 0) {
+                        const finalTranscript = result.matches[0].trim().toLowerCase();
                         setTranscript(finalTranscript);
                         handleCommandRef.current(finalTranscript);
+                    }
+                } catch (e) {
+                    console.error('Speech recognition error:', e);
+                } finally {
+                    if (isEnabledRef.current) {
+                        // Small delay before restarting to avoid freezing
+                        setTimeout(listenLoop, 500);
                     } else {
-                        interimTranscript += event.results[i][0].transcript;
+                        setIsListening(false);
                     }
                 }
             };
 
-            recognitionRef.current.onerror = (event: any) => {
-                console.error('Speech recognition error', event.error);
-                if (event.error === 'not-allowed') {
-                    alert('يرجى السماح بالوصول إلى الميكروفون لتفعيل التحكم الصوتي.');
-                    setIsEnabled(false);
-                } else if (event.error === 'network') {
-                    console.warn('Network error in speech recognition');
-                }
-            };
-
-            recognitionRef.current.start();
+            listenLoop();
             isStartingRef.current = false;
+
         } catch (e) {
             console.error('Error starting recognition:', e);
             setIsEnabled(false);
@@ -201,14 +184,14 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         }
     }, []);
 
-    const stopRecognition = useCallback(() => {
-        if (recognitionRef.current) {
-            try {
-                recognitionRef.current.stop();
-            } catch (e) {}
-            recognitionRef.current = null;
-            setIsListening(false);
+    const stopRecognition = useCallback(async () => {
+        try {
+            const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
+            await SpeechRecognition.stop();
+        } catch (e) {
+            console.error('Error stopping recognition:', e);
         }
+        setIsListening(false);
     }, []);
 
     const toggleEnabled = useCallback(() => {
