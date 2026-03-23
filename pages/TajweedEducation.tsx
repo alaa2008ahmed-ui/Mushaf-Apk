@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '../context/ThemeContext';
 import BottomBar from '../components/BottomBar';
 import { getCachedAudioUrl } from '../utils/audioCache';
+import { VoiceRecorder } from 'capacitor-voice-recorder';
 
 interface TajweedExample {
     id: string;
@@ -378,59 +379,41 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
 
     const startRecording = async (exampleId: string) => {
         try {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                throw new Error("Browser does not support microphone access");
+            // Request permission directly as requested
+            const requestResult = await VoiceRecorder.requestAudioRecordingPermission();
+            
+            if (!requestResult.value) {
+                // Only show manual alert if permission is explicitly denied
+                alert("تم رفض الوصول للميكروفون. يرجى تفعيل الإذن من إعدادات التطبيق لتسجيل قراءتك والمقارنة.");
+                return;
             }
 
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                } 
-            });
-            const mediaRecorder = new MediaRecorder(stream);
-            mediaRecorderRef.current = mediaRecorder;
-            audioChunksRef.current = [];
-
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) audioChunksRef.current.push(e.data);
-            };
-
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                setUserRecordings(prev => ({ ...prev, [exampleId]: audioUrl }));
-                stream.getTracks().forEach(track => track.stop());
-            };
-
-            mediaRecorder.start();
-            setRecordingId(exampleId);
+            // If permission is true, start recording directly
+            const startResult = await VoiceRecorder.startRecording();
+            if (startResult.value) {
+                setRecordingId(exampleId);
+            } else {
+                alert("حدث خطأ أثناء محاولة بدء التسجيل.");
+            }
         } catch (err: any) {
             console.error("Microphone access error:", err);
-            
-            let errorMessage = "يرجى السماح بالوصول إلى الميكروفون لتسجيل قراءتك والمقارنة.";
-            
-            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                errorMessage = "تم رفض الوصول للميكروفون. يرجى تفعيل الإذن من إعدادات المتصفح أو التطبيق.";
-            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                errorMessage = "لم يتم العثور على ميكروفون متصل بجهازك.";
-            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-                errorMessage = "الميكروفون قيد الاستخدام من قبل تطبيق آخر حالياً.";
-            } else if (err.name === 'SecurityError') {
-                errorMessage = "لا يمكن الوصول للميكروفون بسبب قيود أمنية (تأكد من استخدام HTTPS).";
-            } else {
-                errorMessage = `خطأ في الوصول للميكروفون: ${err.message || 'غير معروف'}`;
-            }
-            
-            alert(errorMessage);
+            alert(`خطأ في الوصول للميكروفون: ${err.message || 'غير معروف'}`);
         }
     };
 
-    const stopRecording = () => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-            mediaRecorderRef.current.stop();
-            setRecordingId(null);
+    const stopRecording = async () => {
+        if (recordingId) {
+            try {
+                const result = await VoiceRecorder.stopRecording();
+                if (result.value && result.value.recordDataBase64) {
+                    const audioData = `data:${result.value.mimeType};base64,${result.value.recordDataBase64}`;
+                    setUserRecordings(prev => ({ ...prev, [recordingId]: audioData }));
+                }
+            } catch (err) {
+                console.error("Error stopping recording:", err);
+            } finally {
+                setRecordingId(null);
+            }
         }
     };
 

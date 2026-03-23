@@ -33,12 +33,21 @@ function App() {
     else if (action === 'open_qibla') handleNavigate('qibla');
     else if (action === 'open_tasbeeh') handleNavigate('tasbeeh');
     else if (action === 'open_tajweed') handleNavigate('tajweed-education');
+    else if (action === 'open_nawawi') handleNavigate('nawawi');
+    else if (action === 'open_calculators') handleNavigate('calculators');
+    else if (action === 'open_listen') handleNavigate('listen');
+    else if (action === 'open_adia') handleNavigate('adia');
+    else if (action === 'open_salah_adhkar') handleNavigate('salah-adhkar');
+    else if (action === 'open_hisn_muslim') handleNavigate('hisn-muslim');
+    else if (action === 'open_calendar') handleNavigate('calendar');
+    else if (action === 'open_hajj_umrah') handleNavigate('hajj-umrah');
+    else if (action === 'open_voice_control') handleNavigate('voice-control');
     else if (action === 'open_search') window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_search' } }));
     else if (action === 'open_themes') setIsThemeSelectorOpen(true);
     else if (action === 'open_settings') window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_settings' } }));
     
     // Quran Specific Actions (Forwarded to QuranReader via Event)
-    else if (['next_page', 'prev_page', 'play_audio', 'stop_audio', 'quran_navigation'].includes(action)) {
+    else if (['next_page', 'prev_page', 'play_audio', 'stop_audio', 'quran_navigation', 'increase_font', 'decrease_font', 'change_theme', 'download_quran', 'show_tafsir', 'open_bookmarks'].includes(action)) {
       if (history[history.length - 1] === 'quran') {
         window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text } }));
       } else {
@@ -81,7 +90,7 @@ function App() {
     const validPages = [
       'quran', 'quran-landscape', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'qibla', 
-      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education', 'voice-control'
+      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education', 'voice-control', 'more-menu'
     ];
 
     if (validPages.includes(pageId)) {
@@ -147,14 +156,15 @@ const VoiceControlToggle = () => {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       onClick={toggleEnabled}
-      className={`fixed bottom-24 left-6 z-[100] w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${
+      className={`fixed left-4 z-[100] w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white ${
         isEnabled 
           ? (isListening ? 'bg-red-500 animate-pulse' : 'bg-green-500') 
           : 'bg-gray-400'
       }`}
+      style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
       title={isEnabled ? 'تعطيل التحكم الصوتي' : 'تفعيل التحكم الصوتي'}
     >
-      {isEnabled ? <Mic className="text-white w-6 h-6" /> : <MicOff className="text-white w-6 h-6" />}
+      {isEnabled ? <Mic className="text-white w-5 h-5" /> : <MicOff className="text-white w-5 h-5" />}
       
       {isEnabled && isListening && (
         <motion.div

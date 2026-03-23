@@ -38,6 +38,7 @@
     "@fortawesome/fontawesome-free": "^7.2.0",
     "@google/genai": "^1.45.0",
     "adhan": "^4.4.3",
+    "capacitor-voice-recorder": "^7.0.6",
     "clsx": "^2.1.1",
     "cordova-plugin-device": "^3.0.0",
     "cordova-plugin-local-notification": "^1.2.3",

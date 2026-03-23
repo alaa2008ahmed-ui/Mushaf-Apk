@@ -1383,8 +1383,30 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 handlePlayButtonPointerUp();
             } else if (action === 'open_search') {
                 openModal('search-modal');
-            } else if (action === 'open_settings') {
+            } else if (action === 'open_settings' || action === 'change_theme') {
                 openModal('settings-modal');
+            } else if (action === 'download_quran') {
+                openModal('quran-download-modal');
+            } else if (action === 'show_tafsir') {
+                openModal('tafsir-modal');
+            } else if (action === 'open_bookmarks') {
+                openModal('bookmarks-modal');
+            } else if (action === 'increase_font') {
+                setSettings(prev => {
+                    const newSize = Math.min(60, prev.fontSize + 2);
+                    const newSettings = { ...prev, fontSize: newSize };
+                    localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
+                    window.dispatchEvent(new Event('settings-change'));
+                    return newSettings;
+                });
+            } else if (action === 'decrease_font') {
+                setSettings(prev => {
+                    const newSize = Math.max(16, prev.fontSize - 2);
+                    const newSettings = { ...prev, fontSize: newSize };
+                    localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
+                    window.dispatchEvent(new Event('settings-change'));
+                    return newSettings;
+                });
             }
         };
 

@@ -35,6 +35,20 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'play_audio', phrase: 'تشغيل الصوت', action: 'play_audio', isDefault: true },
     { id: 'stop_audio', phrase: 'إيقاف الصوت', action: 'stop_audio', isDefault: true },
     { id: 'go_home', phrase: 'الرئيسية', action: 'go_home', isDefault: true },
+    { id: 'increase_font', phrase: 'تكبير الخط', action: 'increase_font', isDefault: true },
+    { id: 'decrease_font', phrase: 'تصغير الخط', action: 'decrease_font', isDefault: true },
+    { id: 'change_theme', phrase: 'تغيير لون الخلفية', action: 'change_theme', isDefault: true },
+    { id: 'download_quran', phrase: 'تحميل القرآن', action: 'download_quran', isDefault: true },
+    { id: 'show_tafsir', phrase: 'عرض التفسير', action: 'show_tafsir', isDefault: true },
+    { id: 'open_nawawi', phrase: 'فتح الأربعون النووية', action: 'open_nawawi', isDefault: true },
+    { id: 'open_calculators', phrase: 'فتح الحاسبة الشرعية', action: 'open_calculators', isDefault: true },
+    { id: 'open_listen', phrase: 'فتح الاستماع للقرآن', action: 'open_listen', isDefault: true },
+    { id: 'open_adia', phrase: 'فتح الأدعية', action: 'open_adia', isDefault: true },
+    { id: 'open_salah_adhkar', phrase: 'فتح أذكار الصلاة', action: 'open_salah_adhkar', isDefault: true },
+    { id: 'open_hisn_muslim', phrase: 'فتح حصن المسلم', action: 'open_hisn_muslim', isDefault: true },
+    { id: 'open_calendar', phrase: 'فتح التقويم', action: 'open_calendar', isDefault: true },
+    { id: 'open_hajj_umrah', phrase: 'فتح الحج والعمرة', action: 'open_hajj_umrah', isDefault: true },
+    { id: 'open_voice_control', phrase: 'فتح التحكم الصوتي', action: 'open_voice_control', isDefault: true },
 ];
 
 const VoiceControlContext = createContext<VoiceControlContextType | undefined>(undefined);
@@ -45,22 +59,33 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
     const [transcript, setTranscript] = useState('');
     const [commands, setCommands] = useState<VoiceCommand[]>(() => {
         const saved = localStorage.getItem('voice_commands_v2');
-        return saved ? JSON.parse(saved) : DEFAULT_COMMANDS;
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            // Merge any new default commands that might be missing
+            const missingDefaults = DEFAULT_COMMANDS.filter(dc => !parsed.some((pc: VoiceCommand) => pc.id === dc.id));
+            return [...parsed, ...missingDefaults];
+        }
+        return DEFAULT_COMMANDS;
     });
 
     const recognitionRef = useRef<any>(null);
 
     const isEnabledRef = useRef(isEnabled);
 
+    const isStartingRef = useRef(false);
+
     useEffect(() => {
         isEnabledRef.current = isEnabled;
         localStorage.setItem('voice_control_enabled', isEnabled.toString());
+        // Only start on mount if it was enabled, but we rely on user interaction for subsequent toggles
+    }, [isEnabled]);
+
+    // Start on mount if enabled
+    useEffect(() => {
         if (isEnabled) {
             startRecognition();
-        } else {
-            stopRecognition();
         }
-    }, [isEnabled]);
+    }, []); // Run once on mount
 
     useEffect(() => {
         localStorage.setItem('voice_commands_v2', JSON.stringify(commands));
@@ -80,14 +105,38 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         }
     }, [commands, onAction]);
 
-    const startRecognition = useCallback(() => {
+    const handleCommandRef = useRef(handleCommand);
+
+    useEffect(() => {
+        handleCommandRef.current = handleCommand;
+    }, [handleCommand]);
+
+    const startRecognition = useCallback(async () => {
+        if (isStartingRef.current) return;
+        isStartingRef.current = true;
+
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         
         if (!SpeechRecognition) {
             console.warn('Speech Recognition API not supported in this browser.');
             alert('عذراً، متصفحك لا يدعم ميزة التحكم الصوتي. يرجى استخدام متصفح جوجل كروم.');
             setIsEnabled(false);
+            isStartingRef.current = false;
             return;
+        }
+
+        try {
+            // Request native Android microphone permission first using Capacitor
+            const { VoiceRecorder } = await import('capacitor-voice-recorder');
+            const permission = await VoiceRecorder.requestAudioRecordingPermission();
+            if (!permission.value) {
+                alert('يرجى السماح بالوصول إلى الميكروفون لتفعيل التحكم الصوتي.');
+                setIsEnabled(false);
+                isStartingRef.current = false;
+                return;
+            }
+        } catch (e) {
+            console.warn("Could not request permission via Capacitor", e);
         }
 
         if (recognitionRef.current) {
@@ -103,7 +152,10 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             recognitionRef.current.interimResults = true;
             recognitionRef.current.lang = 'ar-SA';
 
-            recognitionRef.current.onstart = () => setIsListening(true);
+            recognitionRef.current.onstart = () => {
+                setIsListening(true);
+            };
+            
             recognitionRef.current.onend = () => {
                 if (isEnabledRef.current) {
                     try {
@@ -123,7 +175,7 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                     if (event.results[i].isFinal) {
                         const finalTranscript = event.results[i][0].transcript.trim().toLowerCase();
                         setTranscript(finalTranscript);
-                        handleCommand(finalTranscript);
+                        handleCommandRef.current(finalTranscript);
                     } else {
                         interimTranscript += event.results[i][0].transcript;
                     }
@@ -141,11 +193,13 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             };
 
             recognitionRef.current.start();
+            isStartingRef.current = false;
         } catch (e) {
             console.error('Error starting recognition:', e);
             setIsEnabled(false);
+            isStartingRef.current = false;
         }
-    }, [handleCommand]);
+    }, []);
 
     const stopRecognition = useCallback(() => {
         if (recognitionRef.current) {
@@ -158,14 +212,16 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
     }, []);
 
     const toggleEnabled = useCallback(() => {
-        const nextState = !isEnabled;
-        setIsEnabled(nextState);
-        if (nextState) {
-            startRecognition();
-        } else {
-            stopRecognition();
-        }
-    }, [isEnabled, startRecognition, stopRecognition]);
+        setIsEnabled(prev => {
+            const nextState = !prev;
+            if (nextState) {
+                startRecognition();
+            } else {
+                stopRecognition();
+            }
+            return nextState;
+        });
+    }, [startRecognition, stopRecognition]);
 
     const updateCommand = (id: string, phrase: string) => {
         setCommands(prev => prev.map(c => c.id === id ? { ...c, phrase } : c));

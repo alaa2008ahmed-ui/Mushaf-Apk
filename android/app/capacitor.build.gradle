@@ -14,6 +14,7 @@ dependencies {
     implementation project(':capacitor-filesystem')
     implementation project(':capacitor-geolocation')
     implementation project(':capacitor-screen-orientation')
+    implementation project(':capacitor-voice-recorder')
     implementation "androidx.core:core:1.12.0"
 }
 apply from: "../../node_modules/cordova-plugin-local-notification/src/android/build/localnotification.gradle"

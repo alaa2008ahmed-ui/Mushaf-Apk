@@ -15,6 +15,7 @@ import QuranReader from '../pages/QuranReader';
 import Calculators from '../pages/Calculators';
 import TajweedEducation from '../pages/TajweedEducation';
 import VoiceControlPage from '../pages/VoiceControlPage';
+import MoreMenuPage from '../pages/MoreMenuPage';
 
 interface AppRouterProps {
     page: string;
@@ -57,6 +58,8 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
         return <Calculators onBack={onBack} />;
       case 'voice-control':
         return <VoiceControlPage onBack={onBack} />;
+      case 'more-menu':
+        return <MoreMenuPage onBack={onBack} onNavigate={onNavigate} />;
       case 'home':
       default:
         return <MainMenu onNavigate={onNavigate} onOpenThemes={onOpenThemes} />;

@@ -21,6 +21,20 @@ const AVAILABLE_ACTIONS = [
     { id: 'play_audio', name: 'تشغيل الصوت' },
     { id: 'stop_audio', name: 'إيقاف الصوت' },
     { id: 'go_home', name: 'الرئيسية' },
+    { id: 'increase_font', name: 'تكبير الخط' },
+    { id: 'decrease_font', name: 'تصغير الخط' },
+    { id: 'change_theme', name: 'تغيير لون الخلفية' },
+    { id: 'download_quran', name: 'تحميل القرآن' },
+    { id: 'show_tafsir', name: 'عرض التفسير' },
+    { id: 'open_nawawi', name: 'فتح الأربعون النووية' },
+    { id: 'open_calculators', name: 'فتح الحاسبة الشرعية' },
+    { id: 'open_listen', name: 'فتح الاستماع للقرآن' },
+    { id: 'open_adia', name: 'فتح الأدعية' },
+    { id: 'open_salah_adhkar', name: 'فتح أذكار الصلاة' },
+    { id: 'open_hisn_muslim', name: 'فتح حصن المسلم' },
+    { id: 'open_calendar', name: 'فتح التقويم' },
+    { id: 'open_hajj_umrah', name: 'فتح الحج والعمرة' },
+    { id: 'open_voice_control', name: 'فتح التحكم الصوتي' },
 ];
 
 const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {

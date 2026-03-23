@@ -10,7 +10,6 @@ import { registerBackInterceptor } from '../hooks/useBackButton';
 import VerseSection from '../components/MainMenu/VerseSection';
 import TitleSection from '../components/MainMenu/TitleSection';
 import GridSection from '../components/MainMenu/GridSection';
-import MoreMenuModal from '../components/MoreMenuModal';
 
 const DEFAULT_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
@@ -68,7 +67,6 @@ function MainMenu({ onNavigate, onOpenThemes }) {
   });
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [verseFontSize, setVerseFontSize] = useState(() => {
       const saved = localStorage.getItem('mainMenuVerseFontSize');
       return saved ? parseFloat(saved) : 1.25;
@@ -119,10 +117,6 @@ function MainMenu({ onNavigate, onOpenThemes }) {
 
   useEffect(() => {
       const interceptor = () => {
-          if (isMoreMenuOpen) {
-              setIsMoreMenuOpen(false);
-              return true;
-          }
           if (isCustomizationOpen) {
               setIsCustomizationOpen(false);
               return true;
@@ -135,7 +129,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
       };
       const unregister = registerBackInterceptor(interceptor);
       return unregister;
-  }, [isCustomizationOpen, isEditMode, isMoreMenuOpen]);
+  }, [isCustomizationOpen, isEditMode]);
 
   const handleSaveCustomization = (selectedIds: string[]) => {
       setVisibleItems(selectedIds);
@@ -188,7 +182,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
                   visibleItems={visibleItems}
                   isEditMode={isEditMode}
                   onNavigate={(id) => {
-                      if (id === 'more') setIsMoreMenuOpen(true);
+                      if (id === 'more') onNavigate('more-menu');
                       else onNavigate(id);
                   }}
                   theme={theme}
@@ -217,14 +211,6 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         allItems={DEFAULT_MENU_ITEMS}
         visibleIds={visibleItems}
         onSave={handleSaveCustomization}
-      />
-
-      <MoreMenuModal 
-        isOpen={isMoreMenuOpen}
-        onClose={() => setIsMoreMenuOpen(false)}
-        onNavigate={onNavigate}
-        theme={theme}
-        themeKey={themeKey}
       />
     </div>
   );
