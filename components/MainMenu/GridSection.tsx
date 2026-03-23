@@ -96,7 +96,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                     <NavButton 
                         label={item.label} 
                         onClick={() => !isEditMode && onNavigate(item.id)} 
-                        className="w-full h-full"
+                        className={item.id === 'more' ? "w-[calc(50%-6px)] h-full" : "w-full h-full"}
                         color={
                             (item.id === 'quran' && themeKey === 'default') ? '#059669' : 
                             (item.id === 'listen' && themeKey === 'default') ? '#059669' : 
@@ -107,6 +107,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                             (item.id === 'calculators' && themeKey === 'default') ? '#8b5cf6' : 
                             (item.id === 'hisn-muslim' && themeKey === 'default') ? '#8b5cf6' : 
                             (item.id === 'salah-adhkar' && themeKey === 'default') ? '#8b5cf6' : 
+                            (item.id === 'more' && themeKey === 'default') ? '#8b5cf6' : 
                             (item.customColor || theme.palette[DEFAULT_MENU_ITEMS.find(d => d.id === item.id)?.colorIndex ?? item.colorIndex])
                         } 
                         border={theme.btnBorder} 

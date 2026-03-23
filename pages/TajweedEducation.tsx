@@ -463,24 +463,26 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
             style={{ fontFamily: theme.font }}
         >
             {/* Header */}
-            <div className="px-4 py-4 flex flex-col shadow-lg shrink-0" style={{ backgroundColor: `rgba(var(--top-bar-rgb), 1)`, color: 'var(--top-bar-text)' }}>
-                <div className="flex items-center mb-4 relative">
+            <header className="app-top-bar">
+                <div className="app-top-bar__inner flex items-center justify-center px-4">
                     {onNavigateToMushaf && (
-                        <button onClick={onNavigateToMushaf} className="absolute right-0 p-2 hover:bg-white/10 rounded-full transition-colors z-10" title="العودة للقراءة">
+                        <button onClick={onNavigateToMushaf} className="absolute right-4 p-2 hover:bg-white/10 rounded-full transition-colors z-10" title="العودة للقراءة">
                             <i className="fa-solid fa-book-quran text-xl"></i>
                         </button>
                     )}
-                    <div className="flex flex-col w-full text-center">
-                        <h1 className="text-xl font-bold">دورة التجويد التفاعلية</h1>
-                        <span className="text-xs opacity-80 mt-1">تعلم، استمع، سجل، واختبر نفسك</span>
+                    <div className="text-center">
+                        <h1 className="app-top-bar__title text-2xl font-kufi">دورة التجويد التفاعلية</h1>
+                        <p className="app-top-bar__subtitle">تعلم، استمع، سجل، واختبر نفسك</p>
                     </div>
                 </div>
-                
+            </header>
+
+            <div className="px-4 py-2 flex flex-col shadow-sm shrink-0" style={{ backgroundColor: `rgba(var(--top-bar-rgb), 0.1)` }}>
                 {/* Progress Bar */}
-                <div className="w-full bg-black/20 rounded-full h-2.5 mb-1">
-                    <div className="h-2.5 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%`, backgroundColor: theme.palette[0] }}></div>
+                <div className="w-full bg-black/10 rounded-full h-2 mb-1">
+                    <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%`, backgroundColor: theme.palette[0] }}></div>
                 </div>
-                <div className="flex justify-between text-xs font-bold opacity-90">
+                <div className="flex justify-between text-[10px] font-bold opacity-70">
                     <span>مستوى التقدم</span>
                     <span>{progressPercentage}%</span>
                 </div>

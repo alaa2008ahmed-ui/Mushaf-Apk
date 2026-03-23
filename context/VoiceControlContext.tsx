@@ -10,6 +10,7 @@ export interface VoiceCommand {
 interface VoiceControlContextType {
     isEnabled: boolean;
     setIsEnabled: (enabled: boolean) => void;
+    toggleEnabled: () => void;
     isListening: boolean;
     transcript: string;
     commands: VoiceCommand[];
@@ -65,72 +66,6 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         localStorage.setItem('voice_commands_v2', JSON.stringify(commands));
     }, [commands]);
 
-    const startRecognition = useCallback(() => {
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        
-        if (!SpeechRecognition) {
-            console.warn('Speech Recognition API not supported in this browser.');
-            setIsEnabled(false);
-            return;
-        }
-
-        if (!recognitionRef.current) {
-            try {
-                recognitionRef.current = new SpeechRecognition();
-                recognitionRef.current.continuous = true;
-                recognitionRef.current.interimResults = true;
-                recognitionRef.current.lang = 'ar-SA';
-
-                recognitionRef.current.onstart = () => setIsListening(true);
-                recognitionRef.current.onend = () => {
-                    if (isEnabledRef.current) {
-                        try {
-                            recognitionRef.current?.start();
-                        } catch (e) {
-                            console.error('Error restarting recognition:', e);
-                            setIsListening(false);
-                        }
-                    } else {
-                        setIsListening(false);
-                    }
-                };
-
-                recognitionRef.current.onresult = (event: any) => {
-                    let interimTranscript = '';
-                    for (let i = event.resultIndex; i < event.results.length; ++i) {
-                        if (event.results[i].isFinal) {
-                            const finalTranscript = event.results[i][0].transcript.trim().toLowerCase();
-                            setTranscript(finalTranscript);
-                            handleCommand(finalTranscript);
-                        } else {
-                            interimTranscript += event.results[i][0].transcript;
-                        }
-                    }
-                };
-
-                recognitionRef.current.onerror = (event: any) => {
-                    console.error('Speech recognition error', event.error);
-                    if (event.error === 'not-allowed') {
-                        setIsEnabled(false);
-                    }
-                };
-
-                recognitionRef.current.start();
-            } catch (e) {
-                console.error('Error starting recognition:', e);
-                setIsEnabled(false);
-            }
-        }
-    }, [isEnabled]);
-
-    const stopRecognition = useCallback(() => {
-        if (recognitionRef.current) {
-            recognitionRef.current.stop();
-            recognitionRef.current = null;
-            setIsListening(false);
-        }
-    }, []);
-
     const handleCommand = useCallback((text: string) => {
         // Check custom/edited commands first
         const match = commands.find(c => text.includes(c.phrase.toLowerCase()));
@@ -144,6 +79,93 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             onAction('quran_navigation', text);
         }
     }, [commands, onAction]);
+
+    const startRecognition = useCallback(() => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            console.warn('Speech Recognition API not supported in this browser.');
+            alert('عذراً، متصفحك لا يدعم ميزة التحكم الصوتي. يرجى استخدام متصفح جوجل كروم.');
+            setIsEnabled(false);
+            return;
+        }
+
+        if (recognitionRef.current) {
+            try {
+                recognitionRef.current.stop();
+            } catch (e) {}
+            recognitionRef.current = null;
+        }
+
+        try {
+            recognitionRef.current = new SpeechRecognition();
+            recognitionRef.current.continuous = true;
+            recognitionRef.current.interimResults = true;
+            recognitionRef.current.lang = 'ar-SA';
+
+            recognitionRef.current.onstart = () => setIsListening(true);
+            recognitionRef.current.onend = () => {
+                if (isEnabledRef.current) {
+                    try {
+                        recognitionRef.current?.start();
+                    } catch (e) {
+                        console.error('Error restarting recognition:', e);
+                        setIsListening(false);
+                    }
+                } else {
+                    setIsListening(false);
+                }
+            };
+
+            recognitionRef.current.onresult = (event: any) => {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        const finalTranscript = event.results[i][0].transcript.trim().toLowerCase();
+                        setTranscript(finalTranscript);
+                        handleCommand(finalTranscript);
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+            };
+
+            recognitionRef.current.onerror = (event: any) => {
+                console.error('Speech recognition error', event.error);
+                if (event.error === 'not-allowed') {
+                    alert('يرجى السماح بالوصول إلى الميكروفون لتفعيل التحكم الصوتي.');
+                    setIsEnabled(false);
+                } else if (event.error === 'network') {
+                    console.warn('Network error in speech recognition');
+                }
+            };
+
+            recognitionRef.current.start();
+        } catch (e) {
+            console.error('Error starting recognition:', e);
+            setIsEnabled(false);
+        }
+    }, [handleCommand]);
+
+    const stopRecognition = useCallback(() => {
+        if (recognitionRef.current) {
+            try {
+                recognitionRef.current.stop();
+            } catch (e) {}
+            recognitionRef.current = null;
+            setIsListening(false);
+        }
+    }, []);
+
+    const toggleEnabled = useCallback(() => {
+        const nextState = !isEnabled;
+        setIsEnabled(nextState);
+        if (nextState) {
+            startRecognition();
+        } else {
+            stopRecognition();
+        }
+    }, [isEnabled, startRecognition, stopRecognition]);
 
     const updateCommand = (id: string, phrase: string) => {
         setCommands(prev => prev.map(c => c.id === id ? { ...c, phrase } : c));
@@ -171,6 +193,7 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         <VoiceControlContext.Provider value={{
             isEnabled,
             setIsEnabled,
+            toggleEnabled,
             isListening,
             transcript,
             commands,

@@ -1869,20 +1869,13 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 }}
             />
 
-            <FloatingMenu 
-                isFloatingMenuOpen={isFloatingMenuOpen}
-                floatingMenuRef={floatingMenuRef}
-                openModal={openModal}
-                setIsFloatingMenuOpen={setIsFloatingMenuOpen}
-                getToolbarStyle={getToolbarStyle}
-                currentTheme={currentTheme}
-                initialLandscape={initialLandscape}
-                onNavigate={onNavigate}
-            />
             <QuranFooter 
                 currentTheme={currentTheme}
                 getToolbarStyle={getToolbarStyle}
                 setIsFloatingMenuOpen={setIsFloatingMenuOpen}
+                isFloatingMenuOpen={isFloatingMenuOpen}
+                floatingMenuRef={floatingMenuRef}
+                openModal={openModal}
                 menuButtonRef={menuButtonRef}
                 handleBookmarkButtonPointerDown={handleBookmarkButtonPointerDown}
                 handleBookmarkButtonPointerUp={handleBookmarkButtonPointerUp}
@@ -1892,6 +1885,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 handleAutoScrollButtonPointerLeave={handleAutoScrollButtonPointerLeave}
                 autoScrollState={autoScrollState}
                 onBack={onBack}
+                initialLandscape={initialLandscape}
+                onNavigate={onNavigate}
             />
             {isAutoScrollSettingsOpen && (
             <AutoScrollSettingsModal

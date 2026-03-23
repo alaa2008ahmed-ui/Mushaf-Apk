@@ -138,7 +138,7 @@ function App() {
 import { useVoiceControl } from './context/VoiceControlContext';
 
 const VoiceControlToggle = () => {
-  const { isEnabled, setIsEnabled, isListening } = useVoiceControl();
+  const { isEnabled, toggleEnabled, isListening } = useVoiceControl();
 
   return (
     <motion.button
@@ -146,7 +146,7 @@ const VoiceControlToggle = () => {
       animate={{ scale: 1, opacity: 1 }}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
-      onClick={() => setIsEnabled(!isEnabled)}
+      onClick={toggleEnabled}
       className={`fixed bottom-24 left-6 z-[100] w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors ${
         isEnabled 
           ? (isListening ? 'bg-red-500 animate-pulse' : 'bg-green-500') 

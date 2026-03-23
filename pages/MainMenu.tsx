@@ -24,7 +24,7 @@ const DEFAULT_MENU_ITEMS = [
     { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 1 },
     { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
-    { id: 'more', label: "✨ المزيد", className: "h-10", colorIndex: 0 },
+    { id: 'more', label: "✨ المزيد", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
 ];
 
 function MainMenu({ onNavigate, onOpenThemes }) {
@@ -46,6 +46,9 @@ function MainMenu({ onNavigate, onOpenThemes }) {
                 if (item.id === 'calculators' || item.id === 'calendar') {
                     const { customColor, ...rest } = item;
                     return rest;
+                }
+                if (item.id === 'more' && !item.className.includes('flex justify-center')) {
+                    return { ...item, className: "col-span-2 h-10 flex justify-center" };
                 }
                 return item;
             });
@@ -85,6 +88,10 @@ function MainMenu({ onNavigate, onOpenThemes }) {
                         changed = true;
                         return rest;
                     }
+                }
+                if (item.id === 'more' && !item.className.includes('flex justify-center')) {
+                    changed = true;
+                    return { ...item, className: "col-span-2 h-10 flex justify-center" };
                 }
                 return item;
             });
