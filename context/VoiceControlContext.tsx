@@ -102,30 +102,17 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         try {
             const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
             
-            // 1. Check availability first
-            const available = await SpeechRecognition.available();
-            if (!available.available) {
-                alert('عذراً، ميزة التعرف على الصوت غير متوفرة في جهازك.');
-                setIsEnabled(false);
-                isStartingRef.current = false;
-                return;
+            // 1. Safely check and request permissions without blocking
+            try {
+                const checkPerm = await SpeechRecognition.hasPermission();
+                if (!checkPerm.permission) {
+                    await SpeechRecognition.requestPermission();
+                }
+            } catch (permError) {
+                console.warn('Permission check error (proceeding anyway):', permError);
             }
 
-            // 2. Check and request permission
-            const checkPerm = await SpeechRecognition.hasPermission();
-            if (!checkPerm.permission) {
-                await SpeechRecognition.requestPermission();
-            }
-            
-            const finalCheck = await SpeechRecognition.hasPermission();
-            if (!finalCheck.permission) {
-                alert('يرجى السماح بالوصول إلى الميكروفون لتفعيل التحكم الصوتي.');
-                setIsEnabled(false);
-                isStartingRef.current = false;
-                return;
-            }
-
-            // 3. Start listening loop
+            // 2. Start listening loop
             const listenLoop = async () => {
                 if (!isEnabledRef.current) {
                     setIsListening(false);
@@ -146,12 +133,17 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                         setTranscript(finalTranscript);
                         handleCommandRef.current(finalTranscript);
                     }
-                } catch (e) {
+                } catch (e: any) {
+                    if (e?.message === 'Method not implemented on web.') {
+                        setIsEnabled(false);
+                        setIsListening(false);
+                        return; // Stop loop on web
+                    }
                     console.error('Speech recognition error:', e);
                 } finally {
                     if (isEnabledRef.current) {
-                        // Small delay before restarting to avoid freezing
-                        setTimeout(listenLoop, 500);
+                        // Delay before restarting to avoid freezing
+                        setTimeout(listenLoop, 800);
                     } else {
                         setIsListening(false);
                     }
@@ -161,8 +153,11 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             listenLoop();
             isStartingRef.current = false;
 
-        } catch (e) {
-            console.error('Error starting recognition:', e);
+        } catch (e: any) {
+            // Ignore "Method not implemented on web" error as it's expected in browser
+            if (e?.message !== 'Method not implemented on web.') {
+                console.error('Error starting recognition:', e);
+            }
             setIsEnabled(false);
             isStartingRef.current = false;
         }
