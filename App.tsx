@@ -26,7 +26,7 @@ function App() {
 
   const handleNavigate = useCallback((pageId: string) => {
     const validPages = [
-      'quran', 'quran-landscape', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
+      'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'qibla', 
       'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education', 'voice-control', 'more-menu'
     ];
@@ -120,6 +120,44 @@ function App() {
 
   const page = history[history.length - 1];
 
+  if (showSplash) {
+    return <VideoSplash onEnded={() => setShowSplash(false)} />;
+  }
+
+  return (
+    <PrayerTimesProvider>
+      <VoiceControlProvider onAction={handleVoiceAction}>
+        <AppContent 
+          page={page} 
+          history={history}
+          isThemeSelectorOpen={isThemeSelectorOpen}
+          showExitConfirm={showExitConfirm}
+          handleNavigate={handleNavigate}
+          navigateBack={navigateBack}
+          setIsThemeSelectorOpen={setIsThemeSelectorOpen}
+          setShowExitConfirm={setShowExitConfirm}
+        />
+      </VoiceControlProvider>
+    </PrayerTimesProvider>
+  );
+}
+
+function AppContent({ 
+  page, 
+  history, 
+  isThemeSelectorOpen, 
+  showExitConfirm, 
+  handleNavigate, 
+  navigateBack, 
+  setIsThemeSelectorOpen, 
+  setShowExitConfirm 
+}: any) {
+  const { setCurrentPage } = useVoiceControl();
+
+  useEffect(() => {
+    setCurrentPage(page);
+  }, [page, setCurrentPage]);
+
   useEffect(() => {
     // Start preloading tajweed audio in the background
     preloadTajweedAudio();
@@ -143,42 +181,34 @@ function App() {
   const toggleThemeSelector = () => setIsThemeSelectorOpen(prev => !prev);
   const closeThemeSelector = () => setIsThemeSelectorOpen(false);
 
-  if (showSplash) {
-    return <VideoSplash onEnded={() => setShowSplash(false)} />;
-  }
-
   return (
-    <PrayerTimesProvider>
-      <VoiceControlProvider onAction={handleVoiceAction}>
-        <div className="relative min-h-screen">
-          <AppRouter 
-            page={page} 
-            onBack={navigateBack} 
-            onNavigate={handleNavigate} 
-            onOpenThemes={toggleThemeSelector}
+    <div className="relative min-h-screen">
+      <AppRouter 
+        page={page} 
+        onBack={navigateBack} 
+        onNavigate={handleNavigate} 
+        onOpenThemes={toggleThemeSelector}
+      />
+
+      {/* Global Voice Control Toggle */}
+      {page === 'home' && <VoiceControlToggle />}
+
+      {isThemeSelectorOpen && (
+        <ThemeSelector 
+          onClose={closeThemeSelector} 
+        />
+      )}
+
+      {showExitConfirm && (
+          <ExitConfirmModal
+              isOpen={showExitConfirm}
+              onConfirm={handleConfirmExit}
+              onClose={() => setShowExitConfirm(false)}
           />
-
-          {/* Global Voice Control Toggle */}
-          {page === 'home' && <VoiceControlToggle />}
-
-          {isThemeSelectorOpen && (
-            <ThemeSelector 
-              onClose={closeThemeSelector} 
-            />
-          )}
-
-          {showExitConfirm && (
-              <ExitConfirmModal
-                  isOpen={showExitConfirm}
-                  onConfirm={handleConfirmExit}
-                  onClose={() => setShowExitConfirm(false)}
-              />
-          )}
-          
-          <RateUs />
-        </div>
-      </VoiceControlProvider>
-    </PrayerTimesProvider>
+      )}
+      
+      <RateUs />
+    </div>
   );
 }
 

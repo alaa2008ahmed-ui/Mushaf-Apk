@@ -20,6 +20,7 @@ const ALL_MENU_ITEMS = [
     { id: 'nawawi', label: "📚 الأربعون النووية", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'tajweed-education', label: "📖 تعليم التجويد", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
+    { id: 'quran-download', label: "📥 تحميل القرآن", className: "h-10", colorIndex: 1 },
     { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "h-10", colorIndex: 1 },
 ];
 

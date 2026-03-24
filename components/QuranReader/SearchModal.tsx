@@ -18,6 +18,37 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
     const searchJobIdRef = useRef(0);
     const searchTimeoutRef = useRef<any>(null);
 
+    const handleSearchInput = (q: string) => {
+        setQuery(q);
+        localStorage.setItem('search_query' + modeSuffix, q);
+        if (q.trim() !== '') {
+            setSearchStats('جاري الكتابة...');
+        } else {
+            setSearchStats('');
+            setResults([]);
+            setVisibleCount(100);
+        }
+
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        searchTimeoutRef.current = setTimeout(() => performSearch(q), 500);
+    };
+
+    useEffect(() => {
+        const handleVoiceCommand = (e: any) => {
+            const { action, text } = e.detail;
+            if (action === 'execute_search') {
+                handleSearchInput(text);
+            } else if (action === 'clear_search') {
+                handleSearchInput('');
+            } else if (action === 'close_search') {
+                onClose();
+            }
+        };
+
+        window.addEventListener('voice-command', handleVoiceCommand);
+        return () => window.removeEventListener('voice-command', handleVoiceCommand);
+    }, [handleSearchInput, onClose]);
+
     useEffect(() => {
         if (query.trim() !== '') {
             performSearch(query);
@@ -36,21 +67,6 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                    .replace(/[أإآٱ]/g, "ا")
                    .replace(/ة/g, "ه")
                    .replace(/ى/g, "ي");
-    };
-
-    const handleSearchInput = (q: string) => {
-        setQuery(q);
-        localStorage.setItem('search_query' + modeSuffix, q);
-        if (q.trim() !== '') {
-            setSearchStats('جاري الكتابة...');
-        } else {
-            setSearchStats('');
-            setResults([]);
-            setVisibleCount(100);
-        }
-
-        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-        searchTimeoutRef.current = setTimeout(() => performSearch(q), 500);
     };
 
     const performSearch = (q: string) => {

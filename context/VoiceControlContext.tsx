@@ -17,6 +17,8 @@ interface VoiceControlContextType {
     isListening: boolean;
     transcript: string;
     commands: VoiceCommand[];
+    currentPage: string;
+    setCurrentPage: (page: string) => void;
     updateCommand: (id: string, phrase: string) => void;
     addCommand: (phrase: string, action: string) => void;
     deleteCommand: (id: string) => void;
@@ -62,6 +64,7 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
     const [isEnabled, setIsEnabled] = useState(() => localStorage.getItem('voice_control_enabled') === 'true');
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
+    const [currentPage, setCurrentPage] = useState('home');
     const [commands, setCommands] = useState<VoiceCommand[]>(() => {
         const saved = localStorage.getItem('voice_commands_v2');
         if (saved) {
@@ -141,8 +144,8 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
 
     const handleCommand = useCallback((text: string) => {
         const normalizedInput = normalizeArabic(text);
+        console.log('Voice Control - Context:', currentPage);
         console.log('Voice Control - Original Input:', text);
-        console.log('Voice Control - Normalized Input:', normalizedInput);
 
         // 1. Contextual Focus: If an input is focused, type into it
         const activeElement = document.activeElement;
@@ -154,10 +157,38 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             activeElement.value = val.substring(0, start) + text + val.substring(end);
             activeElement.selectionStart = activeElement.selectionEnd = start + text.length;
             activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+            
+            // Special case for Search: Execute search immediately
+            if (currentPage === 'search' || activeElement.closest('.search-modal')) {
+                console.log('Voice Control - Executing search');
+                window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'execute_search', text } }));
+            }
             return;
         }
 
-        // 2. Use the new parser for Quran navigation and dynamic commands
+        // 2. Specific Page Context Handling
+        if (currentPage === 'quran-download') {
+            // In download page, surah names should toggle selection
+            const surahMatch = SURAH_NAMES_AR.find(s => normalizeArabic(s) === normalizedInput);
+            if (surahMatch) {
+                console.log('Voice Control - Download Context: Toggling surah', surahMatch);
+                window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'toggle_download', params: { surahName: surahMatch } } }));
+                return;
+            }
+        }
+
+        if (currentPage === 'search') {
+            if (normalizedInput.includes('الغاء البحث') || normalizedInput.includes('بحث جديد')) {
+                window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'clear_search' } }));
+                return;
+            }
+            if (normalizedInput.includes('اغلاق البحث')) {
+                window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'close_search' } }));
+                return;
+            }
+        }
+
+        // 3. Use the new parser for Quran navigation and dynamic commands
         const parsed = parseVoiceCommand(text, SURAH_NAMES_AR, commands);
         if (parsed) {
             console.log('Voice Control - Parsed Command:', parsed.action, parsed.params);
@@ -169,7 +200,12 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
 
             if (parsed.action === 'ui_discovery') {
                 // Try to find a matching UI element and click it (Voice-to-Click Engine)
-                const elements = document.querySelectorAll('button, [role="button"], a, .clickable, .voice-target, li, span, h1, h2, h3, p');
+                // Prioritize exact matches and specific containers based on context
+                const selectors = currentPage === 'quran' 
+                    ? '.quran-reader-container button, .quran-reader-container [role="button"], .quran-reader-container li'
+                    : 'button, [role="button"], a, .clickable, .voice-target, li, span, h1, h2, h3, p';
+                
+                const elements = document.querySelectorAll(selectors);
                 for (const el of Array.from(elements)) {
                     const htmlEl = el as HTMLElement;
                     const elText = normalizeArabic(htmlEl.innerText || htmlEl.getAttribute('aria-label') || htmlEl.title || '');
@@ -185,14 +221,14 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             return;
         }
 
-        // 3. Fallback to basic pattern matching for Quran navigation (if parser missed it)
+        // 4. Fallback to basic pattern matching for Quran navigation (if parser missed it)
         if (normalizedInput.includes('سوره') || normalizedInput.includes('سورة') || 
             normalizedInput.includes('صفحه') || normalizedInput.includes('صفحة') || 
             normalizedInput.includes('جزء')) {
             console.log('Voice Control - Fallback Match: Quran Navigation');
             onAction('quran_navigation', text);
         }
-    }, [commands, onAction]);
+    }, [commands, onAction, currentPage]);
 
     const handleCommandRef = useRef(handleCommand);
 
@@ -351,6 +387,8 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             isListening,
             transcript,
             commands,
+            currentPage,
+            setCurrentPage,
             updateCommand,
             addCommand,
             deleteCommand,
