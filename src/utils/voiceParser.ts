@@ -238,10 +238,19 @@ export const parseVoiceCommand = (
         'افتح ثيمات': 'open_themes',
         'الوان': 'open_themes',
         'افتح الوان': 'open_themes',
+        'الاستماع للقران': 'go_radio',
+        'مواقيت الصلاه': 'go_prayer_times',
+        'اذكار الصلاه': 'go_salah_adhkar',
+        'حصن المسلم': 'go_hisn_muslim',
+        'التقويم': 'go_calendar',
+        'القبله': 'go_qibla',
+        'الحج والعمرة': 'go_hajj_umrah',
+        'التحكم الصوتي': 'go_voice_settings',
         'خروج': 'exit_app'
     };
     for (const [key, action] of Object.entries(relativeMap)) {
-        if (normalized === normalizeArabic(key)) {
+        const normKey = normalizeArabic(key);
+        if (normalized === normKey || normalized.includes(normKey)) {
             return { action, originalText: text };
         }
     }

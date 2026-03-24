@@ -26,7 +26,7 @@ function App() {
 
   const handleNavigate = useCallback((pageId: string) => {
     const validPages = [
-      'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
+      'quran', 'quran-landscape', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'qibla', 
       'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education', 'voice-control', 'more-menu'
     ];
@@ -93,6 +93,14 @@ function App() {
     else if (action === 'open_hajj_umrah' || (action === 'ui_click' && params?.label?.includes('حج'))) handleNavigate('hajj-umrah');
     else if (action === 'open_quran' || (action === 'ui_click' && params?.label?.includes('مصحف'))) handleNavigate('quran');
     else if (action === 'open_voice_control') handleNavigate('voice-control');
+    else if (action === 'go_radio') handleNavigate('listen');
+    else if (action === 'go_prayer_times') handleNavigate('prayer-times');
+    else if (action === 'go_salah_adhkar') handleNavigate('salah-adhkar');
+    else if (action === 'go_hisn_muslim') handleNavigate('hisn-muslim');
+    else if (action === 'go_calendar') handleNavigate('calendar');
+    else if (action === 'go_qibla') handleNavigate('qibla');
+    else if (action === 'go_hajj_umrah') handleNavigate('hajj-umrah');
+    else if (action === 'go_voice_settings') handleNavigate('voice-control');
     else if (action === 'open_search' || (action === 'ui_click' && params?.label?.includes('بحث'))) {
       setHistory(prev => {
         if (prev[prev.length - 1] === 'quran') {
