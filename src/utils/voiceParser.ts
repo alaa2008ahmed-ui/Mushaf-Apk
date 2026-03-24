@@ -5,18 +5,18 @@
  */
 
 export const ARABIC_NUMBERS_MAP: Record<string, number> = {
-    'واحد': 1, 'واحدة': 1, 'اول': 1, 'الأول': 1, 'اولى': 1,
+    'واحد': 1, 'واحده': 1, 'اول': 1, 'الاول': 1, 'اولى': 1,
     'اثنان': 2, 'اثنين': 2, 'ثاني': 2, 'الثاني': 2,
-    'ثلاثة': 3, 'ثلاث': 3, 'ثالث': 3, 'الثالث': 3,
-    'اربعة': 4, 'اربع': 4, 'رابع': 4, 'الرابع': 4,
-    'خمسة': 5, 'خمس': 5, 'خامس': 5, 'الخامس': 5,
-    'ستة': 6, 'ست': 6, 'سادس': 6, 'السادس': 6,
-    'سبعة': 7, 'سبع': 7, 'سابع': 7, 'السابع': 7,
-    'ثمانية': 8, 'ثمان': 8, 'ثامن': 8, 'الثامن': 8,
-    'تسعة': 9, 'تسع': 9, 'تاسع': 9, 'التاسع': 9,
-    'عشرة': 10, 'عشر': 10, 'عاشر': 10, 'العاشر': 10,
-    'احد عشر': 11, 'اثنا عشر': 12, 'ثلاثة عشر': 13, 'اربعة عشر': 14, 'خمسة عشر': 15,
-    'ستة عشر': 16, 'سبعة عشر': 17, 'ثمانية عشر': 18, 'تسعة عشر': 19,
+    'ثلاثه': 3, 'ثلاث': 3, 'ثالث': 3, 'الثالث': 3,
+    'اربعة': 4, 'اربع': 4, 'رابع': 4, 'الرابع': 4, 'اربعه': 4,
+    'خمسه': 5, 'خمس': 5, 'خامس': 5, 'الخامس': 5,
+    'سته': 6, 'ست': 6, 'سادس': 6, 'السادس': 6,
+    'سبعه': 7, 'سبع': 7, 'سابع': 7, 'السابع': 7,
+    'ثمانيه': 8, 'ثمان': 8, 'ثامن': 8, 'الثامن': 8,
+    'تسعه': 9, 'تسع': 9, 'تاسع': 9, 'التاسع': 9,
+    'عشره': 10, 'عشر': 10, 'عاشر': 10, 'العاشر': 10,
+    'احد عشر': 11, 'اثنا عشر': 12, 'ثلاثه عشر': 13, 'اربعة عشر': 14, 'اربعه عشر': 14, 'خمسه عشر': 15,
+    'سته عشر': 16, 'سبعه عشر': 17, 'ثمانيه عشر': 18, 'تسعه عشر': 19,
     'عشرون': 20, 'عشرين': 20,
     'ثلاثون': 30, 'ثلاثين': 30,
     'اربعون': 40, 'اربعين': 40,
@@ -25,10 +25,10 @@ export const ARABIC_NUMBERS_MAP: Record<string, number> = {
     'سبعون': 70, 'سبعين': 70,
     'ثمانون': 80, 'ثمانين': 80,
     'تسعون': 90, 'تسعين': 90,
-    'مائة': 100, 'مئة': 100,
+    'مائه': 100, 'مئه': 100,
     'مائتان': 200, 'مئتان': 200,
-    'ثلاثمائة': 300, 'اربعمائة': 400, 'خمسمائة': 500,
-    'ستمائة': 600, 'سبعمائة': 700, 'ثمانمائة': 800, 'تسعمائة': 900,
+    'ثلاثمائه': 300, 'اربعمائه': 400, 'خمسمائه': 500,
+    'ستمائه': 600, 'سبعمائه': 700, 'ثمانمائه': 800, 'تسعمائه': 900,
     'الف': 1000
 };
 
@@ -41,8 +41,11 @@ export const normalizeArabic = (text: string): string => {
         .trim()
         .replace(/[\u064B-\u0652]/g, '') // Remove Tashkeel
         .replace(/[أإآ]/g, 'ا')
-        .replace(/ة/g, 'ه')
-        .replace(/ى/g, 'ي')
+        .replace(/[ة]/g, 'ه')
+        .replace(/[ى]/g, 'ي')
+        .replace(/[ؤ]/g, 'و')
+        .replace(/[ئ]/g, 'ي')
+        .replace(/\bال/g, '') // Remove 'Al-' prefix
         .replace(/\s+/g, ' ')
         .toLowerCase();
 };
@@ -102,7 +105,12 @@ export const parseVoiceCommand = (
         }
     }
 
-    // 2. Font Size Control: "خط" + [رقم]
+    // 2. Extract Generic Numbers (Context-Aware)
+    const genericNumberMatch = normalized.match(/\d+/);
+    const wordNumber = arabicWordsToNumber(normalized);
+    const extractedNumber = genericNumberMatch ? parseInt(genericNumberMatch[0], 10) : wordNumber;
+
+    // 3. Font Size Control: "خط" + [رقم]
     const fontRegex = /(?:خط|حجم الخط)\s+(?:الي|إلى|الى)?\s*([آ-ي\s\d]+)/;
     const fontMatch = normalized.match(fontRegex);
     if (fontMatch) {
@@ -112,7 +120,7 @@ export const parseVoiceCommand = (
         }
     }
 
-    // 3. Theme Control: "ثيم" or "لون" + [اسم اللون]
+    // 4. Theme Control: "ثيم" or "لون" + [اسم اللون]
     const themeRegex = /(?:ثيم|لون|مظهر)\s+([آ-ي\s]+)/;
     const themeMatch = normalized.match(themeRegex);
     if (themeMatch) {
@@ -124,7 +132,8 @@ export const parseVoiceCommand = (
             'احمر': 'red', 'الأحمر': 'red',
             'اسود': 'dark', 'الأسود': 'dark', 'ليلي': 'dark',
             'ابيض': 'light', 'الأبيض': 'light', 'نهاري': 'light',
-            'بني': 'sepia', 'البني': 'sepia', 'قديم': 'sepia'
+            'بني': 'sepia', 'البني': 'sepia', 'قديم': 'sepia',
+            'كعبه': 'kaaba_kiswa', 'الكعبه': 'kaaba_kiswa', 'كسوه': 'kaaba_kiswa'
         };
         const themeId = themeMap[normalizeArabic(themeName)];
         if (themeId) {
@@ -132,7 +141,23 @@ export const parseVoiceCommand = (
         }
     }
 
-    // 4. Relative Commands
+    // 5. Action Verbs (Contextual Execution)
+    const actionVerbs: Record<string, string> = {
+        'نزل': 'download', 'تحميل': 'download',
+        'احذف': 'delete', 'مسح': 'delete',
+        'شغل': 'play_audio', 'استماع': 'play_audio',
+        'وقف': 'stop_audio', 'اسكت': 'stop_audio',
+        'كبر': 'increase_font', 'صغر': 'decrease_font',
+        'بحث': 'open_search'
+    };
+    for (const [verb, action] of Object.entries(actionVerbs)) {
+        if (normalized.startsWith(normalizeArabic(verb))) {
+            const remaining = normalized.replace(normalizeArabic(verb), '').trim();
+            return { action, params: { target: remaining }, originalText: text };
+        }
+    }
+
+    // 6. Global Constants / Relative Commands
     const relativeMap: Record<string, string> = {
         'تكبير': 'increase_font',
         'تصغير': 'decrease_font',
@@ -141,15 +166,22 @@ export const parseVoiceCommand = (
         'التالي': 'next_page',
         'السابق': 'prev_page',
         'رجوع': 'go_back',
-        'الرئيسية': 'go_home'
+        'الرئيسية': 'go_home',
+        'الرئيسيه': 'go_home',
+        'افقي': 'set_orientation_horizontal',
+        'رأسي': 'set_orientation_vertical',
+        'راسي': 'set_orientation_vertical',
+        'عرضي': 'set_orientation_horizontal',
+        'طولي': 'set_orientation_vertical',
+        'خروج': 'exit_app'
     };
     for (const [key, action] of Object.entries(relativeMap)) {
-        if (normalized.includes(normalizeArabic(key))) {
+        if (normalized === normalizeArabic(key)) {
             return { action, originalText: text };
         }
     }
 
-    // 5. Page Logic: "صفحة [رقم]"
+    // 7. Page Logic: "صفحة [رقم]"
     const pageRegex = /(?:صفحه|صفحة)\s+([آ-ي\s\d]+)/;
     const pageMatch = normalized.match(pageRegex);
     if (pageMatch) {
@@ -159,19 +191,7 @@ export const parseVoiceCommand = (
         }
     }
 
-    // 6. UI Label Matching (Keyword-based)
-    const uiKeywords = [
-        'الاعدادات', 'المسبحه', 'القبله', 'البحث', 'العلامات', 'التجويد', 
-        'الاذكار', 'الصلاه', 'التقويم', 'الحج', 'العمره', 'الاربعون', 'الحاسبه',
-        'الاستماع', 'الادعيه', 'المصحف', 'الرئيسيه', 'الثيمات'
-    ];
-    for (const keyword of uiKeywords) {
-        if (normalized.includes(normalizeArabic(keyword))) {
-            return { action: 'ui_click', params: { label: keyword }, originalText: text };
-        }
-    }
-
-    // 7. Juz Logic: "جزء [رقم]"
+    // 8. Juz Logic: "جزء [رقم]"
     const juzRegex = /(?:جزء)\s+([آ-ي\s\d]+)/;
     const juzMatch = normalized.match(juzRegex);
     if (juzMatch) {
@@ -181,32 +201,31 @@ export const parseVoiceCommand = (
         }
     }
 
-    // 4. Surah & Ayah Logic
-    // Pattern: "[اسم السورة] آية [رقم]" or just "[اسم السورة]"
+    // 9. Surah & Ayah Logic
     for (let i = 0; i < surahNames.length; i++) {
         const surahName = normalizeArabic(surahNames[i]);
         if (normalized.includes(surahName)) {
             const surahId = i + 1;
-            
-            // Check for Ayah
-            const ayahRegex = new RegExp(`${surahName}\\s+(?:آيه|آية)\\s+([آ-ي\\s\\d]+)`);
+            const ayahRegex = new RegExp(`${surahName}\\s+(?:آيه|آية)?\\s*([آ-ي\\s\\d]+)`);
             const ayahMatch = normalized.match(ayahRegex);
             
             if (ayahMatch) {
-                const ayahNum = arabicWordsToNumber(ayahMatch[1]);
+                const ayahNum = arabicWordsToNumber(ayahMatch[1].trim());
                 if (ayahNum) {
-                    return { 
-                        action: 'go_to_ayah', 
-                        params: { surah: surahId, ayah: ayahNum }, 
-                        originalText: text 
-                    };
+                    return { action: 'go_to_ayah', params: { surah: surahId, ayah: ayahNum }, originalText: text };
                 }
             }
-            
-            // If only surah name was mentioned
             return { action: 'go_to_surah', params: { surah: surahId }, originalText: text };
         }
     }
+
+    // 10. Contextual Number (If just a number is spoken)
+    if (extractedNumber) {
+        return { action: 'contextual_number', params: { value: extractedNumber }, originalText: text };
+    }
+
+    // 11. UI Discovery Fallback (Return as potential UI click)
+    return { action: 'ui_discovery', params: { text: normalized }, originalText: text };
 
     return null;
 };

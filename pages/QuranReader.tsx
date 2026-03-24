@@ -84,6 +84,14 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const [highlightedAyahId, setHighlightedAyahId] = useState<string | null>(null);
     const [isTransparentMode, setIsTransparentMode] = useState(() => localStorage.getItem('transparent_mode' + modeSuffix) === 'true');
     const [isHideToolbarsEnabled, setIsHideToolbarsEnabled] = useState(() => localStorage.getItem('hide_toolbars_enabled' + modeSuffix) === 'true');
+    const [lastInteractionType, setLastInteractionType] = useState<'page' | 'ayah'>(() => {
+        const saved = localStorage.getItem('last_interaction_type' + modeSuffix);
+        return (saved as 'page' | 'ayah') || 'page';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('last_interaction_type' + modeSuffix, lastInteractionType);
+    }, [lastInteractionType, modeSuffix]);
 
     const [activeModals, setActiveModals] = useState<string[]>([]);
     const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
@@ -1236,6 +1244,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const getPageData = useCallback((pageNum) => quranData ? quranData.surahs.flatMap((s:any) => s.ayahs.filter((a:any) => Number(a.page) === Number(pageNum)).map((a:any) => ({ ...a, sNum: s.number, sName: s.name }))) : [], [quranData]);
     
     const jumpToAyah = useCallback((s, a, instant = false) => {
+        if (isJumpingRef.current && !instant) return;
+        setLastInteractionType('ayah');
         stopAudio();
         if (!quranData) return;
         const surah = quranData.surahs.find((su:any) => su.number === s);
@@ -1274,6 +1284,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     const jumpToPage = useCallback((pageNum: number, instant: boolean = true) => {
         if (!quranData || isNaN(pageNum) || pageNum < 1 || pageNum > 604) return;
+        setLastInteractionType('page');
         
         const pageData = getPageData(pageNum);
         if (pageData && pageData.length > 0) {
@@ -1389,6 +1400,18 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             } else if (action === 'play_audio' || action === 'stop_audio') {
                 handlePlayButtonPointerDown();
                 handlePlayButtonPointerUp();
+            } else if (action === 'set_orientation_horizontal') {
+                ScreenOrientation.lock({ orientation: 'landscape' });
+            } else if (action === 'set_orientation_vertical') {
+                ScreenOrientation.lock({ orientation: 'portrait' });
+            } else if (action === 'contextual_number' && params?.value) {
+                const num = params.value;
+                // If last interaction was ayah and number is reasonable for an ayah
+                if (lastInteractionType === 'ayah' && num <= 286) {
+                    jumpToAyah(currentAyah.s, num, true);
+                } else if (num <= 604) {
+                    jumpToPage(num, true);
+                }
             } else if (action === 'open_search') {
                 openModal('search-modal');
             } else if (action === 'open_settings' || action === 'change_theme') {

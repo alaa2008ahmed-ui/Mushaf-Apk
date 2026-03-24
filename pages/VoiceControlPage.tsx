@@ -35,6 +35,9 @@ const AVAILABLE_ACTIONS = [
     { id: 'open_calendar', name: 'فتح التقويم' },
     { id: 'open_hajj_umrah', name: 'فتح الحج والعمرة' },
     { id: 'open_voice_control', name: 'فتح التحكم الصوتي' },
+    { id: 'set_orientation_horizontal', name: 'القراءة الأفقية (عرضي)' },
+    { id: 'set_orientation_vertical', name: 'القراءة الرأسية (طولي)' },
+    { id: 'disable_voice_control', name: 'إيقاف التحكم الصوتي' },
 ];
 
 const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
@@ -242,8 +245,59 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <li>"اذهب إلى صفحة مئة"</li>
                             <li>"اذهب إلى الجزء الثلاثين"</li>
                             <li>"افتح الأذكار"</li>
+                            <li>"حصن المسلم"</li>
+                            <li>"القراءة الأفقية"</li>
+                            <li>"إيقاف التحكم الصوتي"</li>
                             <li>"الصفحة التالية" / "الصفحة السابقة"</li>
                         </ul>
+                    </div>
+
+                    {/* Instructions Section */}
+                    <div className="themed-card p-6 space-y-4">
+                        <h3 className="font-bold text-lg flex items-center gap-2">
+                            <ChevronRight className="w-5 h-5 text-primary" />
+                            إرشادات نطق الأوامر الصحيحة
+                        </h3>
+                        <div className="space-y-4 text-sm opacity-90 leading-relaxed">
+                            <section>
+                                <h4 className="font-bold text-primary mb-1">1. التنقل في المصحف:</h4>
+                                <p>للانتقال إلى سورة أو آية معينة، يفضل النطق بوضوح:</p>
+                                <ul className="list-disc list-inside mr-2 space-y-1">
+                                    <li>"سورة البقرة آية خمسة" (تأكد من نطق كلمة "آية" قبل الرقم).</li>
+                                    <li>"صفحة مائتين" أو "صفحة ٢٠٠".</li>
+                                    <li>"جزء عم" أو "الجزء الثلاثون".</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h4 className="font-bold text-primary mb-1">2. التحكم في المظهر (الثيمات):</h4>
+                                <p>يمكنك تغيير شكل التطبيق بنطق اللون أو اسم الثيم:</p>
+                                <ul className="list-disc list-inside mr-2 space-y-1">
+                                    <li>"تغيير الثيم إلى الكعبة" أو "ثيم الكعبة".</li>
+                                    <li>"تغيير اللون إلى الأخضر" أو "الوضع الليلي".</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h4 className="font-bold text-primary mb-1">3. التحكم في الصوت والخط:</h4>
+                                <ul className="list-disc list-inside mr-2 space-y-1">
+                                    <li>"تشغيل الصوت" لبدء التلاوة (يجب أن تكون داخل المصحف).</li>
+                                    <li>"إيقاف الصوت" لإنهاء التلاوة.</li>
+                                    <li>"القراءة الأفقية" أو "عرضي" لتغيير وضع الشاشة.</li>
+                                    <li>"تكبير الخط" أو "تصغير الخط".</li>
+                                    <li>"حجم الخط ثلاثين" لتحديد حجم معين.</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h4 className="font-bold text-primary mb-1">4. نصائح عامة:</h4>
+                                <ul className="list-disc list-inside mr-2 space-y-1">
+                                    <li>تحدث ببطء ووضوح في بيئة هادئة.</li>
+                                    <li>انتظر ظهور النص المنطوق على الشاشة للتأكد من التعرف عليه.</li>
+                                    <li>يمكنك دائماً إضافة أوامرك الخاصة من قسم "إدارة الأوامر" أعلاه.</li>
+                                </ul>
+                            </section>
+                        </div>
                     </div>
                 </div>
             </main>

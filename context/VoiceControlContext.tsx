@@ -53,6 +53,7 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'open_hajj_umrah', phrase: 'فتح الحج والعمرة', action: 'open_hajj_umrah', isDefault: true },
     { id: 'open_quran', phrase: 'مصحف', action: 'open_quran', isDefault: true },
     { id: 'open_voice_control', phrase: 'فتح التحكم الصوتي', action: 'open_voice_control', isDefault: true },
+    { id: 'disable_voice_control', phrase: 'إيقاف التحكم الصوتي', action: 'disable_voice_control', isDefault: true },
 ];
 
 const VoiceControlContext = createContext<VoiceControlContextType | undefined>(undefined);
@@ -96,15 +97,48 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         console.log('Voice Control - Original Input:', text);
         console.log('Voice Control - Normalized Input:', normalizedInput);
 
-        // 1. Use the new parser for Quran navigation and dynamic commands
+        // 1. Contextual Focus: If an input is focused, type into it
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement)) {
+            console.log('Voice Control - Typing into focused input');
+            const start = activeElement.selectionStart || 0;
+            const end = activeElement.selectionEnd || 0;
+            const val = activeElement.value;
+            activeElement.value = val.substring(0, start) + text + val.substring(end);
+            activeElement.selectionStart = activeElement.selectionEnd = start + text.length;
+            activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+            return;
+        }
+
+        // 2. Use the new parser for Quran navigation and dynamic commands
         const parsed = parseVoiceCommand(text, SURAH_NAMES_AR, commands);
         if (parsed) {
             console.log('Voice Control - Parsed Command:', parsed.action, parsed.params);
+            
+            if (parsed.action === 'disable_voice_control') {
+                setIsEnabled(false);
+                return;
+            }
+
+            if (parsed.action === 'ui_discovery') {
+                // Try to find a matching UI element and click it (Voice-to-Click Engine)
+                const elements = document.querySelectorAll('button, [role="button"], a, .clickable, .voice-target, li, span, h1, h2, h3, p');
+                for (const el of Array.from(elements)) {
+                    const htmlEl = el as HTMLElement;
+                    const elText = normalizeArabic(htmlEl.innerText || htmlEl.getAttribute('aria-label') || htmlEl.title || '');
+                    if (elText && (elText === normalizedInput || elText.includes(normalizedInput))) {
+                        console.log('Voice Control - UI Discovery: Clicking', elText);
+                        htmlEl.click();
+                        return;
+                    }
+                }
+            }
+            
             onAction(parsed.action, text, parsed.params);
             return;
         }
 
-        // 2. Fallback to basic pattern matching for Quran navigation (if parser missed it)
+        // 3. Fallback to basic pattern matching for Quran navigation (if parser missed it)
         if (normalizedInput.includes('سوره') || normalizedInput.includes('سورة') || 
             normalizedInput.includes('صفحه') || normalizedInput.includes('صفحة') || 
             normalizedInput.includes('جزء')) {
@@ -153,13 +187,16 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                     const result = await SpeechRecognition.start({
                         language: "ar-SA",
                         maxResults: 1,
-                        partialResults: false,
+                        partialResults: true, // Use partial results to keep listener active longer
                         popup: false
                     });
 
                     if (result && result.matches && result.matches.length > 0) {
                         const finalTranscript = result.matches[0].trim().toLowerCase();
                         setTranscript(finalTranscript);
+                        
+                        // Only process if it's a final-like result or if we want to react to partials
+                        // For now, we keep the original logic but with partialResults: true to reduce beeps
                         handleCommandRef.current(finalTranscript);
                     }
                 } catch (e: any) {
