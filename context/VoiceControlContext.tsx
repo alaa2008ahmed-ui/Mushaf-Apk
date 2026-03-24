@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
+import { parseVoiceCommand, normalizeArabic } from '../src/utils/voiceParser';
+import { SURAH_NAMES_AR } from '../components/QuranReader/constants';
 
 export interface VoiceCommand {
     id: string;
@@ -49,12 +51,13 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'open_hisn_muslim', phrase: 'فتح حصن المسلم', action: 'open_hisn_muslim', isDefault: true },
     { id: 'open_calendar', phrase: 'فتح التقويم', action: 'open_calendar', isDefault: true },
     { id: 'open_hajj_umrah', phrase: 'فتح الحج والعمرة', action: 'open_hajj_umrah', isDefault: true },
+    { id: 'open_quran', phrase: 'مصحف', action: 'open_quran', isDefault: true },
     { id: 'open_voice_control', phrase: 'فتح التحكم الصوتي', action: 'open_voice_control', isDefault: true },
 ];
 
 const VoiceControlContext = createContext<VoiceControlContextType | undefined>(undefined);
 
-export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onAction: (action: string, text: string) => void }> = ({ children, onAction }) => {
+export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onAction: (action: string, text: string, params?: any) => void }> = ({ children, onAction }) => {
     const [isEnabled, setIsEnabled] = useState(() => localStorage.getItem('voice_control_enabled') === 'true');
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
@@ -76,16 +79,36 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         localStorage.setItem('voice_commands_v2', JSON.stringify(commands));
     }, [commands]);
 
+    const reloadCommands = useCallback(() => {
+        const saved = localStorage.getItem('voice_commands_v2');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            const missingDefaults = DEFAULT_COMMANDS.filter(dc => !parsed.some((pc: VoiceCommand) => pc.id === dc.id));
+            setCommands([...parsed, ...missingDefaults]);
+            console.log('Voice commands reloaded from storage');
+        } else {
+            setCommands(DEFAULT_COMMANDS);
+        }
+    }, []);
+
     const handleCommand = useCallback((text: string) => {
-        // Check custom/edited commands first
-        const match = commands.find(c => text.includes(c.phrase.toLowerCase()));
-        if (match) {
-            onAction(match.action, text);
+        const normalizedInput = normalizeArabic(text);
+        console.log('Voice Control - Original Input:', text);
+        console.log('Voice Control - Normalized Input:', normalizedInput);
+
+        // 1. Use the new parser for Quran navigation and dynamic commands
+        const parsed = parseVoiceCommand(text, SURAH_NAMES_AR, commands);
+        if (parsed) {
+            console.log('Voice Control - Parsed Command:', parsed.action, parsed.params);
+            onAction(parsed.action, text, parsed.params);
             return;
         }
 
-        // Fallback to basic pattern matching if no exact phrase match
-        if (text.includes('سورة') || text.includes('صفحة') || text.includes('جزء')) {
+        // 2. Fallback to basic pattern matching for Quran navigation (if parser missed it)
+        if (normalizedInput.includes('سوره') || normalizedInput.includes('سورة') || 
+            normalizedInput.includes('صفحه') || normalizedInput.includes('صفحة') || 
+            normalizedInput.includes('جزء')) {
+            console.log('Voice Control - Fallback Match: Quran Navigation');
             onAction('quran_navigation', text);
         }
     }, [commands, onAction]);
@@ -100,8 +123,13 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         if (isStartingRef.current) return;
         isStartingRef.current = true;
 
+        // Reload commands every time we start recognition as requested
+        reloadCommands();
+
         try {
             const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
+            
+            console.log('Voice Recognition Started. Active phrases:', commands.map(c => c.phrase));
             
             // 1. Safely check and request permissions without blocking
             try {

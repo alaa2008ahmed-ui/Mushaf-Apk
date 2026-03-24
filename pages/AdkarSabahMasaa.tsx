@@ -4,7 +4,7 @@ import { BASE_ADHKAR_MORNING, BASE_ADHKAR_EVENING } from '../data/adkarSabahMasa
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import AdkarHeader from '../components/AdkarSabahMasaa/AdkarHeader';
 import AdkarTabs from '../components/AdkarSabahMasaa/AdkarTabs';
-import DhikrCard from '../components/AdkarSabahMasaa/DhikrCard';
+import DhikrCard from '../components/HisnAlmuslim/DhikrCard';
 import ZoomModal from '../components/AdkarSabahMasaa/ZoomModal';
 
 const ADHKAR_STATUS_KEY = 'sabah_masaa_status_v1';

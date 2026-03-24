@@ -29,6 +29,7 @@ import AyahContextMenu from '../components/QuranReader/AyahContextMenu';
 import quranUthmaniJson from '../data/quran-uthmani.json';
 import quranTajweedJson from '../data/quran-tajweed.json';
 import { registerBackInterceptor } from '../hooks/useBackButton';
+import { parseVoiceCommand, normalizeArabic } from '../src/utils/voiceParser';
 
 declare var window: any;
 
@@ -1289,80 +1290,78 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     }, [quranData, jumpToAyah, getPageData, showToast]);
 
     const handleVoiceCommand = useCallback((text: string) => {
-        const normalized = text.trim().toLowerCase();
+        console.log('QuranReader - Voice Command:', text);
         
-        // Check custom commands
-        const saved = localStorage.getItem('custom_voice_commands');
+        // Use the new parser for Quran navigation and custom commands
+        const saved = localStorage.getItem('voice_commands_v2');
         const customCommands = saved ? JSON.parse(saved) : [];
-        const customMatch = customCommands.find((c: any) => normalized.includes(c.phrase));
+        const parsed = parseVoiceCommand(text, SURAH_NAMES_AR, customCommands);
         
-        if (customMatch) {
-            const action = customMatch.action;
-            if (action === 'next_page') jumpToPage(Math.min(604, Math.max(...visiblePages) + 1));
-            else if (action === 'prev_page') jumpToPage(Math.max(1, Math.min(...visiblePages) - 1));
-            else if (action === 'play_audio') { handlePlayButtonPointerDown(); handlePlayButtonPointerUp(); }
-            else if (action === 'open_search') openModal('search-modal');
-            else if (action === 'open_settings') openModal('settings-modal');
-            else if (action === 'open_themes') openModal('themes-modal');
-            else if (action === 'go_home') onBack();
-            else if (action === 'go_athkar') onNavigate('athkar');
-            else if (action === 'go_prayer') onNavigate('prayer-times');
-            else if (action === 'go_qibla') onNavigate('qibla');
-            else if (action === 'go_tasbeeh') onNavigate('tasbeeh');
-            else if (action === 'go_tajweed') onNavigate('tajweed-education');
-            return;
-        }
-
-        // Built-in commands
-        if (normalized.includes('سورة')) {
-            const surahName = SURAH_NAMES_AR.find(name => normalized.includes(name));
-            if (surahName) {
-                const surahIndex = SURAH_NAMES_AR.indexOf(surahName) + 1;
-                jumpToAyah(surahIndex, 1, true);
+        if (parsed) {
+            console.log('QuranReader - Parsed Command:', parsed.action, parsed.params);
+            const { action, params } = parsed;
+            
+            if (action === 'go_to_page' && params?.page) {
+                jumpToPage(params.page, true);
+                return;
+            } else if (action === 'go_to_juz' && params?.juz) {
+                const juzInfo = JUZ_MAP.find(j => j.j === params.juz);
+                if (juzInfo) jumpToAyah(juzInfo.s, juzInfo.a, true);
+                return;
+            } else if (action === 'go_to_surah' && params?.surah) {
+                jumpToAyah(params.surah, 1, true);
+                return;
+            } else if (action === 'go_to_ayah' && params?.surah && params?.ayah) {
+                jumpToAyah(params.surah, params.ayah, true);
+                return;
+            } else if (action === 'next_page') {
+                jumpToPage(Math.min(604, Math.max(...visiblePages) + 1));
+                return;
+            } else if (action === 'prev_page') {
+                jumpToPage(Math.max(1, Math.min(...visiblePages) - 1));
+                return;
+            } else if (action === 'play_audio') {
+                handlePlayButtonPointerDown();
+                handlePlayButtonPointerUp();
+                return;
+            } else if (action === 'open_search') {
+                openModal('search-modal');
+                return;
+            } else if (action === 'open_settings') {
+                openModal('settings-modal');
+                return;
+            } else if (action === 'open_themes') {
+                openModal('themes-modal');
+                return;
+            } else if (action === 'go_home') {
+                onBack();
+                return;
+            } else if (action === 'go_athkar') {
+                onNavigate('athkar');
+                return;
+            } else if (action === 'go_prayer') {
+                onNavigate('prayer-times');
+                return;
+            } else if (action === 'go_qibla') {
+                onNavigate('qibla');
+                return;
+            } else if (action === 'go_tasbeeh') {
+                onNavigate('tasbeeh');
+                return;
+            } else if (action === 'go_tajweed') {
+                onNavigate('tajweed-education');
                 return;
             }
         }
 
-        if (normalized.includes('صفحة')) {
-            const num = parseArabicNumber(normalized);
-            if (num && num >= 1 && num <= 604) {
-                jumpToPage(num, true);
-                return;
-            }
-        }
-
-        if (normalized.includes('جزء')) {
-            const num = parseArabicNumber(normalized);
-            if (num && num >= 1 && num <= 30) {
-                const juzInfo = JUZ_MAP.find(j => j.j === num);
-                if (juzInfo) {
-                    jumpToAyah(juzInfo.s, juzInfo.a, true);
-                }
-                return;
-            }
-        }
-
-        if (normalized.includes('التالي') || normalized.includes('بعد')) {
-            jumpToPage(Math.min(604, Math.max(...visiblePages) + 1));
-        } else if (normalized.includes('السابق') || normalized.includes('قبل')) {
-            jumpToPage(Math.max(1, Math.min(...visiblePages) - 1));
-        } else if (normalized.includes('أذكار') || normalized.includes('اذكار')) {
-            onNavigate('athkar');
-        } else if (normalized.includes('قبلة') || normalized.includes('القبلة')) {
-            onNavigate('qibla');
-        } else if (normalized.includes('صلاة') || normalized.includes('الصلاة')) {
-            onNavigate('prayer-times');
-        } else if (normalized.includes('مسبحة') || normalized.includes('المسبحة')) {
-            onNavigate('tasbeeh');
-        } else if (normalized.includes('تجويد') || normalized.includes('التجويد')) {
-            onNavigate('tajweed-education');
-        } else if (normalized.includes('ثيم') || normalized.includes('مظهر')) {
-            openModal('themes-modal');
-        } else if (normalized.includes('إعدادات') || normalized.includes('اعدادات')) {
-            openModal('settings-modal');
-        } else if (normalized.includes('بحث')) {
-            openModal('search-modal');
-        } else if (normalized.includes('شغل') || normalized.includes('وقف') || normalized.includes('صوت')) {
+        // Fallback for other commands not in parser
+        const normalized = normalizeArabic(text);
+        
+        if (normalized.includes('تكبير') || normalized.includes('خط كبير')) {
+            window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'increase_font' } }));
+        } else if (normalized.includes('تصغير') || normalized.includes('خط صغير')) {
+            window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'decrease_font' } }));
+        } else if (normalized.includes('شغل') || normalized.includes('وقف') || normalized.includes('صوت') || normalized.includes('استماع')) {
             handlePlayButtonPointerDown();
             handlePlayButtonPointerUp();
         }
@@ -1371,9 +1370,18 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     // Handle global voice commands
     useEffect(() => {
         const handleGlobalVoiceCommand = (e: any) => {
-            const { action, text } = e.detail;
+            const { action, text, params } = e.detail;
             if (action === 'quran_navigation' && text) {
                 handleVoiceCommand(text);
+            } else if (action === 'go_to_page' && params?.page) {
+                jumpToPage(params.page, true);
+            } else if (action === 'go_to_juz' && params?.juz) {
+                const juzInfo = JUZ_MAP.find(j => j.j === params.juz);
+                if (juzInfo) jumpToAyah(juzInfo.s, juzInfo.a, true);
+            } else if (action === 'go_to_surah' && params?.surah) {
+                jumpToAyah(params.surah, 1, true);
+            } else if (action === 'go_to_ayah' && params?.surah && params?.ayah) {
+                jumpToAyah(params.surah, params.ayah, true);
             } else if (action === 'next_page') {
                 jumpToPage(Math.min(604, Math.max(...visiblePages) + 1));
             } else if (action === 'prev_page') {
@@ -1402,6 +1410,14 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             } else if (action === 'decrease_font') {
                 setSettings(prev => {
                     const newSize = Math.max(16, prev.fontSize - 2);
+                    const newSettings = { ...prev, fontSize: newSize };
+                    localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
+                    window.dispatchEvent(new Event('settings-change'));
+                    return newSettings;
+                });
+            } else if (action === 'set_font_size' && params?.size) {
+                setSettings(prev => {
+                    const newSize = Math.max(16, Math.min(60, params.size));
                     const newSettings = { ...prev, fontSize: newSize };
                     localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
