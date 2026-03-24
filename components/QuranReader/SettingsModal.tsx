@@ -93,53 +93,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         showToast(checked ? 'تم تفعيل إخفاء الأشرطة' : 'تم تعطيل إخفاء الأشرطة');
     };
 
-    useEffect(() => {
-        const handleVoiceCommand = (e: any) => {
-            const { action, params, text } = e.detail;
-            
-            if (action === 'set_font_size' && params?.size) {
-                // Map spoken number (e.g. 1 to 5) to slider range (0.5 to 4.5)
-                // Or if they say 2, set it to 2.0
-                let newSize = params.size;
-                if (newSize > 5) newSize = 5;
-                if (newSize < 1) newSize = 1;
-                // Convert to slider range (0.5 to 4.5)
-                const mappedSize = Math.max(0.5, Math.min(4.5, newSize));
-                updateSetting('fontSize', mappedSize);
-                showToast(`تم تغيير حجم الخط إلى ${mappedSize}`);
-            } else if (action === 'set_color') {
-                const { colorName, target } = params;
-                const colorMap: Record<string, string> = {
-                    'اصفر': '#f59e0b', 'أصفر': '#f59e0b',
-                    'برتقالي': '#f97316',
-                    'اسود': '#000000', 'أسود': '#000000',
-                    'ابيض': '#ffffff', 'أبيض': '#ffffff',
-                    'احمر': '#ef4444', 'أحمر': '#ef4444',
-                    'اخضر': '#10b981', 'أخضر': '#10b981',
-                    'ازرق': '#3b82f6', 'أزرق': '#3b82f6',
-                    'رمادي': '#9ca3af',
-                    'شفاف': 'transparent'
-                };
-                
-                const hexColor = colorMap[colorName];
-                if (hexColor) {
-                    if (target === 'text' || text.includes('نص')) {
-                        updateSetting('textColor', hexColor);
-                        showToast(`تم تغيير لون النص`);
-                    } else if (target === 'background' || text.includes('خلفي')) {
-                        updateSetting('bgColor', hexColor);
-                        showToast(`تم تغيير لون الخلفية`);
-                    } else if (target === 'highlight' || text.includes('تحديد')) {
-                        updateSetting('highlightTextColor', hexColor);
-                        showToast(`تم تغيير لون التحديد`);
-                    }
-                }
-            }
-        };
 
-        window.addEventListener('voice-command', handleVoiceCommand);
-        return () => window.removeEventListener('voice-command', handleVoiceCommand);
-    }, [settings, modeSuffix]);
+
 
     const getReaderName = (id: string) => READERS.find(r => r.id === id)?.name || id;
     const getTafseerName = (id: string) => TAFSEERS.find(t => t.id === id)?.name || id;
@@ -239,7 +194,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     <div className="border-b border-gray-200 dark:border-gray-700 py-1">
                         <label className="text-xs font-bold block opacity-80">نوع الخط</label>
                         <div className="mt-1">
-                            <button aria-label="نوع الخط" onClick={() => onOpenModal('font-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
+                            <button onClick={() => onOpenModal('font-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
                                 <span>{getFontName(settings.fontFamily)}</span>
                                 <i className="fa-solid fa-chevron-left opacity-50"></i>
                             </button>
@@ -249,7 +204,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     <div className="border-b border-gray-200 dark:border-gray-700 py-1">
                         <label className="text-xs font-bold block opacity-80">القارئ</label>
                         <div className="mt-1">
-                            <button aria-label="القارئ" onClick={() => onOpenModal('reciter-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
+                            <button onClick={() => onOpenModal('reciter-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
                                 <span>{getReaderName(settings.reader)}</span>
                                 <i className="fa-solid fa-chevron-left opacity-50"></i>
                             </button>
@@ -263,7 +218,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                 {[1, 2, 3, 4, 5].map(num => (
                                     <button
                                         key={num}
-                                        aria-label={`تكرار الآية ${num}`}
                                         onClick={() => updateSetting('ayahRepeatCount', num)}
                                         className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
                                             settings.ayahRepeatCount === num 
@@ -281,7 +235,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     <div className="border-b border-gray-200 dark:border-gray-700 py-1">
                         <label className="text-xs font-bold block opacity-80">التفسير</label>
                         <div className="mt-1">
-                            <button aria-label="التفسير" onClick={() => onOpenModal('tafseer-selection-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
+                            <button onClick={() => onOpenModal('tafseer-selection-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
                                 <span>{getTafseerName(settings.tafseer)}</span>
                                 <i className="fa-solid fa-chevron-left opacity-50"></i>
                             </button>
@@ -293,7 +247,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                             <label className="text-sm font-bold opacity-80">سرعة التمرير</label>
                         </div>
                         <div className="mt-1">
-                            <button aria-label="سرعة التمرير" onClick={() => onOpenModal('scroll-speed-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
+                            <button onClick={() => onOpenModal('scroll-speed-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
                                 <span>{settings.scrollMinutes} دقيقة</span>
                                 <i className="fa-solid fa-chevron-left opacity-50"></i>
                             </button>
@@ -302,7 +256,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
 
                     <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
                         <div className="flex items-center justify-between">
-                            <label htmlFor="show-sajdah-card" className="text-sm font-bold opacity-80 cursor-pointer">إظهار بطاقة السجدة</label>
+                            <label className="text-sm font-bold opacity-80">إظهار بطاقة السجدة</label>
                             <div className="relative inline-block w-10 align-middle select-none">
                                 <input type="checkbox" id="show-sajdah-card" checked={showSajdahCard} onChange={(e) => handleSajdahCardToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
                                 <label htmlFor="show-sajdah-card" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${showSajdahCard ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
@@ -312,7 +266,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
 
                     <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
                         <div className="flex items-center justify-between">
-                            <label htmlFor="use-tajweed" className="text-sm font-bold opacity-80 cursor-pointer">المصحف المجود</label>
+                            <label className="text-sm font-bold opacity-80">المصحف المجود</label>
                             <div className="relative inline-block w-10 align-middle select-none">
                                 <input type="checkbox" id="use-tajweed" checked={useTajweed} onChange={(e) => handleTajweedToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
                                 <label htmlFor="use-tajweed" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${useTajweed ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
@@ -322,7 +276,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
 
                     <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
                         <div className="flex items-center justify-between">
-                            <label htmlFor="hide-toolbars" className="text-sm font-bold opacity-80 cursor-pointer">إخفاء الأشرطة</label>
+                            <label className="text-sm font-bold opacity-80">إخفاء الأشرطة</label>
                             <div className="relative inline-block w-10 align-middle select-none">
                                 <input type="checkbox" id="hide-toolbars" checked={isHideToolbarsEnabled} onChange={(e) => handleHideToolbarsToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
                                 <label htmlFor="hide-toolbars" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${isHideToolbarsEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>

@@ -218,10 +218,7 @@ export const useQuranScrollAndJump = (
         };
     }, [setVisiblePages, autoScrollState.isActive, handleSajdahVisible, isJumpingRef, mushafContentRef, currentAyahRef, setCurrentAyah, showMarkerNotification]);
 
-    const jumpToAyahRef = useRef(jumpToAyah);
-    useEffect(() => { jumpToAyahRef.current = jumpToAyah; }, [jumpToAyah]);
-
     return {
-        scrollToAyah, handleAyahClick, jumpToAyah, jumpToAyahRef, jumpToPage, getPageData
+        scrollToAyah, handleAyahClick, jumpToAyah, jumpToPage, getPageData
     };
 };

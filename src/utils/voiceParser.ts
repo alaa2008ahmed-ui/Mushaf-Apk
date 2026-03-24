@@ -120,48 +120,25 @@ export const parseVoiceCommand = (
         }
     }
 
-    // 3.5 Specific Color Control: "لون النص أصفر"
-    const colorRegex = /(?:لون)\s+(النص|الخلفيه|الخلفية|التحديد)?\s*([آ-ي\s]+)/;
-    const colorMatch = normalized.match(colorRegex);
-    if (colorMatch) {
-        const targetAr = colorMatch[1];
-        const colorName = colorMatch[2].trim();
-        
-        let target = 'text'; // default
-        if (targetAr) {
-            if (targetAr.includes('خلفي')) target = 'background';
-            else if (targetAr.includes('تحديد')) target = 'highlight';
-        }
-
-        const validColors = ['اصفر', 'برتقالي', 'اسود', 'ابيض', 'احمر', 'اخضر', 'ازرق', 'رمادي', 'شفاف'];
-        if (validColors.includes(colorName)) {
-            return { action: 'set_color', params: { colorName, target }, originalText: text };
-        }
-    }
-
     // 4. Theme Control: "ثيم" or "لون" + [اسم اللون]
     const themeRegex = /(?:ثيم|لون|مظهر)\s+([آ-ي\s]+)/;
     const themeMatch = normalized.match(themeRegex);
-    const themeMap: Record<string, string> = {
-        'اخضر': 'green', 'الأخضر': 'green',
-        'ازرق': 'blue', 'الأزرق': 'blue',
-        'احمر': 'red', 'الأحمر': 'red',
-        'اسود': 'dark', 'الأسود': 'dark', 'ليلي': 'dark', 'وضع ليلي': 'dark',
-        'ابيض': 'light', 'الأبيض': 'light', 'نهاري': 'light', 'وضع نهاري': 'light',
-        'بني': 'sepia', 'البني': 'sepia', 'قديم': 'sepia',
-        'كعبه': 'kaaba_kiswa', 'الكعبه': 'kaaba_kiswa', 'كسوه': 'kaaba_kiswa',
-        'افتراضي': 'default', 'الافتراضي': 'default'
-    };
-
     if (themeMatch) {
         const themeName = themeMatch[1].trim();
+        // Mapping common Arabic color names to theme IDs
+        const themeMap: Record<string, string> = {
+            'اخضر': 'green', 'الأخضر': 'green',
+            'ازرق': 'blue', 'الأزرق': 'blue',
+            'احمر': 'red', 'الأحمر': 'red',
+            'اسود': 'dark', 'الأسود': 'dark', 'ليلي': 'dark',
+            'ابيض': 'light', 'الأبيض': 'light', 'نهاري': 'light',
+            'بني': 'sepia', 'البني': 'sepia', 'قديم': 'sepia',
+            'كعبه': 'kaaba_kiswa', 'الكعبه': 'kaaba_kiswa', 'كسوه': 'kaaba_kiswa'
+        };
         const themeId = themeMap[normalizeArabic(themeName)];
         if (themeId) {
             return { action: 'set_theme', params: { theme: themeId }, originalText: text };
         }
-    } else if (themeMap[normalized]) {
-        // Direct match without "ثيم" prefix
-        return { action: 'set_theme', params: { theme: themeMap[normalized] }, originalText: text };
     }
 
     // 5. Action Verbs (Contextual Execution)
@@ -180,42 +157,6 @@ export const parseVoiceCommand = (
         }
     }
 
-    // 5.5 Specific Toggles and Actions
-    if (normalized.includes('سجده') || normalized.includes('سجدة')) {
-        if (normalized.includes('اظهار') || normalized.includes('اخفاء') || normalized.includes('علامه') || normalized.includes('بطاقه')) {
-            return { action: 'toggle_sajdah', originalText: text };
-        }
-    }
-    if (normalized === 'سبح' || normalized === 'تسبيح' || normalized === 'عد' || normalized === 'اضغط للعد') {
-        return { action: 'increment_tasbeeh', originalText: text };
-    }
-    if (normalized === 'صفر' || normalized === 'تصفير' || normalized === 'اعاده' || normalized === 'إعادة') {
-        return { action: 'reset_counter', originalText: text };
-    }
-    if (normalized.includes('تمرير') || normalized.includes('تلقائي')) {
-        if (normalized.includes('شغل') || normalized.includes('تشغيل') || normalized.includes('ابدأ')) {
-            return { action: 'start_autoscroll', originalText: text };
-        } else if (normalized.includes('وقف') || normalized.includes('ايقاف') || normalized.includes('توقف')) {
-            return { action: 'stop_autoscroll', originalText: text };
-        }
-    }
-    if (normalized === 'توقف' || normalized === 'قف') {
-        return { action: 'stop_action', originalText: text };
-    }
-    if (normalized.includes('سرعه') || normalized.includes('سرعة')) {
-        if (normalized.includes('زياده') || normalized.includes('زيادة') || normalized.includes('اسرع')) {
-            return { action: 'increase_speed', originalText: text };
-        } else if (normalized.includes('تقليل') || normalized.includes('نقص') || normalized.includes('ابطأ')) {
-            return { action: 'decrease_speed', originalText: text };
-        }
-    }
-    if (normalized === 'للاعلى' || normalized === 'للأعلى' || normalized === 'فوق' || normalized === 'اطلع') {
-        return { action: 'scroll_up', originalText: text };
-    }
-    if (normalized === 'للاسفل' || normalized === 'للأسفل' || normalized === 'تحت' || normalized === 'انزل') {
-        return { action: 'scroll_down', originalText: text };
-    }
-
     // 6. Global Constants / Relative Commands
     const relativeMap: Record<string, string> = {
         'تكبير': 'increase_font',
@@ -232,25 +173,10 @@ export const parseVoiceCommand = (
         'راسي': 'set_orientation_vertical',
         'عرضي': 'set_orientation_horizontal',
         'طولي': 'set_orientation_vertical',
-        'قراءه افقيه': 'set_orientation_horizontal',
-        'قراءه راسيه': 'set_orientation_vertical',
-        'ثيمات': 'open_themes',
-        'افتح ثيمات': 'open_themes',
-        'الوان': 'open_themes',
-        'افتح الوان': 'open_themes',
-        'الاستماع للقران': 'go_radio',
-        'مواقيت الصلاه': 'go_prayer_times',
-        'اذكار الصلاه': 'go_salah_adhkar',
-        'حصن المسلم': 'go_hisn_muslim',
-        'التقويم': 'go_calendar',
-        'القبله': 'go_qibla',
-        'الحج والعمرة': 'go_hajj_umrah',
-        'التحكم الصوتي': 'go_voice_settings',
         'خروج': 'exit_app'
     };
     for (const [key, action] of Object.entries(relativeMap)) {
-        const normKey = normalizeArabic(key);
-        if (normalized === normKey || normalized.includes(normKey)) {
+        if (normalized === normalizeArabic(key)) {
             return { action, originalText: text };
         }
     }

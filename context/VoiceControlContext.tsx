@@ -47,15 +47,14 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'show_tafsir', phrase: 'عرض التفسير', action: 'show_tafsir', isDefault: true },
     { id: 'open_nawawi', phrase: 'فتح الأربعون النووية', action: 'open_nawawi', isDefault: true },
     { id: 'open_calculators', phrase: 'فتح الحاسبة الشرعية', action: 'open_calculators', isDefault: true },
-    { id: 'open_listen', phrase: 'الاستماع للقرآن', action: 'open_listen', isDefault: true },
-    { id: 'open_prayer', phrase: 'مواقيت الصلاة', action: 'open_prayer', isDefault: true },
-    { id: 'open_salah_adhkar', phrase: 'أذكار الصلاة', action: 'open_salah_adhkar', isDefault: true },
-    { id: 'open_hisn_muslim', phrase: 'حصن المسلم', action: 'open_hisn_muslim', isDefault: true },
-    { id: 'open_hisn_muslim_alt', phrase: 'حسن المسلم', action: 'open_hisn_muslim', isDefault: true },
-    { id: 'open_calendar', phrase: 'التقويم', action: 'open_calendar', isDefault: true },
-    { id: 'open_qibla', phrase: 'القبلة', action: 'open_qibla', isDefault: true },
-    { id: 'open_hajj_umrah', phrase: 'الحج والعمرة', action: 'open_hajj_umrah', isDefault: true },
-    { id: 'open_voice_control', phrase: 'التحكم الصوتي', action: 'open_voice_control', isDefault: true },
+    { id: 'open_listen', phrase: 'فتح الاستماع للقرآن', action: 'open_listen', isDefault: true },
+    { id: 'open_adia', phrase: 'فتح الأدعية', action: 'open_adia', isDefault: true },
+    { id: 'open_salah_adhkar', phrase: 'فتح أذكار الصلاة', action: 'open_salah_adhkar', isDefault: true },
+    { id: 'open_hisn_muslim', phrase: 'فتح حصن المسلم', action: 'open_hisn_muslim', isDefault: true },
+    { id: 'open_calendar', phrase: 'فتح التقويم', action: 'open_calendar', isDefault: true },
+    { id: 'open_hajj_umrah', phrase: 'فتح الحج والعمرة', action: 'open_hajj_umrah', isDefault: true },
+    { id: 'open_quran', phrase: 'مصحف', action: 'open_quran', isDefault: true },
+    { id: 'open_voice_control', phrase: 'فتح التحكم الصوتي', action: 'open_voice_control', isDefault: true },
     { id: 'disable_voice_control', phrase: 'إيقاف التحكم الصوتي', action: 'disable_voice_control', isDefault: true },
 ];
 
@@ -203,8 +202,8 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                 // Try to find a matching UI element and click it (Voice-to-Click Engine)
                 // Prioritize exact matches and specific containers based on context
                 const selectors = currentPage === 'quran' 
-                    ? '.quran-reader-container button, .quran-reader-container [role="button"], .quran-reader-container li, .quran-reader-container label'
-                    : 'button, [role="button"], a, .clickable, .voice-target, li, span, h1, h2, h3, p, label';
+                    ? '.quran-reader-container button, .quran-reader-container [role="button"], .quran-reader-container li'
+                    : 'button, [role="button"], a, .clickable, .voice-target, li, span, h1, h2, h3, p';
                 
                 const elements = document.querySelectorAll(selectors);
                 for (const el of Array.from(elements)) {

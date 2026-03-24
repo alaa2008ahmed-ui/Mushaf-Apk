@@ -12,6 +12,7 @@ import AdkarSabahMasaa from '../pages/AdkarSabahMasaa';
 import Adia from '../pages/Adia';
 import Nawawi from '../pages/Nawawi';
 import QuranReader from '../pages/QuranReader';
+import QuranDownload from '../pages/QuranDownload';
 import Calculators from '../pages/Calculators';
 import TajweedEducation from '../pages/TajweedEducation';
 import VoiceControlPage from '../pages/VoiceControlPage';
@@ -30,6 +31,8 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
         return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={false} />;
       case 'quran-landscape':
         return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={true} />;
+      case 'quran-download':
+        return <QuranDownload onBack={onBack} />;
       case 'tajweed-education':
         return <TajweedEducation onBack={onBack} onNavigateToMushaf={() => onNavigate('quran')} />;
       case 'salah-adhkar':
