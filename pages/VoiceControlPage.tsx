@@ -128,175 +128,81 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         )}
                     </div>
 
-                    {/* Commands List Header */}
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between px-2">
-                            <h3 className="font-bold text-lg opacity-80">إدارة الأوامر</h3>
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={resetToDefaults}
-                                    className="p-2 rounded-full hover:bg-black/5 transition-colors"
-                                    title="إعادة ضبط المصنع"
-                                >
-                                    <RotateCcw className="w-5 h-5 opacity-60" />
-                                </button>
-                                <button 
-                                    onClick={() => setShowAddCommand(!showAddCommand)}
-                                    className="text-sm font-bold px-4 py-2 rounded-full flex items-center gap-2 shadow-md transition-all active:scale-95"
-                                    style={{ backgroundColor: theme.palette[0], color: '#ffffff' }}
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    {showAddCommand ? 'إلغاء' : 'إضافة أمر'}
-                                </button>
-                            </div>
-                        </div>
-
-                        {showAddCommand && (
-                            <motion.div 
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                className="p-5 rounded-2xl themed-card space-y-4 border-2"
-                                style={{ borderColor: theme.palette[0] + '40' }}
-                            >
-                                <div>
-                                    <label className="text-xs font-bold block mb-2 opacity-70">العبارة الصوتية:</label>
-                                    <input 
-                                        type="text" 
-                                        value={newPhrase}
-                                        onChange={e => setNewPhrase(e.target.value)}
-                                        placeholder="مثلاً: افتح المصحف"
-                                        className="w-full p-3 rounded-xl border bg-black/5 text-base outline-none focus:ring-2"
-                                        style={{ borderColor: theme.barBorder, ringColor: theme.palette[0] }}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-bold block mb-2 opacity-70">الإجراء:</label>
-                                    <select 
-                                        value={newAction}
-                                        onChange={e => setNewAction(e.target.value)}
-                                        className="w-full p-3 rounded-xl border bg-black/5 text-base outline-none"
-                                        style={{ borderColor: theme.barBorder }}
-                                    >
-                                        <option value="">اختر الإجراء...</option>
-                                        {AVAILABLE_ACTIONS.map(action => (
-                                            <option key={action.id} value={action.id}>{action.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <button 
-                                    onClick={handleAdd}
-                                    disabled={!newPhrase.trim() || !newAction}
-                                    className="w-full py-3 rounded-xl font-bold text-base shadow-lg disabled:opacity-50 transition-all active:scale-95"
-                                    style={{ backgroundColor: theme.palette[0], color: '#ffffff' }}
-                                >
-                                    حفظ الأمر الجديد
-                                </button>
-                            </motion.div>
-                        )}
-
-                        <div className="space-y-3">
-                            {commands.map((cmd) => (
-                                <div key={cmd.id} className="flex items-center justify-between p-4 rounded-2xl themed-card border border-black/5 shadow-sm">
-                                    <div className="flex-1 mr-2">
-                                        {editingId === cmd.id ? (
-                                            <div className="flex items-center gap-2">
-                                                <input 
-                                                    type="text"
-                                                    value={editValue}
-                                                    onChange={e => setEditValue(e.target.value)}
-                                                    className="flex-1 p-2 rounded-lg border bg-white text-base text-black outline-none"
-                                                    autoFocus
-                                                />
-                                                <button onClick={() => handleSaveEdit(cmd.id)} className="p-2 text-green-600 hover:bg-green-50 rounded-full"><Check className="w-5 h-5" /></button>
-                                                <button onClick={() => setEditingId(null)} className="p-2 text-red-600 hover:bg-red-50 rounded-full"><X className="w-5 h-5" /></button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col">
-                                                <span className="text-lg font-bold">"{cmd.phrase}"</span>
-                                                <span className="text-xs opacity-60 font-medium">
-                                                    {AVAILABLE_ACTIONS.find(a => a.id === cmd.action)?.name || cmd.action}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <button onClick={() => handleEdit(cmd)} className="p-2 opacity-60 hover:opacity-100 hover:bg-black/5 rounded-full transition-all">
-                                            <Edit2 className="w-5 h-5" />
-                                        </button>
-                                        {!cmd.isDefault && (
-                                            <button onClick={() => deleteCommand(cmd.id)} className="p-2 text-red-500 opacity-60 hover:opacity-100 hover:bg-red-50 rounded-full transition-all">
-                                                <Trash2 className="w-5 h-5" />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
                     {/* Help Section */}
-                    <div className="p-5 rounded-2xl bg-indigo-500/10 border-2 border-indigo-500/20">
-                        <h4 className="text-sm font-bold text-indigo-500 mb-3 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                            أمثلة للأوامر الذكية:
+                    <div className="p-5 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/20">
+                        <h4 className="text-sm font-bold text-emerald-600 mb-3 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                            أمثلة سريعة للأوامر الذكية:
                         </h4>
                         <ul className="text-xs space-y-2 opacity-80 list-disc list-inside font-medium">
-                            <li>"اذهب إلى سورة الكهف"</li>
-                            <li>"اذهب إلى صفحة مئة"</li>
-                            <li>"اذهب إلى الجزء الثلاثين"</li>
-                            <li>"افتح الأذكار"</li>
-                            <li>"حصن المسلم"</li>
-                            <li>"القراءة الأفقية"</li>
-                            <li>"إيقاف التحكم الصوتي"</li>
-                            <li>"الصفحة التالية" / "الصفحة السابقة"</li>
+                            <li>"اذهب إلى سورة الكهف آية عشرة"</li>
+                            <li>"صفحة مائة" / "الجزء الثلاثون"</li>
+                            <li>"القراءة الأفقية" / "وضع طولي"</li>
+                            <li>"حصن المسلم" / "أذكار الصباح"</li>
+                            <li>"إيقاف التحكم الصوتي" (للتعطيل الفوري)</li>
                         </ul>
                     </div>
 
                     {/* Instructions Section */}
-                    <div className="themed-card p-6 space-y-4">
-                        <h3 className="font-bold text-lg flex items-center gap-2">
+                    <div className="themed-card p-6 space-y-6">
+                        <h3 className="font-bold text-lg flex items-center gap-2 border-b pb-2">
                             <ChevronRight className="w-5 h-5 text-primary" />
-                            إرشادات نطق الأوامر الصحيحة
+                            دليل التحكم الصوتي الشامل
                         </h3>
-                        <div className="space-y-4 text-sm opacity-90 leading-relaxed">
-                            <section>
-                                <h4 className="font-bold text-primary mb-1">1. التنقل في المصحف:</h4>
-                                <p>للانتقال إلى سورة أو آية معينة، يفضل النطق بوضوح:</p>
-                                <ul className="list-disc list-inside mr-2 space-y-1">
-                                    <li>"سورة البقرة آية خمسة" (تأكد من نطق كلمة "آية" قبل الرقم).</li>
-                                    <li>"صفحة مائتين" أو "صفحة ٢٠٠".</li>
-                                    <li>"جزء عم" أو "الجزء الثلاثون".</li>
+                        
+                        <div className="space-y-6 text-sm opacity-90 leading-relaxed">
+                            <section className="space-y-2">
+                                <h4 className="font-bold text-primary flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                    1. محرك "انطق ما تراه" (UI Discovery):
+                                </h4>
+                                <p className="pr-4">هذه هي الميزة الأقوى؛ يمكنك ببساطة نطق اسم أي زر أو قائمة تظهر أمامك على الشاشة حالياً، وسيقوم التطبيق بالنقر عليها فوراً. مثلاً: "الإعدادات"، "البحث"، "تغيير الثيم".</p>
+                            </section>
+
+                            <section className="space-y-2">
+                                <h4 className="font-bold text-primary flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                    2. التنقل الذكي في المصحف:
+                                </h4>
+                                <p className="pr-4">النظام يفهم السياق؛ إذا كنت تقرأ في المصحف ونطقت رقماً فقط (مثل "عشرين")، سينتقل بك إلى الآية 20 في السورة الحالية. كما يمكنك استخدام:</p>
+                                <ul className="list-disc list-inside pr-6 space-y-1 text-xs">
+                                    <li>"سورة [اسم السورة]" للانتقال لبداية السورة.</li>
+                                    <li>"صفحة [رقم]" للانتقال لصفحة محددة.</li>
+                                    <li>"جزء [رقم]" للانتقال لبداية الجزء.</li>
                                 </ul>
                             </section>
 
-                            <section>
-                                <h4 className="font-bold text-primary mb-1">2. التحكم في المظهر (الثيمات):</h4>
-                                <p>يمكنك تغيير شكل التطبيق بنطق اللون أو اسم الثيم:</p>
-                                <ul className="list-disc list-inside mr-2 space-y-1">
-                                    <li>"تغيير الثيم إلى الكعبة" أو "ثيم الكعبة".</li>
-                                    <li>"تغيير اللون إلى الأخضر" أو "الوضع الليلي".</li>
+                            <section className="space-y-2">
+                                <h4 className="font-bold text-primary flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                    3. التحكم في وضع الشاشة والخط:
+                                </h4>
+                                <ul className="list-disc list-inside pr-4 space-y-1">
+                                    <li>"القراءة الأفقية" أو "عرضي" لتدوير الشاشة.</li>
+                                    <li>"القراءة الرأسية" أو "طولي" للوضع المعتاد.</li>
+                                    <li>"تكبير الخط" أو "تصغير الخط" للتحكم في حجم النص.</li>
                                 </ul>
                             </section>
 
-                            <section>
-                                <h4 className="font-bold text-primary mb-1">3. التحكم في الصوت والخط:</h4>
-                                <ul className="list-disc list-inside mr-2 space-y-1">
-                                    <li>"تشغيل الصوت" لبدء التلاوة (يجب أن تكون داخل المصحف).</li>
-                                    <li>"إيقاف الصوت" لإنهاء التلاوة.</li>
-                                    <li>"القراءة الأفقية" أو "عرضي" لتغيير وضع الشاشة.</li>
-                                    <li>"تكبير الخط" أو "تصغير الخط".</li>
-                                    <li>"حجم الخط ثلاثين" لتحديد حجم معين.</li>
-                                </ul>
+                            <section className="space-y-2">
+                                <h4 className="font-bold text-primary flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                    4. الكتابة الصوتية (Contextual Focus):
+                                </h4>
+                                <p className="pr-4">عندما تفتح مربع البحث أو أي حقل كتابة، سيتحول المحرك تلقائياً لكتابة ما تنطقه داخل المربع بدلاً من تنفيذه كأمر، مما يسهل عليك البحث عن السور أو الأذكار.</p>
                             </section>
 
-                            <section>
-                                <h4 className="font-bold text-primary mb-1">4. نصائح عامة:</h4>
-                                <ul className="list-disc list-inside mr-2 space-y-1">
-                                    <li>تحدث ببطء ووضوح في بيئة هادئة.</li>
-                                    <li>انتظر ظهور النص المنطوق على الشاشة للتأكد من التعرف عليه.</li>
-                                    <li>يمكنك دائماً إضافة أوامرك الخاصة من قسم "إدارة الأوامر" أعلاه.</li>
-                                </ul>
+                            <section className="space-y-2">
+                                <h4 className="font-bold text-primary flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                    5. الوضع الصامت (Silent Background):
+                                </h4>
+                                <p className="pr-4">يعمل المحرك الآن في صمت تام دون إصدار نغمات تنبيه مزعجة، مما يضمن استمرار صوت القارئ دون انقطاع أثناء استماعك للقرآن الكريم.</p>
                             </section>
+
+                            <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 text-xs italic">
+                                * نصيحة: لا تقلق بشأن التشكيل أو "ال" التعريف، النظام ذكي بما يكفي ليفهم "البقرة" أو "بقرة" بنفس الدقة.
+                            </div>
                         </div>
                     </div>
                 </div>
