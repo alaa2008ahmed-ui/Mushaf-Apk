@@ -3,7 +3,6 @@ import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import InteractiveBackground from '../components/InteractiveBackground';
 import NavButton from '../components/MainMenu/NavButton';
-import { motion } from 'motion/react';
 
 const ALL_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
@@ -17,10 +16,9 @@ const ALL_MENU_ITEMS = [
     { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 1 },
     { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
-    { id: 'nawawi', label: "📚 الأربعون النووية", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'tajweed-education', label: "📖 تعليم التجويد", className: "col-span-2 h-10", colorIndex: 0 },
+    { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
+    { id: 'tajweed-education', label: "📖 تعليم التجويد", className: "h-10", colorIndex: 1 },
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
-    { id: 'quran-download', label: "📥 تحميل القرآن", className: "h-10", colorIndex: 1 },
     { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "h-10", colorIndex: 1 },
 ];
 
@@ -33,7 +31,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
     const { theme, themeKey } = useTheme();
 
     return (
-        <div className="fade-in">
+        <div>
             <InteractiveBackground />
             <div className="h-screen w-full flex flex-col overflow-hidden">
                 <header className="app-top-bar relative z-10">
@@ -51,12 +49,9 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                 <div className="flex-1 overflow-y-auto pb-32 hide-scrollbar">
                     <div className="main-layout px-4 flex flex-col pt-6" style={{ fontFamily: theme.font }}>
                         <div className="grid grid-cols-2 gap-3 w-full max-w-sm mx-auto">
-                            {ALL_MENU_ITEMS.map((item, index) => (
-                                <motion.div
+                            {ALL_MENU_ITEMS.map((item) => (
+                                <div
                                     key={item.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
                                     className={item.className}
                                 >
                                     <NavButton
@@ -68,7 +63,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                         isGlass={theme.isGlass}
                                         btnText={theme.btnText}
                                     />
-                                </motion.div>
+                                </div>
                             ))}
                         </div>
                     </div>

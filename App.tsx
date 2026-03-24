@@ -87,12 +87,12 @@ function App() {
     else if (action === 'open_calculators' || (action === 'ui_click' && params?.label?.includes('حاسبه'))) handleNavigate('calculators');
     else if (action === 'open_listen' || (action === 'ui_click' && params?.label?.includes('استماع'))) handleNavigate('listen');
     else if (action === 'open_adia' || (action === 'ui_click' && params?.label?.includes('ادعيه'))) handleNavigate('adia');
-    else if (action === 'open_salah_adhkar') handleNavigate('salah-adhkar');
-    else if (action === 'open_hisn_muslim' || (action === 'ui_click' && params?.label?.includes('حصن'))) handleNavigate('hisn-muslim');
+    else if (action === 'open_salah_adhkar' || (action === 'ui_click' && params?.label?.includes('اذكار الصلاه'))) handleNavigate('salah-adhkar');
+    else if (action === 'open_hisn_muslim' || (action === 'ui_click' && (params?.label?.includes('حصن') || params?.label?.includes('حسن')))) handleNavigate('hisn-muslim');
     else if (action === 'open_calendar' || (action === 'ui_click' && params?.label?.includes('تقويم'))) handleNavigate('calendar');
     else if (action === 'open_hajj_umrah' || (action === 'ui_click' && params?.label?.includes('حج'))) handleNavigate('hajj-umrah');
     else if (action === 'open_quran' || (action === 'ui_click' && params?.label?.includes('مصحف'))) handleNavigate('quran');
-    else if (action === 'open_voice_control') handleNavigate('voice-control');
+    else if (action === 'open_voice_control' || (action === 'ui_click' && params?.label?.includes('تحكم صوتي'))) handleNavigate('voice-control');
     else if (action === 'set_orientation_horizontal' || action === 'set_orientation_vertical') {
       window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
     }

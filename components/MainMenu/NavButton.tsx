@@ -26,7 +26,7 @@ const NavButton: React.FC<NavButtonProps> = ({
     <div className={`h-full ${className} relative group`}>
         <button 
             onClick={onClick} 
-            className={`btn-3d-effect w-full rounded-2xl py-3 px-1 font-bold relative text-sm h-full ${isEditMode ? 'cursor-move animate-pulse' : ''}`}
+            className={`btn-3d-effect w-full rounded-2xl py-3 px-1 font-bold relative text-sm h-full flex items-center justify-center ${isEditMode ? 'cursor-move animate-pulse' : ''}`}
             style={{ 
                 background: isGlass ? 'transparent' : color, 
                 color: btnText || '#FFFFFF',
