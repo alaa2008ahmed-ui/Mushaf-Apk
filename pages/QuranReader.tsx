@@ -1413,7 +1413,16 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     jumpToPage(num, true);
                 }
             } else if (action === 'open_search') {
+                if (params?.target) {
+                    localStorage.setItem('search_query' + (isLandscapeRef.current ? '_h' : '_v'), params.target);
+                }
                 openModal('search-modal');
+                if (params?.target) {
+                    // Give the modal time to mount, then dispatch execute_search
+                    setTimeout(() => {
+                        window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'execute_search', text: params.target } }));
+                    }, 300);
+                }
             } else if (action === 'open_settings' || action === 'change_theme') {
                 openModal('settings-modal');
             } else if (action === 'download_quran') {
@@ -1424,7 +1433,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 openModal('bookmarks-modal');
             } else if (action === 'increase_font') {
                 setSettings(prev => {
-                    const newSize = Math.min(60, prev.fontSize + 2);
+                    const newSize = Math.min(5.0, prev.fontSize + 0.2);
                     const newSettings = { ...prev, fontSize: newSize };
                     localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
@@ -1432,7 +1441,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 });
             } else if (action === 'decrease_font') {
                 setSettings(prev => {
-                    const newSize = Math.max(16, prev.fontSize - 2);
+                    const newSize = Math.max(0.5, prev.fontSize - 0.2);
                     const newSettings = { ...prev, fontSize: newSize };
                     localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
@@ -1440,18 +1449,62 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 });
             } else if (action === 'set_font_size' && params?.size) {
                 setSettings(prev => {
-                    const newSize = Math.max(16, Math.min(60, params.size));
-                    const newSettings = { ...prev, fontSize: newSize };
+                    let newSize = params.size;
+                    if (newSize > 5) newSize = 5;
+                    if (newSize < 1) newSize = 1;
+                    const mappedSize = Math.max(0.5, Math.min(5.0, newSize));
+                    const newSettings = { ...prev, fontSize: mappedSize };
                     localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
                     return newSettings;
                 });
+            } else if (action === 'toggle_sajdah') {
+                setShowSajdahCard(prev => {
+                    const newValue = !prev;
+                    localStorage.setItem('show_sajdah_card' + (isLandscapeRef.current ? '_h' : '_v'), String(newValue));
+                    window.dispatchEvent(new Event('settings-change'));
+                    showToast(newValue ? 'تم تفعيل بطاقة السجدة الكبرى' : 'تم إيقاف بطاقة السجدة الكبرى');
+                    return newValue;
+                });
+            } else if (action === 'start_autoscroll') {
+                startAutoScroll();
+                showToast('تم تفعيل التمرير التلقائي');
+            } else if (action === 'stop_autoscroll') {
+                stopAutoScroll();
+                showToast('تم إيقاف التمرير التلقائي');
+            } else if (action === 'stop_action') {
+                stopAutoScroll();
+                stopAudio();
+            } else if (action === 'increase_speed') {
+                setSettings(prev => {
+                    const newSpeed = Math.max(1, prev.scrollMinutes - 1);
+                    const newSettings = { ...prev, scrollMinutes: newSpeed };
+                    localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
+                    showToast(`تم زيادة السرعة (${newSpeed})`);
+                    return newSettings;
+                });
+            } else if (action === 'decrease_speed') {
+                setSettings(prev => {
+                    const newSpeed = Math.min(60, prev.scrollMinutes + 1);
+                    const newSettings = { ...prev, scrollMinutes: newSpeed };
+                    localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
+                    showToast(`تم تقليل السرعة (${newSpeed})`);
+                    return newSettings;
+                });
+            } else if (action === 'scroll_up') {
+                if (document.querySelector('.theme-selector-container')) return;
+                const container = document.querySelector('.quran-reader-container');
+                if (container) container.scrollBy({ top: -300, behavior: 'smooth' });
+            } else if (action === 'scroll_down') {
+                if (document.querySelector('.theme-selector-container')) return;
+                const container = document.querySelector('.quran-reader-container');
+                if (container) container.scrollBy({ top: 300, behavior: 'smooth' });
             }
         };
 
         window.addEventListener('voice-command', handleGlobalVoiceCommand);
         return () => window.removeEventListener('voice-command', handleGlobalVoiceCommand);
-    }, [visiblePages, jumpToPage, handlePlayButtonPointerDown, handlePlayButtonPointerUp, openModal, handleVoiceCommand]);
+    }, [visiblePages, jumpToPage, handlePlayButtonPointerDown, handlePlayButtonPointerUp, openModal, handleVoiceCommand, startAutoScroll, stopAutoScroll, stopAudio, showToast]);
 
     const saveBookmark = () => { 
         if (!currentAyah) { showToast('اختر آية أولاً'); return; } 
@@ -1589,7 +1642,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
     };
 
-    const stopAutoScroll = (showTimer = true) => {
+    function stopAutoScroll(showTimer = true) {
         if (autoScrollFrameRef.current) cancelAnimationFrame(autoScrollFrameRef.current);
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         autoScrollFrameRef.current = null;
@@ -1602,9 +1655,9 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         
         if (showTimer) setTimeout(() => setAutoScrollState(p => ({...p, elapsedTime: 0})), 3000);
         else setAutoScrollState(p => ({...p, elapsedTime: 0}));
-    };
+    }
     
-    const startAutoScroll = () => {
+    function startAutoScroll() {
         if (!mushafContentRef.current) return;
         
         // Close any open menus/settings first to ensure bars can hide
@@ -1678,7 +1731,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                  }
             }, 1000);
         }, 100); // Reduced delay to 100ms for faster start
-    };
+    }
 
     const toggleAutoScroll = () => {
         if (autoScrollStateRef.current.isActive) stopAutoScroll();

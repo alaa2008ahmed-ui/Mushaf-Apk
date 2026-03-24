@@ -82,6 +82,24 @@ function Tasbeeh({ onBack }) {
     }, [loadPhrases, theme.palette]);
 
     useEffect(() => {
+        const handleVoiceCommand = (event: Event) => {
+            const customEvent = event as CustomEvent;
+            const { action } = customEvent.detail;
+            
+            if (action === 'increment_tasbeeh') {
+                handleIncrement();
+            } else if (action === 'reset_counter') {
+                handleReset();
+            }
+        };
+
+        window.addEventListener('voice-command', handleVoiceCommand);
+        return () => {
+            window.removeEventListener('voice-command', handleVoiceCommand);
+        };
+    }, [count, target, isCountingStopped, activePhrase]);
+
+    useEffect(() => {
         const interceptor = () => {
             if (modals.target || modals.phrase || modals.add || modals.delete || modals.color) {
                 setModals({ target: false, phrase: false, add: false, delete: false, color: false });

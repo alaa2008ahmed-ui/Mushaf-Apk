@@ -24,6 +24,22 @@ function ThemeSelector({ onClose }) {
         };
     }, [wrapperRef, onClose]);
 
+    useEffect(() => {
+        const handleVoiceCommand = (e: any) => {
+            const { action } = e.detail;
+            const scrollContainer = document.querySelector('.theme-selector-container .overflow-y-auto');
+            if (scrollContainer) {
+                if (action === 'scroll_up') {
+                    scrollContainer.scrollBy({ top: -100, behavior: 'smooth' });
+                } else if (action === 'scroll_down') {
+                    scrollContainer.scrollBy({ top: 100, behavior: 'smooth' });
+                }
+            }
+        };
+        window.addEventListener('voice-command', handleVoiceCommand);
+        return () => window.removeEventListener('voice-command', handleVoiceCommand);
+    }, []);
+
     const handleBgUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
             const file = event.target.files[0];

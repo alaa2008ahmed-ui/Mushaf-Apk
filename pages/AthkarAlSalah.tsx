@@ -27,6 +27,28 @@ function AthkarAlSalah({ onBack }) {
         return unregister;
     }, [zoomedZikr, currentPrayer]);
 
+    useEffect(() => {
+        const handleVoiceCommand = (event: Event) => {
+            const customEvent = event as CustomEvent;
+            const { action } = customEvent.detail;
+            
+            if (action === 'increment_tasbeeh' && currentPrayer) {
+                // Find the first unfinished dhikr and decrement it
+                for (let i = 0; i < athkarList.length; i++) {
+                    if (athkarList[i].currentCount > 0) {
+                        handleDecrement(athkarList[i].id);
+                        break;
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('voice-command', handleVoiceCommand);
+        return () => {
+            window.removeEventListener('voice-command', handleVoiceCommand);
+        };
+    }, [athkarList, currentPrayer]);
+
     const openPrayer = (prayerId, titleText) => {
         let currentAthkarData = JSON.parse(JSON.stringify(baseAthkar));
 

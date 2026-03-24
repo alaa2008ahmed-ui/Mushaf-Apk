@@ -51,6 +51,32 @@ function AdkarSabahMasaa({ onBack }) {
         return unregister;
     }, [zoomedDhikr]);
 
+    useEffect(() => {
+        const handleVoiceCommand = (event: Event) => {
+            const customEvent = event as CustomEvent;
+            const { action } = customEvent.detail;
+            
+            if (action === 'increment_tasbeeh') {
+                // Find the first unfinished dhikr and decrement it
+                const currentTabCounts = adhkarCounts[adhkarTab];
+                if (!currentTabCounts) return;
+                
+                const currentAdhkarList = adhkarTab === 'morning' ? BASE_ADHKAR_MORNING : BASE_ADHKAR_EVENING;
+                for (let i = 0; i < currentAdhkarList.length; i++) {
+                    if (currentTabCounts[i] > 0) {
+                        handleDecrement(i);
+                        break;
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('voice-command', handleVoiceCommand);
+        return () => {
+            window.removeEventListener('voice-command', handleVoiceCommand);
+        };
+    }, [adhkarCounts, adhkarTab, zoomedDhikr]);
+
     const handleDecrement = (index) => {
         if (zoomedDhikr) return; // Prevent decrementing when zoomed
         const currentTabCounts = adhkarCounts[adhkarTab];

@@ -202,8 +202,8 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                 // Try to find a matching UI element and click it (Voice-to-Click Engine)
                 // Prioritize exact matches and specific containers based on context
                 const selectors = currentPage === 'quran' 
-                    ? '.quran-reader-container button, .quran-reader-container [role="button"], .quran-reader-container li'
-                    : 'button, [role="button"], a, .clickable, .voice-target, li, span, h1, h2, h3, p';
+                    ? '.quran-reader-container button, .quran-reader-container [role="button"], .quran-reader-container li, .quran-reader-container label'
+                    : 'button, [role="button"], a, .clickable, .voice-target, li, span, h1, h2, h3, p, label';
                 
                 const elements = document.querySelectorAll(selectors);
                 for (const el of Array.from(elements)) {
