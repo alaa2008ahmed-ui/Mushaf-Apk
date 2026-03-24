@@ -37,6 +37,12 @@ export const useQuranReaderLogic = (onBack: () => void, onNavigate: (pageId: str
         isJumpingRef, wasAutoscrollingBeforeModal
     } = useQuranState(initialLandscape);
 
+    // Refs
+    const mushafContentRef = useRef<HTMLDivElement>(null);
+    const floatingMenuRef = useRef<HTMLDivElement>(null);
+    const menuButtonRef = useRef<HTMLButtonElement>(null);
+    const pageInputRef = useRef<HTMLInputElement>(null);
+
     // 2. Settings & Theme
     const {
         useTajweed, setUseTajweed,
@@ -50,7 +56,77 @@ export const useQuranReaderLogic = (onBack: () => void, onNavigate: (pageId: str
         showSajdahCard, setShowSajdahCard
     } = useQuranSettings(initialLandscape, modeSuffix);
 
-    // 3. Modals & Context/Tafseer
+    const pagesData = useMemo(() => {
+        if (!quranData || !quranData.surahs) return {};
+        const pages: { [key: number]: any[] } = {};
+        quranData.surahs.forEach((surah: any) => {
+            surah.ayahs.forEach((ayah: any) => {
+                const p = Number(ayah.page);
+                if (!pages[p]) pages[p] = [];
+                pages[p].push({
+                    ...ayah,
+                    sNum: surah.number,
+                    sName: surah.name,
+                    englishName: surah.englishName
+                });
+            });
+        });
+        return pages;
+    }, [quranData]);
+
+    const currentAyahData = useMemo(() => {
+        if (!quranData || !quranData.surahs) return null;
+        const surah = quranData.surahs.find((s: any) => s.number === currentAyah.s);
+        if (!surah) return null;
+        const ayah = surah.ayahs.find((a: any) => a.numberInSurah === currentAyah.a);
+        return { ...ayah, sName: surah.name };
+    }, [quranData, currentAyah]);
+
+    const surahName = currentAyahData?.sName || '';
+    const page = currentAyahData?.page || 1;
+    const juz = currentAyahData?.juz || 1;
+
+    // 3. AutoScroll
+    const {
+        autoScrollState, setAutoScrollState, autoScrollStateRef,
+        isAutoScrollSettingsOpen, setIsAutoScrollSettingsOpen,
+        autoScrollButtonTimerRef, autoScrollPausedRef,
+        startAutoScroll, stopAutoScroll, toggleAutoScroll
+    } = useQuranAutoScroll(settingsRef, mushafContentRef, () => {});
+
+    // Refs for circular dependencies
+    const stopAudioRef = useRef<() => void>(() => {});
+    const scrollToAyahRef = useRef<(s: number, a: number, i: boolean) => void>(() => {});
+
+    // 4. Scroll & Jump
+    const scrollAndJump = useQuranScrollAndJump(
+        quranData, isLandscapeRef, mushafContentRef,
+        currentAyahRef, highlightedAyahIdRef, setCurrentAyah, setHighlightedAyahId, setVisiblePages,
+        () => stopAudioRef.current(), isPageInputActiveRef, setActiveModals, showToast,
+        autoScrollState, isJumpingRef, showMarkerNotification, (s, sn, an) => {} // Placeholder for handleSajdahVisible
+    );
+
+    // 5. Audio
+    const audio = useQuranAudio(
+        settings, quranData, showToast, 
+        (s, a, i) => scrollToAyahRef.current(s, a, i), 
+        setCurrentAyah, setHighlightedAyahId
+    );
+
+    // Update refs
+    useEffect(() => {
+        stopAudioRef.current = audio.stopAudio;
+        scrollToAyahRef.current = scrollAndJump.scrollToAyah;
+    }, [audio.stopAudio, scrollAndJump.scrollToAyah]);
+
+    const {
+        isPlaying, setIsPlaying, isPlayingRef,
+        isAudioLoading, setIsAudioLoading, isAudioLoadingRef,
+        playingAyah, setPlayingAyah,
+        stopAudio, playAudio, toggleAudio, playSurah
+    } = audio;
+
+    // 6. Modals & Context/Tafseer
     const {
         ayahContextMenu, setAyahContextMenu,
         ayahContextColorField, setAyahContextColorField,
@@ -59,37 +135,11 @@ export const useQuranReaderLogic = (onBack: () => void, onNavigate: (pageId: str
         isTafseerLoading, setIsTafseerLoading
     } = useQuranContextAndTafseer(settings);
 
-    // 4. Audio
-    const {
-        isPlaying, setIsPlaying, isPlayingRef,
-        isAudioLoading, setIsAudioLoading, isAudioLoadingRef,
-        playingAyah, setPlayingAyah,
-        stopAudio, playAudio, toggleAudio, playSurah
-    } = useQuranAudio(settings, quranData, showToast, (s, a, i) => scrollAndJump.scrollToAyah(s, a, i), setCurrentAyah, setHighlightedAyahId);
-
-    // 5. Modals Helper
+    // 7. Modals Helper
     const { closeModal, openModal } = useQuranModals(
         activeModals, setActiveModals, tafseerSelectionInfo, setTafseerSelectionInfo,
-        { current: { isActive: false, isPaused: false } } as any, // Placeholder for autoScrollStateRef
-        { current: false } as any, // Placeholder for autoScrollPausedRef
-        () => {}, // Placeholder for setAutoScrollState
+        autoScrollStateRef, autoScrollPausedRef, setAutoScrollState,
         wasAutoscrollingBeforeModal, stopAudio
-    );
-
-    // 6. AutoScroll
-    const {
-        autoScrollState, setAutoScrollState, autoScrollStateRef,
-        isAutoScrollSettingsOpen, setIsAutoScrollSettingsOpen,
-        autoScrollButtonTimerRef, autoScrollPausedRef,
-        startAutoScroll, stopAutoScroll, toggleAutoScroll
-    } = useQuranAutoScroll(settingsRef, { current: null } as any, () => {});
-
-    // 7. Scroll & Jump
-    const scrollAndJump = useQuranScrollAndJump(
-        quranData, isLandscapeRef, { current: null } as any, // Placeholder for mushafContentRef
-        currentAyahRef, highlightedAyahIdRef, setCurrentAyah, setHighlightedAyahId, setVisiblePages,
-        stopAudio, isPageInputActiveRef, setActiveModals, showToast,
-        autoScrollState, isJumpingRef, showMarkerNotification, (s, sn, an) => {} // Placeholder for handleSajdahVisible
     );
 
     // 8. Handlers
@@ -122,11 +172,11 @@ export const useQuranReaderLogic = (onBack: () => void, onNavigate: (pageId: str
     // 13. Effects
     const hasJumpedRef = useRef(false);
     useQuranEffects(
-        isFloatingMenuOpen, { current: null } as any, { current: null } as any, setIsFloatingMenuOpen,
+        isFloatingMenuOpen, floatingMenuRef, menuButtonRef, setIsFloatingMenuOpen,
         activeModals, tafseerInfo, tafseerSelectionInfo, { show: false }, isPageInputActive,
         closeModal, () => {}, setTafseerInfo, setTafseerSelectionInfo, setIsPageInputActive,
         autoScrollPausedRef, setAutoScrollState, isPageInputActiveRef,
-        { current: null } as any, false, setBookmarks, modeSuffix, hasJumpedRef,
+        pageInputRef, false, setBookmarks, modeSuffix, hasJumpedRef,
         initialLandscape, scrollAndJump.jumpToAyah, quranData
     );
 
@@ -282,7 +332,8 @@ export const useQuranReaderLogic = (onBack: () => void, onNavigate: (pageId: str
     };
 
     return {
-        isLandscape, modeSuffix, useTajweed, setUseTajweed, quranData, setQuranData,
+        isLandscape, isLandscapeRef, modeSuffix, useTajweed, setUseTajweed, quranData, pagesData,
+        surahName, page, juz, onNavigate,
         isLoading, setIsLoading, loadingStatus, setLoadingStatus, loadingProgress, setLoadingProgress,
         visiblePages, setVisiblePages, currentAyah, setCurrentAyah, highlightedAyahId, setHighlightedAyahId,
         isTransparentMode, setIsTransparentMode, isHideToolbarsEnabled, setIsHideToolbarsEnabled,
@@ -295,8 +346,8 @@ export const useQuranReaderLogic = (onBack: () => void, onNavigate: (pageId: str
         autoScrollState, setAutoScrollState,
         isPlaying, setIsPlaying, isAudioLoading, setIsAudioLoading, playingAyah, setPlayingAyah,
         isTafseerLoading, setIsTafseerLoading, isPageInputActive, setIsPageInputActive,
-        pageInput, setPageInput, mushafContentRef: { current: null }, // Placeholder
-        floatingMenuRef: { current: null }, menuButtonRef: { current: null }, pageInputRef: { current: null },
+        pageInput, setPageInput, mushafContentRef,
+        floatingMenuRef, menuButtonRef, pageInputRef,
         toast, reciterToast, markerNotification, sajdahCardInfo: { show: false },
         isAutoScrollSettingsOpen, setIsAutoScrollSettingsOpen,
         tafseerInfo, setTafseerInfo, tafseerSelectionInfo, setTafseerSelectionInfo,
@@ -309,6 +360,9 @@ export const useQuranReaderLogic = (onBack: () => void, onNavigate: (pageId: str
         handleVoiceCommand, PREDEFINED_COLORS, renderCheckerboard,
         handleMushafTypeSelect: handlers.handleMushafTypeSelect,
         handleTafseerSelect: handlers.handleTafseerSelect,
+        handleVerseClick: handlers.handleVerseClick,
+        handleVerseLongPress: handlers.handleVerseLongPress,
+        handleAyahLongPress: handlers.handleAyahLongPress,
         playSurah, updateSetting, handleAyahClick: scrollAndJump.handleAyahClick,
         handleAyahTextClick: handlers.handleAyahTextClick,
         handleSajdahVisible, handlePageVisible, handleScroll, handleFloatingMenuToggle,

@@ -1,109 +1,99 @@
 import React, { FC } from 'react';
+import { Play, Pause } from 'lucide-react';
 import './QuranReader.css'; 
 import { useQuranReaderLogic } from '../hooks/useQuranReaderLogic';
 import QuranHeader from '../components/QuranReader/QuranHeader';
 import QuranFooter from '../components/QuranReader/QuranFooter';
-import FloatingMenu from '../components/QuranReader/FloatingMenu';
 import MushafPage from '../components/QuranReader/MushafPage';
 import Toast from '../components/QuranReader/Toast';
 import ReadingTimer from '../components/QuranReader/ReadingTimer';
 import MarkerNotification from '../components/QuranReader/MarkerNotification';
 import { QuranReaderModals } from '../components/QuranReader/QuranReaderModals';
-import { toArabic } from '../components/QuranReader/constants';
 
 const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean }> = ({ onBack, onNavigate, initialLandscape = false }) => {
     const logic = useQuranReaderLogic(onBack, onNavigate, initialLandscape);
 
     const {
-        isLandscape,
-        currentTheme,
-        settings,
-        quranData,
-        visiblePages,
-        currentAyah,
-        highlightedAyahId,
-        isTransparentMode,
-        isHideToolbarsEnabled,
-        lastInteractionType,
-        activeModals,
-        isFloatingMenuOpen,
-        setIsFloatingMenuOpen,
-        isLandscapeUIHidden,
-        autoScrollState,
-        isPlaying,
-        isAudioLoading,
-        playingAyah,
-        isPageInputActive,
-        pageInput,
-        mushafContentRef,
-        floatingMenuRef,
-        menuButtonRef,
-        pageInputRef,
-        toast,
-        markerNotification,
-        sajdahCardInfo,
-        isAutoScrollSettingsOpen,
-        setIsAutoScrollSettingsOpen,
-        tafseerInfo,
-        tafseerSelectionInfo,
-        toolbarColors,
-        showToast,
-        handleToastClose,
-        stopAudio,
-        playAudio,
-        closeModal,
-        openModal,
-        jumpToAyah,
-        jumpToPage,
-        toggleAutoScroll,
-        startAutoScroll,
-        stopAutoScroll,
-        saveBookmark,
-        deleteBookmark,
-        handleVoiceCommand,
-        setIsPageInputActive,
-        setPageInput,
-        setAyahContextMenu,
-        setAyahContextColorField,
-        setToolbarColors,
-        setCurrentTheme,
-        setIsTransparentMode,
-        setIsHideToolbarsEnabled,
-        setUseTajweed,
-        setShowSajdahCard,
-        setTafseerInfo,
-        setTafseerSelectionInfo,
-        handleCloseSajdahCard,
-        handleMushafTypeSelect,
-        handleTafseerSelect,
-        playSurah,
-        updateSetting,
-        handleAyahClick,
-        handleAyahTextClick,
-        handleSajdahVisible,
-        handlePageVisible,
-        handleScroll,
-        handleFloatingMenuToggle,
-        handlePageInputChange,
-        handlePageInputSubmit,
-        handlePageInputBlur,
-        handlePageInputKeyDown,
-        handleContextMenu,
-        handleContextColorSelect,
-        handleContextColorFieldSelect,
-        handleContextReset,
-        handleContextSave,
-        handleContextCancel,
-        handleToolbarColorChange,
-        handleToolbarColorReset,
-        handleToolbarColorResetAll,
-        handleToolbarColorSave,
-        handleToolbarColorCancel,
-        handleToolbarColorFieldSelect,
-        handleToolbarColorSelect
+        isLandscape, isLandscapeRef, modeSuffix, useTajweed, setUseTajweed, quranData, pagesData,
+        surahName, page, juz, onNavigate: logicOnNavigate,
+        isLoading, setIsLoading, loadingStatus, setLoadingStatus, loadingProgress, setLoadingProgress,
+        visiblePages, setVisiblePages, currentAyah, setCurrentAyah, highlightedAyahId, setHighlightedAyahId,
+        isTransparentMode, setIsTransparentMode, isHideToolbarsEnabled, setIsHideToolbarsEnabled,
+        lastInteractionType, setLastInteractionType,
+        activeModals, setActiveModals, isFloatingMenuOpen, setIsFloatingMenuOpen,
+        ayahContextMenu, setAyahContextMenu, ayahContextColorField, setAyahContextColorField,
+        isLandscapeUIHidden, setIsLandscapeUIHidden, settings, setSettings,
+        currentTheme, setCurrentTheme, bookmarks, setBookmarks,
+        autoScrollState, setAutoScrollState,
+        isPlaying, setIsPlaying, isAudioLoading, setIsAudioLoading, playingAyah, setPlayingAyah,
+        isTafseerLoading, setIsTafseerLoading, isPageInputActive, setIsPageInputActive,
+        pageInput, setPageInput, mushafContentRef,
+        floatingMenuRef, menuButtonRef, pageInputRef,
+        toast, reciterToast, markerNotification, sajdahCardInfo,
+        isAutoScrollSettingsOpen, setIsAutoScrollSettingsOpen,
+        tafseerInfo, setTafseerInfo, tafseerSelectionInfo, setTafseerSelectionInfo,
+        toolbarColors, setToolbarColors, showToast, handleToastClose,
+        stopAudio, playAudio, closeModal, openModal,
+        jumpToAyah, jumpToPage,
+        toggleAutoScroll, startAutoScroll,
+        stopAutoScroll, saveBookmark, deleteBookmark,
+        handleVoiceCommand, PREDEFINED_COLORS, renderCheckerboard,
+        handleMushafTypeSelect, handleTafseerSelect,
+        handleVerseClick, handleVerseLongPress, handleAyahLongPress,
+        playSurah, updateSetting, handleAyahClick, handleAyahTextClick,
+        handleSajdahVisible, handlePageVisible, handleScroll, handleFloatingMenuToggle,
+        handlePageInputChange, handlePageInputSubmit, handlePageInputBlur,
+        handlePageInputKeyDown, handleContextMenu, handleContextColorSelect,
+        handleContextColorFieldSelect, handleContextReset, handleContextSave,
+        handleContextCancel, handleToolbarColorChange, handleToolbarColorReset,
+        handleToolbarColorResetAll, handleToolbarColorSave, handleToolbarColorCancel,
+        handleToolbarColorFieldSelect, handleToolbarColorSelect,
+        getToolbarStyle,
+        showSajdahCard, setShowSajdahCard, handleCloseSajdahCard
     } = logic;
 
     const showToolbars = !isHideToolbarsEnabled || !autoScrollState.isActive || autoScrollState.isPaused;
+
+    const renderPlayButtonIcon = () => {
+        if (isAudioLoading) return <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>;
+        return isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />;
+    };
+
+    const handlePlayButtonPointerDown = (e: React.PointerEvent) => {
+        // Implementation for play button pointer down
+    };
+
+    const handlePlayButtonPointerUp = (e: React.PointerEvent) => {
+        if (isPlaying || isAudioLoading) stopAudio();
+        else playAudio(currentAyah.s, currentAyah.a);
+    };
+
+    const handlePlayButtonPointerLeave = () => {
+        // Implementation for play button pointer leave
+    };
+
+    const handlePageButtonClick = () => {
+        setIsPageInputActive(true);
+    };
+
+    const handleBookmarkButtonPointerDown = (e: any) => {};
+    const handleBookmarkButtonPointerUp = (e: any) => saveBookmark();
+    const handleBookmarkButtonPointerLeave = () => {};
+
+    const handleAutoScrollButtonPointerDown = (e: any) => {};
+    const handleAutoScrollButtonPointerUp = (e: any) => toggleAutoScroll(setIsFloatingMenuOpen, showToast);
+    const handleAutoScrollButtonPointerLeave = () => {};
+
+    if (!quranData) {
+        return (
+            <div className="flex items-center justify-center h-full w-full bg-slate-50">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                    <p className="text-purple-800 font-bold">جاري تحميل المصحف...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div 
@@ -121,19 +111,25 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         >
             {showToolbars && !isLandscapeUIHidden && (
                 <QuranHeader 
-                    currentAyah={currentAyah}
-                    quranData={quranData}
-                    toolbarColors={toolbarColors}
-                    onBack={onBack}
-                    onOpenModal={openModal}
                     isPageInputActive={isPageInputActive}
-                    pageInput={pageInput}
-                    onPageInputChange={setPageInput}
-                    onPageInputSubmit={handlePageInputSubmit}
-                    onPageInputBlur={handlePageInputBlur}
-                    onPageInputKeyDown={handlePageInputKeyDown}
-                    setIsPageInputActive={setIsPageInputActive}
                     pageInputRef={pageInputRef}
+                    pageInput={pageInput}
+                    handlePageInputChange={handlePageInputChange}
+                    handlePageInputBlur={handlePageInputBlur}
+                    handlePageInputKeyDown={handlePageInputKeyDown}
+                    handlePageButtonClick={handlePageButtonClick}
+                    page={page}
+                    surahName={surahName}
+                    currentAyah={currentAyah}
+                    juz={juz}
+                    openModal={openModal}
+                    currentTheme={currentTheme}
+                    getToolbarStyle={getToolbarStyle}
+                    handlePlayButtonPointerDown={handlePlayButtonPointerDown}
+                    handlePlayButtonPointerUp={handlePlayButtonPointerUp}
+                    handlePlayButtonPointerLeave={handlePlayButtonPointerLeave}
+                    renderPlayButtonIcon={renderPlayButtonIcon}
+                    reciterToast={reciterToast}
                 />
             )}
 
@@ -150,40 +146,37 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     <MushafPage 
                         key={pageNum}
                         pageNum={pageNum}
-                        quranData={quranData}
+                        pageData={pagesData[pageNum] || []}
                         settings={settings}
                         highlightedAyahId={highlightedAyahId}
                         onAyahClick={handleAyahClick}
-                        onAyahTextClick={handleAyahTextClick}
-                        onAyahContextMenu={handleContextMenu}
-                        onSajdahVisible={handleSajdahVisible}
-                        onPageVisible={handlePageVisible}
+                        onVerseClick={handleVerseClick}
+                        onAyahLongPress={handleContextMenu}
                     />
                 ))}
             </div>
 
             {showToolbars && !isLandscapeUIHidden && (
                 <QuranFooter 
-                    currentAyah={currentAyah}
-                    isPlaying={isPlaying}
-                    isAudioLoading={isAudioLoading}
+                    currentTheme={currentTheme}
+                    getToolbarStyle={getToolbarStyle}
+                    setIsFloatingMenuOpen={setIsFloatingMenuOpen}
+                    isFloatingMenuOpen={isFloatingMenuOpen}
+                    floatingMenuRef={floatingMenuRef}
+                    openModal={openModal}
+                    menuButtonRef={menuButtonRef}
+                    handleBookmarkButtonPointerDown={handleBookmarkButtonPointerDown}
+                    handleBookmarkButtonPointerUp={handleBookmarkButtonPointerUp}
+                    handleBookmarkButtonPointerLeave={handleBookmarkButtonPointerLeave}
+                    handleAutoScrollButtonPointerDown={handleAutoScrollButtonPointerDown}
+                    handleAutoScrollButtonPointerUp={handleAutoScrollButtonPointerUp}
+                    handleAutoScrollButtonPointerLeave={handleAutoScrollButtonPointerLeave}
                     autoScrollState={autoScrollState}
-                    toolbarColors={toolbarColors}
-                    onToggleAudio={() => isPlaying ? stopAudio() : playAudio(currentAyah.s, currentAyah.a)}
-                    onToggleAutoScroll={toggleAutoScroll}
-                    onOpenAutoScrollSettings={() => setIsAutoScrollSettingsOpen(true)}
-                    onOpenModal={openModal}
+                    onBack={onBack}
+                    initialLandscape={isLandscape}
+                    onNavigate={onNavigate}
                 />
             )}
-
-            <FloatingMenu 
-                isOpen={isFloatingMenuOpen}
-                onToggle={handleFloatingMenuToggle}
-                onOpenModal={openModal}
-                toolbarColors={toolbarColors}
-                menuRef={floatingMenuRef}
-                buttonRef={menuButtonRef}
-            />
 
             <ReadingTimer isActive={autoScrollState.isActive && !autoScrollState.isPaused} />
             
@@ -204,7 +197,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 closeModal={closeModal}
                 openModal={openModal}
                 settings={settings}
-                setSettings={logic.setSettings}
+                setSettings={setSettings}
                 updateSetting={updateSetting}
                 toolbarColors={toolbarColors}
                 setToolbarColors={setToolbarColors}
@@ -214,22 +207,22 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 setIsTransparentMode={setIsTransparentMode}
                 isHideToolbarsEnabled={isHideToolbarsEnabled}
                 setIsHideToolbarsEnabled={setIsHideToolbarsEnabled}
-                useTajweed={logic.useTajweed}
+                useTajweed={useTajweed}
                 handleMushafTypeSelect={handleMushafTypeSelect}
-                showSajdahCard={logic.showSajdahCard}
+                showSajdahCard={showSajdahCard}
                 setShowSajdahCard={setShowSajdahCard}
-                modeSuffix={logic.modeSuffix}
-                isLandscapeRef={{ current: isLandscape }}
-                bookmarks={logic.bookmarks}
+                modeSuffix={modeSuffix}
+                isLandscapeRef={isLandscapeRef}
+                bookmarks={bookmarks}
                 deleteBookmark={deleteBookmark}
                 jumpToAyah={jumpToAyah}
                 tafseerInfo={tafseerInfo}
                 setTafseerInfo={setTafseerInfo}
-                isTafseerLoading={logic.isTafseerLoading}
+                isTafseerLoading={isTafseerLoading}
                 tafseerSelectionInfo={tafseerSelectionInfo}
                 setTafseerSelectionInfo={setTafseerSelectionInfo}
                 handleTafseerSelect={handleTafseerSelect}
-                ayahContextMenu={logic.ayahContextMenu}
+                ayahContextMenu={ayahContextMenu}
                 setAyahContextMenu={setAyahContextMenu}
                 playAudio={playAudio}
                 saveBookmark={saveBookmark}
