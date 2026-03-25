@@ -173,7 +173,10 @@ export const parseVoiceCommand = (
         'راسي': 'set_orientation_vertical',
         'عرضي': 'set_orientation_horizontal',
         'طولي': 'set_orientation_vertical',
-        'خروج': 'exit_app'
+        'خروج': 'exit_app',
+        'صفحة القراءة': 'open_quran',
+        'القرآن الكريم': 'open_quran',
+        'القران الكريم': 'open_quran'
     };
     for (const [key, action] of Object.entries(relativeMap)) {
         if (normalized === normalizeArabic(key)) {
