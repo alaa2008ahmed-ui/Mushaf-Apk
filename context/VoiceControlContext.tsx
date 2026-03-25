@@ -78,53 +78,6 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
 
     const isEnabledRef = useRef(isEnabled);
     const isStartingRef = useRef(false);
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const silentNodeRef = useRef<OscillatorNode | null>(null);
-
-    // Create a silent audio anchor to keep audio focus and prevent system from stopping Quran audio
-    const startSilentAnchor = useCallback(() => {
-        try {
-            if (!audioContextRef.current) {
-                const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
-                if (AudioContextClass) {
-                    audioContextRef.current = new AudioContextClass();
-                }
-            }
-            
-            if (audioContextRef.current && !silentNodeRef.current) {
-                const ctx = audioContextRef.current;
-                const oscillator = ctx.createOscillator();
-                const gainNode = ctx.createGain();
-                
-                gainNode.gain.value = 0.001; // Extremely low volume, practically silent
-                oscillator.connect(gainNode);
-                gainNode.connect(ctx.destination);
-                
-                oscillator.start();
-                silentNodeRef.current = oscillator;
-                console.log('Voice Control - Silent Audio Anchor Started');
-            }
-        } catch (e) {
-            console.warn('Failed to start silent audio anchor:', e);
-        }
-    }, []);
-
-    const stopSilentAnchor = useCallback(() => {
-        if (silentNodeRef.current) {
-            try {
-                silentNodeRef.current.stop();
-                silentNodeRef.current.disconnect();
-            } catch (e) {}
-            silentNodeRef.current = null;
-        }
-        if (audioContextRef.current) {
-            try {
-                audioContextRef.current.close();
-            } catch (e) {}
-            audioContextRef.current = null;
-        }
-        console.log('Voice Control - Silent Audio Anchor Stopped');
-    }, []);
 
     useEffect(() => {
         localStorage.setItem('voice_commands_v2', JSON.stringify(commands));
@@ -262,19 +215,15 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             const listenLoop = async () => {
                 if (!isEnabledRef.current) {
                     setIsListening(false);
-                    stopSilentAnchor();
                     return;
                 }
-                
-                // Start silent anchor to protect audio focus
-                startSilentAnchor();
                 
                 try {
                     setIsListening(true);
                     const result = await SpeechRecognition.start({
                         language: "ar-SA",
                         maxResults: 1,
-                        partialResults: false, // Set to false as requested for command mode
+                        partialResults: true, // Set to true to allow immediate processing
                         popup: false // Disable popup to prevent system beep/UI
                     });
 
@@ -287,7 +236,6 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                     if (e?.message === 'Method not implemented on web.') {
                         setIsEnabled(false);
                         setIsListening(false);
-                        stopSilentAnchor();
                         return; // Stop loop on web
                     }
                     console.error('Speech recognition error:', e);
@@ -297,7 +245,6 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                         setTimeout(listenLoop, 300);
                     } else {
                         setIsListening(false);
-                        stopSilentAnchor();
                     }
                 }
             };
