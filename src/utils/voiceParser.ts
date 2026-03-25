@@ -121,23 +121,85 @@ export const parseVoiceCommand = (
     }
 
     // 4. Theme Control: "ثيم" or "لون" + [اسم اللون]
-    const themeRegex = /(?:ثيم|لون|مظهر)\s+([آ-ي\s]+)/;
+    const themeRegex = /(?:ثيم|سيم|لون|مظهر)\s+([آ-ي\s]+)/;
     const themeMatch = normalized.match(themeRegex);
     if (themeMatch) {
         const themeName = themeMatch[1].trim();
-        // Mapping common Arabic color names to theme IDs
-        const themeMap: Record<string, string> = {
-            'اخضر': 'green', 'الأخضر': 'green',
-            'ازرق': 'blue', 'الأزرق': 'blue',
-            'احمر': 'red', 'الأحمر': 'red',
-            'اسود': 'dark', 'الأسود': 'dark', 'ليلي': 'dark',
-            'ابيض': 'light', 'الأبيض': 'light', 'نهاري': 'light',
-            'بني': 'sepia', 'البني': 'sepia', 'قديم': 'sepia',
-            'كعبه': 'kaaba_kiswa', 'الكعبه': 'kaaba_kiswa', 'كسوه': 'kaaba_kiswa'
+        const normalizedThemeName = normalizeArabic(themeName);
+        
+        const mainThemeMap: Record<string, string> = {
+            'الافتراضي': 'default', 'افتراضي': 'default',
+            'ابيض واسود': 'black_and_white',
+            'نور الفجر': 'fajr_light',
+            'الرمال الذهبيه': 'golden_sand', 'رمال ذهبيه': 'golden_sand',
+            'الزيتون المبارك': 'olive_grove', 'زيتون مبارك': 'olive_grove',
+            'كسوه الكعبه': 'kaaba_kiswa', 'كسوه كعبه': 'kaaba_kiswa',
+            'ورد المدينه': 'madinah_rose', 'ورد مدينه': 'madinah_rose',
+            'حدائق الاندلس': 'andalusian_garden', 'حدائق اندلس': 'andalusian_garden',
+            'المسجد الازرق': 'blue_mosque', 'مسجد ازرق': 'blue_mosque',
+            'الطين والارض': 'clay_earth', 'طين وارض': 'clay_earth',
+            'الحجر والرخام': 'slate_stone', 'حجر ورخام': 'slate_stone',
+            'ازرق عصري': 'modern_blue',
+            'بنفسجي كهربائي': 'electric_violet',
+            'نسيم الساكورا': 'sakura_breeze', 'نسيم ساكورا': 'sakura_breeze',
+            'نيون منتصف الليل': 'midnight_neon',
+            'ارجواني ملكي': 'royal_purple',
+            'ليل الصحراء': 'desert_night',
+            'سلام المحيط': 'ocean_peace',
+            'ورق عتيق': 'vintage_paper',
+            'فيروزي': 'turquoise_gem',
+            'غابه عميقه': 'deep_forest',
+            'ضباب الخزامى': 'lavender_mist', 'ضباب خزامى': 'lavender_mist',
+            'كريستال شفاف': 'crystal_glass',
+            'زمرد زجاجي': 'frosted_emerald',
+            'زجاج ليلي': 'midnight_glass',
+            // Colors fallback
+            'اخضر': 'deep_forest',
+            'ازرق': 'modern_blue',
+            'احمر': 'madinah_rose',
+            'اسود': 'black_and_white', 'ليلي': 'midnight_glass',
+            'ابيض': 'default', 'نهاري': 'default',
+            'بني': 'vintage_paper', 'قديم': 'vintage_paper'
         };
-        const themeId = themeMap[normalizeArabic(themeName)];
-        if (themeId) {
-            return { action: 'set_theme', params: { theme: themeId }, originalText: text };
+
+        const quranThemeMap: Record<string, string> = {
+            'الافتراضي': 'default', 'افتراضي': 'default',
+            'ورق قديم': 'cream',
+            'اسود كامل': 'deep_black',
+            'عصر ذهبي': 'golden_age',
+            'اندلس': 'andalusia',
+            'كعبه': 'mecca',
+            'قبه': 'medina',
+            'تهجد': 'midnight',
+            'ازرق سماوي': 'blue_cyan',
+            'غابه': 'forest',
+            'خزامى': 'lavender',
+            'مرجان': 'coral',
+            'نعنع': 'mint',
+            'صندل': 'sandal',
+            'زيتون': 'olive',
+            'مسجد زمردي': 'emerald_mosque',
+            'سماء الليل': 'night_sky',
+            'اسلامي حديث': 'modern_islamic',
+            'ضوء القمر الفضي': 'silver_moon', 'ضوء قمر فضي': 'silver_moon',
+            'كثبان رمليه': 'sand_dunes',
+            'زخرفه تيل': 'teal_ornament',
+            'ندى الصباح': 'morning_dew', 'ندى صباح': 'morning_dew',
+            'خشب دافئ': 'warm_wood',
+            'ليلكي ناعم': 'soft_lilac',
+            'روضه شريفه': 'medina_green',
+            'ازرق اندلسي': 'andalusian_blue',
+            'ورد جوري': 'damascus_rose',
+            'فخار': 'clay_pot',
+            'لؤلؤي': 'pearl_white',
+            'مذهب': 'quranic_gold'
+        };
+
+        const mainTheme = mainThemeMap[normalizedThemeName];
+        const quranTheme = quranThemeMap[normalizedThemeName];
+
+        if (mainTheme || quranTheme) {
+            return { action: 'set_smart_theme', params: { mainTheme, quranTheme, themeName: normalizedThemeName }, originalText: text };
         }
     }
 
@@ -177,6 +239,28 @@ export const parseVoiceCommand = (
     };
     for (const [key, action] of Object.entries(relativeMap)) {
         if (normalized === normalizeArabic(key)) {
+            return { action, originalText: text };
+        }
+    }
+
+    // 6.5 Navigation Commands (using includes)
+    const navigationMap: Record<string, string> = {
+        'استماع للقران': 'open_listen',
+        'مواقيت صلاه': 'open_prayer',
+        'اذكار صلاه': 'open_salah_adhkar',
+        'حصن مسلم': 'open_hisn_muslim',
+        'حسن مسلم': 'open_hisn_muslim',
+        'تقويم': 'open_calendar',
+        'قبله': 'open_qibla',
+        'حج وعمره': 'open_hajj_umrah',
+        'تحكم صوتي': 'open_voice_control',
+        'ثيمات': 'open_themes',
+        'سيمات': 'open_themes',
+        'قراءه راسيه': 'open_quran_vertical',
+        'قراءه افقيه': 'open_quran_horizontal'
+    };
+    for (const [key, action] of Object.entries(navigationMap)) {
+        if (normalized.includes(normalizeArabic(key))) {
             return { action, originalText: text };
         }
     }

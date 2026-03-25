@@ -62,12 +62,26 @@ function App() {
     setHistory(prev => (prev.length > 1 ? prev.slice(0, -1) : prev));
   }, []);
 
+  const page = history[history.length - 1];
+
   const handleVoiceAction = useCallback((action: string, text: string, params?: any) => {
     console.log('Voice Action:', action, text, params);
     
     // 1. Handle Theme Change
     if (action === 'set_theme' && params?.theme) {
       applyPresetTheme(params.theme);
+      return;
+    }
+    
+    if (action === 'set_smart_theme') {
+      if (page === 'quran' && params?.quranTheme) {
+        window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'set_quran_theme', text, params: { theme: params.quranTheme } } }));
+      } else if (params?.mainTheme) {
+        applyPresetTheme(params.mainTheme);
+      } else if (params?.quranTheme) {
+        handleNavigate('quran');
+        setTimeout(() => window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'set_quran_theme', text, params: { theme: params.quranTheme } } })), 500);
+      }
       return;
     }
 
@@ -93,17 +107,31 @@ function App() {
     else if (action === 'open_hajj_umrah' || (action === 'ui_click' && params?.label?.includes('حج'))) handleNavigate('hajj-umrah');
     else if (action === 'open_quran' || (action === 'ui_click' && params?.label?.includes('مصحف'))) handleNavigate('quran');
     else if (action === 'open_voice_control' || (action === 'ui_click' && params?.label?.includes('تحكم صوتي'))) handleNavigate('voice-control');
+    else if (action === 'open_quran_vertical') {
+      handleNavigate('quran');
+      setTimeout(() => window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'set_orientation_vertical' } })), 500);
+    }
+    else if (action === 'open_quran_horizontal') {
+      handleNavigate('quran');
+      setTimeout(() => window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'set_orientation_horizontal' } })), 500);
+    }
     else if (action === 'set_orientation_horizontal' || action === 'set_orientation_vertical') {
       window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
     }
     else if (action === 'open_search' || (action === 'ui_click' && params?.label?.includes('بحث'))) window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_search' } }));
-    else if (action === 'open_themes' || (action === 'ui_click' && params?.label?.includes('ثيم'))) setIsThemeSelectorOpen(true);
+    else if (action === 'open_themes' || (action === 'ui_click' && params?.label?.includes('ثيم'))) {
+      if (page === 'quran') {
+        window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_themes' } }));
+      } else {
+        setIsThemeSelectorOpen(true);
+      }
+    }
     else if (action === 'open_settings' || (action === 'ui_click' && params?.label?.includes('اعدادات'))) window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_settings' } }));
     else if (action === 'exit_app') setShowExitConfirm(true);
     else if (action === 'go_back') navigateBack();
     
     // 4. Quran Specific Actions (Forwarded to QuranReader via Event)
-    else if (['next_page', 'prev_page', 'play_audio', 'stop_audio', 'quran_navigation', 'increase_font', 'decrease_font', 'change_theme', 'download_quran', 'show_tafsir', 'open_bookmarks', 'go_to_page', 'go_to_juz', 'go_to_surah', 'go_to_ayah', 'set_font_size', 'contextual_number'].includes(action)) {
+    else if (['next_page', 'prev_page', 'play_audio', 'stop_audio', 'quran_navigation', 'increase_font', 'decrease_font', 'change_theme', 'open_themes', 'set_quran_theme', 'download_quran', 'show_tafsir', 'open_bookmarks', 'go_to_page', 'go_to_juz', 'go_to_surah', 'go_to_ayah', 'set_font_size', 'contextual_number'].includes(action)) {
       setHistory(prev => {
         if (prev[prev.length - 1] === 'quran') {
           window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
@@ -116,9 +144,7 @@ function App() {
         }
       });
     }
-  }, [handleNavigate, applyPresetTheme, performUiClick, navigateBack]);
-
-  const page = history[history.length - 1];
+  }, [handleNavigate, applyPresetTheme, performUiClick, navigateBack, page]);
 
   if (showSplash) {
     return <VideoSplash onEnded={() => setShowSplash(false)} />;
