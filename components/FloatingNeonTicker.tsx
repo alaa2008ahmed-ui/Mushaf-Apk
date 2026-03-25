@@ -77,14 +77,12 @@ const FloatingNeonTicker: React.FC = () => {
     <>
       <style>
         {`
-          @keyframes neon-ticker-ltr {
+          @keyframes neon-ticker-scroll {
             0% { transform: translateX(-100%); color: #39FF14; text-shadow: 0 0 10px #39FF14; }
-            18% { color: #00FFFF; text-shadow: 0 0 10px #00FFFF; }
-            36% { color: #FF00FF; text-shadow: 0 0 10px #FF00FF; }
-            54% { color: #FFFF00; text-shadow: 0 0 10px #FFFF00; }
-            72% { color: #FF3131; text-shadow: 0 0 10px #FF3131; }
-            90% { transform: translateX(100vw); color: #39FF14; text-shadow: 0 0 10px #39FF14; }
-            100% { transform: translateX(100vw); color: #39FF14; text-shadow: 0 0 10px #39FF14; }
+            25% { color: #00FFFF; text-shadow: 0 0 10px #00FFFF; }
+            50% { color: #FF00FF; text-shadow: 0 0 10px #FF00FF; }
+            75% { color: #FFFF00; text-shadow: 0 0 10px #FFFF00; }
+            100% { transform: translateX(100%); color: #39FF14; text-shadow: 0 0 10px #39FF14; }
           }
           @keyframes neon-border-glow {
             0%, 100% { border-color: #39FF14; box-shadow: 0 0 15px rgba(57, 255, 20, 0.7); }
@@ -92,12 +90,11 @@ const FloatingNeonTicker: React.FC = () => {
             50% { border-color: #FF00FF; box-shadow: 0 0 15px rgba(255, 0, 255, 0.7); }
             75% { border-color: #FFFF00; box-shadow: 0 0 15px rgba(255, 255, 0, 0.7); }
           }
-          .animate-neon-ticker {
+          .ticker-content {
             display: inline-block;
             white-space: nowrap;
             width: max-content;
-            animation: neon-ticker-ltr 25s linear infinite;
-            padding-left: 20px;
+            animation: neon-ticker-scroll 25s linear infinite;
           }
           .neon-ticker-container {
             position: absolute;
@@ -126,7 +123,7 @@ const FloatingNeonTicker: React.FC = () => {
         `}
       </style>
       <div id="floating-neon-ticker" className="neon-ticker-container">
-        <div className="animate-neon-ticker">
+        <div className="ticker-content">
           <span className="neon-text" dangerouslySetInnerHTML={{ __html: tickerData.message }}></span>
         </div>
       </div>
