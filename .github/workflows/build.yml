@@ -1,17 +1,17 @@
 name: Build Test Debug APK
 on: [push]
 
+# وضع المتغير هنا في الأعلى يضمن تطبيقه على كل الخطوات وإخفاء التحذير تماماً
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     
-    # نقلنا المتغير هنا لإجبار جميع الـ Actions (مثل checkout و upload-artifact) 
-    # على استخدام Node 24 وإخفاء التحذير الأصفر تماماً.
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
       
       - name: Use Node.js 24
         uses: actions/setup-node@v4
@@ -40,19 +40,19 @@ jobs:
       - name: Sync with Capacitor
         run: npx cap sync android
 
-      # --- بناء نسخة الـ Debug (لا تحتاج لأي مفاتيح أو Secrets) ---
+      # بناء نسخة الـ Debug
       - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      # --- إعادة تسمية ملف الـ Debug الناتج لتمييزه ---
+      # إعادة تسمية ملف الـ APK (تم تعديل المسار لضمان الدقة)
       - name: Rename APK File
         run: |
           mv android/app/build/outputs/apk/debug/app-debug.apk "android/app/build/outputs/apk/debug/مصحف أحمد وليلى - نسخة تجريبية.apk"
 
-      # --- رفع الملف الناتج إلى GitHub Actions ---
+      # رفع الملف الناتج
       - name: Upload Test APK
         uses: actions/upload-artifact@v4
         with:
