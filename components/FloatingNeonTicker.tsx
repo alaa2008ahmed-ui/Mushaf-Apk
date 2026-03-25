@@ -6,11 +6,13 @@ const FloatingNeonTicker: React.FC = () => {
   const [tickerData, setTickerData] = useState<{ status: string; message: string } | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+    
     const fetchTicker = async () => {
       try {
-        const response = await fetch(`${CSV_URL}&t=${Date.now()}`);
+        const response = await fetch(`${CSV_URL}&t=${Date.now()}`, { signal: controller.signal });
         const text = await response.text();
-        const rows = text.split(/\r?\n/);
+        const rows = text.split(/\r?\n/).filter(row => row.trim() !== '');
         
         if (rows.length >= 2) {
           const secondRow = rows[1].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
@@ -23,14 +25,21 @@ const FloatingNeonTicker: React.FC = () => {
             setTickerData(null);
           }
         }
-      } catch (error) {
-        console.error('Error fetching ticker data:', error);
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching ticker data:', error);
+        }
       }
     };
 
     fetchTicker();
-    const interval = setInterval(fetchTicker, 60 * 1000); // Refresh every 60 seconds
-    return () => clearInterval(interval);
+    // Refresh every 5 seconds for "instant" feel as requested
+    const interval = setInterval(fetchTicker, 5 * 1000);
+    
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+    };
   }, []);
 
   if (!tickerData || tickerData.status !== 'ON' || !tickerData.message) {
@@ -51,45 +60,45 @@ const FloatingNeonTicker: React.FC = () => {
             100% { transform: translateX(100vw); color: #39FF14; text-shadow: 0 0 10px #39FF14; }
           }
           @keyframes neon-border-glow {
-            0%, 100% { border-color: #39FF14; box-shadow: 0 0 20px rgba(57, 255, 20, 0.8); }
-            25% { border-color: #00FFFF; box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); }
-            50% { border-color: #FF00FF; box-shadow: 0 0 20px rgba(255, 0, 255, 0.8); }
-            75% { border-color: #FFFF00; box-shadow: 0 0 20px rgba(255, 255, 0, 0.8); }
+            0%, 100% { border-color: #39FF14; box-shadow: 0 0 15px rgba(57, 255, 20, 0.7); }
+            25% { border-color: #00FFFF; box-shadow: 0 0 15px rgba(0, 255, 255, 0.7); }
+            50% { border-color: #FF00FF; box-shadow: 0 0 15px rgba(255, 0, 255, 0.7); }
+            75% { border-color: #FFFF00; box-shadow: 0 0 15px rgba(255, 255, 0, 0.7); }
           }
           .animate-neon-ticker {
             display: inline-block;
             white-space: nowrap;
-            /* 20s total: 18s movement + 2s pause (at 90-100%) */
-            animation: neon-ticker-ltr 20s linear infinite;
+            width: max-content;
+            animation: neon-ticker-ltr 25s linear infinite;
             padding-left: 20px;
           }
           .neon-ticker-container {
-            position: fixed;
-            top: 22px; /* Positioned to float over the header/app name area */
-            left: 0;
-            width: 100%;
-            height: 54px; /* Slightly taller for better presence */
-            z-index: 999999;
+            position: absolute;
+            /* Fills the parent Dua box perfectly */
+            inset: 0;
+            z-index: 10;
             pointer-events: none;
             overflow: hidden;
             display: flex;
             align-items: center;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            border-top: 2px solid #39FF14;
-            border-bottom: 2px solid #39FF14;
+            background: #000000; /* Pure black to completely hide the Dua underneath */
+            backdrop-filter: blur(20px);
+            border: 2px solid #39FF14;
+            border-radius: 1rem; /* Matches the parent's rounded-2xl roughly */
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
             animation: neon-border-glow 8s linear infinite;
           }
           .neon-text {
             font-weight: 900;
-            font-size: 1.5rem; /* Even larger and bolder */
+            font-size: 1.2rem; /* Mobile optimized size */
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
             font-family: 'Cairo', sans-serif;
+            display: inline-block;
           }
         `}
       </style>
-      <div className="neon-ticker-container">
+      <div className="neon-ticker-container" key={tickerData.message}>
         <div className="animate-neon-ticker">
           <span className="neon-text">{tickerData.message}</span>
         </div>

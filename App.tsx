@@ -185,7 +185,6 @@ function AppContent({
 
   return (
     <div className="relative min-h-screen">
-      {page === 'home' && <FloatingNeonTicker />}
       <AppRouter 
         page={page} 
         onBack={navigateBack} 
