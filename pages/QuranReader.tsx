@@ -1446,6 +1446,12 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     window.dispatchEvent(new Event('settings-change'));
                     return newSettings;
                 });
+            } else if (action === 'set_theme' && params?.theme) {
+                if (activeModals.includes('themes-modal')) {
+                    updateSetting('theme', params.theme);
+                } else {
+                    console.log('Voice Control - Theme command ignored because themes modal is closed');
+                }
             }
         };
 

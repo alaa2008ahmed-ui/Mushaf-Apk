@@ -132,23 +132,73 @@ export const parseVoiceCommand = (
     }
 
     // 4. Theme Control: "ثيم" or "لون" + [اسم اللون]
-    const themeRegex = /(?:ثيم|لون|مظهر)\s+([آ-ي\s]+)/;
+    const themeRegex = /(?:ثيم|سيم|لون|مظهر)\s+([آ-ي\s]+)/;
     const themeMatch = normalized.match(themeRegex);
+    
+    // Theme names mapping from constants.ts
+    const themeNameMap: Record<string, string> = {
+        'الافتراضي': 'default',
+        'ورق قديم': 'cream',
+        'اسود كامل': 'deep_black',
+        'عصر ذهبي': 'golden_age',
+        'اندلس': 'andalusia',
+        'كعبه': 'mecca',
+        'قبه': 'medina',
+        'تهجد': 'midnight',
+        'ازرق سماوي': 'blue_cyan',
+        'غابه': 'forest',
+        'خزامي': 'lavender',
+        'مرجان': 'coral',
+        'نعنع': 'mint',
+        'صندل': 'sandal',
+        'زيتون': 'olive',
+        'مسجد زمردي': 'emerald_mosque',
+        'سماء الليل': 'night_sky',
+        'اسلامي حديث': 'modern_islamic',
+        'ضوء القمر الفضي': 'silver_moon',
+        'كثبان رمليه': 'sand_dunes',
+        'زخرفه تيل': 'teal_ornament',
+        'ندي الصباح': 'morning_dew',
+        'خشب دافئ': 'warm_wood',
+        'ليلكي ناعم': 'soft_lilac',
+        'روضه شريفه': 'medina_green',
+        'ازرق اندلسي': 'andalusian_blue',
+        'ورد جوري': 'damascus_rose',
+        'فخار': 'clay_pot',
+        'لؤلؤي': 'pearl_white',
+        'مذهب': 'quranic_gold'
+    };
+
     if (themeMatch) {
         const themeName = themeMatch[1].trim();
-        // Mapping common Arabic color names to theme IDs
-        const themeMap: Record<string, string> = {
-            'اخضر': 'green', 'الأخضر': 'green',
-            'ازرق': 'blue', 'الأزرق': 'blue',
-            'احمر': 'red', 'الأحمر': 'red',
-            'اسود': 'dark', 'الأسود': 'dark', 'ليلي': 'dark',
-            'ابيض': 'light', 'الأبيض': 'light', 'نهاري': 'light',
-            'بني': 'sepia', 'البني': 'sepia', 'قديم': 'sepia',
-            'كعبه': 'kaaba_kiswa', 'الكعبه': 'kaaba_kiswa', 'كسوه': 'kaaba_kiswa'
+        const normThemeName = normalizeArabic(themeName);
+        
+        // Try mapping from the full theme names first
+        for (const [arName, id] of Object.entries(themeNameMap)) {
+            if (normThemeName === normalizeArabic(arName)) {
+                return { action: 'set_theme', params: { theme: id }, originalText: text };
+            }
+        }
+
+        // Mapping common Arabic color names to theme IDs (fallback)
+        const colorMap: Record<string, string> = {
+            'اخضر': 'medina', 'الأخضر': 'medina',
+            'ازرق': 'blue_cyan', 'الأزرق': 'blue_cyan',
+            'احمر': 'coral', 'الأحمر': 'coral',
+            'اسود': 'deep_black', 'الأسود': 'deep_black', 'ليلي': 'midnight',
+            'ابيض': 'default', 'الأبيض': 'default', 'نهاري': 'default',
+            'بني': 'cream', 'البني': 'cream', 'قديم': 'cream',
         };
-        const themeId = themeMap[normalizeArabic(themeName)];
+        const themeId = colorMap[normThemeName];
         if (themeId) {
             return { action: 'set_theme', params: { theme: themeId }, originalText: text };
+        }
+    }
+
+    // Check for direct theme names if they are spoken alone
+    for (const [arName, id] of Object.entries(themeNameMap)) {
+        if (normalized === normalizeArabic(arName)) {
+            return { action: 'set_theme', params: { theme: id }, originalText: text };
         }
     }
 
@@ -187,7 +237,9 @@ export const parseVoiceCommand = (
         'خروج': 'exit_app',
         'صفحة القراءة': 'open_quran',
         'القرآن الكريم': 'open_quran',
-        'القران الكريم': 'open_quran'
+        'القران الكريم': 'open_quran',
+        'الثيمات': 'open_themes',
+        'السيمات': 'open_themes'
     };
     for (const [key, action] of Object.entries(relativeMap)) {
         if (normalized === normalizeArabic(key)) {
