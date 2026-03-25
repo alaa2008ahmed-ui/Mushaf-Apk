@@ -135,11 +135,11 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             أمثلة سريعة للأوامر الذكية:
                         </h4>
                         <ul className="text-xs space-y-2 opacity-80 list-disc list-inside font-medium">
-                            <li>"الاستماع للقران" / "مواقيت الصلاه" / "القبله"</li>
-                            <li>"ثيم اخضر" / "لون ازرق" / "الثيمات"</li>
-                            <li>"خط عشرين" / "تكبير الخط" / "تصغير الخط"</li>
-                            <li>"اذهب إلى سورة الكهف آية عشرة" / "صفحة مائة"</li>
-                            <li>"بحث جديد" / "اغلاق البحث" / "الرئيسية"</li>
+                            <li>"الاستماع للقران" / "مواقيت الصلاه"</li>
+                            <li>"اذكار الصلاه" / "حصن المسلم"</li>
+                            <li>"التقويم" / "القبله" / "الحج والعمرة"</li>
+                            <li>"اذهب إلى سورة الكهف آية عشرة"</li>
+                            <li>"صفحة مائة" / "الجزء الثلاثون"</li>
                             <li>"إيقاف التحكم الصوتي" (للتعطيل الفوري)</li>
                         </ul>
                     </div>
@@ -168,56 +168,37 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 <p className="pr-4">النظام يفهم السياق؛ إذا كنت تقرأ في المصحف ونطقت رقماً فقط (مثل "عشرين")، سينتقل بك إلى الآية 20 في السورة الحالية. كما يمكنك استخدام:</p>
                                 <ul className="list-disc list-inside pr-6 space-y-1 text-xs">
                                     <li>"سورة [اسم السورة]" للانتقال لبداية السورة.</li>
-                                    <li>"اذهب إلى سورة [اسم] آية [رقم]" للانتقال الدقيق.</li>
-                                    <li>"صفحة [رقم]" للانتقال لصفحة محددة (1-604).</li>
-                                    <li>"جزء [رقم]" للانتقال لبداية الجزء (1-30).</li>
+                                    <li>"صفحة [رقم]" للانتقال لصفحة محددة.</li>
+                                    <li>"جزء [رقم]" للانتقال لبداية الجزء.</li>
                                 </ul>
                             </section>
 
                             <section className="space-y-2">
                                 <h4 className="font-bold text-primary flex items-center gap-2">
                                     <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    3. التحكم في الثيمات والخط:
-                                </h4>
-                                <p className="pr-4">يمكنك تغيير مظهر التطبيق وحجم الخط مباشرة:</p>
-                                <ul className="list-disc list-inside pr-6 space-y-1 text-xs">
-                                    <li>"ثيم [اسم]" أو "لون [اسم]" (مثلاً: "ثيم اخضر"، "لون ازرق").</li>
-                                    <li>"خط [رقم]" لتحديد حجم الخط بدقة (مثلاً: "خط 25").</li>
-                                    <li>"تكبير الخط" أو "تصغير الخط" للتعديل التدريجي.</li>
-                                    <li>"الثيمات" لفتح قائمة الألوان المتاحة.</li>
-                                </ul>
-                            </section>
-
-                            <section className="space-y-2">
-                                <h4 className="font-bold text-primary flex items-center gap-2">
-                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    4. الكتابة الصوتية والبحث:
-                                </h4>
-                                <p className="pr-4">عندما تفتح مربع البحث، سيتحول المحرك تلقائياً لكتابة ما تنطقه. كما تتوفر أوامر خاصة بالبحث:</p>
-                                <ul className="list-disc list-inside pr-6 space-y-1 text-xs">
-                                    <li>"بحث جديد" أو "الغاء البحث" لمسح النتائج.</li>
-                                    <li>"اغلاق البحث" للعودة للصفحة السابقة.</li>
-                                    <li>"فتح البحث" لفتح نافذة البحث من أي مكان.</li>
-                                </ul>
-                            </section>
-
-                            <section className="space-y-2">
-                                <h4 className="font-bold text-primary flex items-center gap-2">
-                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    5. التنقل المباشر (Direct Nav):
-                                </h4>
-                                <p className="pr-4">يمكنك الانتقال لأي قسم في التطبيق بكلمة واحدة فقط: "الاستماع للقران"، "مواقيت الصلاه"، "القبله"، "التقويم"، "حصن المسلم"، "الرئيسية".</p>
-                            </section>
-
-                            <section className="space-y-2">
-                                <h4 className="font-bold text-primary flex items-center gap-2">
-                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    6. الوضع الصامت والتدوير:
+                                    3. التحكم في وضع الشاشة والخط:
                                 </h4>
                                 <ul className="list-disc list-inside pr-4 space-y-1">
-                                    <li>"عرضي" أو "افقي" لتدوير الشاشة، و"طولي" أو "رأسي" للوضع العادي.</li>
-                                    <li>المحرك يعمل في صمت تام دون نغمات تنبيه لضمان عدم مقاطعة التلاوة.</li>
+                                    <li>"القراءة الأفقية" أو "عرضي" لتدوير الشاشة.</li>
+                                    <li>"القراءة الرأسية" أو "طولي" للوضع المعتاد.</li>
+                                    <li>"تكبير الخط" أو "تصغير الخط" للتحكم في حجم النص.</li>
                                 </ul>
+                            </section>
+
+                            <section className="space-y-2">
+                                <h4 className="font-bold text-primary flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                    4. الكتابة الصوتية (Contextual Focus):
+                                </h4>
+                                <p className="pr-4">عندما تفتح مربع البحث أو أي حقل كتابة، سيتحول المحرك تلقائياً لكتابة ما تنطقه داخل المربع بدلاً من تنفيذه كأمر، مما يسهل عليك البحث عن السور أو الأذكار.</p>
+                            </section>
+
+                            <section className="space-y-2">
+                                <h4 className="font-bold text-primary flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                    5. الوضع الصامت (Silent Background):
+                                </h4>
+                                <p className="pr-4">يعمل المحرك الآن في صمت تام دون إصدار نغمات تنبيه مزعجة، مما يضمن استمرار صوت القارئ دون انقطاع أثناء استماعك للقرآن الكريم.</p>
                             </section>
 
                             <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 text-xs italic">
