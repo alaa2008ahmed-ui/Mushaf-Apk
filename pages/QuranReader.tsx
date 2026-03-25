@@ -1326,7 +1326,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 jumpToAyah(params.surah, params.ayah, true);
                 return;
             } else if (action === 'next_page') {
-                jumpToPage(Math.min(604, Math.max(...visiblePages) + 1));
+                jumpToPage(Math.min(604, Math.min(...visiblePages) + 1));
                 return;
             } else if (action === 'prev_page') {
                 jumpToPage(Math.max(1, Math.min(...visiblePages) - 1));
@@ -1394,7 +1394,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             } else if (action === 'go_to_ayah' && params?.surah && params?.ayah) {
                 jumpToAyah(params.surah, params.ayah, true);
             } else if (action === 'next_page') {
-                jumpToPage(Math.min(604, Math.max(...visiblePages) + 1));
+                jumpToPage(Math.min(604, Math.min(...visiblePages) + 1));
             } else if (action === 'prev_page') {
                 jumpToPage(Math.max(1, Math.min(...visiblePages) - 1));
             } else if (action === 'play_audio' || action === 'stop_audio') {
@@ -1424,7 +1424,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 openModal('bookmarks-modal');
             } else if (action === 'increase_font') {
                 setSettings(prev => {
-                    const newSize = Math.min(60, prev.fontSize + 2);
+                    const newSize = Number((Math.min(4.5, prev.fontSize + 0.1)).toFixed(1));
                     const newSettings = { ...prev, fontSize: newSize };
                     localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
@@ -1432,7 +1432,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 });
             } else if (action === 'decrease_font') {
                 setSettings(prev => {
-                    const newSize = Math.max(16, prev.fontSize - 2);
+                    const newSize = Number((Math.max(0.5, prev.fontSize - 0.1)).toFixed(1));
                     const newSettings = { ...prev, fontSize: newSize };
                     localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
@@ -1440,7 +1440,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 });
             } else if (action === 'set_font_size' && params?.size) {
                 setSettings(prev => {
-                    const newSize = Math.max(16, Math.min(60, params.size));
+                    const newSize = Math.max(0.5, Math.min(4.5, params.size));
                     const newSettings = { ...prev, fontSize: newSize };
                     localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));

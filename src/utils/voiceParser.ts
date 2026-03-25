@@ -29,7 +29,8 @@ export const ARABIC_NUMBERS_MAP: Record<string, number> = {
     'مائتان': 200, 'مئتان': 200,
     'ثلاثمائه': 300, 'اربعمائه': 400, 'خمسمائه': 500,
     'ستمائه': 600, 'سبعمائه': 700, 'ثمانمائه': 800, 'تسعمائه': 900,
-    'الف': 1000
+    'الف': 1000,
+    'نصف': 0.5, 'نص': 0.5
 };
 
 /**
@@ -51,21 +52,29 @@ export const normalizeArabic = (text: string): string => {
 };
 
 /**
- * Converts Arabic word-based numbers to digits
+ * Converts Arabic word-based numbers to digits (supports decimals)
  */
 export const arabicWordsToNumber = (text: string): number | null => {
     if (!text) return null;
     
-    // Check if it's already digits
-    const digitsMatch = text.match(/\d+/);
-    if (digitsMatch) return parseInt(digitsMatch[0], 10);
+    // Check if it's already digits (including decimals)
+    const digitsMatch = text.match(/(\d+[\.,]\d+|\d+)/);
+    if (digitsMatch) {
+        const val = digitsMatch[0].replace(',', '.');
+        return parseFloat(val);
+    }
 
     const words = text.split(/[\sو]+/); // Split by space or 'و'
     let total = 0;
     let current = 0;
+    let hasHalf = false;
 
     for (const word of words) {
         const normWord = normalizeArabic(word);
+        if (normWord === 'نصف' || normWord === 'نص') {
+            hasHalf = true;
+            continue;
+        }
         if (ARABIC_NUMBERS_MAP[normWord] !== undefined) {
             const val = ARABIC_NUMBERS_MAP[normWord];
             if (val >= 100) {
@@ -78,7 +87,9 @@ export const arabicWordsToNumber = (text: string): number | null => {
         }
     }
     total += current;
-    return total > 0 ? total : null;
+    if (hasHalf) total += 0.5;
+    
+    return total > 0 ? total : (hasHalf ? 0.5 : null);
 };
 
 export interface ParsedCommand {
@@ -111,7 +122,7 @@ export const parseVoiceCommand = (
     const extractedNumber = genericNumberMatch ? parseInt(genericNumberMatch[0], 10) : wordNumber;
 
     // 3. Font Size Control: "خط" + [رقم]
-    const fontRegex = /(?:خط|حجم الخط)\s+(?:الي|إلى|الى)?\s*([آ-ي\s\d]+)/;
+    const fontRegex = /(?:خط|حجم الخط)\s+(?:الي|إلى|الى)?\s*([آ-ي\s\d\.,]+)/;
     const fontMatch = normalized.match(fontRegex);
     if (fontMatch) {
         const num = arabicWordsToNumber(fontMatch[1]);
