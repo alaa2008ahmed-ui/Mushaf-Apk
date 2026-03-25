@@ -88,53 +88,7 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
 
     const isEnabledRef = useRef(isEnabled);
     const isStartingRef = useRef(false);
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const silentNodeRef = useRef<OscillatorNode | null>(null);
-
-    // Create a silent audio anchor to keep audio focus and prevent system from stopping Quran audio
-    const startSilentAnchor = useCallback(() => {
-        try {
-            if (!audioContextRef.current) {
-                const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
-                if (AudioContextClass) {
-                    audioContextRef.current = new AudioContextClass();
-                }
-            }
-            
-            if (audioContextRef.current && !silentNodeRef.current) {
-                const ctx = audioContextRef.current;
-                const oscillator = ctx.createOscillator();
-                const gainNode = ctx.createGain();
-                
-                gainNode.gain.value = 0.001; // Extremely low volume, practically silent
-                oscillator.connect(gainNode);
-                gainNode.connect(ctx.destination);
-                
-                oscillator.start();
-                silentNodeRef.current = oscillator;
-                console.log('Voice Control - Silent Audio Anchor Started');
-            }
-        } catch (e) {
-            console.warn('Failed to start silent audio anchor:', e);
-        }
-    }, []);
-
-    const stopSilentAnchor = useCallback(() => {
-        if (silentNodeRef.current) {
-            try {
-                silentNodeRef.current.stop();
-                silentNodeRef.current.disconnect();
-            } catch (e) {}
-            silentNodeRef.current = null;
-        }
-        if (audioContextRef.current) {
-            try {
-                audioContextRef.current.close();
-            } catch (e) {}
-            audioContextRef.current = null;
-        }
-        console.log('Voice Control - Silent Audio Anchor Stopped');
-    }, []);
+    const webRecognitionRef = useRef<any>(null);
 
     useEffect(() => {
         localStorage.setItem('voice_commands_v2', JSON.stringify(commands));
@@ -253,6 +207,66 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         // Reload commands every time we start recognition as requested
         reloadCommands();
 
+        const startWebRecognition = () => {
+            const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            if (!SpeechRecognitionAPI) {
+                console.error("Speech Recognition API not supported in this browser.");
+                setIsEnabled(false);
+                setIsListening(false);
+                isStartingRef.current = false;
+                return;
+            }
+
+            if (!webRecognitionRef.current) {
+                const recognition = new SpeechRecognitionAPI();
+                recognition.continuous = false; // We restart it on end to mimic continuous but be more stable
+                recognition.lang = 'ar-SA';
+                recognition.interimResults = true;
+                
+                recognition.onstart = () => {
+                    setIsListening(true);
+                };
+                
+                recognition.onresult = (event: any) => {
+                    const lastResult = event.results[event.results.length - 1];
+                    const finalTranscript = lastResult[0].transcript.trim().toLowerCase();
+                    setTranscript(finalTranscript);
+                    if (lastResult.isFinal) {
+                        handleCommandRef.current(finalTranscript);
+                    }
+                };
+                
+                recognition.onerror = (event: any) => {
+                    console.error('Web Speech API Error:', event.error);
+                    if (event.error === 'not-allowed') {
+                        setIsEnabled(false);
+                        setIsListening(false);
+                    }
+                };
+                
+                recognition.onend = () => {
+                    if (isEnabledRef.current) {
+                        try {
+                            webRecognitionRef.current?.start();
+                        } catch (e) {
+                            // Ignore
+                        }
+                    } else {
+                        setIsListening(false);
+                    }
+                };
+                
+                webRecognitionRef.current = recognition;
+            }
+            
+            try {
+                webRecognitionRef.current.start();
+            } catch (e) {
+                // Already started
+            }
+            isStartingRef.current = false;
+        };
+
         try {
             const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
             
@@ -272,24 +286,15 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             const listenLoop = async () => {
                 if (!isEnabledRef.current) {
                     setIsListening(false);
-                    stopSilentAnchor();
                     return;
                 }
                 
-                // Start silent anchor to protect audio focus
-                startSilentAnchor();
-                
                 try {
-                    // Ensure any previous session is stopped
-                    try {
-                        await SpeechRecognition.stop();
-                    } catch (e) {}
-
                     setIsListening(true);
                     const result = await SpeechRecognition.start({
                         language: "ar-SA",
                         maxResults: 1,
-                        partialResults: true, // Changed to true for better responsiveness
+                        partialResults: false, // Changed to false for stability on mobile
                         popup: false 
                     });
 
@@ -299,20 +304,17 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                         handleCommandRef.current(finalTranscript);
                     }
                 } catch (e: any) {
-                    if (e?.message === 'Method not implemented on web.') {
-                        setIsEnabled(false);
-                        setIsListening(false);
-                        stopSilentAnchor();
+                    if (e?.message === 'Method not implemented on web.' || e?.message?.includes('not implemented')) {
+                        startWebRecognition();
                         return; // Stop loop on web
                     }
                     console.error('Speech recognition error:', e);
                 } finally {
-                    if (isEnabledRef.current) {
+                    if (isEnabledRef.current && !webRecognitionRef.current) {
                         // Minimal delay to allow system to breathe but keep loop tight
-                        setTimeout(listenLoop, 300);
-                    } else {
+                        setTimeout(listenLoop, 500);
+                    } else if (!isEnabledRef.current) {
                         setIsListening(false);
-                        stopSilentAnchor();
                     }
                 }
             };
@@ -322,21 +324,26 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
 
         } catch (e: any) {
             // Ignore "Method not implemented on web" error as it's expected in browser
-            if (e?.message !== 'Method not implemented on web.') {
+            if (e?.message === 'Method not implemented on web.' || e?.message?.includes('not implemented')) {
+                startWebRecognition();
+            } else {
                 console.error('Error starting recognition:', e);
+                setIsEnabled(false);
+                isStartingRef.current = false;
             }
-            setIsEnabled(false);
-            isStartingRef.current = false;
         }
-    }, []);
+    }, [reloadCommands, commands]);
 
     const stopRecognition = useCallback(async () => {
         try {
+            if (webRecognitionRef.current) {
+                webRecognitionRef.current.stop();
+            }
             const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
             await SpeechRecognition.stop();
         } catch (e: any) {
             // Ignore "Method not implemented on web" error as it's expected in browser
-            if (e?.message !== 'Method not implemented on web.') {
+            if (e?.message !== 'Method not implemented on web.' && !e?.message?.includes('not implemented')) {
                 console.error('Error stopping recognition:', e);
             }
         }

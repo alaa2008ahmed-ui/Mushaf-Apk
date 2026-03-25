@@ -7,52 +7,69 @@ const FloatingNeonTicker: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let timeoutId: NodeJS.Timeout;
-    const controller = new AbortController();
+    let intervalId: NodeJS.Timeout;
     
     const fetchTicker = async () => {
       try {
-        const response = await fetch(`${CSV_URL}&t=${Date.now()}`, { signal: controller.signal });
+        const timestamp = new Date().getTime();
+        const response = await fetch(`${CSV_URL}&t=${timestamp}`);
+        if (!response.ok) return; // تجاهل أخطاء الشبكة للحفاظ على حالة الشريط
+        
         const text = await response.text();
         if (!isMounted) return;
+
+        // حماية إضافية: إذا قامت جوجل بإرجاع صفحة خطأ (HTML) بدلاً من CSV بسبب كثرة الطلبات، نتجاهلها
+        if (text.trim().toLowerCase().startsWith('<!doctype html>')) {
+          return;
+        }
 
         const rows = text.split(/\r?\n/).filter(row => row.trim() !== '');
         
         if (rows.length >= 2) {
-          const secondRow = rows[1].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-          const status = secondRow[0]?.trim().toUpperCase();
-          const message = secondRow[1]?.replace(/^"|"$/g, '').trim();
+          // استخدام طريقة آمنة جداً لفصل الحالة عن النص بدلاً من الـ Regex المعقد
+          const firstCommaIndex = rows[1].indexOf(',');
+          let status = '';
+          let message = '';
           
-          if (status === 'ON' && message) {
+          if (firstCommaIndex !== -1) {
+            status = rows[1].substring(0, firstCommaIndex).trim().toUpperCase();
+            message = rows[1].substring(firstCommaIndex + 1).trim();
+            
+            // إزالة علامات التنصيص المزدوجة التي يضيفها ملف الـ CSV
+            if (message.startsWith('"') && message.endsWith('"')) {
+              message = message.substring(1, message.length - 1);
+            }
+            message = message.replace(/""/g, '"');
+          } else {
+            status = rows[1].trim().toUpperCase();
+          }
+          
+          // التنفيذ الصارم
+          if (status === 'OFF') {
+            setTickerData(null);
+          } else if (status === 'ON') {
             setTickerData(prev => {
               if (prev?.message === message && prev?.status === status) return prev;
               return { status, message };
             });
-          } else {
-            setTickerData(null);
           }
         }
-      } catch (error: any) {
-        if (error.name !== 'AbortError') {
-          console.error('Error fetching ticker data:', error);
-        }
-      } finally {
-        if (isMounted) {
-          timeoutId = setTimeout(fetchTicker, 5000);
-        }
+      } catch (error) {
+        console.error('Error fetching ticker data:', error);
       }
     };
 
     fetchTicker();
+    intervalId = setInterval(fetchTicker, 5000);
     
     return () => {
       isMounted = false;
-      controller.abort();
-      clearTimeout(timeoutId);
+      clearInterval(intervalId);
     };
   }, []);
 
-  if (!tickerData || tickerData.status !== 'ON' || !tickerData.message) {
+  // لا نخفي الشريط إلا إذا كانت الحالة ليست ON
+  if (!tickerData || tickerData.status !== 'ON') {
     return null;
   }
 
@@ -108,9 +125,9 @@ const FloatingNeonTicker: React.FC = () => {
           }
         `}
       </style>
-      <div className="neon-ticker-container" key={tickerData.message}>
+      <div id="floating-neon-ticker" className="neon-ticker-container">
         <div className="animate-neon-ticker">
-          <span className="neon-text">{tickerData.message}</span>
+          <span className="neon-text" dangerouslySetInnerHTML={{ __html: tickerData.message }}></span>
         </div>
       </div>
     </>
