@@ -6,12 +6,16 @@ const FloatingNeonTicker: React.FC = () => {
   const [tickerData, setTickerData] = useState<{ status: string; message: string } | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
     const controller = new AbortController();
     
     const fetchTicker = async () => {
       try {
         const response = await fetch(`${CSV_URL}&t=${Date.now()}`, { signal: controller.signal });
         const text = await response.text();
+        if (!isMounted) return;
+
         const rows = text.split(/\r?\n/).filter(row => row.trim() !== '');
         
         if (rows.length >= 2) {
@@ -20,7 +24,10 @@ const FloatingNeonTicker: React.FC = () => {
           const message = secondRow[1]?.replace(/^"|"$/g, '').trim();
           
           if (status === 'ON' && message) {
-            setTickerData({ status, message });
+            setTickerData(prev => {
+              if (prev?.message === message && prev?.status === status) return prev;
+              return { status, message };
+            });
           } else {
             setTickerData(null);
           }
@@ -29,16 +36,19 @@ const FloatingNeonTicker: React.FC = () => {
         if (error.name !== 'AbortError') {
           console.error('Error fetching ticker data:', error);
         }
+      } finally {
+        if (isMounted) {
+          timeoutId = setTimeout(fetchTicker, 5000);
+        }
       }
     };
 
     fetchTicker();
-    // Refresh every 5 seconds for "instant" feel as requested
-    const interval = setInterval(fetchTicker, 5 * 1000);
     
     return () => {
+      isMounted = false;
       controller.abort();
-      clearInterval(interval);
+      clearTimeout(timeoutId);
     };
   }, []);
 

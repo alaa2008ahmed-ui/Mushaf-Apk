@@ -142,7 +142,6 @@ function App() {
   );
 }
 
-import FloatingNeonTicker from './components/FloatingNeonTicker';
 
 function AppContent({ 
   page, 

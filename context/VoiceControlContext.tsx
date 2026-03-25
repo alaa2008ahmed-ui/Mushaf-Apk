@@ -56,6 +56,16 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'open_quran', phrase: 'مصحف', action: 'open_quran', isDefault: true },
     { id: 'open_voice_control', phrase: 'فتح التحكم الصوتي', action: 'open_voice_control', isDefault: true },
     { id: 'disable_voice_control', phrase: 'إيقاف التحكم الصوتي', action: 'disable_voice_control', isDefault: true },
+    // Direct Navigation Commands (No "Open" prefix)
+    { id: 'nav_listen', phrase: 'الاستماع للقران', action: 'open_listen', isDefault: true },
+    { id: 'nav_prayer', phrase: 'مواقيت الصلاه', action: 'open_prayer', isDefault: true },
+    { id: 'nav_salah_adhkar', phrase: 'اذكار الصلاه', action: 'open_salah_adhkar', isDefault: true },
+    { id: 'nav_hisn_muslim', phrase: 'حصن المسلم', action: 'open_hisn_muslim', isDefault: true },
+    { id: 'nav_hisn_muslim_alt', phrase: 'حسن المسلم', action: 'open_hisn_muslim', isDefault: true },
+    { id: 'nav_calendar', phrase: 'التقويم', action: 'open_calendar', isDefault: true },
+    { id: 'nav_qibla', phrase: 'القبله', action: 'open_qibla', isDefault: true },
+    { id: 'nav_hajj_umrah', phrase: 'الحج والعمرة', action: 'open_hajj_umrah', isDefault: true },
+    { id: 'nav_voice_control', phrase: 'التحكم الصوتى', action: 'open_voice_control', isDefault: true },
 ];
 
 const VoiceControlContext = createContext<VoiceControlContextType | undefined>(undefined);
@@ -270,12 +280,17 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                 startSilentAnchor();
                 
                 try {
+                    // Ensure any previous session is stopped
+                    try {
+                        await SpeechRecognition.stop();
+                    } catch (e) {}
+
                     setIsListening(true);
                     const result = await SpeechRecognition.start({
                         language: "ar-SA",
                         maxResults: 1,
-                        partialResults: false, // Set to false as requested for command mode
-                        popup: false // Disable popup to prevent system beep/UI
+                        partialResults: true, // Changed to true for better responsiveness
+                        popup: false 
                     });
 
                     if (result && result.matches && result.matches.length > 0) {
