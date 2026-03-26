@@ -15,6 +15,7 @@ import { Mic, MicOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTheme } from './context/ThemeContext';
 import { normalizeArabic } from './src/utils/voiceParser';
+import { applyQuranTheme } from './components/QuranReader/themeUtils';
 
 // --- Main App Component ---
 function App() {
@@ -66,8 +67,21 @@ function App() {
     console.log('Voice Action:', action, text, params);
     
     // 1. Handle Theme Change
-    if (action === 'set_theme' && params?.theme) {
-      applyPresetTheme(params.theme);
+    if (action === 'set_theme') {
+      if (params?.type === 'main' || params?.type === 'both') {
+        applyPresetTheme(params.theme);
+      }
+      
+      if (params?.type === 'quran' || params?.type === 'both') {
+        const quranTheme = params.quranTheme || params.theme;
+        // If we are in Quran page, dispatch event. Otherwise, just apply it to both modes.
+        if (history[history.length - 1] === 'quran' || history[history.length - 1] === 'quran-landscape') {
+          window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'set_quran_theme', params: { theme: quranTheme } } }));
+        } else {
+          applyQuranTheme(quranTheme, '_v');
+          applyQuranTheme(quranTheme, '_h');
+        }
+      }
       return;
     }
 
@@ -92,6 +106,8 @@ function App() {
     else if (action === 'open_calendar' || (action === 'ui_click' && params?.label?.includes('تقويم'))) handleNavigate('calendar');
     else if (action === 'open_hajj_umrah' || (action === 'ui_click' && params?.label?.includes('حج'))) handleNavigate('hajj-umrah');
     else if (action === 'open_quran' || (action === 'ui_click' && params?.label?.includes('مصحف'))) handleNavigate('quran');
+    else if (action === 'open_quran_horizontal') handleNavigate('quran-landscape');
+    else if (action === 'open_quran_vertical') handleNavigate('quran');
     else if (action === 'open_voice_control' || (action === 'ui_click' && params?.label?.includes('تحكم صوتي'))) handleNavigate('voice-control');
     else if (action === 'set_orientation_horizontal' || action === 'set_orientation_vertical') {
       window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));

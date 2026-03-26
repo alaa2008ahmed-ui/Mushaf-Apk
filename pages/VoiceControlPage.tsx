@@ -35,6 +35,8 @@ const AVAILABLE_ACTIONS = [
     { id: 'open_calendar', name: 'فتح التقويم' },
     { id: 'open_hajj_umrah', name: 'فتح الحج والعمرة' },
     { id: 'open_voice_control', name: 'فتح التحكم الصوتي' },
+    { id: 'open_quran_horizontal', name: 'فتح القراءة الأفقية' },
+    { id: 'open_quran_vertical', name: 'فتح القراءة الرأسية' },
     { id: 'set_orientation_horizontal', name: 'القراءة الأفقية (عرضي)' },
     { id: 'set_orientation_vertical', name: 'القراءة الرأسية (طولي)' },
     { id: 'disable_voice_control', name: 'إيقاف التحكم الصوتي' },
