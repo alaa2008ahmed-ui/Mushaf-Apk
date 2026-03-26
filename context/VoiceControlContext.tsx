@@ -284,6 +284,21 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                 console.warn('Permission check error (proceeding anyway):', permError);
             }
 
+            // Remove any existing listeners to prevent duplicates
+            try {
+                await SpeechRecognition.removeAllListeners();
+            } catch (e) {
+                // Ignore
+            }
+
+            // Add listener for partial results to update UI in real-time
+            SpeechRecognition.addListener('partialResults', (data: any) => {
+                if (data && data.matches && data.matches.length > 0) {
+                    const partialTranscript = data.matches[0].trim().toLowerCase();
+                    setTranscript(partialTranscript);
+                }
+            });
+
             // 2. Start listening loop
             const listenLoop = async () => {
                 if (!isEnabledRef.current) {
@@ -296,7 +311,7 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                     const result = await SpeechRecognition.start({
                         language: "ar-SA",
                         maxResults: 1,
-                        partialResults: false, // Changed to false for stability on mobile
+                        partialResults: true, // Changed to true for real-time updates and better stability
                         popup: false 
                     });
 
@@ -342,6 +357,11 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                 webRecognitionRef.current.stop();
             }
             const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
+            try {
+                await SpeechRecognition.removeAllListeners();
+            } catch (e) {
+                // Ignore
+            }
             await SpeechRecognition.stop();
         } catch (e: any) {
             // Ignore "Method not implemented on web" error as it's expected in browser
