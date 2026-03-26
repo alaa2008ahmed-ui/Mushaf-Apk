@@ -29,8 +29,7 @@ export const ARABIC_NUMBERS_MAP: Record<string, number> = {
     'مائتان': 200, 'مئتان': 200,
     'ثلاثمائه': 300, 'اربعمائه': 400, 'خمسمائه': 500,
     'ستمائه': 600, 'سبعمائه': 700, 'ثمانمائه': 800, 'تسعمائه': 900,
-    'الف': 1000,
-    'نصف': 0.5, 'نص': 0.5
+    'الف': 1000
 };
 
 /**
@@ -52,29 +51,21 @@ export const normalizeArabic = (text: string): string => {
 };
 
 /**
- * Converts Arabic word-based numbers to digits (supports decimals)
+ * Converts Arabic word-based numbers to digits
  */
 export const arabicWordsToNumber = (text: string): number | null => {
     if (!text) return null;
     
-    // Check if it's already digits (including decimals)
-    const digitsMatch = text.match(/(\d+[\.,]\d+|\d+)/);
-    if (digitsMatch) {
-        const val = digitsMatch[0].replace(',', '.');
-        return parseFloat(val);
-    }
+    // Check if it's already digits
+    const digitsMatch = text.match(/\d+/);
+    if (digitsMatch) return parseInt(digitsMatch[0], 10);
 
     const words = text.split(/[\sو]+/); // Split by space or 'و'
     let total = 0;
     let current = 0;
-    let hasHalf = false;
 
     for (const word of words) {
         const normWord = normalizeArabic(word);
-        if (normWord === 'نصف' || normWord === 'نص') {
-            hasHalf = true;
-            continue;
-        }
         if (ARABIC_NUMBERS_MAP[normWord] !== undefined) {
             const val = ARABIC_NUMBERS_MAP[normWord];
             if (val >= 100) {
@@ -87,9 +78,7 @@ export const arabicWordsToNumber = (text: string): number | null => {
         }
     }
     total += current;
-    if (hasHalf) total += 0.5;
-    
-    return total > 0 ? total : (hasHalf ? 0.5 : null);
+    return total > 0 ? total : null;
 };
 
 export interface ParsedCommand {
@@ -122,7 +111,7 @@ export const parseVoiceCommand = (
     const extractedNumber = genericNumberMatch ? parseInt(genericNumberMatch[0], 10) : wordNumber;
 
     // 3. Font Size Control: "خط" + [رقم]
-    const fontRegex = /(?:خط|حجم الخط)\s+(?:الي|إلى|الى)?\s*([آ-ي\s\d\.,]+)/;
+    const fontRegex = /(?:خط|حجم الخط)\s+(?:الي|إلى|الى)?\s*([آ-ي\s\d]+)/;
     const fontMatch = normalized.match(fontRegex);
     if (fontMatch) {
         const num = arabicWordsToNumber(fontMatch[1]);
@@ -132,73 +121,23 @@ export const parseVoiceCommand = (
     }
 
     // 4. Theme Control: "ثيم" or "لون" + [اسم اللون]
-    const themeRegex = /(?:ثيم|سيم|لون|مظهر)\s+([آ-ي\s]+)/;
+    const themeRegex = /(?:ثيم|لون|مظهر)\s+([آ-ي\s]+)/;
     const themeMatch = normalized.match(themeRegex);
-    
-    // Theme names mapping from constants.ts
-    const themeNameMap: Record<string, string> = {
-        'الافتراضي': 'default',
-        'ورق قديم': 'cream',
-        'اسود كامل': 'deep_black',
-        'عصر ذهبي': 'golden_age',
-        'اندلس': 'andalusia',
-        'كعبه': 'mecca',
-        'قبه': 'medina',
-        'تهجد': 'midnight',
-        'ازرق سماوي': 'blue_cyan',
-        'غابه': 'forest',
-        'خزامي': 'lavender',
-        'مرجان': 'coral',
-        'نعنع': 'mint',
-        'صندل': 'sandal',
-        'زيتون': 'olive',
-        'مسجد زمردي': 'emerald_mosque',
-        'سماء الليل': 'night_sky',
-        'اسلامي حديث': 'modern_islamic',
-        'ضوء القمر الفضي': 'silver_moon',
-        'كثبان رمليه': 'sand_dunes',
-        'زخرفه تيل': 'teal_ornament',
-        'ندي الصباح': 'morning_dew',
-        'خشب دافئ': 'warm_wood',
-        'ليلكي ناعم': 'soft_lilac',
-        'روضه شريفه': 'medina_green',
-        'ازرق اندلسي': 'andalusian_blue',
-        'ورد جوري': 'damascus_rose',
-        'فخار': 'clay_pot',
-        'لؤلؤي': 'pearl_white',
-        'مذهب': 'quranic_gold'
-    };
-
     if (themeMatch) {
         const themeName = themeMatch[1].trim();
-        const normThemeName = normalizeArabic(themeName);
-        
-        // Try mapping from the full theme names first
-        for (const [arName, id] of Object.entries(themeNameMap)) {
-            if (normThemeName === normalizeArabic(arName)) {
-                return { action: 'set_theme', params: { theme: id }, originalText: text };
-            }
-        }
-
-        // Mapping common Arabic color names to theme IDs (fallback)
-        const colorMap: Record<string, string> = {
-            'اخضر': 'medina', 'الأخضر': 'medina',
-            'ازرق': 'blue_cyan', 'الأزرق': 'blue_cyan',
-            'احمر': 'coral', 'الأحمر': 'coral',
-            'اسود': 'deep_black', 'الأسود': 'deep_black', 'ليلي': 'midnight',
-            'ابيض': 'default', 'الأبيض': 'default', 'نهاري': 'default',
-            'بني': 'cream', 'البني': 'cream', 'قديم': 'cream',
+        // Mapping common Arabic color names to theme IDs
+        const themeMap: Record<string, string> = {
+            'اخضر': 'green', 'الأخضر': 'green',
+            'ازرق': 'blue', 'الأزرق': 'blue',
+            'احمر': 'red', 'الأحمر': 'red',
+            'اسود': 'dark', 'الأسود': 'dark', 'ليلي': 'dark',
+            'ابيض': 'light', 'الأبيض': 'light', 'نهاري': 'light',
+            'بني': 'sepia', 'البني': 'sepia', 'قديم': 'sepia',
+            'كعبه': 'kaaba_kiswa', 'الكعبه': 'kaaba_kiswa', 'كسوه': 'kaaba_kiswa'
         };
-        const themeId = colorMap[normThemeName];
+        const themeId = themeMap[normalizeArabic(themeName)];
         if (themeId) {
             return { action: 'set_theme', params: { theme: themeId }, originalText: text };
-        }
-    }
-
-    // Check for direct theme names if they are spoken alone
-    for (const [arName, id] of Object.entries(themeNameMap)) {
-        if (normalized === normalizeArabic(arName)) {
-            return { action: 'set_theme', params: { theme: id }, originalText: text };
         }
     }
 
@@ -234,12 +173,7 @@ export const parseVoiceCommand = (
         'راسي': 'set_orientation_vertical',
         'عرضي': 'set_orientation_horizontal',
         'طولي': 'set_orientation_vertical',
-        'خروج': 'exit_app',
-        'صفحة القراءة': 'open_quran',
-        'القرآن الكريم': 'open_quran',
-        'القران الكريم': 'open_quran',
-        'الثيمات': 'open_themes',
-        'السيمات': 'open_themes'
+        'خروج': 'exit_app'
     };
     for (const [key, action] of Object.entries(relativeMap)) {
         if (normalized === normalizeArabic(key)) {

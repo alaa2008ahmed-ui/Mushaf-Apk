@@ -67,16 +67,8 @@ function App() {
     
     // 1. Handle Theme Change
     if (action === 'set_theme' && params?.theme) {
-      if (isThemeSelectorOpen) {
-        applyPresetTheme(params.theme);
-        return;
-      } else if (page === 'quran') {
-        window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
-        return;
-      } else {
-        console.log('Voice Control - Theme command ignored because selector is closed');
-        return;
-      }
+      applyPresetTheme(params.theme);
+      return;
     }
 
     // 2. Handle UI Click
@@ -105,13 +97,7 @@ function App() {
       window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
     }
     else if (action === 'open_search' || (action === 'ui_click' && params?.label?.includes('بحث'))) window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_search' } }));
-    else if (action === 'open_themes' || (action === 'ui_click' && params?.label?.includes('ثيم'))) {
-      if (page === 'quran') {
-        window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_themes' } }));
-      } else {
-        setIsThemeSelectorOpen(true);
-      }
-    }
+    else if (action === 'open_themes' || (action === 'ui_click' && params?.label?.includes('ثيم'))) setIsThemeSelectorOpen(true);
     else if (action === 'open_settings' || (action === 'ui_click' && params?.label?.includes('اعدادات'))) window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_settings' } }));
     else if (action === 'exit_app') setShowExitConfirm(true);
     else if (action === 'go_back') navigateBack();
