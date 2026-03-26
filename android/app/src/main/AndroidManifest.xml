@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mushaf.ahmedandlayla"> <queries>
+    package="com.mushaf.ahmedandlayla"> 
+
+    <queries>
         <intent>
             <action android:name="android.intent.action.RECOGNIZE_SPEECH" />
         </intent>
@@ -28,7 +30,7 @@
         
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
-            android:name=".MainActivity"
+            android:name="com.mushaf.ahmedandlayla.MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" 
             android:launchMode="singleTask"
@@ -47,7 +49,10 @@
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
 
-        <receiver android:name="com.mushaf.ahmedandlayla.PrayerWidgetProvider" android:exported="true">
+        <receiver 
+            android:name="com.mushaf.ahmedandlayla.PrayerWidgetProvider" 
+            android:enabled="true"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
