@@ -15,6 +15,8 @@ import { Mic, MicOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTheme } from './context/ThemeContext';
 import { normalizeArabic } from './src/utils/voiceParser';
+import { usePrayerTimes } from './context/PrayerTimesContext';
+import { updateAndroidWidget } from './src/utils/widgetUtils';
 
 // --- Main App Component ---
 function App() {
@@ -171,6 +173,27 @@ function AppContent({
   setShowExitConfirm 
 }: any) {
   const { setCurrentPage } = useVoiceControl();
+  const { times, dates, nextPrayer, countdown } = usePrayerTimes();
+
+  // Sync with Android Widget
+  useEffect(() => {
+    if (times && dates && nextPrayer) {
+      updateAndroidWidget({
+        hijri: dates.hijri,
+        next_prayer_name: nextPrayer.name,
+        next_prayer_id: nextPrayer.key.toLowerCase(),
+        remaining_time: countdown,
+        times: {
+          fajr: times.Fajr || '--:--',
+          sunrise: times.Sunrise || '--:--',
+          dhuhr: times.Dhuhr || '--:--',
+          asr: times.Asr || '--:--',
+          maghrib: times.Maghrib || '--:--',
+          isha: times.Isha || '--:--',
+        }
+      });
+    }
+  }, [times, dates, nextPrayer, countdown]);
 
   useEffect(() => {
     setCurrentPage(page);

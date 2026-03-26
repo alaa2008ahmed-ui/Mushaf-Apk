@@ -172,9 +172,9 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <section className="space-y-2">
                                 <h4 className="font-bold text-primary flex items-center gap-2">
                                     <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    1. محرك "انطق ما تراه" (UI Discovery):
+                                    1. محرك "انطق ما تراه":
                                 </h4>
-                                <p className="pr-4">هذه هي الميزة الأقوى؛ يمكنك ببساطة نطق اسم أي زر أو قائمة تظهر أمامك على الشاشة حالياً، وسيقوم التطبيق بالنقر عليها فوراً. مثلاً: "الإعدادات"، "البحث"، "تغيير الثيم".</p>
+                                <p className="pr-4">هذه هي الميزة الأقوى؛ يمكنك ببساطة نطق اسم أي زر أو قائمة تظهر أمامك على الشاشة حالياً، وسيقوم التطبيق بالنقر عليها فوراً. مثلاً: "الصفحة الرئيسية"، "مواقيت الصلاة"، "القبلة".</p>
                             </section>
 
                             <section className="space-y-2">
@@ -218,17 +218,41 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <section className="space-y-2">
                                 <h4 className="font-bold text-primary flex items-center gap-2">
                                     <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    5. الكتابة الصوتية (Contextual Focus):
+                                    5. التنقل العام بين الأقسام:
                                 </h4>
-                                <p className="pr-4">عندما تفتح مربع البحث أو أي حقل كتابة، سيتحول المحرك تلقائياً لكتابة ما تنطقه داخل المربع بدلاً من تنفيذه كأمر، مما يسهل عليك البحث عن السور أو الأذكار.</p>
+                                <p className="pr-4">يمكنك الانتقال السريع لأي قسم في التطبيق بمجرد نطق اسمه:</p>
+                                <ul className="list-disc list-inside pr-6 space-y-1 text-xs">
+                                    <li>"الرئيسية" للعودة للشاشة الرئيسية.</li>
+                                    <li>"الأذكار" أو "أذكار الصباح والمساء".</li>
+                                    <li>"مواقيت الصلاة" أو "القبلة" أو "المسبحة".</li>
+                                    <li>"حصن المسلم" أو "الأربعون النووية".</li>
+                                    <li>"التقويم" أو "الحج والعمرة" أو "الأدعية".</li>
+                                </ul>
                             </section>
 
                             <section className="space-y-2">
                                 <h4 className="font-bold text-primary flex items-center gap-2">
                                     <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    6. الوضع الصامت (Silent Background):
+                                    6. التحكم في الصوت والاستماع:
                                 </h4>
-                                <p className="pr-4">يعمل المحرك الآن في صمت تام دون إصدار نغمات تنبيه مزعجة، مما يضمن استمرار صوت القارئ دون انقطاع أثناء استماعك للقرآن الكريم.</p>
+                                <ul className="list-disc list-inside pr-4 space-y-1">
+                                    <li>"تشغيل" أو "استماع" لبدء القراءة الصوتية.</li>
+                                    <li>"إيقاف" أو "اسكت" لإنهاء القراءة فوراً.</li>
+                                    <li>"الاستماع للقرآن" لفتح قسم مشغل الصوتيات.</li>
+                                </ul>
+                            </section>
+
+                            <section className="space-y-2">
+                                <h4 className="font-bold text-primary flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                    7. أوامر المصحف المتقدمة:
+                                </h4>
+                                <ul className="list-disc list-inside pr-4 space-y-1 text-xs">
+                                    <li>"فتح البحث" للبحث عن آية أو سورة.</li>
+                                    <li>"فتح العلامات" للوصول لعلامات الحفظ.</li>
+                                    <li>"تعليم التجويد" لفتح دروس التجويد الملون.</li>
+                                    <li>"عرض التفسير" لإظهار تفسير الآية الحالية.</li>
+                                </ul>
                             </section>
 
                             <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 text-xs italic">
