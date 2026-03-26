@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <queries>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.mushaf.ahmedandlayla"> <queries>
         <intent>
             <action android:name="android.intent.action.RECOGNIZE_SPEECH" />
         </intent>
@@ -48,7 +47,7 @@
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
 
-        <receiver android:name=".PrayerWidgetProvider" android:exported="true">
+        <receiver android:name="com.mushaf.ahmedandlayla.PrayerWidgetProvider" android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
