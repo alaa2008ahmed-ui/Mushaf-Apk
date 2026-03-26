@@ -31,6 +31,7 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'next_page', phrase: 'الصفحة التالية', action: 'next_page', isDefault: true },
     { id: 'prev_page', phrase: 'الصفحة السابقة', action: 'prev_page', isDefault: true },
     { id: 'open_search', phrase: 'فتح البحث', action: 'open_search', isDefault: true },
+    { id: 'open_search_alt', phrase: 'بحث', action: 'open_search', isDefault: true },
     { id: 'open_themes', phrase: 'فتح الثيمات', action: 'open_themes', isDefault: true },
     { id: 'open_themes_alt', phrase: 'فتح السيمات', action: 'open_themes', isDefault: true },
     { id: 'open_settings', phrase: 'فتح الإعدادات', action: 'open_settings', isDefault: true },
@@ -126,18 +127,18 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
 
         // 1. Contextual Focus: If an input is focused, type into it
         const activeElement = document.activeElement;
+        const isSearchContext = currentPage === 'search' || (activeElement && activeElement.closest('.search-modal'));
+        
         if (activeElement && (activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement)) {
             console.log('Voice Control - Typing into focused input');
             
             // Special case for Search: Clear search if user says 'إلغاء'
-            if ((currentPage === 'search' || activeElement.closest('.search-modal')) && (normalizedInput === 'الغاء' || normalizedInput === 'إلغاء' || normalizedInput === 'امسح')) {
+            if (isSearchContext && (normalizedInput === 'الغاء' || normalizedInput === 'إلغاء' || normalizedInput === 'امسح')) {
                 console.log('Voice Control - Clearing search');
                 window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'clear_search' } }));
                 return;
             }
 
-            const start = activeElement.selectionStart || 0;
-            const end = activeElement.selectionEnd || 0;
             const val = activeElement.value;
             // For search, we might want to replace the whole text if they say a new word, 
             // but appending is safer. Let's just append with a space if there's already text.
@@ -151,7 +152,7 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             activeElement.dispatchEvent(new Event('input', { bubbles: true }));
             
             // Special case for Search: Execute search immediately
-            if (currentPage === 'search' || activeElement.closest('.search-modal')) {
+            if (isSearchContext) {
                 console.log('Voice Control - Executing search');
                 window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'execute_search', text: newText } }));
             }
@@ -159,25 +160,20 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         }
 
         // 2. Specific Page Context Handling
-        if (currentPage === 'quran-download') {
-            // In download page, surah names should toggle selection
-            const surahMatch = SURAH_NAMES_AR.find(s => normalizeArabic(s) === normalizedInput);
-            if (surahMatch) {
-                console.log('Voice Control - Download Context: Toggling surah', surahMatch);
-                window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'toggle_download', params: { surahName: surahMatch } } }));
-                return;
-            }
-        }
-
-        if (currentPage === 'search') {
-            if (normalizedInput.includes('الغاء البحث') || normalizedInput.includes('بحث جديد')) {
+        if (currentPage === 'search' || isSearchContext) {
+            if (normalizedInput === 'الغاء' || normalizedInput === 'إلغاء' || normalizedInput === 'امسح' || normalizedInput.includes('الغاء البحث') || normalizedInput.includes('بحث جديد')) {
                 window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'clear_search' } }));
                 return;
             }
-            if (normalizedInput.includes('اغلاق البحث')) {
+            if (normalizedInput.includes('اغلاق البحث') || normalizedInput.includes('اغلاق')) {
                 window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'close_search' } }));
                 return;
             }
+            
+            // If search is open but input not focused, still search for the word
+            console.log('Voice Control - Search Context: Searching for', text);
+            window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'execute_search', text: text } }));
+            return;
         }
 
         // 3. Use the new parser for Quran navigation and dynamic commands
@@ -407,19 +403,22 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
     }, []);
 
     // Handle pause/resume from audio playback
+    const wasEnabledBeforePauseRef = useRef(false);
+    
     useEffect(() => {
         const handlePause = () => {
             if (isEnabledRef.current) {
                 console.log('Voice Control - Pausing for audio playback');
-                stopRecognition();
-                setIsListening(false);
+                wasEnabledBeforePauseRef.current = true;
+                setIsEnabled(false);
             }
         };
 
         const handleResume = () => {
-            if (isEnabledRef.current) {
+            if (wasEnabledBeforePauseRef.current) {
                 console.log('Voice Control - Resuming after audio playback');
-                startRecognition();
+                wasEnabledBeforePauseRef.current = false;
+                setIsEnabled(true);
             }
         };
 

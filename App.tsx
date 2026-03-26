@@ -21,10 +21,11 @@ function App() {
   const { theme, applyPresetTheme } = useTheme();
   const [showSplash, setShowSplash] = useState(true);
   const [history, setHistory] = useState(['home']);
+  const [navParams, setNavParams] = useState<any>(null);
   const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
-  const handleNavigate = useCallback((pageId: string) => {
+  const handleNavigate = useCallback((pageId: string, params?: any) => {
     const validPages = [
       'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'qibla', 
@@ -32,6 +33,7 @@ function App() {
     ];
 
     if (validPages.includes(pageId)) {
+      setNavParams(params || null);
       setHistory(prev => {
         if (prev[prev.length - 1] !== pageId) {
           return [...prev, pageId];
@@ -101,7 +103,9 @@ function App() {
     else if (action === 'set_orientation_horizontal' || action === 'set_orientation_vertical') {
       window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
     }
-    else if (action === 'open_search' || (action === 'ui_click' && params?.label?.includes('بحث'))) window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_search' } }));
+    else if (action === 'open_search' || (action === 'ui_click' && params?.label?.includes('بحث'))) {
+      window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_search', params } }));
+    }
     else if (action === 'open_themes' || (action === 'ui_click' && params?.label?.includes('ثيم'))) {
       if (page === 'quran') {
         window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_themes' } }));
@@ -141,6 +145,7 @@ function App() {
         <AppContent 
           page={page} 
           history={history}
+          navParams={navParams}
           isThemeSelectorOpen={isThemeSelectorOpen}
           showExitConfirm={showExitConfirm}
           handleNavigate={handleNavigate}
@@ -157,6 +162,7 @@ function App() {
 function AppContent({ 
   page, 
   history, 
+  navParams,
   isThemeSelectorOpen, 
   showExitConfirm, 
   handleNavigate, 
@@ -200,6 +206,7 @@ function AppContent({
         onBack={navigateBack} 
         onNavigate={handleNavigate} 
         onOpenThemes={toggleThemeSelector}
+        navParams={navParams}
       />
 
       {/* Global Voice Control Toggle */}

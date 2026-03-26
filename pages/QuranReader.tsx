@@ -53,7 +53,7 @@ const parseArabicNumber = (text: string): number | null => {
     return null;
 };
 
-const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean }> = ({ onBack, onNavigate, initialLandscape = false }) => {
+const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
     
     // Auto-detect orientation
@@ -94,6 +94,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     }, [lastInteractionType, modeSuffix]);
 
     const [activeModals, setActiveModals] = useState<string[]>([]);
+    const [initialSearchQuery, setInitialSearchQuery] = useState<string | undefined>(undefined);
     const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
     const [ayahContextMenu, setAyahContextMenu] = useState<{isOpen: boolean, x: number, y: number, s: number, a: number, tempSettings: any}>({isOpen: false, x: 0, y: 0, s: 0, a: 0, tempSettings: DEFAULT_SETTINGS});
     const [ayahContextColorField, setAyahContextColorField] = useState<'textColor' | 'bgColor' | 'highlightTextColor' | null>(null);
@@ -756,6 +757,9 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     const closeModal = useCallback((modalName: string) => {
         setActiveModals(p => p.filter(m => m !== modalName));
+        if (modalName === 'search-modal') {
+            setInitialSearchQuery(undefined);
+        }
         if (wasAutoscrollingBeforeModal.current) {
             const anyOtherOpen = activeModals.some(m => m !== modalName);
             if (!anyOtherOpen) {
@@ -766,8 +770,13 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
     }, [activeModals]);
 
-    const openModal = useCallback((modalName: string) => { 
+    const openModal = useCallback((modalName: string, params?: any) => { 
         stopAudio(); 
+        if (modalName === 'search-modal' && params?.target) {
+            setInitialSearchQuery(params.target);
+        } else if (modalName === 'search-modal') {
+            setInitialSearchQuery(undefined);
+        }
         let wasScrolling = false;
         if (autoScrollStateRef.current.isActive && !autoScrollStateRef.current.isPaused) {
             autoScrollPausedRef.current = true;
@@ -1284,12 +1293,19 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     useEffect(() => {
         if (hasJumpedRef.current) return;
         hasJumpedRef.current = true;
-        const key = initialLandscape ? 'last_pos_h' : 'last_pos_v';
-        const lastPos = JSON.parse(localStorage.getItem(key) || '{}');
-        setTimeout(() => {
-            jumpToAyah(lastPos.s || 1, lastPos.a || 1, true);
-        }, 100);
-    }, [jumpToAyah, initialLandscape]);
+        
+        if (initialSurah && initialAyah) {
+            setTimeout(() => {
+                jumpToAyah(initialSurah, initialAyah, true);
+            }, 100);
+        } else {
+            const key = initialLandscape ? 'last_pos_h' : 'last_pos_v';
+            const lastPos = JSON.parse(localStorage.getItem(key) || '{}');
+            setTimeout(() => {
+                jumpToAyah(lastPos.s || 1, lastPos.a || 1, true);
+            }, 100);
+        }
+    }, [jumpToAyah, initialLandscape, initialSurah, initialAyah]);
 
     const jumpToPage = useCallback((pageNum: number, instant: boolean = true) => {
         if (!quranData || isNaN(pageNum) || pageNum < 1 || pageNum > 604) return;
@@ -1429,7 +1445,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     jumpToPage(num, true);
                 }
             } else if (action === 'open_search') {
-                openModal('search-modal');
+                openModal('search-modal', params);
             } else if (action === 'open_settings' || action === 'change_theme') {
                 openModal('settings-modal');
             } else if (action === 'download_quran') {
@@ -1997,7 +2013,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     }} 
                 />
             )}
-            {activeModals.includes('search-modal') && <SearchModal quranData={quranData} onSelect={(s,a) => jumpToAyah(s,a, true)} onClose={() => closeModal('search-modal')} isLandscape={isLandscape} />}
+            {activeModals.includes('search-modal') && <SearchModal quranData={quranData} onSelect={(s,a) => jumpToAyah(s,a, true)} onClose={() => closeModal('search-modal')} isLandscape={isLandscape} initialQuery={initialSearchQuery} />}
             {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} />}
             {activeModals.includes('settings-modal') && <SettingsModal onClose={() => closeModal('settings-modal')} onOpenModal={openModal} showToast={showToast} isLandscape={isLandscape} />}
             {activeModals.includes('font-modal') && <FontSelectModal isOpen={true} onClose={() => closeModal('font-modal')} isLandscape={isLandscape} currentFontId={settings.fontFamily} onSelect={(id) => {

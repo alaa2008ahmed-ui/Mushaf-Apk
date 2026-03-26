@@ -21,20 +21,21 @@ import MoreMenuPage from '../pages/MoreMenuPage';
 interface AppRouterProps {
     page: string;
     onBack: () => void;
-    onNavigate: (pageId: string) => void;
+    onNavigate: (pageId: string, params?: any) => void;
     onOpenThemes: () => void;
+    navParams?: any;
 }
 
-const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenThemes }) => {
+const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenThemes, navParams }) => {
     switch(page) {
       case 'quran':
-        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={false} />;
+        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={false} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} />;
       case 'quran-landscape':
-        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={true} />;
+        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={true} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} />;
       case 'quran-download':
         return <QuranDownload onBack={onBack} />;
       case 'tajweed-education':
-        return <TajweedEducation onBack={onBack} onNavigateToMushaf={() => onNavigate('quran')} />;
+        return <TajweedEducation onBack={onBack} onNavigateToMushaf={(surah, ayah) => onNavigate('quran', { surah, ayah })} />;
       case 'salah-adhkar':
         return <AthkarAlSalah onBack={onBack} />;
       case 'calendar':

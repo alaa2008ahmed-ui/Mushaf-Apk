@@ -6,11 +6,12 @@ interface SearchModalProps {
     onSelect: (surah: number, ayah: number) => void;
     onClose: () => void;
     isLandscape?: boolean;
+    initialQuery?: string;
 }
 
-const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose, isLandscape }) => {
+const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose, isLandscape, initialQuery }) => {
     const modeSuffix = isLandscape ? '_h' : '_v';
-    const [query, setQuery] = useState(() => localStorage.getItem('search_query' + modeSuffix) || '');
+    const [query, setQuery] = useState(() => initialQuery || localStorage.getItem('search_query' + modeSuffix) || '');
     const [results, setResults] = useState<any[]>([]);
     const [visibleCount, setVisibleCount] = useState(100);
     const [isSearching, setIsSearching] = useState(false);

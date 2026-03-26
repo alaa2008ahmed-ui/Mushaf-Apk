@@ -11,6 +11,8 @@ interface TajweedExample {
     highlightedWord: string;
     audioUrl: string;
     description?: string;
+    surah: number;
+    ayah: number;
 }
 
 interface TajweedQuiz {
@@ -39,9 +41,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         poem: 'وَغُنَّ مِيمًا ثُمَّ نُونًا شُدِّدَا .. وَسَمِّ كُلاً حَرْفَ غُنَّةٍ بَدَا',
         articulationPoint: 'الخيشوم (أقصى الأنف من الداخل)',
         examples: [
-            { id: 'g1', fullAyah: 'قُلْ أَعُوذُ بِرَبِّ النَّاسِ', highlightedWord: 'النَّاسِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/114001.mp3', description: 'نون مشددة' },
-            { id: 'g2', fullAyah: 'عَمَّ يَتَسَاءَلُونَ', highlightedWord: 'عَمَّ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/078001.mp3', description: 'ميم مشددة' },
-            { id: 'g3', fullAyah: 'فَلَمَّا جَاءَتْ قِيلَ أَهَكَذَا عَرْشُكِ قَالَتْ كَأَنَّهُ هُوَ', highlightedWord: 'كَأَنَّهُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/027042.mp3', description: 'نون مشددة' },
+            { id: 'g1', fullAyah: 'قُلْ أَعُوذُ بِرَبِّ النَّاسِ', highlightedWord: 'النَّاسِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/114001.mp3', description: 'نون مشددة', surah: 114, ayah: 1 },
+            { id: 'g2', fullAyah: 'عَمَّ يَتَسَاءَلُونَ', highlightedWord: 'عَمَّ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/078001.mp3', description: 'ميم مشددة', surah: 78, ayah: 1 },
+            { id: 'g3', fullAyah: 'فَلَمَّا جَاءَتْ قِيلَ أَهَكَذَا عَرْشُكِ قَالَتْ كَأَنَّهُ هُوَ', highlightedWord: 'كَأَنَّهُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/027042.mp3', description: 'نون مشددة', surah: 27, ayah: 42 },
         ],
         quiz: {
             question: 'ما هو مقدار الغنة في النون والميم المشددتين؟',
@@ -57,9 +59,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         poem: 'وَالرَّابِعُ الإِخْفَاءُ عِنْدَ الْفَاضِلِ .. مِنَ الحُرُوفِ وَاجِبٌ لِلْفَاضِلِ',
         articulationPoint: 'إخفاء النون عند مخرج الحرف الذي يليها',
         examples: [
-            { id: 'ik1', fullAyah: 'مِنْ شَرِّ مَا خَلَقَ', highlightedWord: 'مِنْ شَرِّ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/113002.mp3' },
-            { id: 'ik2', fullAyah: 'وَالَّذِينَ يُؤْمِنُونَ بِمَا أُنْزِلَ إِلَيْكَ', highlightedWord: 'أُنْزِلَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002004.mp3' },
-            { id: 'ik3', fullAyah: 'فَتُوبُوا إِلَى بَارِئِكُمْ فَاقْتُلُوا أَنْفُسَكُمْ', highlightedWord: 'أَنْفُسَكُمْ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002054.mp3' },
+            { id: 'ik1', fullAyah: 'مِنْ شَرِّ مَا خَلَقَ', highlightedWord: 'مِنْ شَرِّ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/113002.mp3', surah: 113, ayah: 2 },
+            { id: 'ik2', fullAyah: 'وَالَّذِينَ يُؤْمِنُونَ بِمَا أُنْزِلَ إِلَيْكَ', highlightedWord: 'أُنْزِلَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002004.mp3', surah: 2, ayah: 4 },
+            { id: 'ik3', fullAyah: 'فَتُوبُوا إِلَى بَارِئِكُمْ فَاقْتُلُوا أَنْفُسَكُمْ', highlightedWord: 'أَنْفُسَكُمْ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002054.mp3', surah: 2, ayah: 54 },
         ],
         quiz: {
             question: 'كم عدد حروف الإخفاء الحقيقي؟',
@@ -74,9 +76,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         color: '#2E8B57',
         poem: 'وَالثَّانِ إِدْغَامٌ بِسِتَّةٍ أَتَتْ .. فِي يَرْمَلُونَ عِنْدَهُمْ قَدْ ثَبَتَتْ\nلَكِنَّهَا قِسْمَانِ قِسْمٌ يُدْغَمَا .. فِيهِ بِغُنَّةٍ بِيَنْمُو عُلِمَا',
         examples: [
-            { id: 'ig1', fullAyah: 'وَمِنَ النَّاسِ مَنْ يَقُولُ آمَنَّا بِاللَّهِ', highlightedWord: 'مَنْ يَقُولُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002008.mp3' },
-            { id: 'ig2', fullAyah: 'فَمَنْ يَعْمَلْ مِثْقَالَ ذَرَّةٍ خَيْرًا يَرَهُ', highlightedWord: 'فَمَنْ يَعْمَلْ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/099007.mp3' },
-            { id: 'ig3', fullAyah: 'وَمَا لَكُمْ مِنْ دُونِ اللَّهِ مِنْ وَلِيٍّ وَلَا نَصِيرٍ', highlightedWord: 'وَلِيٍّ وَلَا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002107.mp3' },
+            { id: 'ig1', fullAyah: 'وَمِنَ النَّاسِ مَنْ يَقُولُ آمَنَّا بِاللَّهِ', highlightedWord: 'مَنْ يَقُولُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002008.mp3', surah: 2, ayah: 8 },
+            { id: 'ig2', fullAyah: 'فَمَنْ يَعْمَلْ مِثْقَالَ ذَرَّةٍ خَيْرًا يَرَهُ', highlightedWord: 'فَمَنْ يَعْمَلْ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/099007.mp3', surah: 99, ayah: 7 },
+            { id: 'ig3', fullAyah: 'وَمَا لَكُمْ مِنْ دُونِ اللَّهِ مِنْ وَلِيٍّ وَلَا نَصِيرٍ', highlightedWord: 'وَلِيٍّ وَلَا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002107.mp3', surah: 2, ayah: 107 },
         ],
         quiz: {
             question: 'ما هي الكلمة التي تجمع حروف الإدغام بغنة؟',
@@ -91,9 +93,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         color: '#2E8B57',
         poem: 'وَالثَّانِ إِدْغَامٌ بِغَيْرِ غُنَّةْ .. فِي اللاَّمِ وَالرَّا ثُمَّ كَرِّرَنَّهْ',
         examples: [
-            { id: 'in1', fullAyah: 'أُولَئِكَ عَلَى هُدًى مِنْ رَبِّهِمْ', highlightedWord: 'مِنْ رَبِّهِمْ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002005.mp3' },
-            { id: 'in2', fullAyah: 'قَيِّمًا لِيُنْذِرَ بَأْسًا شَدِيدًا مِنْ لَدُنْهُ', highlightedWord: 'مِنْ لَدُنْهُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/018002.mp3' },
-            { id: 'in3', fullAyah: 'إِنَّ اللَّهَ غَفُورٌ رَحِيمٌ', highlightedWord: 'غَفُورٌ رَحِيمٌ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002173.mp3' },
+            { id: 'in1', fullAyah: 'أُولَئِكَ عَلَى هُدًى مِنْ رَبِّهِمْ', highlightedWord: 'مِنْ رَبِّهِمْ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002005.mp3', surah: 2, ayah: 5 },
+            { id: 'in2', fullAyah: 'قَيِّمًا لِيُنْذِرَ بَأْسًا شَدِيدًا مِنْ لَدُنْهُ', highlightedWord: 'مِنْ لَدُنْهُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/018002.mp3', surah: 18, ayah: 2 },
+            { id: 'in3', fullAyah: 'إِنَّ اللَّهَ غَفُورٌ رَحِيمٌ', highlightedWord: 'غَفُورٌ رَحِيمٌ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002173.mp3', surah: 2, ayah: 173 },
         ],
         quiz: {
             question: 'ما هي حروف الإدغام بغير غنة؟',
@@ -109,9 +111,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         poem: 'وَالثَّالِثُ الإِقْلَابُ عِنْدَ الْبَاءِ .. مِيمًا بِغُنَّةٍ مَعَ الإِخْفَاءِ',
         articulationPoint: 'انطباق الشفتين انطباقاً خفيفاً لنطق الميم',
         examples: [
-            { id: 'iq1', fullAyah: 'الَّذِينَ يَنْقُضُونَ عَهْدَ اللَّهِ مِنْ بَعْدِ مِيثَاقِهِ', highlightedWord: 'مِنْ بَعْدِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002027.mp3' },
-            { id: 'iq2', fullAyah: 'قَالَ يَا آدَمُ أَنْبِئْهُمْ بِأَسْمَائِهِمْ', highlightedWord: 'أَنْبِئْهُمْ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002033.mp3' },
-            { id: 'iq3', fullAyah: 'سُبْحَانَ الَّذِي أَسْرَى بِعَبْدِهِ لَيْلًا مِنَ الْمَسْجِدِ الْحَرَامِ إِلَى الْمَسْجِدِ الْأَقْصَى الَّذِي بَارَكْنَا حَوْلَهُ لِنُرِيَهُ مِنْ آيَاتِنَا إِنَّهُ هُوَ السَّمِيعُ الْبَصِيرُ', highlightedWord: 'السَّمِيعُ الْبَصِيرُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/017001.mp3' },
+            { id: 'iq1', fullAyah: 'الَّذِينَ يَنْقُضُونَ عَهْدَ اللَّهِ مِنْ بَعْدِ مِيثَاقِهِ', highlightedWord: 'مِنْ بَعْدِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002027.mp3', surah: 2, ayah: 27 },
+            { id: 'iq2', fullAyah: 'قَالَ يَا آدَمُ أَنْبِئْهُمْ بِأَسْمَائِهِمْ', highlightedWord: 'أَنْبِئْهُمْ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002033.mp3', surah: 2, ayah: 33 },
+            { id: 'iq3', fullAyah: 'سُبْحَانَ الَّذِي أَسْرَى بِعَبْدِهِ لَيْلًا مِنَ الْمَسْجِدِ الْحَرَامِ إِلَى الْمَسْجِدِ الْأَقْصَى الَّذِي بَارَكْنَا حَوْلَهُ لِنُرِيَهُ مِنْ آيَاتِنَا إِنَّهُ هُوَ السَّمِيعُ الْبَصِيرُ', highlightedWord: 'السَّمِيعُ الْبَصِيرُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/017001.mp3', surah: 17, ayah: 1 },
         ],
         quiz: {
             question: 'متى يحدث الإقلاب؟',
@@ -127,9 +129,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         poem: 'فَالأَوَّلُ الإِظْهَارُ قَبْلَ أَحْرُفِ .. لِلْحَلْقِ سِتٍّ رُتِّبَتْ فَلْتَعْرِفِ\nهَمْزٌ فَهَاءٌ ثُمَّ عَيْنٌ حَاءُ .. مُهْمَلَتَانِ ثُمَّ غَيْنٌ خَاءُ',
         articulationPoint: 'الحلق (أقصى، وسط، وأدنى الحلق)',
         examples: [
-            { id: 'iz1', fullAyah: 'إِنَّ الَّذِينَ آمَنُوا وَالَّذِينَ هَادُوا وَالنَّصَارَى وَالصَّابِئِينَ مَنْ آمَنَ بِاللَّهِ', highlightedWord: 'مَنْ آمَنَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002062.mp3' },
-            { id: 'iz2', fullAyah: 'يُوصِيكُمُ اللَّهُ فِي أَوْلَادِكُمْ ۖ لِلذَّكَرِ مِثْلُ حَظِّ الْأُنْثَيَيْنِ ۚ ... إِنَّ اللَّهَ كَانَ عَلِيمًا حَكِيمًا', highlightedWord: 'عَلِيمًا حَكِيمًا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/004011.mp3' },
-            { id: 'iz3', fullAyah: 'الَّذِي أَطْعَمَهُمْ مِنْ جُوعٍ وَآمَنَهُمْ مِنْ خَوْفٍ', highlightedWord: 'مِنْ خَوْفٍ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/106004.mp3' },
+            { id: 'iz1', fullAyah: 'إِنَّ الَّذِينَ آمَنُوا وَالَّذِينَ هَادُوا وَالنَّصَارَى وَالصَّابِئِينَ مَنْ آمَنَ بِاللَّهِ', highlightedWord: 'مَنْ آمَنَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002062.mp3', surah: 2, ayah: 62 },
+            { id: 'iz2', fullAyah: 'يُوصِيكُمُ اللَّهُ فِي أَوْلَادِكُمْ ۖ لِلذَّكَرِ مِثْلُ حَظِّ الْأُنْثَيَيْنِ ۚ ... إِنَّ اللَّهَ كَانَ عَلِيمًا حَكِيمًا', highlightedWord: 'عَلِيمًا حَكِيمًا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/004011.mp3', surah: 4, ayah: 11 },
+            { id: 'iz3', fullAyah: 'الَّذِي أَطْعَمَهُمْ مِنْ جُوعٍ وَآمَنَهُمْ مِنْ خَوْفٍ', highlightedWord: 'مِنْ خَوْفٍ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/106004.mp3', surah: 106, ayah: 4 },
         ],
         quiz: {
             question: 'لماذا سمي الإظهار بالحلقي؟',
@@ -144,10 +146,10 @@ const TAJWEED_RULES: TajweedRule[] = [
         color: '#FF4500',
         poem: 'قَلْقَلَةٌ قُطْبُ جَدٍّ وَاللِّينُ .. وَاوٌ وَيَاءٌ سَكَنَا وَانْفَتَحَا قَبْلَهُمَا',
         examples: [
-            { id: 'q1', fullAyah: 'قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ', highlightedWord: 'الْفَلَقِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/113001.mp3', description: 'قلقلة كبرى (عند الوقف)' },
-            { id: 'q2', fullAyah: 'وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا', highlightedWord: 'يَدْخُلُونَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/110002.mp3', description: 'قلقلة صغرى (في وسط الكلمة)' },
-            { id: 'q3', fullAyah: 'وَاللَّهُ مِنْ وَرَائِهِمْ مُحِيطٌ', highlightedWord: 'مُحِيطٌ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/085020.mp3', description: 'قلقلة كبرى' },
-            { id: 'q4', fullAyah: 'خَتَمَ اللَّهُ عَلَى قُلُوبِهِمْ وَعَلَى سَمْعِهِمْ وَعَلَى أَبْصَارِهِمْ غِشَاوَةٌ', highlightedWord: 'أَبْصَارِهِمْ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002007.mp3', description: 'قلقلة صغرى' },
+            { id: 'q1', fullAyah: 'قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ', highlightedWord: 'الْفَلَقِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/113001.mp3', description: 'قلقلة كبرى (عند الوقف)', surah: 113, ayah: 1 },
+            { id: 'q2', fullAyah: 'وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا', highlightedWord: 'يَدْخُلُونَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/110002.mp3', description: 'قلقلة صغرى (في وسط الكلمة)', surah: 110, ayah: 2 },
+            { id: 'q3', fullAyah: 'وَاللَّهُ مِنْ وَرَائِهِمْ مُحِيطٌ', highlightedWord: 'مُحِيطٌ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/085020.mp3', description: 'قلقلة كبرى', surah: 85, ayah: 20 },
+            { id: 'q4', fullAyah: 'خَتَمَ اللَّهُ عَلَى قُلُوبِهِمْ وَعَلَى سَمْعِهِمْ وَعَلَى أَبْصَارِهِمْ غِشَاوَةٌ', highlightedWord: 'أَبْصَارِهِمْ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002007.mp3', description: 'قلقلة صغرى', surah: 2, ayah: 7 },
         ],
         quiz: {
             question: 'متى تكون القلقلة كبرى؟',
@@ -162,9 +164,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         color: '#DC143C',
         poem: 'فَوَاجِبٌ إِنْ جَاءَ هَمْزٌ بَعْدَ مَدْ .. فِي كِلْمَةٍ وَذَا بِمُتَّصِلٍ يُعَدْ',
         examples: [
-            { id: 'mm1', fullAyah: 'أَوْ كَصَيِّبٍ مِنَ السَّمَاءِ فِيهِ ظُلُمَاتٌ وَرَعْدٌ وَبَرْقٌ', highlightedWord: 'السَّمَاءِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002019.mp3' },
-            { id: 'mm2', fullAyah: 'وَأَشْرَقَتِ الْأَرْضُ بِنُورِ رَبِّهَا وَوُضِعَ الْكِتَابُ وَجِيءَ بِالنَّبِيِّينَ', highlightedWord: 'وَجِيءَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/039069.mp3' },
-            { id: 'mm3', fullAyah: 'إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ', highlightedWord: 'جَاءَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/110001.mp3' },
+            { id: 'mm1', fullAyah: 'أَوْ كَصَيِّبٍ مِنَ السَّمَاءِ فِيهِ ظُلُمَاتٌ وَرَعْدٌ وَبَرْقٌ', highlightedWord: 'السَّمَاءِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002019.mp3', surah: 2, ayah: 19 },
+            { id: 'mm2', fullAyah: 'وَأَشْرَقَتِ الْأَرْضُ بِنُورِ رَبِّهَا وَوُضِعَ الْكِتَابُ وَجِيءَ بِالنَّبِيِّينَ', highlightedWord: 'وَجِيءَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/039069.mp3', surah: 39, ayah: 69 },
+            { id: 'mm3', fullAyah: 'إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ', highlightedWord: 'جَاءَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/110001.mp3', surah: 110, ayah: 1 },
         ],
         quiz: {
             question: 'ما هو حكم المد المتصل؟',
@@ -179,9 +181,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         color: '#DC143C',
         poem: 'وَجَائِزٌ مَدٌّ وَقَصْرٌ إِنْ فُصِلْ .. كُلٌّ بِكِلْمَةٍ وَهَذَا المُنْفَصِلْ',
         examples: [
-            { id: 'mn1', fullAyah: 'وَالَّذِينَ يُؤْمِنُونَ بِمَا أُنْزِلَ إِلَيْكَ وَمَا أُنْزِلَ مِنْ قَبْلِكَ', highlightedWord: 'بِمَا أُنْزِلَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002004.mp3' },
-            { id: 'mn2', fullAyah: 'يَا أَيُّهَا النَّاسُ اعْبُدُوا رَبَّكُمُ', highlightedWord: 'يَا أَيُّهَا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002021.mp3' },
-            { id: 'mn3', fullAyah: 'لَا أَعْبُدُ مَا تَعْبُدُونَ', highlightedWord: 'لَا أَعْبُدُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/109002.mp3' },
+            { id: 'mn1', fullAyah: 'وَالَّذِينَ يُؤْمِنُونَ بِمَا أُنْزِلَ إِلَيْكَ وَمَا أُنْزِلَ مِنْ قَبْلِكَ', highlightedWord: 'بِمَا أُنْزِلَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002004.mp3', surah: 2, ayah: 4 },
+            { id: 'mn2', fullAyah: 'يَا أَيُّهَا النَّاسُ اعْبُدُوا رَبَّكُمُ', highlightedWord: 'يَا أَيُّهَا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002021.mp3', surah: 2, ayah: 21 },
+            { id: 'mn3', fullAyah: 'لَا أَعْبُدُ مَا تَعْبُدُونَ', highlightedWord: 'لَا أَعْبُدُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/109002.mp3', surah: 109, ayah: 2 },
         ],
         quiz: {
             question: 'ما هو حكم المد المنفصل؟',
@@ -196,9 +198,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         color: '#DC143C',
         poem: 'وَلَازِمٌ إِنِ السُّكُونُ أُصِّلَا .. وَصْلاً وَوَقْفًا بَعْدَ مَدٍّ طُوِّلَا',
         examples: [
-            { id: 'ml1', fullAyah: 'صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ', highlightedWord: 'الضَّالِّينَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/001007.mp3' },
-            { id: 'ml2', fullAyah: 'الْحَاقَّةُ', highlightedWord: 'الْحَاقَّةُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/069001.mp3' },
-            { id: 'ml3', fullAyah: 'آلْآنَ وَقَدْ كُنْتُمْ بِهِ تَسْتَعْجِلُونَ', highlightedWord: 'آلْآنَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/010051.mp3' },
+            { id: 'ml1', fullAyah: 'صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ', highlightedWord: 'الضَّالِّينَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/001007.mp3', surah: 1, ayah: 7 },
+            { id: 'ml2', fullAyah: 'الْحَاقَّةُ', highlightedWord: 'الْحَاقَّةُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/069001.mp3', surah: 69, ayah: 1 },
+            { id: 'ml3', fullAyah: 'آلْآنَ وَقَدْ كُنْتُمْ بِهِ تَسْتَعْجِلُونَ', highlightedWord: 'آلْآنَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/010051.mp3', surah: 10, ayah: 51 },
         ],
         quiz: {
             question: 'كم عدد حركات المد اللازم؟',
@@ -213,9 +215,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         color: '#DC143C',
         poem: 'وَمِثْلُ ذَا إِنْ عَرَضَ السُّكُونُ .. وَقْفًا كَتَعْلَمُونَ نَسْتَعِينُ',
         examples: [
-            { id: 'ma1', fullAyah: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ', highlightedWord: 'الْعَالَمِينَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/001002.mp3' },
-            { id: 'ma2', fullAyah: 'إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ', highlightedWord: 'نَسْتَعِينُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/001005.mp3' },
-            { id: 'ma3', fullAyah: 'أُولَئِكَ عَلَى هُدًى مِنْ رَبِّهِمْ وَأُولَئِكَ هُمُ الْمُفْلِحُونَ', highlightedWord: 'الْمُفْلِحُونَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002005.mp3' },
+            { id: 'ma1', fullAyah: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ', highlightedWord: 'الْعَالَمِينَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/001002.mp3', surah: 1, ayah: 2 },
+            { id: 'ma2', fullAyah: 'إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ', highlightedWord: 'نَسْتَعِينُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/001005.mp3', surah: 1, ayah: 5 },
+            { id: 'ma3', fullAyah: 'أُولَئِكَ عَلَى هُدًى مِنْ رَبِّهِمْ وَأُولَئِكَ هُمُ الْمُفْلِحُونَ', highlightedWord: 'الْمُفْلِحُونَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002005.mp3', surah: 2, ayah: 5 },
         ],
         quiz: {
             question: 'متى يحدث المد العارض للسكون؟',
@@ -230,9 +232,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         color: '#DC143C',
         poem: 'وَاللِّينُ مِنْهَا الْيَاءُ وَوَاوٌ سُكِّنَا .. إِنِ انْفِتَاحٌ قَبْلَ كُلٍّ أُعْلِنَا',
         examples: [
-            { id: 'mln1', fullAyah: 'لِإِيلَافِ قُرَيْشٍ', highlightedWord: 'قُرَيْشٍ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/106001.mp3' },
-            { id: 'mln2', fullAyah: 'فَلْيَعْبُدُوا رَبَّ هَذَا الْبَيْتِ', highlightedWord: 'الْبَيْتِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/106003.mp3' },
-            { id: 'mln3', fullAyah: 'الَّذِي أَطْعَمَهُمْ مِنْ جُوعٍ وَآمَنَهُمْ مِنْ خَوْفٍ', highlightedWord: 'خَوْفٍ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/106004.mp3' },
+            { id: 'mln1', fullAyah: 'لِإِيلَافِ قُرَيْشٍ', highlightedWord: 'قُرَيْشٍ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/106001.mp3', surah: 106, ayah: 1 },
+            { id: 'mln2', fullAyah: 'فَلْيَعْبُدُوا رَبَّ هَذَا الْبَيْتِ', highlightedWord: 'الْبَيْتِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/106003.mp3', surah: 106, ayah: 3 },
+            { id: 'mln3', fullAyah: 'الَّذِي أَطْعَمَهُمْ مِنْ جُوعٍ وَآمَنَهُمْ مِنْ خَوْفٍ', highlightedWord: 'خَوْفٍ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/106004.mp3', surah: 106, ayah: 4 },
         ],
         quiz: {
             question: 'ما هي حركة الحرف الذي يسبق حرفي اللين (الواو والياء)؟',
@@ -247,8 +249,8 @@ const TAJWEED_RULES: TajweedRule[] = [
         color: '#DC143C',
         poem: 'وَصِلْ هَاءَ ضَمِيرٍ عَنْ سُكُونٍ قَبْلَ مَا .. حُرِّكَ وَاقْصُرْ عَنْ سُكُونٍ جُلِّيَا',
         examples: [
-            { id: 'ms1', fullAyah: 'إِنَّهُ كَانَ بِعِبَادِهِ خَبِيرًا بَصِيرًا', highlightedWord: 'بِعِبَادِهِ خَبِيرًا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/025020.mp3', description: 'صلة صغرى' },
-            { id: 'ms2', fullAyah: 'يَحْسَبُ أَنَّ مَالَهُ أَخْلَدَهُ', highlightedWord: 'أَخْلَدَهُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/104003.mp3', description: 'صلة كبرى' },
+            { id: 'ms1', fullAyah: 'إِنَّهُ كَانَ بِعِبَادِهِ خَبِيرًا بَصِيرًا', highlightedWord: 'بِعِبَادِهِ خَبِيرًا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/025020.mp3', description: 'صلة صغرى', surah: 25, ayah: 20 },
+            { id: 'ms2', fullAyah: 'يَحْسَبُ أَنَّ مَالَهُ أَخْلَدَهُ', highlightedWord: 'أَخْلَدَهُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/104003.mp3', description: 'صلة كبرى', surah: 104, ayah: 3 },
         ],
         quiz: {
             question: 'متى تمد هاء الضمير؟',
@@ -263,9 +265,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         color: '#DC143C',
         poem: 'أَوْ قُدِّمَ الْهَمْزُ عَلَى المَدِّ وَذَا .. بَدَلْ كَآمَنُوا وَإِيمَانًا خُذَا',
         examples: [
-            { id: 'mb1', fullAyah: 'وَعَلَّمَ آدَمَ الْأَسْمَاءَ كُلَّهَا', highlightedWord: 'آدَمَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002031.mp3' },
-            { id: 'mb2', fullAyah: 'وَمِنَ النَّاسِ مَنْ يَتَّخِذُ مِنْ دُونِ اللَّهِ أَنْدَادًا يُحِبُّونَهُمْ كَحُبِّ اللَّهِ وَالَّذِينَ آمَنُوا أَشَدُّ حُبًّا لِلَّهِ', highlightedWord: 'آمَنُوا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002165.mp3' },
-            { id: 'mb3', fullAyah: 'وَلَمَّا جَاءَهُمْ كِتَابٌ مِنْ عِنْدِ اللَّهِ مُصَدِّقٌ لِمَا مَعَهُمْ وَكَانُوا مِنْ قَبْلُ يَسْتَفْتِحُونَ عَلَى الَّذِينَ كَفَرُوا فَلَمَّا جَاءَهُمْ مَا عَرَفُوا كَفَرُوا بِهِ فَلَعْنَةُ اللَّهِ عَلَى الْكَافِرِينَ', highlightedWord: 'أُوتُوا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002101.mp3' },
+            { id: 'mb1', fullAyah: 'وَعَلَّمَ آدَمَ الْأَسْمَاءَ كُلَّهَا', highlightedWord: 'آدَمَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002031.mp3', surah: 2, ayah: 31 },
+            { id: 'mb2', fullAyah: 'وَمِنَ النَّاسِ مَنْ يَتَّخِذُ مِنْ دُونِ اللَّهِ أَنْدَادًا يُحِبُّونَهُمْ كَحُبِّ اللَّهِ وَالَّذِينَ آمَنُوا أَشَدُّ حُبًّا لِلَّهِ', highlightedWord: 'آمَنُوا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002165.mp3', surah: 2, ayah: 165 },
+            { id: 'mb3', fullAyah: 'وَلَمَّا جَاءَهُمْ كِتَابٌ مِنْ عِنْدِ اللَّهِ مُصَدِّقٌ لِمَا مَعَهُمْ وَكَانُوا مِنْ قَبْلُ يَسْتَفْتِحُونَ عَلَى الَّذِينَ كَفَرُوا فَلَمَّا جَاءَهُمْ مَا عَرَفُوا كَفَرُوا بِهِ فَلَعْنَةُ اللَّهِ عَلَى الْكَافِرِينَ', highlightedWord: 'أُوتُوا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002101.mp3', surah: 2, ayah: 101 },
         ],
         quiz: {
             question: 'ما هو مقدار مد البدل؟',
@@ -280,9 +282,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         color: '#8B4513',
         poem: 'وَرَقِّقِ الرَّاءَ إِذَا مَا كُسِرَتْ .. كَذَاكَ بَعْدَ الْكَسْرِ حَيْثُ سَكَنَتْ',
         examples: [
-            { id: 'rr1', fullAyah: 'وَإِذْ يَرْفَعُ إِبْرَاهِيمُ الْقَوَاعِدَ مِنَ الْبَيْتِ وَإِسْمَاعِيلُ رَبَّنَا تَقَبَّلْ مِنَّا', highlightedWord: 'رَبَّنَا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002127.mp3', description: 'تفخيم' },
-            { id: 'rr2', fullAyah: 'الَّذِي جَعَلَ لَكُمُ الْأَرْضَ فِرَاشًا وَالسَّمَاءَ بِنَاءً وَأَنْزَلَ مِنَ السَّمَاءِ مَاءً فَأَخْرَجَ بِهِ مِنَ الثَّمَرَاتِ رِزْقًا لَكُمْ', highlightedWord: 'رِزْقًا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002022.mp3', description: 'ترقيق' },
-            { id: 'rr3', fullAyah: 'وَإِذْ نَجَّيْنَاكُمْ مِنْ آلِ فِرْعَوْنَ يَسُومُونَكُمْ سُوءَ الْعَذَابِ', highlightedWord: 'فِرْعَوْنَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002049.mp3', description: 'ترقيق' },
+            { id: 'rr1', fullAyah: 'وَإِذْ يَرْفَعُ إِبْرَاهِيمُ الْقَوَاعِدَ مِنَ الْبَيْتِ وَإِسْمَاعِيلُ رَبَّنَا تَقَبَّلْ مِنَّا', highlightedWord: 'رَبَّنَا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002127.mp3', description: 'تفخيم', surah: 2, ayah: 127 },
+            { id: 'rr2', fullAyah: 'الَّذِي جَعَلَ لَكُمُ الْأَرْضَ فِرَاشًا وَالسَّمَاءَ بِنَاءً وَأَنْزَلَ مِنَ السَّمَاءِ مَاءً فَأَخْرَجَ بِهِ مِنَ الثَّمَرَاتِ رِزْقًا لَكُمْ', highlightedWord: 'رِزْقًا', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002022.mp3', description: 'ترقيق', surah: 2, ayah: 22 },
+            { id: 'rr3', fullAyah: 'وَإِذْ نَجَّيْنَاكُمْ مِنْ آلِ فِرْعَوْنَ يَسُومُونَكُمْ سُوءَ الْعَذَابِ', highlightedWord: 'فِرْعَوْنَ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/002049.mp3', description: 'ترقيق', surah: 2, ayah: 49 },
         ],
         quiz: {
             question: 'متى ترقق الراء؟',
@@ -297,9 +299,9 @@ const TAJWEED_RULES: TajweedRule[] = [
         color: '#4B0082',
         poem: 'وَفَخِّمِ اللاَّمَ مِنِ اسْمِ اللَّهِ .. عَنْ فَتْحٍ اوْ ضَمٍّ كَعَبْدُ اللَّهِ',
         examples: [
-            { id: 'rl1', fullAyah: 'قُلْ هُوَ اللَّهُ أَحَدٌ', highlightedWord: 'اللَّهُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/112001.mp3', description: 'تفخيم' },
-            { id: 'rl2', fullAyah: 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ', highlightedWord: 'بِسْمِ اللَّهِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/001001.mp3', description: 'ترقيق' },
-            { id: 'rl3', fullAyah: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ', highlightedWord: 'لِلَّهِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/001002.mp3', description: 'ترقيق' },
+            { id: 'rl1', fullAyah: 'قُلْ هُوَ اللَّهُ أَحَدٌ', highlightedWord: 'اللَّهُ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/112001.mp3', description: 'تفخيم', surah: 112, ayah: 1 },
+            { id: 'rl2', fullAyah: 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ', highlightedWord: 'بِسْمِ اللَّهِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/001001.mp3', description: 'ترقيق', surah: 1, ayah: 1 },
+            { id: 'rl3', fullAyah: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ', highlightedWord: 'لِلَّهِ', audioUrl: 'https://www.everyayah.com/data/Husary_64kbps/001002.mp3', description: 'ترقيق', surah: 1, ayah: 2 },
         ],
         quiz: {
             question: 'متى تفخم لام لفظ الجلالة (الله)؟',
@@ -309,7 +311,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     }
 ];
 
-const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () => void }> = ({ onBack, onNavigateToMushaf }) => {
+const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (surah?: number, ayah?: number) => void }> = ({ onBack, onNavigateToMushaf }) => {
     const { theme } = useTheme();
     const [selectedRule, setSelectedRule] = useState<string | null>(null);
     const [playingAudio, setPlayingAudio] = useState<string | null>(null);
@@ -638,7 +640,12 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: () =
                                                 {/* Mushaf Integration Button */}
                                                 {onNavigateToMushaf && (
                                                     <button 
-                                                        onClick={onNavigateToMushaf}
+                                                        onClick={() => {
+                                                            const firstExample = rule.examples[0];
+                                                            if (onNavigateToMushaf && firstExample) {
+                                                                onNavigateToMushaf(firstExample.surah, firstExample.ayah);
+                                                            }
+                                                        }}
                                                         className="w-full mt-4 py-3 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98]"
                                                         style={{ backgroundColor: theme.palette[0] }}
                                                     >
