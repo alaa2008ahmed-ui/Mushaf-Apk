@@ -120,98 +120,25 @@ export const parseVoiceCommand = (
         }
     }
 
-    // 4. Theme Control: "ثيم" or "سيم" or "لون" + [اسم اللون]
-    const themeRegex = /(?:ثيم|سيم|لون|مظهر)\s+([آ-ي\s]+)/;
+    // 4. Theme Control: "ثيم" or "لون" + [اسم اللون]
+    const themeRegex = /(?:ثيم|لون|مظهر)\s+([آ-ي\s]+)/;
     const themeMatch = normalized.match(themeRegex);
     if (themeMatch) {
         const themeName = themeMatch[1].trim();
-        
-        // Main App Themes
-        const mainThemeMap: Record<string, string> = {
-            'اخضر': 'olive_grove', 'الاخضر': 'olive_grove',
-            'ازرق': 'modern_blue', 'الازرق': 'modern_blue',
-            'احمر': 'madinah_rose', 'الاحمر': 'madinah_rose',
-            'اسود': 'black_and_white', 'الاسود': 'black_and_white', 'ليلي': 'midnight_glass',
-            'ابيض': 'default', 'الابيض': 'default', 'نهاري': 'default',
-            'بني': 'vintage_paper', 'البني': 'vintage_paper', 'قديم': 'vintage_paper',
-            'بنفسجي': 'electric_violet', 'البنفسجي': 'electric_violet',
-            'وردي': 'sakura_breeze', 'الوردي': 'sakura_breeze',
-            'فيروزي': 'turquoise_gem', 'الفيروزي': 'turquoise_gem',
-            'الافتراضي': 'default', 'افتراضي': 'default',
-            'ابيض واسود': 'black_and_white',
-            'نور الفجر': 'fajr_light',
-            'الرمال الذهبيه': 'golden_sand', 'رمال ذهبيه': 'golden_sand',
-            'الزيتون المبارك': 'olive_grove', 'زيتون مبارك': 'olive_grove',
-            'كسوه الكعبه': 'kaaba_kiswa', 'كعبه': 'kaaba_kiswa', 'الكعبه': 'kaaba_kiswa',
-            'ورد المدينه': 'madinah_rose',
-            'حدائق الاندلس': 'andalusian_garden',
-            'المسجد الازرق': 'blue_mosque',
-            'الطين والارض': 'clay_earth',
-            'الحجر والرخام': 'slate_stone',
-            'ازرق عصري': 'modern_blue',
-            'بنفسجي كهربائي': 'electric_violet',
-            'نسيم الساكورا': 'sakura_breeze', 'ساكورا': 'sakura_breeze',
-            'نيون منتصف الليل': 'midnight_neon', 'نيون': 'midnight_neon',
-            'ارجواني ملكي': 'royal_purple', 'ارجواني': 'royal_purple',
-            'ليل الصحراء': 'desert_night', 'صحراء': 'desert_night',
-            'سلام المحيط': 'ocean_peace', 'محيط': 'ocean_peace',
-            'ورق عتيق': 'vintage_paper', 'ورق': 'vintage_paper',
-            'غابه عميقه': 'deep_forest', 'غابه': 'deep_forest',
-            'ضباب الخزامى': 'lavender_mist', 'خزامى': 'lavender_mist',
-            'كريستال شفاف': 'crystal_glass', 'كريستال': 'crystal_glass',
-            'زمرد زجاجي': 'frosted_emerald', 'زمرد': 'frosted_emerald',
-            'زجاج ليلي': 'midnight_glass', 'زجاج': 'midnight_glass'
+        // Mapping common Arabic color names to theme IDs
+        const themeMap: Record<string, string> = {
+            'اخضر': 'green', 'الأخضر': 'green',
+            'ازرق': 'blue', 'الأزرق': 'blue',
+            'احمر': 'red', 'الأحمر': 'red',
+            'اسود': 'dark', 'الأسود': 'dark', 'ليلي': 'dark',
+            'ابيض': 'light', 'الأبيض': 'light', 'نهاري': 'light',
+            'بني': 'sepia', 'البني': 'sepia', 'قديم': 'sepia',
+            'كعبه': 'kaaba_kiswa', 'الكعبه': 'kaaba_kiswa', 'كسوه': 'kaaba_kiswa'
         };
-
-        // Quran Reader Themes
-        const quranThemeMap: Record<string, string> = {
-            'ورق قديم': 'cream',
-            'اسود كامل': 'deep_black', 'اسود': 'deep_black', 'الاسود': 'deep_black',
-            'عصر ذهبي': 'golden_age', 'ذهبي': 'golden_age',
-            'اندلس': 'andalusia',
-            'قبه': 'medina', 'القبه': 'medina',
-            'تهجد': 'midnight',
-            'ازرق سماوي': 'blue_cyan', 'سماوي': 'blue_cyan',
-            'مرجان': 'coral',
-            'نعنع': 'mint',
-            'صندل': 'sandal',
-            'زيتون': 'olive',
-            'مسجد زمردي': 'emerald_mosque', 'زمردي': 'emerald_mosque',
-            'سماء الليل': 'night_sky',
-            'اسلامي حديث': 'modern_islamic', 'اسلامي': 'modern_islamic',
-            'ضوء القمر الفضي': 'silver_moon', 'فضي': 'silver_moon',
-            'كثبان رمليه': 'sand_dunes', 'رملي': 'sand_dunes',
-            'زخرفه تيل': 'teal_ornament', 'تيل': 'teal_ornament',
-            'ندى الصباح': 'morning_dew', 'صباحي': 'morning_dew',
-            'خشب دافئ': 'warm_wood', 'خشبي': 'warm_wood',
-            'ليلكي ناعم': 'soft_lilac', 'ليلكي': 'soft_lilac',
-            'روضه شريفه': 'medina_green', 'روضه': 'medina_green',
-            'ازرق اندلسي': 'andalusian_blue',
-            'ورد جوري': 'damascus_rose', 'جوري': 'damascus_rose',
-            'فخار': 'clay_pot',
-            'لؤلؤي': 'pearl_white',
-            'مذهب': 'quranic_gold'
-        };
-
-        const normalizedThemeName = normalizeArabic(themeName);
-        
-        // Check if it matches both (like 'الافتراضي' or 'كعبه' or 'اسود' or 'ابيض' or 'اخضر' or 'ازرق')
-        // We will send a special type 'both' if it's ambiguous, or just send both IDs.
-        const mainId = mainThemeMap[normalizedThemeName];
-        const quranId = quranThemeMap[normalizedThemeName];
-
-        if (mainId && quranId) {
-            return { action: 'set_theme', params: { theme: mainId, quranTheme: quranId, type: 'both' }, originalText: text };
-        } else if (mainId) {
-            return { action: 'set_theme', params: { theme: mainId, type: 'main' }, originalText: text };
-        } else if (quranId) {
-            return { action: 'set_theme', params: { theme: quranId, type: 'quran' }, originalText: text };
+        const themeId = themeMap[normalizeArabic(themeName)];
+        if (themeId) {
+            return { action: 'set_theme', params: { theme: themeId }, originalText: text };
         }
-    }
-
-    // 4.5 Open Themes Menu
-    if (normalized === 'الثيمات' || normalized === 'ثيمات' || normalized === 'السيمات' || normalized === 'سيمات') {
-        return { action: 'open_themes', originalText: text };
     }
 
     // 5. Action Verbs (Contextual Execution)
@@ -241,12 +168,6 @@ export const parseVoiceCommand = (
         'رجوع': 'go_back',
         'الرئيسية': 'go_home',
         'الرئيسيه': 'go_home',
-        'القراءه الافقيه': 'open_quran_horizontal',
-        'القراءة الافقية': 'open_quran_horizontal',
-        'القراءه الراسيه': 'open_quran_vertical',
-        'القراءة الراسية': 'open_quran_vertical',
-        'قراءه افقيه': 'open_quran_horizontal',
-        'قراءه راسيه': 'open_quran_vertical',
         'افقي': 'set_orientation_horizontal',
         'رأسي': 'set_orientation_vertical',
         'راسي': 'set_orientation_vertical',

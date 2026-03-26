@@ -35,8 +35,6 @@ const AVAILABLE_ACTIONS = [
     { id: 'open_calendar', name: 'فتح التقويم' },
     { id: 'open_hajj_umrah', name: 'فتح الحج والعمرة' },
     { id: 'open_voice_control', name: 'فتح التحكم الصوتي' },
-    { id: 'open_quran_horizontal', name: 'فتح القراءة الأفقية' },
-    { id: 'open_quran_vertical', name: 'فتح القراءة الرأسية' },
     { id: 'set_orientation_horizontal', name: 'القراءة الأفقية (عرضي)' },
     { id: 'set_orientation_vertical', name: 'القراءة الرأسية (طولي)' },
     { id: 'disable_voice_control', name: 'إيقاف التحكم الصوتي' },
@@ -137,11 +135,10 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             أمثلة سريعة للأوامر الذكية:
                         </h4>
                         <ul className="text-xs space-y-2 opacity-80 list-disc list-inside font-medium">
-                            <li>"الاستماع للقران" / "مواقيت الصلاه"</li>
-                            <li>"اذكار الصلاه" / "حصن المسلم"</li>
-                            <li>"التقويم" / "القبله" / "الحج والعمرة"</li>
                             <li>"اذهب إلى سورة الكهف آية عشرة"</li>
                             <li>"صفحة مائة" / "الجزء الثلاثون"</li>
+                            <li>"القراءة الأفقية" / "وضع طولي"</li>
+                            <li>"حصن المسلم" / "أذكار الصباح"</li>
                             <li>"إيقاف التحكم الصوتي" (للتعطيل الفوري)</li>
                         </ul>
                     </div>

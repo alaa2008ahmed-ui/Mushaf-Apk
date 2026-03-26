@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback, FC } from 'react';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import './QuranReader.css'; 
 import { JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, DEFAULT_SETTINGS, FONTS, SURAH_NAMES_AR } from '../components/QuranReader/constants';
-import { applyQuranTheme } from '../components/QuranReader/themeUtils';
 import SearchModal from '../components/QuranReader/SearchModal';
 import ThemesModal from '../components/QuranReader/ThemesModal';
 import SettingsModal from '../components/QuranReader/SettingsModal';
@@ -1439,10 +1438,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     window.dispatchEvent(new Event('settings-change'));
                     return newSettings;
                 });
-            } else if (action === 'set_quran_theme' && params?.theme) {
-                const themeId = params.theme;
-                applyQuranTheme(themeId, isLandscapeRef.current ? '_h' : '_v');
-                showToast(`تم تطبيق ثيم: ${THEMES[themeId as keyof typeof THEMES]?.name || themeId}`);
             } else if (action === 'set_font_size' && params?.size) {
                 setSettings(prev => {
                     const newSize = Math.max(16, Math.min(60, params.size));

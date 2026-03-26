@@ -10,7 +10,6 @@ import { registerBackInterceptor } from '../hooks/useBackButton';
 import VerseSection from '../components/MainMenu/VerseSection';
 import TitleSection from '../components/MainMenu/TitleSection';
 import GridSection from '../components/MainMenu/GridSection';
-import FloatingNeonTicker from '../components/FloatingNeonTicker';
 
 const DEFAULT_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
@@ -194,7 +193,6 @@ function MainMenu({ onNavigate, onOpenThemes }) {
               {/* Footer/Save Button */}
               {!isEditMode && (
                   <div className="themed-card p-2.5 rounded-2xl text-center w-full max-w-sm mx-auto mt-4 mb-4 relative">
-                      <FloatingNeonTicker />
                       <p className="text-[14px] font-bold" style={{ color: themeKey === 'default' ? '#10b981' : theme.textColor }}>
                           اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
                       </p>
