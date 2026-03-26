@@ -54,6 +54,8 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'open_calendar', phrase: 'فتح التقويم', action: 'open_calendar', isDefault: true },
     { id: 'open_hajj_umrah', phrase: 'فتح الحج والعمرة', action: 'open_hajj_umrah', isDefault: true },
     { id: 'open_quran', phrase: 'مصحف', action: 'open_quran', isDefault: true },
+    { id: 'nav_quran_page', phrase: 'صفحة القراءة', action: 'open_quran', isDefault: true },
+    { id: 'nav_quran_full', phrase: 'القرآن الكريم', action: 'open_quran', isDefault: true },
     { id: 'open_voice_control', phrase: 'فتح التحكم الصوتي', action: 'open_voice_control', isDefault: true },
     { id: 'disable_voice_control', phrase: 'إيقاف التحكم الصوتي', action: 'disable_voice_control', isDefault: true },
     // Direct Navigation Commands (No "Open" prefix)
