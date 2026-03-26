@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { READERS, TAFSEERS, JUZ_MAP } from './constants';
+import { normalizeArabic } from '../../src/utils/voiceParser';
 
 interface DownloadModalProps {
     onClose: () => void;
@@ -408,6 +409,40 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
         }
     };
 
+    useEffect(() => {
+        const handleVoiceCommand = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const { action, params, text } = customEvent.detail;
+            
+            if (action === 'go_to_surah' && params?.surah) {
+                toggleSurah(params.surah.toString());
+            } else if (action === 'go_to_juz' && params?.juz) {
+                toggleJuz(params.juz.toString());
+            } else if (action === 'download') {
+                if (selectedReader && (selectedSurahs.length > 0 || selectedJuzs.length > 0)) {
+                    downloadSelected();
+                } else {
+                    showToast('الرجاء اختيار القارئ والسورة/الجزء أولاً');
+                }
+            } else if (action === 'cancel') {
+                if (isDownloading) {
+                    stopDownload();
+                } else {
+                    onClose();
+                }
+            } else if (action === 'ui_discovery' && text) {
+                const normalizedText = normalizeArabic(text);
+                const reader = READERS.find(r => normalizeArabic(r.name).includes(normalizedText) || normalizedText.includes(normalizeArabic(r.name)));
+                if (reader) {
+                    setSelectedReader(reader.id);
+                }
+            }
+        };
+
+        window.addEventListener('voice-command', handleVoiceCommand);
+        return () => window.removeEventListener('voice-command', handleVoiceCommand);
+    }, [selectedReader, selectedSurahs, selectedJuzs, isDownloading, toggleSurah, toggleJuz, downloadSelected, stopDownload, onClose]);
+
     return (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[155] flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
@@ -674,6 +709,40 @@ export const TafsirDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qur
             throw new Error('Failed to download tafsir');
         }
     };
+
+    useEffect(() => {
+        const handleVoiceCommand = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const { action, params, text } = customEvent.detail;
+            
+            if (action === 'go_to_surah' && params?.surah) {
+                toggleSurah(params.surah.toString());
+            } else if (action === 'go_to_juz' && params?.juz) {
+                toggleJuz(params.juz.toString());
+            } else if (action === 'download') {
+                if (selectedTafsir && (selectedSurahs.length > 0 || selectedJuzs.length > 0)) {
+                    downloadSelected();
+                } else {
+                    showToast('الرجاء اختيار المفسر والسورة/الجزء أولاً');
+                }
+            } else if (action === 'cancel') {
+                if (isDownloading) {
+                    stopDownload();
+                } else {
+                    onClose();
+                }
+            } else if (action === 'ui_discovery' && text) {
+                const normalizedText = normalizeArabic(text);
+                const tafsir = TAFSEERS.find(t => normalizeArabic(t.name).includes(normalizedText) || normalizedText.includes(normalizeArabic(t.name)));
+                if (tafsir) {
+                    setSelectedTafsir(tafsir.id);
+                }
+            }
+        };
+
+        window.addEventListener('voice-command', handleVoiceCommand);
+        return () => window.removeEventListener('voice-command', handleVoiceCommand);
+    }, [selectedTafsir, selectedSurahs, selectedJuzs, isDownloading, toggleSurah, toggleJuz, downloadSelected, stopDownload, onClose]);
 
     return (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[156] flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>

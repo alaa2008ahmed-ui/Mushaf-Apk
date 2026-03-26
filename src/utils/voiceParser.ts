@@ -222,6 +222,8 @@ export const parseVoiceCommand = (
     const relativeMap: Record<string, string> = {
         'تكبير': 'increase_font',
         'تصغير': 'decrease_font',
+        'تكبير الخط': 'increase_font',
+        'تصغير الخط': 'decrease_font',
         'ايقاف': 'stop_audio',
         'تشغيل': 'play_audio',
         'التالي': 'next_page',
@@ -235,6 +237,8 @@ export const parseVoiceCommand = (
         'عرضي': 'set_orientation_horizontal',
         'طولي': 'set_orientation_vertical',
         'خروج': 'exit_app',
+        'الغاء': 'cancel',
+        'إلغاء': 'cancel',
         'صفحة القراءة': 'open_quran',
         'القرآن الكريم': 'open_quran',
         'القران الكريم': 'open_quran',

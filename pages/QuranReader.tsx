@@ -678,6 +678,9 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         setCurrentAyah({ s, a });
         setHighlightedAyahId(`ayah-${s}-${a}`);
         scrollToAyah(s, a, false);
+        
+        // Pause voice control if it's running
+        window.dispatchEvent(new CustomEvent('voice-control-pause'));
     
         const cacheKey = `${s}:${a}`;
         let audio: HTMLAudioElement;
@@ -711,7 +714,11 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         currentAudioRef.current = audio;
     
         audio.onplaying = () => { setIsPlaying(true); setIsAudioLoading(false); };
-        audio.onpause = () => setIsPlaying(false);
+        audio.onpause = () => { 
+            setIsPlaying(false);
+            // Resume voice control if it was running before
+            window.dispatchEvent(new CustomEvent('voice-control-resume'));
+        };
         audio.onwaiting = () => setIsAudioLoading(true);
         audio.onended = () => {
             const maxRepeat = ayahRepeatCountRef.current;
@@ -732,6 +739,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             showToast('خطأ في تحميل المقطع الصوتي.');
             stopAudio();
             delete audioCacheRef.current[cacheKey];
+            window.dispatchEvent(new CustomEvent('voice-control-resume'));
         };
     
         try {
@@ -742,6 +750,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             showToast('فشل تشغيل الصوت.');
             stopAudio();
             delete audioCacheRef.current[cacheKey];
+            window.dispatchEvent(new CustomEvent('voice-control-resume'));
         }
     }, [settings.reader, settings.ayahRepeatCount, stopAudio, preloadAudioQueue, manageAudioCache, showToast, scrollToAyah]);
 
@@ -1382,6 +1391,13 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     useEffect(() => {
         const handleGlobalVoiceCommand = (e: any) => {
             const { action, text, params } = e.detail;
+            
+            // Prevent background navigation if download modals are open
+            const isDownloadModalOpen = activeModals.includes('quran-download-modal') || activeModals.includes('tafsir-download-modal');
+            if (isDownloadModalOpen && ['quran_navigation', 'go_to_page', 'go_to_juz', 'go_to_surah', 'go_to_ayah', 'next_page', 'prev_page'].includes(action)) {
+                return; // Let the modal handle it
+            }
+
             if (action === 'quran_navigation' && text) {
                 handleVoiceCommand(text);
             } else if (action === 'go_to_page' && params?.page) {
@@ -1418,13 +1434,15 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 openModal('settings-modal');
             } else if (action === 'download_quran') {
                 openModal('quran-download-modal');
+            } else if (action === 'download_tafsir') {
+                openModal('tafsir-download-modal');
             } else if (action === 'show_tafsir') {
                 openModal('tafsir-modal');
             } else if (action === 'open_bookmarks') {
                 openModal('bookmarks-modal');
             } else if (action === 'increase_font') {
                 setSettings(prev => {
-                    const newSize = Number((Math.min(4.5, prev.fontSize + 0.1)).toFixed(1));
+                    const newSize = Number((Math.min(4.5, prev.fontSize + 0.01)).toFixed(2));
                     const newSettings = { ...prev, fontSize: newSize };
                     localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
@@ -1432,7 +1450,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 });
             } else if (action === 'decrease_font') {
                 setSettings(prev => {
-                    const newSize = Number((Math.max(0.5, prev.fontSize - 0.1)).toFixed(1));
+                    const newSize = Number((Math.max(0.5, prev.fontSize - 0.01)).toFixed(2));
                     const newSettings = { ...prev, fontSize: newSize };
                     localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
@@ -1447,17 +1465,13 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     return newSettings;
                 });
             } else if (action === 'set_theme' && params?.theme) {
-                if (activeModals.includes('themes-modal')) {
-                    updateSetting('theme', params.theme);
-                } else {
-                    console.log('Voice Control - Theme command ignored because themes modal is closed');
-                }
+                updateSetting('theme', params.theme);
             }
         };
 
         window.addEventListener('voice-command', handleGlobalVoiceCommand);
         return () => window.removeEventListener('voice-command', handleGlobalVoiceCommand);
-    }, [visiblePages, jumpToPage, handlePlayButtonPointerDown, handlePlayButtonPointerUp, openModal, handleVoiceCommand]);
+    }, [visiblePages, jumpToPage, handlePlayButtonPointerDown, handlePlayButtonPointerUp, openModal, handleVoiceCommand, activeModals]);
 
     const saveBookmark = () => { 
         if (!currentAyah) { showToast('اختر آية أولاً'); return; } 

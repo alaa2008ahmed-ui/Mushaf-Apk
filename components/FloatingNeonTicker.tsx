@@ -55,7 +55,7 @@ const FloatingNeonTicker: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Error fetching ticker data:', error);
+        // Ignore errors to prevent console spam during background polling
       }
     };
 

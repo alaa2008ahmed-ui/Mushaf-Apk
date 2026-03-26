@@ -67,14 +67,11 @@ function App() {
     
     // 1. Handle Theme Change
     if (action === 'set_theme' && params?.theme) {
-      if (isThemeSelectorOpen) {
-        applyPresetTheme(params.theme);
-        return;
-      } else if (page === 'quran') {
+      if (page === 'quran') {
         window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
         return;
       } else {
-        console.log('Voice Control - Theme command ignored because selector is closed');
+        applyPresetTheme(params.theme);
         return;
       }
     }
@@ -117,7 +114,7 @@ function App() {
     else if (action === 'go_back') navigateBack();
     
     // 4. Quran Specific Actions (Forwarded to QuranReader via Event)
-    else if (['next_page', 'prev_page', 'play_audio', 'stop_audio', 'quran_navigation', 'increase_font', 'decrease_font', 'change_theme', 'download_quran', 'show_tafsir', 'open_bookmarks', 'go_to_page', 'go_to_juz', 'go_to_surah', 'go_to_ayah', 'set_font_size', 'contextual_number'].includes(action)) {
+    else if (['next_page', 'prev_page', 'play_audio', 'stop_audio', 'quran_navigation', 'increase_font', 'decrease_font', 'change_theme', 'download_quran', 'download_tafsir', 'show_tafsir', 'open_bookmarks', 'go_to_page', 'go_to_juz', 'go_to_surah', 'go_to_ayah', 'set_font_size', 'contextual_number', 'download', 'cancel', 'ui_discovery'].includes(action)) {
       setHistory(prev => {
         if (prev[prev.length - 1] === 'quran') {
           window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
@@ -230,7 +227,9 @@ function AppContent({
 import { useVoiceControl } from './context/VoiceControlContext';
 
 const VoiceControlToggle = () => {
-  const { isEnabled, toggleEnabled, isListening } = useVoiceControl();
+  const { isEnabled, toggleEnabled, isListening, showVoiceIcon } = useVoiceControl();
+
+  if (!showVoiceIcon) return null;
 
   return (
     <motion.button

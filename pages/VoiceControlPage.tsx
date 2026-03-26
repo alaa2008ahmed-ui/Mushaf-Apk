@@ -25,6 +25,7 @@ const AVAILABLE_ACTIONS = [
     { id: 'decrease_font', name: 'تصغير الخط' },
     { id: 'change_theme', name: 'تغيير لون الخلفية' },
     { id: 'download_quran', name: 'تحميل القرآن' },
+    { id: 'download_tafsir', name: 'تحميل التفسير' },
     { id: 'show_tafsir', name: 'عرض التفسير' },
     { id: 'open_nawawi', name: 'فتح الأربعون النووية' },
     { id: 'open_calculators', name: 'فتح الحاسبة الشرعية' },
@@ -51,7 +52,9 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         updateCommand, 
         addCommand, 
         deleteCommand,
-        resetToDefaults
+        resetToDefaults,
+        showVoiceIcon,
+        setShowVoiceIcon
     } = useVoiceControl();
 
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -128,6 +131,20 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         )}
                     </div>
 
+                    {/* Settings Section */}
+                    <div className="themed-card p-6 flex items-center justify-between">
+                        <div>
+                            <h3 className="font-bold text-lg">أيقونة التحكم الصوتي</h3>
+                            <p className="text-xs opacity-60 mt-1">إظهار أيقونة التحكم الصوتي في الصفحة الرئيسية</p>
+                        </div>
+                        <button 
+                            onClick={() => setShowVoiceIcon(!showVoiceIcon)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showVoiceIcon ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                        >
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showVoiceIcon ? '-translate-x-6' : '-translate-x-1'}`} />
+                        </button>
+                    </div>
+
                     {/* Help Section */}
                     <div className="p-5 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/20">
                         <h4 className="text-sm font-bold text-emerald-600 mb-3 flex items-center gap-2">
@@ -188,7 +205,20 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <section className="space-y-2">
                                 <h4 className="font-bold text-primary flex items-center gap-2">
                                     <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    4. الكتابة الصوتية (Contextual Focus):
+                                    4. تحميل القرآن والتفسير صوتياً:
+                                </h4>
+                                <ul className="list-disc list-inside pr-4 space-y-1 text-xs">
+                                    <li>انطق "تحميل القرآن" أو "تحميل التفسير" لفتح القائمة.</li>
+                                    <li>داخل القائمة: انطق اسم السورة (مثل "البقرة")، أو رقم الجزء (مثل "الجزء الأول")، أو اسم القارئ/المفسر لتحديده مباشرة.</li>
+                                    <li>انطق "تحميل" لبدء التنزيل فوراً.</li>
+                                    <li>انطق "إلغاء" لإيقاف التحميل أو إغلاق القائمة.</li>
+                                </ul>
+                            </section>
+
+                            <section className="space-y-2">
+                                <h4 className="font-bold text-primary flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                    5. الكتابة الصوتية (Contextual Focus):
                                 </h4>
                                 <p className="pr-4">عندما تفتح مربع البحث أو أي حقل كتابة، سيتحول المحرك تلقائياً لكتابة ما تنطقه داخل المربع بدلاً من تنفيذه كأمر، مما يسهل عليك البحث عن السور أو الأذكار.</p>
                             </section>
@@ -196,7 +226,7 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <section className="space-y-2">
                                 <h4 className="font-bold text-primary flex items-center gap-2">
                                     <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    5. الوضع الصامت (Silent Background):
+                                    6. الوضع الصامت (Silent Background):
                                 </h4>
                                 <p className="pr-4">يعمل المحرك الآن في صمت تام دون إصدار نغمات تنبيه مزعجة، مما يضمن استمرار صوت القارئ دون انقطاع أثناء استماعك للقرآن الكريم.</p>
                             </section>

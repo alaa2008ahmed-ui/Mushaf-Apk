@@ -14,6 +14,8 @@ interface VoiceControlContextType {
     isEnabled: boolean;
     setIsEnabled: (enabled: boolean) => void;
     toggleEnabled: () => void;
+    showVoiceIcon: boolean;
+    setShowVoiceIcon: (show: boolean) => void;
     isListening: boolean;
     transcript: string;
     commands: VoiceCommand[];
@@ -30,6 +32,7 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'prev_page', phrase: 'الصفحة السابقة', action: 'prev_page', isDefault: true },
     { id: 'open_search', phrase: 'فتح البحث', action: 'open_search', isDefault: true },
     { id: 'open_themes', phrase: 'فتح الثيمات', action: 'open_themes', isDefault: true },
+    { id: 'open_themes_alt', phrase: 'فتح السيمات', action: 'open_themes', isDefault: true },
     { id: 'open_settings', phrase: 'فتح الإعدادات', action: 'open_settings', isDefault: true },
     { id: 'open_bookmarks', phrase: 'فتح العلامات', action: 'open_bookmarks', isDefault: true },
     { id: 'open_tajweed', phrase: 'فتح تعليم التجويد', action: 'open_tajweed', isDefault: true },
@@ -41,9 +44,12 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'stop_audio', phrase: 'إيقاف الصوت', action: 'stop_audio', isDefault: true },
     { id: 'go_home', phrase: 'الرئيسية', action: 'go_home', isDefault: true },
     { id: 'increase_font', phrase: 'تكبير الخط', action: 'increase_font', isDefault: true },
+    { id: 'increase_font_alt', phrase: 'تكبير', action: 'increase_font', isDefault: true },
     { id: 'decrease_font', phrase: 'تصغير الخط', action: 'decrease_font', isDefault: true },
+    { id: 'decrease_font_alt', phrase: 'تصغير', action: 'decrease_font', isDefault: true },
     { id: 'change_theme', phrase: 'تغيير لون الخلفية', action: 'change_theme', isDefault: true },
     { id: 'download_quran', phrase: 'تحميل القرآن', action: 'download_quran', isDefault: true },
+    { id: 'download_tafsir', phrase: 'تحميل التفسير', action: 'download_tafsir', isDefault: true },
     { id: 'show_tafsir', phrase: 'عرض التفسير', action: 'show_tafsir', isDefault: true },
     { id: 'open_nawawi', phrase: 'فتح الأربعون النووية', action: 'open_nawawi', isDefault: true },
     { id: 'open_calculators', phrase: 'فتح الحاسبة الشرعية', action: 'open_calculators', isDefault: true },
@@ -68,12 +74,17 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'nav_qibla', phrase: 'القبله', action: 'open_qibla', isDefault: true },
     { id: 'nav_hajj_umrah', phrase: 'الحج والعمرة', action: 'open_hajj_umrah', isDefault: true },
     { id: 'nav_voice_control', phrase: 'التحكم الصوتى', action: 'open_voice_control', isDefault: true },
+    { id: 'nav_next_page', phrase: 'التالي', action: 'next_page', isDefault: true },
+    { id: 'nav_prev_page', phrase: 'السابق', action: 'prev_page', isDefault: true },
+    { id: 'nav_themes', phrase: 'ثيمات', action: 'open_themes', isDefault: true },
+    { id: 'nav_themes_alt', phrase: 'سيمات', action: 'open_themes', isDefault: true },
 ];
 
 const VoiceControlContext = createContext<VoiceControlContextType | undefined>(undefined);
 
 export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onAction: (action: string, text: string, params?: any) => void }> = ({ children, onAction }) => {
     const [isEnabled, setIsEnabled] = useState(() => localStorage.getItem('voice_control_enabled') === 'true');
+    const [showVoiceIcon, setShowVoiceIcon] = useState(() => localStorage.getItem('show_voice_icon') !== 'false');
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
     const [currentPage, setCurrentPage] = useState('home');
@@ -117,17 +128,32 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         const activeElement = document.activeElement;
         if (activeElement && (activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement)) {
             console.log('Voice Control - Typing into focused input');
+            
+            // Special case for Search: Clear search if user says 'إلغاء'
+            if ((currentPage === 'search' || activeElement.closest('.search-modal')) && (normalizedInput === 'الغاء' || normalizedInput === 'إلغاء' || normalizedInput === 'امسح')) {
+                console.log('Voice Control - Clearing search');
+                window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'clear_search' } }));
+                return;
+            }
+
             const start = activeElement.selectionStart || 0;
             const end = activeElement.selectionEnd || 0;
             const val = activeElement.value;
-            activeElement.value = val.substring(0, start) + text + val.substring(end);
-            activeElement.selectionStart = activeElement.selectionEnd = start + text.length;
+            // For search, we might want to replace the whole text if they say a new word, 
+            // but appending is safer. Let's just append with a space if there's already text.
+            const newText = val.length > 0 ? val + ' ' + text : text;
+            activeElement.value = newText;
+            activeElement.selectionStart = activeElement.selectionEnd = newText.length;
+            
+            // React needs a native input event to update state
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+            nativeInputValueSetter?.call(activeElement, newText);
             activeElement.dispatchEvent(new Event('input', { bubbles: true }));
             
             // Special case for Search: Execute search immediately
             if (currentPage === 'search' || activeElement.closest('.search-modal')) {
                 console.log('Voice Control - Executing search');
-                window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'execute_search', text } }));
+                window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'execute_search', text: newText } }));
             }
             return;
         }
@@ -221,7 +247,8 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
 
             if (!webRecognitionRef.current) {
                 const recognition = new SpeechRecognitionAPI();
-                recognition.continuous = false; // We restart it on end to mimic continuous but be more stable
+                // Set continuous to true to prevent constant restarting and beeping
+                recognition.continuous = true; 
                 recognition.lang = 'ar-SA';
                 recognition.interimResults = true;
                 
@@ -244,10 +271,12 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                         setIsEnabled(false);
                         setIsListening(false);
                     }
+                    // If error is no-speech, we can just let it continue or restart silently
                 };
                 
                 recognition.onend = () => {
                     if (isEnabledRef.current) {
+                        // Only restart if it's still supposed to be enabled
                         try {
                             webRecognitionRef.current?.start();
                         } catch (e) {
@@ -284,21 +313,6 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                 console.warn('Permission check error (proceeding anyway):', permError);
             }
 
-            // Remove any existing listeners to prevent duplicates
-            try {
-                await SpeechRecognition.removeAllListeners();
-            } catch (e) {
-                // Ignore
-            }
-
-            // Add listener for partial results to update UI in real-time
-            SpeechRecognition.addListener('partialResults', (data: any) => {
-                if (data && data.matches && data.matches.length > 0) {
-                    const partialTranscript = data.matches[0].trim().toLowerCase();
-                    setTranscript(partialTranscript);
-                }
-            });
-
             // 2. Start listening loop
             const listenLoop = async () => {
                 if (!isEnabledRef.current) {
@@ -311,7 +325,7 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                     const result = await SpeechRecognition.start({
                         language: "ar-SA",
                         maxResults: 1,
-                        partialResults: true, // Changed to true for real-time updates and better stability
+                        partialResults: false, // Changed to false for stability on mobile
                         popup: false 
                     });
 
@@ -357,11 +371,6 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                 webRecognitionRef.current.stop();
             }
             const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
-            try {
-                await SpeechRecognition.removeAllListeners();
-            } catch (e) {
-                // Ignore
-            }
             await SpeechRecognition.stop();
         } catch (e: any) {
             // Ignore "Method not implemented on web" error as it's expected in browser
@@ -397,6 +406,32 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         };
     }, []);
 
+    // Handle pause/resume from audio playback
+    useEffect(() => {
+        const handlePause = () => {
+            if (isEnabledRef.current) {
+                console.log('Voice Control - Pausing for audio playback');
+                stopRecognition();
+                setIsListening(false);
+            }
+        };
+
+        const handleResume = () => {
+            if (isEnabledRef.current) {
+                console.log('Voice Control - Resuming after audio playback');
+                startRecognition();
+            }
+        };
+
+        window.addEventListener('voice-control-pause', handlePause);
+        window.addEventListener('voice-control-resume', handleResume);
+
+        return () => {
+            window.removeEventListener('voice-control-pause', handlePause);
+            window.removeEventListener('voice-control-resume', handleResume);
+        };
+    }, [startRecognition, stopRecognition]);
+
     const toggleEnabled = useCallback(() => {
         setIsEnabled(prev => !prev);
     }, []);
@@ -423,11 +458,18 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         setCommands(DEFAULT_COMMANDS);
     };
 
+    const handleSetShowVoiceIcon = (show: boolean) => {
+        setShowVoiceIcon(show);
+        localStorage.setItem('show_voice_icon', String(show));
+    };
+
     return (
         <VoiceControlContext.Provider value={{
             isEnabled,
             setIsEnabled,
             toggleEnabled,
+            showVoiceIcon,
+            setShowVoiceIcon: handleSetShowVoiceIcon,
             isListening,
             transcript,
             commands,
