@@ -54,33 +54,37 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:weightSum="5">
+        android:weightSum="6">
 
-        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+        <LinearLayout android:id="@+id/row_fajr" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="فجر" android:textColor="#AAFFFFFF" android:textSize="9sp" />
             <TextView android:id="@+id/time_fajr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#FFFFFF" android:textSize="10sp" />
         </LinearLayout>
 
-        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+        <LinearLayout android:id="@+id/row_sunrise" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="شروق" android:textColor="#AAFFFFFF" android:textSize="9sp" />
+            <TextView android:id="@+id/time_sunrise" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#FFFFFF" android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/row_dhuhr" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ظهر" android:textColor="#AAFFFFFF" android:textSize="9sp" />
             <TextView android:id="@+id/time_dhuhr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#FFFFFF" android:textSize="10sp" />
         </LinearLayout>
 
-        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+        <LinearLayout android:id="@+id/row_asr" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="عصر" android:textColor="#AAFFFFFF" android:textSize="9sp" />
             <TextView android:id="@+id/time_asr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#FFFFFF" android:textSize="10sp" />
         </LinearLayout>
 
-        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+        <LinearLayout android:id="@+id/row_maghrib" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="مغرب" android:textColor="#AAFFFFFF" android:textSize="9sp" />
             <TextView android:id="@+id/time_maghrib" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#FFFFFF" android:textSize="10sp" />
         </LinearLayout>
 
-        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+        <LinearLayout android:id="@+id/row_isha" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="عشاء" android:textColor="#AAFFFFFF" android:textSize="9sp" />
             <TextView android:id="@+id/time_isha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--:--" android:textColor="#FFFFFF" android:textSize="10sp" />
         </LinearLayout>
 
     </LinearLayout>
-
 </LinearLayout>
