@@ -1,4 +1,4 @@
-package com.mushaf.ahmedandlayla;
+package com.mushaf.ahmedandlayla; // تم التعديل إلى الاسم المعتمد (y)
 
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
@@ -8,6 +8,9 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.widget.RemoteViews;
 import org.json.JSONObject;
+
+// السطر التالي هو المفتاح لحل مشكلة الـ 22 خطأ (ربط الفهرس بالحزمة الصحيحة)
+import com.mushaf.ahmedandlayla.R; 
 
 public class PrayerWidgetProvider extends AppWidgetProvider {
 
@@ -19,10 +22,11 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
     }
 
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
-        // Read data from SharedPreferences (Capacitor default storage)
+        // قراءة البيانات من مخزن Capacitor المشترك
         SharedPreferences prefs = context.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
         String prayerJson = prefs.getString("widget_prayer_data", null);
 
+        // ربط الواجهة (الريدجت) مع الحزمة الصحيحة
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.prayer_widget);
 
         if (prayerJson != null) {
@@ -31,12 +35,12 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                 JSONObject times = data.getJSONObject("times");
                 String nextPrayerId = data.getString("next_prayer_id");
 
-                // Update Hijri Date and Next Prayer Info
+                // تحديث التاريخ الهجري ومعلومات الصلاة القادمة
                 views.setTextViewText(R.id.widget_hijri_date, data.getString("hijri"));
                 views.setTextViewText(R.id.widget_next_prayer_name, "الصلاة القادمة: " + data.getString("next_prayer_name"));
                 views.setTextViewText(R.id.widget_next_prayer_time, data.getString("remaining_time"));
 
-                // Update Prayer Times
+                // تحديث أوقات الصلوات
                 views.setTextViewText(R.id.time_fajr, times.getString("fajr"));
                 views.setTextViewText(R.id.time_sunrise, times.getString("sunrise"));
                 views.setTextViewText(R.id.time_dhuhr, times.getString("dhuhr"));
@@ -44,9 +48,9 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                 views.setTextViewText(R.id.time_maghrib, times.getString("maghrib"));
                 views.setTextViewText(R.id.time_isha, times.getString("isha"));
 
-                // Reset Backgrounds
+                // إعداد الألوان (تصفير الخلفيات)
                 int defaultColor = Color.TRANSPARENT;
-                int highlightColor = Color.parseColor("#33FFD700"); // Semi-transparent Gold
+                int highlightColor = Color.parseColor("#33FFD700"); // ذهبي نيون شفاف
 
                 views.setInt(R.id.row_fajr, "setBackgroundColor", defaultColor);
                 views.setInt(R.id.row_sunrise, "setBackgroundColor", defaultColor);
@@ -55,7 +59,7 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                 views.setInt(R.id.row_maghrib, "setBackgroundColor", defaultColor);
                 views.setInt(R.id.row_isha, "setBackgroundColor", defaultColor);
 
-                // Highlight Next Prayer
+                // تظليل الصلاة القادمة فقط
                 if (nextPrayerId.equals("fajr")) views.setInt(R.id.row_fajr, "setBackgroundColor", highlightColor);
                 else if (nextPrayerId.equals("sunrise")) views.setInt(R.id.row_sunrise, "setBackgroundColor", highlightColor);
                 else if (nextPrayerId.equals("dhuhr")) views.setInt(R.id.row_dhuhr, "setBackgroundColor", highlightColor);
