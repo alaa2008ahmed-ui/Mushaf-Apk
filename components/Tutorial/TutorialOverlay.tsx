@@ -105,17 +105,15 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-6 text-white text-center select-none"
+          className="fixed inset-0 z-[9999] select-none overflow-hidden"
           onClick={handleClose}
         >
-          {/* Background Overlay when no target */}
-          {!targetRect && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="absolute inset-0 bg-black/80" 
-            />
-          )}
+          {/* Background Overlay */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 bg-black/85" 
+          />
 
           {/* Highlight Target */}
           {targetRect && (
@@ -146,53 +144,55 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
             />
           )}
 
-          <div className="relative w-full h-full flex flex-col items-center justify-center pointer-events-none">
-            {/* Step Content - Centered */}
+          {/* Centered Tooltip Container */}
+          <div className="fixed inset-0 flex items-center justify-center p-6 pointer-events-none z-[10001]">
             <motion.div
               key={currentStep}
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: -20 }}
-              className="absolute flex flex-col items-center gap-4 pointer-events-auto cursor-pointer z-[10001]"
-              style={tooltipStyle}
+              className="flex flex-col items-center gap-4 pointer-events-auto cursor-pointer w-full max-w-[320px] text-center"
               onClick={handleNext}
             >
               {step.icon && (
-                <div className="p-3 bg-white/20 rounded-full backdrop-blur-sm shadow-xl border border-white/30">
+                <div className="p-4 bg-white/20 rounded-full backdrop-blur-md shadow-2xl border border-white/30">
                   {step.icon}
                 </div>
               )}
               
-              <div className="w-full bg-black/60 p-6 rounded-3xl backdrop-blur-xl border border-white/20 shadow-2xl">
-                <h3 className="text-lg font-bold mb-4 leading-relaxed">
+              <div className="w-full bg-black/80 p-6 rounded-[2rem] backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <h3 className="text-xl font-bold mb-6 leading-relaxed text-white">
                   {step.text}
                 </h3>
                 
-                <div className="flex items-center justify-center gap-2 mt-2">
+                <div className="flex items-center justify-center gap-2">
                   <button 
-                    className="px-6 py-2 bg-white text-black rounded-full text-sm font-bold flex items-center gap-1 active:scale-95 transition-transform"
+                    className="px-8 py-3 bg-white text-black rounded-full text-base font-bold flex items-center gap-2 active:scale-95 transition-transform shadow-lg"
                     onClick={handleNext}
                   >
                     {currentStep === steps.length - 1 ? 'إنهاء' : 'التالي'}
-                    {currentStep < steps.length - 1 && <ChevronLeft className="w-4 h-4" />}
+                    {currentStep < steps.length - 1 && <ChevronLeft className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
             </motion.div>
+          </div>
 
-            {/* Global Instruction */}
-            <div className="absolute bottom-10 left-0 right-0 text-center opacity-70 text-sm animate-pulse">
-              اضغط في أي مكان فارغ للخروج
-            </div>
-
+          {/* Bottom Indicators & Instructions */}
+          <div className="fixed bottom-10 left-0 right-0 flex flex-col items-center gap-6 pointer-events-none z-[10002]">
             {/* Step Indicator */}
-            <div className="absolute bottom-20 flex gap-2">
+            <div className="flex gap-2.5">
               {steps.map((_, idx) => (
                 <div 
                   key={idx} 
-                  className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentStep ? 'w-6 bg-white' : 'w-2 bg-white/30'}`}
+                  className={`h-2 rounded-full transition-all duration-500 ${idx === currentStep ? 'w-8 bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'w-2 bg-white/20'}`}
                 />
               ))}
+            </div>
+
+            {/* Global Instruction */}
+            <div className="text-white/60 text-sm font-medium animate-pulse tracking-wide">
+              اضغط في أي مكان فارغ للخروج
             </div>
           </div>
         </motion.div>
