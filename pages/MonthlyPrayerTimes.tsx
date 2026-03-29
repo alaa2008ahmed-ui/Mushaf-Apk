@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { usePrayerTimes } from '../context/PrayerTimesContext';
 import { Coordinates, CalculationMethod, PrayerTimes as AdhanPrayerTimes } from 'adhan';
@@ -10,6 +10,8 @@ import { Share, ArrowRight, Download, ChevronRight, ChevronLeft } from 'lucide-r
 import { Share as CapacitorShare } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
+import BottomBar from '../components/BottomBar';
+import { registerBackInterceptor } from '../hooks/useBackButton';
 
 const getCalculationParams = (country: string, code: string) => {
     let params = CalculationMethod.MuslimWorldLeague();
@@ -38,12 +40,22 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
     const { config } = usePrayerTimes();
     const [currentHijriDate, setCurrentHijriDate] = useState(moment());
     const [isExporting, setIsExporting] = useState(false);
+    const [isSharing, setIsSharing] = useState(false);
     const pdfTableRef = useRef<HTMLDivElement>(null);
 
     const isBlackAndWhite = themeKey === 'black_and_white';
     const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
     const secondaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[1];
     const topBarTextColor = theme.topBarText || (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
+
+    useEffect(() => {
+        const interceptor = () => {
+            onBack();
+            return true;
+        };
+        const unregister = registerBackInterceptor(interceptor);
+        return unregister;
+    }, [onBack]);
 
     const monthData = useMemo(() => {
         const year = currentHijriDate.iYear();
@@ -96,65 +108,96 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
     const monthNameAr = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', { month: 'long' }).format(currentHijriDate.toDate());
     const hijriYear = currentHijriDate.iYear();
 
+    const generateImage = async () => {
+        if (!pdfTableRef.current) return null;
+        const canvas = await html2canvas(pdfTableRef.current, {
+            scale: 2.5, // Increased scale for better print quality and clarity
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            windowWidth: 800
+        });
+        return {
+            canvas,
+            dataUrl: canvas.toDataURL('image/jpeg', 0.95) // High quality JPEG
+        };
+    };
+
     const handleShare = async () => {
-        const text = `مواقيت الصلاة لشهر ${monthNameAr} ${hijriYear} هـ\nالموقع: ${config.location.cityGov}\nتم الإنشاء بواسطة: مصحف احمد وليلى\n\n`;
+        setIsSharing(true);
+        const text = `مواقيت الصلاة لشهر ${monthNameAr} ${hijriYear} هـ\nالموقع: ${config.location.cityGov}\nتم الإنشاء بواسطة: مصحف احمد وليلى`;
         try {
+            const result = await generateImage();
+            if (!result) return;
+            
+            const fileName = `prayer_times_${Date.now()}.jpg`;
+
             if (Capacitor.isNativePlatform()) {
+                const base64Data = result.dataUrl.split(',')[1];
+                const savedFile = await Filesystem.writeFile({
+                    path: fileName,
+                    data: base64Data,
+                    directory: Directory.Cache
+                });
+                
                 await CapacitorShare.share({
                     title: `مواقيت الصلاة - ${monthNameAr}`,
                     text: text,
+                    url: savedFile.uri,
                     dialogTitle: 'مشاركة مواقيت الصلاة',
                 });
             } else if (navigator.share) {
-                await navigator.share({
-                    title: `مواقيت الصلاة - ${monthNameAr}`,
-                    text: text,
-                });
+                try {
+                    const blob = await (await fetch(result.dataUrl)).blob();
+                    const file = new File([blob], fileName, { type: 'image/jpeg' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            title: `مواقيت الصلاة - ${monthNameAr}`,
+                            text: text,
+                            files: [file]
+                        });
+                    } else {
+                        await navigator.share({
+                            title: `مواقيت الصلاة - ${monthNameAr}`,
+                            text: text,
+                        });
+                    }
+                } catch (e) {
+                    await navigator.share({ title: `مواقيت الصلاة`, text: text });
+                }
             } else {
                 alert("المشاركة غير مدعومة في هذا المتصفح");
             }
         } catch (err) {
             console.error("Share failed:", err);
+        } finally {
+            setIsSharing(false);
         }
     };
 
     const handleExportPDF = async () => {
-        if (!pdfTableRef.current) return;
         setIsExporting(true);
-        
         try {
-            const canvas = await html2canvas(pdfTableRef.current, {
-                scale: 2, // Higher quality
-                useCORS: true,
-                backgroundColor: '#ffffff',
-                windowWidth: 800
-            });
+            const result = await generateImage();
+            if (!result) return;
+            const { canvas, dataUrl } = result;
             
-            const imgData = canvas.toDataURL('image/png');
-            
-            // Create a custom PDF size that exactly matches the canvas dimensions
             const pdf = new jsPDF({
                 orientation: canvas.width > canvas.height ? 'l' : 'p',
                 unit: 'px',
                 format: [canvas.width, canvas.height]
             });
             
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.addImage(dataUrl, 'JPEG', 0, 0, canvas.width, canvas.height);
             
             const fileName = `prayer_times_${hijriYear}_${currentHijriDate.iMonth() + 1}.pdf`;
 
             if (Capacitor.isNativePlatform()) {
-                // Get base64 string
                 const pdfBase64 = pdf.output('datauristring').split(',')[1];
-                
-                // Save to device
                 const savedFile = await Filesystem.writeFile({
                     path: fileName,
                     data: pdfBase64,
                     directory: Directory.Cache
                 });
-                
-                // Share the file
                 await CapacitorShare.share({
                     title: 'مواقيت الصلاة',
                     text: `مواقيت الصلاة لشهر ${monthNameAr} ${hijriYear} هـ`,
@@ -203,6 +246,28 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                 </button>
             </div>
 
+            {/* Actions */}
+            <div className="flex justify-center gap-4 p-4 pb-0">
+                <button 
+                    onClick={handleShare}
+                    disabled={isSharing}
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-bold text-white transition-transform active:scale-95 disabled:opacity-50 min-w-[120px] shadow-sm"
+                    style={{ backgroundColor: primaryColor }}
+                >
+                    <Share size={18} />
+                    <span>{isSharing ? 'جاري...' : 'مشاركة'}</span>
+                </button>
+                <button 
+                    onClick={handleExportPDF}
+                    disabled={isExporting}
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-bold text-white transition-transform active:scale-95 disabled:opacity-50 min-w-[120px] shadow-sm"
+                    style={{ backgroundColor: secondaryColor }}
+                >
+                    <Download size={18} />
+                    <span>{isExporting ? 'جاري...' : 'PDF'}</span>
+                </button>
+            </div>
+
             {/* Table */}
             <main className="flex-1 overflow-y-auto p-4 pb-24">
                 <div className="max-w-4xl mx-auto overflow-x-auto rounded-xl border shadow-sm" style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--card-bg)' }}>
@@ -242,37 +307,10 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                 </div>
             </main>
 
-            {/* Bottom Actions */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-black/80 backdrop-blur-md border-t flex justify-center gap-4 z-50" style={{ borderColor: 'var(--card-border)' }}>
-                <button 
-                    onClick={onBack}
-                    className="flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-transform active:scale-95"
-                    style={{ backgroundColor: 'var(--card-bg)', color: theme.textColor, border: `1px solid var(--card-border)` }}
-                >
-                    <ArrowRight size={20} />
-                    <span>رجوع</span>
-                </button>
-                <button 
-                    onClick={handleShare}
-                    className="flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white transition-transform active:scale-95"
-                    style={{ backgroundColor: primaryColor }}
-                >
-                    <Share size={20} />
-                    <span>مشاركة</span>
-                </button>
-                <button 
-                    onClick={handleExportPDF}
-                    disabled={isExporting}
-                    className="flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white transition-transform active:scale-95 disabled:opacity-50"
-                    style={{ backgroundColor: secondaryColor }}
-                >
-                    <Download size={20} />
-                    <span>{isExporting ? 'جاري التحويل...' : 'PDF'}</span>
-                </button>
-            </div>
+            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
 
             {/* Hidden Table for PDF Export */}
-            <div style={{ position: 'absolute', top: 0, left: '-9999px' }}>
+            <div style={{ position: 'fixed', top: '-10000px', left: '-10000px', zIndex: -1000 }}>
                 <div ref={pdfTableRef} style={{ width: '800px', padding: '20px', backgroundColor: '#fff', color: '#000', direction: 'rtl', fontFamily: 'Cairo, sans-serif' }}>
                     <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                         <h1 style={{ fontSize: '24px', color: primaryColor }}>مواقيت الصلاة لشهر {monthNameAr} {hijriYear} هـ</h1>
