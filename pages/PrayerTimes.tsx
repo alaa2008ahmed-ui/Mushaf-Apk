@@ -47,31 +47,39 @@ function PrayerTimes({ onBack, onNavigate }) {
             id: 'location-refresh',
             text: 'اضغط هنا لتحديث موقعك الحالي والحصول على مواقيت دقيقة.',
             position: { top: '60px', left: '20px' },
+            selector: '#location-refresh-btn',
             arrow: 'up',
             icon: <MapPin className="w-8 h-8 text-white" />
         },
         {
             id: 'date-search',
-            text: 'يمكنك البحث عن مواقيت الصلاة لأي تاريخ أو مدينة أخرى.',
+            text: 'يمكنك البحث عن مواقيت الصلاة لأي مدينة أو محافظة أخرى من هنا.',
             position: { top: '150px' },
+            selector: '#search-input-container',
+            arrow: 'up',
             icon: <Search className="w-8 h-8 text-white" />
         },
         {
             id: 'next-prayer',
             text: 'هنا يظهر الوقت المتبقي للصلاة القادمة.',
             position: { top: '250px' },
+            selector: '#next-prayer-card',
+            arrow: 'up',
             icon: <Clock className="w-8 h-8 text-white" />
         },
         {
             id: 'prayer-settings',
-            text: 'اضغط على أي صلاة لتعديل التنبيهات، صوت الأذان، أو وقت الإقامة.',
+            text: 'الدائرة العلوية لتفعيل أو كتم صوت الأذان، والزر بالأسفل لتعديل التنبيهات، صوت الأذان، أو وقت الإقامة.',
             position: { top: '450px' },
+            selector: '#prayer-actions-container',
+            arrow: 'up',
             icon: <Bell className="w-8 h-8 text-white" />
         },
         {
             id: 'monthly-times',
             text: 'عرض جدول مواقيت الصلاة للشهر الحالي بالكامل.',
             position: { bottom: '100px' },
+            selector: '#monthly-times-btn',
             arrow: 'down',
             icon: <Calendar className="w-8 h-8 text-white" />
         }
@@ -237,7 +245,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                         prayerOffset={nextPrayer ? (config.prayerOffsets[nextPrayer.key] || 0) + (isSummerTimeActive ? 60 : 0) : 0}
                     />
 
-                    <div className="space-y-3 mt-5">
+                    <div id="prayer-list" className="space-y-3 mt-5">
                         {['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((key, idx) => {
                              const totalOffset = (config.prayerOffsets[key] || 0) + (isSummerTimeActive ? 60 : 0);
                              const displayTimeStr = applyOffset(times[key], totalOffset);
@@ -271,6 +279,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                     </div>
                     
                     <button 
+                        id="monthly-times-btn"
                         onClick={() => onNavigate('monthly-prayer-times')}
                         className="w-full mt-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-sm"
                         style={{ backgroundColor: primaryColor, color: isBlackAndWhite ? '#000' : '#fff' }}

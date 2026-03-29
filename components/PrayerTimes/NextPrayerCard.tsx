@@ -26,7 +26,7 @@ const NextPrayerCard: React.FC<NextPrayerCardProps> = ({
     if (!nextPrayer || !times[nextPrayer.key]) return null;
 
     return (
-        <div className="rounded-2xl p-3 text-white mb-5 relative overflow-hidden" style={{background: isBlackAndWhite ? `linear-gradient(135deg, #333, #000)` : `linear-gradient(135deg, ${themePalette1}, ${themePalette0})`}}>
+        <div id="next-prayer-card" className="rounded-2xl p-3 text-white mb-5 relative overflow-hidden" style={{background: isBlackAndWhite ? `linear-gradient(135deg, #333, #000)` : `linear-gradient(135deg, ${themePalette1}, ${themePalette0})`}}>
             <div className="flex justify-between items-center relative z-10">
                 <div className="text-right">
                     <p className="text-[10px] font-bold opacity-90">المتبقي على صلاة <span className="underline decoration-white/40">{nextPrayer.name}</span></p>

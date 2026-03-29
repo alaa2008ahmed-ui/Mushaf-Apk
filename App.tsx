@@ -243,6 +243,7 @@ const VoiceControlToggle = () => {
 
   return (
     <motion.button
+      id="voice-control-btn"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       whileHover={{ scale: 1.1 }}

@@ -14,52 +14,7 @@
         android:orientation="horizontal"
         android:baselineAligned="false">
 
-        <!-- Left Part (Purple) -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_weight="4"
-            android:layout_height="match_parent"
-            android:background="@drawable/widget_left_bg"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="12dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="☀️"
-                android:textSize="24sp" />
-
-            <TextView
-                android:id="@+id/widget_city"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="المدينة"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginTop="4dp" />
-
-            <TextView
-                android:id="@+id/widget_hijri_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="-- رمضان 1445"
-                android:textColor="#E0E0E0"
-                android:textSize="12sp"
-                android:layout_marginTop="2dp" />
-
-            <TextView
-                android:id="@+id/widget_gregorian_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="-- -- --"
-                android:textColor="#E0E0E0"
-                android:textSize="10sp"
-                android:layout_marginTop="2dp" />
-        </LinearLayout>
-
-        <!-- Right Part (White) -->
+        <!-- Right Part (White) - Now first child to be on the right in RTL -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_weight="6"
@@ -111,15 +66,60 @@
                     android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
+
+        <!-- Left Part (Purple) - Now second child to be on the left in RTL -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="4"
+            android:layout_height="match_parent"
+            android:background="@drawable/widget_left_bg"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="☀️"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/widget_city"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="المدينة"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/widget_hijri_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-- رمضان 1445"
+                android:textColor="#E0E0E0"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp" />
+
+            <TextView
+                android:id="@+id/widget_gregorian_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-- -- --"
+                android:textColor="#E0E0E0"
+                android:textSize="10sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Divider -->
-    <View
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="#E0E0E0" />
 
-    <!-- Middle Section (Prayers) -->
+    <!-- Middle Section (Prayers) - Reordered for RTL (Fajr to Isha) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -128,37 +128,13 @@
         android:paddingTop="8dp"
         android:paddingBottom="8dp">
 
-        <!-- Isha -->
-        <LinearLayout android:id="@+id/col_isha" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-            <TextView android:id="@+id/name_isha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العشاء" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="✨" android:textSize="16sp" android:layout_marginTop="2dp" android:layout_marginBottom="2dp"/>
-            <TextView android:id="@+id/time_isha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="07:26" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
+        <!-- Fajr -->
+        <LinearLayout android:id="@+id/col_fajr" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/name_fajr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الفجر" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🌙" android:textSize="16sp" android:layout_marginTop="2dp" android:layout_marginBottom="2dp"/>
+            <TextView android:id="@+id/time_fajr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="04:14" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
         </LinearLayout>
-        <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#E0E0E0" android:layout_marginTop="4dp" android:layout_marginBottom="4dp"/>
-
-        <!-- Maghrib -->
-        <LinearLayout android:id="@+id/col_maghrib" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-            <TextView android:id="@+id/name_maghrib" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="المغرب" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🌇" android:textSize="16sp" android:layout_marginTop="2dp" android:layout_marginBottom="2dp"/>
-            <TextView android:id="@+id/time_maghrib" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="05:56" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
-        </LinearLayout>
-        <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#E0E0E0" android:layout_marginTop="4dp" android:layout_marginBottom="4dp"/>
-
-        <!-- Asr -->
-        <LinearLayout android:id="@+id/col_asr" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-            <TextView android:id="@+id/name_asr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العصر" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🌤️" android:textSize="16sp" android:layout_marginTop="2dp" android:layout_marginBottom="2dp"/>
-            <TextView android:id="@+id/time_asr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="03:14" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
-        </LinearLayout>
-        <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#E0E0E0" android:layout_marginTop="4dp" android:layout_marginBottom="4dp"/>
-
-        <!-- Dhuhr -->
-        <LinearLayout android:id="@+id/col_dhuhr" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-            <TextView android:id="@+id/name_dhuhr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الظهر" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="☀️" android:textSize="16sp" android:layout_marginTop="2dp" android:layout_marginBottom="2dp"/>
-            <TextView android:id="@+id/time_dhuhr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="11:45" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
-        </LinearLayout>
-        <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#E0E0E0" android:layout_marginTop="4dp" android:layout_marginBottom="4dp"/>
+        <FrameLayout android:layout_width="1dp" android:layout_height="match_parent" android:background="#E0E0E0" android:layout_marginTop="4dp" android:layout_marginBottom="4dp"/>
 
         <!-- Sunrise -->
         <LinearLayout android:id="@+id/col_sunrise" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
@@ -166,13 +142,37 @@
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🌅" android:textSize="16sp" android:layout_marginTop="2dp" android:layout_marginBottom="2dp"/>
             <TextView android:id="@+id/time_sunrise" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="05:34" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
         </LinearLayout>
-        <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#E0E0E0" android:layout_marginTop="4dp" android:layout_marginBottom="4dp"/>
+        <FrameLayout android:layout_width="1dp" android:layout_height="match_parent" android:background="#E0E0E0" android:layout_marginTop="4dp" android:layout_marginBottom="4dp"/>
 
-        <!-- Fajr -->
-        <LinearLayout android:id="@+id/col_fajr" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
-            <TextView android:id="@+id/name_fajr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الفجر" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🌙" android:textSize="16sp" android:layout_marginTop="2dp" android:layout_marginBottom="2dp"/>
-            <TextView android:id="@+id/time_fajr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="04:14" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
+        <!-- Dhuhr -->
+        <LinearLayout android:id="@+id/col_dhuhr" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/name_dhuhr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="الظهر" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="☀️" android:textSize="16sp" android:layout_marginTop="2dp" android:layout_marginBottom="2dp"/>
+            <TextView android:id="@+id/time_dhuhr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="11:45" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
+        </LinearLayout>
+        <FrameLayout android:layout_width="1dp" android:layout_height="match_parent" android:background="#E0E0E0" android:layout_marginTop="4dp" android:layout_marginBottom="4dp"/>
+
+        <!-- Asr -->
+        <LinearLayout android:id="@+id/col_asr" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/name_asr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العصر" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🌤️" android:textSize="16sp" android:layout_marginTop="2dp" android:layout_marginBottom="2dp"/>
+            <TextView android:id="@+id/time_asr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="03:14" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
+        </LinearLayout>
+        <FrameLayout android:layout_width="1dp" android:layout_height="match_parent" android:background="#E0E0E0" android:layout_marginTop="4dp" android:layout_marginBottom="4dp"/>
+
+        <!-- Maghrib -->
+        <LinearLayout android:id="@+id/col_maghrib" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/name_maghrib" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="المغرب" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🌇" android:textSize="16sp" android:layout_marginTop="2dp" android:layout_marginBottom="2dp"/>
+            <TextView android:id="@+id/time_maghrib" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="05:56" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
+        </LinearLayout>
+        <FrameLayout android:layout_width="1dp" android:layout_height="match_parent" android:background="#E0E0E0" android:layout_marginTop="4dp" android:layout_marginBottom="4dp"/>
+
+        <!-- Isha -->
+        <LinearLayout android:id="@+id/col_isha" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
+            <TextView android:id="@+id/name_isha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="العشاء" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="✨" android:textSize="16sp" android:layout_marginTop="2dp" android:layout_marginBottom="2dp"/>
+            <TextView android:id="@+id/time_isha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="07:26" android:textColor="#000000" android:textSize="12sp" android:textStyle="bold"/>
         </LinearLayout>
     </LinearLayout>
 

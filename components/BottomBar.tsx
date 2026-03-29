@@ -24,6 +24,7 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
                 )}
                 {showThemes && (
                     <button 
+                        id="themes-btn"
                         onClick={onThemesClick} 
                         className={themesButtonClass}
                         style={{ 

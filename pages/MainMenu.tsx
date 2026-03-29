@@ -86,6 +86,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
       id: 'verse',
       text: 'هنا تجد آية يومية متجددة لتدبر كتاب الله.',
       position: { top: '30%' },
+      selector: '#verse-section',
       arrow: 'up',
       icon: <BookOpen className="w-8 h-8 text-white" />
     },
@@ -93,12 +94,14 @@ function MainMenu({ onNavigate, onOpenThemes }) {
       id: 'grid',
       text: 'من هنا يمكنك الوصول السريع لجميع أقسام التطبيق.',
       position: { top: '50%' },
+      selector: '#grid-section',
       icon: <LayoutGrid className="w-8 h-8 text-white" />
     },
     {
       id: 'voice',
       text: 'يمكنك تفعيل التحكم الصوتي للتنقل بين الصفحات وقراءة القرآن بصوتك.',
       position: { bottom: '120px', left: '20px' },
+      selector: '#voice-control-btn',
       arrow: 'down',
       icon: <Mic className="w-8 h-8 text-white" />
     },
@@ -106,6 +109,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
       id: 'themes',
       text: 'خصص مظهر التطبيق والألوان بما يناسب ذوقك.',
       position: { bottom: '100px', right: '20px' },
+      selector: '#themes-btn',
       arrow: 'down',
       icon: <Palette className="w-8 h-8 text-white" />
     }
@@ -196,14 +200,16 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         <div className="flex-1 overflow-hidden pb-32">
           <div className="main-layout px-4 h-full flex flex-col" style={{ fontFamily: theme.font }}>
               
-              <VerseSection 
-                  currentVerse={currentVerse}
-                  verseFontSize={verseFontSize}
-                  setVerseFontSize={setVerseFontSize}
-                  setIsCustomizationOpen={setIsCustomizationOpen}
-                  theme={theme}
-                  themeKey={themeKey}
-              />
+              <div id="verse-section">
+                <VerseSection 
+                    currentVerse={currentVerse}
+                    verseFontSize={verseFontSize}
+                    setVerseFontSize={setVerseFontSize}
+                    setIsCustomizationOpen={setIsCustomizationOpen}
+                    theme={theme}
+                    themeKey={themeKey}
+                />
+              </div>
 
               <TitleSection 
                   isEditMode={isEditMode}
@@ -215,19 +221,21 @@ function MainMenu({ onNavigate, onOpenThemes }) {
                   themeKey={themeKey}
               />
 
-              <GridSection 
-                  menuItems={menuItems}
-                  setMenuItems={setMenuItems}
-                  visibleItems={visibleItems}
-                  isEditMode={isEditMode}
-                  onNavigate={(id) => {
-                      if (id === 'more') onNavigate('more-menu');
-                      else onNavigate(id);
-                  }}
-                  theme={theme}
-                  themeKey={themeKey}
-                  DEFAULT_MENU_ITEMS={DEFAULT_MENU_ITEMS}
-              />
+              <div id="grid-section">
+                <GridSection 
+                    menuItems={menuItems}
+                    setMenuItems={setMenuItems}
+                    visibleItems={visibleItems}
+                    isEditMode={isEditMode}
+                    onNavigate={(id) => {
+                        if (id === 'more') onNavigate('more-menu');
+                        else onNavigate(id);
+                    }}
+                    theme={theme}
+                    themeKey={themeKey}
+                    DEFAULT_MENU_ITEMS={DEFAULT_MENU_ITEMS}
+                />
+              </div>
 
               {/* Footer/Save Button */}
               {!isEditMode && (

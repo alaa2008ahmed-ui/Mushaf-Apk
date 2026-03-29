@@ -60,6 +60,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             id: 'colors',
             text: 'غير ألوان النص والخلفية والتحديد لتجربة قراءة مخصصة.',
             position: { top: '250px' },
+            arrow: 'up',
             selector: '#colors-section',
             icon: <Palette className="w-8 h-8 text-white" />
         },
@@ -67,6 +68,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             id: 'font-family',
             text: 'اختر نوع الخط الذي تفضله للقراءة.',
             position: { top: '350px' },
+            arrow: 'up',
             selector: '#font-family-section',
             icon: <Type className="w-8 h-8 text-white" />
         },
@@ -74,6 +76,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             id: 'reciter',
             text: 'اختر قارئك المفضل من قائمة القراء المتاحين.',
             position: { top: '420px' },
+            arrow: 'up',
             selector: '#reciter-section',
             icon: <Mic className="w-8 h-8 text-white" />
         },
@@ -81,6 +84,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             id: 'ayah-repeat',
             text: 'حدد عدد مرات تكرار الآية الواحدة عند الاستماع.',
             position: { top: '500px' },
+            arrow: 'up',
             selector: '#ayah-repeat-section',
             icon: <Repeat className="w-8 h-8 text-white" />
         },
@@ -88,6 +92,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             id: 'tafseer',
             text: 'اختر كتاب التفسير الذي تود عرضه مع الآيات.',
             position: { top: '580px' },
+            arrow: 'up',
             selector: '#tafseer-section',
             icon: <Book className="w-8 h-8 text-white" />
         },
@@ -95,6 +100,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             id: 'scroll-speed',
             text: 'اضبط سرعة التمرير التلقائي للصفحة.',
             position: { top: '650px' },
+            arrow: 'up',
             selector: '#scroll-speed-section',
             icon: <MousePointer2 className="w-8 h-8 text-white" />
         },
@@ -102,6 +108,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             id: 'toggles',
             text: 'خيارات إضافية لإظهار السجدة، المصحف المجود، أو إخفاء الأشرطة.',
             position: { top: '750px' },
+            arrow: 'up',
             selector: '#toggles-section',
             icon: <Settings2 className="w-8 h-8 text-white" />
         },

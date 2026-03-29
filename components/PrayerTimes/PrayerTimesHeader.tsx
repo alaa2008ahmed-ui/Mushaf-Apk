@@ -19,7 +19,7 @@ const PrayerTimesHeader: React.FC<PrayerTimesHeaderProps> = ({
         <header className="app-top-bar">
             <div className="app-top-bar__inner">
                 <div className="flex items-center justify-center gap-2">
-                    <i onClick={handleRefreshLocation} className="text-xl cursor-pointer active:rotate-180 duration-700 fa-solid fa-location-crosshairs" style={{ color: topBarTextColor }}></i>
+                    <i id="location-refresh-btn" onClick={handleRefreshLocation} className="text-xl cursor-pointer active:rotate-180 duration-700 fa-solid fa-location-crosshairs" style={{ color: topBarTextColor }}></i>
                     <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi truncate" style={{ color: topBarTextColor }}>{cityGov}</h1>
                 </div>
                  <div className="flex items-center justify-center gap-2" dir="rtl">

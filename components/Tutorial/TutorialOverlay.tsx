@@ -23,6 +23,8 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
+  const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+
   useEffect(() => {
     if (shouldShowTutorial(tutorialId)) {
       setIsVisible(true);
@@ -48,14 +50,89 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
 
   useEffect(() => {
     if (isVisible && step?.selector) {
-      const el = document.querySelector(step.selector);
+      const el = document.querySelector(step.selector!);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        const update = () => {
+          setTargetRect(el.getBoundingClientRect());
+        };
+
+        // Update immediately and after a short delay for scroll
+        update();
+        const timer = setTimeout(update, 500);
+        const longTimer = setTimeout(update, 1000); // Second check for slow scrolls
+
+        const resizeObserver = new ResizeObserver(update);
+        resizeObserver.observe(el);
+        resizeObserver.observe(document.body);
+
+        window.addEventListener('scroll', update, true);
+        window.addEventListener('resize', update);
+
+        return () => {
+          clearTimeout(timer);
+          clearTimeout(longTimer);
+          resizeObserver.disconnect();
+          window.removeEventListener('scroll', update, true);
+          window.removeEventListener('resize', update);
+        };
+      } else {
+        setTargetRect(null);
       }
+    } else {
+      setTargetRect(null);
     }
   }, [currentStep, isVisible, step?.selector]);
 
   if (!isVisible) return null;
+
+  const getTooltipStyle = () => {
+    if (!targetRect) {
+      return {
+        top: step.position.top || '50%',
+        left: step.position.left || '50%',
+        transform: 'translate(-50%, -50%)'
+      };
+    }
+
+    const padding = 20;
+    const tooltipWidth = 280;
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    let top: number | string = 'auto';
+    let left: number | string = 'auto';
+    let bottom: number | string = 'auto';
+    let right: number | string = 'auto';
+    let transform = 'none';
+
+    if (step.arrow === 'up') {
+      top = Math.min(screenHeight - 150, targetRect.bottom + padding);
+      left = Math.max(10, Math.min(screenWidth - tooltipWidth - 10, targetRect.left + targetRect.width / 2 - tooltipWidth / 2));
+    } else if (step.arrow === 'down') {
+      const calculatedBottom = (screenHeight - targetRect.top) + padding;
+      bottom = Math.min(screenHeight - 150, calculatedBottom);
+      left = Math.max(10, Math.min(screenWidth - tooltipWidth - 10, targetRect.left + targetRect.width / 2 - tooltipWidth / 2));
+    } else if (step.arrow === 'left') {
+      left = Math.min(screenWidth - tooltipWidth - 10, targetRect.right + padding);
+      top = Math.max(10, Math.min(screenHeight - 150, targetRect.top + targetRect.height / 2 - 50));
+    } else if (step.arrow === 'right') {
+      const calculatedRight = (screenWidth - targetRect.left) + padding;
+      right = Math.min(screenWidth - tooltipWidth - 10, calculatedRight);
+      top = Math.max(10, Math.min(screenHeight - 150, targetRect.top + targetRect.height / 2 - 50));
+    } else {
+      return {
+        top: step.position.top || '50%',
+        left: step.position.left || '50%',
+        transform: 'translate(-50%, -50%)'
+      };
+    }
+
+    return { top, left, bottom, right, transform };
+  };
+
+  const tooltipStyle = getTooltipStyle();
 
   return (
     <AnimatePresence>
@@ -64,9 +141,47 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999] bg-black/70 flex flex-col items-center justify-center p-6 text-white text-center select-none"
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-6 text-white text-center select-none"
           onClick={handleClose}
         >
+          {/* Background Overlay when no target */}
+          {!targetRect && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 bg-black/80" 
+            />
+          )}
+
+          {/* Highlight Target */}
+          {targetRect && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ 
+                opacity: 1,
+                boxShadow: [
+                  '0 0 0 9999px rgba(0,0,0,0.85), 0 0 0 2px rgba(255,255,255,0.2), 0 0 20px rgba(255,255,255,0.4)',
+                  '0 0 0 9999px rgba(0,0,0,0.85), 0 0 0 4px rgba(255,255,255,0.3), 0 0 40px rgba(255,255,255,0.6)',
+                  '0 0 0 9999px rgba(0,0,0,0.85), 0 0 0 2px rgba(255,255,255,0.2), 0 0 20px rgba(255,255,255,0.4)'
+                ]
+              }}
+              transition={{
+                boxShadow: {
+                  repeat: Infinity,
+                  duration: 2,
+                  ease: "easeInOut"
+                }
+              }}
+              className="fixed border-4 border-white rounded-2xl pointer-events-none z-[10000]"
+              style={{
+                top: targetRect.top - 8,
+                left: targetRect.left - 8,
+                width: targetRect.width + 16,
+                height: targetRect.height + 16,
+              }}
+            />
+          )}
+
           <div className="relative w-full h-full flex flex-col items-center justify-center pointer-events-none">
             {/* Step Content */}
             <motion.div
@@ -74,23 +189,30 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: -20 }}
-              className="absolute flex flex-col items-center gap-4 pointer-events-auto cursor-pointer"
-              style={{
-                top: step.position.top,
-                bottom: step.position.bottom,
-                left: step.position.left,
-                right: step.position.right,
-              }}
+              className="absolute flex flex-col items-center gap-4 pointer-events-auto cursor-pointer z-[10001]"
+              style={tooltipStyle}
               onClick={handleNext}
             >
+              {step.arrow === 'up' && (
+                <motion.div 
+                  animate={{ y: [0, -5, 0] }} 
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                  className="absolute -top-10"
+                >
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 19V5M5 12l7-7 7 7"/>
+                  </svg>
+                </motion.div>
+              )}
+              
               {step.icon && (
-                <div className="p-4 bg-white/20 rounded-full backdrop-blur-sm shadow-xl border border-white/30">
+                <div className="p-3 bg-white/20 rounded-full backdrop-blur-sm shadow-xl border border-white/30">
                   {step.icon}
                 </div>
               )}
               
-              <div className="max-w-[280px] bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 shadow-2xl">
-                <h3 className="text-xl font-bold mb-3 leading-relaxed">
+              <div className="w-[280px] bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 shadow-2xl">
+                <h3 className="text-lg font-bold mb-3 leading-relaxed">
                   {step.text}
                 </h3>
                 
@@ -105,24 +227,13 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
                 </div>
               </div>
 
-              {step.arrow === 'up' && (
-                <motion.div 
-                  animate={{ y: [0, -10, 0] }} 
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="absolute -top-12"
-                >
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 19V5M5 12l7-7 7 7"/>
-                  </svg>
-                </motion.div>
-              )}
               {step.arrow === 'down' && (
                 <motion.div 
-                  animate={{ y: [0, 10, 0] }} 
+                  animate={{ y: [0, 5, 0] }} 
                   transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="absolute -bottom-12"
+                  className="absolute -bottom-10"
                 >
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 5v14M5 12l7 7 7-7"/>
                   </svg>
                 </motion.div>
