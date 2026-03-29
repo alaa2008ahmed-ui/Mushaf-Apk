@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { READERS, TAFSEERS, THEMES, DEFAULT_SETTINGS, toArabic } from './constants';
+import TutorialOverlay, { TutorialStep } from '../Tutorial/TutorialOverlay';
+import { ZoomIn, Palette, Mic, Type, Repeat, Book, MousePointer2, Settings2, Download } from 'lucide-react';
 
 interface SettingsModalProps {
     onClose: () => void;
@@ -44,6 +46,65 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
     const [isHideToolbarsEnabled, setIsHideToolbarsEnabled] = useState(() => localStorage.getItem('hide_toolbars_enabled' + modeSuffix) === 'true');
 
     const [activeColorField, setActiveColorField] = useState<'textColor' | 'bgColor' | 'highlightTextColor' | null>(null);
+
+    const settingsTutorialSteps: TutorialStep[] = [
+        {
+            id: 'font-size',
+            text: 'تحكم في حجم الخط بما يتناسب مع راحتك.',
+            position: { top: '150px' },
+            arrow: 'up',
+            icon: <ZoomIn className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'colors',
+            text: 'غير ألوان النص والخلفية والتحديد لتجربة قراءة مخصصة.',
+            position: { top: '250px' },
+            icon: <Palette className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'font-family',
+            text: 'اختر نوع الخط الذي تفضله للقراءة.',
+            position: { top: '350px' },
+            icon: <Type className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'reciter',
+            text: 'اختر قارئك المفضل من قائمة القراء المتاحين.',
+            position: { top: '420px' },
+            icon: <Mic className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'ayah-repeat',
+            text: 'حدد عدد مرات تكرار الآية الواحدة عند الاستماع.',
+            position: { top: '500px' },
+            icon: <Repeat className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'tafseer',
+            text: 'اختر كتاب التفسير الذي تود عرضه مع الآيات.',
+            position: { top: '580px' },
+            icon: <Book className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'scroll-speed',
+            text: 'اضبط سرعة التمرير التلقائي للصفحة.',
+            position: { top: '650px' },
+            icon: <MousePointer2 className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'toggles',
+            text: 'خيارات إضافية لإظهار السجدة، المصحف المجود، أو إخفاء الأشرطة.',
+            position: { top: '750px' },
+            icon: <Settings2 className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'downloads',
+            text: 'يمكنك تحميل القرآن الكريم أو التفسير للاستخدام بدون إنترنت.',
+            position: { bottom: '100px' },
+            arrow: 'down',
+            icon: <Download className="w-8 h-8 text-white" />
+        }
+    ];
 
     const PREDEFINED_COLORS = [
         '#ffffff', '#f3f4f6', '#9ca3af', '#4b5563', '#000000',
@@ -315,6 +376,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     <button onClick={handleClose} className="theme-accent-btn font-bold py-2 px-8 rounded-lg shadow text-sm w-full">حفظ وإغلاق</button>
                 </div>
             </div>
+            <TutorialOverlay tutorialId="settings-tutorial" steps={settingsTutorialSteps} />
         </div>
     );
 };

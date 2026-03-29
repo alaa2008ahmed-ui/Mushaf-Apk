@@ -10,14 +10,13 @@ import { useBackButton } from './hooks/useBackButton';
 import { App as CapacitorApp } from '@capacitor/app';
 import { PrayerTimesProvider } from './context/PrayerTimesContext';
 import { VoiceControlProvider } from './context/VoiceControlContext';
+import { TutorialProvider } from './context/TutorialContext';
 import { preloadTajweedAudio } from './utils/audioCache';
 import { Mic, MicOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTheme } from './context/ThemeContext';
 import { normalizeArabic } from './utils/voiceParser';
 import { usePrayerTimes } from './context/PrayerTimesContext';
-import { updateAndroidWidget } from './utils/widgetUtils';
-
 // --- Main App Component ---
 function App() {
   const { theme, applyPresetTheme } = useTheme();
@@ -142,21 +141,23 @@ function App() {
   }
 
   return (
-    <PrayerTimesProvider>
-      <VoiceControlProvider onAction={handleVoiceAction}>
-        <AppContent 
-          page={page} 
-          history={history}
-          navParams={navParams}
-          isThemeSelectorOpen={isThemeSelectorOpen}
-          showExitConfirm={showExitConfirm}
-          handleNavigate={handleNavigate}
-          navigateBack={navigateBack}
-          setIsThemeSelectorOpen={setIsThemeSelectorOpen}
-          setShowExitConfirm={setShowExitConfirm}
-        />
-      </VoiceControlProvider>
-    </PrayerTimesProvider>
+    <TutorialProvider>
+      <PrayerTimesProvider>
+        <VoiceControlProvider onAction={handleVoiceAction}>
+          <AppContent 
+            page={page} 
+            history={history}
+            navParams={navParams}
+            isThemeSelectorOpen={isThemeSelectorOpen}
+            showExitConfirm={showExitConfirm}
+            handleNavigate={handleNavigate}
+            navigateBack={navigateBack}
+            setIsThemeSelectorOpen={setIsThemeSelectorOpen}
+            setShowExitConfirm={setShowExitConfirm}
+          />
+        </VoiceControlProvider>
+      </PrayerTimesProvider>
+    </TutorialProvider>
   );
 }
 
@@ -173,27 +174,6 @@ function AppContent({
   setShowExitConfirm 
 }: any) {
   const { setCurrentPage } = useVoiceControl();
-  const { times, dates, nextPrayer, countdown } = usePrayerTimes();
-
-  // Sync with Android Widget
-  useEffect(() => {
-    if (times && dates && nextPrayer) {
-      updateAndroidWidget({
-        hijri: dates.hijri,
-        next_prayer_name: nextPrayer.name,
-        next_prayer_id: nextPrayer.key.toLowerCase(),
-        remaining_time: countdown,
-        times: {
-          fajr: times.Fajr || '--:--',
-          sunrise: times.Sunrise || '--:--',
-          dhuhr: times.Dhuhr || '--:--',
-          asr: times.Asr || '--:--',
-          maghrib: times.Maghrib || '--:--',
-          isha: times.Isha || '--:--',
-        }
-      });
-    }
-  }, [times, dates, nextPrayer, countdown]);
 
   useEffect(() => {
     setCurrentPage(page);

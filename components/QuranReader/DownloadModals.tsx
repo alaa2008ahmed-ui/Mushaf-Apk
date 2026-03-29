@@ -7,6 +7,8 @@ interface DownloadModalProps {
     quranData: any;
     showToast: (msg: string) => void;
     isLandscape?: boolean;
+    mode?: 'ayah' | 'surah';
+    readersList?: { id: string, name: string }[];
 }
 
 // --- Helper Functions ---
@@ -155,7 +157,7 @@ const storeTafsirOffline = (fileName: string, data: any) => {
     }
 };
 
-export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, quranData, showToast, isLandscape }) => {
+export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, quranData, showToast, isLandscape, mode = 'ayah', readersList = READERS }) => {
     const [selectedReader, setSelectedReader] = useState('');
     const [selectedSurahs, setSelectedSurahs] = useState<string[]>([]);
     const [selectedJuzs, setSelectedJuzs] = useState<string[]>([]);
@@ -178,27 +180,48 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
 
             const dSurahs: string[] = [];
             for (const surah of quranData.surahs) {
-                let allAyahsDownloaded = true;
-                for (let i = 1; i <= surah.ayahs.length; i++) {
-                    if (!downloadedSet.has(`${selectedReader}_${surah.number}_${i}.mp3`)) {
-                        allAyahsDownloaded = false;
-                        break;
+                let allItemsDownloaded = true;
+                if (mode === 'surah') {
+                    const surahStr = String(surah.number).padStart(3, '0');
+                    const fileName = `${selectedReader}_${surahStr}.mp3`;
+                    if (!downloadedSet.has(fileName)) {
+                        allItemsDownloaded = false;
+                    }
+                } else {
+                    for (let i = 1; i <= surah.ayahs.length; i++) {
+                        if (!downloadedSet.has(`${selectedReader}_${surah.number}_${i}.mp3`)) {
+                            allItemsDownloaded = false;
+                            break;
+                        }
                     }
                 }
-                if (allAyahsDownloaded) dSurahs.push(surah.number.toString());
+                if (allItemsDownloaded) dSurahs.push(surah.number.toString());
             }
 
             const dJuzs: string[] = [];
             for (let j = 1; j <= 30; j++) {
                 const ayahs = getAyahsForJuz(j, quranData);
-                let allAyahsDownloaded = true;
-                for (const a of ayahs) {
-                    if (!downloadedSet.has(`${selectedReader}_${a.surah}_${a.ayah}.mp3`)) {
-                        allAyahsDownloaded = false;
-                        break;
+                let allItemsDownloaded = true;
+                
+                if (mode === 'surah') {
+                    const surahsInJuz = Array.from(new Set(ayahs.map(a => a.surah)));
+                    for (const sNum of surahsInJuz) {
+                        const surahStr = String(sNum).padStart(3, '0');
+                        const fileName = `${selectedReader}_${surahStr}.mp3`;
+                        if (!downloadedSet.has(fileName)) {
+                            allItemsDownloaded = false;
+                            break;
+                        }
+                    }
+                } else {
+                    for (const a of ayahs) {
+                        if (!downloadedSet.has(`${selectedReader}_${a.surah}_${a.ayah}.mp3`)) {
+                            allItemsDownloaded = false;
+                            break;
+                        }
                     }
                 }
-                if (allAyahsDownloaded) dJuzs.push(j.toString());
+                if (allItemsDownloaded) dJuzs.push(j.toString());
             }
 
             setDownloadedSurahs(dSurahs);
@@ -206,7 +229,7 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
         } catch (e) {
             console.error('Error checking downloads:', e);
         }
-    }, [selectedReader, quranData]);
+    }, [selectedReader, quranData, mode]);
 
     useEffect(() => {
         checkDownloads();
@@ -255,12 +278,16 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
         abortControllerRef.current = new AbortController();
 
         try {
-            const ayahsToDownload = new Set<string>();
+            const itemsToDownload = new Set<string>();
             
             if (selectedSurahs.includes('all')) {
                 for (const surah of quranData.surahs) {
-                    for (let i = 1; i <= surah.ayahs.length; i++) {
-                        ayahsToDownload.add(`${surah.number}_${i}`);
+                    if (mode === 'surah') {
+                        itemsToDownload.add(`${surah.number}`);
+                    } else {
+                        for (let i = 1; i <= surah.ayahs.length; i++) {
+                            itemsToDownload.add(`${surah.number}_${i}`);
+                        }
                     }
                 }
             } else {
@@ -268,8 +295,12 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
                     const surahNum = parseInt(surahNumStr);
                     const surah = quranData.surahs.find((s: any) => s.number === surahNum);
                     if (surah) {
-                        for (let i = 1; i <= surah.ayahs.length; i++) {
-                            ayahsToDownload.add(`${surahNum}_${i}`);
+                        if (mode === 'surah') {
+                            itemsToDownload.add(`${surahNum}`);
+                        } else {
+                            for (let i = 1; i <= surah.ayahs.length; i++) {
+                                itemsToDownload.add(`${surahNum}_${i}`);
+                            }
                         }
                     }
                 }
@@ -277,8 +308,15 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
                 for (const juzNumStr of selectedJuzs) {
                     const juzNum = parseInt(juzNumStr);
                     const ayahs = getAyahsForJuz(juzNum, quranData);
-                    for (const a of ayahs) {
-                        ayahsToDownload.add(`${a.surah}_${a.ayah}`);
+                    if (mode === 'surah') {
+                        const surahsInJuz = Array.from(new Set(ayahs.map(a => a.surah)));
+                        for (const sNum of surahsInJuz) {
+                            itemsToDownload.add(`${sNum}`);
+                        }
+                    } else {
+                        for (const a of ayahs) {
+                            itemsToDownload.add(`${a.surah}_${a.ayah}`);
+                        }
                     }
                 }
             }
@@ -286,54 +324,69 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
             const downloadedFiles = JSON.parse(localStorage.getItem('downloaded_audio_files') || '[]');
             const downloadedSet = new Set(downloadedFiles.map((f: any) => f.fileName));
             
-            const finalAyahsList = [];
+            const finalItemsList = [];
             let alreadyDownloadedCount = 0;
             
-            for (const s of ayahsToDownload) {
-                const [surah, ayah] = s.split('_').map(Number);
-                const fileName = `${selectedReader}_${surah}_${ayah}.mp3`;
-                if (downloadedSet.has(fileName)) {
-                    alreadyDownloadedCount++;
+            for (const itemKey of itemsToDownload) {
+                let fileName = '';
+                if (mode === 'surah') {
+                    const surahNum = parseInt(itemKey);
+                    const surahStr = String(surahNum).padStart(3, '0');
+                    fileName = `${selectedReader}_${surahStr}.mp3`;
+                    if (downloadedSet.has(fileName)) {
+                        alreadyDownloadedCount++;
+                    } else {
+                        finalItemsList.push({ surah: surahNum });
+                    }
                 } else {
-                    finalAyahsList.push({ surah, ayah });
+                    const [surah, ayah] = itemKey.split('_').map(Number);
+                    fileName = `${selectedReader}_${surah}_${ayah}.mp3`;
+                    if (downloadedSet.has(fileName)) {
+                        alreadyDownloadedCount++;
+                    } else {
+                        finalItemsList.push({ surah, ayah });
+                    }
                 }
             }
             
-            if (finalAyahsList.length === 0 && ayahsToDownload.size > 0) {
+            if (finalItemsList.length === 0 && itemsToDownload.size > 0) {
                 showToast('جميع العناصر المحددة محملة مسبقاً');
                 setIsDownloading(false);
                 return;
             }
             
             if (alreadyDownloadedCount > 0) {
-                showToast(`تم تخطي ${alreadyDownloadedCount} آية محملة مسبقاً`);
+                showToast(`تم تخطي ${alreadyDownloadedCount} ${mode === 'surah' ? 'سورة' : 'آية'} محملة مسبقاً`);
             }
             
-            finalAyahsList.sort((a, b) => {
+            finalItemsList.sort((a, b) => {
                 if (a.surah !== b.surah) return a.surah - b.surah;
-                return a.ayah - b.ayah;
+                return (a.ayah || 0) - (b.ayah || 0);
             });
             
             let downloaded = 0;
-            const totalAyahs = finalAyahsList.length;
+            const totalItems = finalItemsList.length;
             
-            for (const item of finalAyahsList) {
+            for (const item of finalItemsList) {
                 if (abortControllerRef.current?.signal.aborted) throw new Error('Aborted');
-                await downloadAyah(selectedReader, item.surah, item.ayah);
+                if (mode === 'surah') {
+                    await downloadSurahFile(selectedReader, item.surah);
+                } else {
+                    await downloadAyah(selectedReader, item.surah, item.ayah!);
+                }
                 downloaded++;
-                setProgress((downloaded / totalAyahs) * 100);
-                setStatus(`جاري التحميل - ${Math.round((downloaded / totalAyahs) * 100)}%`);
+                setProgress((downloaded / totalItems) * 100);
+                setStatus(`جاري التحميل - ${Math.round((downloaded / totalItems) * 100)}%`);
             }
             
             setStatus('تم التحميل بنجاح!');
             setProgress(100);
             showToast('تم التحميل بنجاح!');
             
-            // Re-check downloads to update UI
             checkDownloads();
             
         } catch (error: any) {
-            if (error.name === 'AbortError') {
+            if (error.name === 'AbortError' || error.message === 'Aborted') {
                 setStatus('تم إيقاف التحميل');
                 showToast('تم إيقاف التحميل');
             } else {
@@ -391,7 +444,33 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
             const cache = await caches.open('quran-audio-cache');
             const match = await cache.match(url);
             if (match) {
-                // Even if cached, ensure metadata exists
+                storeAudioOffline(fileName, await match.blob());
+                return;
+            }
+
+            const response = await fetch(url, { signal: abortControllerRef.current?.signal });
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const blob = await response.blob();
+            await cache.put(url, new Response(blob));
+            storeAudioOffline(fileName, blob);
+            
+        } catch (e) {
+            console.error(e);
+            if ((e as Error).name === 'AbortError') throw e;
+        }
+    };
+
+    const downloadSurahFile = async (readerUrl: string, surah: number) => {
+        const surahStr = String(surah).padStart(3, '0');
+        const baseUrl = readerUrl.endsWith('/') ? readerUrl.slice(0, -1) : readerUrl;
+        const url = `${baseUrl}/${surahStr}.mp3`;
+        const fileName = `${readerUrl}_${surahStr}.mp3`;
+        
+        try {
+            const cache = await caches.open('quran-audio-cache');
+            const match = await cache.match(url);
+            if (match) {
                 storeAudioOffline(fileName, await match.blob());
                 return;
             }
@@ -432,7 +511,7 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
                 }
             } else if (action === 'ui_discovery' && text) {
                 const normalizedText = normalizeArabic(text);
-                const reader = READERS.find(r => normalizeArabic(r.name).includes(normalizedText) || normalizedText.includes(normalizeArabic(r.name)));
+                const reader = readersList.find(r => normalizeArabic(r.name).includes(normalizedText) || normalizedText.includes(normalizeArabic(r.name)));
                 if (reader) {
                     setSelectedReader(reader.id);
                 }
@@ -455,7 +534,7 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
                         <div className="text-right">
                             <label className="text-xs font-bold opacity-70 block mb-2">اختر القارئ</label>
                             <div className={`grid ${isLandscape ? 'grid-cols-4 sm:grid-cols-5 md:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3'} gap-2 ${isLandscape ? 'max-h-40' : 'max-h-60'} overflow-y-auto p-2 border rounded-lg themed-card-bg custom-scrollbar`} dir="rtl">
-                                {READERS.map(r => (
+                                {readersList.map(r => (
                                     <button 
                                         key={r.id}
                                         onClick={() => setSelectedReader(r.id)}

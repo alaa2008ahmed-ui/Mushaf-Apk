@@ -26,6 +26,8 @@ import QuranHeader from '../components/QuranReader/QuranHeader';
 import QuranFooter from '../components/QuranReader/QuranFooter';
 import FloatingMenu from '../components/QuranReader/FloatingMenu';
 import AyahContextMenu from '../components/QuranReader/AyahContextMenu';
+import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
+import { MousePointer2, Move, ZoomIn, LayoutGrid } from 'lucide-react';
 import quranUthmaniJson from '../data/quran-uthmani.json';
 import quranTajweedJson from '../data/quran-tajweed.json';
 import { registerBackInterceptor } from '../hooks/useBackButton';
@@ -468,6 +470,35 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             'btn-search': { bg: purple, text: white, border: purpleBorder }
         };
     });
+
+    const quranTutorialSteps: TutorialStep[] = [
+        {
+            id: 'sidebar',
+            text: 'القائمة الجانبية: من هنا يمكنك الوصول للإعدادات، البحث، والفهارس.',
+            position: { top: '20px', right: '20px' },
+            arrow: 'up',
+            icon: <LayoutGrid className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'ayah-click',
+            text: 'اضغط على رأس الآية لتحديد موضع توقف قراءتك أو إظهار خيارات الآية.',
+            position: { top: '40%' },
+            icon: <MousePointer2 className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'zoom',
+            text: 'حرك الأصابع لتكبير أو تصغير الخط بما يريح عينيك.',
+            position: { top: '60%' },
+            icon: <ZoomIn className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'navigation',
+            text: 'التنقل السريع: استخدم الشريط السفلي للتنقل بين الصفحات والأجزاء بسهولة.',
+            position: { bottom: '100px' },
+            arrow: 'down',
+            icon: <Move className="w-8 h-8 text-white" />
+        }
+    ];
     const mushafContentRef = useRef<HTMLDivElement>(null);
     const settingsRef = useRef(settings);
     useEffect(() => { settingsRef.current = settings; }, [settings]);
@@ -2093,6 +2124,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             />
             <SajdahCardModal info={sajdahCardInfo} onClose={handleCloseSajdahCard} isLandscape={isLandscape} />
             <Toast message={toast.message} show={toast.show} onClose={handleToastClose} />
+            <TutorialOverlay tutorialId="quran-reader-tutorial" steps={quranTutorialSteps} />
         </div>
     );
 };

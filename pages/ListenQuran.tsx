@@ -4,6 +4,8 @@ import { useTheme } from '../context/ThemeContext';
 import { RECITERS, SURAH_LIST } from '../data/listenQuranData';
 import ReciterSelectModal from '../components/QuranReader/ReciterSelectModal';
 import ListenSurahSelectModal from '../components/QuranReader/ListenSurahSelectModal';
+import { QuranDownloadModal } from '../components/QuranReader/DownloadModals';
+import Toast from '../components/QuranReader/Toast';
 import { SURAH_INFO } from '../components/QuranReader/constants';
 import './QuranReader.css';
 
@@ -40,6 +42,8 @@ function ListenQuran({ onBack, onOpenThemes }) {
     const [error, setError] = useState('');
     const [showReciterModal, setShowReciterModal] = useState(false);
     const [showSurahModal, setShowSurahModal] = useState(false);
+    const [showDownloadModal, setShowDownloadModal] = useState(false);
+    const [toast, setToast] = useState({ show: false, message: '' });
     
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const autoPlayNextRef = useRef(false);
@@ -142,6 +146,10 @@ function ListenQuran({ onBack, onOpenThemes }) {
         };
     }, [isContinuousPlay, handleNextSurah]);
 
+    const showToast = (message: string) => {
+        setToast({ show: true, message });
+    };
+
     useEffect(() => {
         if (!reciterId || !surahNumber) return;
 
@@ -155,25 +163,44 @@ function ListenQuran({ onBack, onOpenThemes }) {
         setError('');
 
         const surahFormatted = String(surahNumber).padStart(3, '0');
-        // Ensure no double slashes if reciterId has a trailing slash
         const baseUrl = reciterId.endsWith('/') ? reciterId.slice(0, -1) : reciterId;
         const audioUrl = `${baseUrl}/${surahFormatted}.mp3`;
 
-        audio.src = audioUrl;
-        audio.load();
+        const loadAudio = async () => {
+            try {
+                const cache = await caches.open('quran-audio-cache');
+                const match = await cache.match(audioUrl);
+                
+                if (match) {
+                    const blob = await match.blob();
+                    audio.src = URL.createObjectURL(blob);
+                } else {
+                    audio.src = audioUrl;
+                }
+                
+                audio.load();
 
-        if (wasPlaying || autoPlayNextRef.current) {
-           audio.play().catch(err => {
-               console.error("Failed to autoplay:", err);
-               setError('فشل التشغيل التلقائي.');
-               setIsLoading(false);
-           });
-           if (autoPlayNextRef.current) {
-               autoPlayNextRef.current = false;
-           }
-        } else {
-            setIsLoading(false);
-        }
+                if (wasPlaying || autoPlayNextRef.current) {
+                    audio.play().catch(err => {
+                        console.error("Failed to autoplay:", err);
+                        setError('فشل التشغيل التلقائي.');
+                        setIsLoading(false);
+                    });
+                    if (autoPlayNextRef.current) {
+                        autoPlayNextRef.current = false;
+                    }
+                } else {
+                    setIsLoading(false);
+                }
+            } catch (err) {
+                console.error("Error loading audio:", err);
+                audio.src = audioUrl;
+                audio.load();
+                setIsLoading(false);
+            }
+        };
+
+        loadAudio();
         
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ 
             savedReciterId: reciterId, 
@@ -242,6 +269,16 @@ function ListenQuran({ onBack, onOpenThemes }) {
                     >
                         <span>{surahNumber} - {surahName}</span>
                         <i className="fa-solid fa-chevron-down opacity-50"></i>
+                    </button>
+                    <button 
+                        onClick={() => setShowDownloadModal(true)} 
+                        className="w-full p-3 text-center rounded-xl border font-bold themed-card flex justify-between items-center"
+                    >
+                        <div className="flex items-center gap-2">
+                            <i className="fa-solid fa-download" style={{ color: theme.palette[0] }}></i>
+                            <span>تحميل المصحف</span>
+                        </div>
+                        <i className="fa-solid fa-chevron-left opacity-50"></i>
                     </button>
                 </div>
 
@@ -320,6 +357,20 @@ function ListenQuran({ onBack, onOpenThemes }) {
                     currentSurah={surahNumber}
                 />
             )}
+            {showDownloadModal && (
+                <QuranDownloadModal
+                    onClose={() => setShowDownloadModal(false)}
+                    quranData={mockQuranData}
+                    showToast={showToast}
+                    mode="surah"
+                    readersList={RECITERS}
+                />
+            )}
+            <Toast 
+                show={toast.show} 
+                message={toast.message} 
+                onClose={() => setToast({ ...toast, show: false })} 
+            />
         </div>
     );
 }

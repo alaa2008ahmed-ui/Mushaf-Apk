@@ -11,6 +11,8 @@ import VerseSection from '../components/MainMenu/VerseSection';
 import TitleSection from '../components/MainMenu/TitleSection';
 import GridSection from '../components/MainMenu/GridSection';
 import FloatingNeonTicker from '../components/FloatingNeonTicker';
+import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
+import { Mic, Palette, LayoutGrid, BookOpen } from 'lucide-react';
 
 const DEFAULT_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
@@ -72,6 +74,42 @@ function MainMenu({ onNavigate, onOpenThemes }) {
       const saved = localStorage.getItem('mainMenuVerseFontSize');
       return saved ? parseFloat(saved) : 1.25;
   });
+
+  const homeTutorialSteps: TutorialStep[] = [
+    {
+      id: 'welcome',
+      text: 'أهلاً بك في تطبيق مصحف A&L. إليك جولة سريعة للتعرف على المميزات.',
+      position: { top: '20%' },
+      icon: <BookOpen className="w-8 h-8 text-white" />
+    },
+    {
+      id: 'verse',
+      text: 'هنا تجد آية يومية متجددة لتدبر كتاب الله.',
+      position: { top: '30%' },
+      arrow: 'up',
+      icon: <BookOpen className="w-8 h-8 text-white" />
+    },
+    {
+      id: 'grid',
+      text: 'من هنا يمكنك الوصول السريع لجميع أقسام التطبيق.',
+      position: { top: '50%' },
+      icon: <LayoutGrid className="w-8 h-8 text-white" />
+    },
+    {
+      id: 'voice',
+      text: 'يمكنك تفعيل التحكم الصوتي للتنقل بين الصفحات وقراءة القرآن بصوتك.',
+      position: { bottom: '120px', left: '20px' },
+      arrow: 'down',
+      icon: <Mic className="w-8 h-8 text-white" />
+    },
+    {
+      id: 'themes',
+      text: 'خصص مظهر التطبيق والألوان بما يناسب ذوقك.',
+      position: { bottom: '100px', right: '20px' },
+      arrow: 'down',
+      icon: <Palette className="w-8 h-8 text-white" />
+    }
+  ];
 
   useEffect(() => {
     // Check if we need to update layout in storage (migration/fix)
@@ -214,6 +252,8 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         visibleIds={visibleItems}
         onSave={handleSaveCustomization}
       />
+
+      <TutorialOverlay tutorialId="home-tutorial" steps={homeTutorialSteps} />
     </div>
   );
 }

@@ -1,9 +1,11 @@
 package com.mushaf.ahmedandlayla; // تم التعديل إلى الاسم المعتمد (y)
 
+import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.widget.RemoteViews;
@@ -28,6 +30,12 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
 
         // ربط الواجهة (الريدجت) مع الحزمة الصحيحة
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.prayer_widget);
+
+        // جعل الريدجت يفتح التطبيق عند الضغط عليه
+        Intent intent = new Intent(context, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        views.setOnClickPendingIntent(R.id.widget_root, pendingIntent);
+        views.setOnClickPendingIntent(R.id.widget_refresh_btn, pendingIntent);
 
         if (prayerJson != null) {
             try {

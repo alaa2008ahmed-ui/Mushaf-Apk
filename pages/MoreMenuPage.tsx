@@ -3,6 +3,8 @@ import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import InteractiveBackground from '../components/InteractiveBackground';
 import NavButton from '../components/MainMenu/NavButton';
+import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
+import { LayoutGrid } from 'lucide-react';
 
 const ALL_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
@@ -29,6 +31,15 @@ interface MoreMenuPageProps {
 
 const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
     const { theme, themeKey } = useTheme();
+
+    const moreMenuTutorialSteps: TutorialStep[] = [
+        {
+            id: 'all-items',
+            text: 'هنا تجد جميع أقسام التطبيق في مكان واحد لسهولة الوصول.',
+            position: { top: '30%' },
+            icon: <LayoutGrid className="w-8 h-8 text-white" />
+        }
+    ];
 
     return (
         <div>
@@ -71,6 +82,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
             </div>
 
             <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <TutorialOverlay tutorialId="more-menu-tutorial" steps={moreMenuTutorialSteps} />
         </div>
     );
 };

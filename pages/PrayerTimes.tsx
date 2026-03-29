@@ -9,6 +9,8 @@ import PrayerCard from '../components/PrayerTimes/PrayerCard';
 import PrayerTimesHeader from '../components/PrayerTimes/PrayerTimesHeader';
 import PrayerTimesDateSearch from '../components/PrayerTimes/PrayerTimesDateSearch';
 import NextPrayerCard from '../components/PrayerTimes/NextPrayerCard';
+import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
+import { MapPin, Search, Clock, Bell, Calendar } from 'lucide-react';
 import {
     applyOffset,
     formatTime12,
@@ -39,6 +41,41 @@ function PrayerTimes({ onBack, onNavigate }) {
     
     const supportsDST = checkSupportsDST(config.location.combinedCode, config.location.fullCountry);
     const isSummerTimeActive = config.isSummerTime && supportsDST;
+
+    const prayerTutorialSteps: TutorialStep[] = [
+        {
+            id: 'location-refresh',
+            text: 'اضغط هنا لتحديث موقعك الحالي والحصول على مواقيت دقيقة.',
+            position: { top: '60px', left: '20px' },
+            arrow: 'up',
+            icon: <MapPin className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'date-search',
+            text: 'يمكنك البحث عن مواقيت الصلاة لأي تاريخ أو مدينة أخرى.',
+            position: { top: '150px' },
+            icon: <Search className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'next-prayer',
+            text: 'هنا يظهر الوقت المتبقي للصلاة القادمة.',
+            position: { top: '250px' },
+            icon: <Clock className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'prayer-settings',
+            text: 'اضغط على أي صلاة لتعديل التنبيهات، صوت الأذان، أو وقت الإقامة.',
+            position: { top: '450px' },
+            icon: <Bell className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'monthly-times',
+            text: 'عرض جدول مواقيت الصلاة للشهر الحالي بالكامل.',
+            position: { bottom: '100px' },
+            arrow: 'down',
+            icon: <Calendar className="w-8 h-8 text-white" />
+        }
+    ];
     
     useEffect(() => {
         if (toastMessage) {
@@ -277,6 +314,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                 </div>
             )}
             <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <TutorialOverlay tutorialId="prayer-times-tutorial" steps={prayerTutorialSteps} />
         </div>
     );
 }

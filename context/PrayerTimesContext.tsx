@@ -534,6 +534,51 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
         scheduleNotifications();
     }, [scheduleNotifications]);
 
+    const updateWidget = useCallback((currentTimes: Record<string, string>, currentDates: { hijri: string; gregorian: string }, currentNext: any, currentCountdown: string) => {
+        if (Capacitor.getPlatform() !== 'android' || !currentTimes.Fajr || !currentNext) return;
+
+        const supportsDST = checkSupportsDST(config.location.combinedCode, config.location.fullCountry);
+        const isSummerTimeActive = config.isSummerTime && supportsDST;
+        
+        const maghribOffset = (config.prayerOffsets.Maghrib || 0) + (isSummerTimeActive ? 60 : 0);
+        const fajrOffset = (config.prayerOffsets.Fajr || 0) + (isSummerTimeActive ? 60 : 0);
+        const maghribTime = applyOffset(currentTimes.Maghrib, maghribOffset);
+        const fajrTime = applyOffset(currentTimes.Fajr, fajrOffset);
+        const nightTimes = calculateNightTimes(maghribTime, fajrTime);
+        
+        const formatTime = (timeStr: string, offset: number) => {
+            const adjusted = applyOffset(timeStr, offset + (isSummerTimeActive ? 60 : 0));
+            if (!adjusted || adjusted.includes('--')) return "--:--";
+            let [hh, mm] = adjusted.split(':');
+            let hInt = parseInt(hh);
+            hInt = hInt % 12 || 12;
+            return `${hInt.toString().padStart(2, '0')}:${mm}`;
+        };
+        
+        const dayNamesAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+        const currentDayName = dayNamesAr[new Date().getDay()];
+        
+        updateAndroidWidget({
+            hijri: currentDates.hijri,
+            gregorian: currentDates.gregorian,
+            day: currentDayName,
+            city: config.location.cityGov.split(' - ')[0],
+            next_prayer_name: currentNext.name,
+            next_prayer_id: currentNext.key.toLowerCase(),
+            remaining_time: currentCountdown.split(':').slice(0, 2).join(':'), // HH:MM
+            midnight: `منتصف الليل : ${nightTimes.midnight}`,
+            last_third: `الثلث الأخير : ${nightTimes.lastThird}`,
+            times: {
+                fajr: formatTime(currentTimes.Fajr, config.prayerOffsets.Fajr || 0),
+                sunrise: formatTime(currentTimes.Sunrise, config.prayerOffsets.Sunrise || 0),
+                dhuhr: formatTime(currentTimes.Dhuhr, config.prayerOffsets.Dhuhr || 0),
+                asr: formatTime(currentTimes.Asr, config.prayerOffsets.Asr || 0),
+                maghrib: formatTime(currentTimes.Maghrib, config.prayerOffsets.Maghrib || 0),
+                isha: formatTime(currentTimes.Isha, config.prayerOffsets.Isha || 0)
+            }
+        });
+    }, [config.location, config.prayerOffsets, config.isSummerTime]);
+
     // --- Next Prayer & Countdown Logic ---
     useEffect(() => {
         const findNext = () => {
@@ -603,48 +648,9 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                     const countdownStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                     setCountdown(countdownStr);
                     
-                    if (m !== lastWidgetUpdateMinute && times.Fajr) {
+                    if (m !== lastWidgetUpdateMinute) {
                         lastWidgetUpdateMinute = m;
-                        const supportsDST = checkSupportsDST(config.location.combinedCode, config.location.fullCountry);
-                        const isSummerTimeActive = config.isSummerTime && supportsDST;
-                        
-                        const maghribOffset = (config.prayerOffsets.Maghrib || 0) + (isSummerTimeActive ? 60 : 0);
-                        const fajrOffset = (config.prayerOffsets.Fajr || 0) + (isSummerTimeActive ? 60 : 0);
-                        const maghribTime = applyOffset(times.Maghrib, maghribOffset);
-                        const fajrTime = applyOffset(times.Fajr, fajrOffset);
-                        const nightTimes = calculateNightTimes(maghribTime, fajrTime);
-                        
-                        const formatTime = (timeStr: string, offset: number) => {
-                            const adjusted = applyOffset(timeStr, offset + (isSummerTimeActive ? 60 : 0));
-                            if (!adjusted || adjusted.includes('--')) return "--:--";
-                            let [hh, mm] = adjusted.split(':');
-                            let hInt = parseInt(hh);
-                            hInt = hInt % 12 || 12;
-                            return `${hInt.toString().padStart(2, '0')}:${mm}`;
-                        };
-                        
-                        const dayNamesAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-                        const currentDayName = dayNamesAr[new Date().getDay()];
-                        
-                        updateAndroidWidget({
-                            hijri: dates.hijri,
-                            gregorian: dates.gregorian,
-                            day: currentDayName,
-                            city: config.location.cityGov.split(' - ')[0],
-                            next_prayer_name: next.name,
-                            next_prayer_id: next.key.toLowerCase(),
-                            remaining_time: `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`,
-                            midnight: `منتصف الليل : ${nightTimes.midnight}`,
-                            last_third: `الثلث الأخير : ${nightTimes.lastThird}`,
-                            times: {
-                                fajr: formatTime(times.Fajr, config.prayerOffsets.Fajr || 0),
-                                sunrise: formatTime(times.Sunrise, config.prayerOffsets.Sunrise || 0),
-                                dhuhr: formatTime(times.Dhuhr, config.prayerOffsets.Dhuhr || 0),
-                                asr: formatTime(times.Asr, config.prayerOffsets.Asr || 0),
-                                maghrib: formatTime(times.Maghrib, config.prayerOffsets.Maghrib || 0),
-                                isha: formatTime(times.Isha, config.prayerOffsets.Isha || 0)
-                            }
-                        });
+                        updateWidget(times, dates, next, countdownStr);
                     }
                 } else {
                     setCountdown("00:00:00");
@@ -654,6 +660,13 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
 
         return () => clearInterval(timer);
     }, [times, config.prayerOffsets, config.isSummerTime]);
+
+    // Update widget when times or next prayer changes (not every second)
+    useEffect(() => {
+        if (times.Fajr && nextPrayer) {
+            updateWidget(times, dates, nextPrayer, countdown);
+        }
+    }, [times, dates, nextPrayer?.key, updateWidget]);
 
     // Initial load
     useEffect(() => {
