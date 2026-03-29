@@ -96,10 +96,11 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
       };
     }
 
-    const padding = 20;
-    const tooltipWidth = 280;
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
+    const padding = 15;
+    const tooltipWidth = Math.min(280, screenWidth * 0.9);
+    const tooltipHeight = 180; // Estimated max height
 
     let top: number | string = 'auto';
     let left: number | string = 'auto';
@@ -107,20 +108,45 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
     let right: number | string = 'auto';
     let transform = 'none';
 
+    // Helper to keep left/right within bounds
+    const getSafeLeft = (preferredLeft: number) => {
+      return Math.max(10, Math.min(screenWidth - tooltipWidth - 10, preferredLeft));
+    };
+
     if (step.arrow === 'up') {
-      top = Math.min(screenHeight - 150, targetRect.bottom + padding);
-      left = Math.max(10, Math.min(screenWidth - tooltipWidth - 10, targetRect.left + targetRect.width / 2 - tooltipWidth / 2));
+      // Tooltip is BELOW the target, arrow points UP
+      top = targetRect.bottom + padding;
+      // If it goes off screen bottom, flip it or cap it
+      if (typeof top === 'number' && top + tooltipHeight > screenHeight - 20) {
+        top = 'auto';
+        bottom = (screenHeight - targetRect.top) + padding;
+      }
+      left = getSafeLeft(targetRect.left + targetRect.width / 2 - tooltipWidth / 2);
     } else if (step.arrow === 'down') {
-      const calculatedBottom = (screenHeight - targetRect.top) + padding;
-      bottom = Math.min(screenHeight - 150, calculatedBottom);
-      left = Math.max(10, Math.min(screenWidth - tooltipWidth - 10, targetRect.left + targetRect.width / 2 - tooltipWidth / 2));
+      // Tooltip is ABOVE the target, arrow points DOWN
+      bottom = (screenHeight - targetRect.top) + padding;
+      // If it goes off screen top, flip it or cap it
+      if (typeof bottom === 'number' && screenHeight - bottom < 20) {
+         bottom = 'auto';
+         top = targetRect.bottom + padding;
+      }
+      left = getSafeLeft(targetRect.left + targetRect.width / 2 - tooltipWidth / 2);
     } else if (step.arrow === 'left') {
-      left = Math.min(screenWidth - tooltipWidth - 10, targetRect.right + padding);
-      top = Math.max(10, Math.min(screenHeight - 150, targetRect.top + targetRect.height / 2 - 50));
+      // Tooltip is to the RIGHT of the target, arrow points LEFT
+      left = targetRect.right + padding;
+      if (typeof left === 'number' && left + tooltipWidth > screenWidth - 10) {
+        left = 'auto';
+        right = (screenWidth - targetRect.left) + padding;
+      }
+      top = Math.max(10, Math.min(screenHeight - tooltipHeight - 10, targetRect.top + targetRect.height / 2 - 50));
     } else if (step.arrow === 'right') {
-      const calculatedRight = (screenWidth - targetRect.left) + padding;
-      right = Math.min(screenWidth - tooltipWidth - 10, calculatedRight);
-      top = Math.max(10, Math.min(screenHeight - 150, targetRect.top + targetRect.height / 2 - 50));
+      // Tooltip is to the LEFT of the target, arrow points RIGHT
+      right = (screenWidth - targetRect.left) + padding;
+      if (typeof right === 'number' && right + tooltipWidth > screenWidth - 10) {
+        right = 'auto';
+        left = targetRect.right + padding;
+      }
+      top = Math.max(10, Math.min(screenHeight - tooltipHeight - 10, targetRect.top + targetRect.height / 2 - 50));
     } else {
       return {
         top: step.position.top || '50%',

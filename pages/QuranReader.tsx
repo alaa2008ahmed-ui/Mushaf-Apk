@@ -497,9 +497,19 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             icon: <Mic className="w-8 h-8 text-white" />
         },
         {
-            id: 'ayah-interaction',
-            text: 'التفاعل مع الآيات: اضغط على الآية لإظهار خيارات التفسير، النسخ، أو الاستماع لآية محددة.',
-            position: { top: '40%' },
+            id: 'ayah-text',
+            text: 'تفاعل مع الآية: اضغط على نص الآية لإظهار خيارات التفسير، النسخ، أو المشاركة.',
+            position: { top: '300px' },
+            arrow: 'up',
+            selector: '.ayah-text-block',
+            icon: <MousePointer2 className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'ayah-number',
+            text: 'رقم الآية: اضغط على رقم الآية للوصول لخيارات سريعة خاصة بهذه الآية.',
+            position: { top: '350px' },
+            arrow: 'up',
+            selector: '.verse-container',
             icon: <MousePointer2 className="w-8 h-8 text-white" />
         },
         {

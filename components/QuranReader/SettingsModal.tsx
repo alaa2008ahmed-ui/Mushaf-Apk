@@ -113,8 +113,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             icon: <Settings2 className="w-8 h-8 text-white" />
         },
         {
+            id: 'interface-customization',
+            text: 'تخصيص الواجهة: يمكنك تغيير ألوان شريط الأدوات والعناصر الأخرى لتناسب ذوقك.',
+            position: { bottom: '150px' },
+            arrow: 'down',
+            selector: '#interface-customization-btn',
+            icon: <Palette className="w-8 h-8 text-white" />
+        },
+        {
             id: 'downloads',
-            text: 'يمكنك تحميل القرآن الكريم أو التفسير للاستخدام بدون إنترنت.',
+            text: 'تحميل المحتوى: يمكنك تحميل القرآن الكريم أو التفسير للاستخدام بدون إنترنت.',
             position: { bottom: '100px' },
             arrow: 'down',
             selector: '#downloads-section',
@@ -366,7 +374,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     <div id="downloads-section" className="space-y-1">
                         <div className="border-b border-gray-200 dark:border-gray-700 py-1">
                             <div className="custom-select-wrapper">
-                                <button onClick={() => onOpenModal('toolbar-color-picker-modal')} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
+                                <button id="interface-customization-btn" onClick={() => onOpenModal('toolbar-color-picker-modal')} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
                                     <span>تخصيص الواجهة</span>
                                     <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
                                 </button>
@@ -375,7 +383,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         
                         <div className="border-b border-gray-200 dark:border-gray-700 py-1">
                             <div className="custom-select-wrapper">
-                                <button onClick={() => { onOpenModal('quran-download-modal'); }} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
+                                <button id="quran-download-btn" onClick={() => { onOpenModal('quran-download-modal'); }} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
                                     <span>تحميل القرآن الكريم</span>
                                     <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
                                 </button>
@@ -384,7 +392,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         
                         <div className="border-b border-gray-200 dark:border-gray-700 py-1">
                             <div className="custom-select-wrapper">
-                                <button onClick={() => { onOpenModal('tafsir-download-modal'); }} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
+                                <button id="tafseer-download-btn" onClick={() => { onOpenModal('tafsir-download-modal'); }} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
                                     <span>تحميل التفسير</span>
                                     <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
                                 </button>
