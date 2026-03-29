@@ -108,12 +108,14 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
           className="fixed inset-0 z-[9999] select-none overflow-hidden"
           onClick={handleClose}
         >
-          {/* Background Overlay */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute inset-0 bg-black/85" 
-          />
+          {/* Background Overlay - Only when no specific target is highlighted */}
+          {!targetRect && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 bg-black/85" 
+            />
+          )}
 
           {/* Highlight Target */}
           {targetRect && (
