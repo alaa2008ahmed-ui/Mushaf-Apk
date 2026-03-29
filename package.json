@@ -19,6 +19,7 @@
     "@capacitor/geolocation": "^8.1.0",
     "@capacitor/preferences": "^8.0.1",
     "@capacitor/screen-orientation": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
     "@fontsource/amiri": "^5.2.8",
     "@fontsource/amiri-quran": "^5.2.10",
     "@fontsource/aref-ruqaa": "^5.2.8",

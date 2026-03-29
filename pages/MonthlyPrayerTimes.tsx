@@ -7,6 +7,9 @@ import { formatTime12_clean, applyOffset } from '../utils/prayerTimesUtils';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Share, ArrowRight, Download, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Share as CapacitorShare } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
 
 const getCalculationParams = (country: string, code: string) => {
     let params = CalculationMethod.MuslimWorldLeague();
@@ -95,17 +98,23 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
 
     const handleShare = async () => {
         const text = `مواقيت الصلاة لشهر ${monthNameAr} ${hijriYear} هـ\nالموقع: ${config.location.cityGov}\nتم الإنشاء بواسطة: مصحف احمد وليلى\n\n`;
-        if (navigator.share) {
-            try {
+        try {
+            if (Capacitor.isNativePlatform()) {
+                await CapacitorShare.share({
+                    title: `مواقيت الصلاة - ${monthNameAr}`,
+                    text: text,
+                    dialogTitle: 'مشاركة مواقيت الصلاة',
+                });
+            } else if (navigator.share) {
                 await navigator.share({
                     title: `مواقيت الصلاة - ${monthNameAr}`,
                     text: text,
                 });
-            } catch (err) {
-                console.error("Share failed:", err);
+            } else {
+                alert("المشاركة غير مدعومة في هذا المتصفح");
             }
-        } else {
-            alert("المشاركة غير مدعومة في هذا المتصفح");
+        } catch (err) {
+            console.error("Share failed:", err);
         }
     };
 
@@ -132,7 +141,29 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
             
             pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
             
-            pdf.save(`مواقيت_الصلاة_${hijriYear}_${currentHijriDate.iMonth() + 1}.pdf`);
+            const fileName = `prayer_times_${hijriYear}_${currentHijriDate.iMonth() + 1}.pdf`;
+
+            if (Capacitor.isNativePlatform()) {
+                // Get base64 string
+                const pdfBase64 = pdf.output('datauristring').split(',')[1];
+                
+                // Save to device
+                const savedFile = await Filesystem.writeFile({
+                    path: fileName,
+                    data: pdfBase64,
+                    directory: Directory.Cache
+                });
+                
+                // Share the file
+                await CapacitorShare.share({
+                    title: 'مواقيت الصلاة',
+                    text: `مواقيت الصلاة لشهر ${monthNameAr} ${hijriYear} هـ`,
+                    url: savedFile.uri,
+                    dialogTitle: 'مشاركة أو حفظ ملف PDF'
+                });
+            } else {
+                pdf.save(fileName);
+            }
         } catch (error) {
             console.error("Error generating PDF:", error);
             alert("حدث خطأ أثناء إنشاء ملف PDF");

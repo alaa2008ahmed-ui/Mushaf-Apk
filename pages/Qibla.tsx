@@ -177,9 +177,9 @@ function Qibla({ onBack }) {
                 </div>
             </header>
 
-            <main className="flex-1 flex flex-col items-center justify-center p-4 gap-4 text-center overflow-hidden">
-                 {error && <p className="themed-card p-3 rounded-lg" style={{backgroundColor: '#ef4444', color: 'white'}}>{error}</p>}
-                 {qiblaDirection === null && !error && <p className="themed-text">جاري تحديد اتجاه القبلة...</p>}
+            <main className="flex-1 w-full flex flex-col items-center justify-start p-4 gap-4 text-center overflow-y-auto overflow-x-hidden pb-24">
+                 {error && <p className="themed-card p-3 rounded-lg w-full" style={{backgroundColor: '#ef4444', color: 'white'}}>{error}</p>}
+                 {qiblaDirection === null && !error && <p className="themed-text w-full">جاري تحديد اتجاه القبلة...</p>}
                  
                  {permissionStatus === 'unknown' && activeMode === 'compass' && (
                      <button 
@@ -193,7 +193,7 @@ function Qibla({ onBack }) {
                  )}
 
                 {activeMode === 'compass' && (
-                    <>
+                    <div className="flex-1 flex flex-col items-center justify-center w-full">
                         <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full flex items-center justify-center themed-card transition-all duration-300" style={{boxShadow: isAligned ? `0 0 20px ${theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]}90` : 'var(--card-shadow)'}}>
                             
                             <div ref={compassCircleRef} className="absolute w-full h-full transition-transform duration-500 ease-out">
@@ -237,7 +237,7 @@ function Qibla({ onBack }) {
                         <p className="text-center text-sm mt-4 opacity-70 themed-text-muted">
                             (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
                         </p>
-                    </>
+                    </div>
                 )}
 
                 {activeMode === 'visual' && config?.location && (

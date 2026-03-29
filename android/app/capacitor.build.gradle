@@ -16,6 +16,7 @@ dependencies {
     implementation project(':capacitor-geolocation')
     implementation project(':capacitor-preferences')
     implementation project(':capacitor-screen-orientation')
+    implementation project(':capacitor-share')
     implementation project(':capacitor-voice-recorder')
     implementation "androidx.core:core:1.12.0"
 }
