@@ -88,74 +88,12 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
   if (!isVisible) return null;
 
   const getTooltipStyle = () => {
-    if (!targetRect) {
-      return {
-        top: step.position.top || '50%',
-        left: step.position.left || '50%',
-        transform: 'translate(-50%, -50%)'
-      };
-    }
-
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-    const padding = 15;
-    const tooltipWidth = Math.min(280, screenWidth * 0.9);
-    const tooltipHeight = 180; // Estimated max height
-
-    let top: number | string = 'auto';
-    let left: number | string = 'auto';
-    let bottom: number | string = 'auto';
-    let right: number | string = 'auto';
-    let transform = 'none';
-
-    // Helper to keep left/right within bounds
-    const getSafeLeft = (preferredLeft: number) => {
-      return Math.max(10, Math.min(screenWidth - tooltipWidth - 10, preferredLeft));
+    return {
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      width: 'min(320px, 90vw)',
     };
-
-    if (step.arrow === 'up') {
-      // Tooltip is BELOW the target, arrow points UP
-      top = targetRect.bottom + padding;
-      // If it goes off screen bottom, flip it or cap it
-      if (typeof top === 'number' && top + tooltipHeight > screenHeight - 20) {
-        top = 'auto';
-        bottom = (screenHeight - targetRect.top) + padding;
-      }
-      left = getSafeLeft(targetRect.left + targetRect.width / 2 - tooltipWidth / 2);
-    } else if (step.arrow === 'down') {
-      // Tooltip is ABOVE the target, arrow points DOWN
-      bottom = (screenHeight - targetRect.top) + padding;
-      // If it goes off screen top, flip it or cap it
-      if (typeof bottom === 'number' && screenHeight - bottom < 20) {
-         bottom = 'auto';
-         top = targetRect.bottom + padding;
-      }
-      left = getSafeLeft(targetRect.left + targetRect.width / 2 - tooltipWidth / 2);
-    } else if (step.arrow === 'left') {
-      // Tooltip is to the RIGHT of the target, arrow points LEFT
-      left = targetRect.right + padding;
-      if (typeof left === 'number' && left + tooltipWidth > screenWidth - 10) {
-        left = 'auto';
-        right = (screenWidth - targetRect.left) + padding;
-      }
-      top = Math.max(10, Math.min(screenHeight - tooltipHeight - 10, targetRect.top + targetRect.height / 2 - 50));
-    } else if (step.arrow === 'right') {
-      // Tooltip is to the LEFT of the target, arrow points RIGHT
-      right = (screenWidth - targetRect.left) + padding;
-      if (typeof right === 'number' && right + tooltipWidth > screenWidth - 10) {
-        right = 'auto';
-        left = targetRect.right + padding;
-      }
-      top = Math.max(10, Math.min(screenHeight - tooltipHeight - 10, targetRect.top + targetRect.height / 2 - 50));
-    } else {
-      return {
-        top: step.position.top || '50%',
-        left: step.position.left || '50%',
-        transform: 'translate(-50%, -50%)'
-      };
-    }
-
-    return { top, left, bottom, right, transform };
   };
 
   const tooltipStyle = getTooltipStyle();
@@ -209,7 +147,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
           )}
 
           <div className="relative w-full h-full flex flex-col items-center justify-center pointer-events-none">
-            {/* Step Content */}
+            {/* Step Content - Centered */}
             <motion.div
               key={currentStep}
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -219,32 +157,20 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
               style={tooltipStyle}
               onClick={handleNext}
             >
-              {step.arrow === 'up' && (
-                <motion.div 
-                  animate={{ y: [0, -5, 0] }} 
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="absolute -top-10"
-                >
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 19V5M5 12l7-7 7 7"/>
-                  </svg>
-                </motion.div>
-              )}
-              
               {step.icon && (
                 <div className="p-3 bg-white/20 rounded-full backdrop-blur-sm shadow-xl border border-white/30">
                   {step.icon}
                 </div>
               )}
               
-              <div className="w-[280px] bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 shadow-2xl">
-                <h3 className="text-lg font-bold mb-3 leading-relaxed">
+              <div className="w-full bg-black/60 p-6 rounded-3xl backdrop-blur-xl border border-white/20 shadow-2xl">
+                <h3 className="text-lg font-bold mb-4 leading-relaxed">
                   {step.text}
                 </h3>
                 
                 <div className="flex items-center justify-center gap-2 mt-2">
                   <button 
-                    className="px-4 py-1.5 bg-white text-black rounded-full text-sm font-bold flex items-center gap-1 active:scale-95 transition-transform"
+                    className="px-6 py-2 bg-white text-black rounded-full text-sm font-bold flex items-center gap-1 active:scale-95 transition-transform"
                     onClick={handleNext}
                   >
                     {currentStep === steps.length - 1 ? 'إنهاء' : 'التالي'}
@@ -252,18 +178,6 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
                   </button>
                 </div>
               </div>
-
-              {step.arrow === 'down' && (
-                <motion.div 
-                  animate={{ y: [0, 5, 0] }} 
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="absolute -bottom-10"
-                >
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                  </svg>
-                </motion.div>
-              )}
             </motion.div>
 
             {/* Global Instruction */}
