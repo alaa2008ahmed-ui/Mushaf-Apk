@@ -14,9 +14,9 @@ import { preloadTajweedAudio } from './utils/audioCache';
 import { Mic, MicOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTheme } from './context/ThemeContext';
-import { normalizeArabic } from './src/utils/voiceParser';
+import { normalizeArabic } from './utils/voiceParser';
 import { usePrayerTimes } from './context/PrayerTimesContext';
-import { updateAndroidWidget } from './src/utils/widgetUtils';
+import { updateAndroidWidget } from './utils/widgetUtils';
 
 // --- Main App Component ---
 function App() {

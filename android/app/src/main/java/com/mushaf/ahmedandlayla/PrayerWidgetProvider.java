@@ -36,9 +36,13 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                 String nextPrayerId = data.getString("next_prayer_id");
 
                 // تحديث التاريخ الهجري ومعلومات الصلاة القادمة
-                views.setTextViewText(R.id.widget_hijri_date, data.getString("hijri"));
-                views.setTextViewText(R.id.widget_next_prayer_name, "الصلاة القادمة: " + data.getString("next_prayer_name"));
+                views.setTextViewText(R.id.widget_hijri_date, data.getString("day") + "، " + data.getString("hijri"));
+                views.setTextViewText(R.id.widget_gregorian_date, data.getString("gregorian"));
+                views.setTextViewText(R.id.widget_city, data.getString("city"));
+                views.setTextViewText(R.id.widget_next_prayer_name, data.getString("next_prayer_name") + " بعد");
                 views.setTextViewText(R.id.widget_next_prayer_time, data.getString("remaining_time"));
+                views.setTextViewText(R.id.widget_midnight, data.getString("midnight"));
+                views.setTextViewText(R.id.widget_last_third, data.getString("last_third"));
 
                 // تحديث أوقات الصلوات
                 views.setTextViewText(R.id.time_fajr, times.getString("fajr"));
@@ -48,24 +52,43 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                 views.setTextViewText(R.id.time_maghrib, times.getString("maghrib"));
                 views.setTextViewText(R.id.time_isha, times.getString("isha"));
 
-                // إعداد الألوان (تصفير الخلفيات)
-                int defaultColor = Color.TRANSPARENT;
-                int highlightColor = Color.parseColor("#33FFD700"); // ذهبي نيون شفاف
+                // إعداد الألوان (تصفير الألوان)
+                int defaultColor = Color.parseColor("#000000");
+                int highlightColor = Color.parseColor("#10b981"); // Green
 
-                views.setInt(R.id.row_fajr, "setBackgroundColor", defaultColor);
-                views.setInt(R.id.row_sunrise, "setBackgroundColor", defaultColor);
-                views.setInt(R.id.row_dhuhr, "setBackgroundColor", defaultColor);
-                views.setInt(R.id.row_asr, "setBackgroundColor", defaultColor);
-                views.setInt(R.id.row_maghrib, "setBackgroundColor", defaultColor);
-                views.setInt(R.id.row_isha, "setBackgroundColor", defaultColor);
+                views.setTextColor(R.id.name_fajr, defaultColor);
+                views.setTextColor(R.id.time_fajr, defaultColor);
+                views.setTextColor(R.id.name_sunrise, defaultColor);
+                views.setTextColor(R.id.time_sunrise, defaultColor);
+                views.setTextColor(R.id.name_dhuhr, defaultColor);
+                views.setTextColor(R.id.time_dhuhr, defaultColor);
+                views.setTextColor(R.id.name_asr, defaultColor);
+                views.setTextColor(R.id.time_asr, defaultColor);
+                views.setTextColor(R.id.name_maghrib, defaultColor);
+                views.setTextColor(R.id.time_maghrib, defaultColor);
+                views.setTextColor(R.id.name_isha, defaultColor);
+                views.setTextColor(R.id.time_isha, defaultColor);
 
                 // تظليل الصلاة القادمة فقط
-                if (nextPrayerId.equals("fajr")) views.setInt(R.id.row_fajr, "setBackgroundColor", highlightColor);
-                else if (nextPrayerId.equals("sunrise")) views.setInt(R.id.row_sunrise, "setBackgroundColor", highlightColor);
-                else if (nextPrayerId.equals("dhuhr")) views.setInt(R.id.row_dhuhr, "setBackgroundColor", highlightColor);
-                else if (nextPrayerId.equals("asr")) views.setInt(R.id.row_asr, "setBackgroundColor", highlightColor);
-                else if (nextPrayerId.equals("maghrib")) views.setInt(R.id.row_maghrib, "setBackgroundColor", highlightColor);
-                else if (nextPrayerId.equals("isha")) views.setInt(R.id.row_isha, "setBackgroundColor", highlightColor);
+                if (nextPrayerId.equals("fajr")) {
+                    views.setTextColor(R.id.name_fajr, highlightColor);
+                    views.setTextColor(R.id.time_fajr, highlightColor);
+                } else if (nextPrayerId.equals("sunrise")) {
+                    views.setTextColor(R.id.name_sunrise, highlightColor);
+                    views.setTextColor(R.id.time_sunrise, highlightColor);
+                } else if (nextPrayerId.equals("dhuhr")) {
+                    views.setTextColor(R.id.name_dhuhr, highlightColor);
+                    views.setTextColor(R.id.time_dhuhr, highlightColor);
+                } else if (nextPrayerId.equals("asr")) {
+                    views.setTextColor(R.id.name_asr, highlightColor);
+                    views.setTextColor(R.id.time_asr, highlightColor);
+                } else if (nextPrayerId.equals("maghrib")) {
+                    views.setTextColor(R.id.name_maghrib, highlightColor);
+                    views.setTextColor(R.id.time_maghrib, highlightColor);
+                } else if (nextPrayerId.equals("isha")) {
+                    views.setTextColor(R.id.name_isha, highlightColor);
+                    views.setTextColor(R.id.time_isha, highlightColor);
+                }
 
             } catch (Exception e) {
                 e.printStackTrace();

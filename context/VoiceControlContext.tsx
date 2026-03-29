@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import { parseVoiceCommand, normalizeArabic } from '../src/utils/voiceParser';
+import { parseVoiceCommand, normalizeArabic } from '../utils/voiceParser';
 import { SURAH_NAMES_AR } from '../components/QuranReader/constants';
 
 export interface VoiceCommand {

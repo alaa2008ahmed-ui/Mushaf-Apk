@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { READERS, TAFSEERS, JUZ_MAP } from './constants';
-import { normalizeArabic } from '../../src/utils/voiceParser';
+import { normalizeArabic } from '../../utils/voiceParser';
 
 interface DownloadModalProps {
     onClose: () => void;

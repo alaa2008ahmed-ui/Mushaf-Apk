@@ -29,7 +29,7 @@ import AyahContextMenu from '../components/QuranReader/AyahContextMenu';
 import quranUthmaniJson from '../data/quran-uthmani.json';
 import quranTajweedJson from '../data/quran-tajweed.json';
 import { registerBackInterceptor } from '../hooks/useBackButton';
-import { parseVoiceCommand, normalizeArabic } from '../src/utils/voiceParser';
+import { parseVoiceCommand, normalizeArabic } from '../utils/voiceParser';
 
 declare var window: any;
 

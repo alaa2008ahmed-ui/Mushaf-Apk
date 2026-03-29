@@ -4,7 +4,8 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { prayerNamesAr } from '../data/prayerTimesData';
-import { checkSupportsDST } from '../utils/prayerTimesUtils';
+import { checkSupportsDST, calculateNightTimes } from '../utils/prayerTimesUtils';
+import { updateAndroidWidget } from '../utils/widgetUtils';
 
 // --- Types ---
 interface PrayerConfig {
@@ -587,6 +588,8 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             return found;
         };
 
+        let lastWidgetUpdateMinute = -1;
+
         const timer = setInterval(() => {
             const next = findNext();
             setNextPrayer(next);
@@ -597,7 +600,52 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                     const h = Math.floor(diff / 3600000);
                     const m = Math.floor((diff % 3600000) / 60000);
                     const s = Math.floor((diff % 60000) / 1000);
-                    setCountdown(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+                    const countdownStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                    setCountdown(countdownStr);
+                    
+                    if (m !== lastWidgetUpdateMinute && times.Fajr) {
+                        lastWidgetUpdateMinute = m;
+                        const supportsDST = checkSupportsDST(config.location.combinedCode, config.location.fullCountry);
+                        const isSummerTimeActive = config.isSummerTime && supportsDST;
+                        
+                        const maghribOffset = (config.prayerOffsets.Maghrib || 0) + (isSummerTimeActive ? 60 : 0);
+                        const fajrOffset = (config.prayerOffsets.Fajr || 0) + (isSummerTimeActive ? 60 : 0);
+                        const maghribTime = applyOffset(times.Maghrib, maghribOffset);
+                        const fajrTime = applyOffset(times.Fajr, fajrOffset);
+                        const nightTimes = calculateNightTimes(maghribTime, fajrTime);
+                        
+                        const formatTime = (timeStr: string, offset: number) => {
+                            const adjusted = applyOffset(timeStr, offset + (isSummerTimeActive ? 60 : 0));
+                            if (!adjusted || adjusted.includes('--')) return "--:--";
+                            let [hh, mm] = adjusted.split(':');
+                            let hInt = parseInt(hh);
+                            hInt = hInt % 12 || 12;
+                            return `${hInt.toString().padStart(2, '0')}:${mm}`;
+                        };
+                        
+                        const dayNamesAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+                        const currentDayName = dayNamesAr[new Date().getDay()];
+                        
+                        updateAndroidWidget({
+                            hijri: dates.hijri,
+                            gregorian: dates.gregorian,
+                            day: currentDayName,
+                            city: config.location.cityGov.split(' - ')[0],
+                            next_prayer_name: next.name,
+                            next_prayer_id: next.key.toLowerCase(),
+                            remaining_time: `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`,
+                            midnight: `منتصف الليل : ${nightTimes.midnight}`,
+                            last_third: `الثلث الأخير : ${nightTimes.lastThird}`,
+                            times: {
+                                fajr: formatTime(times.Fajr, config.prayerOffsets.Fajr || 0),
+                                sunrise: formatTime(times.Sunrise, config.prayerOffsets.Sunrise || 0),
+                                dhuhr: formatTime(times.Dhuhr, config.prayerOffsets.Dhuhr || 0),
+                                asr: formatTime(times.Asr, config.prayerOffsets.Asr || 0),
+                                maghrib: formatTime(times.Maghrib, config.prayerOffsets.Maghrib || 0),
+                                isha: formatTime(times.Isha, config.prayerOffsets.Isha || 0)
+                            }
+                        });
+                    }
                 } else {
                     setCountdown("00:00:00");
                 }

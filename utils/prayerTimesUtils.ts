@@ -77,3 +77,36 @@ export const stopNotificationSound = () => {
         previewAudio = null;
     }
 };
+
+export const calculateNightTimes = (maghribTimeStr: string, fajrTimeStr: string) => {
+    if (!maghribTimeStr || !fajrTimeStr || maghribTimeStr.includes('--') || fajrTimeStr.includes('--')) {
+        return { midnight: "--:--", lastThird: "--:--" };
+    }
+    
+    const [mH, mM] = maghribTimeStr.split(':').map(Number);
+    const [fH, fM] = fajrTimeStr.split(':').map(Number);
+    
+    let maghribDate = new Date();
+    maghribDate.setHours(mH, mM, 0, 0);
+    
+    let fajrDate = new Date();
+    fajrDate.setHours(fH, fM, 0, 0);
+    
+    if (fajrDate <= maghribDate) {
+        fajrDate.setDate(fajrDate.getDate() + 1);
+    }
+    
+    const diffMs = fajrDate.getTime() - maghribDate.getTime();
+    
+    const midnightDate = new Date(maghribDate.getTime() + diffMs / 2);
+    const lastThirdDate = new Date(maghribDate.getTime() + (diffMs * 2) / 3);
+    
+    const formatTime = (d: Date) => {
+        return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    };
+    
+    return {
+        midnight: formatTime(midnightDate),
+        lastThird: formatTime(lastThirdDate)
+    };
+};
