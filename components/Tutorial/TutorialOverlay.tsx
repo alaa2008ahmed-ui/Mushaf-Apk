@@ -9,6 +9,7 @@ export interface TutorialStep {
   icon?: React.ReactNode;
   position: { top?: string; bottom?: string; left?: string; right?: string };
   arrow?: 'up' | 'down' | 'left' | 'right';
+  selector?: string;
 }
 
 interface TutorialOverlayProps {
@@ -28,8 +29,6 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
     }
   }, [tutorialId, shouldShowTutorial]);
 
-  if (!isVisible) return null;
-
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (currentStep < steps.length - 1) {
@@ -46,6 +45,17 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
   };
 
   const step = steps[currentStep];
+
+  useEffect(() => {
+    if (isVisible && step?.selector) {
+      const el = document.querySelector(step.selector);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [currentStep, isVisible, step?.selector]);
+
+  if (!isVisible) return null;
 
   return (
     <AnimatePresence>

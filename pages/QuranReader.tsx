@@ -27,7 +27,7 @@ import QuranFooter from '../components/QuranReader/QuranFooter';
 import FloatingMenu from '../components/QuranReader/FloatingMenu';
 import AyahContextMenu from '../components/QuranReader/AyahContextMenu';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
-import { MousePointer2, Move, ZoomIn, LayoutGrid } from 'lucide-react';
+import { MousePointer2, Move, ZoomIn, LayoutGrid, Mic, Bookmark, Home } from 'lucide-react';
 import quranUthmaniJson from '../data/quran-uthmani.json';
 import quranTajweedJson from '../data/quran-tajweed.json';
 import { registerBackInterceptor } from '../hooks/useBackButton';
@@ -473,30 +473,72 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     const quranTutorialSteps: TutorialStep[] = [
         {
-            id: 'sidebar',
-            text: 'القائمة الجانبية: من هنا يمكنك الوصول للإعدادات، البحث، والفهارس.',
-            position: { top: '20px', right: '20px' },
+            id: 'surah-name',
+            text: 'اسم السورة: اضغط هنا لتغيير السورة أو الانتقال لجزء محدد بسهولة.',
+            position: { top: '70px', right: '20px' },
             arrow: 'up',
+            selector: '#surah-name-header',
             icon: <LayoutGrid className="w-8 h-8 text-white" />
         },
         {
-            id: 'ayah-click',
-            text: 'اضغط على رأس الآية لتحديد موضع توقف قراءتك أو إظهار خيارات الآية.',
+            id: 'page-nav',
+            text: 'رقم الصفحة: اضغط هنا للانتقال السريع لصفحة معينة عبر إدخال رقمها.',
+            position: { top: '70px', left: '50%', right: 'auto' },
+            arrow: 'up',
+            selector: '#header-page',
+            icon: <Move className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'audio-play',
+            text: 'التشغيل الصوتي: اضغط للتشغيل أو الإيقاف، واضغط مطولاً لتغيير القارئ المفضل.',
+            position: { top: '70px', left: '20px' },
+            arrow: 'up',
+            selector: '#btn-play',
+            icon: <Mic className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'ayah-interaction',
+            text: 'التفاعل مع الآيات: اضغط على الآية لإظهار خيارات التفسير، النسخ، أو الاستماع لآية محددة.',
             position: { top: '40%' },
             icon: <MousePointer2 className="w-8 h-8 text-white" />
         },
         {
-            id: 'zoom',
-            text: 'حرك الأصابع لتكبير أو تصغير الخط بما يريح عينيك.',
+            id: 'zoom-gesture',
+            text: 'التكبير والتصغير: استخدم إصبعين على الشاشة لتكبير أو تصغير الخط بما يريح عينيك.',
             position: { top: '60%' },
             icon: <ZoomIn className="w-8 h-8 text-white" />
         },
         {
-            id: 'navigation',
-            text: 'التنقل السريع: استخدم الشريط السفلي للتنقل بين الصفحات والأجزاء بسهولة.',
-            position: { bottom: '100px' },
+            id: 'main-menu',
+            text: 'القائمة العائمة: اضغط هنا للوصول السريع للبحث، المظهر، قائمة العلامات، والإعدادات العامة.',
+            position: { bottom: '80px', right: '20px' },
             arrow: 'down',
+            selector: '#btn-menu',
+            icon: <LayoutGrid className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'bookmark-feature',
+            text: 'حفظ العلامة: اضغط لحفظ موضعك الحالي، واضغط مطولاً لعرض وإدارة قائمة علاماتك.',
+            position: { bottom: '80px', right: '35%' },
+            arrow: 'down',
+            selector: '#btn-bookmark',
+            icon: <Bookmark className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'autoscroll-feature',
+            text: 'التمرير التلقائي: اضغط لبدء أو إيقاف التمرير، واضغط مطولاً لضبط السرعة والأوقات المفضلة.',
+            position: { bottom: '80px', left: '35%' },
+            arrow: 'down',
+            selector: '#btn-autoscroll',
             icon: <Move className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'home-nav',
+            text: 'الرئيسية: اضغط هنا للعودة إلى الشاشة الرئيسية للتطبيق في أي وقت.',
+            position: { bottom: '80px', left: '20px' },
+            arrow: 'down',
+            selector: '#btn-home',
+            icon: <Home className="w-8 h-8 text-white" />
         }
     ];
     const mushafContentRef = useRef<HTMLDivElement>(null);

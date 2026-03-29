@@ -53,48 +53,56 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             text: 'تحكم في حجم الخط بما يتناسب مع راحتك.',
             position: { top: '150px' },
             arrow: 'up',
+            selector: '#font-size-section',
             icon: <ZoomIn className="w-8 h-8 text-white" />
         },
         {
             id: 'colors',
             text: 'غير ألوان النص والخلفية والتحديد لتجربة قراءة مخصصة.',
             position: { top: '250px' },
+            selector: '#colors-section',
             icon: <Palette className="w-8 h-8 text-white" />
         },
         {
             id: 'font-family',
             text: 'اختر نوع الخط الذي تفضله للقراءة.',
             position: { top: '350px' },
+            selector: '#font-family-section',
             icon: <Type className="w-8 h-8 text-white" />
         },
         {
             id: 'reciter',
             text: 'اختر قارئك المفضل من قائمة القراء المتاحين.',
             position: { top: '420px' },
+            selector: '#reciter-section',
             icon: <Mic className="w-8 h-8 text-white" />
         },
         {
             id: 'ayah-repeat',
             text: 'حدد عدد مرات تكرار الآية الواحدة عند الاستماع.',
             position: { top: '500px' },
+            selector: '#ayah-repeat-section',
             icon: <Repeat className="w-8 h-8 text-white" />
         },
         {
             id: 'tafseer',
             text: 'اختر كتاب التفسير الذي تود عرضه مع الآيات.',
             position: { top: '580px' },
+            selector: '#tafseer-section',
             icon: <Book className="w-8 h-8 text-white" />
         },
         {
             id: 'scroll-speed',
             text: 'اضبط سرعة التمرير التلقائي للصفحة.',
             position: { top: '650px' },
+            selector: '#scroll-speed-section',
             icon: <MousePointer2 className="w-8 h-8 text-white" />
         },
         {
             id: 'toggles',
             text: 'خيارات إضافية لإظهار السجدة، المصحف المجود، أو إخفاء الأشرطة.',
             position: { top: '750px' },
+            selector: '#toggles-section',
             icon: <Settings2 className="w-8 h-8 text-white" />
         },
         {
@@ -102,6 +110,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             text: 'يمكنك تحميل القرآن الكريم أو التفسير للاستخدام بدون إنترنت.',
             position: { bottom: '100px' },
             arrow: 'down',
+            selector: '#downloads-section',
             icon: <Download className="w-8 h-8 text-white" />
         }
     ];
@@ -181,7 +190,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     <button onClick={handleClose} className="hover:opacity-80 rounded-full bg-white/20 w-8 h-8 flex items-center justify-center">✕</button>
                 </div>
                 <div className={`p-3 overflow-y-auto text-center flex-1 ${isLandscape ? 'grid grid-cols-2 gap-x-6 gap-y-2' : 'space-y-2'}`}>
-                    <div className={`${isLandscape ? 'col-span-2' : ''} border-b pb-2 border-gray-200 dark:border-gray-700 space-y-2`}>
+                    <div id="font-size-section" className={`${isLandscape ? 'col-span-2' : ''} border-b pb-2 border-gray-200 dark:border-gray-700 space-y-2`}>
                         <div className="flex items-center justify-between mt-3">
                             <label className="text-sm font-bold opacity-80">حجم الخط</label>
                             <span className="text-xs px-2 rounded themed-card-bg">{settings.fontSize}</span>
@@ -189,7 +198,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         <input type="range" min="0.5" max="4.5" step="0.1" value={settings.fontSize} onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value))} className="w-full h-1.5 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
                     </div>
 
-                    <div className={`${isLandscape ? 'col-span-2 grid grid-cols-3 gap-3' : 'grid grid-cols-1 gap-3'} border-b pb-2 border-gray-200 dark:border-gray-700`}>
+                    <div id="colors-section" className={`${isLandscape ? 'col-span-2 grid grid-cols-3 gap-3' : 'grid grid-cols-1 gap-3'} border-b pb-2 border-gray-200 dark:border-gray-700`}>
                         <div className="flex flex-col">
                             <label className="text-xs font-bold opacity-80 mb-1">لون النص</label>
                             <div 
@@ -252,7 +261,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         )}
                     </div>
 
-                    <div className="border-b border-gray-200 dark:border-gray-700 py-1">
+                    <div id="font-family-section" className="border-b border-gray-200 dark:border-gray-700 py-1">
                         <label className="text-xs font-bold block opacity-80">نوع الخط</label>
                         <div className="mt-1">
                             <button onClick={() => onOpenModal('font-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
@@ -262,7 +271,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         </div>
                     </div>
 
-                    <div className="border-b border-gray-200 dark:border-gray-700 py-1">
+                    <div id="reciter-section" className="border-b border-gray-200 dark:border-gray-700 py-1">
                         <label className="text-xs font-bold block opacity-80">القارئ</label>
                         <div className="mt-1">
                             <button onClick={() => onOpenModal('reciter-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
@@ -272,7 +281,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         </div>
                     </div>
 
-                    <div className="border-b border-gray-200 dark:border-gray-700 py-2">
+                    <div id="ayah-repeat-section" className="border-b border-gray-200 dark:border-gray-700 py-2">
                         <div className="flex flex-col gap-2">
                             <label className="text-sm font-bold opacity-80 text-right">تكرار الآية</label>
                             <div className="flex items-center gap-1.5 flex-wrap justify-center">
@@ -293,7 +302,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         </div>
                     </div>
 
-                    <div className="border-b border-gray-200 dark:border-gray-700 py-1">
+                    <div id="tafseer-section" className="border-b border-gray-200 dark:border-gray-700 py-1">
                         <label className="text-xs font-bold block opacity-80">التفسير</label>
                         <div className="mt-1">
                             <button onClick={() => onOpenModal('tafseer-selection-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
@@ -303,7 +312,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         </div>
                     </div>
 
-                    <div className="border-b pb-2 border-gray-200 dark:border-gray-700 space-y-2">
+                    <div id="scroll-speed-section" className="border-b pb-2 border-gray-200 dark:border-gray-700 space-y-2">
                         <div className="flex items-center justify-between mt-1">
                             <label className="text-sm font-bold opacity-80">سرعة التمرير</label>
                         </div>
@@ -315,60 +324,64 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         </div>
                     </div>
 
-                    <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
-                        <div className="flex items-center justify-between">
-                            <label className="text-sm font-bold opacity-80">إظهار بطاقة السجدة</label>
-                            <div className="relative inline-block w-10 align-middle select-none">
-                                <input type="checkbox" id="show-sajdah-card" checked={showSajdahCard} onChange={(e) => handleSajdahCardToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                                <label htmlFor="show-sajdah-card" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${showSajdahCard ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                    <div id="toggles-section" className="space-y-1">
+                        <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-bold opacity-80">إظهار بطاقة السجدة</label>
+                                <div className="relative inline-block w-10 align-middle select-none">
+                                    <input type="checkbox" id="show-sajdah-card" checked={showSajdahCard} onChange={(e) => handleSajdahCardToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
+                                    <label htmlFor="show-sajdah-card" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${showSajdahCard ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-bold opacity-80">المصحف المجود</label>
+                                <div className="relative inline-block w-10 align-middle select-none">
+                                    <input type="checkbox" id="use-tajweed" checked={useTajweed} onChange={(e) => handleTajweedToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
+                                    <label htmlFor="use-tajweed" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${useTajweed ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-bold opacity-80">إخفاء الأشرطة</label>
+                                <div className="relative inline-block w-10 align-middle select-none">
+                                    <input type="checkbox" id="hide-toolbars" checked={isHideToolbarsEnabled} onChange={(e) => handleHideToolbarsToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
+                                    <label htmlFor="hide-toolbars" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${isHideToolbarsEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
-                        <div className="flex items-center justify-between">
-                            <label className="text-sm font-bold opacity-80">المصحف المجود</label>
-                            <div className="relative inline-block w-10 align-middle select-none">
-                                <input type="checkbox" id="use-tajweed" checked={useTajweed} onChange={(e) => handleTajweedToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                                <label htmlFor="use-tajweed" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${useTajweed ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                    <div id="downloads-section" className="space-y-1">
+                        <div className="border-b border-gray-200 dark:border-gray-700 py-1">
+                            <div className="custom-select-wrapper">
+                                <button onClick={() => onOpenModal('toolbar-color-picker-modal')} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
+                                    <span>تخصيص الواجهة</span>
+                                    <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
+                                </button>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
-                        <div className="flex items-center justify-between">
-                            <label className="text-sm font-bold opacity-80">إخفاء الأشرطة</label>
-                            <div className="relative inline-block w-10 align-middle select-none">
-                                <input type="checkbox" id="hide-toolbars" checked={isHideToolbarsEnabled} onChange={(e) => handleHideToolbarsToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                                <label htmlFor="hide-toolbars" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${isHideToolbarsEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                        
+                        <div className="border-b border-gray-200 dark:border-gray-700 py-1">
+                            <div className="custom-select-wrapper">
+                                <button onClick={() => { onOpenModal('quran-download-modal'); }} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
+                                    <span>تحميل القرآن الكريم</span>
+                                    <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
+                                </button>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="border-b border-gray-200 dark:border-gray-700 py-1">
-                        <div className="custom-select-wrapper">
-                            <button onClick={() => onOpenModal('toolbar-color-picker-modal')} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
-                                <span>تخصيص الواجهة</span>
-                                <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div className="border-b border-gray-200 dark:border-gray-700 py-1">
-                        <div className="custom-select-wrapper">
-                            <button onClick={() => { onOpenModal('quran-download-modal'); }} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
-                                <span>تحميل القرآن الكريم</span>
-                                <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div className="border-b border-gray-200 dark:border-gray-700 py-1">
-                        <div className="custom-select-wrapper">
-                            <button onClick={() => { onOpenModal('tafsir-download-modal'); }} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
-                                <span>تحميل التفسير</span>
-                                <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
-                            </button>
+                        
+                        <div className="border-b border-gray-200 dark:border-gray-700 py-1">
+                            <div className="custom-select-wrapper">
+                                <button onClick={() => { onOpenModal('tafsir-download-modal'); }} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
+                                    <span>تحميل التفسير</span>
+                                    <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
