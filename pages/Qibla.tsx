@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import { usePrayerTimes } from '../context/PrayerTimesContext';
+import { VisualQibla, ARQibla, SunMoonQibla, ShadowQibla } from '../components/QiblaModes';
 
 // --- Helper Functions ---
 const toRad = (deg) => deg * Math.PI / 180;
@@ -16,6 +17,7 @@ function Qibla({ onBack }) {
     const [isAligned, setIsAligned] = useState(false);
     const [error, setError] = useState('');
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [activeMode, setActiveMode] = useState('compass'); // compass, visual, ar, sun_moon, shadow
     
     const compassCircleRef = useRef(null);
     const qiblaPointerRef = useRef(null);
@@ -148,13 +150,38 @@ function Qibla({ onBack }) {
                         {config?.location?.cityGov ? `حسب موقعك في: ${config.location.cityGov}` : 'استخدم البوصلة لتحديد اتجاه الكعبة المشرفة'}
                     </p>
                 </div>
+                
+                {/* Modes Tabs */}
+                <div className="flex overflow-x-auto hide-scrollbar gap-2 px-4 pb-2 mt-4">
+                    {[
+                        { id: 'compass', label: 'البوصلة', icon: 'fa-compass' },
+                        { id: 'visual', label: 'المرئية', icon: 'fa-map-location-dot' },
+                        { id: 'ar', label: 'الواقع المعزز', icon: 'fa-vr-cardboard' },
+                        { id: 'sun_moon', label: 'الشمس والقمر', icon: 'fa-cloud-sun' },
+                        { id: 'shadow', label: 'الظل', icon: 'fa-person-rays' }
+                    ].map(mode => (
+                        <button
+                            key={mode.id}
+                            onClick={() => setActiveMode(mode.id)}
+                            className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${activeMode === mode.id ? 'shadow-md' : 'opacity-70'}`}
+                            style={{
+                                backgroundColor: activeMode === mode.id ? (theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]) : 'var(--card-bg)',
+                                color: activeMode === mode.id ? (theme.name === 'أبيض وأسود' ? '#000000' : '#ffffff') : 'var(--text-color)',
+                                border: `1px solid ${theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]}30`
+                            }}
+                        >
+                            <i className={`fa-solid ${mode.icon}`}></i>
+                            {mode.label}
+                        </button>
+                    ))}
+                </div>
             </header>
 
-            <main className="flex-1 flex flex-col items-center justify-center p-4 gap-4 text-center">
+            <main className="flex-1 flex flex-col items-center justify-center p-4 gap-4 text-center overflow-hidden">
                  {error && <p className="themed-card p-3 rounded-lg" style={{backgroundColor: '#ef4444', color: 'white'}}>{error}</p>}
                  {qiblaDirection === null && !error && <p className="themed-text">جاري تحديد اتجاه القبلة...</p>}
                  
-                 {permissionStatus === 'unknown' && (
+                 {permissionStatus === 'unknown' && activeMode === 'compass' && (
                      <button 
                          onClick={requestPermission}
                          className="themed-card p-4 rounded-xl font-bold flex flex-col items-center gap-2 animate-pulse"
@@ -165,49 +192,69 @@ function Qibla({ onBack }) {
                      </button>
                  )}
 
-                <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full flex items-center justify-center themed-card transition-all duration-300" style={{boxShadow: isAligned ? `0 0 20px ${theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]}90` : 'var(--card-shadow)'}}>
-                    
-                    <div ref={compassCircleRef} className="absolute w-full h-full transition-transform duration-500 ease-out">
-                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-4 text-2xl font-bold" style={{color: theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]}}>ش</div>
-                         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 -mb-2 text-base themed-text-muted">ج</div>
-                         <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-2 text-base themed-text-muted">غ</div>
-                         <div className="absolute right-0 top-1/2 -translate-y-1/2 -mr-2 text-base themed-text-muted">ش</div>
-                         {/* Minor tick marks */}
-                        {Array.from({length: 12}).map((_, i) => (
-                          <div key={i} className="absolute top-0 left-1/2 w-px h-2 bg-current opacity-20" style={{transform: `translateX(-50%) rotate(${i * 30}deg)`, transformOrigin: '0 128px'}}></div>
-                        ))}
-                    </div>
-                    
-                    {qiblaDirection !== null && (
-                         <div ref={qiblaPointerRef} className="absolute w-full h-full transition-transform duration-500 ease-out">
-                             <svg viewBox="0 0 100 100" className="w-full h-full" style={{filter: `drop-shadow(0 2px 4px ${theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]}50)`}}>
-                                <path d="M50 0 L60 20 L50 15 L40 20 Z" fill={theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]} />
-                            </svg>
+                {activeMode === 'compass' && (
+                    <>
+                        <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full flex items-center justify-center themed-card transition-all duration-300" style={{boxShadow: isAligned ? `0 0 20px ${theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]}90` : 'var(--card-shadow)'}}>
+                            
+                            <div ref={compassCircleRef} className="absolute w-full h-full transition-transform duration-500 ease-out">
+                                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-4 text-2xl font-bold" style={{color: theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]}}>ش</div>
+                                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 -mb-2 text-base themed-text-muted">ج</div>
+                                 <div className="absolute left-0 top-1/2 -translate-y-1/2 -ml-2 text-base themed-text-muted">غ</div>
+                                 <div className="absolute right-0 top-1/2 -translate-y-1/2 -mr-2 text-base themed-text-muted">ش</div>
+                                 {/* Minor tick marks */}
+                                {Array.from({length: 12}).map((_, i) => (
+                                  <div key={i} className="absolute top-0 left-1/2 w-px h-2 bg-current opacity-20" style={{transform: `translateX(-50%) rotate(${i * 30}deg)`, transformOrigin: '0 128px'}}></div>
+                                ))}
+                            </div>
+                            
+                            {qiblaDirection !== null && (
+                                 <div ref={qiblaPointerRef} className="absolute w-full h-full transition-transform duration-500 ease-out">
+                                     <svg viewBox="0 0 100 100" className="w-full h-full" style={{filter: `drop-shadow(0 2px 4px ${theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]}50)`}}>
+                                        <path d="M50 0 L60 20 L50 15 L40 20 Z" fill={theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]} />
+                                    </svg>
+                                </div>
+                            )}
+                            
+                            {/* Kaaba Icon or Center Dot */}
+                            <div className="transition-all duration-500" style={{opacity: isAligned ? 1 : 0, transform: isAligned ? 'scale(1)' : 'scale(0)'}}>
+                                 <i className="fa-solid fa-kaaba text-6xl" style={{ color: theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[1], transform: `rotate(${heading}deg)` }}></i>
+                            </div>
+                            
+                            {!isAligned && <div className="absolute w-3 h-3 rounded-full border-2 shadow-lg transition-opacity" style={{backgroundColor: theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[1], borderColor: 'var(--card-bg)'}}></div>}
                         </div>
-                    )}
-                    
-                    {/* Kaaba Icon or Center Dot */}
-                    <div className="transition-all duration-500" style={{opacity: isAligned ? 1 : 0, transform: isAligned ? 'scale(1)' : 'scale(0)'}}>
-                         <i className="fa-solid fa-kaaba text-6xl" style={{ color: theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[1], transform: `rotate(${heading}deg)` }}></i>
-                    </div>
-                    
-                    {!isAligned && <div className="absolute w-3 h-3 rounded-full border-2 shadow-lg transition-opacity" style={{backgroundColor: theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[1], borderColor: 'var(--card-bg)'}}></div>}
-                </div>
-                
-                {qiblaDirection !== null && (
-                    <div className="themed-card p-4 rounded-xl transition-all duration-300 w-64" style={{borderColor: isAligned ? (theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]) : 'var(--card-border)', borderWidth: '2px'}}>
-                        <p className="text-lg font-bold transition-colors" style={{color: isAligned ? (theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]) : 'var(--text-color)'}}>
-                             {isAligned ? "هذا هو اتجاه القبلة" : `اتجاه القبلة: ${Math.round(qiblaDirection)}°`}
+                        
+                        {qiblaDirection !== null && (
+                            <div className="themed-card p-4 rounded-xl transition-all duration-300 w-64" style={{borderColor: isAligned ? (theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]) : 'var(--card-border)', borderWidth: '2px'}}>
+                                <p className="text-lg font-bold transition-colors" style={{color: isAligned ? (theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]) : 'var(--text-color)'}}>
+                                     {isAligned ? "هذا هو اتجاه القبلة" : `اتجاه القبلة: ${Math.round(qiblaDirection)}°`}
+                                </p>
+                                <p className="text-xs themed-text-muted mt-1">
+                                    {isAligned ? "تقبل الله طاعتكم" : "قم بمحاذاة السهم الأخضر مع علامة الشمال (ش)"}
+                                </p>
+                            </div>
+                        )}
+                        
+                        <p className="text-center text-sm mt-4 opacity-70 themed-text-muted">
+                            (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
                         </p>
-                        <p className="text-xs themed-text-muted mt-1">
-                            {isAligned ? "تقبل الله طاعتكم" : "قم بمحاذاة السهم الأخضر مع علامة الشمال (ش)"}
-                        </p>
-                    </div>
+                    </>
                 )}
-                
-                <p className="text-center text-sm mt-4 opacity-70 themed-text-muted">
-                    (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
-                </p>
+
+                {activeMode === 'visual' && config?.location && (
+                    <VisualQibla lat={config.location.lat} lng={config.location.lng} theme={theme} />
+                )}
+
+                {activeMode === 'ar' && qiblaDirection !== null && (
+                    <ARQibla qiblaDirection={qiblaDirection} heading={heading} isAligned={isAligned} theme={theme} />
+                )}
+
+                {activeMode === 'sun_moon' && config?.location && qiblaDirection !== null && (
+                    <SunMoonQibla lat={config.location.lat} lng={config.location.lng} qiblaDirection={qiblaDirection} heading={heading} theme={theme} />
+                )}
+
+                {activeMode === 'shadow' && config?.location && qiblaDirection !== null && (
+                    <ShadowQibla lat={config.location.lat} lng={config.location.lng} qiblaDirection={qiblaDirection} heading={heading} theme={theme} />
+                )}
 
             </main>
             

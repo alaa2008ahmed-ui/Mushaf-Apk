@@ -4,6 +4,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { prayerNamesAr } from '../data/prayerTimesData';
+import { checkSupportsDST } from '../utils/prayerTimesUtils';
 
 // --- Types ---
 interface PrayerConfig {
@@ -18,6 +19,7 @@ interface PrayerConfig {
         lat: number;
         lng: number;
     };
+    isSummerTime?: boolean;
 }
 
 interface PrayerTimesContextType {
@@ -38,7 +40,8 @@ const DEFAULT_CONFIG: PrayerConfig = {
     prayerOffsets: { Fajr: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 },
     tones: {},
     mutedPrayers: { Sunrise: true },
-    location: { cityGov: "الدمام - الشرقية", fullCountry: "المملكة العربية السعودية", combinedCode: "+966013", lat: 26.4207, lng: 50.0888 }
+    location: { cityGov: "الدمام - الشرقية", fullCountry: "المملكة العربية السعودية", combinedCode: "+966013", lat: 26.4207, lng: 50.0888 },
+    isSummerTime: false
 };
 
 
@@ -398,7 +401,9 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                                 if (!config.mutedPrayers[key]) {
                                     let prayerDate = dayTimings[key];
                                     // Apply offset
-                                    prayerDate.setMinutes(prayerDate.getMinutes() + (config.prayerOffsets[key] || 0));
+                                    const supportsDST = checkSupportsDST(config.location.combinedCode, config.location.fullCountry);
+                                    const totalOffset = (config.prayerOffsets[key] || 0) + ((config.isSummerTime && supportsDST) ? 60 : 0);
+                                    prayerDate.setMinutes(prayerDate.getMinutes() + totalOffset);
 
                                     // Skip if time passed
                                     if (prayerDate < new Date()) continue;
@@ -550,8 +555,12 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             const keys = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
             let found = null;
 
+            const supportsDST = checkSupportsDST(config.location.combinedCode, config.location.fullCountry);
+            const isSummerTimeActive = config.isSummerTime && supportsDST;
+
             for (const key of keys) {
-                const adjustedTime = applyOffset(times[key], config.prayerOffsets[key]);
+                const totalOffset = (config.prayerOffsets[key] || 0) + (isSummerTimeActive ? 60 : 0);
+                const adjustedTime = applyOffset(times[key], totalOffset);
                 if (adjustedTime && !adjustedTime.includes('--')) {
                     const [h, m] = adjustedTime.split(':');
                     const pDate = new Date(now); // Use city's current date
@@ -565,7 +574,8 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             }
 
             if (!found && times.Fajr) {
-                const fajrTime = applyOffset(times.Fajr, config.prayerOffsets.Fajr);
+                const totalOffset = (config.prayerOffsets.Fajr || 0) + (isSummerTimeActive ? 60 : 0);
+                const fajrTime = applyOffset(times.Fajr, totalOffset);
                 if (fajrTime && !fajrTime.includes('--')) {
                     const [h, m] = fajrTime.split(':');
                     const pDate = new Date(now);
@@ -595,7 +605,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [times, config.prayerOffsets]);
+    }, [times, config.prayerOffsets, config.isSummerTime]);
 
     // Initial load
     useEffect(() => {

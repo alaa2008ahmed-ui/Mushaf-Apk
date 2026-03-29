@@ -30,7 +30,7 @@ function App() {
   const handleNavigate = useCallback((pageId: string, params?: any) => {
     const validPages = [
       'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
-      'hajj-umrah', 'hisn-muslim', 'prayer-times', 'qibla', 
+      'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'qibla', 
       'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education', 'voice-control', 'more-menu'
     ];
 

@@ -21,6 +21,7 @@ interface PrayerTimesSettingsModalProps {
     handleToneSelection: (e: React.ChangeEvent<HTMLSelectElement>) => void;
     handleToneUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
     saveUserConfig: () => void;
+    isSummerTime?: boolean;
 }
 
 const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
@@ -42,9 +43,12 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
     internetTones,
     handleToneSelection,
     handleToneUpload,
-    saveUserConfig
+    saveUserConfig,
+    isSummerTime
 }) => {
     if (!isOpen || !currentEditingKey) return null;
+
+    const totalPreviewOffset = tempOffset + (isSummerTime ? 60 : 0);
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-6 scale-in">
@@ -61,7 +65,7 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                         <div className="flex items-center justify-between themed-bg-alt p-2 rounded-2xl border themed-card-border shadow-inner">
                             <button onClick={() => setTempOffset(p => p - 1)} className="control-btn text-red-500 shadow-sm"><i className="fa-solid fa-minus"></i></button>
                             <div className="text-center">
-                                <div className="text-lg font-black en-digits" style={{ color: primaryColor }}>{formatTime12_EN(applyOffset(times[currentEditingKey], tempOffset))}</div>
+                                <div className="text-lg font-black en-digits" style={{ color: primaryColor }}>{formatTime12_EN(applyOffset(times[currentEditingKey], totalPreviewOffset))}</div>
                                 <div className="text-[10px] font-bold mt-0.5 en-digits" style={{color: secondaryColor}}>{tempOffset > 0 ? "+" : ""}{tempOffset} min</div>
                             </div>
                             <button onClick={() => setTempOffset(p => p + 1)} className="control-btn shadow-sm" style={{color: primaryColor}}><i className="fa-solid fa-plus"></i></button>

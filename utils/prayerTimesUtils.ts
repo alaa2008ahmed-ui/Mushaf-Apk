@@ -1,5 +1,12 @@
 import { Capacitor } from '@capacitor/core';
 
+export const checkSupportsDST = (combinedCode: string, fullCountry: string) => {
+    if (!combinedCode && !fullCountry) return false;
+    const dstCodes = ['+20', '+961', '+970', '+1', '+44', '+33', '+49', '+39', '+34', '+61', '+64'];
+    const dstCountries = ['مصر', 'لبنان', 'فلسطين', 'أمريكا', 'كندا', 'بريطانيا', 'فرنسا', 'ألمانيا', 'إيطاليا', 'إسبانيا', 'أستراليا'];
+    return dstCodes.some(c => combinedCode.startsWith(c)) || dstCountries.some(c => fullCountry.includes(c));
+};
+
 export const applyOffset = (timeStr: string, offsetMins: number) => {
     if (!timeStr || timeStr.includes('--')) return "--:--";
     let [h, m] = timeStr.split(':');

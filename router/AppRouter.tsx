@@ -17,6 +17,7 @@ import Calculators from '../pages/Calculators';
 import TajweedEducation from '../pages/TajweedEducation';
 import VoiceControlPage from '../pages/VoiceControlPage';
 import MoreMenuPage from '../pages/MoreMenuPage';
+import MonthlyPrayerTimes from '../pages/MonthlyPrayerTimes';
 
 interface AppRouterProps {
     page: string;
@@ -49,7 +50,9 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
       case 'hisn-muslim':
         return <HisnAlmuslim onBack={onBack} />;
       case 'prayer-times':
-        return <PrayerTimes onBack={onBack} />;
+        return <PrayerTimes onBack={onBack} onNavigate={onNavigate} />;
+      case 'monthly-prayer-times':
+        return <MonthlyPrayerTimes onBack={onBack} />;
       case 'qibla':
         return <Qibla onBack={onBack} />;
       case 'sabah-masaa':

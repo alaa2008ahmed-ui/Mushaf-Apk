@@ -15,11 +15,12 @@ import {
     formatTime12_EN,
     formatTime12_clean,
     playNotificationSound,
-    stopNotificationSound
+    stopNotificationSound,
+    checkSupportsDST
 } from '../utils/prayerTimesUtils';
 
 // Main Component
-function PrayerTimes({ onBack }) {
+function PrayerTimes({ onBack, onNavigate }) {
     const { theme, themeKey } = useTheme();
     const { times, dates, nextPrayer, countdown, config, refreshLocation, manualSearch, updateConfig } = usePrayerTimes();
 
@@ -35,6 +36,9 @@ function PrayerTimes({ onBack }) {
     const [searchInput, setSearchInput] = useState("");
     const searchIconRef = useRef(null);
     const [toastMessage, setToastMessage] = useState('');
+    
+    const supportsDST = checkSupportsDST(config.location.combinedCode, config.location.fullCountry);
+    const isSummerTimeActive = config.isSummerTime && supportsDST;
     
     useEffect(() => {
         if (toastMessage) {
@@ -106,6 +110,13 @@ function PrayerTimes({ onBack }) {
             mutedPrayers: {...config.mutedPrayers, [key]: !config.mutedPrayers[key] }
         });
     }
+
+    const toggleSummerTime = () => {
+        if (!supportsDST) return;
+        const newState = !config.isSummerTime;
+        updateConfig({ isSummerTime: newState });
+        showToast(newState ? "تم تفعيل التقويم الصيفي (+60 دقيقة)" : "تم إلغاء التقويم الصيفي");
+    };
 
     const handleToneSelection = async (e) => {
         const value = e.target.value;
@@ -186,12 +197,13 @@ function PrayerTimes({ onBack }) {
                         themePalette1={theme.palette[1]}
                         formatTime12={formatTime12}
                         applyOffset={applyOffset}
-                        prayerOffset={nextPrayer ? config.prayerOffsets[nextPrayer.key] : 0}
+                        prayerOffset={nextPrayer ? (config.prayerOffsets[nextPrayer.key] || 0) + (isSummerTimeActive ? 60 : 0) : 0}
                     />
 
                     <div className="space-y-3 mt-5">
                         {['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((key, idx) => {
-                             const displayTimeStr = applyOffset(times[key], config.prayerOffsets[key]);
+                             const totalOffset = (config.prayerOffsets[key] || 0) + (isSummerTimeActive ? 60 : 0);
+                             const displayTimeStr = applyOffset(times[key], totalOffset);
                              const iqamaTime = applyOffset(displayTimeStr, config.iqamaOffsets[key]);
                              const isMuted = config.mutedPrayers[key];
                              
@@ -213,11 +225,23 @@ function PrayerTimes({ onBack }) {
                                     openSettings={openSettings}
                                     formatTime12={formatTime12}
                                     formatTime12_clean={formatTime12_clean}
+                                    isSummerTime={isSummerTimeActive}
+                                    toggleSummerTime={toggleSummerTime}
+                                    supportsDST={supportsDST}
                                 />
                             )
                         })}
                     </div>
                     
+                    <button 
+                        onClick={() => onNavigate('monthly-prayer-times')}
+                        className="w-full mt-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-sm"
+                        style={{ backgroundColor: primaryColor, color: isBlackAndWhite ? '#000' : '#fff' }}
+                    >
+                        <i className="fa-solid fa-calendar-days"></i>
+                        <span>مواقيت الشهر الحالي</span>
+                    </button>
+
                     <p className="text-center text-sm mt-6 opacity-70" style={{ color: secondaryColor }}>
                         (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
                     </p>
@@ -244,6 +268,7 @@ function PrayerTimes({ onBack }) {
                 handleToneSelection={handleToneSelection}
                 handleToneUpload={handleToneUpload}
                 saveUserConfig={saveUserConfig}
+                isSummerTime={isSummerTimeActive}
             />
 
             {toastMessage && (

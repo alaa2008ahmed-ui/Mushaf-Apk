@@ -16,6 +16,9 @@ interface PrayerCardProps {
     openSettings: (key: string) => void;
     formatTime12: (time: string) => string;
     formatTime12_clean: (time: string) => string;
+    isSummerTime?: boolean;
+    toggleSummerTime?: () => void;
+    supportsDST?: boolean;
 }
 
 const PrayerCard: React.FC<PrayerCardProps> = ({
@@ -33,7 +36,10 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
     togglePrayerSound,
     openSettings,
     formatTime12,
-    formatTime12_clean
+    formatTime12_clean,
+    isSummerTime,
+    toggleSummerTime,
+    supportsDST
 }) => {
     return (
         <div className="prayer-card rounded-2xl px-4 flex items-center justify-between mb-3 themed-card" style={{borderColor: isNextPrayer ? primaryColor : 'var(--card-border)', borderWidth: isNextPrayer ? '2px' : '1px'}}>
@@ -43,7 +49,22 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
                         <div onClick={() => togglePrayerSound(prayerKey)} className={`toggle-dot ${isMuted ? 'bg-red-500' : 'bg-green-500'}`} style={{borderColor: primaryColor}}></div>
                         <button onClick={() => openSettings(prayerKey)} className="settings-btn shadow-sm hover:opacity-80" style={{ color: primaryColor }}><i className="fa-solid fa-sliders"></i></button>
                     </div>
-                ) : <div className="w-12"></div>}
+                ) : (
+                    supportsDST ? (
+                        <div className="flex flex-col items-center gap-1 w-12">
+                            <button 
+                                onClick={toggleSummerTime}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors border ${isSummerTime ? 'bg-green-500 text-white border-green-600' : 'bg-gray-200 text-gray-500 border-gray-300 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600'}`}
+                                title="التقويم الصيفي"
+                            >
+                                <i className="fa-solid fa-clock"></i>
+                            </button>
+                            <span className="text-[8px] font-bold text-center leading-tight" style={{ color: primaryColor }}>صيفي</span>
+                        </div>
+                    ) : (
+                        <div className="w-12"></div>
+                    )
+                )}
                 <div className="w-10 h-10 rounded-2xl themed-bg-alt flex items-center justify-center border" style={{color: idx % 2 === 0 ? primaryColor : secondaryColor, borderColor: 'var(--card-border)'}}>
                      <i className={`fa-regular ${prayerKey === 'Sunrise' ? 'fa-sun' : 'fa-moon'} text-xl`}></i>
                 </div>
