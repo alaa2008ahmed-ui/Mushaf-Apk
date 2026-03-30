@@ -20,6 +20,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
     const [visibleCount, setVisibleCount] = useState(100);
     const [isSearching, setIsSearching] = useState(false);
     const [searchStats, setSearchStats] = useState('');
+    const [expandedSurahs, setExpandedSurahs] = useState<Record<number, boolean>>({});
     const searchJobIdRef = useRef(0);
     const searchTimeoutRef = useRef<any>(null);
 
@@ -202,6 +203,13 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
     }, {} as Record<number, { surahName: string, ayahs: any[] }>);
     const sortedSurahKeys = Object.keys(groupedResults).map(Number).sort((a, b) => a - b);
 
+    const toggleSurah = (surahNum: number) => {
+        setExpandedSurahs(prev => ({
+            ...prev,
+            [surahNum]: !prev[surahNum]
+        }));
+    };
+
     return (
         <div className={`fixed inset-0 z-[200] bg-black/30 flex justify-center ${isLandscape ? 'items-start pt-0 px-0' : 'items-center px-4'} backdrop-blur-sm animate-fadeIn`} onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none' : 'max-w-lg rounded-2xl max-h-[90vh]'} flex flex-col shadow-2xl`} onClick={e => e.stopPropagation()}>
@@ -234,7 +242,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                     </div>
                     <div className="text-xs text-center mt-2 opacity-60 font-bold">{searchStats}</div>
                 </div>
-                <div className={`flex-1 overflow-y-auto p-4 relative themed-bg space-y-4`}>
+                <div className={`flex-1 overflow-y-auto p-4 relative themed-bg space-y-2`}>
                     {isSearching && (
                         <div className="text-center mt-8">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto"></div>
@@ -258,21 +266,41 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
 
                     {sortedSurahKeys.map(surahNum => {
                         const group = groupedResults[surahNum];
+                        const isExpanded = expandedSurahs[surahNum];
                         return (
-                            <div key={surahNum} className="mb-6">
-                                <h4 className="font-amiri-quran text-3xl font-bold text-emerald-600 dark:text-emerald-400 mb-4 border-b border-emerald-500/30 pb-2 text-center">
-                                    {group.surahName}
-                                </h4>
-                                <div className={isLandscape ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
-                                    {group.ayahs.map((r, idx) => (
-                                        <div key={idx} className="search-context-block search-main-ayah" onClick={() => { onSelect(r.surah, r.ayah); onClose(); }}>
-                                            <div className="search-context-label">آية {toArabic(r.ayah)} - صفحة {toArabic(r.page)}</div>
-                                            <div className="search-context-ayah">
-                                                {highlightText(r.text, r.highlightRegex)}
+                            <div key={surahNum} className="mb-2 border border-emerald-500/20 rounded-xl overflow-hidden">
+                                <button 
+                                    onClick={() => toggleSurah(surahNum)}
+                                    className="w-full flex justify-between items-center p-3 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors"
+                                >
+                                    <h4 className="font-amiri-quran text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                                        {group.surahName}
+                                    </h4>
+                                    <div className="flex items-center gap-2">
+                                        <span className="bg-emerald-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                            {toArabic(group.ayahs.length)}
+                                        </span>
+                                        <svg 
+                                            className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} 
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    </div>
+                                </button>
+                                
+                                {isExpanded && (
+                                    <div className={`p-3 bg-white/5 ${isLandscape ? 'grid grid-cols-2 gap-2' : 'space-y-2'}`}>
+                                        {group.ayahs.map((r, idx) => (
+                                            <div key={idx} className="search-context-block search-main-ayah !mb-0" onClick={() => { onSelect(r.surah, r.ayah); onClose(); }}>
+                                                <div className="search-context-label !text-[10px] !mb-1">آية {toArabic(r.ayah)} - صفحة {toArabic(r.page)}</div>
+                                                <div className="search-context-ayah !text-sm">
+                                                    {highlightText(r.text, r.highlightRegex)}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         );
                     })}

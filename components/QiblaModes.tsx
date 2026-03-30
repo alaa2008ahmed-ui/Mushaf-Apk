@@ -161,10 +161,15 @@ export const SunMoonQibla = ({ lat, lng, qiblaDirection, heading, theme }: any) 
 
     return (
         <div className="w-full flex flex-col gap-6 pb-8">
-            <div className="themed-card p-6 rounded-2xl flex flex-col items-center justify-center text-center relative overflow-hidden shadow-md">
+            <div className="themed-card p-8 rounded-2xl flex flex-col items-center justify-center text-center relative overflow-hidden shadow-md">
                 <div className="absolute top-4 right-4 text-yellow-500 opacity-10"><i className="fa-solid fa-sun text-6xl"></i></div>
-                <h3 className="text-2xl font-bold mb-2" style={{ color: theme.palette[0] }}>الشمس</h3>
-                <p className="text-sm opacity-80 mb-2">وجه هاتفك (العلامة الحمراء) نحو الشمس في السماء، وسيشير سهم الكعبة إلى القبلة.</p>
+                <h3 className="text-2xl font-bold mb-4" style={{ color: theme.palette[0] }}>تحديد القبلة عن طريق الشمس</h3>
+                
+                <div className="mb-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 max-w-sm shadow-sm backdrop-blur-sm">
+                    <p className="text-sm leading-relaxed font-bold text-yellow-700 dark:text-yellow-300">
+                        وجه هاتفك (العلامة الحمراء) نحو الشمس في السماء، وسيشير سهم الكعبة إلى القبلة.
+                    </p>
+                </div>
                 
                 <CompassDial targetHeading={sunHeading} targetIcon="fa-sun" targetColor="#eab308" label="الشمس" />
 
@@ -186,10 +191,15 @@ export const SunMoonQibla = ({ lat, lng, qiblaDirection, heading, theme }: any) 
                 </div>
             </div>
 
-            <div className="themed-card p-6 rounded-2xl flex flex-col items-center justify-center text-center relative overflow-hidden shadow-md">
+            <div className="themed-card p-8 rounded-2xl flex flex-col items-center justify-center text-center relative overflow-hidden shadow-md">
                 <div className="absolute top-4 right-4 text-blue-400 opacity-10"><i className="fa-solid fa-moon text-6xl"></i></div>
-                <h3 className="text-2xl font-bold mb-2" style={{ color: theme.palette[0] }}>القمر</h3>
-                <p className="text-sm opacity-80 mb-2">وجه هاتفك (العلامة الحمراء) نحو القمر في السماء، وسيشير سهم الكعبة إلى القبلة.</p>
+                <h3 className="text-2xl font-bold mb-4" style={{ color: theme.palette[0] }}>تحديد القبلة عن طريق القمر</h3>
+                
+                <div className="mb-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 max-w-sm shadow-sm backdrop-blur-sm">
+                    <p className="text-sm leading-relaxed font-bold text-blue-700 dark:text-blue-300">
+                        وجه هاتفك (العلامة الحمراء) نحو القمر في السماء، وسيشير سهم الكعبة إلى القبلة.
+                    </p>
+                </div>
                 
                 <CompassDial targetHeading={moonHeading} targetIcon="fa-moon" targetColor="#60a5fa" label="القمر" />
 
@@ -228,17 +238,19 @@ export const ShadowQibla = ({ lat, lng, qiblaDirection, heading, theme }: any) =
     const shadowDiff = Math.abs(shadowHeading - qiblaDirection);
 
     return (
-        <div className="w-full flex flex-col items-center justify-center themed-card p-6 rounded-2xl text-center relative overflow-hidden shadow-md mb-8">
+        <div className="w-full flex flex-col items-center justify-center themed-card p-8 rounded-2xl text-center relative overflow-hidden shadow-md mb-8">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5">
                 <i className="fa-solid fa-person-rays text-[15rem]"></i>
             </div>
             
             <div className="z-10 flex flex-col items-center w-full">
-                <h3 className="text-2xl font-bold mb-2" style={{ color: theme.palette[0] }}>ظل الشمس</h3>
+                <h3 className="text-2xl font-bold mb-4" style={{ color: theme.palette[0] }}>تحديد القبلة عن طريق الظل</h3>
                 
-                <p className="mb-4 text-sm leading-relaxed themed-text-muted max-w-sm">
-                    ضع عصا بشكل عمودي على الأرض المستوية. ظل العصا يشير إلى الاتجاه المعاكس للشمس. وجه هاتفك (العلامة الحمراء) نحو الظل.
-                </p>
+                <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 max-w-sm shadow-sm backdrop-blur-sm">
+                    <p className="text-sm leading-relaxed font-bold text-emerald-700 dark:text-emerald-300">
+                        ضع عصا بشكل عمودي على الأرض المستوية. ظل العصا يشير إلى الاتجاه المعاكس للشمس. وجه هاتفك (العلامة الحمراء) نحو الظل، وسيشير سهم الكعبة إلى القبلة.
+                    </p>
+                </div>
 
                 <div className="relative w-64 h-64 rounded-full border-4 flex items-center justify-center mx-auto my-6 shadow-lg" style={{ borderColor: `${theme.palette[0]}50`, backgroundColor: `${theme.palette[0]}0a` }}>
                     {/* Phone heading indicator */}
