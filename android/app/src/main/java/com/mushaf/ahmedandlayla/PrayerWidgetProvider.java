@@ -53,7 +53,6 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                 // تحديث التاريخ الهجري ومعلومات الصلاة القادمة
                 views.setTextViewText(R.id.widget_hijri_date, data.getString("day") + "، " + data.getString("hijri"));
                 views.setTextViewText(R.id.widget_gregorian_date, data.getString("gregorian"));
-                views.setTextViewText(R.id.widget_city, data.getString("city"));
                 views.setTextViewText(R.id.widget_next_prayer_name, data.getString("next_prayer_name") + " بعد");
                 
                 if (data.has("target_time_millis")) {
@@ -131,23 +130,6 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.widget_bottom_section, View.GONE);
         } else {
             views.setViewVisibility(R.id.widget_bottom_section, View.VISIBLE);
-        }
-
-        // Hide prayer icons if height is very small (e.g., < 90dp) to prevent time text from being cut off
-        if (minHeight > 0 && minHeight < 90) {
-            views.setViewVisibility(R.id.icon_fajr, View.GONE);
-            views.setViewVisibility(R.id.icon_sunrise, View.GONE);
-            views.setViewVisibility(R.id.icon_dhuhr, View.GONE);
-            views.setViewVisibility(R.id.icon_asr, View.GONE);
-            views.setViewVisibility(R.id.icon_maghrib, View.GONE);
-            views.setViewVisibility(R.id.icon_isha, View.GONE);
-        } else {
-            views.setViewVisibility(R.id.icon_fajr, View.VISIBLE);
-            views.setViewVisibility(R.id.icon_sunrise, View.VISIBLE);
-            views.setViewVisibility(R.id.icon_dhuhr, View.VISIBLE);
-            views.setViewVisibility(R.id.icon_asr, View.VISIBLE);
-            views.setViewVisibility(R.id.icon_maghrib, View.VISIBLE);
-            views.setViewVisibility(R.id.icon_isha, View.VISIBLE);
         }
 
         appWidgetManager.updateAppWidget(appWidgetId, views);

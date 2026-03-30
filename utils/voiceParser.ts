@@ -243,7 +243,15 @@ export const parseVoiceCommand = (
         'القرآن الكريم': 'open_quran',
         'القران الكريم': 'open_quran',
         'الثيمات': 'open_themes',
-        'السيمات': 'open_themes'
+        'السيمات': 'open_themes',
+        'تفسير الايه': 'show_tafsir',
+        'تفسير الاية': 'show_tafsir',
+        'التمرير التلقائى': 'toggle_auto_scroll',
+        'التمرير التلقائي': 'toggle_auto_scroll',
+        'الاشارات المرجعيه': 'open_bookmarks',
+        'الاشارات المرجعية': 'open_bookmarks',
+        'حفظ الايه': 'save_bookmark',
+        'حفظ الاية': 'save_bookmark'
     };
     for (const [key, action] of Object.entries(relativeMap)) {
         if (normalized === normalizeArabic(key)) {

@@ -1470,6 +1470,35 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             } else if (action === 'go_tajweed') {
                 onNavigate('tajweed-education');
                 return;
+            } else if (action === 'show_tafsir') {
+                if (currentAyahRef.current) {
+                    const { s, a } = currentAyahRef.current;
+                    const surah = quranData?.surahs.find((su: any) => su.number === s);
+                    if (surah) {
+                        const wasAutoscrolling = autoScrollStateRef.current.isActive && !autoScrollStateRef.current.isPaused;
+                        if (wasAutoscrolling) {
+                            autoScrollPausedRef.current = true;
+                            const newState = { ...autoScrollStateRef.current, isPaused: true };
+                            autoScrollStateRef.current = newState;
+                            setAutoScrollState(newState);
+                            if (initialLandscape) {
+                                setIsLandscapeUIHidden(false);
+                            }
+                        }
+                        setIsTafseerLoading(true);
+                        setTafseerInfo({ isOpen: true, s, a, text: '', surahName: surah.name, wasAutoscrolling });
+                    }
+                }
+                return;
+            } else if (action === 'toggle_auto_scroll') {
+                toggleAutoScroll();
+                return;
+            } else if (action === 'open_bookmarks') {
+                openModal('bookmarks-modal');
+                return;
+            } else if (action === 'save_bookmark') {
+                saveBookmark();
+                return;
             }
         }
 
@@ -1536,9 +1565,30 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             } else if (action === 'download_tafsir') {
                 openModal('tafsir-download-modal');
             } else if (action === 'show_tafsir') {
-                openModal('tafsir-modal');
+                if (currentAyahRef.current) {
+                    const { s, a } = currentAyahRef.current;
+                    const surah = quranData?.surahs.find((su: any) => su.number === s);
+                    if (surah) {
+                        const wasAutoscrolling = autoScrollStateRef.current.isActive && !autoScrollStateRef.current.isPaused;
+                        if (wasAutoscrolling) {
+                            autoScrollPausedRef.current = true;
+                            const newState = { ...autoScrollStateRef.current, isPaused: true };
+                            autoScrollStateRef.current = newState;
+                            setAutoScrollState(newState);
+                            if (initialLandscape) {
+                                setIsLandscapeUIHidden(false);
+                            }
+                        }
+                        setIsTafseerLoading(true);
+                        setTafseerInfo({ isOpen: true, s, a, text: '', surahName: surah.name, wasAutoscrolling });
+                    }
+                }
             } else if (action === 'open_bookmarks') {
                 openModal('bookmarks-modal');
+            } else if (action === 'toggle_auto_scroll') {
+                toggleAutoScroll();
+            } else if (action === 'save_bookmark') {
+                saveBookmark();
             } else if (action === 'increase_font') {
                 setSettings(prev => {
                     const newSize = Number((Math.min(4.5, prev.fontSize + 0.01)).toFixed(2));
@@ -1573,18 +1623,20 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     }, [visiblePages, jumpToPage, handlePlayButtonPointerDown, handlePlayButtonPointerUp, openModal, handleVoiceCommand, activeModals]);
 
     const saveBookmark = () => { 
-        if (!currentAyah) { showToast('اختر آية أولاً'); return; } 
-        const stored = JSON.parse(localStorage.getItem('quran_bookmarks_list' + modeSuffix) || '[]'); 
+        const current = currentAyahRef.current;
+        if (!current) { showToast('اختر آية أولاً'); return; } 
+        const currentModeSuffix = isLandscapeRef.current ? '_h' : '_v';
+        const stored = JSON.parse(localStorage.getItem('quran_bookmarks_list' + currentModeSuffix) || '[]'); 
         const date = new Date(); 
         const newBookmark = { 
             id: Date.now(), 
-            s: currentAyah.s, 
-            a: currentAyah.a, 
+            s: current.s, 
+            a: current.a, 
             date: date.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }), 
             time: date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) 
         }; 
         const newBookmarks = [newBookmark, ...stored]; 
-        localStorage.setItem('quran_bookmarks_list' + modeSuffix, JSON.stringify(newBookmarks)); 
+        localStorage.setItem('quran_bookmarks_list' + currentModeSuffix, JSON.stringify(newBookmarks)); 
         setBookmarks(newBookmarks); 
         showToast(`تم حفظ الإشارة المرجعية`); 
     };
