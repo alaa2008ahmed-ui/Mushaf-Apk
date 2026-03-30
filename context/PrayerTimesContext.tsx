@@ -590,6 +590,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             next_prayer_name: currentNext.name,
             next_prayer_id: currentNext.key.toLowerCase(),
             remaining_time: currentCountdown.split(':').slice(0, 2).join(':'), // HH:MM
+            target_time_millis: currentNext.date.getTime(),
             midnight: `منتصف الليل : ${nightTimes.midnight}`,
             last_third: `الثلث الأخير : ${nightTimes.lastThird}`,
             times: {

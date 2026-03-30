@@ -35,7 +35,6 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
         Intent intent = new Intent(context, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setOnClickPendingIntent(R.id.widget_root, pendingIntent);
-        views.setOnClickPendingIntent(R.id.widget_refresh_btn, pendingIntent);
 
         if (prayerJson != null) {
             try {
@@ -48,7 +47,19 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                 views.setTextViewText(R.id.widget_gregorian_date, data.getString("gregorian"));
                 views.setTextViewText(R.id.widget_city, data.getString("city"));
                 views.setTextViewText(R.id.widget_next_prayer_name, data.getString("next_prayer_name") + " بعد");
-                views.setTextViewText(R.id.widget_next_prayer_time, data.getString("remaining_time"));
+                
+                if (data.has("target_time_millis")) {
+                    long targetTimeMillis = data.getLong("target_time_millis");
+                    long remainingMillis = targetTimeMillis - System.currentTimeMillis();
+                    long base = android.os.SystemClock.elapsedRealtime() + remainingMillis;
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                        views.setBoolean(R.id.widget_next_prayer_time, "setCountDown", true);
+                    }
+                    views.setChronometer(R.id.widget_next_prayer_time, base, "%s", true);
+                } else {
+                    views.setTextViewText(R.id.widget_next_prayer_time, data.getString("remaining_time"));
+                }
+                
                 views.setTextViewText(R.id.widget_midnight, data.getString("midnight"));
                 views.setTextViewText(R.id.widget_last_third, data.getString("last_third"));
 

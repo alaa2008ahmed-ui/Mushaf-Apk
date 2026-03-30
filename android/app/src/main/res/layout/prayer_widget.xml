@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/widget_bg_white"
-    android:layout_margin="8dp">
+    android:layout_margin="4dp">
 
     <!-- Top Section -->
     <LinearLayout
@@ -22,7 +22,7 @@
             android:background="@drawable/widget_top_right_bg"
             android:orientation="vertical"
             android:gravity="center"
-            android:padding="12dp">
+            android:padding="6dp">
 
             <TextView
                 android:id="@+id/widget_next_prayer_name"
@@ -33,38 +33,15 @@
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
-            <TextView
+            <Chronometer
                 android:id="@+id/widget_next_prayer_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="00:00"
                 android:textColor="#000000"
-                android:textSize="32sp"
+                android:textSize="28sp"
                 android:textStyle="bold"
-                android:layout_marginTop="4dp" />
-
-            <LinearLayout
-                android:id="@+id/widget_refresh_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginTop="4dp">
-                
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🔄"
-                    android:textSize="12sp"
-                    android:layout_marginEnd="4dp" />
-                    
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="اضغط للتحديث"
-                    android:textColor="#666666"
-                    android:textSize="12sp" />
-            </LinearLayout>
+                android:layout_marginTop="2dp"
+                android:countDown="true" />
         </LinearLayout>
 
         <!-- Left Part (Purple) - Now second child to be on the left in RTL -->
@@ -75,7 +52,7 @@
             android:background="@drawable/widget_left_bg"
             android:orientation="vertical"
             android:gravity="center"
-            android:padding="12dp">
+            android:padding="6dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -89,9 +66,9 @@
                 android:layout_height="wrap_content"
                 android:text="المدينة"
                 android:textColor="#FFFFFF"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="2dp" />
 
             <TextView
                 android:id="@+id/widget_hijri_date"
@@ -125,8 +102,8 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="#FFFFFF"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp">
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp">
 
         <!-- Fajr -->
         <LinearLayout android:id="@+id/col_fajr" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center">
@@ -182,7 +159,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="@drawable/widget_bottom_bg"
-        android:padding="8dp">
+        android:padding="4dp">
 
         <TextView
             android:id="@+id/widget_midnight"

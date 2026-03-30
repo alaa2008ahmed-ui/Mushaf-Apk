@@ -9,6 +9,7 @@ export interface WidgetData {
   next_prayer_name: string;
   next_prayer_id: string;
   remaining_time: string;
+  target_time_millis?: number;
   midnight: string;
   last_third: string;
   times: {
