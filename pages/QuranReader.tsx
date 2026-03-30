@@ -498,7 +498,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         },
         {
             id: 'ayah-text',
-            text: 'تفاعل مع الآية: اضغط على نص الآية لإظهار خيارات التفسير، النسخ، أو المشاركة.',
+            text: 'تفاعل مع الايه اضغط على نص الايه مطولا لعرض لون ونوع الخط ولون الخلفيه ولون التحديد',
             position: { top: '300px' },
             arrow: 'up',
             selector: '.ayah-text-block',
@@ -506,7 +506,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         },
         {
             id: 'ayah-number',
-            text: 'رقم الآية: اضغط على رقم الآية للوصول لخيارات سريعة خاصة بهذه الآية.',
+            text: 'رقم الايه لعرض التفسير واضغط مطولا للاختيار من التفسيرات المختلفه',
             position: { top: '350px' },
             arrow: 'up',
             selector: '.verse-container',

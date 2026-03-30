@@ -87,7 +87,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
 
   if (!isVisible) return null;
 
-  const getTooltipStyle = () => {
+  const getTooltipStyle = (): React.CSSProperties => {
     if (!targetRect) {
       return {
         top: '50%',
@@ -97,49 +97,30 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
       };
     }
 
-    const targetCenterY = targetRect.top + targetRect.height / 2;
     const screenHeight = window.innerHeight;
 
-    // If target is in the upper half, show tooltip in the available space below
-    // If target is in the lower half, show tooltip in the available space above
-    if (targetCenterY < screenHeight / 2) {
-      const availableTop = Math.min(Math.max(targetRect.bottom, 0), screenHeight);
-      const availableHeight = screenHeight - availableTop;
-      
-      // If there's not enough space below, just center it on screen
-      if (availableHeight < 150) {
-        return {
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 'min(320px, 90vw)',
-        };
-      }
-      
-      const centerY = availableTop + availableHeight / 2;
-      
+    const baseStyle: React.CSSProperties = {
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: 'min(320px, 90vw)',
+    };
+
+    const spaceAbove = targetRect.top;
+    const spaceBelow = screenHeight - targetRect.bottom;
+
+    if (spaceBelow >= spaceAbove && spaceBelow > 150) {
       return {
-        top: `${centerY}px`,
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: 'min(320px, 90vw)',
+        ...baseStyle,
+        top: `${Math.min(targetRect.bottom + 24, screenHeight - 150)}px`,
+      };
+    } else if (spaceAbove > 150) {
+      return {
+        ...baseStyle,
+        bottom: `${Math.min(screenHeight - targetRect.top + 24, screenHeight - 150)}px`,
       };
     } else {
-      const availableBottom = Math.max(Math.min(targetRect.top, screenHeight), 0);
-      const centerY = availableBottom / 2;
-      
-      // If there's not enough space above, just center it on screen
-      if (availableBottom < 150) {
-        return {
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 'min(320px, 90vw)',
-        };
-      }
-      
       return {
-        top: `${centerY}px`,
+        top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         width: 'min(320px, 90vw)',
@@ -205,9 +186,28 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: -20 }}
-                className="flex flex-col items-center gap-4 pointer-events-auto cursor-pointer text-center w-full"
+                className="flex flex-col items-center gap-4 pointer-events-auto cursor-pointer text-center w-full relative"
                 onClick={handleNext}
               >
+                {/* Arrow */}
+                {targetRect && (
+                  <div
+                    className={`absolute w-4 h-4 bg-black/80 transform rotate-45 z-[-1] ${
+                      window.innerHeight - targetRect.bottom >= targetRect.top && window.innerHeight - targetRect.bottom > 150
+                        ? '-top-2'
+                        : '-bottom-2'
+                    }`}
+                    style={{
+                      left: `${Math.max(
+                        16,
+                        Math.min(
+                          Math.min(320, window.innerWidth * 0.9) - 16,
+                          targetRect.left + targetRect.width / 2 - (window.innerWidth - Math.min(320, window.innerWidth * 0.9)) / 2
+                        )
+                      )}px`,
+                    }}
+                  />
+                )}
                 {step.icon && (
                 <div className="p-4 bg-white/20 rounded-full backdrop-blur-md shadow-2xl border border-white/30">
                   {step.icon}

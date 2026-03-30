@@ -102,7 +102,18 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
         setSelectedJuz(j);
         setSelectedSurah(juzData.s);
         setSelectedAyah(juzData.a);
-        setSelectedHizbQuarter(getHizbQuarterForSurah(juzData.s));
+        
+        let targetHq = getHizbQuarterForSurah(juzData.s);
+        if (quranData && quranData.surahs) {
+            const surah = quranData.surahs[juzData.s - 1];
+            if (surah && surah.ayahs) {
+                const ayah = surah.ayahs.find((a: any) => a.numberInSurah === juzData.a);
+                if (ayah && ayah.hizbQuarter) {
+                    targetHq = ayah.hizbQuarter;
+                }
+            }
+        }
+        setSelectedHizbQuarter(targetHq);
         setSearchTerm('');
     };
 
@@ -117,18 +128,43 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
     const handleAyahClick = (a: number) => {
         setSelectedAyah(a);
         setSelectedJuz(getJuzForAyah(selectedSurah, a));
+        
+        let targetHq = getHizbQuarterForSurah(selectedSurah);
+        if (quranData && quranData.surahs) {
+            const surah = quranData.surahs[selectedSurah - 1];
+            if (surah && surah.ayahs) {
+                const ayah = surah.ayahs.find((ay: any) => ay.numberInSurah === a);
+                if (ayah && ayah.hizbQuarter) {
+                    targetHq = ayah.hizbQuarter;
+                }
+            }
+        }
+        setSelectedHizbQuarter(targetHq);
     };
 
     const handleHizbQuarterClick = (hq: number) => {
         setSelectedHizbQuarter(hq);
-        // Find the first surah/ayah for this hizb quarter
-        // This is a simplification, a more accurate mapping would be needed for exact ayah
-        const targetSurah = HIZB_QUARTERS.findIndex(h => h === hq) + 1;
-        if (targetSurah > 0) {
-            setSelectedSurah(targetSurah);
-            setSelectedAyah(1);
-            setSelectedJuz(getJuzForAyah(targetSurah, 1));
+        
+        let targetSurah = 1;
+        let targetAyah = 1;
+        
+        if (quranData && quranData.surahs) {
+            for (const surah of quranData.surahs) {
+                const ayah = surah.ayahs.find((a: any) => a.hizbQuarter === hq);
+                if (ayah) {
+                    targetSurah = surah.number;
+                    targetAyah = ayah.numberInSurah;
+                    break;
+                }
+            }
+        } else {
+            targetSurah = HIZB_QUARTERS.findIndex(h => h === hq) + 1;
+            if (targetSurah <= 0) targetSurah = 1;
         }
+
+        setSelectedSurah(targetSurah);
+        setSelectedAyah(targetAyah);
+        setSelectedJuz(getJuzForAyah(targetSurah, targetAyah));
         setSearchTerm('');
     };
 

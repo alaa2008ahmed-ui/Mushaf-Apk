@@ -106,7 +106,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         },
         {
             id: 'toggles',
-            text: 'خيارات إضافية لإظهار السجدة، المصحف المجود، أو إخفاء الأشرطة.',
+            text: 'خيارات اضافيه لاظهار شرح السجده والمصحف المجود واخفاء الاشرطه اثناء التمرير التلقائى',
             position: { top: '750px' },
             arrow: 'up',
             selector: '#toggles-section',
@@ -125,7 +125,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             text: 'تحميل المحتوى: يمكنك تحميل القرآن الكريم أو التفسير للاستخدام بدون إنترنت.',
             position: { bottom: '100px' },
             arrow: 'down',
-            selector: '#downloads-section',
+            selector: '#downloads-only-section',
             icon: <Download className="w-8 h-8 text-white" />
         }
     ];
@@ -381,21 +381,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                             </div>
                         </div>
                         
-                        <div className="border-b border-gray-200 dark:border-gray-700 py-1">
-                            <div className="custom-select-wrapper">
-                                <button id="quran-download-btn" onClick={() => { onOpenModal('quran-download-modal'); }} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
-                                    <span>تحميل القرآن الكريم</span>
-                                    <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
-                                </button>
+                        <div id="downloads-only-section">
+                            <div className="border-b border-gray-200 dark:border-gray-700 py-1">
+                                <div className="custom-select-wrapper">
+                                    <button id="quran-download-btn" onClick={() => { onOpenModal('quran-download-modal'); }} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
+                                        <span>تحميل القرآن الكريم</span>
+                                        <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div className="border-b border-gray-200 dark:border-gray-700 py-1">
-                            <div className="custom-select-wrapper">
-                                <button id="tafseer-download-btn" onClick={() => { onOpenModal('tafsir-download-modal'); }} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
-                                    <span>تحميل التفسير</span>
-                                    <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
-                                </button>
+                            
+                            <div className="border-b border-gray-200 dark:border-gray-700 py-1">
+                                <div className="custom-select-wrapper">
+                                    <button id="tafseer-download-btn" onClick={() => { onOpenModal('tafsir-download-modal'); }} className="custom-select-display text-xs h-8 w-full text-right px-2 flex items-center justify-between themed-card-bg">
+                                        <span>تحميل التفسير</span>
+                                        <i className="fa-solid fa-chevron-left text-gray-500 text-xs"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
