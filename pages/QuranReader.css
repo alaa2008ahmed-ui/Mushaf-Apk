@@ -26,7 +26,7 @@
     --font-hafs-new: 'KFGQPC Uthman Taha Naskh', serif;
     --font-me-quran: 'Me Quran', serif;
     --font-warsh: 'Amiri', serif;
-    --font-default: var(--font-noto);
+    --font-default: var(--font-amiri-quran);
     --font-ui: var(--font-cairo);
     --search-result-bg: rgba(16, 185, 129, 0.1);
     --search-result-border: #10b981;
@@ -193,10 +193,12 @@
 .page-content {
     text-align: justify;
     text-align-last: center;
-    line-height: 2.3;
+    line-height: 2.5;
     font-size: 1.7rem;
-    letter-spacing: 0px; 
-    word-spacing: -3px;
+    letter-spacing: normal; 
+    word-spacing: normal;
+    font-feature-settings: "liga" 1, "dlig" 1, "kern" 1, "mark" 1, "mkmk" 1;
+    text-rendering: optimizeLegibility;
 }
 
 .page-footer {
@@ -215,9 +217,10 @@
     padding: 0; 
     border-radius: 6px; 
     transition: background-color 0.2s; 
-    font-variant-ligatures: common-ligatures discretionary-ligatures;
-    -webkit-font-variant-ligatures: common-ligatures discretionary-ligatures;
+    font-variant-ligatures: common-ligatures discretionary-ligatures contextual;
+    -webkit-font-variant-ligatures: common-ligatures discretionary-ligatures contextual;
     text-rendering: optimizeLegibility;
+    font-feature-settings: "liga" 1, "dlig" 1, "kern" 1, "mark" 1, "mkmk" 1;
 }
 .ayah-text-block.highlighted { 
     background-color: transparent !important;

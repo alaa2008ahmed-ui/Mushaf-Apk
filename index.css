@@ -78,10 +78,21 @@
 
   --font-cairo: "Cairo", sans-serif;
   --font-amiri: "Amiri", serif;
+  --font-amiri-quran: "Amiri Quran", serif;
+  --font-noto: "Noto Naskh Arabic", serif;
+  --font-hafs: 'KFGQPC Uthman Taha Naskh', serif;
   --font-tajawal: "Tajawal", sans-serif;
   --font-marhey: "Marhey", sans-serif;
   --font-kufi: "Reem Kufi", sans-serif;
   --font-scheherazade: "Scheherazade New", serif;
+  --font-aref: "Aref Ruqaa", serif;
+  --font-gulzar: "Gulzar", serif;
+  --font-mirza: "Mirza", serif;
+  --font-lateef: "Lateef", serif;
+  --font-messiri: "El Messiri", sans-serif;
+  --font-lalezar: "Lalezar", system-ui;
+  --font-rakkas: "Rakkas", system-ui;
+  --font-katibeh: "Katibeh", system-ui;
 }
 
 /* Hide number input arrows (spinners) */

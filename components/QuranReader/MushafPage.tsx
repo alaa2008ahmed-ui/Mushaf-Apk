@@ -19,12 +19,19 @@ interface MushafPageProps {
     };
 }
 
+const fixQuranText = (text: string) => {
+    if (!text) return text;
+    // Fix for "Ibrahim" and similar words where Small Yeh (\u06e6) causes disconnection in some fonts
+    // We replace the sequence of (Heh + Kasra + Small Yeh) with (Heh + Kasra + Regular Yeh)
+    // to ensure proper shaping and connectivity.
+    return text.replace(/\u0647\u0650\u06e6/g, '\u0647\u0650\u064a');
+};
+
 const renderTajweedText = (text: string) => {
     if (!text) return text;
     
-    // Fix for disconnected characters like Small High Ya (U+06E6) and Small High Waw (U+06E5)
-    // We wrap them with Zero Width Joiner (U+200D) to force connection with surrounding letters.
-    const fixedText = text.replace(/([\u06E5\u06E6])/g, '\u200D$1\u200D');
+    // Remove the ZWJ hack as it breaks shaping in proper Quranic fonts
+    const fixedText = text;
 
     if (!fixedText.includes('[')) return fixedText;
     
@@ -116,13 +123,13 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
     
     const pageStyle = {
         fontSize: settings ? `${settings.fontSize}rem` : '1.7rem',
-        fontFamily: settings?.fontFamily || 'var(--font-amiri)',
+        fontFamily: settings?.fontFamily || 'var(--font-amiri-quran)',
         color: settings?.theme === 'dark' ? '#fff' : (settings?.textColor || '#000')
     };
 
     const headerStyle = {
         fontSize: settings ? `${settings.fontSize * 0.94}rem` : '1.6rem',
-        fontFamily: settings?.fontFamily || 'var(--font-amiri)'
+        fontFamily: settings?.fontFamily || 'var(--font-amiri-quran)'
     };
 
     return (
@@ -140,9 +147,9 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                     // But usually markers are at the start of pages or handled by the reader.
                     // We can also check if (ayah.hizbQuarter - 1) * some_logic matches.
                     
-                    const text = (ayah.numberInSurah === 1 && ayah.sNum !== 1 && ayah.sNum !== 9) 
+                    const text = fixQuranText((ayah.numberInSurah === 1 && ayah.sNum !== 1 && ayah.sNum !== 9) 
                         ? ayah.text.replace('بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', '').replace('بِّسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', '').trim() 
-                        : ayah.text;
+                        : ayah.text);
                     
                     const id = `ayah-${ayah.sNum}-${ayah.numberInSurah}`;
 

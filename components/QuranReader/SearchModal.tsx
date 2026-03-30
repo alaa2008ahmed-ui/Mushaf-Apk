@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { toArabic } from './constants';
+import { X } from 'lucide-react';
 
 interface SearchModalProps {
     quranData: any;
@@ -12,65 +13,106 @@ interface SearchModalProps {
 const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose, isLandscape, initialQuery }) => {
     const modeSuffix = isLandscape ? '_h' : '_v';
     const [query, setQuery] = useState(() => initialQuery || localStorage.getItem('search_query' + modeSuffix) || '');
-    const [results, setResults] = useState<any[]>([]);
+    const [results, setResults] = useState<any[]>(() => {
+        const saved = localStorage.getItem('search_results' + modeSuffix);
+        return saved ? JSON.parse(saved) : [];
+    });
     const [visibleCount, setVisibleCount] = useState(100);
     const [isSearching, setIsSearching] = useState(false);
     const [searchStats, setSearchStats] = useState('');
     const searchJobIdRef = useRef(0);
     const searchTimeoutRef = useRef<any>(null);
 
-    const handleSearchInput = (q: string) => {
-        setQuery(q);
-        localStorage.setItem('search_query' + modeSuffix, q);
-        if (q.trim() !== '') {
-            setSearchStats('جاري الكتابة...');
-        } else {
-            setSearchStats('');
-            setResults([]);
-            setVisibleCount(100);
-        }
-
-        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-        searchTimeoutRef.current = setTimeout(() => performSearch(q), 500);
-    };
-
-    useEffect(() => {
-        const handleVoiceCommand = (e: any) => {
-            const { action, text } = e.detail;
-            if (action === 'execute_search') {
-                handleSearchInput(text);
-            } else if (action === 'clear_search') {
-                handleSearchInput('');
-            } else if (action === 'close_search') {
-                onClose();
-            }
-        };
-
-        window.addEventListener('voice-command', handleVoiceCommand);
-        return () => window.removeEventListener('voice-command', handleVoiceCommand);
-    }, [handleSearchInput, onClose]);
-
-    useEffect(() => {
-        if (query.trim() !== '') {
-            performSearch(query);
-        }
-    }, []);
-
     const stripTajweedTags = (text: string) => {
         if (!text) return '';
+        // Remove [tag[text]] or [tag:num[text]]
         return text.replace(/\[([a-z])(?::\d+)?\[([^\]]+)\]/g, '$2');
     };
 
-    const normalizeArabic = (text: string) => {
-        const stripped = stripTajweedTags(text);
-        return stripped.replace(/[\u064B-\u065F\u0670]/g, "")
-                   .replace(/\u0640/g, "")
-                   .replace(/[أإآٱ]/g, "ا")
-                   .replace(/ة/g, "ه")
-                   .replace(/ى/g, "ي");
+    const fixQuranText = (text: string) => {
+        if (!text) return "";
+        // Fix for "Ibrahim" disconnected display issue in some fonts
+        return text.replace(/\u0647\u0650\u06E6/g, "\u0647\u0650\u064a");
     };
 
-    const performSearch = (q: string) => {
+    const normalizeArabic = (text: string) => {
+        if (!text) return '';
+        let normalized = stripTajweedTags(text);
+        
+        // Normalize common variations for search matching
+        return normalized
+            .replace(/\u0670/g, "ا")
+            .replace(/\u06E6/g, "ي")
+            .replace(/\u06E5/g, "و")
+            .replace(/[\u0610-\u061A\u064B-\u065F\u06D6-\u06ED]/g, "")
+            .replace(/\u0640/g, "")
+            .replace(/[أإآٱ]/g, "ا")
+            .replace(/ة/g, "ه")
+            .replace(/[ىي]/g, "ي");
+    };
+
+    const executeSearchOptimized = useCallback((q: string, jobId: number) => {
+        const normQ = normalizeArabic(q);
+        // The gap regex allows for any number of diacritics, small letters, and Quranic marks between search characters
+        const gap = '[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u0640]*';
+        const highlightPattern = normQ.split('').map(c => (
+            c === 'ا' ? '[أإآٱا]' : 
+            (c === 'ه' ? '[هة]' : 
+            (c === 'ي' ? '[يى]' : c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+        )).join(gap);
+        
+        const regex = new RegExp(highlightPattern, 'gi');
+        
+        const foundResults: any[] = [];
+        let sIdx = 0;
+        let aIdx = 0;
+
+        const processChunk = () => {
+            if (searchJobIdRef.current > jobId) return; 
+            
+            const start = performance.now();
+            while (sIdx < quranData.surahs.length) {
+                const surah = quranData.surahs[sIdx];
+                while (aIdx < surah.ayahs.length) {
+                    const ayah = surah.ayahs[aIdx];
+                    const rawText = ayah.text;
+                    const cleanText = stripTajweedTags(rawText);
+                    
+                    // Use regex test on clean text for much more flexible matching
+                    if (regex.test(cleanText)) {
+                        foundResults.push({ 
+                            text: fixQuranText(cleanText), 
+                            surah: surah.number, 
+                            surahName: surah.name, 
+                            ayah: ayah.numberInSurah, 
+                            page: ayah.page,
+                            highlightRegex: regex
+                        });
+                    }
+                    aIdx++;
+                    if (performance.now() - start > 20) {
+                        setResults([...foundResults]);
+                        setSearchStats(`جاري البحث... (${toArabic(foundResults.length)})`);
+                        setTimeout(processChunk, 0);
+                        return;
+                    }
+                }
+                aIdx = 0;
+                sIdx++;
+            }
+            
+            if (searchJobIdRef.current === jobId) {
+                setResults([...foundResults]);
+                localStorage.setItem('search_results' + modeSuffix, JSON.stringify(foundResults));
+                setSearchStats(`النتائج: ${toArabic(foundResults.length)}`);
+                setIsSearching(false);
+            }
+        };
+
+        processChunk();
+    }, [quranData, modeSuffix]);
+
+    const performSearch = useCallback((q: string) => {
         if (!quranData) return;
         
         searchJobIdRef.current += 1;
@@ -89,61 +131,51 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
         setSearchStats('...');
         setVisibleCount(100);
         
-        // Use setTimeout to allow UI update before heavy processing
         setTimeout(() => {
             executeSearchOptimized(q, newJobId);
         }, 10);
-    };
+    }, [quranData, executeSearchOptimized]);
 
-    const executeSearchOptimized = (q: string, jobId: number) => {
-        const normQ = normalizeArabic(q);
-        const highlightPattern = normQ.split('').map(c => (c==='ا'?'[أإآٱا]':(c==='ه'?'[هة]':(c==='ي'?'[يى]':c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))))).join('[\\u064B-\\u065F\\u0670]*');
-        const regex = new RegExp(highlightPattern, 'gi');
+    const handleSearchInput = useCallback((q: string) => {
+        setQuery(q);
+        localStorage.setItem('search_query' + modeSuffix, q);
         
-        const foundResults: any[] = [];
-        let sIdx = 0;
-        let aIdx = 0;
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        
+        if (q.trim() === '') {
+            setSearchStats('');
+            setResults([]);
+            localStorage.removeItem('search_results' + modeSuffix);
+            setVisibleCount(100);
+            setIsSearching(false);
+            return;
+        }
 
-        const processChunk = () => {
-            if (searchJobIdRef.current > jobId) return; // Cancelled by newer search
-            
-            const start = performance.now();
-            while (sIdx < quranData.surahs.length) {
-                const surah = quranData.surahs[sIdx];
-                while (aIdx < surah.ayahs.length) {
-                    const ayah = surah.ayahs[aIdx];
-                    const cleanText = stripTajweedTags(ayah.text);
-                    if (normalizeArabic(cleanText).includes(normQ)) {
-                        foundResults.push({ 
-                            text: cleanText, 
-                            surah: surah.number, 
-                            surahName: surah.name, 
-                            ayah: ayah.numberInSurah, 
-                            page: ayah.page,
-                            highlightRegex: regex
-                        });
-                    }
-                    aIdx++;
-                    if (performance.now() - start > 15) {
-                        setResults([...foundResults]);
-                        setSearchStats(`جاري البحث... (${toArabic(foundResults.length)})`);
-                        setTimeout(processChunk, 0);
-                        return;
-                    }
-                }
-                aIdx = 0;
-                sIdx++;
-            }
-            
-            if (searchJobIdRef.current === jobId) {
-                setResults([...foundResults]);
-                setSearchStats(`النتائج: ${toArabic(foundResults.length)}`);
-                setIsSearching(false);
+        setSearchStats('جاري الكتابة...');
+        searchTimeoutRef.current = setTimeout(() => performSearch(q), 500);
+    }, [modeSuffix, performSearch]);
+
+    useEffect(() => {
+        const handleVoiceCommand = (e: any) => {
+            const { action, text } = e.detail;
+            if (action === 'execute_search') {
+                handleSearchInput(text);
+            } else if (action === 'clear_search') {
+                handleSearchInput('');
+            } else if (action === 'close_search') {
+                onClose();
             }
         };
 
-        processChunk();
-    };
+        window.addEventListener('voice-command', handleVoiceCommand);
+        return () => window.removeEventListener('voice-command', handleVoiceCommand);
+    }, [handleSearchInput, onClose]);
+
+    useEffect(() => {
+        if (query.trim() !== '' && results.length === 0) {
+            performSearch(query);
+        }
+    }, [performSearch, query, results.length]);
 
     const highlightText = (text: string, regex: RegExp) => {
         const parts = text.split(regex);
@@ -184,9 +216,18 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                             value={query}
                             onChange={(e) => handleSearchInput(e.target.value)}
                             placeholder="اكتب كلمة للبحث..." 
-                            className="w-full p-3 pl-10 rounded-xl border focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold themed-input"
+                            className="w-full p-3 pl-10 pr-10 rounded-xl border focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold themed-input"
                             autoFocus
                         />
+                        {query && (
+                            <button 
+                                onClick={() => handleSearchInput('')}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                                title="مسح البحث"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        )}
                         <button onClick={() => performSearch(query)} className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-emerald-500 text-white p-1.5 rounded-lg hover:bg-emerald-600 transition">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         </button>
@@ -219,7 +260,9 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                         const group = groupedResults[surahNum];
                         return (
                             <div key={surahNum} className="mb-6">
-                                <h4 className="font-bold text-emerald-600 dark:text-emerald-400 mb-3 border-b border-emerald-500/30 pb-2 text-lg">{group.surahName}</h4>
+                                <h4 className="font-amiri-quran text-3xl font-bold text-emerald-600 dark:text-emerald-400 mb-4 border-b border-emerald-500/30 pb-2 text-center">
+                                    {group.surahName}
+                                </h4>
                                 <div className={isLandscape ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
                                     {group.ayahs.map((r, idx) => (
                                         <div key={idx} className="search-context-block search-main-ayah" onClick={() => { onSelect(r.surah, r.ayah); onClose(); }}>
