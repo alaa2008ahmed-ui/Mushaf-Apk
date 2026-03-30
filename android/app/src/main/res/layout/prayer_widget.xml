@@ -22,7 +22,7 @@
             android:background="@drawable/widget_top_right_bg"
             android:orientation="vertical"
             android:gravity="center"
-            android:padding="4dp">
+            android:padding="2dp">
 
             <TextView
                 android:id="@+id/widget_next_prayer_name"
@@ -30,7 +30,7 @@
                 android:layout_height="wrap_content"
                 android:text="الصلاة بعد"
                 android:textColor="#10b981"
-                android:textSize="14sp"
+                android:textSize="12sp"
                 android:textStyle="bold" />
 
             <Chronometer
@@ -38,7 +38,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="#000000"
-                android:textSize="24sp"
+                android:textSize="20sp"
                 android:textStyle="bold"
                 android:layout_marginTop="0dp"
                 android:countDown="true" />
@@ -52,23 +52,30 @@
             android:background="@drawable/widget_left_bg"
             android:orientation="vertical"
             android:gravity="center"
-            android:padding="4dp">
+            android:padding="2dp">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="☀️"
-                android:textSize="20sp" />
+                android:orientation="horizontal"
+                android:gravity="center">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="☀️"
+                    android:textSize="14sp" />
 
-            <TextView
-                android:id="@+id/widget_city"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="المدينة"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:layout_marginTop="0dp" />
+                <TextView
+                    android:id="@+id/widget_city"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="المدينة"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/widget_hijri_date"
@@ -76,7 +83,7 @@
                 android:layout_height="wrap_content"
                 android:text="-- رمضان 1445"
                 android:textColor="#E0E0E0"
-                android:textSize="10sp"
+                android:textSize="9sp"
                 android:layout_marginTop="0dp" />
 
             <TextView
@@ -85,7 +92,7 @@
                 android:layout_height="wrap_content"
                 android:text="-- -- --"
                 android:textColor="#E0E0E0"
-                android:textSize="9sp"
+                android:textSize="8sp"
                 android:layout_marginTop="0dp" />
         </LinearLayout>
     </LinearLayout>
@@ -155,6 +162,7 @@
 
     <!-- Bottom Section -->
     <LinearLayout
+        android:id="@+id/widget_bottom_section"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"

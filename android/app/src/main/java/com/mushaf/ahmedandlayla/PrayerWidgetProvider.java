@@ -9,6 +9,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.widget.RemoteViews;
+import android.os.Bundle;
+import android.view.View;
 import org.json.JSONObject;
 
 // السطر التالي هو المفتاح لحل مشكلة الـ 22 خطأ (ربط الفهرس بالحزمة الصحيحة)
@@ -21,6 +23,12 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
         for (int appWidgetId : appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId);
         }
+    }
+
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
+        updateAppWidget(context, appWidgetManager, appWidgetId);
     }
 
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
@@ -112,6 +120,17 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+
+        // Handle resizing logic
+        Bundle options = appWidgetManager.getAppWidgetOptions(appWidgetId);
+        int minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+        
+        // If the widget is shrunk below a certain threshold (e.g., 100dp), hide the bottom section
+        if (minHeight > 0 && minHeight < 100) {
+            views.setViewVisibility(R.id.widget_bottom_section, View.GONE);
+        } else {
+            views.setViewVisibility(R.id.widget_bottom_section, View.VISIBLE);
         }
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
