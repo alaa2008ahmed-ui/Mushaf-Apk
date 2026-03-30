@@ -75,25 +75,33 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
 
     useEffect(() => {
         if (!searchTerm) {
-            juzRefs.current[selectedJuz]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            setTimeout(() => {
+                juzRefs.current[selectedJuz]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }, 50);
         }
     }, [selectedJuz, searchTerm]);
 
     useEffect(() => {
         if (!searchTerm) {
-            surahRefs.current[selectedSurah]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            setTimeout(() => {
+                surahRefs.current[selectedSurah]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }, 50);
         }
     }, [selectedSurah, searchTerm]);
 
     useEffect(() => {
         if (!searchTerm) {
-            ayahRefs.current[selectedAyah]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            setTimeout(() => {
+                ayahRefs.current[selectedAyah]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }, 50);
         }
     }, [selectedAyah, searchTerm]);
 
     useEffect(() => {
         if (!searchTerm) {
-            hizbRefs.current[selectedHizbQuarter]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            setTimeout(() => {
+                hizbRefs.current[selectedHizbQuarter]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }, 50);
         }
     }, [selectedHizbQuarter, searchTerm]);
 

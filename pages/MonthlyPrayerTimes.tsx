@@ -62,12 +62,16 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
 
     useEffect(() => {
         const interceptor = () => {
+            if (isPickerOpen) {
+                setIsPickerOpen(false);
+                return true;
+            }
             onBack();
             return true;
         };
         const unregister = registerBackInterceptor(interceptor);
         return unregister;
-    }, [onBack]);
+    }, [onBack, isPickerOpen]);
 
     const monthData = useMemo(() => {
         const data = [];
@@ -275,7 +279,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
     return (
         <div className="h-screen w-screen flex flex-col" style={{ backgroundColor: theme.backgroundColor, color: theme.textColor }}>
             {/* Top Bar */}
-            <div className="app-top-bar" style={{ backgroundColor: primaryColor }}>
+            <div className="app-top-bar">
                 <div className="app-top-bar__inner relative flex items-center justify-center">
                     <div className="text-center">
                         <h1 className="app-top-bar__title text-xl" style={{ color: topBarTextColor }}>
@@ -381,7 +385,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                         style={{ background: theme.palette[0], color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
                     >
                         <span className="text-xl">🏠</span>
-                        <span>الرئيسية</span>
+                        <span className="hidden sm:inline">الرئيسية</span>
                     </button>
 
                     <button 
