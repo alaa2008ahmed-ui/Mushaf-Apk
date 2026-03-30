@@ -6,12 +6,22 @@ import moment from 'moment-hijri';
 import { formatTime12_clean, applyOffset } from '../utils/prayerTimesUtils';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Share, ArrowRight, Download, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Share, ArrowRight, Download, ChevronRight, ChevronLeft, Calendar, X } from 'lucide-react';
 import { Share as CapacitorShare } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import BottomBar from '../components/BottomBar';
 import { registerBackInterceptor } from '../hooks/useBackButton';
+
+const HIJRI_MONTHS = [
+    "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
+    "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"
+];
+
+const GREGORIAN_MONTHS = [
+    "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+    "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+];
 
 const getCalculationParams = (country: string, code: string) => {
     let params = CalculationMethod.MuslimWorldLeague();
@@ -38,7 +48,9 @@ const getCalculationParams = (country: string, code: string) => {
 export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
     const { theme, themeKey } = useTheme();
     const { config } = usePrayerTimes();
-    const [currentHijriDate, setCurrentHijriDate] = useState(moment());
+    const [viewDate, setViewDate] = useState(moment());
+    const [calendarType, setCalendarType] = useState<'hijri' | 'gregorian'>('hijri');
+    const [isPickerOpen, setIsPickerOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const pdfTableRef = useRef<HTMLDivElement>(null);
@@ -58,55 +70,98 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
     }, [onBack]);
 
     const monthData = useMemo(() => {
-        const year = currentHijriDate.iYear();
-        const month = currentHijriDate.iMonth();
-        const daysInMonth = moment.iDaysInMonth(year, month);
-        
         const data = [];
         const coordinates = new Coordinates(config.location.lat, config.location.lng);
         const params = getCalculationParams(config.location.fullCountry, config.location.combinedCode);
 
+        let daysInMonth = 30;
+        if (calendarType === 'hijri') {
+            daysInMonth = moment.iDaysInMonth(viewDate.iYear(), viewDate.iMonth());
+        } else {
+            daysInMonth = viewDate.daysInMonth();
+        }
+
         for (let day = 1; day <= daysInMonth; day++) {
-            const date = moment(`${year}/${month + 1}/${day}`, 'iYYYY/iM/iD').toDate();
+            let date: Date;
+            if (calendarType === 'hijri') {
+                date = moment().iYear(viewDate.iYear()).iMonth(viewDate.iMonth()).iDate(day).toDate();
+            } else {
+                date = moment().year(viewDate.year()).month(viewDate.month()).date(day).toDate();
+            }
+            
             const prayerTimes = new AdhanPrayerTimes(coordinates, date, params);
             
             const formatTime = (d: Date) => {
                 return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
             };
 
+            // Ramadan Isha Adjustment for specific countries (Saudi Arabia, Qatar)
+            // In Ramadan, Isha is delayed by 30 minutes (90 min -> 120 min after Maghrib)
+            const isRamadan = moment(date).iMonth() === 8;
+            const country = config.location.fullCountry || '';
+            const code = config.location.combinedCode || '';
+            
+            let ishaTime = prayerTimes.isha;
+            if (isRamadan && (code.startsWith('+966') || country.includes('السعودية') || code.startsWith('+974') || country.includes('قطر'))) {
+                const maghribMs = prayerTimes.maghrib.getTime();
+                const ishaMs = prayerTimes.isha.getTime();
+                const diffMinutes = (ishaMs - maghribMs) / 60000;
+                
+                // If the library returned the standard 90-minute offset, add the extra 30 minutes for Ramadan
+                if (diffMinutes < 110) {
+                    ishaTime = new Date(ishaMs + 30 * 60000);
+                }
+            }
+
             const dayName = new Intl.DateTimeFormat('ar-SA', { weekday: 'long' }).format(date);
             const gregorianDay = date.getDate();
+            const hijriDay = moment(date).iDate();
             
             const timings = {
                 Fajr: formatTime(prayerTimes.fajr),
                 Dhuhr: formatTime(prayerTimes.dhuhr),
                 Asr: formatTime(prayerTimes.asr),
                 Maghrib: formatTime(prayerTimes.maghrib),
-                Isha: formatTime(prayerTimes.isha),
+                Isha: formatTime(ishaTime),
             };
 
             data.push({
-                hijriDay: day,
+                hijriDay,
                 gregorianDay,
                 gregorianDateStr: `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`,
-                hijriDateStr: `${year}/${month + 1}/${day}`,
+                hijriDateStr: `${moment(date).iYear()}/${moment(date).iMonth() + 1}/${hijriDay}`,
                 dayName,
                 timings
             });
         }
         return data;
-    }, [currentHijriDate, config.location]);
+    }, [viewDate, calendarType, config.location]);
 
     const handlePrevMonth = () => {
-        setCurrentHijriDate(prev => prev.clone().subtract(1, 'iMonth'));
+        if (calendarType === 'hijri') {
+            setViewDate(prev => prev.clone().subtract(1, 'iMonth'));
+        } else {
+            setViewDate(prev => prev.clone().subtract(1, 'month'));
+        }
     };
 
     const handleNextMonth = () => {
-        setCurrentHijriDate(prev => prev.clone().add(1, 'iMonth'));
+        if (calendarType === 'hijri') {
+            setViewDate(prev => prev.clone().add(1, 'iMonth'));
+        } else {
+            setViewDate(prev => prev.clone().add(1, 'month'));
+        }
     };
 
-    const monthNameAr = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', { month: 'long' }).format(currentHijriDate.toDate());
-    const hijriYear = currentHijriDate.iYear();
+    const monthNameDisplay = useMemo(() => {
+        if (calendarType === 'hijri') {
+            const name = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', { month: 'long' }).format(viewDate.toDate());
+            return `${name} ${viewDate.iYear()} هـ`;
+        } else {
+            const name = new Intl.DateTimeFormat('ar-SA', { month: 'long' }).format(viewDate.toDate());
+            return `${name} ${viewDate.year()} م`;
+        }
+    }, [viewDate, calendarType]);
 
     const generateImage = async () => {
         if (!pdfTableRef.current) return null;
@@ -124,7 +179,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
 
     const handleShare = async () => {
         setIsSharing(true);
-        const text = `مواقيت الصلاة لشهر ${monthNameAr} ${hijriYear} هـ\nالموقع: ${config.location.cityGov}\nتم الإنشاء بواسطة: مصحف احمد وليلى`;
+        const text = `مواقيت الصلاة لشهر ${monthNameDisplay}\nالموقع: ${config.location.cityGov}\nتم الإنشاء بواسطة: مصحف احمد وليلى`;
         try {
             const result = await generateImage();
             if (!result) return;
@@ -140,7 +195,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                 });
                 
                 await CapacitorShare.share({
-                    title: `مواقيت الصلاة - ${monthNameAr}`,
+                    title: `مواقيت الصلاة - ${monthNameDisplay}`,
                     text: text,
                     url: savedFile.uri,
                     dialogTitle: 'مشاركة مواقيت الصلاة',
@@ -151,13 +206,13 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                     const file = new File([blob], fileName, { type: 'image/jpeg' });
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({
-                            title: `مواقيت الصلاة - ${monthNameAr}`,
+                            title: `مواقيت الصلاة - ${monthNameDisplay}`,
                             text: text,
                             files: [file]
                         });
                     } else {
                         await navigator.share({
-                            title: `مواقيت الصلاة - ${monthNameAr}`,
+                            title: `مواقيت الصلاة - ${monthNameDisplay}`,
                             text: text,
                         });
                     }
@@ -189,7 +244,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
             
             pdf.addImage(dataUrl, 'JPEG', 0, 0, canvas.width, canvas.height);
             
-            const fileName = `prayer_times_${hijriYear}_${currentHijriDate.iMonth() + 1}.pdf`;
+            const fileName = `prayer_times_${calendarType === 'hijri' ? viewDate.iYear() : viewDate.year()}_${(calendarType === 'hijri' ? viewDate.iMonth() : viewDate.month()) + 1}.pdf`;
 
             if (Capacitor.isNativePlatform()) {
                 const pdfBase64 = pdf.output('datauristring').split(',')[1];
@@ -200,7 +255,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                 });
                 await CapacitorShare.share({
                     title: 'مواقيت الصلاة',
-                    text: `مواقيت الصلاة لشهر ${monthNameAr} ${hijriYear} هـ`,
+                    text: `مواقيت الصلاة لشهر ${monthNameDisplay}`,
                     url: savedFile.uri,
                     dialogTitle: 'مشاركة أو حفظ ملف PDF'
                 });
@@ -238,33 +293,34 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                 <button onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                     <ChevronRight size={24} color={primaryColor} />
                 </button>
-                <h2 className="text-lg font-bold" style={{ color: primaryColor }}>
-                    {monthNameAr} {hijriYear} هـ
-                </h2>
+                <div className="flex flex-col items-center gap-1">
+                    <button 
+                        onClick={() => setIsPickerOpen(true)}
+                        className="text-lg font-bold flex items-center gap-2 px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" 
+                        style={{ color: primaryColor }}
+                    >
+                        {monthNameDisplay}
+                        <Calendar size={16} />
+                    </button>
+                    <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
+                        <button 
+                            onClick={() => setCalendarType('hijri')}
+                            className={`px-3 py-0.5 text-[10px] rounded-md transition-all ${calendarType === 'hijri' ? 'bg-white dark:bg-gray-800 shadow-sm' : 'opacity-50'}`}
+                            style={{ color: calendarType === 'hijri' ? primaryColor : undefined }}
+                        >
+                            هجري
+                        </button>
+                        <button 
+                            onClick={() => setCalendarType('gregorian')}
+                            className={`px-3 py-0.5 text-[10px] rounded-md transition-all ${calendarType === 'gregorian' ? 'bg-white dark:bg-gray-800 shadow-sm' : 'opacity-50'}`}
+                            style={{ color: calendarType === 'gregorian' ? primaryColor : undefined }}
+                        >
+                            ميلادي
+                        </button>
+                    </div>
+                </div>
                 <button onClick={handleNextMonth} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                     <ChevronLeft size={24} color={primaryColor} />
-                </button>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-center gap-4 p-4 pb-0">
-                <button 
-                    onClick={handleShare}
-                    disabled={isSharing}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-bold text-white transition-transform active:scale-95 disabled:opacity-50 min-w-[120px] shadow-sm"
-                    style={{ backgroundColor: primaryColor }}
-                >
-                    <Share size={18} />
-                    <span>{isSharing ? 'جاري...' : 'مشاركة'}</span>
-                </button>
-                <button 
-                    onClick={handleExportPDF}
-                    disabled={isExporting}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-bold text-white transition-transform active:scale-95 disabled:opacity-50 min-w-[120px] shadow-sm"
-                    style={{ backgroundColor: secondaryColor }}
-                >
-                    <Download size={18} />
-                    <span>{isExporting ? 'جاري...' : 'PDF'}</span>
                 </button>
             </div>
 
@@ -307,13 +363,44 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                 </div>
             </main>
 
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <nav className="app-bottom-bar">
+                <div className="app-bottom-bar__inner !justify-between gap-3">
+                    <button 
+                        onClick={handleShare}
+                        disabled={isSharing}
+                        className="bar-button btn-3d-effect !flex-1 !py-2.5 !px-2 !text-sm !rounded-xl shadow-lg"
+                        style={{ background: primaryColor, color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
+                    >
+                        <Share size={18} />
+                        <span className="hidden xs:inline">{isSharing ? '...' : 'مشاركة'}</span>
+                    </button>
+
+                    <button 
+                        onClick={onBack} 
+                        className="bar-button btn-3d-effect !flex-[2] max-w-[160px] py-2.5 px-4 rounded-xl shadow-lg"
+                        style={{ background: theme.palette[0], color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
+                    >
+                        <span className="text-xl">🏠</span>
+                        <span>الرئيسية</span>
+                    </button>
+
+                    <button 
+                        onClick={handleExportPDF}
+                        disabled={isExporting}
+                        className="bar-button btn-3d-effect !flex-1 !py-2.5 !px-2 !text-sm !rounded-xl shadow-lg"
+                        style={{ background: primaryColor, color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
+                    >
+                        <Download size={18} />
+                        <span className="hidden xs:inline">{isExporting ? '...' : 'PDF'}</span>
+                    </button>
+                </div>
+            </nav>
 
             {/* Hidden Table for PDF Export */}
             <div style={{ position: 'fixed', top: '-10000px', left: '-10000px', zIndex: -1000 }}>
                 <div ref={pdfTableRef} style={{ width: '800px', padding: '20px', backgroundColor: '#fff', color: '#000', direction: 'rtl', fontFamily: 'Cairo, sans-serif' }}>
                     <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                        <h1 style={{ fontSize: '24px', color: primaryColor }}>مواقيت الصلاة لشهر {monthNameAr} {hijriYear} هـ</h1>
+                        <h1 style={{ fontSize: '24px', color: primaryColor }}>مواقيت الصلاة لشهر {monthNameDisplay}</h1>
                         <p style={{ fontSize: '16px', color: '#666' }}>الموقع: {config.location.cityGov}</p>
                         <p style={{ fontSize: '14px', color: '#888', marginTop: '5px' }}>تم الإنشاء بواسطة: مصحف احمد وليلى</p>
                     </div>
@@ -347,6 +434,75 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                 </table>
                 </div>
             </div>
+
+            {/* Month/Year Picker Modal */}
+            {isPickerOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" dir="rtl">
+                        <div className="p-6 flex flex-col gap-6">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-bold" style={{ color: primaryColor }}>اختيار الشهر والسنة</h3>
+                                <button onClick={() => setIsPickerOpen(false)} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs opacity-60 font-bold">الشهر</label>
+                                    <select 
+                                        value={calendarType === 'hijri' ? viewDate.iMonth() : viewDate.month()}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            if (calendarType === 'hijri') {
+                                                setViewDate(prev => prev.clone().iMonth(val));
+                                            } else {
+                                                setViewDate(prev => prev.clone().month(val));
+                                            }
+                                        }}
+                                        className="bg-black/5 dark:bg-white/5 p-3 rounded-xl outline-none focus:ring-2 transition-all"
+                                        style={{ borderColor: 'var(--card-border)' }}
+                                    >
+                                        {(calendarType === 'hijri' ? HIJRI_MONTHS : GREGORIAN_MONTHS).map((m, i) => (
+                                            <option key={i} value={i}>{m}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-xs opacity-60 font-bold">السنة</label>
+                                    <select 
+                                        value={calendarType === 'hijri' ? viewDate.iYear() : viewDate.year()}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            if (calendarType === 'hijri') {
+                                                setViewDate(prev => prev.clone().iYear(val));
+                                            } else {
+                                                setViewDate(prev => prev.clone().year(val));
+                                            }
+                                        }}
+                                        className="bg-black/5 dark:bg-white/5 p-3 rounded-xl outline-none focus:ring-2 transition-all"
+                                        style={{ borderColor: 'var(--card-border)' }}
+                                    >
+                                        {Array.from({ length: 20 }, (_, i) => {
+                                            const baseYear = calendarType === 'hijri' ? moment().iYear() : moment().year();
+                                            const year = baseYear - 10 + i;
+                                            return <option key={year} value={year}>{year}</option>;
+                                        })}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={() => setIsPickerOpen(false)}
+                                className="w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-transform active:scale-95"
+                                style={{ backgroundColor: primaryColor }}
+                            >
+                                تم
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

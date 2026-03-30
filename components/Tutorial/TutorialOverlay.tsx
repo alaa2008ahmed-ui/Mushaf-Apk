@@ -88,12 +88,35 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
   if (!isVisible) return null;
 
   const getTooltipStyle = () => {
-    return {
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      width: 'min(320px, 90vw)',
-    };
+    if (!targetRect) {
+      return {
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 'min(320px, 90vw)',
+      };
+    }
+
+    const targetCenterY = targetRect.top + targetRect.height / 2;
+    const screenHeight = window.innerHeight;
+
+    // If target is in the upper half, show tooltip in the lower half
+    // If target is in the lower half, show tooltip in the upper half
+    if (targetCenterY < screenHeight / 2) {
+      return {
+        bottom: '15%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: 'min(320px, 90vw)',
+      };
+    } else {
+      return {
+        top: '15%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: 'min(320px, 90vw)',
+      };
+    }
   };
 
   const tooltipStyle = getTooltipStyle();
@@ -146,14 +169,15 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
             />
           )}
 
-          {/* Centered Tooltip Container */}
-          <div className="fixed inset-0 flex items-center justify-center p-6 pointer-events-none z-[10001]">
+          {/* Tooltip Container */}
+          <div className="fixed inset-0 pointer-events-none z-[10001]">
             <motion.div
               key={currentStep}
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: -20 }}
-              className="flex flex-col items-center gap-4 pointer-events-auto cursor-pointer w-full max-w-[320px] text-center"
+              className="absolute flex flex-col items-center gap-4 pointer-events-auto cursor-pointer w-full max-w-[320px] text-center"
+              style={tooltipStyle}
               onClick={handleNext}
             >
               {step.icon && (

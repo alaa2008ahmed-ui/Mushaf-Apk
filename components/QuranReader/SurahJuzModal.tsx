@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { JUZ_MAP, toArabic, SURAH_INFO } from './constants';
+import { JUZ_MAP, toArabic, SURAH_INFO, HIZB_QUARTERS } from './constants';
 
 interface SurahJuzModalProps {
-    type: 'surah' | 'juz';
+    type: 'surah' | 'juz' | 'hizb';
     quranData: any;
     onSelect: (surah: number, ayah: number) => void;
     onClose: () => void;
@@ -23,6 +23,10 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
         return 1;
     }, []);
 
+    const getHizbQuarterForSurah = useCallback((s: number) => {
+        return HIZB_QUARTERS[s - 1] || 1;
+    }, []);
+
     // Initialize state
     const [selectedSurah, setSelectedSurah] = useState(() => {
         if (currentAyah) return currentAyah.s;
@@ -39,11 +43,13 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
     });
 
     const [selectedJuz, setSelectedJuz] = useState(() => getJuzForAyah(selectedSurah, selectedAyah));
+    const [selectedHizbQuarter, setSelectedHizbQuarter] = useState(() => getHizbQuarterForSurah(selectedSurah));
     const [searchTerm, setSearchTerm] = useState('');
 
     const juzRefs = useRef<(HTMLButtonElement | null)[]>([]);
     const surahRefs = useRef<(HTMLButtonElement | null)[]>([]);
     const ayahRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const hizbRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
     const removeDiacritics = (text: string) => {
         if (!text) return "";
@@ -64,6 +70,7 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
         juzRefs.current[selectedJuz]?.scrollIntoView(scrollOptions);
         surahRefs.current[selectedSurah]?.scrollIntoView(scrollOptions);
         ayahRefs.current[selectedAyah]?.scrollIntoView(scrollOptions);
+        hizbRefs.current[selectedHizbQuarter]?.scrollIntoView(scrollOptions);
     }, []);
 
     useEffect(() => {
@@ -84,11 +91,18 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
         }
     }, [selectedAyah, searchTerm]);
 
+    useEffect(() => {
+        if (!searchTerm) {
+            hizbRefs.current[selectedHizbQuarter]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+    }, [selectedHizbQuarter, searchTerm]);
+
     const handleJuzClick = (j: number) => {
         const juzData = JUZ_MAP[j - 1];
         setSelectedJuz(j);
         setSelectedSurah(juzData.s);
         setSelectedAyah(juzData.a);
+        setSelectedHizbQuarter(getHizbQuarterForSurah(juzData.s));
         setSearchTerm('');
     };
 
@@ -96,12 +110,26 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
         setSelectedSurah(s);
         setSelectedAyah(1);
         setSelectedJuz(getJuzForAyah(s, 1));
+        setSelectedHizbQuarter(getHizbQuarterForSurah(s));
         setSearchTerm('');
     };
 
     const handleAyahClick = (a: number) => {
         setSelectedAyah(a);
         setSelectedJuz(getJuzForAyah(selectedSurah, a));
+    };
+
+    const handleHizbQuarterClick = (hq: number) => {
+        setSelectedHizbQuarter(hq);
+        // Find the first surah/ayah for this hizb quarter
+        // This is a simplification, a more accurate mapping would be needed for exact ayah
+        const targetSurah = HIZB_QUARTERS.findIndex(h => h === hq) + 1;
+        if (targetSurah > 0) {
+            setSelectedSurah(targetSurah);
+            setSelectedAyah(1);
+            setSelectedJuz(getJuzForAyah(targetSurah, 1));
+        }
+        setSearchTerm('');
     };
 
     const ayahsCount = SURAH_INFO[selectedSurah]?.ayahs || 0;
@@ -113,9 +141,21 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
         return normalizedName.includes(normalizedSearch) || normalizedNameWithoutSurah.includes(normalizedSearch);
     });
 
+    const formatHizbQuarter = (hq: number) => {
+        const hizb = Math.ceil(hq / 4);
+        const quarter = hq % 4;
+        let quarterText = '';
+        if (quarter === 1) quarterText = 'الحزب';
+        else if (quarter === 2) quarterText = 'ربع الحزب';
+        else if (quarter === 3) quarterText = 'نصف الحزب';
+        else if (quarter === 0) quarterText = 'ثلاثة أرباع الحزب';
+        
+        return `${quarterText} ${toArabic(hizb)}`;
+    };
+
     return (
         <div className={`fixed inset-0 z-[100] bg-black/30 flex justify-center items-center p-4 animate-fadeIn backdrop-blur-sm`} onClick={onClose}>
-            <div className={`modal-skinned w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
                 <div className="p-4 theme-header-bg flex flex-col gap-3">
                     <div className="flex justify-between items-center">
                         <h3 className="font-bold text-lg">انتقال سريع</h3>
@@ -136,6 +176,23 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                 </div>
 
                 <div className="flex flex-1 overflow-hidden themed-card-bg">
+                    {/* Hizb Quarter Column */}
+                    <div className="flex-1 flex flex-col border-l border-gray-200 dark:border-gray-700">
+                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b border-gray-200 dark:border-gray-700">الحزب</div>
+                        <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            {Array.from({ length: 240 }, (_, i) => i + 1).map(hq => (
+                                <button
+                                    key={hq}
+                                    ref={el => hizbRefs.current[hq] = el}
+                                    onClick={() => handleHizbQuarterClick(hq)}
+                                    className={`w-full p-2 rounded text-xs font-bold transition ${selectedHizbQuarter === hq ? 'theme-accent-btn shadow-md' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                                >
+                                    {formatHizbQuarter(hq)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Juz Column */}
                     <div className="flex-1 flex flex-col border-l border-gray-200 dark:border-gray-700">
                         <div className="p-2 text-center text-xs font-bold opacity-60 border-b border-gray-200 dark:border-gray-700">الجزء</div>

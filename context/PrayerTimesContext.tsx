@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { Coordinates, CalculationMethod, PrayerTimes as AdhanPrayerTimes } from 'adhan';
+import moment from 'moment-hijri';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
@@ -211,13 +212,25 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                     return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
                 };
 
+                // Ramadan Isha Adjustment for specific countries (Saudi Arabia, Qatar)
+                const isRamadan = moment(date).iMonth() === 8;
+                const country = locationData?.fullCountry || '';
+                const code = locationData?.combinedCode || '';
+                let ishaTime = prayerTimes.isha;
+                if (isRamadan && (code.startsWith('+966') || country.includes('السعودية') || code.startsWith('+974') || country.includes('قطر'))) {
+                    const diffMinutes = (ishaTime.getTime() - prayerTimes.maghrib.getTime()) / 60000;
+                    if (diffMinutes < 110) {
+                        ishaTime = new Date(ishaTime.getTime() + 30 * 60000);
+                    }
+                }
+
                 timings = {
                     Fajr: formatTime(prayerTimes.fajr),
                     Sunrise: formatTime(prayerTimes.sunrise),
                     Dhuhr: formatTime(prayerTimes.dhuhr),
                     Asr: formatTime(prayerTimes.asr),
                     Maghrib: formatTime(prayerTimes.maghrib),
-                    Isha: formatTime(prayerTimes.isha),
+                    Isha: formatTime(ishaTime),
                 };
 
                 const hijriFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
@@ -396,6 +409,17 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                                 Maghrib: prayerTimes.maghrib,
                                 Isha: prayerTimes.isha,
                             };
+
+                            // Ramadan Isha Adjustment
+                            const isRamadan = moment(date).iMonth() === 8;
+                            const country = config.location.fullCountry || '';
+                            const code = config.location.combinedCode || '';
+                            if (isRamadan && (code.startsWith('+966') || country.includes('السعودية') || code.startsWith('+974') || country.includes('قطر'))) {
+                                const diffMinutes = (dayTimings.Isha.getTime() - dayTimings.Maghrib.getTime()) / 60000;
+                                if (diffMinutes < 110) {
+                                    dayTimings.Isha = new Date(dayTimings.Isha.getTime() + 30 * 60000);
+                                }
+                            }
 
                             // Use a for...of loop to handle async operations sequentially
                             for (const key of prayerKeys) {
