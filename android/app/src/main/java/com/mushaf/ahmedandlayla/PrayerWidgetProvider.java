@@ -133,6 +133,23 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.widget_bottom_section, View.VISIBLE);
         }
 
+        // Hide prayer icons if height is very small (e.g., < 90dp) to prevent time text from being cut off
+        if (minHeight > 0 && minHeight < 90) {
+            views.setViewVisibility(R.id.icon_fajr, View.GONE);
+            views.setViewVisibility(R.id.icon_sunrise, View.GONE);
+            views.setViewVisibility(R.id.icon_dhuhr, View.GONE);
+            views.setViewVisibility(R.id.icon_asr, View.GONE);
+            views.setViewVisibility(R.id.icon_maghrib, View.GONE);
+            views.setViewVisibility(R.id.icon_isha, View.GONE);
+        } else {
+            views.setViewVisibility(R.id.icon_fajr, View.VISIBLE);
+            views.setViewVisibility(R.id.icon_sunrise, View.VISIBLE);
+            views.setViewVisibility(R.id.icon_dhuhr, View.VISIBLE);
+            views.setViewVisibility(R.id.icon_asr, View.VISIBLE);
+            views.setViewVisibility(R.id.icon_maghrib, View.VISIBLE);
+            views.setViewVisibility(R.id.icon_isha, View.VISIBLE);
+        }
+
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 }
