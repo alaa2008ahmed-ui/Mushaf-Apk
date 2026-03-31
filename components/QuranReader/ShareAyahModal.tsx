@@ -274,6 +274,20 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
                                 <p 
                                     style={{ 
+                                        fontFamily: 'var(--font-thuluth)', 
+                                        fontSize: `${fontSize * 1.3}px`, 
+                                        color: selectedBg.accent, 
+                                        marginBottom: '20px',
+                                        textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                                        opacity: 1,
+                                        marginTop: '10px',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+                                </p>
+                                <p 
+                                    style={{ 
                                         lineHeight: '2',
                                         fontFamily: selectedFont,
                                         fontSize: `${fontSize}px`, 

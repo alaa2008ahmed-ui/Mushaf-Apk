@@ -56,6 +56,30 @@ const parseArabicNumber = (text: string): number | null => {
     return null;
 };
 
+const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings }: any) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 z-[200] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
+            <div className="modal-skinned w-full max-w-sm rounded-2xl shadow-2xl flex flex-col animate-modal-enter" onClick={e => e.stopPropagation()}>
+                <div className="p-4 flex justify-between items-center h-14 flex-none theme-header-bg rounded-t-2xl">
+                    <h2 className="text-xl font-bold">خيارات الآية</h2>
+                    <button onClick={onClose} className="hover:opacity-80 rounded-full bg-white/20 w-9 h-9 flex items-center justify-center text-lg">✕</button>
+                </div>
+                <div className="p-5 flex flex-col gap-4">
+                    <button onClick={onTafseer} className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg transition-colors shadow-md flex items-center justify-center gap-2">
+                        <i className="fa-solid fa-book-open"></i>
+                        التفسير
+                    </button>
+                    <button onClick={onMeanings} className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold text-lg transition-colors shadow-md flex items-center justify-center gap-2">
+                        <i className="fa-solid fa-language"></i>
+                        معاني القرآن
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
     
@@ -361,6 +385,11 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const [tafseerSelectionInfo, setTafseerSelectionInfo] = useState({ isOpen: false, s: 0, a: 0, wasAutoscrolling: false });
     const [isTafseerLoading, setIsTafseerLoading] = useState(false);
     const tafseerCache = useRef<any>({});
+    
+    const [ayahActionMenu, setAyahActionMenu] = useState({ isOpen: false, s: 0, a: 0, surahName: '', wasAutoscrolling: false });
+    const [quranMeaningsInfo, setQuranMeaningsInfo] = useState({ isOpen: false, s: 0, a: 0, text: '', surahName: '', wasAutoscrolling: false });
+    const [isQuranMeaningsLoading, setIsQuranMeaningsLoading] = useState(false);
+    const quranMeaningsCache = useRef<any>(null);
     
     const [isPageInputActive, setIsPageInputActive] = useState(false);
     const [pageInput, setPageInput] = useState('');
@@ -927,8 +956,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 setIsLandscapeUIHidden(false);
             }
             }
-            setIsTafseerLoading(true);
-            setTafseerInfo({ isOpen: true, s, a, text: '', surahName: surah.name, wasAutoscrolling });
+            setAyahActionMenu({ isOpen: true, s, a, surahName: surah.name, wasAutoscrolling });
         }
     }, [quranData, handleAyahClick]);
 
@@ -994,6 +1022,37 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         };
         fetchTafseer();
     }, [tafseerInfo.isOpen, tafseerInfo.s, tafseerInfo.a, settings.tafseer]);
+
+    useEffect(() => {
+        const fetchQuranMeanings = async () => {
+            if (!quranMeaningsInfo.isOpen) return;
+            try {
+                setIsQuranMeaningsLoading(true);
+                if (!quranMeaningsCache.current) {
+                    const res = await fetch('/tafseer.json');
+                    const data = await res.json();
+                    quranMeaningsCache.current = data;
+                }
+                
+                const meaningObj = quranMeaningsCache.current.find(
+                    (item: any) => item.number === String(quranMeaningsInfo.s) && item.aya === String(quranMeaningsInfo.a)
+                );
+                
+                setQuranMeaningsInfo(prev => ({ 
+                    ...prev, 
+                    text: meaningObj?.text || "معاني الكلمات غير متوفرة لهذه الآية." 
+                }));
+            } catch (e) {
+                setQuranMeaningsInfo(prev => ({
+                    ...prev, 
+                    text: 'خطأ في تحميل معاني القرآن. يرجى التحقق من اتصالك بالإنترنت.'
+                }));
+            } finally { 
+                setIsQuranMeaningsLoading(false); 
+            }
+        };
+        fetchQuranMeanings();
+    }, [quranMeaningsInfo.isOpen, quranMeaningsInfo.s, quranMeaningsInfo.a]);
 
     const toggleAudio = useCallback(() => {
         if (isPlaying || isAudioLoading) stopAudio();
@@ -2215,6 +2274,39 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     }
                     setTafseerInfo(p => ({ ...p, isOpen: false, wasAutoscrolling: false }));
                 }} 
+            />
+            <TafseerModal 
+                isOpen={quranMeaningsInfo.isOpen} 
+                isLoading={isQuranMeaningsLoading} 
+                isLandscape={isLandscape}
+                title={`معاني القرآن - ${quranMeaningsInfo.surahName.replace('سورة','').trim()} - آية ${toArabic(quranMeaningsInfo.a)}`} 
+                text={quranMeaningsInfo.text} 
+                onClose={() => {
+                    if (quranMeaningsInfo.wasAutoscrolling) {
+                        autoScrollPausedRef.current = false;
+                        setAutoScrollState(p => ({ ...p, isPaused: false }));
+                    }
+                    setQuranMeaningsInfo(p => ({ ...p, isOpen: false, wasAutoscrolling: false }));
+                }} 
+            />
+            <AyahActionMenu
+                isOpen={ayahActionMenu.isOpen}
+                onClose={() => {
+                    if (ayahActionMenu.wasAutoscrolling) {
+                        autoScrollPausedRef.current = false;
+                        setAutoScrollState(p => ({ ...p, isPaused: false }));
+                    }
+                    setAyahActionMenu(p => ({ ...p, isOpen: false, wasAutoscrolling: false }));
+                }}
+                onTafseer={() => {
+                    setAyahActionMenu(p => ({ ...p, isOpen: false }));
+                    setIsTafseerLoading(true);
+                    setTafseerInfo({ isOpen: true, s: ayahActionMenu.s, a: ayahActionMenu.a, text: '', surahName: ayahActionMenu.surahName, wasAutoscrolling: ayahActionMenu.wasAutoscrolling });
+                }}
+                onMeanings={() => {
+                    setAyahActionMenu(p => ({ ...p, isOpen: false }));
+                    setQuranMeaningsInfo({ isOpen: true, s: ayahActionMenu.s, a: ayahActionMenu.a, text: '', surahName: ayahActionMenu.surahName, wasAutoscrolling: ayahActionMenu.wasAutoscrolling });
+                }}
             />
             <TafseerSelectionModal 
                 isOpen={tafseerSelectionInfo.isOpen} 
