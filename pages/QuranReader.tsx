@@ -28,7 +28,7 @@ import FloatingMenu from '../components/QuranReader/FloatingMenu';
 import AyahContextMenu from '../components/QuranReader/AyahContextMenu';
 import ShareAyahModal from '../components/QuranReader/ShareAyahModal';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
-import { MousePointer2, Move, ZoomIn, LayoutGrid, Mic, Bookmark, Home } from 'lucide-react';
+import { MousePointer2, Move, ZoomIn, LayoutGrid, Mic, Bookmark, Home, Share2 } from 'lucide-react';
 import quranUthmaniJson from '../data/quran-uthmani.json';
 import quranTajweedJson from '../data/quran-tajweed.json';
 import { registerBackInterceptor } from '../hooks/useBackButton';
@@ -542,6 +542,14 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             arrow: 'down',
             selector: '#btn-autoscroll',
             icon: <Move className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'share-ayah-feature',
+            text: 'مشاركة آية: اضغط هنا لمشاركة الآية الحالية كصورة مع إمكانية تخصيص الخلفية والخط والألوان.',
+            position: { bottom: '80px', left: '25%' },
+            arrow: 'down',
+            selector: '#btn-share',
+            icon: <Share2 className="w-8 h-8 text-white" />
         },
         {
             id: 'home-nav',

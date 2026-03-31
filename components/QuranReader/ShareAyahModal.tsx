@@ -107,48 +107,52 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const handleShare = async () => {
         if (!previewRef.current || isSharing) return;
         setIsSharing(true);
+        const shareText = `تلاوة من القرآن الكريم\n${surahInfo}\nتم الإنشاء بواسطة: مصحف احمد وليلى`;
         try {
             const canvas = await html2canvas(previewRef.current, {
-                scale: 2,
+                scale: 2.5,
                 useCORS: true,
-                backgroundColor: null,
+                backgroundColor: '#ffffff',
             });
-            const dataUrl = canvas.toDataURL('image/png');
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
             if (Capacitor.isNativePlatform()) {
-                const fileName = `ayah_share_${new Date().getTime()}.png`;
+                const fileName = `ayah_share_${Date.now()}.jpg`;
+                const base64Data = dataUrl.split(',')[1];
                 const savedFile = await Filesystem.writeFile({
                     path: fileName,
-                    data: dataUrl.split(',')[1],
+                    data: base64Data,
                     directory: Directory.Cache,
                 });
+                
                 await Share.share({
                     title: 'مشاركة آية',
+                    text: shareText,
                     url: savedFile.uri,
                     dialogTitle: 'مشاركة عبر'
                 });
-            } else {
+            } else if (navigator.share) {
                 // Web fallback
                 try {
                     const blob = await (await fetch(dataUrl)).blob();
-                    const file = new File([blob], 'ayah.png', { type: 'image/png' });
+                    const file = new File([blob], 'ayah.jpg', { type: 'image/jpeg' });
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({
-                            files: [file],
                             title: 'مشاركة آية',
+                            text: shareText,
+                            files: [file],
                         });
                     } else {
-                        const link = document.createElement('a');
-                        link.download = 'ayah.png';
-                        link.href = dataUrl;
-                        link.click();
+                        await navigator.share({
+                            title: 'مشاركة آية',
+                            text: shareText,
+                        });
                     }
                 } catch (e) {
-                    const link = document.createElement('a');
-                    link.download = 'ayah.png';
-                    link.href = dataUrl;
-                    link.click();
+                    await navigator.share({ title: 'مشاركة آية', text: shareText });
                 }
+            } else {
+                alert("المشاركة غير مدعومة في هذا المتصفح");
             }
         } catch (error) {
             console.error('Error sharing image:', error);
