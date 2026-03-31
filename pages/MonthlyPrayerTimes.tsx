@@ -66,12 +66,11 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                 setIsPickerOpen(false);
                 return true;
             }
-            onBack();
-            return true;
+            return false;
         };
         const unregister = registerBackInterceptor(interceptor);
         return unregister;
-    }, [onBack, isPickerOpen]);
+    }, [isPickerOpen]);
 
     const monthData = useMemo(() => {
         const data = [];

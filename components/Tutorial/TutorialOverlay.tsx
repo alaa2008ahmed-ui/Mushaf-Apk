@@ -16,9 +16,10 @@ interface TutorialOverlayProps {
   tutorialId: string;
   steps: TutorialStep[];
   onComplete?: () => void;
+  onStepChange?: (stepId: string) => void;
 }
 
-const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, onComplete }) => {
+const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, onComplete, onStepChange }) => {
   const { shouldShowTutorial, markTutorialAsSeen } = useTutorial();
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
@@ -28,13 +29,20 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
   useEffect(() => {
     if (shouldShowTutorial(tutorialId)) {
       setIsVisible(true);
+      if (onStepChange && steps.length > 0) {
+        onStepChange(steps[0].id);
+      }
     }
-  }, [tutorialId, shouldShowTutorial]);
+  }, [tutorialId, shouldShowTutorial, onStepChange, steps]);
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      if (onStepChange) {
+        onStepChange(steps[nextStep].id);
+      }
     } else {
       handleClose();
     }
@@ -43,6 +51,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
   const handleClose = () => {
     setIsVisible(false);
     markTutorialAsSeen(tutorialId);
+    if (onStepChange) onStepChange('');
     if (onComplete) onComplete();
   };
 

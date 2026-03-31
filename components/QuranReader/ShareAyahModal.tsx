@@ -4,7 +4,7 @@ import html2canvas from 'html2canvas';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
-import { FONTS } from './constants';
+import { FONTS, SURAH_NAMES_AR } from './constants';
 
 interface ShareAyahModalProps {
     isOpen: boolean;
@@ -33,6 +33,51 @@ const BACKGROUNDS = [
     { id: 'bg16', type: 'gradient', value: 'linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%)', border: '#ffd266', accent: '#880E4F' },
 ];
 
+const FRAMES = [
+    { id: 'none', name: 'بدون إطار', type: 'none', color: 'transparent' },
+    { id: 'f1', name: 'مزدوج ذهبي', type: 'double', color: '#FFD700' },
+    { id: 'f2', name: 'مزدوج أبيض', type: 'double', color: '#ffffff' },
+    { id: 'f3', name: 'زوايا ذهبي', type: 'corner-diamonds', color: '#FFD700' },
+    { id: 'f4', name: 'زوايا أبيض', type: 'corner-diamonds', color: '#ffffff' },
+    { id: 'f5', name: 'محراب ذهبي', type: 'mihrab', color: '#FFD700' },
+    { id: 'f6', name: 'محراب أبيض', type: 'mihrab', color: '#ffffff' },
+    { id: 'f7', name: 'أنيق ذهبي', type: 'elegant', color: '#FFD700' },
+    { id: 'f8', name: 'أنيق أبيض', type: 'elegant', color: '#ffffff' },
+];
+
+const FrameOverlay = ({ frame }: { frame: typeof FRAMES[0] }) => {
+    if (frame.type === 'none') return null;
+    
+    const color = frame.color;
+
+    if (frame.type === 'double') {
+        return <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', bottom: '10px', border: `3px double ${color}`, borderRadius: '8px', pointerEvents: 'none', zIndex: 5 }} />;
+    }
+    if (frame.type === 'corner-diamonds') {
+        return (
+            <div style={{ position: 'absolute', top: '14px', left: '14px', right: '14px', bottom: '14px', border: `1px solid ${color}`, pointerEvents: 'none', zIndex: 5 }}>
+                <div style={{ position: 'absolute', top: '-4px', left: '-4px', width: '8px', height: '8px', backgroundColor: color, transform: 'rotate(45deg)' }} />
+                <div style={{ position: 'absolute', top: '-4px', right: '-4px', width: '8px', height: '8px', backgroundColor: color, transform: 'rotate(45deg)' }} />
+                <div style={{ position: 'absolute', bottom: '-4px', left: '-4px', width: '8px', height: '8px', backgroundColor: color, transform: 'rotate(45deg)' }} />
+                <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', width: '8px', height: '8px', backgroundColor: color, transform: 'rotate(45deg)' }} />
+            </div>
+        );
+    }
+    if (frame.type === 'mihrab') {
+        return (
+            <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', bottom: '10px', border: `2px solid ${color}`, borderTopLeftRadius: '60px', borderTopRightRadius: '60px', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px', pointerEvents: 'none', zIndex: 5 }} />
+        );
+    }
+    if (frame.type === 'elegant') {
+        return (
+            <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', bottom: '10px', border: `1px solid ${color}`, borderRadius: '12px', pointerEvents: 'none', zIndex: 5 }}>
+                <div style={{ position: 'absolute', top: '4px', left: '4px', right: '4px', bottom: '4px', border: `1px solid ${color}`, borderRadius: '8px', opacity: 0.5 }} />
+            </div>
+        );
+    }
+    return null;
+};
+
 const TEXT_COLORS = [
     '#ffffff', '#000000', '#f1c40f', '#e74c3c', '#2ecc71', '#3498db',
     '#9b59b6', '#e67e22', '#1abc9c', '#ecf0f1', '#95a5a6', '#34495e',
@@ -48,6 +93,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
 }) => {
     const [selectedAyahs, setSelectedAyahs] = useState<{ s: number; a: number }[]>([currentAyah]);
     const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0]);
+    const [selectedFrame, setSelectedFrame] = useState(FRAMES[0]);
     const [fontSize, setFontSize] = useState(24);
     const [textColor, setTextColor] = useState(TEXT_COLORS[0]);
     const [selectedFont, setSelectedFont] = useState(FONTS[0].id);
@@ -59,6 +105,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         if (isOpen) {
             setSelectedAyahs([currentAyah]);
             setSelectedBg(BACKGROUNDS[0]);
+            setSelectedFrame(FRAMES[0]);
             setFontSize(24);
             setTextColor(TEXT_COLORS[0]);
             setSelectedFont(FONTS[0].id);
@@ -101,7 +148,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     };
 
     const getSurahName = (s: number) => {
-        return quranData.surahs[s - 1]?.name || '';
+        return SURAH_NAMES_AR[s - 1] || '';
     };
 
     const handleShare = async () => {
@@ -167,7 +214,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const surahInfo = firstAyah.s === lastAyah.s 
         ? (firstAyah.a === lastAyah.a 
             ? `سورة ${getSurahName(firstAyah.s)} - آية ${firstAyah.a}`
-            : `سورة ${getSurahName(firstAyah.s)} - آيات ${firstAyah.a}-${lastAyah.a}`)
+            : `سورة ${getSurahName(firstAyah.s)} - آية ${firstAyah.a} إلى آية ${lastAyah.a}`)
         : `سورة ${getSurahName(firstAyah.s)} آية ${firstAyah.a} - سورة ${getSurahName(lastAyah.s)} آية ${lastAyah.a}`;
 
     return (
@@ -207,6 +254,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             }}
                         >
                             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
+                            <FrameOverlay frame={selectedFrame} />
                             <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
                                 <p 
                                     style={{ 
@@ -281,6 +329,22 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                         backgroundPosition: 'center'
                                     }}
                                 />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Frame Selection */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الإطار</label>
+                        <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                            {FRAMES.map(frame => (
+                                <button
+                                    key={frame.id}
+                                    onClick={() => setSelectedFrame(frame)}
+                                    className={`shrink-0 px-3 py-2 rounded-lg border-2 transition-all text-xs font-medium flex items-center justify-center min-w-[80px] ${selectedFrame.id === frame.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
+                                >
+                                    {frame.name}
+                                </button>
                             ))}
                         </div>
                     </div>

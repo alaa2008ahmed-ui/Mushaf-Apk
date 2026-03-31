@@ -235,11 +235,13 @@ function AppContent({
 }
 
 import { useVoiceControl } from './context/VoiceControlContext';
+import { useTutorial } from './context/TutorialContext';
 
 const VoiceControlToggle = () => {
   const { isEnabled, toggleEnabled, isListening, showVoiceIcon } = useVoiceControl();
+  const { shouldShowTutorial } = useTutorial();
 
-  if (!showVoiceIcon) return null;
+  if (!showVoiceIcon || shouldShowTutorial('home-tutorial')) return null;
 
   return (
     <motion.button
