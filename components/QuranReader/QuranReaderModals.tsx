@@ -14,6 +14,7 @@ import { QuranDownloadModal, TafsirDownloadModal } from './DownloadModals';
 import AutoScrollSettingsModal from './AutoScrollSettingsModal';
 import ListenSurahSelectModal from './ListenSurahSelectModal';
 import MushafSelectionModal from './MushafSelectionModal';
+import ShareAyahModal from './ShareAyahModal';
 
 export const QuranReaderModals = ({
     activeModals,
@@ -55,7 +56,8 @@ export const QuranReaderModals = ({
     quranData,
     audioState,
     setAudioState,
-    playSurah
+    playSurah,
+    currentAyah
 }: any) => {
 
     return (
@@ -69,6 +71,16 @@ export const QuranReaderModals = ({
                     }}
                     showToast={showToast}
                     isLandscape={isLandscapeRef.current}
+                />
+            )}
+
+            {activeModals.includes('share-ayah') && (
+                <ShareAyahModal
+                    isOpen={true}
+                    onClose={() => closeModal('share-ayah')}
+                    currentAyah={currentAyah}
+                    quranData={quranData}
+                    currentTheme={currentTheme}
                 />
             )}
 

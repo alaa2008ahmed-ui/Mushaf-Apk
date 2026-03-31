@@ -53,7 +53,6 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                 // تحديث التاريخ الهجري ومعلومات الصلاة القادمة
                 views.setTextViewText(R.id.widget_hijri_date, data.getString("day") + "، " + data.getString("hijri"));
                 views.setTextViewText(R.id.widget_gregorian_date, data.getString("gregorian"));
-                views.setTextViewText(R.id.widget_gregorian_date_bottom, data.getString("gregorian"));
                 views.setTextViewText(R.id.widget_next_prayer_name, data.getString("next_prayer_name") + " بعد");
                 
                 if (data.has("target_time_millis")) {
@@ -126,26 +125,11 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
         Bundle options = appWidgetManager.getAppWidgetOptions(appWidgetId);
         int minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
         
-        // If the widget is shrunk below a certain threshold (e.g., 100dp)
-        if (minHeight > 0 && minHeight < 110) {
-            // Very small widget (e.g. 4x1)
-            views.setViewVisibility(R.id.widget_middle_section, View.GONE); // Hide prayers
-            views.setViewVisibility(R.id.widget_gregorian_date, View.GONE); // Hide from top
-            
-            // Show bottom section but only with Gregorian date
-            views.setViewVisibility(R.id.widget_bottom_section, View.VISIBLE);
-            views.setViewVisibility(R.id.widget_midnight, View.GONE);
-            views.setViewVisibility(R.id.widget_last_third, View.GONE);
-            views.setViewVisibility(R.id.widget_gregorian_date_bottom, View.VISIBLE);
+        // If the widget is shrunk below a certain threshold (e.g., 100dp), hide the bottom section
+        if (minHeight > 0 && minHeight < 100) {
+            views.setViewVisibility(R.id.widget_bottom_section, View.GONE);
         } else {
-            // Normal widget
-            views.setViewVisibility(R.id.widget_middle_section, View.VISIBLE);
-            views.setViewVisibility(R.id.widget_gregorian_date, View.VISIBLE);
-            
             views.setViewVisibility(R.id.widget_bottom_section, View.VISIBLE);
-            views.setViewVisibility(R.id.widget_midnight, View.VISIBLE);
-            views.setViewVisibility(R.id.widget_last_third, View.VISIBLE);
-            views.setViewVisibility(R.id.widget_gregorian_date_bottom, View.GONE);
         }
 
         appWidgetManager.updateAppWidget(appWidgetId, views);

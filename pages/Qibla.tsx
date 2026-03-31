@@ -152,7 +152,7 @@ function Qibla({ onBack }) {
                 </div>
                 
                 {/* Modes Tabs */}
-                <div className="flex overflow-x-auto hide-scrollbar gap-2 px-4 pb-2 mt-4">
+                <div className="flex justify-center flex-wrap w-full gap-1.5 px-1 pb-2 mt-4">
                     {[
                         { id: 'compass', label: 'البوصلة', icon: 'fa-compass' },
                         { id: 'visual', label: 'المرئية', icon: 'fa-map-location-dot' },
@@ -163,7 +163,7 @@ function Qibla({ onBack }) {
                         <button
                             key={mode.id}
                             onClick={() => setActiveMode(mode.id)}
-                            className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${activeMode === mode.id ? 'shadow-md' : 'opacity-70'}`}
+                            className={`whitespace-nowrap px-2 py-1.5 rounded-full text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 ${activeMode === mode.id ? 'shadow-md' : 'opacity-90'}`}
                             style={{
                                 backgroundColor: activeMode === mode.id ? (theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]) : 'var(--card-bg)',
                                 color: activeMode === mode.id ? (theme.name === 'أبيض وأسود' ? '#000000' : '#ffffff') : 'var(--text-color)',
@@ -171,7 +171,7 @@ function Qibla({ onBack }) {
                             }}
                         >
                             <i className={`fa-solid ${mode.icon}`}></i>
-                            {mode.label}
+                            <span>{mode.label}</span>
                         </button>
                     ))}
                 </div>

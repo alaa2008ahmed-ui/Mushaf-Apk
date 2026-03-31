@@ -160,7 +160,7 @@ export const SunMoonQibla = ({ lat, lng, qiblaDirection, heading, theme }: any) 
     );
 
     return (
-        <div className="w-full flex flex-col gap-6 pb-8">
+        <div className="w-full shrink-0 flex flex-col gap-6 pb-8">
             <div className="themed-card p-8 rounded-2xl flex flex-col items-center justify-center text-center relative overflow-hidden shadow-md">
                 <div className="absolute top-4 right-4 text-yellow-500 opacity-10"><i className="fa-solid fa-sun text-6xl"></i></div>
                 <h3 className="text-2xl font-bold mb-4" style={{ color: theme.palette[0] }}>تحديد القبلة عن طريق الشمس</h3>
@@ -238,7 +238,7 @@ export const ShadowQibla = ({ lat, lng, qiblaDirection, heading, theme }: any) =
     const shadowDiff = Math.abs(shadowHeading - qiblaDirection);
 
     return (
-        <div className="w-full flex flex-col items-center justify-start themed-card p-8 rounded-2xl text-center relative overflow-hidden shadow-md mb-8">
+        <div className="w-full shrink-0 flex flex-col items-center justify-start themed-card p-8 rounded-2xl text-center relative overflow-hidden shadow-md mb-8">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5">
                 <i className="fa-solid fa-person-rays text-[15rem]"></i>
             </div>

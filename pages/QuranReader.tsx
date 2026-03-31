@@ -26,6 +26,7 @@ import QuranHeader from '../components/QuranReader/QuranHeader';
 import QuranFooter from '../components/QuranReader/QuranFooter';
 import FloatingMenu from '../components/QuranReader/FloatingMenu';
 import AyahContextMenu from '../components/QuranReader/AyahContextMenu';
+import ShareAyahModal from '../components/QuranReader/ShareAyahModal';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { MousePointer2, Move, ZoomIn, LayoutGrid, Mic, Bookmark, Home } from 'lucide-react';
 import quranUthmaniJson from '../data/quran-uthmani.json';
@@ -2149,6 +2150,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 />
             )}
             {activeModals.includes('search-modal') && <SearchModal quranData={quranData} onSelect={(s,a) => jumpToAyah(s,a, true)} onClose={() => closeModal('search-modal')} isLandscape={isLandscape} initialQuery={initialSearchQuery} />}
+            {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} />}
             {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} />}
             {activeModals.includes('settings-modal') && <SettingsModal onClose={() => closeModal('settings-modal')} onOpenModal={openModal} showToast={showToast} isLandscape={isLandscape} />}
             {activeModals.includes('font-modal') && <FontSelectModal isOpen={true} onClose={() => closeModal('font-modal')} isLandscape={isLandscape} currentFontId={settings.fontFamily} onSelect={(id) => {

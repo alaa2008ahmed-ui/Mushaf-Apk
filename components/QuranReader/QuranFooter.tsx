@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Bookmark, ChevronDown, Pause, Home } from 'lucide-react';
+import { Menu, Bookmark, ChevronDown, Pause, Home, Share2 } from 'lucide-react';
 import FloatingMenu from './FloatingMenu';
 
 interface QuranFooterProps {
@@ -85,6 +85,15 @@ const QuranFooter: React.FC<QuranFooterProps> = ({
                 title="التمرير التلقائي"
             >
                 {autoScrollState.isActive ? <Pause size={24} /> : <ChevronDown size={24} />}
+            </button>
+            <button 
+                id="btn-share" 
+                onClick={() => openModal('share-ayah')} 
+                className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1 shadow-sm" 
+                style={getToolbarStyle('btn-share', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBg)}
+                title="مشاركة"
+            >
+                <Share2 size={24} />
             </button>
             <button 
                 id="btn-home" 
