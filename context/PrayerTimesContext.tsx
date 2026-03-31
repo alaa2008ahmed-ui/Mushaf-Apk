@@ -570,6 +570,14 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
         const fajrTime = applyOffset(currentTimes.Fajr, fajrOffset);
         const nightTimes = calculateNightTimes(maghribTime, fajrTime);
         
+        const to12h = (timeStr: string) => {
+            if (!timeStr || timeStr.includes('--')) return "--:--";
+            let [hh, mm] = timeStr.split(':');
+            let hInt = parseInt(hh);
+            hInt = hInt % 12 || 12;
+            return `${hInt.toString().padStart(2, '0')}:${mm}`;
+        };
+
         const formatTime = (timeStr: string, offset: number) => {
             const adjusted = applyOffset(timeStr, offset + (isSummerTimeActive ? 60 : 0));
             if (!adjusted || adjusted.includes('--')) return "--:--";
@@ -591,8 +599,8 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             next_prayer_id: currentNext.key.toLowerCase(),
             remaining_time: currentCountdown.split(':').slice(0, 2).join(':'), // HH:MM
             target_time_millis: currentNext.date.getTime(),
-            midnight: `منتصف الليل : ${nightTimes.midnight}`,
-            last_third: `الثلث الأخير : ${nightTimes.lastThird}`,
+            midnight: `منتصف الليل : ${to12h(nightTimes.midnight)}`,
+            last_third: `الثلث الأخير : ${to12h(nightTimes.lastThird)}`,
             times: {
                 fajr: formatTime(currentTimes.Fajr, config.prayerOffsets.Fajr || 0),
                 sunrise: formatTime(currentTimes.Sunrise, config.prayerOffsets.Sunrise || 0),

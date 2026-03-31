@@ -4,7 +4,7 @@ import html2canvas from 'html2canvas';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
-import { FONTS, SURAH_NAMES_AR } from './constants';
+import { FONTS, SURAH_NAMES_AR, toArabic } from './constants';
 
 interface ShareAyahModalProps {
     isOpen: boolean;
@@ -160,6 +160,22 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 scale: 2.5,
                 useCORS: true,
                 backgroundColor: '#ffffff',
+                onclone: (clonedDoc) => {
+                    // Fix for oklab/oklch colors which html2canvas doesn't support
+                    const elements = clonedDoc.getElementsByTagName('*');
+                    for (let i = 0; i < elements.length; i++) {
+                        const el = elements[i] as HTMLElement;
+                        const style = window.getComputedStyle(el);
+                        // Check common properties that might have oklab
+                        ['color', 'backgroundColor', 'borderColor', 'outlineColor'].forEach(prop => {
+                            const val = el.style.getPropertyValue(prop) || style.getPropertyValue(prop);
+                            if (val && (val.includes('oklab') || val.includes('oklch'))) {
+                                // Fallback to black for text, transparent for others
+                                el.style.setProperty(prop, prop === 'color' ? '#000000' : 'transparent', 'important');
+                            }
+                        });
+                    }
+                }
             });
             const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
@@ -213,9 +229,9 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const lastAyah = selectedAyahs[selectedAyahs.length - 1];
     const surahInfo = firstAyah.s === lastAyah.s 
         ? (firstAyah.a === lastAyah.a 
-            ? `سورة ${getSurahName(firstAyah.s)} - آية ${firstAyah.a}`
-            : `سورة ${getSurahName(firstAyah.s)} - آية ${firstAyah.a} إلى آية ${lastAyah.a}`)
-        : `سورة ${getSurahName(firstAyah.s)} آية ${firstAyah.a} - سورة ${getSurahName(lastAyah.s)} آية ${lastAyah.a}`;
+            ? `سورة ${getSurahName(firstAyah.s)} - ايه ${toArabic(firstAyah.a)}`
+            : `سورة ${getSurahName(firstAyah.s)} - ايه ${toArabic(firstAyah.a)} الى ايه ${toArabic(lastAyah.a)}`)
+        : `سورة ${getSurahName(firstAyah.s)} ايه ${toArabic(firstAyah.a)} - سورة ${getSurahName(lastAyah.s)} ايه ${toArabic(lastAyah.a)}`;
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" dir="rtl">

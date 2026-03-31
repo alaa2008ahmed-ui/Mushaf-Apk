@@ -241,7 +241,7 @@ const VoiceControlToggle = () => {
   const { isEnabled, toggleEnabled, isListening, showVoiceIcon } = useVoiceControl();
   const { shouldShowTutorial } = useTutorial();
 
-  if (!showVoiceIcon || shouldShowTutorial('home-tutorial')) return null;
+  if (!showVoiceIcon) return null;
 
   return (
     <motion.button
