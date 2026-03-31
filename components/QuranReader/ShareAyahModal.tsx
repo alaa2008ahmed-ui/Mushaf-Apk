@@ -234,18 +234,19 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         : `سورة ${getSurahName(firstAyah.s)} ايه ${toArabic(firstAyah.a)} - سورة ${getSurahName(lastAyah.s)} ايه ${toArabic(lastAyah.a)}`;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" dir="rtl">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
-                {/* Header */}
-                <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">مشاركة آية</h3>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
-                        <X size={20} />
-                    </button>
-                </div>
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm overflow-y-auto" dir="rtl">
+            <div className="min-h-full flex items-center justify-center p-4">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md flex flex-col">
+                    {/* Header */}
+                    <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">مشاركة آية</h3>
+                        <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
+                            <X size={20} />
+                        </button>
+                    </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                    {/* Content */}
+                    <div className="p-4 space-y-6">
                     {/* Preview Area */}
                     <div className="flex justify-center drop-shadow-lg">
                         <div 
@@ -467,6 +468,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         )}
                     </button>
                 </div>
+            </div>
             </div>
         </div>
     );

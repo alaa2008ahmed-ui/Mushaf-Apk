@@ -16,7 +16,7 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
                     <button 
                         onClick={onHomeClick} 
                         className={homeButtonClass}
-                        style={{ background: theme.palette[0], color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
+                        style={{ background: themeKey === 'default' ? '#8b5cf6' : theme.palette[0], color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
                     >
                         <span className="text-xl">🏠</span>
                         {!isSingleButton && <span>الرئيسية</span>}

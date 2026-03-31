@@ -56,7 +56,7 @@ const parseArabicNumber = (text: string): number | null => {
     return null;
 };
 
-const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings }: any) => {
+const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, currentTheme }: any) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[200] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
@@ -66,11 +66,11 @@ const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings }: any) => {
                     <button onClick={onClose} className="hover:opacity-80 rounded-full bg-white/20 w-9 h-9 flex items-center justify-center text-lg">✕</button>
                 </div>
                 <div className="p-5 flex flex-col gap-4">
-                    <button onClick={onTafseer} className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg transition-colors shadow-md flex items-center justify-center gap-2">
+                    <button onClick={onTafseer} style={{ backgroundColor: currentTheme?.accent || '#4f46e5' }} className="w-full py-3 px-4 text-white rounded-xl font-bold text-lg transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2">
                         <i className="fa-solid fa-book-open"></i>
                         التفسير
                     </button>
-                    <button onClick={onMeanings} className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold text-lg transition-colors shadow-md flex items-center justify-center gap-2">
+                    <button onClick={onMeanings} style={{ backgroundColor: currentTheme?.highlightText || currentTheme?.accent || '#0d9488' }} className="w-full py-3 px-4 text-white rounded-xl font-bold text-lg transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2">
                         <i className="fa-solid fa-language"></i>
                         معاني القرآن
                     </button>
@@ -2291,6 +2291,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             />
             <AyahActionMenu
                 isOpen={ayahActionMenu.isOpen}
+                currentTheme={currentTheme}
                 onClose={() => {
                     if (ayahActionMenu.wasAutoscrolling) {
                         autoScrollPausedRef.current = false;

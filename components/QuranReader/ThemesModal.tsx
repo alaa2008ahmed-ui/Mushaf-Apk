@@ -134,7 +134,8 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
                 <div className={`px-4 py-4 border-b border-gray-200 dark:border-gray-700 flex ${isLandscape ? 'flex-row' : 'flex-wrap'} gap-3 justify-center bg-gray-100 dark:bg-gray-800/90`}>
                     <button 
                         onClick={toggleTransparency}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${isTransparent ? 'bg-indigo-600 text-white border-indigo-700 shadow-lg' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${isTransparent ? 'text-white shadow-lg' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                        style={isTransparent ? { backgroundColor: activeTheme.accent, borderColor: activeTheme.accent } : {}}
                         title="تفعيل/تعطيل شفافية الأشرطة"
                     >
                         <i className={`fa-solid ${isTransparent ? 'fa-eye' : 'fa-eye-slash'}`}></i>
@@ -142,7 +143,8 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
                     </button>
                     <button 
                         onClick={toggleLockHighlightColor}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${lockHighlightColor ? 'bg-amber-600 text-white border-amber-700 shadow-lg' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${lockHighlightColor ? 'text-white shadow-lg' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                        style={lockHighlightColor ? { backgroundColor: activeTheme.accent, borderColor: activeTheme.accent } : {}}
                         title="قفل لون التحديد الحالي"
                     >
                         <i className={`fa-solid ${lockHighlightColor ? 'fa-lock' : 'fa-lock-open'}`}></i>
