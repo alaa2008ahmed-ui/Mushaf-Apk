@@ -184,38 +184,49 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
                     {/* Preview Area */}
-                    <div className="flex justify-center">
+                    <div className="flex justify-center drop-shadow-lg">
                         <div 
                             ref={previewRef}
-                            className="relative w-full max-w-[350px] rounded-xl overflow-hidden flex flex-col items-center justify-center py-4 px-6 text-center shadow-lg"
                             style={{
+                                position: 'relative',
+                                width: '100%',
+                                maxWidth: '350px',
+                                borderRadius: '12px',
+                                overflow: 'hidden',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '16px 24px',
+                                textAlign: 'center',
                                 backgroundImage: selectedBg.value,
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'center',
-                                border: `4px solid ${selectedBg.border}`
+                                border: `4px solid ${selectedBg.border}`,
+                                backgroundColor: '#ffffff'
                             }}
                         >
-                            <div className="absolute inset-0 bg-black/20"></div>
-                            <div className="relative z-10 flex flex-col items-center justify-center w-full">
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
+                            <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
                                 <p 
-                                    className="leading-loose"
                                     style={{ 
+                                        lineHeight: '2',
                                         fontFamily: selectedFont,
                                         fontSize: `${fontSize}px`, 
                                         color: textColor,
-                                        textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                                        textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                                        margin: 0
                                     }}
                                 >
                                     {combinedText}
                                 </p>
-                                <div className="mt-4 pt-4 border-t border-white/30 w-full px-2 flex flex-col items-center gap-2">
-                                    <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }} className="text-sm font-bold opacity-90 text-center">
+                                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.3)', width: '100%', paddingLeft: '8px', paddingRight: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                    <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '14px', fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
                                         {surahInfo}
                                     </p>
-                                    <div className="w-full flex justify-between items-end mt-1">
+                                    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '4px' }}>
                                         <span 
-                                            style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }} 
-                                            className="text-xs font-medium max-w-[50%] text-right leading-tight opacity-90"
+                                            style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '12px', fontWeight: 500, maxWidth: '50%', textAlign: 'right', lineHeight: 1.2, opacity: 0.9 }} 
                                         >
                                             {customText}
                                         </span>
@@ -223,8 +234,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                             href="https://play.google.com/store/apps/details?id=com.AhmedLaila.Quran&hl=ar&pli=1" 
                                             target="_blank" 
                                             rel="noopener noreferrer"
-                                            style={{ color: selectedBg.accent, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }} 
-                                            className="text-[13px] font-extrabold hover:opacity-100 transition-opacity underline decoration-dotted underline-offset-4 text-left drop-shadow-md"
+                                            style={{ color: selectedBg.accent, textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '13px', fontWeight: 800, textDecoration: 'underline', textDecorationStyle: 'dotted', textUnderlineOffset: '4px', textAlign: 'left' }} 
                                             dir="rtl"
                                         >
                                             مصحف احمد وليلى
