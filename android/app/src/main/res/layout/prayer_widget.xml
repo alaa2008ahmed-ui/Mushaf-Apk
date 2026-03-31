@@ -12,7 +12,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="35"
+        android:layout_weight="30"
         android:orientation="horizontal"
         android:baselineAligned="false">
 
@@ -22,7 +22,7 @@
             android:layout_weight="6"
             android:layout_height="match_parent"
             android:background="@drawable/widget_top_right_bg"
-            android:orientation="vertical"
+            android:orientation="horizontal"
             android:gravity="center"
             android:padding="0dp">
 
@@ -33,7 +33,8 @@
                 android:text="الصلاة بعد"
                 android:textColor="#10b981"
                 android:textSize="13sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:layout_marginEnd="6dp" />
 
             <Chronometer
                 android:id="@+id/widget_next_prayer_time"
@@ -52,29 +53,42 @@
             android:layout_weight="4"
             android:layout_height="match_parent"
             android:background="@drawable/widget_left_bg"
-            android:orientation="vertical"
+            android:orientation="horizontal"
             android:gravity="center"
-            android:padding="0dp">
+            android:padding="4dp">
 
-            <TextView
-                android:id="@+id/widget_hijri_date"
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@mipmap/ic_launcher"
+                android:layout_marginEnd="8dp" />
+
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="-- رمضان 1445"
-                android:textColor="#FFFFFF"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:layout_marginTop="0dp" />
+                android:orientation="vertical"
+                android:gravity="center">
 
-            <TextView
-                android:id="@+id/widget_gregorian_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="-- -- --"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:layout_marginTop="2dp" />
+                <TextView
+                    android:id="@+id/widget_hijri_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-- رمضان 1445"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="0dp" />
+
+                <TextView
+                    android:id="@+id/widget_gregorian_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-- -- --"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="0dp" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
@@ -141,7 +155,7 @@
         android:id="@+id/widget_bottom_section"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="15"
+        android:layout_weight="20"
         android:orientation="horizontal"
         android:background="@drawable/widget_bottom_bg"
         android:padding="2dp">
