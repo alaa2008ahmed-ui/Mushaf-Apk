@@ -4,6 +4,7 @@ import html2canvas from 'html2canvas';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
+import { FONTS } from './constants';
 
 interface ShareAyahModalProps {
     isOpen: boolean;
@@ -22,9 +23,21 @@ const BACKGROUNDS = [
     { id: 'bg6', type: 'gradient', value: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)', border: '#4c7384', accent: '#FFCA28' },
     { id: 'bg7', type: 'gradient', value: 'linear-gradient(135deg, #f2709c 0%, #ff9472 100%)', border: '#ffb399', accent: '#880E4F' },
     { id: 'bg8', type: 'gradient', value: 'linear-gradient(135deg, #1D976C 0%, #93F9B9 100%)', border: '#b3fcd0', accent: '#004D40' },
+    { id: 'bg9', type: 'gradient', value: 'linear-gradient(135deg, #000000 0%, #434343 100%)', border: '#666666', accent: '#FFD700' },
+    { id: 'bg10', type: 'gradient', value: 'linear-gradient(135deg, #5C258D 0%, #4389A2 100%)', border: '#6db3c9', accent: '#FFEB3B' },
+    { id: 'bg11', type: 'gradient', value: 'linear-gradient(135deg, #134E5E 0%, #71B280 100%)', border: '#8cd19c', accent: '#FFF' },
+    { id: 'bg12', type: 'gradient', value: 'linear-gradient(135deg, #ff9966 0%, #ff5e62 100%)', border: '#ffb399', accent: '#FFF' },
+    { id: 'bg13', type: 'gradient', value: 'linear-gradient(135deg, #00b09b 0%, #96c93d 100%)', border: '#b8eb5e', accent: '#004D40' },
+    { id: 'bg14', type: 'gradient', value: 'linear-gradient(135deg, #8E0E00 0%, #1F1C18 100%)', border: '#b31200', accent: '#FFD700' },
+    { id: 'bg15', type: 'gradient', value: 'linear-gradient(135deg, #00C9FF 0%, #92FE9D 100%)', border: '#b3ffc2', accent: '#004D40' },
+    { id: 'bg16', type: 'gradient', value: 'linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%)', border: '#ffd266', accent: '#880E4F' },
 ];
 
-const TEXT_COLORS = ['#ffffff', '#000000', '#f1c40f', '#e74c3c', '#2ecc71', '#3498db'];
+const TEXT_COLORS = [
+    '#ffffff', '#000000', '#f1c40f', '#e74c3c', '#2ecc71', '#3498db',
+    '#9b59b6', '#e67e22', '#1abc9c', '#ecf0f1', '#95a5a6', '#34495e',
+    '#ff9ff3', '#feca57', '#ff6b6b', '#48dbfb', '#1dd1a1', '#5f27cd'
+];
 
 const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     isOpen,
@@ -37,6 +50,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0]);
     const [fontSize, setFontSize] = useState(24);
     const [textColor, setTextColor] = useState(TEXT_COLORS[0]);
+    const [selectedFont, setSelectedFont] = useState(FONTS[0].id);
     const [customText, setCustomText] = useState('');
     const [isSharing, setIsSharing] = useState(false);
     const previewRef = useRef<HTMLDivElement>(null);
@@ -47,6 +61,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             setSelectedBg(BACKGROUNDS[0]);
             setFontSize(24);
             setTextColor(TEXT_COLORS[0]);
+            setSelectedFont(FONTS[0].id);
             setCustomText('');
         }
     }, [isOpen, currentAyah]);
@@ -82,7 +97,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         if (s !== 1 && s !== 9 && a === 1) {
             text = text.replace('بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', '').replace('بِّسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', '').trim();
         }
-        return text + ` ﴿${a}﴾`;
+        return text;
     };
 
     const getSurahName = (s: number) => {
@@ -96,7 +111,6 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             const canvas = await html2canvas(previewRef.current, {
                 scale: 2,
                 useCORS: true,
-                allowTaint: true,
                 backgroundColor: null,
             });
             const dataUrl = canvas.toDataURL('image/png');
@@ -115,10 +129,26 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 });
             } else {
                 // Web fallback
-                const link = document.createElement('a');
-                link.download = 'ayah.png';
-                link.href = dataUrl;
-                link.click();
+                try {
+                    const blob = await (await fetch(dataUrl)).blob();
+                    const file = new File([blob], 'ayah.png', { type: 'image/png' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'مشاركة آية',
+                        });
+                    } else {
+                        const link = document.createElement('a');
+                        link.download = 'ayah.png';
+                        link.href = dataUrl;
+                        link.click();
+                    }
+                } catch (e) {
+                    const link = document.createElement('a');
+                    link.download = 'ayah.png';
+                    link.href = dataUrl;
+                    link.click();
+                }
             }
         } catch (error) {
             console.error('Error sharing image:', error);
@@ -127,12 +157,14 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         }
     };
 
-    const combinedText = selectedAyahs.map(ay => getAyahText(ay.s, ay.a)).join(' ');
+    const combinedText = selectedAyahs.map(ay => getAyahText(ay.s, ay.a) + ` ﴿${ay.a}﴾`).join(' ');
     const firstAyah = selectedAyahs[0];
     const lastAyah = selectedAyahs[selectedAyahs.length - 1];
     const surahInfo = firstAyah.s === lastAyah.s 
-        ? `${getSurahName(firstAyah.s)}` 
-        : `${getSurahName(firstAyah.s)} - ${getSurahName(lastAyah.s)}`;
+        ? (firstAyah.a === lastAyah.a 
+            ? `سورة ${getSurahName(firstAyah.s)} - آية ${firstAyah.a}`
+            : `سورة ${getSurahName(firstAyah.s)} - آيات ${firstAyah.a}-${lastAyah.a}`)
+        : `سورة ${getSurahName(firstAyah.s)} آية ${firstAyah.a} - سورة ${getSurahName(lastAyah.s)} آية ${lastAyah.a}`;
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" dir="rtl">
@@ -162,8 +194,9 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             <div className="absolute inset-0 bg-black/20"></div>
                             <div className="relative z-10 flex flex-col items-center justify-center w-full">
                                 <p 
-                                    className="font-quran leading-loose"
+                                    className="leading-loose"
                                     style={{ 
+                                        fontFamily: selectedFont,
                                         fontSize: `${fontSize}px`, 
                                         color: textColor,
                                         textShadow: '0 2px 4px rgba(0,0,0,0.5)'
@@ -172,12 +205,12 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                     {combinedText}
                                 </p>
                                 <div className="mt-4 pt-4 border-t border-white/30 w-full px-2 flex flex-col items-center gap-2">
-                                    <p style={{ color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }} className="text-sm font-bold opacity-90 text-center">
+                                    <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }} className="text-sm font-bold opacity-90 text-center">
                                         {surahInfo}
                                     </p>
                                     <div className="w-full flex justify-between items-end mt-1">
                                         <span 
-                                            style={{ color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }} 
+                                            style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }} 
                                             className="text-xs font-medium max-w-[50%] text-right leading-tight opacity-90"
                                         >
                                             {customText}
@@ -273,6 +306,23 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                     />
                                 ))}
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Font Selection */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">نوع الخط</label>
+                        <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                            {FONTS.map(font => (
+                                <button
+                                    key={font.id}
+                                    onClick={() => setSelectedFont(font.id)}
+                                    className={`px-4 py-2 rounded-lg shrink-0 border transition-all ${selectedFont === font.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600'}`}
+                                    style={{ fontFamily: font.id }}
+                                >
+                                    {font.name}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
