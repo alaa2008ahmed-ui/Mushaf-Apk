@@ -278,6 +278,13 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         steps={homeTutorialSteps} 
         onStepChange={setCurrentTutorialStep}
       />
+      {currentTutorialStep && currentTutorialStep !== 'voice' && (
+        <style>{`
+          #voice-control-btn {
+            display: none !important;
+          }
+        `}</style>
+      )}
     </div>
   );
 }
