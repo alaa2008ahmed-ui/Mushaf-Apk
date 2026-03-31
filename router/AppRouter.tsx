@@ -18,7 +18,6 @@ import TajweedEducation from '../pages/TajweedEducation';
 import VoiceControlPage from '../pages/VoiceControlPage';
 import MoreMenuPage from '../pages/MoreMenuPage';
 import MonthlyPrayerTimes from '../pages/MonthlyPrayerTimes';
-import QAPage from '../pages/QAPage';
 
 interface AppRouterProps {
     page: string;
@@ -68,8 +67,6 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
         return <VoiceControlPage onBack={onBack} />;
       case 'more-menu':
         return <MoreMenuPage onBack={onBack} onNavigate={onNavigate} />;
-      case 'qa':
-        return <QAPage onBack={onBack} />;
       case 'home':
       default:
         return <MainMenu onNavigate={onNavigate} onOpenThemes={onOpenThemes} />;

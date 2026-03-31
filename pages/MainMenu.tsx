@@ -78,8 +78,10 @@ function MainMenu({ onNavigate, onOpenThemes }) {
   const homeTutorialSteps: TutorialStep[] = [
     {
       id: 'welcome',
-      text: 'أهلاً بك في تطبيق مصحف أحمد وليلى. إليك جولة سريعة للتعرف على المميزات.',
+      text: 'أهلاً بك في تطبيق "مُصْحَفُ أَحْمَدَ وَلَيْلَى". إليك جولة سريعة للتعرف على المميزات.',
       position: { top: '20%' },
+      selector: '#app-title',
+      arrow: 'up',
       icon: <BookOpen className="w-8 h-8 text-white" />
     },
     {
@@ -276,13 +278,6 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         steps={homeTutorialSteps} 
         onStepChange={setCurrentTutorialStep}
       />
-      {currentTutorialStep === 'welcome' && (
-        <style>{`
-          #voice-control-btn {
-            display: none !important;
-          }
-        `}</style>
-      )}
     </div>
   );
 }

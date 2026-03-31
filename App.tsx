@@ -30,7 +30,7 @@ function App() {
     const validPages = [
       'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'qibla', 
-      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education', 'voice-control', 'more-menu', 'qa'
+      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education', 'voice-control', 'more-menu'
     ];
 
     if (validPages.includes(pageId)) {
@@ -251,7 +251,7 @@ const VoiceControlToggle = () => {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       onClick={toggleEnabled}
-      className={`fixed left-4 z-[100] w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white ${
+      className={`fixed left-4 z-[10005] w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white ${
         isEnabled 
           ? (isListening ? 'bg-red-500 animate-pulse' : 'bg-green-500') 
           : 'bg-gray-400'

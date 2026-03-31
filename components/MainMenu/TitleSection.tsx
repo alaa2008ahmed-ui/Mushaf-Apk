@@ -44,7 +44,7 @@ const TitleSection: React.FC<TitleSectionProps> = ({
             onMouseUp={cancelTitlePress}
             onMouseLeave={cancelTitlePress}
         >
-            <h1 className={`text-4xl font-black tracking-tight transition-transform ${isEditMode ? 'scale-110 text-yellow-400' : ''}`} style={{ color: isEditMode ? undefined : theme.textColor }}>
+            <h1 id="app-title" className={`text-4xl font-black tracking-tight transition-transform ${isEditMode ? 'scale-110 text-yellow-400' : ''}`} style={{ color: isEditMode ? undefined : theme.textColor }}>
                 مُصْحَفُ أَحْمَدَ وَلَيْلَى
             </h1>
             <p className="text-[16px] font-black mt-3" style={{ color: themeKey === 'default' ? '#8b5cf6' : theme.textColor }}>
