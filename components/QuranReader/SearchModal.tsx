@@ -17,7 +17,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
         const saved = localStorage.getItem('search_results' + modeSuffix);
         return saved ? JSON.parse(saved) : [];
     });
-    const [visibleCount, setVisibleCount] = useState(100);
+    const [visibleCount, setVisibleCount] = useState(10000); // Set to a very high number to show all
     const [isSearching, setIsSearching] = useState(false);
     const [searchStats, setSearchStats] = useState('');
     const [expandedSurahs, setExpandedSurahs] = useState<Record<number, boolean>>({});
@@ -122,7 +122,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
         q = q.trim();
         if (q === '') {
             setResults([]);
-            setVisibleCount(100);
+            setVisibleCount(10000);
             setSearchStats('');
             setIsSearching(false);
             return;
@@ -130,7 +130,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
 
         setIsSearching(true);
         setSearchStats('...');
-        setVisibleCount(100);
+        setVisibleCount(10000);
         
         setTimeout(() => {
             executeSearchOptimized(q, newJobId);
@@ -147,7 +147,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
             setSearchStats('');
             setResults([]);
             localStorage.removeItem('search_results' + modeSuffix);
-            setVisibleCount(100);
+            setVisibleCount(10000);
             setIsSearching(false);
             return;
         }

@@ -238,7 +238,7 @@ export const ShadowQibla = ({ lat, lng, qiblaDirection, heading, theme }: any) =
     const shadowDiff = Math.abs(shadowHeading - qiblaDirection);
 
     return (
-        <div className="w-full flex flex-col items-center justify-center themed-card p-8 rounded-2xl text-center relative overflow-hidden shadow-md mb-8">
+        <div className="w-full flex flex-col items-center justify-start themed-card p-8 rounded-2xl text-center relative overflow-hidden shadow-md mb-8">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5">
                 <i className="fa-solid fa-person-rays text-[15rem]"></i>
             </div>
@@ -246,7 +246,7 @@ export const ShadowQibla = ({ lat, lng, qiblaDirection, heading, theme }: any) =
             <div className="z-10 flex flex-col items-center w-full">
                 <h3 className="text-2xl font-bold mb-4" style={{ color: theme.palette[0] }}>تحديد القبلة عن طريق الظل</h3>
                 
-                <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 max-w-sm shadow-sm backdrop-blur-sm">
+                <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 w-full max-w-md shadow-sm backdrop-blur-sm">
                     <p className="text-sm leading-relaxed font-bold text-emerald-700 dark:text-emerald-300">
                         ضع عصا بشكل عمودي على الأرض المستوية. ظل العصا يشير إلى الاتجاه المعاكس للشمس. وجه هاتفك (العلامة الحمراء) نحو الظل، وسيشير سهم الكعبة إلى القبلة.
                     </p>
