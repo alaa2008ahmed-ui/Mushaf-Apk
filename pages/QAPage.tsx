@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, ArrowRight, BookOpen, Loader2 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-import { GoogleGenAI } from '@google/genai';
 
 interface Message {
     id: string;
@@ -14,44 +13,64 @@ interface QAPageProps {
     onBack: () => void;
 }
 
+interface Hadith {
+    id: number;
+    idInBook: number;
+    chapterId: number;
+    bookId: number;
+    arabic: string;
+    english: {
+        narrator: string;
+        text: string;
+    };
+}
+
+const removeTashkeel = (text: string) => {
+    return text.replace(/[\u0617-\u061A\u064B-\u0652]/g, '');
+};
+
 const QAPage: React.FC<QAPageProps> = ({ onBack }) => {
     const { theme } = useTheme();
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
-            text: 'مرحباً بك في قسم سؤال وجواب. يمكنك طرح أي سؤال، وسأقوم بالإجابة عليه بناءً على الكتب والمراجع المعتمدة المتاحة لدي فقط.',
+            text: 'مرحباً بك في قسم سؤال وجواب (البحث المتقدم). يمكنك البحث عن أي كلمة أو عبارة، وسأقوم بالبحث عنها في مسند الإمام أحمد بن حنبل وعرض النتائج المطابقة.',
             sender: 'bot',
             timestamp: new Date()
         }
     ]);
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isDataLoading, setIsDataLoading] = useState(true);
+    const [hadithsData, setHadithsData] = useState<Hadith[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [booksContext, setBooksContext] = useState<string>('');
 
     // Scroll to bottom when messages change
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Load books context (simulated for now, will load from public/books later)
+    // Load ahmed.json data
     useEffect(() => {
-        const loadBooks = async () => {
+        const loadData = async () => {
             try {
-                // Fetch the context file from the public folder
-                const response = await fetch('/books/context.txt');
+                setIsDataLoading(true);
+                const response = await fetch('/ahmed.json');
                 if (response.ok) {
-                    const text = await response.text();
-                    setBooksContext(text);
+                    const data = await response.json();
+                    if (data && data.hadiths) {
+                        setHadithsData(data.hadiths);
+                    }
                 } else {
-                    setBooksContext('لم يتم العثور على محتوى الكتب بعد. سيتم إضافتها لاحقاً.');
+                    console.error('Failed to load ahmed.json');
                 }
             } catch (error) {
-                console.error('Error loading books:', error);
-                setBooksContext('حدث خطأ أثناء تحميل محتوى الكتب.');
+                console.error('Error loading data:', error);
+            } finally {
+                setIsDataLoading(false);
             }
         };
-        loadBooks();
+        loadData();
     }, []);
 
     const handleSendMessage = async () => {
@@ -68,54 +87,77 @@ const QAPage: React.FC<QAPageProps> = ({ onBack }) => {
         setInputText('');
         setIsLoading(true);
 
-        try {
-            // Initialize Gemini API
-            // Note: In a real production app, API keys should not be exposed in the client.
-            // Since this is a client-side only app for now, we use the environment variable.
-            const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-            
-            if (!apiKey) {
-                throw new Error('مفتاح API غير متوفر. يرجى إضافته في إعدادات التطبيق.');
-            }
-
-            const ai = new GoogleGenAI({ apiKey: apiKey });
-            
-            const systemInstruction = `أنت مساعد إسلامي متخصص. مهمتك هي الإجابة على أسئلة المستخدم بناءً على النصوص والكتب المقدمة لك فقط. 
-إذا كان السؤال خارج نطاق النصوص المقدمة، يجب أن تعتذر وتقول "عذراً، لا تتوفر لدي معلومات حول هذا الموضوع في الكتب المتاحة حالياً."
-لا تقم بتأليف أي إجابات من خارج السياق المقدم.
-
-السياق المتاح (محتوى الكتب):
-${booksContext}`;
-
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
-                contents: userMsg.text,
-                config: {
-                    systemInstruction: systemInstruction,
-                    temperature: 0.3, // Low temperature for more factual answers
+        // Simulate a slight delay for better UX
+        setTimeout(() => {
+            try {
+                const query = removeTashkeel(userMsg.text.trim());
+                const queryWords = query.split(/\s+/).filter(w => w.length > 0);
+                
+                if (queryWords.length === 0) {
+                    throw new Error("يرجى إدخال كلمات للبحث.");
                 }
-            });
 
-            const botMsg: Message = {
-                id: (Date.now() + 1).toString(),
-                text: response.text || 'عذراً، حدث خطأ غير متوقع.',
-                sender: 'bot',
-                timestamp: new Date()
-            };
+                // Simple scoring search
+                const results = hadithsData.map(hadith => {
+                    const normalizedArabic = removeTashkeel(hadith.arabic);
+                    let score = 0;
+                    
+                    // Exact phrase match gets highest score
+                    if (normalizedArabic.includes(query)) {
+                        score += 100;
+                    }
+                    
+                    // Word matches
+                    let matchedWords = 0;
+                    for (const word of queryWords) {
+                        if (normalizedArabic.includes(word)) {
+                            matchedWords++;
+                            score += 10;
+                        }
+                    }
+                    
+                    // Boost score if all words match
+                    if (matchedWords === queryWords.length && queryWords.length > 1) {
+                        score += 50;
+                    }
 
-            setMessages(prev => [...prev, botMsg]);
-        } catch (error: any) {
-            console.error('Error generating response:', error);
-            const errorMsg: Message = {
-                id: (Date.now() + 1).toString(),
-                text: error.message || 'عذراً، حدث خطأ أثناء الاتصال بالخادم. يرجى المحاولة لاحقاً.',
-                sender: 'bot',
-                timestamp: new Date()
-            };
-            setMessages(prev => [...prev, errorMsg]);
-        } finally {
-            setIsLoading(false);
-        }
+                    return { hadith, score };
+                }).filter(item => item.score > 0)
+                  .sort((a, b) => b.score - a.score)
+                  .slice(0, 5); // Get top 5 results
+
+                let botResponseText = '';
+
+                if (results.length > 0) {
+                    botResponseText = `وجدت ${results.length} نتائج مطابقة في مسند الإمام أحمد:\n\n`;
+                    results.forEach((res, index) => {
+                        botResponseText += `${index + 1}. ${res.hadith.arabic}\n\n`;
+                    });
+                } else {
+                    botResponseText = 'عذراً، لم يتم العثور على نتائج مطابقة لبحثك في مسند الإمام أحمد.';
+                }
+
+                const botMsg: Message = {
+                    id: (Date.now() + 1).toString(),
+                    text: botResponseText.trim(),
+                    sender: 'bot',
+                    timestamp: new Date()
+                };
+
+                setMessages(prev => [...prev, botMsg]);
+            } catch (error: any) {
+                console.error('Error searching:', error);
+                const errorMsg: Message = {
+                    id: (Date.now() + 1).toString(),
+                    text: error.message || 'عذراً، حدث خطأ أثناء البحث.',
+                    sender: 'bot',
+                    timestamp: new Date()
+                };
+                setMessages(prev => [...prev, errorMsg]);
+            } finally {
+                setIsLoading(false);
+            }
+        }, 300);
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -147,8 +189,10 @@ ${booksContext}`;
                         <BookOpen size={20} className="text-white" />
                     </div>
                     <div>
-                        <h1 className="font-bold text-lg leading-tight">سؤال وجواب</h1>
-                        <p className="text-xs text-white/80">يجيب من الكتب المعتمدة فقط</p>
+                        <h1 className="font-bold text-lg leading-tight">البحث المتقدم</h1>
+                        <p className="text-xs text-white/80">
+                            {isDataLoading ? 'جاري تحميل مسند الإمام أحمد...' : 'يبحث في مسند الإمام أحمد (بدون إنترنت)'}
+                        </p>
                     </div>
                 </div>
             </header>
@@ -189,7 +233,7 @@ ${booksContext}`;
                     <div className="flex justify-start">
                         <div className="bg-white dark:bg-gray-800 rounded-2xl rounded-tr-none px-4 py-3 shadow-sm flex items-center gap-2">
                             <Loader2 size={16} className="animate-spin text-gray-500" />
-                            <span className="text-sm text-gray-500">جاري البحث في الكتب...</span>
+                            <span className="text-sm text-gray-500">جاري البحث...</span>
                         </div>
                     </div>
                 )}
@@ -204,15 +248,16 @@ ${booksContext}`;
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             onKeyDown={handleKeyPress}
-                            placeholder="اكتب سؤالك هنا..."
+                            placeholder={isDataLoading ? "جاري تحميل البيانات..." : "اكتب كلمة أو عبارة للبحث..."}
                             className="flex-1 max-h-32 min-h-[50px] p-3 bg-transparent border-none focus:ring-0 resize-none text-gray-900 dark:text-white outline-none"
                             rows={1}
                             dir="rtl"
+                            disabled={isDataLoading}
                         />
                     </div>
                     <button
                         onClick={handleSendMessage}
-                        disabled={!inputText.trim() || isLoading}
+                        disabled={!inputText.trim() || isLoading || isDataLoading}
                         className="w-[50px] h-[50px] rounded-full flex items-center justify-center text-white shadow-md transition-transform active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex-none"
                         style={{ backgroundColor: theme.palette[0] || '#00897b' }}
                     >
