@@ -278,10 +278,13 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         steps={homeTutorialSteps} 
         onStepChange={setCurrentTutorialStep}
       />
-      {currentTutorialStep && currentTutorialStep !== 'voice' && (
+      {currentTutorialStep && (
         <style>{`
           #voice-control-btn {
-            display: none !important;
+            opacity: ${currentTutorialStep === 'voice' ? '1' : '0'} !important;
+            pointer-events: ${currentTutorialStep === 'voice' ? 'auto' : 'none'} !important;
+            z-index: 10005 !important;
+            transition: opacity 0.3s ease !important;
           }
         `}</style>
       )}
