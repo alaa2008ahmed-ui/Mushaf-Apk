@@ -74,13 +74,14 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
                 'page': { bg: white, text: purpleText, border: purpleText, font: theme.font },
                 'audio': { bg: white, text: green, border: green },
                 'btn-settings': { bg: purple, text: white, border: purpleBorder },
-                'btn-home': { bg: green, text: white, border: greenBorder },
+                'btn-home': { bg: purple, text: white, border: purpleBorder },
                 'btn-bookmark': { bg: green, text: white, border: greenBorder },
                 'btn-bookmarks-list': { bg: green, text: white, border: greenBorder },
                 'btn-themes': { bg: green, text: white, border: greenBorder },
                 'btn-autoscroll': { bg: purple, text: white, border: purpleBorder },
                 'btn-menu': { bg: purple, text: white, border: purpleBorder },
-                'btn-search': { bg: purple, text: white, border: purpleBorder }
+                'btn-search': { bg: purple, text: white, border: purpleBorder },
+                'btn-share': { bg: green, text: white, border: greenBorder }
              };
         } else {
              themeColors = { 
@@ -97,7 +98,8 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
                  'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg }, 
                  'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg }, 
                  'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg }, 
-                 'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg } 
+                 'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg },
+                 'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg }
             };
         }
 
@@ -126,16 +128,16 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
     return (
         <div className="fixed inset-0 z-[190] bg-black/60 flex justify-center items-center px-4 animate-fadeIn" onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl flex flex-col max-h-[85vh] shadow-2xl`} onClick={e => e.stopPropagation()}>
-                <div className="p-4 rounded-t-2xl flex justify-between items-center shadow-md theme-header-bg">
+                <div className="p-4 rounded-t-2xl flex justify-between items-center shadow-md" style={{ backgroundColor: activeTheme.headerBg, color: activeTheme.headerText }}>
                     <h3 className="font-bold text-lg">اختر الثيم</h3>
                     <button onClick={onClose} className="text-2xl hover:opacity-80 transition">&times;</button>
                 </div>
                 
-                <div className={`px-4 py-4 border-b border-gray-200 dark:border-gray-700 flex ${isLandscape ? 'flex-row' : 'flex-wrap'} gap-3 justify-center bg-gray-100 dark:bg-gray-800/90`}>
+                <div className={`px-4 py-4 border-b flex ${isLandscape ? 'flex-row' : 'flex-wrap'} gap-3 justify-center`} style={{ backgroundColor: activeTheme.barBg, borderColor: activeTheme.barBorder }}>
                     <button 
                         onClick={toggleTransparency}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${isTransparent ? 'text-white shadow-lg' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                        style={isTransparent ? { backgroundColor: activeTheme.accent, borderColor: activeTheme.accent } : {}}
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${isTransparent ? 'shadow-lg' : 'hover:opacity-80'}`}
+                        style={isTransparent ? { backgroundColor: activeTheme.accent, borderColor: activeTheme.accent, color: activeTheme.accentText } : { backgroundColor: activeTheme.cardBg, borderColor: activeTheme.cardBorder, color: activeTheme.cardText }}
                         title="تفعيل/تعطيل شفافية الأشرطة"
                     >
                         <i className={`fa-solid ${isTransparent ? 'fa-eye' : 'fa-eye-slash'}`}></i>
@@ -143,8 +145,8 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
                     </button>
                     <button 
                         onClick={toggleLockHighlightColor}
-                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${lockHighlightColor ? 'text-white shadow-lg' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                        style={lockHighlightColor ? { backgroundColor: activeTheme.accent, borderColor: activeTheme.accent } : {}}
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${lockHighlightColor ? 'shadow-lg' : 'hover:opacity-80'}`}
+                        style={lockHighlightColor ? { backgroundColor: activeTheme.accent, borderColor: activeTheme.accent, color: activeTheme.accentText } : { backgroundColor: activeTheme.cardBg, borderColor: activeTheme.cardBorder, color: activeTheme.cardText }}
                         title="قفل لون التحديد الحالي"
                     >
                         <i className={`fa-solid ${lockHighlightColor ? 'fa-lock' : 'fa-lock-open'}`}></i>
