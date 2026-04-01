@@ -2,7 +2,15 @@
 import React from 'react';
 import { useTheme } from '../context/ThemeContext';
 
-function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = true }) {
+interface BottomBarProps {
+    onHomeClick: () => void;
+    onThemesClick: () => void;
+    showHome?: boolean;
+    showThemes?: boolean;
+    homeLabel?: string;
+}
+
+function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = true, homeLabel = "الرئيسية" }: BottomBarProps) {
     const { theme, themeKey } = useTheme();
 
     const isSingleButton = !showHome || !showThemes;
@@ -18,8 +26,8 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
                         className={homeButtonClass}
                         style={{ background: themeKey === 'default' ? '#8b5cf6' : theme.palette[0], color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
                     >
-                        <span className="text-xl">🏠</span>
-                        {!isSingleButton && <span>الرئيسية</span>}
+                        <span className="text-xl">{homeLabel === "رجوع" ? "⬅️" : "🏠"}</span>
+                        <span>{homeLabel}</span>
                     </button>
                 )}
                 {showThemes && (

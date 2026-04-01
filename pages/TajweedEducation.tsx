@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import BottomBar from '../components/BottomBar';
 import { getCachedAudioUrl } from '../utils/audioCache';
 import { VoiceRecorder } from 'capacitor-voice-recorder';
+import { registerBackInterceptor } from '../hooks/useBackButton';
 
 interface TajweedExample {
     id: string;
@@ -36,7 +37,7 @@ interface TajweedRule {
 const TAJWEED_RULES: TajweedRule[] = [
     {
         "id": "ghunnah",
-        "title": "الغنة (Ghunnah)",
+        "title": "الغنة",
         "category": "أحكام النون والميم المشددتين",
         "description": "صوت يخرج من الخيشوم، وتكون في النون والميم المشددتين بمقدار حركتين.",
         "color": "#FF69B4",
@@ -102,7 +103,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "ikhfa",
-        "title": "الإخفاء الحقيقي (Ikhfa)",
+        "title": "الإخفاء الحقيقي",
         "category": "أحكام النون الساكنة والتنوين",
         "description": "النطق بالنون الساكنة أو التنوين بصفة بين الإظهار والإدغام عارياً عن التشديد مع بقاء الغنة.",
         "color": "#4169E1",
@@ -165,7 +166,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "idgham_ghunnah",
-        "title": "إدغام بغنة (Idgham with Ghunnah)",
+        "title": "إدغام بغنة",
         "category": "أحكام النون الساكنة والتنوين",
         "description": "إدخال النون الساكنة أو التنوين في حروف (ي ن م و) مع الغنة.",
         "color": "#2E8B57",
@@ -227,7 +228,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "idgham_no_ghunnah",
-        "title": "إدغام بغير غنة (Idgham without Ghunnah)",
+        "title": "إدغام بغير غنة",
         "category": "أحكام النون الساكنة والتنوين",
         "description": "إدخال النون الساكنة أو التنوين في حرفي (ل ر) بدون غنة.",
         "color": "#2E8B57",
@@ -289,7 +290,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "iqlab",
-        "title": "الإقلاب (Iqlab)",
+        "title": "الإقلاب",
         "category": "أحكام النون الساكنة والتنوين",
         "description": "قلب النون الساكنة أو التنوين ميماً مخفاة بغنة عند ملاقاتها لحرف الباء.",
         "color": "#808080",
@@ -352,7 +353,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "izhar",
-        "title": "الإظهار الحلقي (Izhar)",
+        "title": "الإظهار الحلقي",
         "category": "أحكام النون الساكنة والتنوين",
         "description": "إخراج النون الساكنة أو التنوين من مخرجها بوضوح. حروفه (ء هـ ع ح غ خ).",
         "color": "#000000",
@@ -415,7 +416,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "qalqalah",
-        "title": "القلقلة (Qalqalah)",
+        "title": "القلقلة",
         "category": "أحكام أخرى",
         "description": "اضطراب الصوت عند النطق بالحرف الساكن. حروفها (قطب جد).",
         "color": "#FF4500",
@@ -480,7 +481,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_muttasil",
-        "title": "المد المتصل (Madd Muttasil)",
+        "title": "المد المتصل",
         "category": "أحكام المدود",
         "description": "أن يأتي حرف المد وبعده همزة في كلمة واحدة. يمد 4 أو 5 حركات.",
         "color": "#DC143C",
@@ -542,7 +543,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_munfasil",
-        "title": "المد المنفصل (Madd Munfasil)",
+        "title": "المد المنفصل",
         "category": "أحكام المدود",
         "description": "أن يأتي حرف المد في آخر كلمة والهمزة في أول الكلمة التالية. يمد 2 أو 4 أو 5 حركات.",
         "color": "#DC143C",
@@ -604,7 +605,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_lazim",
-        "title": "المد اللازم (Madd Lazim)",
+        "title": "المد اللازم",
         "category": "أحكام المدود",
         "description": "أن يأتي بعد حرف المد سكون أصلي ثابت وصلاً ووقفاً. يمد 6 حركات.",
         "color": "#DC143C",
@@ -666,7 +667,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_arid",
-        "title": "المد العارض للسكون (Madd Arid)",
+        "title": "المد العارض للسكون",
         "category": "أحكام المدود",
         "description": "أن يأتي بعد حرف المد حرف متحرك يتم تسكينه لأجل الوقف. يمد 2 أو 4 أو 6 حركات.",
         "color": "#DC143C",
@@ -728,7 +729,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_lin",
-        "title": "مد اللين (Madd Lin)",
+        "title": "مد اللين",
         "category": "أحكام المدود",
         "description": "أن تأتي الواو أو الياء الساكنة المفتوح ما قبلها وبعدها حرف سكن للوقف.",
         "color": "#DC143C",
@@ -790,7 +791,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_silah",
-        "title": "مد الصلة (Madd Silah)",
+        "title": "مد الصلة",
         "category": "أحكام المدود",
         "description": "مد هاء الضمير للمفرد الغائب المذكر إذا وقعت بين متحركين.",
         "color": "#DC143C",
@@ -855,7 +856,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_badal",
-        "title": "مد البدل (Madd Badal)",
+        "title": "مد البدل",
         "category": "أحكام المدود",
         "description": "أن تتقدم الهمزة على حرف المد في كلمة واحدة. يمد حركتين.",
         "color": "#DC143C",
@@ -917,7 +918,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "rules_ra",
-        "title": "أحكام الراء (Rules of Ra)",
+        "title": "أحكام الراء",
         "category": "التفخيم والترقيق",
         "description": "للراء حالتان: التفخيم (تغليظ الصوت) والترقيق (تنحيف الصوت) حسب حركتها وما قبلها.",
         "color": "#8B4513",
@@ -982,7 +983,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "rules_lam",
-        "title": "أحكام اللام (Rules of Lam)",
+        "title": "أحكام اللام",
         "category": "التفخيم والترقيق",
         "description": "الأصل في اللام الترقيق، وتفخم في لفظ الجلالة (الله) إذا سبقها فتح أو ضم.",
         "color": "#4B0082",
@@ -1047,7 +1048,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "ikhfa_shafawi",
-        "title": "الإخفاء الشفوي (Ikhfa Shafawi)",
+        "title": "الإخفاء الشفوي",
         "category": "أحكام الميم الساكنة",
         "description": "إخفاء الميم الساكنة مع الغنة بمقدار حركتين إذا جاء بعدها حرف الباء.",
         "color": "#4169E1",
@@ -1110,7 +1111,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "idgham_shafawi",
-        "title": "الإدغام الشفوي (Idgham Shafawi)",
+        "title": "الإدغام الشفوي",
         "category": "أحكام الميم الساكنة",
         "description": "إدغام الميم الساكنة في ميم متحركة بعدها بحيث تصير ميمًا واحدة مشددة مع الغنة.",
         "color": "#2E8B57",
@@ -1172,7 +1173,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "izhar_shafawi",
-        "title": "الإظهار الشفوي (Izhar Shafawi)",
+        "title": "الإظهار الشفوي",
         "category": "أحكام الميم الساكنة",
         "description": "إظهار الميم الساكنة عند ملاقاتها لأي حرف من حروف الهجاء عدا الميم والباء، ويكون أشد إظهاراً عند الواو والفاء.",
         "color": "#000000",
@@ -1234,7 +1235,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_tabii",
-        "title": "المد الطبيعي (Madd Tabi'i)",
+        "title": "المد الطبيعي",
         "category": "أحكام المدود",
         "description": "هو المد الذي لا تقوم ذات الحرف إلا به، ولا يتوقف على سبب من همز أو سكون. يمد حركتين.",
         "color": "#DC143C",
@@ -1296,7 +1297,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_iwad",
-        "title": "مد العوض (Madd Iwad)",
+        "title": "مد العوض",
         "category": "أحكام المدود",
         "description": "التعويض عن تنوين النصب حالة الوقف بألف تمد مقدار حركتين.",
         "color": "#DC143C",
@@ -1358,7 +1359,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "isti_la",
-        "title": "حروف الاستعلاء (Isti'la - Tafkheem)",
+        "title": "حروف الاستعلاء",
         "category": "التفخيم والترقيق",
         "description": "الاستعلاء هو ارتفاع أقصى اللسان إلى الحنك الأعلى عند النطق بالحرف، وحروفه مجموعة في (خص ضغط قظ) وهي مفخمة دائماً.",
         "color": "#8B4513",
@@ -1423,7 +1424,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "idgham_mutamathilayn",
-        "title": "إدغام المتماثلين (Idgham Mutamathilayn)",
+        "title": "إدغام المتماثلين",
         "category": "الإدغام العام",
         "description": "أن يتفق الحرفان صفة ومخرجاً، ويكون الأول ساكناً والثاني متحركاً، فيدغمان ليصبحا حرفاً واحداً مشدداً.",
         "color": "#2E8B57",
@@ -1488,7 +1489,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "idgham_mutajanisayn",
-        "title": "إدغام المتجانسين (Idgham Mutajanisayn)",
+        "title": "إدغام المتجانسين",
         "category": "الإدغام العام",
         "description": "أن يتفق الحرفان مخرجاً ويختلفا صفة، ويكون الأول ساكناً والثاني متحركاً.",
         "color": "#2E8B57",
@@ -1553,7 +1554,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "idgham_mutaqaribayn",
-        "title": "إدغام المتقاربين (Idgham Mutaqaribayn)",
+        "title": "إدغام المتقاربين",
         "category": "الإدغام العام",
         "description": "أن يتقارب الحرفان مخرجاً وصفة، ويكون الأول ساكناً والثاني متحركاً.",
         "color": "#2E8B57",
@@ -1618,7 +1619,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_muttasil_2",
-        "title": "المد المتصل (Madd Muttasil)",
+        "title": "المد المتصل",
         "category": "أحكام المدود",
         "description": "أن يقع بعد حرف المد همز متصل به في كلمة واحدة. يمد بمقدار 4 أو 5 حركات وجوباً.",
         "color": "#9370DB",
@@ -1683,7 +1684,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_munfasil_2",
-        "title": "المد المنفصل (Madd Munfasil)",
+        "title": "المد المنفصل",
         "category": "أحكام المدود",
         "description": "أن يقع بعد حرف المد همز منفصل عنه في الكلمة التي تليها. يمد بمقدار 4 أو 5 حركات جوازاً.",
         "color": "#9370DB",
@@ -1748,7 +1749,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_badal_2",
-        "title": "المد البدل (Madd Badal)",
+        "title": "المد البدل",
         "category": "أحكام المدود",
         "description": "أن يتقدم الهمز على حرف المد في كلمة واحدة، وليس بعد حرف المد همز أو سكون. يمد حركتين.",
         "color": "#9370DB",
@@ -1813,7 +1814,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_aridh",
-        "title": "المد العارض للسكون (Madd Aridh lis-Sukun)",
+        "title": "المد العارض للسكون",
         "category": "أحكام المدود",
         "description": "أن يقع بعد حرف المد حرف سكن سكوناً عارضاً لأجل الوقف. يمد 2 أو 4 أو 6 حركات.",
         "color": "#9370DB",
@@ -1878,7 +1879,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "madd_lazim_2",
-        "title": "المد اللازم (Madd Lazim)",
+        "title": "المد اللازم",
         "category": "أحكام المدود",
         "description": "أن يقع بعد حرف المد سكون أصلي (ثابت وصلاً ووقفاً) في كلمة أو حرف. يمد 6 حركات لزوماً.",
         "color": "#9370DB",
@@ -1943,7 +1944,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "qalqalah_2",
-        "title": "القلقلة (Qalqalah)",
+        "title": "القلقلة",
         "category": "أحكام أخرى",
         "description": "اضطراب الصوت عند النطق بالحرف الساكن حتى يسمع له نبرة قوية. حروفها مجموعة في (قطب جد).",
         "color": "#FF8C00",
@@ -2008,7 +2009,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "ahkam_ra",
-        "title": "أحكام الراء (Ahkam Ar-Ra')",
+        "title": "أحكام الراء",
         "category": "أحكام التفخيم والترقيق",
         "description": "الراء تفخم إذا كانت مفتوحة أو مضمومة، وترقق إذا كانت مكسورة، ولها أحكام تفصيلية عند السكون.",
         "color": "#FF6347",
@@ -2073,7 +2074,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "lam_jalalah",
-        "title": "لام لفظ الجلالة (Lam Lafdh Al-Jalalah)",
+        "title": "لام لفظ الجلالة",
         "category": "أحكام التفخيم والترقيق",
         "description": "تفخم لام لفظ الجلالة (الله) إذا سبقها فتح أو ضم، وترقق إذا سبقها كسر.",
         "color": "#FF6347",
@@ -2138,7 +2139,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     },
     {
         "id": "hamzat_wasl",
-        "title": "همزة الوصل والقطع (Hamzat Al-Wasl and Al-Qat')",
+        "title": "همزة الوصل والقطع",
         "category": "أحكام أخرى",
         "description": "همزة الوصل تثبت في الابتداء وتسقط في الوصل، وهمزة القطع تثبت في الابتداء والوصل.",
         "color": "#FF8C00",
@@ -2223,6 +2224,18 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (sur
             setCompletedRules(JSON.parse(savedProgress));
         }
     }, []);
+
+    useEffect(() => {
+        if (selectedRule) {
+            const unregister = registerBackInterceptor(() => {
+                setSelectedRule(null);
+                setPlayingAudio(null);
+                setRecordingId(null);
+                return true;
+            });
+            return unregister;
+        }
+    }, [selectedRule]);
 
     const saveProgress = (ruleId: string) => {
         if (!completedRules.includes(ruleId)) {
@@ -2429,12 +2442,8 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (sur
                             
                             return (
                                 <>
-                                    <div className="app-top-bar shrink-0 shadow-md flex items-center justify-between px-4 py-3">
-                                        <button onClick={() => { setSelectedRule(null); setPlayingAudio(null); setRecordingId(null); }} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                                            <i className="fa-solid fa-xmark text-xl"></i>
-                                        </button>
+                                    <div className="app-top-bar shrink-0 shadow-md flex items-center justify-center px-4 py-3">
                                         <h2 className="text-xl font-bold font-kufi truncate px-4">{rule.title}</h2>
-                                        <div className="w-8"></div> {/* Spacer for centering */}
                                     </div>
 
                                     <div className="flex-1 overflow-y-auto p-4 pb-24">
@@ -2608,6 +2617,12 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (sur
                                             )}
                                         </div>
                                     </div>
+                                    <BottomBar 
+                                        onHomeClick={() => { setSelectedRule(null); setPlayingAudio(null); setRecordingId(null); }} 
+                                        onThemesClick={() => {}} 
+                                        showThemes={false} 
+                                        homeLabel="رجوع" 
+                                    />
                                 </>
                             );
                         })()}
