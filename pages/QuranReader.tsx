@@ -1658,11 +1658,38 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 openModal('bookmarks-modal');
             } else if (action === 'toggle_auto_scroll') {
                 toggleAutoScroll();
+            } else if (action === 'pause_auto_scroll') {
+                if (autoScrollStateRef.current.isActive && !autoScrollStateRef.current.isPaused) {
+                    autoScrollPausedRef.current = true;
+                    const newState = { ...autoScrollStateRef.current, isPaused: true };
+                    autoScrollStateRef.current = newState;
+                    setAutoScrollState(newState);
+                    if (initialLandscape) {
+                        setIsLandscapeUIHidden(false);
+                    }
+                }
+            } else if (action === 'stop_auto_scroll') {
+                if (autoScrollStateRef.current.isActive) {
+                    stopAutoScroll(false);
+                }
+            } else if (action === 'close_modal') {
+                setActiveModals([]);
+                if (wasAutoscrollingBeforeModal.current) {
+                    autoScrollPausedRef.current = false;
+                    setAutoScrollState(p => ({ ...p, isPaused: false }));
+                    wasAutoscrollingBeforeModal.current = false;
+                }
+                setTafseerInfo(p => ({ ...p, isOpen: false }));
+                setTafseerSelectionInfo(p => ({ ...p, isOpen: false }));
+                if (sajdahCardInfo.isOpen) handleCloseSajdahCard();
+                setIsFloatingMenuOpen(false);
+                setIsPageInputActive(false);
+                setAyahContextMenu(p => ({ ...p, isOpen: false }));
             } else if (action === 'save_bookmark') {
                 saveBookmark();
             } else if (action === 'increase_font') {
                 setSettings(prev => {
-                    const newSize = Number((Math.min(4.5, prev.fontSize + 0.01)).toFixed(2));
+                    const newSize = Number((Math.min(4.5, prev.fontSize + 0.1)).toFixed(2));
                     const newSettings = { ...prev, fontSize: newSize };
                     localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
@@ -1670,7 +1697,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 });
             } else if (action === 'decrease_font') {
                 setSettings(prev => {
-                    const newSize = Number((Math.max(0.5, prev.fontSize - 0.01)).toFixed(2));
+                    const newSize = Number((Math.max(0.5, prev.fontSize - 0.1)).toFixed(2));
                     const newSettings = { ...prev, fontSize: newSize };
                     localStorage.setItem('quran_settings' + (isLandscapeRef.current ? '_h' : '_v'), JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));

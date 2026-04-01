@@ -101,6 +101,7 @@ function App() {
     else if (action === 'open_hajj_umrah' || (action === 'ui_click' && params?.label?.includes('حج'))) handleNavigate('hajj-umrah');
     else if (action === 'open_quran' || (action === 'ui_click' && params?.label?.includes('مصحف'))) handleNavigate('quran');
     else if (action === 'open_voice_control' || (action === 'ui_click' && params?.label?.includes('تحكم صوتي'))) handleNavigate('voice-control');
+    else if (action === 'open_more' || (action === 'ui_click' && params?.label?.includes('مزيد'))) handleNavigate('more-menu');
     else if (action === 'set_orientation_horizontal' || action === 'set_orientation_vertical') {
       window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
     }
@@ -119,7 +120,7 @@ function App() {
     else if (action === 'go_back') navigateBack();
     
     // 4. Quran Specific Actions (Forwarded to QuranReader via Event)
-    else if (['next_page', 'prev_page', 'play_audio', 'stop_audio', 'quran_navigation', 'increase_font', 'decrease_font', 'change_theme', 'download_quran', 'download_tafsir', 'show_tafsir', 'open_bookmarks', 'go_to_page', 'go_to_juz', 'go_to_surah', 'go_to_ayah', 'set_font_size', 'contextual_number', 'download', 'cancel', 'ui_discovery', 'toggle_auto_scroll', 'save_bookmark'].includes(action)) {
+    else if (['next_page', 'prev_page', 'play_audio', 'stop_audio', 'quran_navigation', 'increase_font', 'decrease_font', 'change_theme', 'download_quran', 'download_tafsir', 'show_tafsir', 'open_bookmarks', 'go_to_page', 'go_to_juz', 'go_to_surah', 'go_to_ayah', 'set_font_size', 'contextual_number', 'download', 'cancel', 'ui_discovery', 'toggle_auto_scroll', 'pause_auto_scroll', 'stop_auto_scroll', 'close_modal', 'save_bookmark'].includes(action)) {
       setHistory(prev => {
         if (prev[prev.length - 1] === 'quran') {
           window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
