@@ -20,7 +20,12 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   const [settings, setSettings] = useState<WirdSettings | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [tempMode, setTempMode] = useState<'days' | 'pages'>('days');
-  const [tempValue, setTempValue] = useState<number>(30);
+  const [tempValue, setTempValue] = useState<string>('30');
+
+  const toEnglishDigits = (str: string) => {
+    return str.replace(/[٠-٩]/g, (d) => (d.charCodeAt(0) - 1632).toString())
+              .replace(/[۰-۹]/g, (d) => (d.charCodeAt(0) - 1776).toString());
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('dailyWirdSettings');
@@ -37,9 +42,10 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   };
 
   const handleStart = () => {
+    const val = parseInt(tempValue) || (tempMode === 'days' ? 30 : 20);
     const newSettings: WirdSettings = {
       mode: tempMode,
-      value: tempValue,
+      value: val,
       startDate: settings ? settings.startDate : new Date().toISOString(),
       currentDay: settings ? settings.currentDay : 1,
       completedDays: settings ? settings.completedDays : [],
@@ -52,7 +58,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   const handleEdit = () => {
     if (settings) {
       setTempMode(settings.mode);
-      setTempValue(settings.value);
+      setTempValue(settings.value.toString());
       setShowSettings(true);
     }
   };
@@ -122,13 +128,18 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             {tempMode === 'days' ? 'عدد الأيام للختمة:' : 'عدد الصفحات يومياً:'}
           </label>
           <input 
-            type="number" 
-            min="1" 
-            max={tempMode === 'days' ? 1000 : 604}
+            type="text"
+            inputMode="numeric"
             value={tempValue}
-            onChange={(e) => setTempValue(Number(e.target.value))}
+            onChange={(e) => {
+              const val = toEnglishDigits(e.target.value);
+              if (val === '' || /^\d*$/.test(val)) {
+                setTempValue(val);
+              }
+            }}
             className="w-full border rounded-xl p-3 text-center text-xl font-bold focus:outline-none focus:border-green-500"
             style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)', borderColor: theme.cardBorder, color: theme.textColor }}
+            placeholder={tempMode === 'days' ? '30' : '20'}
           />
         </div>
 
@@ -153,15 +164,29 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     </div>
   );
 
+  const getDayRange = (day: number) => {
+    if (!settings) return { start: 1, end: 20 };
+    if (settings.mode === 'days') {
+      const totalDays = settings.value;
+      const start = Math.floor(((day - 1) * TOTAL_PAGES) / totalDays) + 1;
+      const end = Math.floor((day * TOTAL_PAGES) / totalDays);
+      return { start, end: Math.max(start - 1, end) };
+    } else {
+      const pagesPerDay = settings.value;
+      const start = (day - 1) * pagesPerDay + 1;
+      const end = Math.min(day * pagesPerDay, TOTAL_PAGES);
+      return { start: Math.min(start, TOTAL_PAGES + 1), end };
+    }
+  };
+
   const renderProgress = () => {
     if (!settings) return null;
     const totalDays = getTotalDays();
-    const pagesPerDay = getPagesPerDay();
     const progress = (settings.completedDays.length / totalDays) * 100;
     
-    const startPage = (settings.currentDay - 1) * pagesPerDay + 1;
-    const endPage = Math.min(settings.currentDay * pagesPerDay, TOTAL_PAGES);
+    const { start: startPage, end: endPage } = getDayRange(settings.currentDay);
     const isCompleted = settings.completedDays.includes(settings.currentDay);
+    const hasPages = startPage <= endPage && startPage <= TOTAL_PAGES;
 
     return (
       <div className="space-y-6">
@@ -189,25 +214,35 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
           <h3 className="text-xl font-bold mb-4 text-emerald-600 dark:text-emerald-400">ورد اليوم ({settings.currentDay})</h3>
           
           <div className="flex justify-center items-center gap-4 mb-6">
-            <div className="p-4 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
-              <p className="text-sm opacity-80 mb-1">من صفحة</p>
-              <p className="text-3xl font-bold">{startPage}</p>
-            </div>
-            <span className="text-2xl opacity-50">-</span>
-            <div className="p-4 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
-              <p className="text-sm opacity-80 mb-1">إلى صفحة</p>
-              <p className="text-3xl font-bold">{endPage}</p>
-            </div>
+            {hasPages ? (
+              <>
+                <div className="p-4 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
+                  <p className="text-sm opacity-80 mb-1">من صفحة</p>
+                  <p className="text-3xl font-bold">{startPage}</p>
+                </div>
+                <span className="text-2xl opacity-50">-</span>
+                <div className="p-4 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
+                  <p className="text-sm opacity-80 mb-1">إلى صفحة</p>
+                  <p className="text-3xl font-bold">{endPage}</p>
+                </div>
+              </>
+            ) : (
+              <div className="p-4 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
+                <p className="text-xl font-bold">لقد أكملت جميع الصفحات!</p>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-3">
-            <button 
-              onClick={() => handleOpenQuran(startPage)}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
-            >
-              <BookOpen size={24} />
-              افتح المصحف للقراءة
-            </button>
+            {hasPages && (
+              <button 
+                onClick={() => handleOpenQuran(startPage)}
+                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+              >
+                <BookOpen size={24} />
+                افتح المصحف للقراءة
+              </button>
+            )}
 
             {!isCompleted ? (
               <button 
