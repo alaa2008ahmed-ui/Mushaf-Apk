@@ -43,7 +43,39 @@ export const TAJWEED_AUDIO_URLS = [
     'https://www.everyayah.com/data/Husary_64kbps/002022.mp3',
     'https://www.everyayah.com/data/Husary_64kbps/002049.mp3',
     'https://www.everyayah.com/data/Husary_64kbps/112001.mp3',
-    'https://www.everyayah.com/data/Husary_64kbps/001001.mp3'
+    'https://www.everyayah.com/data/Husary_64kbps/001001.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/105004.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/100011.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/104008.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/002010.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/105001.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/109006.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/002030.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/002011.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/110003.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/098008.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/002153.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/002060.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/005061.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/004078.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/003072.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/007189.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/007176.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/017080.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/077020.mp3',
+    'https://www.everyayah.com/data/Husary_64kbps/003069.mp3',
+    // المدود الفرعية
+    'https://server8.mp3quran.net/afs/001002.mp3', // المد المتصل
+    'https://server8.mp3quran.net/afs/001003.mp3', // المد المنفصل
+    'https://server8.mp3quran.net/afs/001004.mp3', // المد البدل
+    'https://server8.mp3quran.net/afs/001005.mp3', // المد العارض للسكون
+    'https://server8.mp3quran.net/afs/001006.mp3', // المد اللازم
+    
+    // القلقلة وأحكام أخرى
+    'https://server8.mp3quran.net/afs/112001.mp3', // القلقلة
+    'https://server8.mp3quran.net/afs/108002.mp3', // أحكام الراء
+    'https://server8.mp3quran.net/afs/110003.mp3', // لام لفظ الجلالة
+    'https://server8.mp3quran.net/afs/001007.mp3', // همزة الوصل والقطع
 ];
 
 export const CACHE_NAME = 'tajweed-audio-v1';

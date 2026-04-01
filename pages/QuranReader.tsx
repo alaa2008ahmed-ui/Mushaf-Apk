@@ -80,7 +80,7 @@ const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, currentTheme }
     );
 };
 
-const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah }) => {
+const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
     
     // Auto-detect orientation
@@ -773,7 +773,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
     }, [settings.reader, quranData]);
 
-    const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false) => {
+    const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false, retries: number = 10) => {
         const el = document.getElementById(`ayah-${s}-${a}`);
         if (el) {
             const container = mushafContentRef.current;
@@ -791,6 +791,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             } else {
                 el.scrollIntoView({ block: 'center', behavior: instant ? 'auto' : 'smooth' });
             }
+        } else if (retries > 0) {
+            setTimeout(() => scrollToAyah(s, a, instant, retries - 1), 100);
         }
     }, []);
 
@@ -1443,24 +1445,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
     }, [quranData, handleAyahClick, stopAudio, scrollToAyah]);
 
-    const hasJumpedRef = useRef(false);
-    useEffect(() => {
-        if (hasJumpedRef.current) return;
-        hasJumpedRef.current = true;
-        
-        if (initialSurah && initialAyah) {
-            setTimeout(() => {
-                jumpToAyah(initialSurah, initialAyah, true);
-            }, 100);
-        } else {
-            const key = initialLandscape ? 'last_pos_h' : 'last_pos_v';
-            const lastPos = JSON.parse(localStorage.getItem(key) || '{}');
-            setTimeout(() => {
-                jumpToAyah(lastPos.s || 1, lastPos.a || 1, true);
-            }, 100);
-        }
-    }, [jumpToAyah, initialLandscape, initialSurah, initialAyah]);
-
     const jumpToPage = useCallback((pageNum: number, instant: boolean = true) => {
         if (!quranData || isNaN(pageNum) || pageNum < 1 || pageNum > 604) return;
         setLastInteractionType('page');
@@ -1478,6 +1462,28 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             showToast(`لا توجد بيانات لصفحة ${toArabic(pageNum)}`);
         }
     }, [quranData, jumpToAyah, getPageData, showToast]);
+
+    const hasJumpedRef = useRef(false);
+    useEffect(() => {
+        if (hasJumpedRef.current) return;
+        hasJumpedRef.current = true;
+        
+        if (initialPage) {
+            setTimeout(() => {
+                jumpToPage(initialPage, true);
+            }, 100);
+        } else if (initialSurah && initialAyah) {
+            setTimeout(() => {
+                jumpToAyah(initialSurah, initialAyah, true);
+            }, 100);
+        } else {
+            const key = initialLandscape ? 'last_pos_h' : 'last_pos_v';
+            const lastPos = JSON.parse(localStorage.getItem(key) || '{}');
+            setTimeout(() => {
+                jumpToAyah(lastPos.s || 1, lastPos.a || 1, true);
+            }, 100);
+        }
+    }, [jumpToAyah, jumpToPage, initialLandscape, initialSurah, initialAyah, initialPage]);
 
     const handleVoiceCommand = useCallback((text: string) => {
         console.log('QuranReader - Voice Command:', text);
