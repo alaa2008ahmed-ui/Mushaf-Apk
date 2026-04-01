@@ -2,42 +2,47 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useVoiceControl, VoiceCommand } from '../context/VoiceControlContext';
-import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, RotateCcw, ChevronRight } from 'lucide-react';
+import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, RotateCcw, ChevronRight, WifiOff } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import BottomBar from '../components/BottomBar';
 
 const AVAILABLE_ACTIONS = [
+    { id: 'go_home', name: 'الرئيسية' },
+    { id: 'open_quran', name: 'مصحف / صفحة القراءة / القرآن الكريم' },
+    { id: 'open_prayer', name: 'مواقيت الصلاة / مواقيت الصلاه' },
+    { id: 'open_qibla', name: 'القبلة / القبله' },
+    { id: 'open_tasbeeh', name: 'السبحه / السبحه' },
+    { id: 'open_athkar', name: 'الأذكار/ الاذكار' },
+    { id: 'open_salah_adhkar', name: 'أذكار الصلاة / اذكار الصلاه' },
+    { id: 'open_hisn_muslim', name: 'حصن المسلم / حصن المسلم / حسن المسلم' },
+    { id: 'open_calendar', name: 'التقويم / التقويم' },
+    { id: 'open_listen', name: 'الاستماع للقرآن / الاستماع للقران' },
+    { id: 'open_settings', name: 'الإعدادات/ الاعدادات' },
+    { id: 'open_themes', name: 'الثيمات / ثيمات / السيمات' },
+    { id: 'open_voice_control', name: 'التحكم الصوتي / التحكم الصوتى' },
+    { id: 'open_adia', name: 'الادعيه / الادعيه' },
+    { id: 'open_hajj_umrah', name: 'الحج والعمرة / الحج والعمرة' },
+    { id: 'open_more', name: 'المزيد / المزيد' },
+    { id: 'open_nawawi', name: 'الاربعون النوويه / الاربعون النوويه' },
+    { id: 'go_back', name: 'رجوع' },
+    { id: 'exit_app', name: 'خروج' },
+    { id: 'increase_font', name: 'تكبير الخط / تكبير' },
+    { id: 'decrease_font', name: 'تصغير الخط / تصغير' },
+    { id: 'change_theme', name: 'تغيير لون الخلفية/ لون الخلفيه' },
+    { id: 'play_audio', name: 'تشغيل الصوت / تشغيل' },
+    { id: 'stop_audio', name: 'إيقاف الصوت / إيقاف' },
+    { id: 'show_tafsir', name: 'عرض التفسير' },
+    { id: 'open_bookmarks', name: 'فتح العلامات' },
+    { id: 'toggle_auto_scroll', name: 'تشغيل التمرير التلقائى/ التمرير التلقائى' },
+    { id: 'faster_auto_scroll', name: 'اسرع' },
+    { id: 'slower_auto_scroll', name: 'ابطئ' },
+    { id: 'pause_auto_scroll', name: 'ايقاف التمرير' },
+    { id: 'stop_auto_scroll', name: 'اغلاق التمرير' },
+    { id: 'open_share', name: 'المشاركه / مشاركه' },
+    { id: 'open_search', name: 'فتح البحث / بحث' },
+    { id: 'close_modal', name: 'اغلاق القائمه / اغلاق' },
     { id: 'next_page', name: 'الصفحة التالية' },
     { id: 'prev_page', name: 'الصفحة السابقة' },
-    { id: 'open_search', name: 'فتح البحث' },
-    { id: 'open_themes', name: 'فتح الثيمات' },
-    { id: 'open_settings', name: 'فتح الإعدادات' },
-    { id: 'open_bookmarks', name: 'فتح العلامات' },
-    { id: 'open_tajweed', name: 'فتح تعليم التجويد' },
-    { id: 'open_athkar', name: 'فتح الأذكار' },
-    { id: 'open_prayer', name: 'فتح مواقيت الصلاة' },
-    { id: 'open_qibla', name: 'فتح القبلة' },
-    { id: 'open_tasbeeh', name: 'فتح المسبحة' },
-    { id: 'play_audio', name: 'تشغيل الصوت' },
-    { id: 'stop_audio', name: 'إيقاف الصوت' },
-    { id: 'go_home', name: 'الرئيسية' },
-    { id: 'increase_font', name: 'تكبير الخط' },
-    { id: 'decrease_font', name: 'تصغير الخط' },
-    { id: 'change_theme', name: 'تغيير لون الخلفية' },
-    { id: 'download_quran', name: 'تحميل القرآن' },
-    { id: 'download_tafsir', name: 'تحميل التفسير' },
-    { id: 'show_tafsir', name: 'عرض التفسير' },
-    { id: 'open_nawawi', name: 'فتح الأربعون النووية' },
-    { id: 'open_calculators', name: 'فتح الحاسبة الشرعية' },
-    { id: 'open_listen', name: 'فتح الاستماع للقرآن' },
-    { id: 'open_adia', name: 'فتح الأدعية' },
-    { id: 'open_salah_adhkar', name: 'فتح أذكار الصلاة' },
-    { id: 'open_hisn_muslim', name: 'فتح حصن المسلم' },
-    { id: 'open_calendar', name: 'فتح التقويم' },
-    { id: 'open_hajj_umrah', name: 'فتح الحج والعمرة' },
-    { id: 'open_voice_control', name: 'فتح التحكم الصوتي' },
-    { id: 'set_orientation_horizontal', name: 'القراءة الأفقية (عرضي)' },
-    { id: 'set_orientation_vertical', name: 'القراءة الرأسية (طولي)' },
     { id: 'disable_voice_control', name: 'إيقاف التحكم الصوتي' },
 ];
 
@@ -62,6 +67,24 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [showAddCommand, setShowAddCommand] = useState(false);
     const [newPhrase, setNewPhrase] = useState('');
     const [newAction, setNewAction] = useState('');
+    const [toastMessage, setToastMessage] = useState('');
+
+    const handleToggleVoiceControl = () => {
+        if (!isEnabled) {
+            if (!navigator.onLine) {
+                setToastMessage('لا يتوفر إنترنت لتشغيل التحكم الصوتي. يرجى التحقق من اتصالك.');
+            } else {
+                setToastMessage('تم تفعيل التحكم الصوتي بنجاح.');
+            }
+        } else {
+            setToastMessage('تم تعطيل التحكم الصوتي.');
+        }
+        
+        // Hide toast after 3 seconds
+        setTimeout(() => setToastMessage(''), 3000);
+        
+        setIsEnabled(!isEnabled);
+    };
 
     const handleEdit = (cmd: VoiceCommand) => {
         setEditingId(cmd.id);
@@ -97,68 +120,91 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
             <main className="w-full flex-1 flex flex-col items-center overflow-hidden p-4 pb-24">
                 <div className="w-full max-w-lg flex-1 overflow-y-auto hide-scrollbar pb-6 space-y-6">
-                    {/* Status Section */}
-                    <div className="themed-card p-6 flex flex-col items-center justify-center space-y-4">
-                        <motion.button 
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setIsEnabled(!isEnabled)}
-                            className={`w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all ${isEnabled && isListening ? 'animate-pulse' : ''}`}
-                            style={{ 
-                                backgroundColor: isEnabled ? (isListening ? '#ef4444' : '#10b981') : '#9ca3af',
-                                color: '#ffffff'
-                            }}
-                        >
-                            {isEnabled ? <Mic className="w-12 h-12" /> : <MicOff className="w-12 h-12" />}
-                        </motion.button>
-                        <div className="text-center">
-                            <p className="text-lg font-bold">
-                                {isEnabled ? (isListening ? 'جاري الاستماع...' : 'التحكم الصوتي مفعل') : 'التحكم الصوتي معطل'}
-                            </p>
-                            <p className="text-xs opacity-60 mt-1">
-                                {isEnabled ? 'يمكنك التحدث بالأوامر من أي مكان في التطبيق' : 'اضغط على الزر لتفعيل الاستماع الدائم'}
-                            </p>
-                        </div>
-                        
-                        {transcript && isListening && (
+                    {/* Merged Status & Settings Section */}
+                    <div className="themed-card p-4 space-y-4 relative">
+                        {toastMessage && (
                             <motion.div 
-                                initial={{ opacity: 0, y: 10 }}
+                                initial={{ opacity: 0, y: -20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="p-4 rounded-2xl bg-black/5 w-full text-center italic font-bold text-lg border border-black/5"
+                                exit={{ opacity: 0, y: -20 }}
+                                className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-[10px] px-3 py-1.5 rounded-full shadow-lg z-50 whitespace-nowrap"
                             >
-                                "{transcript}"
+                                {toastMessage}
                             </motion.div>
                         )}
-                    </div>
-
-                    {/* Settings Section */}
-                    <div className="themed-card p-6 flex items-center justify-between">
-                        <div>
-                            <h3 className="font-bold text-lg">أيقونة التحكم الصوتي</h3>
-                            <p className="text-xs opacity-60 mt-1">إظهار أيقونة التحكم الصوتي في الصفحة الرئيسية</p>
+                        
+                        {/* Mic Button Section */}
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                            <motion.button 
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={handleToggleVoiceControl}
+                                className={`w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-all ${isEnabled && isListening ? 'animate-pulse' : ''}`}
+                                style={{ 
+                                    backgroundColor: isEnabled ? (isListening ? '#ef4444' : '#10b981') : '#9ca3af',
+                                    color: '#ffffff'
+                                }}
+                            >
+                                {isEnabled ? <Mic className="w-8 h-8" /> : <MicOff className="w-8 h-8" />}
+                            </motion.button>
+                            <div className="text-center">
+                                <p className="text-base font-bold">
+                                    {isEnabled ? (isListening ? 'جاري الاستماع...' : 'التحكم الصوتي مفعل') : 'التحكم الصوتي معطل'}
+                                </p>
+                                <p className="text-[10px] opacity-60 mt-0.5">
+                                    {isEnabled ? 'يمكنك التحدث بالأوامر من أي مكان في التطبيق' : 'اضغط على الزر لتفعيل الاستماع الدائم'}
+                                </p>
+                            </div>
+                            
+                            {transcript && isListening && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="p-3 rounded-xl bg-black/5 w-full text-center italic font-bold text-base border border-black/5"
+                                >
+                                    "{transcript}"
+                                </motion.div>
+                            )}
                         </div>
-                        <button 
-                            onClick={() => setShowVoiceIcon(!showVoiceIcon)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${showVoiceIcon ? 'bg-emerald-500' : 'bg-gray-300'}`}
-                        >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showVoiceIcon ? '-translate-x-6' : '-translate-x-1'}`} />
-                        </button>
+
+                        <div className="h-px bg-black/5 w-full"></div>
+
+                        {/* Toggle Section */}
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="font-bold text-sm">أيقونة التحكم الصوتي</h3>
+                                <p className="text-[10px] opacity-60 mt-0.5">إظهار أيقونة التحكم الصوتي في الصفحة الرئيسية</p>
+                            </div>
+                            <button 
+                                onClick={() => setShowVoiceIcon(!showVoiceIcon)}
+                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${showVoiceIcon ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                            >
+                                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${showVoiceIcon ? '-translate-x-5' : '-translate-x-0.5'}`} />
+                            </button>
+                        </div>
                     </div>
 
-                    {/* Help Section */}
-                    <div className="p-5 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/20">
-                        <h4 className="text-sm font-bold text-emerald-600 mb-3 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-                            أمثلة سريعة للأوامر الذكية:
-                        </h4>
-                        <ul className="text-xs space-y-2 opacity-80 list-disc list-inside font-medium">
-                            <li>"الاستماع للقران" / "مواقيت الصلاه"</li>
-                            <li>"اذكار الصلاه" / "حصن المسلم"</li>
-                            <li>"التقويم" / "القبله" / "الحج والعمرة"</li>
-                            <li>"اذهب إلى سورة الكهف آية عشرة"</li>
-                            <li>"صفحة مائة" / "الجزء الثلاثون"</li>
-                            <li>"إيقاف التحكم الصوتي" (للتعطيل الفوري)</li>
-                        </ul>
+                    {/* Offline Warning & Settings Section */}
+                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col gap-3">
+                        <div className="flex items-start gap-3">
+                            <WifiOff className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                                <h4 className="font-bold text-amber-700 text-sm mb-1">تنبيه هام: يتطلب اتصال بالإنترنت</h4>
+                                <p className="text-xs text-amber-700/80 leading-relaxed">
+                                    خاصية التحكم الصوتي تعتمد على محرك التعرف على الصوت الخاص بجهازك (مثل Google أو Apple)، والذي <strong>لا يعمل إلا عند توفر اتصال بالإنترنت</strong>.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="mt-2 pt-3 border-t border-amber-500/20">
+                            <h4 className="font-bold text-amber-700 text-sm mb-2">لتشغيل التحكم الصوتي بدون إنترنت (أوفلاين):</h4>
+                            <p className="text-xs text-amber-700/80 leading-relaxed mb-3">
+                                يجب التأكد من تحميل حزمة اللغة العربية للتعرف على الصوت في إعدادات نظام أندرويد لضمان عمل التطبيق بكفاءة في وضع الأوفلاين:
+                            </p>
+                            
+                            <ul className="text-xs text-amber-700/80 leading-relaxed list-disc list-inside space-y-1 pr-2">
+                                <li><strong>أجهزة أندرويد (Android):</strong> الإعدادات &gt; الإدارة العامة (أو النظام) &gt; اللغة والإدخال &gt; لوحة المفاتيح التي تظهر على الشاشة &gt; الكتابة بالصوت من Google &gt; التعرف على الصوت بلا اتصال بالإنترنت &gt; تحميل اللغة العربية.</li>
+                            </ul>
+                        </div>
                     </div>
 
                     {/* Instructions Section */}
@@ -172,9 +218,29 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <section className="space-y-2">
                                 <h4 className="font-bold text-primary flex items-center gap-2">
                                     <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    1. محرك "انطق ما تراه":
+                                    1. أوامر التنقل العامة (تعمل من أي مكان في التطبيق):
                                 </h4>
-                                <p className="pr-4">هذه هي الميزة الأقوى؛ يمكنك ببساطة نطق اسم أي زر أو قائمة تظهر أمامك على الشاشة حالياً، وسيقوم التطبيق بالنقر عليها فوراً. مثلاً: "الصفحة الرئيسية"، "مواقيت الصلاة"، "القبلة".</p>
+                                <ul className="list-disc list-inside pr-4 space-y-1 text-xs">
+                                    <li>"الرئيسية": للعودة إلى الشاشة الرئيسية.</li>
+                                    <li>"مصحف" / "صفحة القراءة" / "القرآن الكريم": لفتح المصحف الشريف.</li>
+                                    <li>"فتح مواقيت الصلاة" / "مواقيت الصلاه": للانتقال لصفحة مواقيت الصلاة.</li>
+                                    <li>"فتح القبلة" / "القبله": لفتح بوصلة القبلة.</li>
+                                    <li>"فتح السبحه" / "السبحه": لفتح المسبحة الإلكترونية.</li>
+                                    <li>"فتح الأذكار" / "الاذكار": لفتح أذكار الصباح والمساء.</li>
+                                    <li>"فتح أذكار الصلاة" / "اذكار الصلاه": لفتح الأذكار بعد الصلاة.</li>
+                                    <li>"فتح حصن المسلم" / "حصن المسلم" / "حسن المسلم": لفتح كتاب حصن المسلم.</li>
+                                    <li>"فتح التقويم" / "التقويم": لفتح التقويم الهجري والميلادي.</li>
+                                    <li>"فتح الاستماع للقرآن" / "الاستماع للقران": لفتح صفحة الاستماع لمشاهير القراء.</li>
+                                    <li>"فتح الإعدادات" / "الاعدادات": لفتح صفحة إعدادات التطبيق.</li>
+                                    <li>"فتح الثيمات" / "ثيمات" / "السيمات": لفتح قائمة تغيير ألوان ومظهر التطبيق.</li>
+                                    <li>"فتح التحكم الصوتي" / "التحكم الصوتى": للانتقال لإعدادات التحكم الصوتي.</li>
+                                    <li>"فتح الادعيه" / "الادعيه": لفتح صفحة الادعيه.</li>
+                                    <li>"فتح الحج والعمرة" / "الحج والعمرة": لفتح صفحه الحج والعمرة.</li>
+                                    <li>"فتح المزيد" / "المزيد": لفتح صفحة المزيد.</li>
+                                    <li>"فتح الاربعون النوويه" / "الاربعون النوويه": لفتح صفحة الاربعون النوويه.</li>
+                                    <li>"رجوع": للعودة الى الصفحه السابقة.</li>
+                                    <li>"خروج": لإغلاق التطبيق.</li>
+                                </ul>
                             </section>
 
                             <section className="space-y-2">
@@ -193,65 +259,24 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             <section className="space-y-2">
                                 <h4 className="font-bold text-primary flex items-center gap-2">
                                     <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    3. التحكم في وضع الشاشة والخط:
-                                </h4>
-                                <ul className="list-disc list-inside pr-4 space-y-1">
-                                    <li>"القراءة الأفقية" أو "عرضي" لتدوير الشاشة.</li>
-                                    <li>"القراءة الرأسية" أو "طولي" للوضع المعتاد.</li>
-                                    <li>"تكبير الخط" أو "تصغير الخط" للتحكم في حجم النص.</li>
-                                </ul>
-                            </section>
-
-                            <section className="space-y-2">
-                                <h4 className="font-bold text-primary flex items-center gap-2">
-                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    4. تحميل القرآن والتفسير صوتياً:
+                                    3. أوامر التحكم في صفحة القراءة والمظهر:
                                 </h4>
                                 <ul className="list-disc list-inside pr-4 space-y-1 text-xs">
-                                    <li>انطق "تحميل القرآن" أو "تحميل التفسير" لفتح القائمة.</li>
-                                    <li>داخل القائمة: انطق اسم السورة (مثل "البقرة")، أو رقم الجزء (مثل "الجزء الأول")، أو اسم القارئ/المفسر لتحديده مباشرة.</li>
-                                    <li>انطق "تحميل" لبدء التنزيل فوراً.</li>
-                                    <li>انطق "إلغاء" لإيقاف التحميل أو إغلاق القائمة.</li>
-                                </ul>
-                            </section>
-
-                            <section className="space-y-2">
-                                <h4 className="font-bold text-primary flex items-center gap-2">
-                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    5. التنقل العام بين الأقسام:
-                                </h4>
-                                <p className="pr-4">يمكنك الانتقال السريع لأي قسم في التطبيق بمجرد نطق اسمه:</p>
-                                <ul className="list-disc list-inside pr-6 space-y-1 text-xs">
-                                    <li>"الرئيسية" للعودة للشاشة الرئيسية.</li>
-                                    <li>"الأذكار" أو "أذكار الصباح والمساء".</li>
-                                    <li>"مواقيت الصلاة" أو "القبلة" أو "المسبحة".</li>
-                                    <li>"حصن المسلم" أو "الأربعون النووية".</li>
-                                    <li>"التقويم" أو "الحج والعمرة" أو "الأدعية".</li>
-                                </ul>
-                            </section>
-
-                            <section className="space-y-2">
-                                <h4 className="font-bold text-primary flex items-center gap-2">
-                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    6. التحكم في الصوت والاستماع:
-                                </h4>
-                                <ul className="list-disc list-inside pr-4 space-y-1">
-                                    <li>"تشغيل" أو "استماع" لبدء القراءة الصوتية.</li>
-                                    <li>"إيقاف" أو "اسكت" لإنهاء القراءة فوراً.</li>
-                                    <li>"الاستماع للقرآن" لفتح قسم مشغل الصوتيات.</li>
-                                </ul>
-                            </section>
-
-                            <section className="space-y-2">
-                                <h4 className="font-bold text-primary flex items-center gap-2">
-                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                    7. أوامر المصحف المتقدمة:
-                                </h4>
-                                <ul className="list-disc list-inside pr-4 space-y-1 text-xs">
-                                    <li>"فتح البحث" للبحث عن آية أو سورة.</li>
-                                    <li>"فتح العلامات" للوصول لعلامات الحفظ.</li>
-                                    <li>"تعليم التجويد" لفتح دروس التجويد الملون.</li>
-                                    <li>"عرض التفسير" لإظهار تفسير الآية الحالية.</li>
+                                    <li>"تكبير الخط" / "تكبير": لزيادة حجم خط القراءة.</li>
+                                    <li>"تصغير الخط" / "تصغير": لتقليل حجم خط القراءة.</li>
+                                    <li>"حجم الخط [رقم]": لضبط الخط على مقاس محدد (مثال: "حجم الخط ٢٤").</li>
+                                    <li>"تغيير لون الخلفية" / "لون الخلفيه": لتبديل مظهر المصحف.</li>
+                                    <li>"تشغيل الصوت" / "تشغيل": لبدء تلاوة الآيات في الصفحة الحالية.</li>
+                                    <li>"إيقاف الصوت" / "إيقاف": لإيقاف التلاوة.</li>
+                                    <li>"عرض التفسير": لفتح نافذة التفسير للآيات.</li>
+                                    <li>"فتح العلامات": لفتح قائمة الإشارات المرجعية المحفوظة.</li>
+                                    <li>"تشغيل التمرير التلقائى" / "التمرير التلقائى": لتفعيل التمرير التلقائى وتشغيله.</li>
+                                    <li>"اسرع" / "ابطئ": لزياده وابطاء سرعة التمرير التلقائى.</li>
+                                    <li>"ايقاف التمرير": لايقاف التمرير مؤقتا.</li>
+                                    <li>"اغلاق التمرير": لايقاف التمرير نهائيا.</li>
+                                    <li>"المشاركه" / "مشاركه": لفتح قائمة المشاركه.</li>
+                                    <li>"فتح البحث" / "بحث": لفتح محرك البحث في القرآن.</li>
+                                    <li>"اغلاق القائمه" / "اغلاق": لاغلاق اى قائمة مفتوحة.</li>
                                 </ul>
                             </section>
 

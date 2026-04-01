@@ -22,6 +22,7 @@ interface PrayerConfig {
         lng: number;
     };
     isSummerTime?: boolean;
+    syncWidgetTheme?: boolean;
     nightNotifications?: {
         firstThird: boolean;
         midnight: boolean;
@@ -49,6 +50,7 @@ const DEFAULT_CONFIG: PrayerConfig = {
     mutedPrayers: { Sunrise: true },
     location: { cityGov: "الدمام - الشرقية", fullCountry: "المملكة العربية السعودية", combinedCode: "+966013", lat: 26.4207, lng: 50.0888 },
     isSummerTime: false,
+    syncWidgetTheme: true,
     nightNotifications: { firstThird: true, midnight: true, lastThird: true }
 };
 
@@ -692,8 +694,8 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 maghrib: formatTime(currentTimes.Maghrib, config.prayerOffsets.Maghrib || 0),
                 isha: formatTime(currentTimes.Isha, config.prayerOffsets.Isha || 0)
             }
-        });
-    }, [config.location, config.prayerOffsets, config.isSummerTime]);
+        }, config.syncWidgetTheme !== false);
+    }, [config.location, config.prayerOffsets, config.isSummerTime, config.syncWidgetTheme]);
 
     // --- Next Prayer & Countdown Logic ---
     useEffect(() => {
@@ -783,6 +785,17 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             updateWidget(times, dates, nextPrayer, countdown);
         }
     }, [times, dates, nextPrayer?.key, updateWidget]);
+
+    // Listen for theme changes to update widget immediately
+    useEffect(() => {
+        const handleThemeChange = () => {
+            if (times.Fajr && nextPrayer) {
+                updateWidget(times, dates, nextPrayer, countdown);
+            }
+        };
+        window.addEventListener('themeChanged', handleThemeChange);
+        return () => window.removeEventListener('themeChanged', handleThemeChange);
+    }, [times, dates, nextPrayer, countdown, updateWidget]);
 
     // Initial load
     useEffect(() => {
