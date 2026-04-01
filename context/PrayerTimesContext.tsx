@@ -22,6 +22,11 @@ interface PrayerConfig {
         lng: number;
     };
     isSummerTime?: boolean;
+    nightNotifications?: {
+        firstThird: boolean;
+        midnight: boolean;
+        lastThird: boolean;
+    };
 }
 
 interface PrayerTimesContextType {
@@ -43,7 +48,8 @@ const DEFAULT_CONFIG: PrayerConfig = {
     tones: {},
     mutedPrayers: { Sunrise: true },
     location: { cityGov: "الدمام - الشرقية", fullCountry: "المملكة العربية السعودية", combinedCode: "+966013", lat: 26.4207, lng: 50.0888 },
-    isSummerTime: false
+    isSummerTime: false,
+    nightNotifications: { firstThird: true, midnight: true, lastThird: true }
 };
 
 
@@ -532,6 +538,83 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
 
                                     notificationsToSchedule.push(notificationObj);
                                 }
+                            }
+
+                            // --- Night Times Notifications ---
+                            const nightNotifs = config.nightNotifications || { firstThird: true, midnight: true, lastThird: true };
+                            
+                            // Calculate tomorrow's Fajr
+                            const tomorrow = new Date(date);
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            const tomorrowParams = getCalculationParams(tomorrow, config.location).params;
+                            const tomorrowPrayerTimes = new AdhanPrayerTimes(coordinates, tomorrow, tomorrowParams);
+                            
+                            const supportsDST = checkSupportsDST(config.location.combinedCode, config.location.fullCountry);
+                            const isSummerTimeActive = config.isSummerTime && supportsDST;
+                            
+                            let maghribDate = new Date(dayTimings.Maghrib);
+                            let tomorrowFajrDate = new Date(tomorrowPrayerTimes.fajr);
+                            
+                            const maghribOffset = (config.prayerOffsets.Maghrib || 0) + (isSummerTimeActive ? 60 : 0);
+                            const fajrOffset = (config.prayerOffsets.Fajr || 0) + (isSummerTimeActive ? 60 : 0);
+                            
+                            maghribDate.setMinutes(maghribDate.getMinutes() + maghribOffset);
+                            tomorrowFajrDate.setMinutes(tomorrowFajrDate.getMinutes() + fajrOffset);
+                            
+                            const diffMs = tomorrowFajrDate.getTime() - maghribDate.getTime();
+                            const firstThirdDate = new Date(maghribDate.getTime() + diffMs / 3);
+                            const midnightDate = new Date(maghribDate.getTime() + diffMs / 2);
+                            const lastThirdDate = new Date(maghribDate.getTime() + (diffMs * 2) / 3);
+
+                            if (nightNotifs.firstThird && firstThirdDate > new Date()) {
+                                notificationsToSchedule.push({
+                                    id: (day * 100) + 50,
+                                    title: 'أول الليل',
+                                    text: 'قال رسول الله ﷺ: "أفضل الصلاة بعد الفريضة صلاة الليل"',
+                                    trigger: { at: firstThirdDate },
+                                    foreground: true,
+                                    priority: 1,
+                                    androidChannelId: 'night_times_channel',
+                                    androidChannelName: 'تنبيهات أوقات الليل',
+                                    androidChannelDescription: 'إشعارات لأوقات أول الليل، منتصف الليل، والثلث الأخير',
+                                    androidChannelImportance: 4,
+                                    androidAllowWhileIdle: true,
+                                    androidWakeUpScreen: true
+                                });
+                            }
+
+                            if (nightNotifs.midnight && midnightDate > new Date()) {
+                                notificationsToSchedule.push({
+                                    id: (day * 100) + 51,
+                                    title: 'منتصف الليل',
+                                    text: 'قال رسول الله ﷺ: "عليكم بقيام الليل فإنه دأب الصالحين قبلكم، وقربة إلى الله تعالى"',
+                                    trigger: { at: midnightDate },
+                                    foreground: true,
+                                    priority: 1,
+                                    androidChannelId: 'night_times_channel',
+                                    androidChannelName: 'تنبيهات أوقات الليل',
+                                    androidChannelDescription: 'إشعارات لأوقات أول الليل، منتصف الليل، والثلث الأخير',
+                                    androidChannelImportance: 4,
+                                    androidAllowWhileIdle: true,
+                                    androidWakeUpScreen: true
+                                });
+                            }
+
+                            if (nightNotifs.lastThird && lastThirdDate > new Date()) {
+                                notificationsToSchedule.push({
+                                    id: (day * 100) + 52,
+                                    title: 'الثلث الأخير من الليل',
+                                    text: 'قال ﷺ: "ينزل ربنا تبارك وتعالى كل ليلة إلى السماء الدنيا حين يبقى ثلث الليل الآخر، فيقول: من يدعوني فأستجيب له..."',
+                                    trigger: { at: lastThirdDate },
+                                    foreground: true,
+                                    priority: 2,
+                                    androidChannelId: 'night_times_channel',
+                                    androidChannelName: 'تنبيهات أوقات الليل',
+                                    androidChannelDescription: 'إشعارات لأوقات أول الليل، منتصف الليل، والثلث الأخير',
+                                    androidChannelImportance: 4,
+                                    androidAllowWhileIdle: true,
+                                    androidWakeUpScreen: true
+                                });
                             }
                         }
 

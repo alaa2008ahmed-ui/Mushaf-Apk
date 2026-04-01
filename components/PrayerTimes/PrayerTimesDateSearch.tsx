@@ -8,6 +8,7 @@ interface PrayerTimesDateSearchProps {
     searchIconRef: React.RefObject<HTMLElement>;
     primaryColor: string;
     secondaryColor: string;
+    onNavigateToMonthly: () => void;
 }
 
 const PrayerTimesDateSearch: React.FC<PrayerTimesDateSearchProps> = ({
@@ -17,7 +18,8 @@ const PrayerTimesDateSearch: React.FC<PrayerTimesDateSearchProps> = ({
     handleManualSearch,
     searchIconRef,
     primaryColor,
-    secondaryColor
+    secondaryColor,
+    onNavigateToMonthly
 }) => {
     return (
         <>
@@ -32,8 +34,8 @@ const PrayerTimesDateSearch: React.FC<PrayerTimesDateSearchProps> = ({
                 </div>
             </div>
 
-             <div className="flex items-center justify-center gap-3 mb-5 px-1">
-                <button onClick={handleManualSearch} className="themed-card text-sm font-black px-3 py-1.5 rounded-lg shadow-sm active:scale-95 hover:bg-card-bg-hover" style={{ color: primaryColor }}>بحث</button>
+             <div className="flex items-center justify-center gap-2 mb-5 px-1">
+                <button onClick={handleManualSearch} className="themed-card text-sm font-black px-3 py-2 rounded-lg shadow-sm active:scale-95 hover:bg-card-bg-hover" style={{ color: primaryColor }}>بحث</button>
                 <div id="search-input-container" className="flex-1 relative themed-card rounded-xl overflow-hidden shadow-sm">
                     <input type="text" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleManualSearch()} placeholder="عن مدينة أو محافظة..." 
                         className="w-full bg-transparent py-2.5 px-4 pr-10 text-xs outline-none transition-all" style={{ color: primaryColor }}/>
@@ -41,6 +43,7 @@ const PrayerTimesDateSearch: React.FC<PrayerTimesDateSearchProps> = ({
                         <i ref={searchIconRef} className="fa-solid fa-magnifying-glass"></i>
                     </button>
                 </div>
+                <button id="monthly-times-btn" onClick={onNavigateToMonthly} className="themed-card text-sm font-black px-3 py-2 rounded-lg shadow-sm active:scale-95 hover:bg-card-bg-hover" style={{ color: primaryColor }}>مواقيت</button>
             </div>
         </>
     );

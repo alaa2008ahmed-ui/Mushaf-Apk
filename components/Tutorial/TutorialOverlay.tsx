@@ -29,11 +29,14 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
   useEffect(() => {
     if (shouldShowTutorial(tutorialId)) {
       setIsVisible(true);
-      if (onStepChange && steps.length > 0) {
-        onStepChange(steps[0].id);
-      }
     }
-  }, [tutorialId, shouldShowTutorial, onStepChange, steps]);
+  }, [tutorialId, shouldShowTutorial]);
+
+  useEffect(() => {
+    if (isVisible && onStepChange && steps[currentStep]) {
+      onStepChange(steps[currentStep].id);
+    }
+  }, [isVisible, currentStep, onStepChange, steps]);
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();

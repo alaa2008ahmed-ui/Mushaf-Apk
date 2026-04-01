@@ -18,7 +18,8 @@ import {
     formatTime12_clean,
     playNotificationSound,
     stopNotificationSound,
-    checkSupportsDST
+    checkSupportsDST,
+    calculateNightTimes
 } from '../utils/prayerTimesUtils';
 
 // Main Component
@@ -68,6 +69,14 @@ function PrayerTimes({ onBack, onNavigate }) {
             icon: <Clock className="w-8 h-8 text-white" />
         },
         {
+            id: 'night-times',
+            text: 'يمكنك تفعيل أو تعطيل إشعارات أوقات الليل (أول الليل، منتصف الليل، الثلث الأخير) من هنا.',
+            position: { top: '250px' },
+            selector: '#night-times-container',
+            arrow: 'up',
+            icon: <Bell className="w-8 h-8 text-white" />
+        },
+        {
             id: 'prayer-settings',
             text: 'الدائرة العلوية لتفعيل أو كتم صوت الأذان، والزر بالأسفل لتعديل التنبيهات، صوت الأذان، أو وقت الإقامة.',
             position: { top: '450px' },
@@ -77,10 +86,10 @@ function PrayerTimes({ onBack, onNavigate }) {
         },
         {
             id: 'monthly-times',
-            text: 'عرض جدول مواقيت الصلاة للشهر الحالي بالكامل.',
-            position: { bottom: '100px' },
+            text: 'عرض جدول مواقيت الصلاة للشهر الحالي، كما يمكنك عرض الشهور السابقة واللاحقة.',
+            position: { top: '150px' },
             selector: '#monthly-times-btn',
-            arrow: 'down',
+            arrow: 'up',
             icon: <Calendar className="w-8 h-8 text-white" />
         }
     ];
@@ -231,19 +240,41 @@ function PrayerTimes({ onBack, onNavigate }) {
                         searchIconRef={searchIconRef}
                         primaryColor={primaryColor}
                         secondaryColor={secondaryColor}
+                        onNavigateToMonthly={() => onNavigate('monthly-prayer-times')}
                     />
                     
-                    <NextPrayerCard 
-                        nextPrayer={nextPrayer}
-                        times={times}
-                        countdown={countdown}
-                        isBlackAndWhite={isBlackAndWhite}
-                        themePalette0={theme.palette[0]}
-                        themePalette1={theme.palette[1]}
-                        formatTime12={formatTime12}
-                        applyOffset={applyOffset}
-                        prayerOffset={nextPrayer ? (config.prayerOffsets[nextPrayer.key] || 0) + (isSummerTimeActive ? 60 : 0) : 0}
-                    />
+                    {(() => {
+                        const maghribOffset = (config.prayerOffsets.Maghrib || 0) + (isSummerTimeActive ? 60 : 0);
+                        const fajrOffset = (config.prayerOffsets.Fajr || 0) + (isSummerTimeActive ? 60 : 0);
+                        const maghribTime = applyOffset(times.Maghrib, maghribOffset);
+                        const fajrTime = applyOffset(times.Fajr, fajrOffset);
+                        const nightTimes = calculateNightTimes(maghribTime, fajrTime);
+
+                        return (
+                            <NextPrayerCard 
+                                nextPrayer={nextPrayer}
+                                times={times}
+                                countdown={countdown}
+                                isBlackAndWhite={isBlackAndWhite}
+                                themePalette0={theme.palette[0]}
+                                themePalette1={theme.palette[1]}
+                                formatTime12={formatTime12}
+                                applyOffset={applyOffset}
+                                prayerOffset={nextPrayer ? (config.prayerOffsets[nextPrayer.key] || 0) + (isSummerTimeActive ? 60 : 0) : 0}
+                                nightTimes={nightTimes}
+                                nightNotifications={config.nightNotifications}
+                                onToggleNightNotification={(key) => {
+                                    const currentNotifs = config.nightNotifications || { firstThird: true, midnight: true, lastThird: true };
+                                    updateConfig({
+                                        nightNotifications: {
+                                            ...currentNotifs,
+                                            [key]: !currentNotifs[key]
+                                        }
+                                    });
+                                }}
+                            />
+                        );
+                    })()}
 
                     <div id="prayer-list" className="space-y-3 mt-5">
                         {['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((key, idx) => {
@@ -278,16 +309,6 @@ function PrayerTimes({ onBack, onNavigate }) {
                         })}
                     </div>
                     
-                    <button 
-                        id="monthly-times-btn"
-                        onClick={() => onNavigate('monthly-prayer-times')}
-                        className="w-full mt-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-sm"
-                        style={{ backgroundColor: primaryColor, color: isBlackAndWhite ? '#000' : '#fff' }}
-                    >
-                        <i className="fa-solid fa-calendar-days"></i>
-                        <span>مواقيت الشهر الحالي</span>
-                    </button>
-
                     <p className="text-center text-sm mt-6 opacity-70" style={{ color: secondaryColor }}>
                         (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
                     </p>

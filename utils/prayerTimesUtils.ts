@@ -80,7 +80,7 @@ export const stopNotificationSound = () => {
 
 export const calculateNightTimes = (maghribTimeStr: string, fajrTimeStr: string) => {
     if (!maghribTimeStr || !fajrTimeStr || maghribTimeStr.includes('--') || fajrTimeStr.includes('--')) {
-        return { midnight: "--:--", lastThird: "--:--" };
+        return { midnight: "--:--", lastThird: "--:--", firstThird: "--:--" };
     }
     
     const [mH, mM] = maghribTimeStr.split(':').map(Number);
@@ -98,6 +98,7 @@ export const calculateNightTimes = (maghribTimeStr: string, fajrTimeStr: string)
     
     const diffMs = fajrDate.getTime() - maghribDate.getTime();
     
+    const firstThirdDate = new Date(maghribDate.getTime() + diffMs / 3);
     const midnightDate = new Date(maghribDate.getTime() + diffMs / 2);
     const lastThirdDate = new Date(maghribDate.getTime() + (diffMs * 2) / 3);
     
@@ -106,6 +107,7 @@ export const calculateNightTimes = (maghribTimeStr: string, fajrTimeStr: string)
     };
     
     return {
+        firstThird: formatTime(firstThirdDate),
         midnight: formatTime(midnightDate),
         lastThird: formatTime(lastThirdDate)
     };

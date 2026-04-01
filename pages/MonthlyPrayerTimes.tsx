@@ -54,6 +54,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
     const [isExporting, setIsExporting] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const pdfTableRef = useRef<HTMLDivElement>(null);
+    const todayRowRef = useRef<HTMLTableRowElement>(null);
 
     const isBlackAndWhite = themeKey === 'black_and_white';
     const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
@@ -66,11 +67,12 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                 setIsPickerOpen(false);
                 return true;
             }
-            return false;
+            onBack();
+            return true;
         };
         const unregister = registerBackInterceptor(interceptor);
         return unregister;
-    }, [isPickerOpen]);
+    }, [isPickerOpen, onBack]);
 
     const monthData = useMemo(() => {
         const data = [];
@@ -139,6 +141,16 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
         }
         return data;
     }, [viewDate, calendarType, config.location]);
+
+    // Scroll to today's row when the component mounts or viewDate changes
+    useEffect(() => {
+        if (todayRowRef.current) {
+            // Add a small delay to ensure rendering is complete
+            setTimeout(() => {
+                todayRowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
+    }, [monthData]);
 
     const handlePrevMonth = () => {
         if (calendarType === 'hijri') {
@@ -345,11 +357,17 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                         <tbody>
                             {monthData.map((day, idx) => {
                                 const isToday = day.gregorianDateStr === `${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`;
+                                const textColor = isToday ? primaryColor : 'inherit';
                                 return (
-                                    <tr key={idx} className={`border-b last:border-0 transition-colors ${isToday ? 'bg-primary/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`} style={{ borderColor: 'var(--card-border)' }}>
+                                    <tr 
+                                        key={idx} 
+                                        ref={isToday ? todayRowRef : null}
+                                        className={`border-b last:border-0 transition-colors ${isToday ? 'bg-primary/10 font-bold' : 'hover:bg-black/5 dark:hover:bg-white/5'}`} 
+                                        style={{ borderColor: 'var(--card-border)', color: textColor }}
+                                    >
                                         <td className="p-2 border-l" style={{ borderColor: 'var(--card-border)' }}>{day.dayName}</td>
                                         <td className="p-2 border-l font-mono text-xs" style={{ borderColor: 'var(--card-border)' }} dir="ltr">
-                                            <span style={{ color: primaryColor }}>{day.hijriDay}</span>
+                                            <span style={{ color: isToday ? primaryColor : primaryColor }}>{day.hijriDay}</span>
                                             <span className="mx-1 opacity-50">/</span>
                                             <span className="opacity-70">{day.gregorianDay}</span>
                                         </td>
