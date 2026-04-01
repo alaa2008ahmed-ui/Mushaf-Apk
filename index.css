@@ -93,6 +93,12 @@
   --font-lalezar: "Lalezar", system-ui;
   --font-rakkas: "Rakkas", system-ui;
   --font-katibeh: "Katibeh", system-ui;
+
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  --animate-spin-slow: spin-slow 3s linear infinite;
 }
 
 /* Hide number input arrows (spinners) */

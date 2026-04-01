@@ -1,26 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'motion/react';
-import { CheckCircle, BookOpen, RotateCcw, Play, Settings, X } from 'lucide-react';
+import { CheckCircle, BookOpen, RotateCcw, Play, Settings, X, User, Plus, Trash2, ChevronDown, Edit2 } from 'lucide-react';
 import BottomBar from '../components/BottomBar';
+import ResetConfirmModal from '../components/DailyWird/ResetConfirmModal';
 
 interface WirdSettings {
+  id: string;
+  name: string;
   mode: 'days' | 'pages';
   value: number;
   startDate: string;
   currentDay: number;
   completedDays: number[];
   isActive: boolean;
+  startPage?: number;
 }
 
 const TOTAL_PAGES = 604;
 
 const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, params?: any) => void }> = ({ onBack, onNavigate }) => {
   const { theme, themeKey } = useTheme();
-  const [settings, setSettings] = useState<WirdSettings | null>(null);
+  const [allSettings, setAllSettings] = useState<WirdSettings[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [tempMode, setTempMode] = useState<'days' | 'pages'>('days');
   const [tempValue, setTempValue] = useState<string>('30');
+  const [tempName, setTempName] = useState<string>('');
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [calcMethod, setCalcMethod] = useState<'remaining' | 'total'>('remaining');
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  const settings = allSettings.find(s => s.id === activeId) || null;
 
   const toEnglishDigits = (str: string) => {
     return str.replace(/[٠-٩]/g, (d) => (d.charCodeAt(0) - 1632).toString())
@@ -28,62 +40,160 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem('dailyWirdSettings');
+    const saved = localStorage.getItem('dailyWirdSettings_v2');
     if (saved) {
-      setSettings(JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      setAllSettings(parsed.profiles || []);
+      setActiveId(parsed.activeId || (parsed.profiles?.length > 0 ? parsed.profiles[0].id : null));
     } else {
-      setShowSettings(true);
+      // Migrate from old single settings if exists
+      const oldSaved = localStorage.getItem('dailyWirdSettings');
+      if (oldSaved) {
+        const oldSettings = JSON.parse(oldSaved);
+        const migrated: WirdSettings = {
+          ...oldSettings,
+          id: 'default',
+          name: 'المستخدم 1'
+        };
+        setAllSettings([migrated]);
+        setActiveId('default');
+        localStorage.setItem('dailyWirdSettings_v2', JSON.stringify({ profiles: [migrated], activeId: 'default' }));
+      } else {
+        setShowSettings(true);
+      }
     }
   }, []);
 
-  const saveSettings = (newSettings: WirdSettings) => {
-    setSettings(newSettings);
-    localStorage.setItem('dailyWirdSettings', JSON.stringify(newSettings));
+  const saveAllSettings = (profiles: WirdSettings[], activeProfileId: string | null) => {
+    setAllSettings(profiles);
+    setActiveId(activeProfileId);
+    localStorage.setItem('dailyWirdSettings_v2', JSON.stringify({ profiles, activeId: activeProfileId }));
   };
 
   const handleStart = () => {
-    const val = parseInt(tempValue) || (tempMode === 'days' ? 30 : 20);
-    const newSettings: WirdSettings = {
+    const inputVal = parseInt(tempValue) || (tempMode === 'days' ? 30 : 20);
+    let finalValue = inputVal;
+    let startPage = 1;
+    const profileName = tempName.trim() || `مستخدم ${allSettings.length + 1}`;
+
+    if (settings && settings.completedDays.length > 0) {
+      const lastPageRead = Math.max(0, ...settings.completedDays.map(d => getDayRange(d).end));
+      startPage = lastPageRead + 1;
+
+      if (tempMode === 'days' && calcMethod === 'total') {
+        const completedDaysCount = settings.completedDays.length;
+        finalValue = Math.max(1, inputVal - completedDaysCount);
+      }
+    }
+
+    const newWird: WirdSettings = {
+      id: settings?.id || Date.now().toString(),
+      name: profileName,
       mode: tempMode,
-      value: val,
+      value: finalValue,
       startDate: settings ? settings.startDate : new Date().toISOString(),
-      currentDay: settings ? settings.currentDay : 1,
-      completedDays: settings ? settings.completedDays : [],
+      currentDay: 1,
+      completedDays: [],
       isActive: true,
+      startPage: startPage
     };
-    saveSettings(newSettings);
+
+    let newProfiles: WirdSettings[];
+    if (settings) {
+      newProfiles = allSettings.map(p => p.id === settings.id ? newWird : p);
+    } else {
+      newProfiles = [...allSettings, newWird];
+    }
+
+    saveAllSettings(newProfiles, newWird.id);
     setShowSettings(false);
+  };
+
+  const handleAddNew = () => {
+    setTempMode('days');
+    setTempValue('30');
+    setTempName('');
+    setActiveId(null); // This tells handleStart to create a new one
+    setShowSettings(true);
+  };
+
+  const handleEditProfile = (profile: WirdSettings, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveId(profile.id);
+    setTempMode(profile.mode);
+    setTempValue(profile.value.toString());
+    setTempName(profile.name);
+    setShowSettings(true);
+    setShowProfileMenu(false);
+  };
+
+  const handleDeleteProfile = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(id);
+    setShowProfileMenu(false);
+  };
+
+  const confirmDeleteProfile = () => {
+    if (!showDeleteConfirm) return;
+    const newProfiles = allSettings.filter(p => p.id !== showDeleteConfirm);
+    let newActiveId = activeId;
+    if (activeId === showDeleteConfirm) {
+      newActiveId = newProfiles.length > 0 ? newProfiles[0].id : null;
+    }
+    saveAllSettings(newProfiles, newActiveId);
+    if (newProfiles.length === 0) {
+      setShowSettings(true);
+    }
+    setShowDeleteConfirm(null);
   };
 
   const handleEdit = () => {
     if (settings) {
       setTempMode(settings.mode);
       setTempValue(settings.value.toString());
+      setTempName(settings.name);
       setShowSettings(true);
     }
   };
 
   const handleCancelEdit = () => {
+    if (allSettings.length === 0) {
+      onBack();
+    } else if (!activeId) {
+      setActiveId(allSettings[0].id);
+    }
     setShowSettings(false);
   };
 
   const handleReset = () => {
-    if (window.confirm('هل أنت متأكد من إعادة تعيين الختمة؟')) {
-      setShowSettings(true);
-      setSettings(null);
-      localStorage.removeItem('dailyWirdSettings');
+    setShowResetConfirm(true);
+  };
+
+  const confirmReset = () => {
+    if (settings) {
+      const newWird = {
+        ...settings,
+        currentDay: 1,
+        completedDays: [],
+        startDate: new Date().toISOString(),
+        startPage: 1
+      };
+      const newProfiles = allSettings.map(p => p.id === settings.id ? newWird : p);
+      saveAllSettings(newProfiles, settings.id);
     }
+    setShowResetConfirm(false);
   };
 
   const markDayCompleted = () => {
     if (!settings) return;
     const newCompleted = [...settings.completedDays, settings.currentDay];
-    const newSettings = {
+    const newWird = {
       ...settings,
       completedDays: newCompleted,
       currentDay: settings.currentDay < getTotalDays() ? settings.currentDay + 1 : settings.currentDay,
     };
-    saveSettings(newSettings);
+    const newProfiles = allSettings.map(p => p.id === settings.id ? newWird : p);
+    saveAllSettings(newProfiles, settings.id);
   };
 
   const getTotalDays = () => {
@@ -102,9 +212,21 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
 
   const renderSettings = () => (
     <div className="p-6 rounded-2xl shadow-lg border" style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}>
-      <h2 className="text-2xl font-bold mb-6 text-center">إعداد الختمة</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">{settings ? 'تعديل الختمة' : 'إعداد ختمة جديدة'}</h2>
       
       <div className="space-y-6">
+        <div>
+          <label className="block mb-2 font-semibold">اسم المستخدم / الختمة:</label>
+          <input 
+            type="text"
+            value={tempName}
+            onChange={(e) => setTempName(e.target.value)}
+            className="w-full border rounded-xl p-3 text-right focus:outline-none focus:border-green-500"
+            style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)', borderColor: theme.cardBorder, color: theme.textColor }}
+            placeholder="مثال: أحمد، ختمة رمضان..."
+          />
+        </div>
+
         <div>
           <label className="block mb-2 font-semibold">طريقة الختمة:</label>
           <div className="flex gap-4">
@@ -143,6 +265,31 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
           />
         </div>
 
+        {settings && settings.completedDays.length > 0 && (
+          <div className="p-4 rounded-xl border-2 border-dashed" style={{ borderColor: theme.cardBorder }}>
+            <label className="block mb-3 font-bold text-sm text-emerald-600 dark:text-emerald-400">طريقة احتساب المتبقي:</label>
+            <div className="space-y-3">
+              <button 
+                onClick={() => setCalcMethod('remaining')}
+                className={`w-full p-3 rounded-xl text-right text-sm flex items-center justify-between border transition-all ${calcMethod === 'remaining' ? 'border-emerald-500 bg-emerald-500/10' : 'border-gray-200 dark:border-gray-700'}`}
+              >
+                <span>خطة جديدة للمتبقي (العدد المدخل هو للمستقبل)</span>
+                <div className={`w-4 h-4 rounded-full border-2 ${calcMethod === 'remaining' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-400'}`} />
+              </button>
+              <button 
+                onClick={() => setCalcMethod('total')}
+                className={`w-full p-3 rounded-xl text-right text-sm flex items-center justify-between border transition-all ${calcMethod === 'total' ? 'border-emerald-500 bg-emerald-500/10' : 'border-gray-200 dark:border-gray-700'}`}
+              >
+                <span>تعديل الخطة الحالية (العدد المدخل هو الإجمالي)</span>
+                <div className={`w-4 h-4 rounded-full border-2 ${calcMethod === 'total' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-400'}`} />
+              </button>
+            </div>
+            <p className="text-[10px] mt-2 opacity-60 leading-tight">
+              * سيتم البدء من الصفحة التالية لآخر صفحة قرأتها.
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-3 mt-6">
           <button 
             onClick={handleStart}
@@ -151,7 +298,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             <Play size={24} />
             {settings ? 'حفظ التعديلات' : 'ابدأ الختمة'}
           </button>
-          {settings && (
+          {(settings || allSettings.length > 0) && (
             <button 
               onClick={handleCancelEdit}
               className="py-4 px-6 bg-gray-500 hover:bg-gray-400 text-white rounded-xl font-bold text-lg flex items-center justify-center transition-colors"
@@ -166,15 +313,20 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
 
   const getDayRange = (day: number) => {
     if (!settings) return { start: 1, end: 20 };
+    
+    const startPage = settings.startPage || 1;
+    const pagesLeft = TOTAL_PAGES - startPage + 1;
+    const offset = startPage - 1;
+
     if (settings.mode === 'days') {
       const totalDays = settings.value;
-      const start = Math.floor(((day - 1) * TOTAL_PAGES) / totalDays) + 1;
-      const end = Math.floor((day * TOTAL_PAGES) / totalDays);
+      const start = Math.floor(((day - 1) * pagesLeft) / totalDays) + 1 + offset;
+      const end = Math.floor((day * pagesLeft) / totalDays) + offset;
       return { start, end: Math.max(start - 1, end) };
     } else {
       const pagesPerDay = settings.value;
-      const start = (day - 1) * pagesPerDay + 1;
-      const end = Math.min(day * pagesPerDay, TOTAL_PAGES);
+      const start = (day - 1) * pagesPerDay + 1 + offset;
+      const end = Math.min(day * pagesPerDay + offset, TOTAL_PAGES);
       return { start: Math.min(start, TOTAL_PAGES + 1), end };
     }
   };
@@ -281,9 +433,139 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     );
   };
 
+  const renderProfileSelector = () => {
+    if (allSettings.length === 0) return null;
+    return (
+      <div className="relative mb-6">
+        <button 
+          onClick={() => setShowProfileMenu(!showProfileMenu)}
+          className="w-full p-4 rounded-2xl border flex items-center justify-between transition-all"
+          style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <User size={20} />
+            </div>
+            <div className="text-right">
+              <p className="text-xs opacity-60">المستخدم الحالي</p>
+              <p className="font-bold">{settings?.name || 'اختر مستخدماً'}</p>
+            </div>
+          </div>
+          <ChevronDown size={20} className={`transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
+        </button>
+
+        {showProfileMenu && (
+          <>
+            <div 
+              className="fixed inset-0 z-40" 
+              onClick={() => setShowProfileMenu(false)}
+            />
+            <div 
+              className="absolute top-full left-0 right-0 mt-2 rounded-2xl border shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200" 
+              style={{ 
+                backgroundColor: theme.isDark ? '#1a1a1a' : '#ffffff', 
+                borderColor: theme.cardBorder 
+              }}
+            >
+              {allSettings.map(profile => (
+                <div 
+                  key={profile.id}
+                  onClick={() => {
+                    setActiveId(profile.id);
+                    setShowProfileMenu(false);
+                  }}
+                  className={`p-4 flex items-center justify-between border-b last:border-0 cursor-pointer transition-colors ${activeId === profile.id ? 'bg-emerald-500/10' : 'hover:bg-gray-500/5'}`}
+                  style={{ borderColor: theme.cardBorder }}
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <User size={18} className={activeId === profile.id ? 'text-emerald-500' : 'opacity-40'} />
+                    <span className={activeId === profile.id ? 'font-bold text-emerald-600 dark:text-emerald-400' : ''}>{profile.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button 
+                      onClick={(e) => handleEditProfile(profile, e)}
+                      className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
+                      title="تعديل"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={(e) => handleDeleteProfile(profile.id, e)}
+                      className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                      title="حذف"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button 
+                onClick={() => {
+                  handleAddNew();
+                  setShowProfileMenu(false);
+                }}
+                className="w-full p-4 flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/5 transition-colors"
+              >
+                <Plus size={20} />
+                إضافة مستخدم جديد
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const renderDeleteConfirmModal = () => {
+    if (!showDeleteConfirm) return null;
+    const profileToDelete = allSettings.find(p => p.id === showDeleteConfirm);
+    if (!profileToDelete) return null;
+
+    const isWirdIncomplete = !profileToDelete.completedDays.includes(profileToDelete.currentDay);
+
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="w-full max-w-sm p-6 rounded-3xl shadow-2xl text-center border"
+          style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}
+        >
+          <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Trash2 size={32} />
+          </div>
+          <h3 className="text-xl font-bold mb-2">حذف المستخدم؟</h3>
+          <p className="opacity-70 mb-4">هل أنت متأكد من حذف "{profileToDelete.name}"؟ لا يمكن التراجع عن هذه الخطوة.</p>
+          
+          {isWirdIncomplete && (
+            <div className="p-3 mb-6 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-sm font-bold flex items-center gap-2 text-right">
+              <span className="text-lg">⚠️</span>
+              تنبيه: لم يتم إكمال ورد اليوم لهذا المستخدم بعد.
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button 
+              onClick={confirmDeleteProfile}
+              className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold transition-colors"
+            >
+              تأكيد الحذف
+            </button>
+            <button 
+              onClick={() => setShowDeleteConfirm(null)}
+              className="flex-1 py-3 bg-gray-500/10 hover:bg-gray-500/20 rounded-xl font-bold transition-colors"
+            >
+              إلغاء
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ fontFamily: theme.font, backgroundColor: theme.background, color: theme.textColor }}>
-      <header className="app-top-bar relative z-10">
+    <div className="fixed inset-0 flex flex-col" style={{ fontFamily: theme.font, backgroundColor: theme.background, color: theme.textColor }}>
+      <header className="app-top-bar shrink-0 relative z-10">
         <div className="app-top-bar__inner flex items-center justify-center px-4">
           <div className="text-center">
             <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2">
@@ -295,13 +577,22 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 pb-32">
+      <main className="flex-1 min-h-0 overflow-y-auto p-4 pb-32">
         <div className="max-w-md mx-auto mt-4">
+          {!showSettings && renderProfileSelector()}
           {showSettings || !settings ? renderSettings() : renderProgress()}
         </div>
       </main>
 
       <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+
+      {renderDeleteConfirmModal()}
+
+      <ResetConfirmModal 
+        isOpen={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+        onConfirm={confirmReset}
+      />
     </div>
   );
 };
