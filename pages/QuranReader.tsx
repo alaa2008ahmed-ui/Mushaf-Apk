@@ -185,23 +185,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         window.addEventListener('resize', handleResize);
         handleResize(); // Initial check
         
-        // Check for saved memorization session if not already in one
-        if (!isMemorizationMode) {
-            const saved = localStorage.getItem('memorization_session_v1');
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    const isRecent = Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000;
-                    if (isRecent) {
-                        setSavedSession(parsed);
-                        setShowResumeModal(true);
-                    }
-                } catch (e) {}
-            }
-        }
-        
         return () => window.removeEventListener('resize', handleResize);
-    }, [isMemorizationMode]);
+    }, []);
 
     const [readingMode, setReadingMode] = useState<ReadingMode>('mushaf');
     const modeSuffix = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
@@ -237,36 +222,38 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const [hasShownWirdComplete, setHasShownWirdComplete] = useState(false);
 
     useEffect(() => {
-        const saved = localStorage.getItem('dailyWirdSettings_v2');
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                const activeProfile = parsed.profiles?.find((p: any) => p.id === parsed.activeId);
-                if (activeProfile && activeProfile.isActive) {
-                    const getDayRange = (day: number, settings: any) => {
-                        const TOTAL_PAGES = 604;
-                        const startPage = settings.startPage || 1;
-                        const pagesLeft = TOTAL_PAGES - startPage + 1;
-                        const offset = startPage - 1;
+        if (isWirdMode) {
+            const saved = localStorage.getItem('dailyWirdSettings_v2');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    const activeProfile = parsed.profiles?.find((p: any) => p.id === parsed.activeId);
+                    if (activeProfile && activeProfile.isActive) {
+                        const getDayRange = (day: number, settings: any) => {
+                            const TOTAL_PAGES = 604;
+                            const startPage = settings.startPage || 1;
+                            const pagesLeft = TOTAL_PAGES - startPage + 1;
+                            const offset = startPage - 1;
 
-                        if (settings.mode === 'days') {
-                            const totalDays = settings.value;
-                            const start = Math.floor(((day - 1) * pagesLeft) / totalDays) + 1 + offset;
-                            const end = Math.floor((day * pagesLeft) / totalDays) + offset;
-                            return { start, end: Math.max(start - 1, end) };
-                        } else {
-                            const pagesPerDay = settings.value;
-                            const start = (day - 1) * pagesPerDay + 1 + offset;
-                            const end = Math.min(day * pagesPerDay + offset, TOTAL_PAGES);
-                            return { start: Math.min(start, TOTAL_PAGES + 1), end };
-                        }
-                    };
-                    const { end } = getDayRange(activeProfile.currentDay, activeProfile);
-                    setWirdEndPage(end);
-                }
-            } catch (e) {}
+                            if (settings.mode === 'days') {
+                                const totalDays = settings.value;
+                                const start = Math.floor(((day - 1) * pagesLeft) / totalDays) + 1 + offset;
+                                const end = Math.floor((day * pagesLeft) / totalDays) + offset;
+                                return { start, end: Math.max(start - 1, end) };
+                            } else {
+                                const pagesPerDay = settings.value;
+                                const start = (day - 1) * pagesPerDay + 1 + offset;
+                                const end = Math.min(day * pagesPerDay + offset, TOTAL_PAGES);
+                                return { start: Math.min(start, TOTAL_PAGES + 1), end };
+                            }
+                        };
+                        const { end } = getDayRange(activeProfile.currentDay, activeProfile);
+                        setWirdEndPage(end);
+                    }
+                } catch (e) {}
+            }
         }
-    }, []);
+    }, [isWirdMode]);
 
     const [currentAyah, setCurrentAyah] = useState<{ s: number; a: number }>({ s: 1, a: 1 });
 
@@ -942,23 +929,28 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         setSajdahCardInfo({ show: false, surah: '', ayah: 0, juz: 0, page: 0, wasAutoscrolling: false, wasPlaying: false });
     };
 
-    const playNextAyah = useCallback(() => {
-        if (!quranData || !playingAyah) return stopAudio();
-        const { s, a } = playingAyah;
-        const surah = quranData.surahs[s - 1];
-        if (!surah) return stopAudio();
-    
-        if (a < surah.ayahs.length) {
-            const nextAyah = { s, a: a + 1 };
-            playAudio(nextAyah.s, nextAyah.a);
-        } else {
-            stopAudio();
-            showToast('انتهت السورة');
+    const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false, retries: number = 10) => {
+        const el = document.getElementById(`ayah-${s}-${a}`);
+        if (el) {
+            const container = mushafContentRef.current;
+            if (container) {
+                if (isLandscapeRef.current) {
+                    // In landscape mode (rotated), we use offsetTop for more reliable scrolling
+                    const targetScroll = el.offsetTop - (container.clientHeight / 2) + (el.clientHeight / 2);
+                    container.scrollTo({ top: targetScroll, behavior: instant ? 'auto' : 'smooth' });
+                } else {
+                    const containerRect = container.getBoundingClientRect();
+                    const elRect = el.getBoundingClientRect();
+                    const scrollTop = container.scrollTop + elRect.top - containerRect.top - (containerRect.height / 2) + (elRect.height / 2);
+                    container.scrollTo({ top: scrollTop, behavior: instant ? 'auto' : 'smooth' });
+                }
+            } else {
+                el.scrollIntoView({ block: 'center', behavior: instant ? 'auto' : 'smooth' });
+            }
+        } else if (retries > 0) {
+            setTimeout(() => scrollToAyah(s, a, instant, retries - 1), 100);
         }
-    }, [quranData, playingAyah, stopAudio, showToast]);
-
-    const playNextAyahRef = useRef(playNextAyah);
-    useEffect(() => { playNextAyahRef.current = playNextAyah; }, [playNextAyah]);
+    }, []);
 
     const manageAudioCache = useCallback((currentS: number, currentA: number) => {
         const keys = Object.keys(audioCacheRef.current);
@@ -1004,36 +996,14 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 } catch (e) { console.warn("Preloading failed", e); }
             }
         }
-    }, [settings.reader, quranData]);
-
-    const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false, retries: number = 10) => {
-        const el = document.getElementById(`ayah-${s}-${a}`);
-        if (el) {
-            const container = mushafContentRef.current;
-            if (container) {
-                if (isLandscapeRef.current) {
-                    // In landscape mode (rotated), we use offsetTop for more reliable scrolling
-                    const targetScroll = el.offsetTop - (container.clientHeight / 2) + (el.clientHeight / 2);
-                    container.scrollTo({ top: targetScroll, behavior: instant ? 'auto' : 'smooth' });
-                } else {
-                    const containerRect = container.getBoundingClientRect();
-                    const elRect = el.getBoundingClientRect();
-                    const scrollTop = container.scrollTop + elRect.top - containerRect.top - (containerRect.height / 2) + (elRect.height / 2);
-                    container.scrollTo({ top: scrollTop, behavior: instant ? 'auto' : 'smooth' });
-                }
-            } else {
-                el.scrollIntoView({ block: 'center', behavior: instant ? 'auto' : 'smooth' });
-            }
-        } else if (retries > 0) {
-            setTimeout(() => scrollToAyah(s, a, instant, retries - 1), 100);
-        }
-    }, []);
+    }, [settings.reader, quranData, localIsMemorizationMode]);
 
     const memorizationSettingsRef = useRef(localMemorizationSettings);
     useEffect(() => { memorizationSettingsRef.current = localMemorizationSettings; }, [localMemorizationSettings]);
     const rangeRepeatCountRef = useRef(localMemorizationSettings?.rangeRepeatCount || 0);
+    const lastLinkedAyahRef = useRef<{s: number, a: number} | null>(null);
 
-    const playAudio = useCallback(async (s: number, a: number) => {
+    const playAudio = useCallback(async (s: number, a: number, isLinked = false, targetAyah?: {s: number, a: number}) => {
         stopAudio();
         setIsAudioLoading(true);
         setPlayingAyah({ s, a });
@@ -1041,6 +1011,46 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         setHighlightedAyahId(`ayah-${s}-${a}`);
         scrollToAyah(s, a, false);
         
+        // Reset repeat count if it's a new ayah (not a repetition or linked)
+        if (!isLinked && !targetAyah) {
+            currentRepeatCountRef.current = 0;
+        }
+
+        // Handle Linked Repeat if it's the start of a new ayah session
+        if (localIsMemorizationMode && memorizationSettingsRef.current?.linkedRepeat && !isLinked && !targetAyah) {
+            // Only play linked if we haven't played it for this ayah yet
+            if (lastLinkedAyahRef.current?.s !== s || lastLinkedAyahRef.current?.a !== a) {
+                // Find previous ayah
+                let prevS = s;
+                let prevA = a - 1;
+                if (prevA < 1) {
+                    if (prevS > 1) {
+                        prevS -= 1;
+                        prevA = quranData.surahs[prevS - 1].ayahs.length;
+                    }
+                }
+                
+                if (prevA >= 1) {
+                    lastLinkedAyahRef.current = { s, a };
+                    // Play previous ayah once, then come back to current ayah
+                    playAudio(prevS, prevA, true, { s, a });
+                    return;
+                }
+            }
+        }
+
+        // Save session on every ayah change
+        if (localIsMemorizationMode) {
+            const sessionData = {
+                currentAyah: { s, a },
+                settings: memorizationSettingsRef.current,
+                rangeRepeatCount: rangeRepeatCountRef.current,
+                currentRepeatCount: currentRepeatCountRef.current,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('memorization_session_v1', JSON.stringify(sessionData));
+        }
+
         // Pause voice control if it's running
         window.dispatchEvent(new CustomEvent('voice-control-pause'));
     
@@ -1085,6 +1095,13 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         audio.onended = () => {
             if (localIsMemorizationMode && memorizationSettingsRef.current) {
                 const memSettings = memorizationSettingsRef.current;
+                
+                // If this was a linked ayah, play the target ayah next
+                if (isLinked && targetAyah) {
+                    playAudio(targetAyah.s, targetAyah.a, false);
+                    return;
+                }
+
                 const maxAyahRepeat = memSettings.ayahRepeat || 1;
                 const pauseLength = memSettings.pauseLength || 0;
                 
@@ -1165,6 +1182,34 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             window.dispatchEvent(new CustomEvent('voice-control-resume'));
         }
     }, [settings.reader, settings.ayahRepeatCount, localIsMemorizationMode, stopAudio, preloadAudioQueue, manageAudioCache, showToast, scrollToAyah, onBack, onNavigate]);
+
+    const playNextAyah = useCallback(() => {
+        if (!quranData || !playingAyah) return stopAudio();
+        const { s, a } = playingAyah;
+        const surah = quranData.surahs[s - 1];
+        if (!surah) return stopAudio();
+    
+        let nextS = s;
+        let nextA = a + 1;
+
+        if (a < surah.ayahs.length) {
+            nextA = a + 1;
+        } else if (s < 114) {
+            nextS = s + 1;
+            nextA = 1;
+        } else {
+            stopAudio();
+            showToast('انتهت السورة');
+            return;
+        }
+
+        playAudio(nextS, nextA);
+    }, [quranData, playingAyah, stopAudio, showToast, localIsMemorizationMode, playAudio]);
+
+    const playNextAyahRef = useRef(playNextAyah);
+    useEffect(() => { playNextAyahRef.current = playNextAyah; }, [playNextAyah]);
+
+
 
     const closeModal = useCallback((modalName: string) => {
         setActiveModals(p => p.filter(m => m !== modalName));

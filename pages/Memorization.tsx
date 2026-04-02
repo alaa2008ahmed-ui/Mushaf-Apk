@@ -28,9 +28,70 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
 
     const [showHelpModal, setShowHelpModal] = useState(false);
     const [showExplanationModal, setShowExplanationModal] = useState(false);
+    const [showResumePrompt, setShowResumePrompt] = useState(false);
+    const [savedSession, setSavedSession] = useState<any>(null);
     const [activePicker, setActivePicker] = useState<'range' | 'ayah' | 'pause' | null>(null);
 
+    // Load settings from localStorage
+    useEffect(() => {
+        const savedSettings = localStorage.getItem('memorization_settings_v1');
+        if (savedSettings) {
+            try {
+                const parsed = JSON.parse(savedSettings);
+                setSelectedReader(parsed.reader || MEMORIZATION_READERS[1].id);
+                setFromSurah(parsed.fromSurah || 1);
+                setFromAyah(parsed.fromAyah || 1);
+                setToSurah(parsed.toSurah || 1);
+                setToAyah(parsed.toAyah || 7);
+                setRangeRepeat(parsed.rangeRepeat || 1);
+                setAyahRepeat(parsed.ayahRepeat || 1);
+                setLinkedRepeat(parsed.linkedRepeat !== undefined ? parsed.linkedRepeat : true);
+                setPauseLength(parsed.pauseLength || 1);
+                setTestAfterSession(parsed.testAfterSession || false);
+            } catch (e) {
+                console.error("Failed to load memorization settings", e);
+            }
+        }
+
+        // Check for active session
+        const session = localStorage.getItem('memorization_session_v1');
+        if (session) {
+            try {
+                const parsed = JSON.parse(session);
+                // Only suggest if it's recent (last 24h)
+                if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+                    setSavedSession(parsed);
+                }
+            } catch (e) {}
+        }
+    }, []);
+
+    // Save settings to localStorage whenever they change
+    useEffect(() => {
+        const settings = {
+            reader: selectedReader,
+            fromSurah,
+            fromAyah,
+            toSurah,
+            toAyah,
+            rangeRepeat,
+            ayahRepeat,
+            linkedRepeat,
+            pauseLength,
+            testAfterSession
+        };
+        localStorage.setItem('memorization_settings_v1', JSON.stringify(settings));
+    }, [selectedReader, fromSurah, fromAyah, toSurah, toAyah, rangeRepeat, ayahRepeat, linkedRepeat, pauseLength, testAfterSession]);
+
     const handleStart = () => {
+        if (savedSession) {
+            setShowResumePrompt(true);
+        } else {
+            startNewSession();
+        }
+    };
+
+    const startNewSession = () => {
         onNavigate('quran', {
             isMemorization: true,
             memorizationSettings: {
@@ -45,6 +106,15 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 pauseLength,
                 testAfterSession
             }
+        });
+    };
+
+    const resumeSession = () => {
+        onNavigate('quran', {
+            isMemorization: true,
+            memorizationSettings: savedSession.settings,
+            initialSurah: savedSession.currentAyah.s,
+            initialAyah: savedSession.currentAyah.a
         });
     };
 
@@ -319,6 +389,42 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                             هذه الميزة تساعدك على ربط الآيات ببعضها. عند تفعيلها، سيقوم التطبيق بتشغيل الآية السابقة مرة واحدة قبل البدء بتكرار الآية الحالية، مما يرسخ تسلسل الآيات في ذاكرتك.
                         </p>
                         <button onClick={() => setShowExplanationModal(false)} className="w-full py-3 rounded-xl font-bold text-white" style={{ backgroundColor: theme.btnBg }}>إغلاق</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Resume Session Modal */}
+            {showResumePrompt && savedSession && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+                    <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-modal-enter text-center" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', border: `1px solid var(--card-border)` }}>
+                        <div className="w-16 h-16 bg-emerald-500/20 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Play size={32} />
+                        </div>
+                        <h2 className="text-xl font-bold mb-2">جلسة سابقة متوفرة</h2>
+                        <p className="opacity-70 mb-6 text-sm leading-relaxed">
+                            تم العثور على جلسة تحفيظ سابقة عند سورة {SURAH_NAMES_AR[savedSession.currentAyah.s - 1]} الآية {savedSession.currentAyah.a}.
+                            هل تود الاستمرار من حيث توقفت أم البدء من جديد؟
+                        </p>
+                        <div className="space-y-3">
+                            <button 
+                                onClick={resumeSession}
+                                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md active:scale-95 transition-transform"
+                            >
+                                الاستمرار في الجلسة
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    localStorage.removeItem('memorization_session_v1');
+                                    setSavedSession(null);
+                                    setShowResumePrompt(false);
+                                    startNewSession();
+                                }}
+                                className="w-full py-3 bg-gray-500/10 hover:bg-gray-500/20 rounded-xl font-bold opacity-70 active:scale-95 transition-transform"
+                                style={{ color: 'var(--text-color)' }}
+                            >
+                                البدء من جديد
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
