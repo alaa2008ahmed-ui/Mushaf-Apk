@@ -189,7 +189,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     }, []);
 
     const [readingMode, setReadingMode] = useState<ReadingMode>('mushaf');
-    const modeSuffix = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
+    const contextSuffix = isWirdMode ? '_wird' : (isMemorizationMode ? '_mem' : '_main');
+    const modeSuffix = (readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`) + contextSuffix;
 
     const [isLandscapeUIHidden, setIsLandscapeUIHidden] = useState(() => {
         if (!initialLandscape) return false;
@@ -370,7 +371,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     // Load settings based on orientation and mode
     useEffect(() => {
-        const mode = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
+        const mode = (readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`) + contextSuffix;
         
         const tajweedSetting = localStorage.getItem('use_tajweed_quran' + mode) === 'true';
         setUseTajweed(tajweedSetting);
@@ -858,6 +859,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         if (currentAudioRef.current) {
             currentAudioRef.current.pause();
             currentAudioRef.current.onended = null;
+            currentAudioRef.current = null;
         }
         currentRepeatCountRef.current = 0;
         setIsPlaying(false);
@@ -865,9 +867,12 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         setPlayingAyah(null);
     }, []);
 
-    // Stop audio on unmount and save memorization session if active
+    const isMounted = useRef(true);
     useEffect(() => {
+        isMounted.current = true;
         return () => {
+            isMounted.current = false;
+            stopAudio();
             if (localIsMemorizationMode) {
                 const sessionData = {
                     currentAyah: currentAyahRef.current,
@@ -878,7 +883,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 };
                 localStorage.setItem('memorization_session_v1', JSON.stringify(sessionData));
             }
-            stopAudio();
         };
     }, [localIsMemorizationMode, stopAudio]);
     const showMarkerNotification = useCallback((type: 'juz' | 'quarter' | 'sajda' | 'surah', text: string) => {
@@ -1172,7 +1176,9 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     
         try {
-            await audio.play();
+            if (isMounted.current) {
+                await audio.play();
+            }
             preloadAudioQueue(s, a + 1);
             manageAudioCache(s, a);
         } catch (error) {
