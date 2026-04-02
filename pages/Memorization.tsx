@@ -227,7 +227,10 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                     </button>
                                     <label className="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" className="sr-only peer" checked={linkedRepeat} onChange={(e) => setLinkedRepeat(e.target.checked)} />
-                                        <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all" style={{ backgroundColor: linkedRepeat ? theme.btnBg : undefined }}></div>
+                                        <div 
+                                            className="w-11 h-6 rounded-full peer peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:-translate-x-full peer-checked:after:border-white" 
+                                            style={{ backgroundColor: linkedRepeat ? (theme.btnBg || theme.palette[0]) : '#d1d5db' }}
+                                        ></div>
                                     </label>
                                 </div>
                                 <span className="font-medium" style={{ color: 'var(--text-color)' }}>تفعيل التكرار المترابط</span>
@@ -254,22 +257,25 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                     <div className="flex items-center justify-between p-4 rounded-2xl border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" className="sr-only peer" checked={testAfterSession} onChange={(e) => setTestAfterSession(e.target.checked)} />
-                            <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all" style={{ backgroundColor: testAfterSession ? theme.btnBg : undefined }}></div>
+                            <div 
+                                className="w-11 h-6 rounded-full peer peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:-translate-x-full peer-checked:after:border-white" 
+                                style={{ backgroundColor: testAfterSession ? (theme.btnBg || theme.palette[0]) : '#d1d5db' }}
+                            ></div>
                         </label>
                         <div className="flex items-center gap-2 font-bold text-lg" style={{ color: 'var(--text-color)' }}>
                             <span>اختبار بعد الجلسة</span>
                             <CheckSquare size={24} />
-                            <HelpCircle size={18} style={{ color: theme.btnBg }} />
+                            <HelpCircle size={18} style={{ color: theme.btnBg || theme.palette[0] }} />
                         </div>
                     </div>
                 </main>
 
                 {/* Start Button */}
-                <div className="p-4 border-t shrink-0" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+                <div className="p-4 border-t shrink-0 pb-24" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
                     <button 
                         onClick={handleStart}
-                        className="w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-colors"
-                        style={{ backgroundColor: theme.btnBg, color: theme.btnText }}
+                        className="w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-colors active:scale-95"
+                        style={{ backgroundColor: theme.btnBg || theme.palette[0], color: theme.btnText || '#FFFFFF' }}
                     >
                         ابدأ جلسة التحفيظ
                     </button>

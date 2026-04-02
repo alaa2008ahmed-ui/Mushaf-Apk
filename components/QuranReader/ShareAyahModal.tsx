@@ -234,19 +234,30 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         
         const fullText = `${combinedText}\n\n${combinedExplanation ? combinedExplanation + '\n\n' : ''}${shareText}`;
 
+        const blobToBase64 = (blob: Blob): Promise<string> => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        };
+
         try {
             if (shareType === 'text') {
-                if (navigator.share) {
-                    await navigator.share({
-                        title: 'مشاركة آية',
-                        text: fullText,
-                    });
-                } else {
+                if (Capacitor.isNativePlatform()) {
                     await Share.share({
                         title: 'مشاركة آية',
                         text: fullText,
                         dialogTitle: 'مشاركة عبر'
                     });
+                } else if (navigator.share) {
+                    await navigator.share({
+                        title: 'مشاركة آية',
+                        text: fullText,
+                    });
+                } else {
+                    alert("المشاركة غير مدعومة في هذا المتصفح");
                 }
             } else if (shareType === 'image' && previewRef.current) {
                 const canvas = await html2canvas(previewRef.current, {
@@ -306,39 +317,60 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             } else if (shareType === 'page') {
                 const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
                 const imageUrl = `https://quran.ksu.edu.sa/png_big/${pageNum}.png`;
+                const fileName = `page_${pageNum}.png`;
                 
-                if (Capacitor.isNativePlatform()) {
+                try {
                     const res = await fetch(imageUrl);
+                    if (!res.ok) throw new Error('Failed to fetch image');
                     const blob = await res.blob();
-                    const base64Data = await new Promise<string>((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result as string);
-                        reader.onerror = reject;
-                        reader.readAsDataURL(blob);
-                    });
-                    const fileName = `page_${pageNum}.png`;
-                    const savedFile = await Filesystem.writeFile({
-                        path: fileName,
-                        data: base64Data.split(',')[1],
-                        directory: Directory.Cache,
-                    });
-                    await Share.share({
-                        title: 'مشاركة صفحة',
-                        text: shareText,
-                        url: savedFile.uri,
-                        dialogTitle: 'مشاركة عبر'
-                    });
-                } else {
-                    if (navigator.share) {
-                        await navigator.share({
-                            title: 'مشاركة صفحة',
-                            text: `${shareText}\n${imageUrl}`,
+
+                    if (Capacitor.isNativePlatform()) {
+                        const base64Data = await blobToBase64(blob);
+                        const savedFile = await Filesystem.writeFile({
+                            path: fileName,
+                            data: base64Data.split(',')[1],
+                            directory: Directory.Cache,
                         });
+                        await Share.share({
+                            title: 'مشاركة صفحة',
+                            text: shareText,
+                            url: savedFile.uri,
+                            dialogTitle: 'مشاركة عبر'
+                        });
+                    } else if (navigator.share) {
+                        const file = new File([blob], fileName, { type: 'image/png' });
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                title: 'مشاركة صفحة',
+                                text: shareText,
+                                files: [file],
+                            });
+                        } else {
+                            await navigator.share({
+                                title: 'مشاركة صفحة',
+                                text: `${shareText}\n${imageUrl}`,
+                            });
+                        }
                     } else {
                         await Share.share({
                             title: 'مشاركة صفحة',
                             text: `${shareText}\n${imageUrl}`,
                             dialogTitle: 'مشاركة عبر'
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error sharing page image:', e);
+                    // Fallback to text share if image fetch fails (CORS etc)
+                    if (Capacitor.isNativePlatform()) {
+                        await Share.share({
+                            title: 'مشاركة صفحة',
+                            text: `${shareText}\n${imageUrl}`,
+                            dialogTitle: 'مشاركة عبر'
+                        });
+                    } else if (navigator.share) {
+                        await navigator.share({
+                            title: 'مشاركة صفحة',
+                            text: `${shareText}\n${imageUrl}`,
                         });
                     }
                 }
@@ -354,17 +386,64 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 const audioReader = reader === 'ar.alafasy' ? 'Alafasy_128kbps' : reader;
                 const audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
                 
-                if (navigator.share) {
-                    await navigator.share({
-                        title: 'مشاركة تلاوة',
-                        text: `${shareText}\nاستمع للآية: ${audioUrl}`,
-                    });
-                } else {
-                    await Share.share({
-                        title: 'مشاركة تلاوة',
-                        text: `${shareText}\nاستمع للآية: ${audioUrl}`,
-                        dialogTitle: 'مشاركة عبر'
-                    });
+                // Custom file name: SurahName_AyahRange.mp3
+                const fileName = `${getSurahName(firstAyah.s)}_${firstAyah.a}${firstAyah.a !== lastAyah.a ? '-' + lastAyah.a : ''}.mp3`;
+
+                try {
+                    const res = await fetch(audioUrl);
+                    if (!res.ok) throw new Error('Failed to fetch audio');
+                    const blob = await res.blob();
+
+                    if (Capacitor.isNativePlatform()) {
+                        const base64Data = await blobToBase64(blob);
+                        const savedFile = await Filesystem.writeFile({
+                            path: fileName,
+                            data: base64Data.split(',')[1],
+                            directory: Directory.Cache,
+                        });
+                        await Share.share({
+                            title: 'مشاركة تلاوة',
+                            text: shareText,
+                            url: savedFile.uri,
+                            dialogTitle: 'مشاركة عبر'
+                        });
+                    } else if (navigator.share) {
+                        const file = new File([blob], fileName, { type: 'audio/mpeg' });
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                title: 'مشاركة تلاوة',
+                                text: shareText,
+                                files: [file],
+                            });
+                        } else {
+                            // Fallback to link if file share not supported
+                            await navigator.share({
+                                title: 'مشاركة تلاوة',
+                                text: `${shareText}\nاستمع للآية: ${audioUrl}`,
+                            });
+                        }
+                    } else {
+                        await Share.share({
+                            title: 'مشاركة تلاوة',
+                            text: `${shareText}\nاستمع للآية: ${audioUrl}`,
+                            dialogTitle: 'مشاركة عبر'
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error sharing audio file:', e);
+                    // Fallback to link share
+                    if (Capacitor.isNativePlatform()) {
+                        await Share.share({
+                            title: 'مشاركة تلاوة',
+                            text: `${shareText}\nاستمع للآية: ${audioUrl}`,
+                            dialogTitle: 'مشاركة عبر'
+                        });
+                    } else if (navigator.share) {
+                        await navigator.share({
+                            title: 'مشاركة تلاوة',
+                            text: `${shareText}\nاستمع للآية: ${audioUrl}`,
+                        });
+                    }
                 }
             }
         } catch (error) {
