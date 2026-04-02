@@ -188,7 +188,14 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const [readingMode, setReadingMode] = useState<ReadingMode>('mushaf');
+    const [readingMode, setReadingMode] = useState<ReadingMode>(() => {
+        const saved = localStorage.getItem('last_reading_mode');
+        return (saved as ReadingMode) || 'mushaf';
+    });
+    
+    useEffect(() => {
+        localStorage.setItem('last_reading_mode', readingMode);
+    }, [readingMode]);
     const modeSuffix = localIsMemorizationMode 
         ? `_memorization_${isLandscape ? 'h' : 'v'}` 
         : isWirdMode 
@@ -419,9 +426,15 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
         if (!hasJumpedRef.current && (initialSurah || initialPage || localIsMemorizationMode || isWirdMode)) {
             // Do not jump to lastPos on initial mount if we have initial params
-        } else if (lastPos.s && lastPos.a) {
+        } else {
+            // Prevent scroll listener from overwriting position during transition
+            isJumpingRef.current = true;
+            const targetS = lastPos.s || 1;
+            const targetA = lastPos.a || 1;
+            
             setTimeout(() => {
-                jumpToAyah(lastPos.s, lastPos.a, true);
+                jumpToAyah(targetS, targetA, true);
+                // isJumpingRef.current will be reset to false inside jumpToAyah after another timeout
             }, 100);
         }
 
@@ -890,10 +903,12 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         setPlayingAyah(null);
     }, []);
 
+    const isSessionFinishedRef = useRef(false);
+
     // Stop audio on unmount and save memorization session if active
     useEffect(() => {
         return () => {
-            if (localIsMemorizationMode) {
+            if (localIsMemorizationMode && !isSessionFinishedRef.current) {
                 const sessionData = {
                     currentAyah: currentAyahRef.current,
                     settings: memorizationSettingsRef.current,
@@ -1149,6 +1164,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                                 playAudio(memSettings.fromSurah, memSettings.fromAyah);
                             } else {
                                 rangeRepeatCountRef.current = 0;
+                                isSessionFinishedRef.current = true;
                                 stopAudio();
                                 localStorage.removeItem('memorization_session_v1');
                                 showToast('انتهت جلسة التحفيظ');

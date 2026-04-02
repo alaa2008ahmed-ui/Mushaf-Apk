@@ -214,7 +214,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                                 setFromSurah(newSurah);
                                                 setFromAyah(1);
                                                 setToSurah(newSurah);
-                                                setToAyah(getAyahsCount(newSurah));
+                                                setToAyah(1);
                                                 setSavedSession(null);
                                             }}
                                             className="w-full p-3 border rounded-xl appearance-none outline-none text-center font-medium shadow-sm cursor-pointer"
