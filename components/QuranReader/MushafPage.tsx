@@ -5,7 +5,6 @@ interface MushafPageProps {
     pageNum: number;
     pageData: any[];
     highlightedAyahId: string | null;
-    revealedAyahs?: Set<string>;
     onAyahClick: (surah: number, ayah: number) => void;
     onVerseClick: (surah: number, ayah: number, event: React.MouseEvent) => void;
     onVerseLongPress?: (surah: number, ayah: number) => void;
@@ -58,7 +57,7 @@ const renderTajweedText = (text: string) => {
     return parts;
 };
 
-const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, revealedAyahs, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme }) => {
+const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme }) => {
     const pageRef = useRef<HTMLDivElement | null>(null);
     const longPressTimer = useRef<number | null>(null);
     const isLongPressTriggered = useRef(false);
@@ -191,7 +190,7 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                             )}
                             <span 
                                 id={id} 
-                                className={`ayah-text-block ${highlightedAyahId === id ? 'highlighted' : ''} ${revealedAyahs?.has(`${ayah.sNum}-${ayah.numberInSurah}`) ? 'revealed' : ''} ${isSajdah ? 'ayah-sajdah' : ''}`} 
+                                className={`ayah-text-block ${highlightedAyahId === id ? 'highlighted' : ''} ${isSajdah ? 'ayah-sajdah' : ''}`} 
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (!isLongPressTriggered.current) {

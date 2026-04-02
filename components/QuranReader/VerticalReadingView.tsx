@@ -8,7 +8,6 @@ interface VerticalReadingViewProps {
     settings: any;
     currentTheme: any;
     currentAyah: { s: number; a: number };
-    revealedAyahs?: Set<string>;
     onAyahClick: (s: number, a: number) => void;
     onSettingsChange?: (newSettings: any) => void;
     modeSuffix?: string;
@@ -25,7 +24,6 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     settings,
     currentTheme,
     currentAyah,
-    revealedAyahs,
     onAyahClick,
     onSettingsChange,
     modeSuffix = '_v'
@@ -228,19 +226,18 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
         }
 
         const isHighlighted = currentAyah.s === item.surahNumber && currentAyah.a === item.ayahNumber;
-        const isRevealed = revealedAyahs?.has(`${item.surahNumber}-${item.ayahNumber}`);
         
         return (
             <div className="px-4 py-2">
                 <div 
-                    className={`ayah-item p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2 highlighted' : ''} ${isRevealed ? 'revealed' : ''}`}
+                    className={`ayah-item p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2' : ''}`}
                     style={{ 
                         backgroundColor: isHighlighted ? `${currentTheme.accent}20` : 'transparent',
                         borderColor: isHighlighted ? currentTheme.accent : 'transparent'
                     }}
                     onClick={() => onAyahClick(item.surahNumber, item.ayahNumber)}
                 >
-                    <div className={`ayah-text mb-4 text-right leading-relaxed ${isHighlighted ? 'highlighted' : ''} ${isRevealed ? 'revealed' : ''}`} 
+                    <div className="ayah-text mb-4 text-right leading-relaxed" 
                          style={{ 
                              fontSize: `${settings.fontSize}rem`, 
                              fontFamily: settings.fontFamily,
@@ -269,7 +266,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 </div>
             </div>
         );
-    }, [currentAyah, revealedAyahs, currentTheme, settings, readingMode, onAyahClick, meaningsData, tafseerData, translationData]);
+    }, [currentAyah, currentTheme, settings, readingMode, onAyahClick, meaningsData, tafseerData, translationData]);
 
     if (isLoading) {
         return (

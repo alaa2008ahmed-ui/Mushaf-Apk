@@ -564,17 +564,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const lastScrollTimeRef = useRef<number>(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isAudioLoading, setIsAudioLoading] = useState(false);
-    const [isTestMode, setIsTestMode] = useState(false);
-    const [revealedAyahs, setRevealedAyahs] = useState<Set<string>>(new Set());
-    const isMountedRef = useRef(true);
-
-    useEffect(() => {
-        isMountedRef.current = true;
-        return () => {
-            isMountedRef.current = false;
-        };
-    }, []);
-
     const [playingAyah, setPlayingAyah] = useState<{s: number; a: number} | null>(null);
     
     const [tafseerInfo, setTafseerInfo] = useState({ isOpen: false, s: 0, a: 0, text: '', surahName: '', wasAutoscrolling: false });
@@ -866,7 +855,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const showToast = useCallback((message: string) => setToast({ show: true, message }), []);
     
     const stopAudio = useCallback(() => {
-        playRequestIdRef.current++; // Invalidate any pending play requests
         if (currentAudioRef.current) {
             currentAudioRef.current.pause();
             currentAudioRef.current.onended = null;
@@ -1014,10 +1002,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     useEffect(() => { memorizationSettingsRef.current = localMemorizationSettings; }, [localMemorizationSettings]);
     const rangeRepeatCountRef = useRef(localMemorizationSettings?.rangeRepeatCount || 0);
     const lastLinkedAyahRef = useRef<{s: number, a: number} | null>(null);
-    const playRequestIdRef = useRef(0);
 
     const playAudio = useCallback(async (s: number, a: number, isLinked = false, targetAyah?: {s: number, a: number}) => {
-        const currentRequestId = ++playRequestIdRef.current;
         stopAudio();
         setIsAudioLoading(true);
         setPlayingAyah({ s, a });
@@ -1092,10 +1078,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 }
             } catch (e) { console.warn("Cache API check failed", e); }
     
-            if (currentRequestId !== playRequestIdRef.current || !isMountedRef.current) {
-                return; // Another play request was started or component unmounted
-            }
-
             audio = new Audio(audioSrc);
             audio.preload = 'auto';
             audioCacheRef.current[cacheKey] = audio;
@@ -1124,13 +1106,12 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 const pauseLength = memSettings.pauseLength || 0;
                 
                 const handleNext = () => {
-                    if (!isMountedRef.current) return;
                     if (currentRepeatCountRef.current < maxAyahRepeat - 1) {
                         currentRepeatCountRef.current += 1;
                         audio.currentTime = 0;
                         audio.play().catch(e => {
                             console.error("Repeat playback failed", e);
-                            if (isMountedRef.current) playNextAyahRef.current();
+                            playNextAyahRef.current();
                         });
                     } else {
                         currentRepeatCountRef.current = 0;
@@ -1147,18 +1128,12 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                                 showToast('انتهت جلسة التحفيظ');
                                 if (memSettings.testAfterSession) {
                                     showToast('حان وقت الاختبار!');
-                                    setIsTestMode(true);
-                                    setRevealedAyahs(new Set());
-                                    // Reset to the beginning of the range
-                                    jumpToAyah(memSettings.fromSurah, memSettings.fromAyah, true);
-                                } else {
-                                    // Auto-return to memorization page
-                                    setTimeout(() => {
-                                        if (!isMountedRef.current) return;
-                                        if (onBack) onBack();
-                                        else if (onNavigate) onNavigate('memorization');
-                                    }, 1500);
                                 }
+                                // Auto-return to memorization page
+                                setTimeout(() => {
+                                    if (onBack) onBack();
+                                    else if (onNavigate) onNavigate('memorization');
+                                }, 1500);
                             }
                         } else {
                             playNextAyahRef.current();
@@ -1180,11 +1155,11 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     audio.currentTime = 0;
                     audio.play().catch(e => {
                         console.error("Repeat playback failed", e);
-                        if (isMountedRef.current) playNextAyahRef.current();
+                        playNextAyahRef.current();
                     });
                 } else {
                     currentRepeatCountRef.current = 0;
-                    if (isMountedRef.current) playNextAyahRef.current();
+                    playNextAyahRef.current();
                 }
             }
         };
@@ -1197,12 +1172,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     
         try {
-            if (!isMountedRef.current) return;
             await audio.play();
-            if (!isMountedRef.current) {
-                audio.pause();
-                return;
-            }
             preloadAudioQueue(s, a + 1);
             manageAudioCache(s, a);
         } catch (error) {
@@ -1214,7 +1184,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     }, [settings.reader, settings.ayahRepeatCount, localIsMemorizationMode, stopAudio, preloadAudioQueue, manageAudioCache, showToast, scrollToAyah, onBack, onNavigate]);
 
     const playNextAyah = useCallback(() => {
-        if (!isMountedRef.current) return;
         if (!quranData || !playingAyah) return stopAudio();
         const { s, a } = playingAyah;
         const surah = quranData.surahs[s - 1];
@@ -1291,11 +1260,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         handleAyahClick(s, a);
         setIsFloatingMenuOpen(false);
         
-        if (isTestMode) {
-            setRevealedAyahs(prev => new Set(prev).add(`${s}-${a}`));
-            playAudio(s, a);
-        }
-        
         if (autoScrollStateRef.current.isActive) {
             const newPausedState = !autoScrollStateRef.current.isPaused;
             autoScrollPausedRef.current = newPausedState;
@@ -1309,7 +1273,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         } else if (initialLandscape) {
             setIsLandscapeUIHidden(prev => !prev);
         }
-    }, [handleAyahClick, isTestMode, playAudio, initialLandscape]);
+    }, [handleAyahClick]);
 
     const handleVerseClick = useCallback((s: number, a: number, event: React.MouseEvent) => {
         event.stopPropagation();
@@ -2549,11 +2513,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const handleVerticalAyahClick = useCallback((s: number, a: number) => {
         setCurrentAyah({ s, a });
         setHighlightedAyahId(`${s}-${a}`);
-        if (isTestMode) {
-            setRevealedAyahs(prev => new Set(prev).add(`${s}-${a}`));
-            playAudio(s, a);
-        }
-    }, [isTestMode, playAudio]);
+    }, []);
 
     return (
         <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused ? 'hide-toolbars-autoscroll' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
@@ -2583,27 +2543,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 memorizationSettings={localMemorizationSettings}
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
-            <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className={`flex-grow overflow-y-auto w-full relative touch-pan-y ${isTestMode ? 'test-mode-active' : ''}`}>
-                
-                {/* Test Mode Banner */}
-                {isTestMode && (
-                    <div className="sticky top-0 left-0 right-0 z-[100] p-2 text-center text-white font-bold animate-pulse shadow-md flex justify-between items-center" style={{ backgroundColor: currentTheme.accent }}>
-                        <span>وضع الاختبار: اضغط على الآية لإظهارها أو تشغيلها</span>
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setIsTestMode(false);
-                                setRevealedAyahs(new Set());
-                                if (onBack) onBack();
-                                else if (onNavigate) onNavigate('memorization');
-                            }}
-                            className="px-3 py-1 bg-white text-black rounded-full text-sm font-normal hover:bg-gray-200 transition-colors"
-                        >
-                            إنهاء الاختبار
-                        </button>
-                    </div>
-                )}
-
+            <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
                 {readingMode === 'mushaf' ? (
                     <div id="pages-container" className="full-mushaf-container">
                     {[...new Set(visiblePages)].sort((a: number, b: number) => a - b).map(pageNum => {
@@ -2614,7 +2554,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                                 pageNum={pageNum} 
                                 pageData={getPageData(pageNum)} 
                                 highlightedAyahId={highlightedAyahId} 
-                                revealedAyahs={revealedAyahs}
                                 onAyahClick={handleAyahTextClick} 
                                 onVerseClick={handleVerseClick} 
                                 onVerseLongPress={handleVerseLongPress} 
@@ -2634,7 +2573,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                         settings={settings}
                         currentTheme={currentTheme}
                         currentAyah={currentAyah}
-                        revealedAyahs={revealedAyahs}
                         onAyahClick={handleVerticalAyahClick}
                         onSettingsChange={setSettings}
                         modeSuffix={modeSuffix}
