@@ -3,6 +3,7 @@ export interface Theme {
     name: string;
     bgColor: string | null;
     isOriginal?: boolean;
+    isDark?: boolean;
     textColor: string;
     font: string;
     palette: string[];
@@ -15,6 +16,9 @@ export interface Theme {
     btnText?: string;
     accent?: string;
     highlightText?: string;
+    cardBg?: string;
+    cardBorder?: string;
+    isGlass?: boolean;
 }
 
 export const presetThemes: { [key: string]: Theme } = {

@@ -10,6 +10,7 @@ interface VerticalReadingViewProps {
     currentAyah: { s: number; a: number };
     onAyahClick: (s: number, a: number) => void;
     onSettingsChange?: (newSettings: any) => void;
+    modeSuffix?: string;
 }
 
 // Global cache to ensure instant loading after first fetch
@@ -23,7 +24,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     currentTheme,
     currentAyah,
     onAyahClick,
-    onSettingsChange
+    onSettingsChange,
+    modeSuffix = '_v'
 }) => {
     const [tafseerData, setTafseerData] = useState<any[]>(cachedTafseerData || []);
     const [meaningsData, setMeaningsData] = useState<any[]>(cachedMeaningsData || []);
@@ -63,7 +65,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
     const handleTouchEnd = () => {
         if (initialPinchDistanceRef.current !== null && onSettingsChange) {
-            localStorage.setItem('quran_settings_v', JSON.stringify(settings));
+            localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(settings));
             window.dispatchEvent(new Event('settings-change'));
         }
         initialPinchDistanceRef.current = null;

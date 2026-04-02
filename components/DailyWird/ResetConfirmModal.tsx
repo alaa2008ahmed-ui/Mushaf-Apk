@@ -17,11 +17,11 @@ const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({ isOpen, onClose, 
     const isGolden = theme.name.includes('ذهب') || theme.name.includes('Golden');
     const isEmerald = theme.name.includes('زمرد') || theme.name.includes('Emerald');
 
-    const modalBg = isGlass 
+    const modalBg = theme.isGlass 
         ? (isGolden ? '#451a03' : isEmerald ? '#064E3B' : '#1e293b')
-        : (theme.cardBg || (theme.isOriginal ? '#ffffff' : '#1e293b'));
+        : 'var(--modal-bg)';
     
-    const modalTextColor = isGlass ? '#FFFFFF' : theme.textColor;
+    const modalTextColor = theme.isGlass ? '#FFFFFF' : 'var(--modal-text)';
 
     return (
         <AnimatePresence>
@@ -45,7 +45,8 @@ const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({ isOpen, onClose, 
                         style={{ 
                             backgroundColor: modalBg, 
                             borderColor: theme.cardBorder || theme.palette[0],
-                            fontFamily: theme.font 
+                            fontFamily: theme.font,
+                            color: modalTextColor
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -58,7 +59,7 @@ const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({ isOpen, onClose, 
                                 <RotateCcw size={32} className="animate-spin-slow" />
                             </div>
 
-                            <h3 className="text-xl font-bold mb-2" style={{ color: modalTextColor }}>إعادة تعيين الختمة</h3>
+                            <h3 className="text-xl font-bold mb-2">إعادة تعيين الختمة</h3>
                             
                             <div className="flex items-center gap-2 mb-4 px-3 py-1 rounded-full text-xs font-bold" 
                                  style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
@@ -66,7 +67,7 @@ const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({ isOpen, onClose, 
                                 <span>إجراء لا يمكن التراجع عنه</span>
                             </div>
 
-                            <p className="mb-8 opacity-80 leading-relaxed" style={{ color: modalTextColor }}>
+                            <p className="mb-8 opacity-80 leading-relaxed">
                                 هل أنت متأكد من رغبتك في إعادة تعيين الختمة الحالية؟ سيتم مسح جميع التقدم الذي أحرزته والبدء من جديد.
                             </p>
 
@@ -75,9 +76,9 @@ const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({ isOpen, onClose, 
                                     onClick={onClose} 
                                     className="flex-1 py-3 rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
                                     style={{
-                                        backgroundColor: isGlass ? 'rgba(255, 255, 255, 0.1)' : (theme.isOriginal ? '#f3f4f6' : 'rgba(255, 255, 255, 0.05)'),
+                                        backgroundColor: theme.isGlass ? 'rgba(255, 255, 255, 0.1)' : (theme.isOriginal ? '#f3f4f6' : 'rgba(255, 255, 255, 0.05)'),
                                         color: modalTextColor,
-                                        border: `1px solid ${isGlass ? 'rgba(255, 255, 255, 0.2)' : (theme.cardBorder || '#d1d5db')}`
+                                        border: `1px solid ${theme.isGlass ? 'rgba(255, 255, 255, 0.2)' : (theme.cardBorder || '#d1d5db')}`
                                     }}
                                 >
                                     <X size={18} />

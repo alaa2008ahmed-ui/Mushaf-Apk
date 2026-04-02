@@ -8,10 +8,11 @@ interface SearchModalProps {
     onClose: () => void;
     isLandscape?: boolean;
     initialQuery?: string;
+    readingMode?: string;
 }
 
-const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose, isLandscape, initialQuery }) => {
-    const modeSuffix = isLandscape ? '_h' : '_v';
+const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose, isLandscape, initialQuery, readingMode = 'mushaf' }) => {
+    const modeSuffix = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
     const [query, setQuery] = useState(() => initialQuery || localStorage.getItem('search_query' + modeSuffix) || '');
     const [results, setResults] = useState<any[]>(() => {
         const saved = localStorage.getItem('search_results' + modeSuffix);

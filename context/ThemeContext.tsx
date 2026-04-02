@@ -40,7 +40,21 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         }
     });
 
-    const theme = useMemo(() => presetThemes[settings.themeKey] || presetThemes.default, [settings.themeKey]);
+    const theme = useMemo(() => {
+        const baseTheme = presetThemes[settings.themeKey] || presetThemes.default;
+        const isDark = !baseTheme.bgColor || 
+            ['#191D3A', '#0C0A09', '#000000', '#4C1D95', '#7C2D12', '#1E40AF', '#1E1B4B', '#1C1917', '#0B0F19', '#3E2723', '#450A0A', '#064E3B', '#0F766E', '#155E75', '#581C87', '#0F172A', '#2E1065', '#0B0F19', '#022C22'].includes(baseTheme.bgColor.toUpperCase());
+        const isGlass = settings.themeKey.includes('glass') || settings.themeKey.includes('emerald') || settings.themeKey.includes('crystal');
+        
+        return {
+            ...baseTheme,
+            isDark,
+            isGlass,
+            cardBg: baseTheme.cardBg || (isDark ? '#1e293b' : '#ffffff'),
+            cardBorder: baseTheme.cardBorder || (isDark ? '#334155' : '#e2e8f0'),
+            textColor: baseTheme.textColor || (isDark ? '#ffffff' : '#000000')
+        };
+    }, [settings.themeKey]);
 
     const saveSettings = (newSettings: ThemeSettings) => {
         setSettings(newSettings);
@@ -108,8 +122,7 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         root.style.setProperty('--color-primary', theme.palette[0]);
         root.style.setProperty('--color-secondary', theme.palette[1]);
         
-        const isDark = !theme.bgColor || 
-            ['#191D3A', '#0c0a09', '#000000', '#4c1d95', '#7c2d12', '#1e40af', '#1e1b4b', '#1c1917', '#0b0f19', '#3e2723', '#450a0a', '#064e3b', '#0f766e', '#155e75', '#581c87', '#0F172A', '#2E1065', '#0B0F19', '#022C22'].includes(theme.bgColor.toUpperCase());
+        const isDark = theme.isDark;
 
         // Apply shared colors/styles
         root.style.setProperty('--text-color', theme.textColor);
@@ -125,11 +138,11 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         root.style.setProperty('--bottom-bar-border', barBorderColor);
         root.style.setProperty('--qr-bar-bg', theme.barBg || (isDark ? '#1e293b' : '#ffffff'));
         root.style.setProperty('--qr-bar-border', barBorderColor);
-        root.style.setProperty('--card-bg', isDark ? '#1e293b' : '#ffffff');
-        root.style.setProperty('--card-border', isDark ? '#334155' : '#e2e8f0');
+        root.style.setProperty('--card-bg', theme.cardBg || (isDark ? '#1e293b' : '#ffffff'));
+        root.style.setProperty('--card-border', theme.cardBorder || (isDark ? '#334155' : '#e2e8f0'));
         
         // Modal styles
-        root.style.setProperty('--modal-bg', isDark ? '#1e293b' : '#ffffff');
+        root.style.setProperty('--modal-bg', theme.cardBg || (isDark ? '#1e293b' : '#ffffff'));
         root.style.setProperty('--modal-text', theme.textColor);
         root.style.setProperty('--modal-border', theme.palette[0]);
 

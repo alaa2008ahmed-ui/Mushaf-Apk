@@ -222,7 +222,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   };
 
   const renderSettings = () => (
-    <div className="p-4 rounded-2xl shadow-lg border" style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}>
+    <div className="p-4 rounded-2xl shadow-lg border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
       <h2 className="text-xl font-bold mb-4 text-center">{settings ? 'تعديل الختمة' : 'إعداد ختمة جديدة'}</h2>
       
       <div className="space-y-4">
@@ -233,7 +233,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             value={tempName}
             onChange={(e) => setTempName(e.target.value)}
             className="w-full border rounded-xl p-3 text-right focus:outline-none focus:border-green-500"
-            style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)', borderColor: theme.cardBorder, color: theme.textColor }}
+            style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)', borderColor: 'var(--card-border)', color: 'var(--text-color)' }}
             placeholder="مثال: أحمد، ختمة رمضان..."
           />
         </div>
@@ -271,7 +271,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
               }
             }}
             className="w-full border rounded-xl p-3 text-center text-xl font-bold focus:outline-none focus:border-green-500"
-            style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)', borderColor: theme.cardBorder, color: theme.textColor }}
+            style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)', borderColor: 'var(--card-border)', color: 'var(--text-color)' }}
             placeholder={tempMode === 'days' ? '30' : '20'}
           />
         </div>
@@ -354,7 +354,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     return (
       <div className="space-y-4">
         {/* Progress Bar */}
-        <div className="rounded-2xl p-4 shadow-lg border" style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}>
+        <div className="rounded-2xl p-4 shadow-lg border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
           <div className="flex justify-between mb-1">
             <span className="font-bold text-sm">نسبة الإنجاز</span>
             <span className="font-bold text-green-500 dark:text-green-400 text-sm">{progress.toFixed(1)}%</span>
@@ -373,7 +373,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
 
         {/* Current Wird */}
-        <div className="rounded-2xl p-4 shadow-lg border text-center" style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}>
+        <div className="rounded-2xl p-4 shadow-lg border text-center" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
           <h3 className="text-lg font-bold mb-3 text-emerald-600 dark:text-emerald-400">ورد اليوم ({settings.currentDay})</h3>
           
           <div className="flex justify-center items-center gap-3 mb-4">
@@ -470,7 +470,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         <button 
           onClick={() => setShowProfileMenu(!showProfileMenu)}
           className="w-full p-4 rounded-2xl border flex items-center justify-between transition-all"
-          style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}
+          style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
@@ -559,7 +559,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="w-full max-w-sm p-6 rounded-3xl shadow-2xl text-center border"
-          style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}
+          style={{ backgroundColor: 'var(--modal-bg)', borderColor: 'var(--card-border)', color: 'var(--modal-text)' }}
         >
           <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <Trash2 size={32} />
@@ -594,7 +594,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ fontFamily: theme.font, backgroundColor: theme.background, color: theme.textColor }}>
+    <div className="fixed inset-0 flex flex-col" style={{ fontFamily: theme.font, backgroundColor: theme.bgColor || '#000000', color: 'var(--text-color)' }}>
       <header className="app-top-bar shrink-0 relative z-10">
         <div className="app-top-bar__inner flex items-center justify-center px-4">
           <div className="text-center">
@@ -614,7 +614,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
       </main>
 
-      <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
+      <BottomBar onHomeClick={() => onNavigate('more-menu')} onThemesClick={() => {}} showThemes={false} />
 
       {renderDeleteConfirmModal()}
 
