@@ -84,9 +84,11 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     }, [selectedReader, fromSurah, fromAyah, toSurah, toAyah, rangeRepeat, ayahRepeat, linkedRepeat, pauseLength, testAfterSession]);
 
     const handleStart = () => {
-        if (savedSession) {
+        const session = localStorage.getItem('memorization_session_v1');
+        if (savedSession && session) {
             setShowResumePrompt(true);
         } else {
+            setSavedSession(null);
             startNewSession();
         }
     };
@@ -178,7 +180,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                         <div className="relative">
                             <select 
                                 value={selectedReader}
-                                onChange={(e) => setSelectedReader(e.target.value)}
+                                onChange={(e) => { setSelectedReader(e.target.value); setSavedSession(null); }}
                                 className="w-full p-4 rounded-2xl appearance-none outline-none text-right font-medium text-lg shadow-sm border"
                                 style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
                             >
@@ -208,8 +210,12 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                         <select 
                                             value={fromSurah}
                                             onChange={(e) => {
-                                                setFromSurah(Number(e.target.value));
+                                                const newSurah = Number(e.target.value);
+                                                setFromSurah(newSurah);
                                                 setFromAyah(1);
+                                                setToSurah(newSurah);
+                                                setToAyah(getAyahsCount(newSurah));
+                                                setSavedSession(null);
                                             }}
                                             className="w-full p-3 border rounded-xl appearance-none outline-none text-center font-medium shadow-sm cursor-pointer"
                                             style={{ backgroundColor: theme.bgColor, color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
@@ -225,7 +231,10 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                     <div className="relative">
                                         <select 
                                             value={fromAyah}
-                                            onChange={(e) => setFromAyah(Number(e.target.value))}
+                                            onChange={(e) => {
+                                                setFromAyah(Number(e.target.value));
+                                                setSavedSession(null);
+                                            }}
                                             className="w-full p-3 border rounded-xl appearance-none outline-none text-center font-medium shadow-sm cursor-pointer"
                                             style={{ backgroundColor: theme.bgColor, color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
                                         >
@@ -248,8 +257,10 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                         <select 
                                             value={toSurah}
                                             onChange={(e) => {
-                                                setToSurah(Number(e.target.value));
-                                                setToAyah(1);
+                                                const newSurah = Number(e.target.value);
+                                                setToSurah(newSurah);
+                                                setToAyah(getAyahsCount(newSurah));
+                                                setSavedSession(null);
                                             }}
                                             className="w-full p-3 border rounded-xl appearance-none outline-none text-center font-medium shadow-sm cursor-pointer"
                                             style={{ backgroundColor: theme.bgColor, color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
@@ -265,7 +276,10 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                     <div className="relative">
                                         <select 
                                             value={toAyah}
-                                            onChange={(e) => setToAyah(Number(e.target.value))}
+                                            onChange={(e) => {
+                                                setToAyah(Number(e.target.value));
+                                                setSavedSession(null);
+                                            }}
                                             className="w-full p-3 border rounded-xl appearance-none outline-none text-center font-medium shadow-sm cursor-pointer"
                                             style={{ backgroundColor: theme.bgColor, color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
                                         >
@@ -292,13 +306,13 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                         <div className="rounded-2xl border divide-y" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
                             {/* Range Repeat */}
                             <div className="flex items-center justify-between p-4" style={{ borderColor: 'var(--card-border)' }}>
-                                <NumberPicker value={rangeRepeat} onChange={setRangeRepeat} label="range" />
+                                <NumberPicker value={rangeRepeat} onChange={(v) => { setRangeRepeat(v); setSavedSession(null); }} label="range" />
                                 <span className="font-medium" style={{ color: 'var(--text-color)' }}>تكرار نطاق الآيات</span>
                             </div>
 
                             {/* Ayah Repeat */}
                             <div className="flex items-center justify-between p-4" style={{ borderColor: 'var(--card-border)' }}>
-                                <NumberPicker value={ayahRepeat} onChange={setAyahRepeat} label="ayah" />
+                                <NumberPicker value={ayahRepeat} onChange={(v) => { setAyahRepeat(v); setSavedSession(null); }} label="ayah" />
                                 <span className="font-medium" style={{ color: 'var(--text-color)' }}>تكرار الآية الواحدة</span>
                             </div>
 
@@ -313,7 +327,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                         توضيح <Play size={14} />
                                     </button>
                                     <label className="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" className="sr-only peer" checked={linkedRepeat} onChange={(e) => setLinkedRepeat(e.target.checked)} />
+                                        <input type="checkbox" className="sr-only peer" checked={linkedRepeat} onChange={(e) => { setLinkedRepeat(e.target.checked); setSavedSession(null); }} />
                                         <div 
                                             className={`w-11 h-6 rounded-full peer peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:-translate-x-full peer-checked:after:border-white ${linkedRepeat ? 'bg-emerald-500' : 'bg-gray-400'}`}
                                         ></div>
@@ -324,7 +338,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
 
                             {/* Pause Length */}
                             <div className="flex items-center justify-between p-4" style={{ borderColor: 'var(--card-border)' }}>
-                                <NumberPicker value={pauseLength} onChange={setPauseLength} label="pause" />
+                                <NumberPicker value={pauseLength} onChange={(v) => { setPauseLength(v); setSavedSession(null); }} label="pause" />
                                 <span className="font-medium" style={{ color: 'var(--text-color)' }}>طول السكتة (بقدر الآية)</span>
                             </div>
                         </div>
@@ -333,7 +347,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                     {/* Test After Session */}
                     <div className="flex items-center justify-between p-4 rounded-2xl border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
                         <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" checked={testAfterSession} onChange={(e) => setTestAfterSession(e.target.checked)} />
+                            <input type="checkbox" className="sr-only peer" checked={testAfterSession} onChange={(e) => { setTestAfterSession(e.target.checked); setSavedSession(null); }} />
                             <div 
                                 className={`w-11 h-6 rounded-full peer peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:-translate-x-full peer-checked:after:border-white ${testAfterSession ? 'bg-emerald-500' : 'bg-gray-300'}`}
                             ></div>
