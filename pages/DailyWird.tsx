@@ -612,7 +612,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ fontFamily: theme.font, backgroundColor: theme.bgColor || '#000000', color: 'var(--text-color)' }}>
+    <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, color: 'var(--text-color)' }}>
       <header className="app-top-bar shrink-0 relative z-10">
         <div className="app-top-bar__inner flex items-center justify-center px-4">
           <div className="text-center">

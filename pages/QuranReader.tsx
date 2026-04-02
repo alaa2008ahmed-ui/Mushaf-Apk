@@ -132,8 +132,46 @@ const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentThe
     );
 };
 
+const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentTheme, savedSession }: any) => {
+    if (!isOpen || !savedSession) return null;
+    return (
+        <div className="fixed inset-0 z-[400] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+            <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center animate-modal-enter"
+                 style={{ backgroundColor: 'var(--modal-bg)', color: 'var(--modal-text)', border: `2px solid var(--color-primary)`, fontFamily: currentTheme?.font }}>
+                <div className="w-16 h-16 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i className="fa-solid fa-play text-3xl"></i>
+                </div>
+                <h2 className="text-xl font-bold mb-2">جلسة سابقة متوفرة</h2>
+                <p className="opacity-70 mb-6 text-sm">
+                    تم العثور على جلسة تحفيظ سابقة عند سورة {SURAH_NAMES_AR[savedSession.currentAyah.s - 1]} الآية {savedSession.currentAyah.a}.
+                    هل تود الاستمرار من حيث توقفت أم البدء من جديد؟
+                </p>
+                <div className="space-y-3">
+                    <button 
+                        onClick={onResume}
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-md active:scale-95 transition-transform"
+                    >
+                        الاستمرار في الجلسة
+                    </button>
+                    <button 
+                        onClick={onStartNew}
+                        className="w-full py-3 bg-gray-500/10 hover:bg-gray-500/20 rounded-xl font-bold opacity-70 active:scale-95 transition-transform"
+                        style={{ color: 'var(--modal-text)' }}
+                    >
+                        البدء من جديد
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
+    const [showResumeModal, setShowResumeModal] = useState(false);
+    const [savedSession, setSavedSession] = useState<any>(null);
+    const [localIsMemorizationMode, setLocalIsMemorizationMode] = useState(isMemorizationMode);
+    const [localMemorizationSettings, setLocalMemorizationSettings] = useState(memorizationSettings);
     
     // Auto-detect orientation
     useEffect(() => {
@@ -147,8 +185,23 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         window.addEventListener('resize', handleResize);
         handleResize(); // Initial check
         
+        // Check for saved memorization session if not already in one
+        if (!isMemorizationMode) {
+            const saved = localStorage.getItem('memorization_session_v1');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    const isRecent = Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000;
+                    if (isRecent) {
+                        setSavedSession(parsed);
+                        setShowResumeModal(true);
+                    }
+                } catch (e) {}
+            }
+        }
+        
         return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    }, [isMemorizationMode]);
 
     const [readingMode, setReadingMode] = useState<ReadingMode>('mushaf');
     const modeSuffix = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
@@ -165,8 +218,15 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
     }, [isLandscapeUIHidden, modeSuffix]);
 
-    const [useTajweed, setUseTajweed] = useState(() => isMemorizationMode ? true : localStorage.getItem('use_tajweed_quran' + modeSuffix) === 'true');
+    const [useTajweed, setUseTajweed] = useState(() => localIsMemorizationMode ? true : localStorage.getItem('use_tajweed_quran' + modeSuffix) === 'true');
     const [quranData, setQuranData] = useState<any>(useTajweed ? quranTajweedJson.data : quranUthmaniJson.data);
+
+    useEffect(() => {
+        if (localIsMemorizationMode) {
+            setUseTajweed(true);
+            setQuranData(quranTajweedJson.data);
+        }
+    }, [localIsMemorizationMode]);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStatus, setLoadingStatus] = useState('');
     const [loadingProgress, setLoadingProgress] = useState(100);
@@ -742,7 +802,31 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     
     const audioCacheRef = useRef<Record<string, HTMLAudioElement>>({});
     const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-    const currentRepeatCountRef = useRef(memorizationSettings?.currentRepeatCount || 0);
+    const handleResumeSession = () => {
+        if (savedSession) {
+            setLocalIsMemorizationMode(true);
+            const settings = {
+                ...savedSession.settings,
+                rangeRepeatCount: savedSession.rangeRepeatCount,
+                currentRepeatCount: savedSession.currentRepeatCount
+            };
+            setLocalMemorizationSettings(settings);
+            memorizationSettingsRef.current = settings;
+            
+            jumpToAyah(savedSession.currentAyah.s, savedSession.currentAyah.a, true);
+            setTimeout(() => {
+                playAudio(savedSession.currentAyah.s, savedSession.currentAyah.a);
+            }, 500);
+        }
+        setShowResumeModal(false);
+    };
+
+    const handleStartNewFromResume = () => {
+        localStorage.removeItem('memorization_session_v1');
+        setShowResumeModal(false);
+    };
+
+    const currentRepeatCountRef = useRef(localMemorizationSettings?.currentRepeatCount || 0);
     const ayahRepeatCountRef = useRef(settings.ayahRepeatCount || 1);
 
     useEffect(() => {
@@ -797,7 +881,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     // Stop audio on unmount and save memorization session if active
     useEffect(() => {
         return () => {
-            if (isMemorizationMode) {
+            if (localIsMemorizationMode) {
                 const sessionData = {
                     currentAyah: currentAyahRef.current,
                     settings: memorizationSettingsRef.current,
@@ -809,7 +893,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             }
             stopAudio();
         };
-    }, [isMemorizationMode, stopAudio]);
+    }, [localIsMemorizationMode, stopAudio]);
     const showMarkerNotification = useCallback((type: 'juz' | 'quarter' | 'sajda' | 'surah', text: string) => {
         setMarkerNotification({ show: true, type, text });
         setTimeout(() => setMarkerNotification(prev => ({ ...prev, show: false })), 2000);
@@ -892,7 +976,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         const surah = quranData.surahs[s - 1];
         if (!surah) return;
 
-        const reader = isMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader;
+        const reader = localIsMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader;
 
         for (let i = 0; i < 10; i++) {
             const ayahNum = startAyah + i;
@@ -945,9 +1029,9 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
     }, []);
 
-    const memorizationSettingsRef = useRef(memorizationSettings);
-    useEffect(() => { memorizationSettingsRef.current = memorizationSettings; }, [memorizationSettings]);
-    const rangeRepeatCountRef = useRef(memorizationSettings?.rangeRepeatCount || 0);
+    const memorizationSettingsRef = useRef(localMemorizationSettings);
+    useEffect(() => { memorizationSettingsRef.current = localMemorizationSettings; }, [localMemorizationSettings]);
+    const rangeRepeatCountRef = useRef(localMemorizationSettings?.rangeRepeatCount || 0);
 
     const playAudio = useCallback(async (s: number, a: number) => {
         stopAudio();
@@ -969,7 +1053,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         } else {
             const surahStr = String(s).padStart(3, '0');
             const ayahStr = String(a).padStart(3, '0');
-            const reader = isMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader;
+            const reader = localIsMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader;
             const audioUrl = `https://everyayah.com/data/${reader}/${surahStr}${ayahStr}.mp3`;
             let audioSrc = audioUrl;
 
@@ -999,7 +1083,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         };
         audio.onwaiting = () => setIsAudioLoading(true);
         audio.onended = () => {
-            if (isMemorizationMode && memorizationSettingsRef.current) {
+            if (localIsMemorizationMode && memorizationSettingsRef.current) {
                 const memSettings = memorizationSettingsRef.current;
                 const maxAyahRepeat = memSettings.ayahRepeat || 1;
                 const pauseLength = memSettings.pauseLength || 0;
@@ -1080,7 +1164,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             delete audioCacheRef.current[cacheKey];
             window.dispatchEvent(new CustomEvent('voice-control-resume'));
         }
-    }, [settings.reader, settings.ayahRepeatCount, isMemorizationMode, stopAudio, preloadAudioQueue, manageAudioCache, showToast, scrollToAyah, onBack, onNavigate]);
+    }, [settings.reader, settings.ayahRepeatCount, localIsMemorizationMode, stopAudio, preloadAudioQueue, manageAudioCache, showToast, scrollToAyah, onBack, onNavigate]);
 
     const closeModal = useCallback((modalName: string) => {
         setActiveModals(p => p.filter(m => m !== modalName));
@@ -1264,14 +1348,14 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         if (isPlaying || isAudioLoading) stopAudio();
         else if (currentAyah) {
             playAudio(currentAyah.s, currentAyah.a);
-            const currentReaderId = isMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader;
-            const readerList = isMemorizationMode ? MEMORIZATION_READERS : READERS;
+            const currentReaderId = localIsMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader;
+            const readerList = localIsMemorizationMode ? MEMORIZATION_READERS : READERS;
             const reciterName = readerList.find(r => r.id === currentReaderId)?.name || 'القارئ';
             setReciterToast({ show: true, name: reciterName });
             setTimeout(() => setReciterToast(prev => ({ ...prev, show: false })), 2000);
         }
         else showToast('الرجاء اختيار آية للبدء');
-    }, [isPlaying, isAudioLoading, currentAyah, playAudio, stopAudio, settings.reader, isMemorizationMode]);
+    }, [isPlaying, isAudioLoading, currentAyah, playAudio, stopAudio, settings.reader, localIsMemorizationMode]);
 
     const playButtonTimerRef = useRef<number | null>(null);
     const handlePlayButtonPointerDown = () => {
@@ -1704,10 +1788,10 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         if (hasJumpedRef.current) return;
         hasJumpedRef.current = true;
         
-        if (isMemorizationMode && memorizationSettings) {
+        if (localIsMemorizationMode && localMemorizationSettings) {
             setTimeout(() => {
-                const startS = initialSurah || memorizationSettings.fromSurah;
-                const startA = initialAyah || memorizationSettings.fromAyah;
+                const startS = initialSurah || localMemorizationSettings.fromSurah;
+                const startA = initialAyah || localMemorizationSettings.fromAyah;
                 jumpToAyah(startS, startA, true);
                 setTimeout(() => {
                     playAudio(startS, startA);
@@ -1728,7 +1812,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 jumpToAyah(lastPos.s || 1, lastPos.a || 1, true);
             }, 100);
         }
-    }, [jumpToAyah, jumpToPage, initialLandscape, initialSurah, initialAyah, initialPage, isMemorizationMode, memorizationSettings, playAudio]);
+    }, [jumpToAyah, jumpToPage, initialLandscape, initialSurah, initialAyah, initialPage, localIsMemorizationMode, localMemorizationSettings, playAudio]);
 
     const handleVoiceCommand = useCallback((text: string) => {
         console.log('QuranReader - Voice Command:', text);
@@ -2410,8 +2494,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 reciterToast={reciterToast}
                 readingMode={readingMode}
                 setReadingMode={setReadingMode}
-                isMemorizationMode={isMemorizationMode}
-                memorizationSettings={memorizationSettings}
+                isMemorizationMode={localIsMemorizationMode}
+                memorizationSettings={localMemorizationSettings}
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
@@ -2561,8 +2645,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 showToast('تم تغيير سرعة التمرير');
                 closeModal('scroll-speed-modal');
             }} />}
-            {activeModals.includes('reciter-modal') && <ReciterSelectModal onClose={() => closeModal('reciter-modal')} currentReader={isMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader} isLandscape={isLandscape} readersList={isMemorizationMode ? MEMORIZATION_READERS : READERS} onSelect={(id) => {
-                if (isMemorizationMode && memorizationSettingsRef.current) {
+            {activeModals.includes('reciter-modal') && <ReciterSelectModal onClose={() => closeModal('reciter-modal')} currentReader={localIsMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader} isLandscape={isLandscape} readersList={localIsMemorizationMode ? MEMORIZATION_READERS : READERS} onSelect={(id) => {
+                if (localIsMemorizationMode && memorizationSettingsRef.current) {
                     memorizationSettingsRef.current.reader = id;
                 }
                 const newSettings = { ...settings, reader: id };
@@ -2645,6 +2729,14 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 currentType={useTajweed ? 'tajweed' : 'uthmani'}
             />
             <SajdahCardModal info={sajdahCardInfo} onClose={handleCloseSajdahCard} isLandscape={isLandscape} />
+            <ResumeSessionModal 
+                isOpen={showResumeModal} 
+                onClose={() => setShowResumeModal(false)} 
+                onResume={handleResumeSession} 
+                onStartNew={handleStartNewFromResume} 
+                currentTheme={currentTheme} 
+                savedSession={savedSession} 
+            />
             <Toast message={toast.message} show={toast.show} onClose={handleToastClose} />
             <TutorialOverlay tutorialId="quran-reader-tutorial" steps={quranTutorialSteps} />
         </div>
