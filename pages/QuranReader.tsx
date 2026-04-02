@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, FC } from 'react';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import './QuranReader.css'; 
-import { ReadingMode, JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, DEFAULT_SETTINGS, FONTS, SURAH_NAMES_AR } from '../components/QuranReader/constants';
+import { ReadingMode, JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, MEMORIZATION_READERS, DEFAULT_SETTINGS, FONTS, SURAH_NAMES_AR } from '../components/QuranReader/constants';
 import SearchModal from '../components/QuranReader/SearchModal';
 import ThemesModal from '../components/QuranReader/ThemesModal';
 import SettingsModal from '../components/QuranReader/SettingsModal';
@@ -223,7 +223,13 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             }
         }
     }, [currentAyah, wirdEndPage, quranData, hasShownWirdComplete, isWirdMode]);
+    const isInitialMountRef = useRef(true);
+
     useEffect(() => {
+        if (isInitialMountRef.current) {
+            isInitialMountRef.current = false;
+            return;
+        }
         if (isWirdMode && quranData) {
             const ayah = quranData.surahs[currentAyah.s - 1]?.ayahs[currentAyah.a - 1];
             if (ayah) {
@@ -1241,12 +1247,14 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         if (isPlaying || isAudioLoading) stopAudio();
         else if (currentAyah) {
             playAudio(currentAyah.s, currentAyah.a);
-            const reciterName = READERS.find(r => r.id === settings.reader)?.name || 'القارئ';
+            const currentReaderId = isMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader;
+            const readerList = isMemorizationMode ? MEMORIZATION_READERS : READERS;
+            const reciterName = readerList.find(r => r.id === currentReaderId)?.name || 'القارئ';
             setReciterToast({ show: true, name: reciterName });
             setTimeout(() => setReciterToast(prev => ({ ...prev, show: false })), 2000);
         }
         else showToast('الرجاء اختيار آية للبدء');
-    }, [isPlaying, isAudioLoading, currentAyah, playAudio, stopAudio, settings.reader]);
+    }, [isPlaying, isAudioLoading, currentAyah, playAudio, stopAudio, settings.reader, isMemorizationMode]);
 
     const playButtonTimerRef = useRef<number | null>(null);
     const handlePlayButtonPointerDown = () => {
@@ -1686,13 +1694,13 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     playAudio(memorizationSettings.fromSurah, memorizationSettings.fromAyah);
                 }, 500);
             }, 100);
-        } else if (initialPage) {
-            setTimeout(() => {
-                jumpToPage(initialPage, true);
-            }, 100);
         } else if (initialSurah && initialAyah) {
             setTimeout(() => {
                 jumpToAyah(initialSurah, initialAyah, true);
+            }, 100);
+        } else if (initialPage) {
+            setTimeout(() => {
+                jumpToPage(initialPage, true);
             }, 100);
         } else {
             const key = initialLandscape ? 'last_pos_h' : 'last_pos_v';
@@ -2532,7 +2540,10 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 showToast('تم تغيير سرعة التمرير');
                 closeModal('scroll-speed-modal');
             }} />}
-            {activeModals.includes('reciter-modal') && <ReciterSelectModal onClose={() => closeModal('reciter-modal')} currentReader={settings.reader} isLandscape={isLandscape} onSelect={(id) => {
+            {activeModals.includes('reciter-modal') && <ReciterSelectModal onClose={() => closeModal('reciter-modal')} currentReader={isMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader} isLandscape={isLandscape} readersList={isMemorizationMode ? MEMORIZATION_READERS : READERS} onSelect={(id) => {
+                if (isMemorizationMode && memorizationSettingsRef.current) {
+                    memorizationSettingsRef.current.reader = id;
+                }
                 const newSettings = { ...settings, reader: id };
                 setSettings(newSettings);
                 localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));

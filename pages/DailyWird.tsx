@@ -206,6 +206,8 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       ...settings,
       completedDays: newCompleted,
       currentDay: settings.currentDay < getTotalDays() ? settings.currentDay + 1 : settings.currentDay,
+      lastPage: undefined,
+      lastAyah: undefined
     };
     const newProfiles = allSettings.map(p => p.id === settings.id ? newWird : p);
     saveAllSettings(newProfiles, settings.id);
@@ -223,10 +225,10 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
 
   const handleOpenQuran = (page: number, initialAyah?: { s: number; a: number }) => {
     onNavigate('quran', { 
-      initialPage: page, 
-      initialSurah: initialAyah?.s, 
-      initialAyah: initialAyah?.a, 
-      isWirdMode: true 
+      page: page, 
+      surah: initialAyah?.s, 
+      ayah: initialAyah?.a, 
+      isWird: true 
     });
   };
 
@@ -408,26 +410,20 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
 
           <div className="flex flex-col gap-2">
             {hasPages && (
-              <>
-                {canContinue && (
-                  <button 
-                    onClick={() => handleOpenQuran(settings.lastPage!, settings.lastAyah)}
-                    className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md"
-                    style={{ backgroundColor: secondaryColor, color: btnTextColor, border: theme.btnBorder || 'none' }}
-                  >
-                    <Play size={20} />
-                    تكملة الورد (صفحة {settings.lastPage})
-                  </button>
-                )}
-                <button 
-                  onClick={() => handleOpenQuran(startPage)}
-                  className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md"
-                  style={{ backgroundColor: primaryColor, color: btnTextColor, border: theme.btnBorder || 'none' }}
-                >
-                  <BookOpen size={20} />
-                  {canContinue ? 'البدء من بداية ورد اليوم' : 'افتح المصحف للقراءة'}
-                </button>
-              </>
+              <button 
+                onClick={() => {
+                  if (canContinue) {
+                    handleOpenQuran(settings.lastPage!, settings.lastAyah);
+                  } else {
+                    handleOpenQuran(startPage);
+                  }
+                }}
+                className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md"
+                style={{ backgroundColor: primaryColor, color: btnTextColor, border: theme.btnBorder || 'none' }}
+              >
+                <BookOpen size={20} />
+                {canContinue ? `تكملة الورد (صفحة ${settings.lastPage})` : 'افتح المصحف للقراءة'}
+              </button>
             )}
 
             {!isCompleted ? (
@@ -636,7 +632,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
       </main>
 
-      <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
+      <BottomBar onHomeClick={() => onNavigate('more-menu')} onThemesClick={() => {}} showThemes={false} />
 
       {renderDeleteConfirmModal()}
 

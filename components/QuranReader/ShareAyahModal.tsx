@@ -204,16 +204,50 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const handleShare = async () => {
         if (isSharing) return;
         setIsSharing(true);
-        const shareText = `ايات من القران الكريم . بواسطة : مصحف احمد وليلى`;
+        
+        let shareText = `${surahInfo}\nايات من القران الكريم . بواسطة : مصحف احمد وليلى`;
+        
+        if (shareType === 'page') {
+            const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
+            
+            // Find all ayahs in this page
+            const pageAyahs: {s: number, a: number}[] = [];
+            quranData.surahs.forEach((surah: any, sIdx: number) => {
+                surah.ayahs.forEach((ayah: any) => {
+                    if (ayah.page === pageNum) {
+                        pageAyahs.push({ s: sIdx + 1, a: ayah.numberInSurah });
+                    }
+                });
+            });
+            
+            let pageSurahInfo = surahInfo;
+            if (pageAyahs.length > 0) {
+                const firstPageAyah = pageAyahs[0];
+                const lastPageAyah = pageAyahs[pageAyahs.length - 1];
+                pageSurahInfo = firstPageAyah.s === lastPageAyah.s 
+                    ? `سورة ${getSurahName(firstPageAyah.s)} - آية ${toArabic(firstPageAyah.a)} إلى آية ${toArabic(lastPageAyah.a)}`
+                    : `سورة ${getSurahName(firstPageAyah.s)} آية ${toArabic(firstPageAyah.a)} - سورة ${getSurahName(lastPageAyah.s)} آية ${toArabic(lastPageAyah.a)}`;
+            }
+            
+            shareText = `صفحة ${pageNum} - ${pageSurahInfo}\nايات من القران الكريم . بواسطة : مصحف احمد وليلى`;
+        }
+        
         const fullText = `${combinedText}\n\n${combinedExplanation ? combinedExplanation + '\n\n' : ''}${shareText}`;
 
         try {
             if (shareType === 'text') {
-                await Share.share({
-                    title: 'مشاركة آية',
-                    text: fullText,
-                    dialogTitle: 'مشاركة عبر'
-                });
+                if (navigator.share) {
+                    await navigator.share({
+                        title: 'مشاركة آية',
+                        text: fullText,
+                    });
+                } else {
+                    await Share.share({
+                        title: 'مشاركة آية',
+                        text: fullText,
+                        dialogTitle: 'مشاركة عبر'
+                    });
+                }
             } else if (shareType === 'image' && previewRef.current) {
                 const canvas = await html2canvas(previewRef.current, {
                     scale: 2.5,
@@ -270,37 +304,43 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     alert("المشاركة غير مدعومة في هذا المتصفح");
                 }
             } else if (shareType === 'page') {
-                const pageNum = quranData.surahs[firstAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === firstAyah.a)?.page || 1;
+                const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
                 const imageUrl = `https://quran.ksu.edu.sa/png_big/${pageNum}.png`;
                 
                 if (Capacitor.isNativePlatform()) {
                     const res = await fetch(imageUrl);
                     const blob = await res.blob();
-                    const reader = new FileReader();
-                    reader.readAsDataURL(blob);
-                    reader.onloadend = async () => {
-                        const base64data = reader.result as string;
-                        const fileName = `page_${pageNum}.png`;
-                        const savedFile = await Filesystem.writeFile({
-                            path: fileName,
-                            data: base64data.split(',')[1],
-                            directory: Directory.Cache,
-                        });
-                        await Share.share({
-                            title: 'مشاركة صفحة',
-                            text: shareText,
-                            url: savedFile.uri,
-                            dialogTitle: 'مشاركة عبر'
-                        });
-                        setIsSharing(false);
-                    };
-                    return; // Wait for onloadend
-                } else {
+                    const base64Data = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                    const fileName = `page_${pageNum}.png`;
+                    const savedFile = await Filesystem.writeFile({
+                        path: fileName,
+                        data: base64Data.split(',')[1],
+                        directory: Directory.Cache,
+                    });
                     await Share.share({
                         title: 'مشاركة صفحة',
-                        text: `${shareText}\n${imageUrl}`,
+                        text: shareText,
+                        url: savedFile.uri,
                         dialogTitle: 'مشاركة عبر'
                     });
+                } else {
+                    if (navigator.share) {
+                        await navigator.share({
+                            title: 'مشاركة صفحة',
+                            text: `${shareText}\n${imageUrl}`,
+                        });
+                    } else {
+                        await Share.share({
+                            title: 'مشاركة صفحة',
+                            text: `${shareText}\n${imageUrl}`,
+                            dialogTitle: 'مشاركة عبر'
+                        });
+                    }
                 }
             } else if (shareType === 'audio') {
                 let reader = 'ar.alafasy';
@@ -314,11 +354,18 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 const audioReader = reader === 'ar.alafasy' ? 'Alafasy_128kbps' : reader;
                 const audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
                 
-                await Share.share({
-                    title: 'مشاركة تلاوة',
-                    text: `${shareText}\nاستمع للآية: ${audioUrl}`,
-                    dialogTitle: 'مشاركة عبر'
-                });
+                if (navigator.share) {
+                    await navigator.share({
+                        title: 'مشاركة تلاوة',
+                        text: `${shareText}\nاستمع للآية: ${audioUrl}`,
+                    });
+                } else {
+                    await Share.share({
+                        title: 'مشاركة تلاوة',
+                        text: `${shareText}\nاستمع للآية: ${audioUrl}`,
+                        dialogTitle: 'مشاركة عبر'
+                    });
+                }
             }
         } catch (error) {
             console.error('Error sharing:', error);
@@ -358,36 +405,38 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         </div>
 
                         {/* Range Selector */}
-                        <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 p-1.5 rounded-xl gap-3">
-                            <div className="flex-1">
-                                <label className="block text-[9px] text-center text-gray-500 dark:text-gray-400 mb-0.5">من</label>
-                                <select 
-                                    value={fromAyah} 
-                                    onChange={(e) => setFromAyah(Number(e.target.value))}
-                                    className="w-full p-1 text-[10px] border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-center outline-none"
-                                >
-                                    {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
-                                        <option key={ay.numberInSurah} value={ay.numberInSurah}>
-                                            {getSurahName(currentAyah.s)} {ay.numberInSurah}
-                                        </option>
-                                    ))}
-                                </select>
+                        {shareType !== 'page' && (
+                            <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 p-1.5 rounded-xl gap-3">
+                                <div className="flex-1">
+                                    <label className="block text-[9px] text-center text-gray-500 dark:text-gray-400 mb-0.5">من</label>
+                                    <select 
+                                        value={fromAyah} 
+                                        onChange={(e) => setFromAyah(Number(e.target.value))}
+                                        className="w-full p-1 text-[10px] border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-center outline-none"
+                                    >
+                                        {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
+                                            <option key={ay.numberInSurah} value={ay.numberInSurah}>
+                                                {getSurahName(currentAyah.s)} {ay.numberInSurah}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-[9px] text-center text-gray-500 dark:text-gray-400 mb-0.5">إلى</label>
+                                    <select 
+                                        value={toAyah} 
+                                        onChange={(e) => setToAyah(Number(e.target.value))}
+                                        className="w-full p-1 text-[10px] border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-center outline-none"
+                                    >
+                                        {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
+                                            <option key={ay.numberInSurah} value={ay.numberInSurah}>
+                                                {getSurahName(currentAyah.s)} {ay.numberInSurah}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <label className="block text-[9px] text-center text-gray-500 dark:text-gray-400 mb-0.5">إلى</label>
-                                <select 
-                                    value={toAyah} 
-                                    onChange={(e) => setToAyah(Number(e.target.value))}
-                                    className="w-full p-1 text-[10px] border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-center outline-none"
-                                >
-                                    {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
-                                        <option key={ay.numberInSurah} value={ay.numberInSurah}>
-                                            {getSurahName(currentAyah.s)} {ay.numberInSurah}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
+                        )}
 
                         {/* Preview Area (Only for Image) */}
                         {shareType === 'image' && (

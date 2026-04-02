@@ -37,6 +37,19 @@ export const THEMES = {
     pearl_white: { name: "لؤلؤي", bg: "#fafafa", text: "#3f3f46", font: "var(--font-amiri)", barBg: "#f4f4f5", barText: "#27272a", barBorder: "#e4e4e7", btnBg: "#52525b", btnText: "#ffffff", accent: "#52525b", accentText: "#ffffff", modalBg: "#fafafa", modalText: "#3f3f46", headerBg: "#f4f4f5", headerText: "#27272a", cardBg: "#ffffff", cardText: "#3f3f46", cardBorder: "#e4e4e7", sajdah: "#3f3f46", highlightText: "#3f3f46" },
     quranic_gold: { name: "مذهب", bg: "#fffdf0", text: "#451a03", font: "var(--font-gulzar)", barBg: "#fef3c7", barText: "#78350f", barBorder: "#fde68a", btnBg: "#d97706", btnText: "#ffffff", accent: "#d97706", accentText: "#ffffff", modalBg: "#fffdf0", modalText: "#451a03", headerBg: "#fef3c7", headerText: "#78350f", cardBg: "#ffffff", cardText: "#451a03", cardBorder: "#fde68a", sajdah: "#b45309", highlightText: "#b45309" }
 };
+export const MEMORIZATION_READERS = [
+    { id: 'Alafasy_128kbps', name: 'مشاري العفاسي' },
+    { id: 'Abdul_Basit_Mujawwad_128kbps', name: 'عبد الباسط عبد الصمد' },
+    { id: 'Husary_128kbps', name: 'محمود خليل الحصري' },
+    { id: 'Minshawy_Teacher_128kbps', name: 'محمد صديق المنشاوي (معلم)' },
+    { id: 'MaherAlMuaiqly128kbps', name: 'ماهر المعيقلي' },
+    { id: 'Hudhaify_128kbps', name: 'علي الحذيفي' },
+    { id: 'Abu_Bakr_Ash-Shaatree_128kbps', name: 'أبو بكر الشاطري' },
+    { id: 'Muhammad_Ayyoub_128kbps', name: 'محمد أيوب' },
+    { id: 'Saood_ash-Shuraym_128kbps', name: 'سعود الشريم' },
+    { id: 'Abdurrahmaan_As-Sudais_192kbps', name: 'عبد الرحمن السديس' }
+];
+
 export const READERS = [
     { id: 'Abu_Bakr_Ash-Shaatree_128kbps', name: 'أبو بكر الشاطري' },
     { id: 'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net', name: 'أحمد بن علي العجمي' },
