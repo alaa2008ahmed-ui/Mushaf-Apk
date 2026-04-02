@@ -8,10 +8,11 @@ interface SettingsModalProps {
     onOpenModal: (modalName: string) => void;
     showToast: (msg: string) => void;
     isLandscape: boolean;
+    readingMode: string;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, showToast, isLandscape }) => {
-    const modeSuffix = isLandscape ? '_h' : '_v';
+const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, showToast, isLandscape, readingMode }) => {
+    const modeSuffix = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
     const [isClosing, setIsClosing] = useState(false);
 
     const handleClose = () => {

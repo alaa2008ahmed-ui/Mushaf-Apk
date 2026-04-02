@@ -4,7 +4,7 @@ import { toArabic, SURAH_INFO, SURAH_NAMES_AR } from './constants';
 
 interface VerticalReadingViewProps {
     quranData: any;
-    readingMode: 'tafseer' | 'meanings';
+    readingMode: 'tafseer' | 'meanings' | 'translation';
     settings: any;
     currentTheme: any;
     currentAyah: { s: number; a: number };
@@ -16,6 +16,7 @@ interface VerticalReadingViewProps {
 // Global cache to ensure instant loading after first fetch
 let cachedTafseerData: any[] | null = null;
 let cachedMeaningsData: any[] | null = null;
+let cachedTranslationData: any[] | null = null;
 
 const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     quranData,
@@ -29,9 +30,11 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 }) => {
     const [tafseerData, setTafseerData] = useState<any[]>(cachedTafseerData || []);
     const [meaningsData, setMeaningsData] = useState<any[]>(cachedMeaningsData || []);
+    const [translationData, setTranslationData] = useState<any[]>(cachedTranslationData || []);
     const [isLoading, setIsLoading] = useState(() => {
         if (readingMode === 'tafseer') return !cachedTafseerData;
         if (readingMode === 'meanings') return !cachedMeaningsData;
+        if (readingMode === 'translation') return !cachedTranslationData;
         return true;
     });
     const virtuosoRef = useRef<VirtuosoHandle>(null);
@@ -101,8 +104,22 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
             }
         };
 
+        const fetchTranslation = async () => {
+            if (cachedTranslationData) return;
+            try {
+                const res = await fetch('/quran_en.json');
+                const data = await res.json();
+                cachedTranslationData = data;
+                setTranslationData(cachedTranslationData);
+                if (readingMode === 'translation') setIsLoading(false);
+            } catch (error) {
+                console.error('Error fetching translation data:', error);
+            }
+        };
+
         fetchTafseer();
         fetchMeanings();
+        fetchTranslation();
     }, [readingMode]);
 
     // Flatten the Quran data into a single list of items (headers and ayahs)
@@ -160,6 +177,10 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
     const getTafseer = (s: number, a: number) => {
         return tafseerData[s - 1]?.ayahs[a - 1]?.text;
+    };
+
+    const getTranslation = (s: number, a: number) => {
+        return translationData[s - 1]?.verses[a - 1]?.translation;
     };
 
     const renderItem = useCallback((index: number, item: any) => {
@@ -220,8 +241,15 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     <div className="divider h-px w-full my-4 opacity-20" style={{ backgroundColor: currentTheme.text }}></div>
                     
                     <div className="explanation-text text-right opacity-90 leading-relaxed"
-                         style={{ fontSize: `${settings.fontSize * 0.8}rem`, color: currentTheme.text }}>
-                        {readingMode === 'tafseer' ? getTafseer(item.surahNumber, item.ayahNumber) : getMeaning(item.surahNumber, item.ayahNumber)}
+                         style={{ 
+                             fontSize: `${settings.fontSize * 0.8}rem`, 
+                             color: currentTheme.text,
+                             direction: readingMode === 'translation' ? 'ltr' : 'rtl',
+                             textAlign: readingMode === 'translation' ? 'left' : 'right'
+                         }}>
+                        {readingMode === 'tafseer' ? getTafseer(item.surahNumber, item.ayahNumber) : 
+                         readingMode === 'meanings' ? getMeaning(item.surahNumber, item.ayahNumber) :
+                         getTranslation(item.surahNumber, item.ayahNumber)}
                     </div>
                 </div>
             </div>

@@ -21,8 +21,8 @@ interface QuranHeaderProps {
     handlePlayButtonPointerLeave: () => void;
     renderPlayButtonIcon: () => React.ReactNode;
     reciterToast: { show: boolean; name: string };
-    readingMode: 'mushaf' | 'tafseer' | 'meanings';
-    setReadingMode: (mode: 'mushaf' | 'tafseer' | 'meanings') => void;
+    readingMode: 'mushaf' | 'tafseer' | 'meanings' | 'translation';
+    setReadingMode: (mode: 'mushaf' | 'tafseer' | 'meanings' | 'translation') => void;
 }
 
 const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
@@ -120,6 +120,13 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                             >
                                 <i className="fa-solid fa-language w-5"></i>
                                 <span>المعاني</span>
+                            </button>
+                            <button 
+                                onClick={() => { setReadingMode('translation'); setIsModeMenuOpen(false); }}
+                                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'translation' ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
+                            >
+                                <i className="fa-solid fa-globe w-5"></i>
+                                <span>الترجمة</span>
                             </button>
                         </div>
                     </>
