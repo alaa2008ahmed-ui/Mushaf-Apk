@@ -119,3 +119,21 @@ input[type=number] {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Test Mode Styles */
+.test-mode-active .ayah-text-block, 
+.test-mode-active .ayah-text {
+  filter: blur(6px);
+  opacity: 0.4;
+  transition: all 0.3s ease;
+}
+
+.test-mode-active .ayah-text-block.highlighted, 
+.test-mode-active .ayah-text-block:active,
+.test-mode-active .ayah-text-block.revealed,
+.test-mode-active .ayah-text.highlighted,
+.test-mode-active .ayah-text:active,
+.test-mode-active .ayah-text.revealed {
+  filter: none;
+  opacity: 1;
+}

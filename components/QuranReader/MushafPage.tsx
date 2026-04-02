@@ -5,6 +5,7 @@ interface MushafPageProps {
     pageNum: number;
     pageData: any[];
     highlightedAyahId: string | null;
+    revealedAyahs?: Set<string>;
     onAyahClick: (surah: number, ayah: number) => void;
     onVerseClick: (surah: number, ayah: number, event: React.MouseEvent) => void;
     onVerseLongPress?: (surah: number, ayah: number) => void;
@@ -17,6 +18,7 @@ interface MushafPageProps {
         textColor: string;
         theme: string;
     };
+    currentTheme?: any;
 }
 
 const fixQuranText = (text: string) => {
@@ -56,7 +58,7 @@ const renderTajweedText = (text: string) => {
     return parts;
 };
 
-const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings }) => {
+const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, revealedAyahs, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme }) => {
     const pageRef = useRef<HTMLDivElement | null>(null);
     const longPressTimer = useRef<number | null>(null);
     const isLongPressTriggered = useRef(false);
@@ -153,6 +155,12 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                     
                     const id = `ayah-${ayah.sNum}-${ayah.numberInSurah}`;
 
+                    const headerBg = currentTheme?.headerBg || '#22c55e';
+                    const headerBorder = currentTheme?.accent || '#14532d';
+                    const headerText = currentTheme?.headerText || '#ffffff';
+                    const cartoucheBg = currentTheme?.bg || '#dcfce7';
+                    const cartoucheText = currentTheme?.accent || '#14532d';
+
                     return (
                         <React.Fragment key={id}>
                             {showHeader && ( 
@@ -160,19 +168,19 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                     <div className="surah-header-container">
                                         <svg className="surah-header-bg" viewBox="0 0 600 80" preserveAspectRatio="none">
                                             {/* Outer Green Box with Double Border */}
-                                            <rect x="2" y="2" width="596" height="76" fill="#22c55e" stroke="#14532d" strokeWidth="2" />
-                                            <rect x="6" y="6" width="588" height="68" fill="none" stroke="#dcfce7" strokeWidth="1" opacity="0.5" />
+                                            <rect x="2" y="2" width="596" height="76" fill={headerBg} stroke={headerBorder} strokeWidth="2" />
+                                            <rect x="6" y="6" width="588" height="68" fill="none" stroke={headerText} strokeWidth="1" opacity="0.3" />
                                             
                                             {/* Center Cartouche Background (Light) - Shrunken Width */}
-                                            <path d="M 180 10 L 420 10 Q 440 10 445 25 L 450 40 L 445 55 Q 440 70 420 70 L 180 70 Q 160 70 155 55 L 150 40 L 155 25 Q 160 10 180 10 Z" fill="#dcfce7" stroke="#14532d" strokeWidth="2" />
+                                            <path d="M 180 10 L 420 10 Q 440 10 445 25 L 450 40 L 445 55 Q 440 70 420 70 L 180 70 Q 160 70 155 55 L 150 40 L 155 25 Q 160 10 180 10 Z" fill={cartoucheBg} stroke={headerBorder} strokeWidth="2" />
                                             
                                             {/* Inner decorative line for cartouche - Shrunken Width */}
-                                            <path d="M 185 15 L 415 15 Q 430 15 434 25 L 438 40 L 434 55 Q 430 65 415 65 L 185 65 Q 170 65 166 55 L 162 40 L 166 25 Q 170 15 185 15 Z" fill="none" stroke="#14532d" strokeWidth="1" opacity="0.5" />
+                                            <path d="M 185 15 L 415 15 Q 430 15 434 25 L 438 40 L 434 55 Q 430 65 415 65 L 185 65 Q 170 65 166 55 L 162 40 L 166 25 Q 170 15 185 15 Z" fill="none" stroke={headerBorder} strokeWidth="1" opacity="0.3" />
                                         </svg>
                                         
-                                        <div className="surah-header-content">
+                                        <div className="surah-header-content" style={{ color: headerText }}>
                                             <div className="surah-header-right-text">{SURAH_INFO[ayah.sNum]?.type}</div>
-                                            <div className="surah-header-center-text">{ayah.sName.replace('سورة', '').trim()}</div>
+                                            <div className="surah-header-center-text" style={{ color: cartoucheText }}>{ayah.sName.replace('سورة', '').trim()}</div>
                                             <div className="surah-header-left-text">{toArabic(SURAH_INFO[ayah.sNum]?.ayahs || 0)} آيات</div>
                                         </div>
                                     </div> 
@@ -183,7 +191,7 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                             )}
                             <span 
                                 id={id} 
-                                className={`ayah-text-block ${highlightedAyahId === id ? 'highlighted' : ''} ${isSajdah ? 'ayah-sajdah' : ''}`} 
+                                className={`ayah-text-block ${highlightedAyahId === id ? 'highlighted' : ''} ${revealedAyahs?.has(`${ayah.sNum}-${ayah.numberInSurah}`) ? 'revealed' : ''} ${isSajdah ? 'ayah-sajdah' : ''}`} 
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (!isLongPressTriggered.current) {

@@ -112,6 +112,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const [isSharing, setIsSharing] = useState(false);
     const [explanationData, setExplanationData] = useState<any>(null);
     const previewRef = useRef<HTMLDivElement>(null);
+    const hiddenCaptureRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const fetchExplanation = async () => {
@@ -318,15 +319,36 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
                 
                 // Find the page element or the main content container
-                const pageElement = document.querySelector(`.mushaf-page[data-page="${pageNum}"]`) as HTMLElement;
-                const captureElement = pageElement || document.getElementById('mushaf-content');
+                let captureElement: HTMLElement | null = null;
+                
+                if (readingMode === 'mushaf') {
+                    captureElement = document.querySelector(`.mushaf-page[data-page="${pageNum}"]`) as HTMLElement;
+                } else {
+                    // For Tafseer/Meanings, use the hidden capture element
+                    captureElement = hiddenCaptureRef.current;
+                }
+                
+                if (!captureElement) {
+                    captureElement = document.getElementById('mushaf-content');
+                }
                 
                 if (captureElement) {
                     try {
+                        // Ensure all images are loaded if any
+                        const images = captureElement.querySelectorAll('img');
+                        await Promise.all(Array.from(images).map(img => {
+                            if (img.complete) return Promise.resolve();
+                            return new Promise(resolve => {
+                                img.onload = resolve;
+                                img.onerror = resolve;
+                            });
+                        }));
+
                         const canvas = await html2canvas(captureElement, {
                             scale: 2,
                             useCORS: true,
                             backgroundColor: currentTheme.bg || '#ffffff',
+                            logging: false,
                             onclone: (clonedDoc) => {
                                 // Fix for oklch/oklab colors that html2canvas doesn't support
                                 const elements = clonedDoc.getElementsByTagName('*');
@@ -339,6 +361,16 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                             el.style.setProperty(prop, prop === 'color' ? '#000000' : 'transparent', 'important');
                                         }
                                     });
+                                }
+                                
+                                // Ensure the cloned element is visible even if the original is hidden
+                                const clonedCapture = clonedDoc.getElementById('hidden-page-capture');
+                                if (clonedCapture) {
+                                    clonedCapture.style.position = 'relative';
+                                    clonedCapture.style.left = '0';
+                                    clonedCapture.style.top = '0';
+                                    clonedCapture.style.visibility = 'visible';
+                                    clonedCapture.style.display = 'block';
                                 }
                             }
                         });
@@ -477,8 +509,98 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         }
     };
 
+    const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
+    const pageAyahs: {s: number, a: number}[] = [];
+    let pageSurahInfo = "";
+    if (readingMode !== 'mushaf') {
+        quranData.surahs.forEach((surah: any, sIdx: number) => {
+            surah.ayahs.forEach((ayah: any) => {
+                if (ayah.page === pageNum) {
+                    pageAyahs.push({ s: sIdx + 1, a: ayah.numberInSurah });
+                }
+            });
+        });
+        
+        if (pageAyahs.length > 0) {
+            const firstPageAyah = pageAyahs[0];
+            const lastPageAyah = pageAyahs[pageAyahs.length - 1];
+            pageSurahInfo = firstPageAyah.s === lastPageAyah.s 
+                ? `سورة ${getSurahName(firstPageAyah.s)} - آية ${toArabic(firstPageAyah.a)} إلى آية ${toArabic(lastPageAyah.a)}`
+                : `سورة ${getSurahName(firstPageAyah.s)} آية ${toArabic(firstPageAyah.a)} - سورة ${getSurahName(lastPageAyah.s)} آية ${toArabic(lastPageAyah.a)}`;
+        }
+    }
+
     return (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm overflow-y-auto" dir="rtl">
+            {/* Hidden capture element for Tafseer/Meanings page share */}
+            {readingMode !== 'mushaf' && (
+                <div 
+                    id="hidden-page-capture"
+                    ref={hiddenCaptureRef}
+                    style={{
+                        position: 'absolute',
+                        left: '-9999px',
+                        top: '-9999px',
+                        width: '800px', // Fixed width for consistent capture
+                        backgroundColor: currentTheme.bg || '#ffffff',
+                        padding: '40px',
+                        color: currentTheme.text || '#000000',
+                        direction: 'rtl'
+                    }}
+                >
+                    <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: `2px solid ${currentTheme.accent}`, paddingBottom: '15px' }}>
+                        <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: currentTheme.accent }}>
+                            صفحة {toArabic(pageNum)} - {pageSurahInfo}
+                        </h2>
+                    </div>
+                    
+                    {pageAyahs.map((ay, idx) => {
+                        const ayahText = getAyahText(ay.s, ay.a);
+                        const explanation = getExplanationText(ay.s, ay.a);
+                        const isNewSurah = idx === 0 || pageAyahs[idx-1].s !== ay.s;
+                        
+                        return (
+                            <div key={`${ay.s}-${ay.a}`} style={{ marginBottom: '25px' }}>
+                                {isNewSurah && idx > 0 && (
+                                    <div style={{ textAlign: 'center', margin: '30px 0', padding: '10px', backgroundColor: `${currentTheme.accent}15`, borderRadius: '8px' }}>
+                                        <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: currentTheme.accent }}>سورة {getSurahName(ay.s)}</h3>
+                                    </div>
+                                )}
+                                <div style={{ 
+                                    fontSize: '22px', 
+                                    lineHeight: '1.8', 
+                                    fontFamily: 'var(--font-amiri-quran), serif',
+                                    color: currentTheme.accent,
+                                    marginBottom: '10px',
+                                    textAlign: 'right'
+                                }}>
+                                    {ayahText} ﴿{toArabic(ay.a)}﴾
+                                </div>
+                                {explanation && (
+                                    <div style={{ 
+                                        fontSize: '16px', 
+                                        lineHeight: '1.6', 
+                                        color: currentTheme.text,
+                                        opacity: 0.9,
+                                        textAlign: readingMode === 'translation' ? 'left' : 'right',
+                                        direction: readingMode === 'translation' ? 'ltr' : 'rtl',
+                                        padding: '10px',
+                                        backgroundColor: 'rgba(0,0,0,0.02)',
+                                        borderRadius: '6px'
+                                    }}>
+                                        {explanation}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                    
+                    <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #eee', textAlign: 'center', opacity: 0.6, fontSize: '14px' }}>
+                        مصحف احمد وليلى - {new Date().toLocaleDateString('ar-EG')}
+                    </div>
+                </div>
+            )}
+
             <div className="min-h-full flex items-center justify-center p-2 sm:p-4">
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md flex flex-col">
                     {/* Header */}

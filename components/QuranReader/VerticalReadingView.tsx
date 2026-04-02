@@ -8,6 +8,7 @@ interface VerticalReadingViewProps {
     settings: any;
     currentTheme: any;
     currentAyah: { s: number; a: number };
+    revealedAyahs?: Set<string>;
     onAyahClick: (s: number, a: number) => void;
     onSettingsChange?: (newSettings: any) => void;
     modeSuffix?: string;
@@ -24,6 +25,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     settings,
     currentTheme,
     currentAyah,
+    revealedAyahs,
     onAyahClick,
     onSettingsChange,
     modeSuffix = '_v'
@@ -185,27 +187,39 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
     const renderItem = useCallback((index: number, item: any) => {
         if (item.type === 'header') {
+            const headerBg = currentTheme?.headerBg || '#2ecc71';
+            const headerBorder = currentTheme?.accent || '#1a5d38';
+            const headerText = currentTheme?.headerText || '#ffffff';
+            const cartoucheBg = currentTheme?.bg || '#e8f8f1';
+            const cartoucheText = currentTheme?.accent || '#1a5d38';
+
             return (
                 <div className="px-4 py-6">
-                    <div className="surah-header-visual relative h-14 w-full flex items-center justify-between px-6 rounded-md border-[3px] border-[#1a5d38] overflow-hidden"
+                    <div className="surah-header-visual relative h-14 w-full flex items-center justify-between px-6 rounded-md border-[3px] overflow-hidden"
                          style={{ 
-                             background: 'linear-gradient(to bottom, #2ecc71, #27ae60)',
+                             background: headerBg,
+                             borderColor: headerBorder,
                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
                          }}>
-                        <div className="text-white font-bold text-lg z-10 drop-shadow-md">
+                        <div className="font-bold text-lg z-10 drop-shadow-md" style={{ color: headerText }}>
                             {toArabic(item.ayahCount)} آيات
                         </div>
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="relative bg-[#e8f8f1] h-10 px-12 flex items-center justify-center border-2 border-[#1a5d38] shadow-inner"
-                                 style={{ borderRadius: '50px / 50px', minWidth: '240px' }}>
-                                <h2 className="text-xl font-bold text-[#1a5d38] whitespace-nowrap mb-0">
+                            <div className="relative h-10 px-12 flex items-center justify-center border-2 shadow-inner"
+                                 style={{ 
+                                     borderRadius: '50px / 50px', 
+                                     minWidth: '240px',
+                                     backgroundColor: cartoucheBg,
+                                     borderColor: headerBorder
+                                 }}>
+                                <h2 className="text-xl font-bold whitespace-nowrap mb-0" style={{ color: cartoucheText }}>
                                     سُورَةُ {item.surahName}
                                 </h2>
-                                <div className="absolute left-0 top-0 bottom-0 w-4 border-r-2 border-[#1a5d38] rounded-l-full opacity-30"></div>
-                                <div className="absolute right-0 top-0 bottom-0 w-4 border-l-2 border-[#1a5d38] rounded-r-full opacity-30"></div>
+                                <div className="absolute left-0 top-0 bottom-0 w-4 border-r-2 rounded-l-full opacity-30" style={{ borderColor: headerBorder }}></div>
+                                <div className="absolute right-0 top-0 bottom-0 w-4 border-l-2 rounded-r-full opacity-30" style={{ borderColor: headerBorder }}></div>
                             </div>
                         </div>
-                        <div className="text-white font-bold text-lg z-10 drop-shadow-md">
+                        <div className="font-bold text-lg z-10 drop-shadow-md" style={{ color: headerText }}>
                             {item.surahType}
                         </div>
                     </div>
@@ -214,18 +228,19 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
         }
 
         const isHighlighted = currentAyah.s === item.surahNumber && currentAyah.a === item.ayahNumber;
+        const isRevealed = revealedAyahs?.has(`${item.surahNumber}-${item.ayahNumber}`);
         
         return (
             <div className="px-4 py-2">
                 <div 
-                    className={`ayah-item p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2' : ''}`}
+                    className={`ayah-item p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2 highlighted' : ''} ${isRevealed ? 'revealed' : ''}`}
                     style={{ 
                         backgroundColor: isHighlighted ? `${currentTheme.accent}20` : 'transparent',
                         borderColor: isHighlighted ? currentTheme.accent : 'transparent'
                     }}
                     onClick={() => onAyahClick(item.surahNumber, item.ayahNumber)}
                 >
-                    <div className="ayah-text mb-4 text-right leading-relaxed" 
+                    <div className={`ayah-text mb-4 text-right leading-relaxed ${isHighlighted ? 'highlighted' : ''} ${isRevealed ? 'revealed' : ''}`} 
                          style={{ 
                              fontSize: `${settings.fontSize}rem`, 
                              fontFamily: settings.fontFamily,
@@ -254,7 +269,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 </div>
             </div>
         );
-    }, [currentAyah, currentTheme, settings, readingMode, onAyahClick, meaningsData, tafseerData, translationData]);
+    }, [currentAyah, revealedAyahs, currentTheme, settings, readingMode, onAyahClick, meaningsData, tafseerData, translationData]);
 
     if (isLoading) {
         return (

@@ -7,6 +7,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import { prayerNamesAr } from '../data/prayerTimesData';
 import { checkSupportsDST, calculateNightTimes } from '../utils/prayerTimesUtils';
 import { updateAndroidWidget } from '../utils/widgetUtils';
+import { useTheme } from './ThemeContext';
 
 // --- Types ---
 interface PrayerConfig {
@@ -175,6 +176,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
         }
     });
 
+    const { themeKey } = useTheme();
     const [times, setTimes] = useState<Record<string, string>>({});
     const [dates, setDates] = useState({ hijri: "-- -- --", gregorian: "-- -- --" });
     const [nextPrayer, setNextPrayer] = useState<{ key: string; date: Date; name: string } | null>(null);
@@ -825,16 +827,12 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [times, dates, nextPrayer?.key, updateWidget]);
 
-    // Listen for theme changes to update widget immediately
+    // Update widget immediately when theme changes
     useEffect(() => {
-        const handleThemeChange = () => {
-            if (times.Fajr && nextPrayer) {
-                updateWidget(times, dates, nextPrayer, countdown);
-            }
-        };
-        window.addEventListener('themeChanged', handleThemeChange);
-        return () => window.removeEventListener('themeChanged', handleThemeChange);
-    }, [times, dates, nextPrayer, countdown, updateWidget]);
+        if (times.Fajr && nextPrayer) {
+            updateWidget(times, dates, nextPrayer, countdown);
+        }
+    }, [themeKey, times, dates, nextPrayer, countdown, updateWidget]);
 
     // Initial load
     useEffect(() => {
