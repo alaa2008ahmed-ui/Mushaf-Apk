@@ -81,19 +81,46 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                 // إعداد الألوان (تصفير الألوان)
                 int defaultColor = Color.parseColor("#000000");
                 int highlightColor = Color.parseColor("#10b981"); // Green
+                int bgColor = Color.parseColor("#FFFFFF");
+                int textColor = Color.parseColor("#000000");
+                int accentColor = Color.parseColor("#7C3AED"); // Purple
+                int secondaryColor = Color.parseColor("#10b981"); // Green
 
-                views.setTextColor(R.id.name_fajr, defaultColor);
-                views.setTextColor(R.id.time_fajr, defaultColor);
-                views.setTextColor(R.id.name_sunrise, defaultColor);
-                views.setTextColor(R.id.time_sunrise, defaultColor);
-                views.setTextColor(R.id.name_dhuhr, defaultColor);
-                views.setTextColor(R.id.time_dhuhr, defaultColor);
-                views.setTextColor(R.id.name_asr, defaultColor);
-                views.setTextColor(R.id.time_asr, defaultColor);
-                views.setTextColor(R.id.name_maghrib, defaultColor);
-                views.setTextColor(R.id.time_maghrib, defaultColor);
-                views.setTextColor(R.id.name_isha, defaultColor);
-                views.setTextColor(R.id.time_isha, defaultColor);
+                // تطبيق الثيم إذا كان متوفراً
+                if (data.has("theme") && !data.isNull("theme")) {
+                    JSONObject theme = data.getJSONObject("theme");
+                    if (theme.has("primaryColor")) highlightColor = Color.parseColor(theme.getString("primaryColor"));
+                    if (theme.has("secondaryColor")) accentColor = Color.parseColor(theme.getString("secondaryColor"));
+                    if (theme.has("bgColor")) bgColor = Color.parseColor(theme.getString("bgColor"));
+                    if (theme.has("textColor")) textColor = Color.parseColor(theme.getString("textColor"));
+                    
+                    // تطبيق الألوان على الخلفيات
+                    views.setInt(R.id.widget_root, "setBackgroundColor", bgColor);
+                    views.setInt(R.id.widget_left_section, "setBackgroundColor", accentColor);
+                    views.setInt(R.id.widget_bottom_section, "setBackgroundColor", accentColor);
+                    // ملاحظة: قد نفقد الحواف المستديرة عند استخدام setBackgroundColor مباشرة
+                    // ولكن هذا يضمن تغيير اللون كما طلب المستخدم
+                }
+
+                views.setTextColor(R.id.widget_next_prayer_name, highlightColor);
+                views.setTextColor(R.id.widget_next_prayer_time, textColor);
+                views.setTextColor(R.id.widget_hijri_date, Color.WHITE); // Keep white for contrast on accent
+                views.setTextColor(R.id.widget_gregorian_date, Color.WHITE);
+                views.setTextColor(R.id.widget_midnight, Color.WHITE);
+                views.setTextColor(R.id.widget_last_third, Color.WHITE);
+
+                views.setTextColor(R.id.name_fajr, textColor);
+                views.setTextColor(R.id.time_fajr, textColor);
+                views.setTextColor(R.id.name_sunrise, textColor);
+                views.setTextColor(R.id.time_sunrise, textColor);
+                views.setTextColor(R.id.name_dhuhr, textColor);
+                views.setTextColor(R.id.time_dhuhr, textColor);
+                views.setTextColor(R.id.name_asr, textColor);
+                views.setTextColor(R.id.time_asr, textColor);
+                views.setTextColor(R.id.name_maghrib, textColor);
+                views.setTextColor(R.id.time_maghrib, textColor);
+                views.setTextColor(R.id.name_isha, textColor);
+                views.setTextColor(R.id.time_isha, textColor);
 
                 // تظليل الصلاة القادمة فقط
                 if (nextPrayerId.equals("fajr")) {

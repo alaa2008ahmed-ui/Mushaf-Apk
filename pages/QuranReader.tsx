@@ -742,7 +742,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     
     const audioCacheRef = useRef<Record<string, HTMLAudioElement>>({});
     const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-    const currentRepeatCountRef = useRef(0);
+    const currentRepeatCountRef = useRef(memorizationSettings?.currentRepeatCount || 0);
     const ayahRepeatCountRef = useRef(settings.ayahRepeatCount || 1);
 
     useEffect(() => {
@@ -794,12 +794,22 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         setPlayingAyah(null);
     }, []);
 
-    // Stop audio on unmount
+    // Stop audio on unmount and save memorization session if active
     useEffect(() => {
         return () => {
+            if (isMemorizationMode) {
+                const sessionData = {
+                    currentAyah: currentAyahRef.current,
+                    settings: memorizationSettingsRef.current,
+                    rangeRepeatCount: rangeRepeatCountRef.current,
+                    currentRepeatCount: currentRepeatCountRef.current,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('memorization_session_v1', JSON.stringify(sessionData));
+            }
             stopAudio();
         };
-    }, [stopAudio]);
+    }, [isMemorizationMode, stopAudio]);
     const showMarkerNotification = useCallback((type: 'juz' | 'quarter' | 'sajda' | 'surah', text: string) => {
         setMarkerNotification({ show: true, type, text });
         setTimeout(() => setMarkerNotification(prev => ({ ...prev, show: false })), 2000);
@@ -882,6 +892,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         const surah = quranData.surahs[s - 1];
         if (!surah) return;
 
+        const reader = isMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader;
+
         for (let i = 0; i < 10; i++) {
             const ayahNum = startAyah + i;
             if (ayahNum > surah.ayahs.length) break;
@@ -889,7 +901,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             if (!audioCacheRef.current[cacheKey]) {
                 const surahStr = String(s).padStart(3, '0');
                 const ayahStr = String(ayahNum).padStart(3, '0');
-                const audioUrl = `https://everyayah.com/data/${settings.reader}/${surahStr}${ayahStr}.mp3`;
+                const audioUrl = `https://everyayah.com/data/${reader}/${surahStr}${ayahStr}.mp3`;
                 
                 try {
                     if ('caches' in window) {
@@ -935,7 +947,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     const memorizationSettingsRef = useRef(memorizationSettings);
     useEffect(() => { memorizationSettingsRef.current = memorizationSettings; }, [memorizationSettings]);
-    const rangeRepeatCountRef = useRef(0);
+    const rangeRepeatCountRef = useRef(memorizationSettings?.rangeRepeatCount || 0);
 
     const playAudio = useCallback(async (s: number, a: number) => {
         stopAudio();
@@ -1011,11 +1023,16 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                             } else {
                                 rangeRepeatCountRef.current = 0;
                                 stopAudio();
+                                localStorage.removeItem('memorization_session_v1');
                                 showToast('انتهت جلسة التحفيظ');
                                 if (memSettings.testAfterSession) {
-                                    // Could implement test logic here
                                     showToast('حان وقت الاختبار!');
                                 }
+                                // Auto-return to memorization page
+                                setTimeout(() => {
+                                    if (onBack) onBack();
+                                    else if (onNavigate) onNavigate('memorization');
+                                }, 1500);
                             }
                         } else {
                             playNextAyahRef.current();
@@ -1063,7 +1080,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             delete audioCacheRef.current[cacheKey];
             window.dispatchEvent(new CustomEvent('voice-control-resume'));
         }
-    }, [settings.reader, settings.ayahRepeatCount, stopAudio, preloadAudioQueue, manageAudioCache, showToast, scrollToAyah]);
+    }, [settings.reader, settings.ayahRepeatCount, isMemorizationMode, stopAudio, preloadAudioQueue, manageAudioCache, showToast, scrollToAyah, onBack, onNavigate]);
 
     const closeModal = useCallback((modalName: string) => {
         setActiveModals(p => p.filter(m => m !== modalName));
@@ -1689,9 +1706,11 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         
         if (isMemorizationMode && memorizationSettings) {
             setTimeout(() => {
-                jumpToAyah(memorizationSettings.fromSurah, memorizationSettings.fromAyah, true);
+                const startS = initialSurah || memorizationSettings.fromSurah;
+                const startA = initialAyah || memorizationSettings.fromAyah;
+                jumpToAyah(startS, startA, true);
                 setTimeout(() => {
-                    playAudio(memorizationSettings.fromSurah, memorizationSettings.fromAyah);
+                    playAudio(startS, startA);
                 }, 500);
             }, 100);
         } else if (initialSurah && initialAyah) {
@@ -2391,6 +2410,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 reciterToast={reciterToast}
                 readingMode={readingMode}
                 setReadingMode={setReadingMode}
+                isMemorizationMode={isMemorizationMode}
+                memorizationSettings={memorizationSettings}
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">

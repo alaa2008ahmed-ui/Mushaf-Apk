@@ -229,7 +229,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     : `سورة ${getSurahName(firstPageAyah.s)} آية ${toArabic(firstPageAyah.a)} - سورة ${getSurahName(lastPageAyah.s)} آية ${toArabic(lastPageAyah.a)}`;
             }
             
-            shareText = `صفحة ${pageNum} - ${pageSurahInfo}\nايات من القران الكريم . بواسطة : مصحف احمد وليلى`;
+            shareText = `صفحة ${toArabic(pageNum)} - ${pageSurahInfo}\nايات من القران الكريم . بواسطة : مصحف احمد وليلى`;
         }
         
         const fullText = `${combinedText}\n\n${combinedExplanation ? combinedExplanation + '\n\n' : ''}${shareText}`;
@@ -316,62 +316,86 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 }
             } else if (shareType === 'page') {
                 const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
-                const imageUrl = `https://quran.ksu.edu.sa/png_big/${pageNum}.png`;
-                const fileName = `page_${pageNum}.png`;
                 
-                try {
-                    const res = await fetch(imageUrl);
-                    if (!res.ok) throw new Error('Failed to fetch image');
-                    const blob = await res.blob();
+                // Find the page element or the main content container
+                const pageElement = document.querySelector(`.mushaf-page[data-page="${pageNum}"]`) as HTMLElement;
+                const captureElement = pageElement || document.getElementById('mushaf-content');
+                
+                if (captureElement) {
+                    try {
+                        const canvas = await html2canvas(captureElement, {
+                            scale: 2,
+                            useCORS: true,
+                            backgroundColor: currentTheme.bg || '#ffffff',
+                            onclone: (clonedDoc) => {
+                                // Fix for oklch/oklab colors that html2canvas doesn't support
+                                const elements = clonedDoc.getElementsByTagName('*');
+                                for (let i = 0; i < elements.length; i++) {
+                                    const el = elements[i] as HTMLElement;
+                                    const style = window.getComputedStyle(el);
+                                    ['color', 'backgroundColor', 'borderColor', 'outlineColor'].forEach(prop => {
+                                        const val = el.style.getPropertyValue(prop) || style.getPropertyValue(prop);
+                                        if (val && (val.includes('oklab') || val.includes('oklch'))) {
+                                            el.style.setProperty(prop, prop === 'color' ? '#000000' : 'transparent', 'important');
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
 
-                    if (Capacitor.isNativePlatform()) {
-                        const base64Data = await blobToBase64(blob);
-                        const savedFile = await Filesystem.writeFile({
-                            path: fileName,
-                            data: base64Data.split(',')[1],
-                            directory: Directory.Cache,
-                        });
-                        await Share.share({
-                            title: 'مشاركة صفحة',
-                            text: shareText,
-                            url: savedFile.uri,
-                            dialogTitle: 'مشاركة عبر'
-                        });
-                    } else if (navigator.share) {
-                        const file = new File([blob], fileName, { type: 'image/png' });
-                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        if (Capacitor.isNativePlatform()) {
+                            const fileName = `quran_page_${pageNum}_${Date.now()}.jpg`;
+                            const base64Data = dataUrl.split(',')[1];
+                            const savedFile = await Filesystem.writeFile({
+                                path: fileName,
+                                data: base64Data,
+                                directory: Directory.Cache,
+                            });
+                            
+                            await Share.share({
+                                title: 'مشاركة صفحة',
+                                text: shareText,
+                                url: savedFile.uri,
+                                dialogTitle: 'مشاركة عبر'
+                            });
+                        } else if (navigator.share) {
+                            const blob = await (await fetch(dataUrl)).blob();
+                            const file = new File([blob], `page_${pageNum}.jpg`, { type: 'image/jpeg' });
+                            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                await navigator.share({
+                                    title: 'مشاركة صفحة',
+                                    text: shareText,
+                                    files: [file],
+                                });
+                            } else {
+                                await navigator.share({
+                                    title: 'مشاركة صفحة',
+                                    text: shareText,
+                                });
+                            }
+                        } else {
+                            // Fallback for browsers that don't support sharing
+                            const link = document.createElement('a');
+                            link.download = `page_${pageNum}.jpg`;
+                            link.href = dataUrl;
+                            link.click();
+                        }
+                    } catch (e) {
+                        console.error('Error capturing page:', e);
+                        // Fallback to text share
+                        if (Capacitor.isNativePlatform()) {
+                            await Share.share({
+                                title: 'مشاركة صفحة',
+                                text: shareText,
+                                dialogTitle: 'مشاركة عبر'
+                            });
+                        } else if (navigator.share) {
                             await navigator.share({
                                 title: 'مشاركة صفحة',
                                 text: shareText,
-                                files: [file],
-                            });
-                        } else {
-                            await navigator.share({
-                                title: 'مشاركة صفحة',
-                                text: `${shareText}\n${imageUrl}`,
                             });
                         }
-                    } else {
-                        await Share.share({
-                            title: 'مشاركة صفحة',
-                            text: `${shareText}\n${imageUrl}`,
-                            dialogTitle: 'مشاركة عبر'
-                        });
-                    }
-                } catch (e) {
-                    console.error('Error sharing page image:', e);
-                    // Fallback to text share if image fetch fails (CORS etc)
-                    if (Capacitor.isNativePlatform()) {
-                        await Share.share({
-                            title: 'مشاركة صفحة',
-                            text: `${shareText}\n${imageUrl}`,
-                            dialogTitle: 'مشاركة عبر'
-                        });
-                    } else if (navigator.share) {
-                        await navigator.share({
-                            title: 'مشاركة صفحة',
-                            text: `${shareText}\n${imageUrl}`,
-                        });
                     }
                 }
             } else if (shareType === 'audio') {
@@ -416,32 +440,32 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 files: [file],
                             });
                         } else {
-                            // Fallback to link if file share not supported
+                            // Fallback to text only if file share not supported
                             await navigator.share({
                                 title: 'مشاركة تلاوة',
-                                text: `${shareText}\nاستمع للآية: ${audioUrl}`,
+                                text: shareText,
                             });
                         }
                     } else {
                         await Share.share({
                             title: 'مشاركة تلاوة',
-                            text: `${shareText}\nاستمع للآية: ${audioUrl}`,
+                            text: shareText,
                             dialogTitle: 'مشاركة عبر'
                         });
                     }
                 } catch (e) {
                     console.error('Error sharing audio file:', e);
-                    // Fallback to link share
+                    // Fallback to text share
                     if (Capacitor.isNativePlatform()) {
                         await Share.share({
                             title: 'مشاركة تلاوة',
-                            text: `${shareText}\nاستمع للآية: ${audioUrl}`,
+                            text: shareText,
                             dialogTitle: 'مشاركة عبر'
                         });
                     } else if (navigator.share) {
                         await navigator.share({
                             title: 'مشاركة تلاوة',
-                            text: `${shareText}\nاستمع للآية: ${audioUrl}`,
+                            text: shareText,
                         });
                     }
                 }

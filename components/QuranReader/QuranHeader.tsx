@@ -23,6 +23,8 @@ interface QuranHeaderProps {
     reciterToast: { show: boolean; name: string };
     readingMode: 'mushaf' | 'tafseer' | 'meanings' | 'translation';
     setReadingMode: (mode: 'mushaf' | 'tafseer' | 'meanings' | 'translation') => void;
+    isMemorizationMode?: boolean;
+    memorizationSettings?: any;
 }
 
 const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
@@ -46,7 +48,9 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
     renderPlayButtonIcon,
     reciterToast,
     readingMode,
-    setReadingMode
+    setReadingMode,
+    isMemorizationMode = false,
+    memorizationSettings
 }) => {
     const [isModeMenuOpen, setIsModeMenuOpen] = React.useState(false);
 
@@ -58,7 +62,13 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                 className="top-bar-text-button flex items-center justify-center leading-none !pt-0" 
                 style={getToolbarStyle('surah', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
             >
-                <span className="flex items-center justify-center leading-none">{surahName} - آية {toArabic(currentAyah.a)}</span>
+                <span className="flex items-center justify-center leading-none">
+                    {surahName} - {isMemorizationMode && memorizationSettings ? (
+                        <>الآيات {toArabic(memorizationSettings.fromAyah)} - {toArabic(memorizationSettings.toAyah)}</>
+                    ) : (
+                        <>آية {toArabic(currentAyah.a)}</>
+                    )}
+                </span>
             </button>
             <div id="juz-number-header" className="top-bar-text-button !rounded-lg !min-w-[36px] !w-[36px] !h-[36px] !pt-0 !pb-[3px] !px-0 cursor-default flex-shrink-0 !font-black !text-lg flex items-center justify-center leading-none" style={{ cursor: 'default', ...getToolbarStyle('juz', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder) }}>{toArabic(juz)}</div>
             {isPageInputActive ? (

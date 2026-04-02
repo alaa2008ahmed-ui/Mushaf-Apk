@@ -49,6 +49,7 @@
 
         <!-- Left Part (Purple) - Now second child to be on the left in RTL -->
         <LinearLayout
+            android:id="@+id/widget_left_section"
             android:layout_width="0dp"
             android:layout_weight="4"
             android:layout_height="match_parent"

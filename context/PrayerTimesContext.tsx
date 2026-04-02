@@ -408,6 +408,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
         const w = window as any;
         if (w.cordova && w.cordova.plugins && w.cordova.plugins.notification && w.cordova.plugins.notification.local) {
             const localNotifier = w.cordova.plugins.notification.local;
+            const isAndroidNative = w.cordova && (w.cordova.platformId === 'android' || (w.device && w.device.platform === 'Android') || /android/i.test(navigator.userAgent));
 
             // Create Notification Channel for Android 8+
             if (w.cordova.platformId === 'android') {
@@ -482,7 +483,6 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
 
                                     // Fix sound path for Android (Capacitor)
                                     let androidSoundPath = soundPath;
-                                    const isAndroidNative = w.cordova && (w.cordova.platformId === 'android' || (w.device && w.device.platform === 'Android') || /android/i.test(navigator.userAgent));
                                     
                                     if (isAndroidNative && playSound && soundPath) {
                                         // Force bundled azans to use res://raw/ (even if they are old file:// or http:// paths in config)
@@ -570,6 +570,19 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
 
                             // --- Night Times Notifications ---
                             const nightNotifs = config.nightNotifications || { firstThird: true, midnight: true, lastThird: true };
+                            
+                            // Explicitly create the channel for night times to ensure it works on Android 8+
+                            if (isAndroidNative && localNotifier.createChannel) {
+                                localNotifier.createChannel({
+                                    androidChannelId: 'night_times_channel',
+                                    androidChannelName: 'تنبيهات أوقات الليل',
+                                    androidChannelDescription: 'إشعارات لأوقات أول الليل، منتصف الليل، والثلث الأخير',
+                                    androidChannelImportance: 5, // MAX importance
+                                    androidChannelEnableVibration: true,
+                                    androidChannelVisibility: 1,
+                                    androidChannelLockscreenVisibility: 1
+                                });
+                            }
                             
                             // Calculate tomorrow's Fajr
                             const tomorrow = new Date(date);
