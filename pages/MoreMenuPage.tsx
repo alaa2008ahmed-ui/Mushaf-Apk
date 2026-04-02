@@ -23,6 +23,7 @@ const ALL_MENU_ITEMS = [
     { id: 'tajweed-education', label: "📖 تعليم التجويد", className: "h-10", colorIndex: 1 },
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
     { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "h-10", colorIndex: 1 },
+    { id: 'memorization', label: "🧠 التحفيظ", className: "col-span-2 h-10", colorIndex: 0 },
 ];
 
 interface MoreMenuPageProps {

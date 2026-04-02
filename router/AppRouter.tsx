@@ -19,6 +19,7 @@ import VoiceControlPage from '../pages/VoiceControlPage';
 import MoreMenuPage from '../pages/MoreMenuPage';
 import MonthlyPrayerTimes from '../pages/MonthlyPrayerTimes';
 import DailyWird from '../pages/DailyWird';
+import Memorization from '../pages/Memorization';
 
 interface AppRouterProps {
     page: string;
@@ -31,9 +32,9 @@ interface AppRouterProps {
 const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenThemes, navParams }) => {
     switch(page) {
       case 'quran':
-        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={false} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} />;
+        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={false} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} />;
       case 'quran-landscape':
-        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={true} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} />;
+        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={true} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} />;
       case 'quran-download':
         return <QuranDownload onBack={onBack} />;
       case 'tajweed-education':
@@ -70,6 +71,8 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
         return <MoreMenuPage onBack={onBack} onNavigate={onNavigate} />;
       case 'daily-wird':
         return <DailyWird onBack={onBack} onNavigate={onNavigate} />;
+      case 'memorization':
+        return <Memorization onBack={onBack} onNavigate={onNavigate} />;
       case 'home':
       default:
         return <MainMenu onNavigate={onNavigate} onOpenThemes={onOpenThemes} />;

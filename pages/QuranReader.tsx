@@ -132,7 +132,7 @@ const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentThe
     );
 };
 
-const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false }) => {
+const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
     
     // Auto-detect orientation
@@ -165,7 +165,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
     }, [isLandscapeUIHidden, modeSuffix]);
 
-    const [useTajweed, setUseTajweed] = useState(() => localStorage.getItem('use_tajweed_quran' + modeSuffix) === 'true');
+    const [useTajweed, setUseTajweed] = useState(() => isMemorizationMode ? true : localStorage.getItem('use_tajweed_quran' + modeSuffix) === 'true');
     const [quranData, setQuranData] = useState<any>(useTajweed ? quranTajweedJson.data : quranUthmaniJson.data);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStatus, setLoadingStatus] = useState('');
@@ -927,6 +927,10 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
     }, []);
 
+    const memorizationSettingsRef = useRef(memorizationSettings);
+    useEffect(() => { memorizationSettingsRef.current = memorizationSettings; }, [memorizationSettings]);
+    const rangeRepeatCountRef = useRef(0);
+
     const playAudio = useCallback(async (s: number, a: number) => {
         stopAudio();
         setIsAudioLoading(true);
@@ -947,7 +951,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         } else {
             const surahStr = String(s).padStart(3, '0');
             const ayahStr = String(a).padStart(3, '0');
-            const audioUrl = `https://everyayah.com/data/${settings.reader}/${surahStr}${ayahStr}.mp3`;
+            const reader = isMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader;
+            const audioUrl = `https://everyayah.com/data/${reader}/${surahStr}${ayahStr}.mp3`;
             let audioSrc = audioUrl;
 
             try {
@@ -957,7 +962,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     if (cachedResponse) {
                         const blob = await cachedResponse.blob();
                         audioSrc = URL.createObjectURL(blob);
-                        showToast(`تشغيل من المحفوظات`);
                     }
                 }
             } catch (e) { console.warn("Cache API check failed", e); }
@@ -977,18 +981,62 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         };
         audio.onwaiting = () => setIsAudioLoading(true);
         audio.onended = () => {
-            const maxRepeat = ayahRepeatCountRef.current;
-            
-            if (currentRepeatCountRef.current < maxRepeat - 1) {
-                currentRepeatCountRef.current += 1;
-                audio.currentTime = 0;
-                audio.play().catch(e => {
-                    console.error("Repeat playback failed", e);
-                    playNextAyahRef.current();
-                });
+            if (isMemorizationMode && memorizationSettingsRef.current) {
+                const memSettings = memorizationSettingsRef.current;
+                const maxAyahRepeat = memSettings.ayahRepeat || 1;
+                const pauseLength = memSettings.pauseLength || 0;
+                
+                const handleNext = () => {
+                    if (currentRepeatCountRef.current < maxAyahRepeat - 1) {
+                        currentRepeatCountRef.current += 1;
+                        audio.currentTime = 0;
+                        audio.play().catch(e => {
+                            console.error("Repeat playback failed", e);
+                            playNextAyahRef.current();
+                        });
+                    } else {
+                        currentRepeatCountRef.current = 0;
+                        // Check if we reached the end of the range
+                        if (s === memSettings.toSurah && a === memSettings.toAyah) {
+                            const maxRangeRepeat = memSettings.rangeRepeat || 1;
+                            if (rangeRepeatCountRef.current < maxRangeRepeat - 1) {
+                                rangeRepeatCountRef.current += 1;
+                                playAudio(memSettings.fromSurah, memSettings.fromAyah);
+                            } else {
+                                rangeRepeatCountRef.current = 0;
+                                stopAudio();
+                                showToast('انتهت جلسة التحفيظ');
+                                if (memSettings.testAfterSession) {
+                                    // Could implement test logic here
+                                    showToast('حان وقت الاختبار!');
+                                }
+                            }
+                        } else {
+                            playNextAyahRef.current();
+                        }
+                    }
+                };
+
+                if (pauseLength > 0) {
+                    const pauseMs = audio.duration * 1000 * pauseLength;
+                    setTimeout(handleNext, pauseMs);
+                } else {
+                    handleNext();
+                }
             } else {
-                currentRepeatCountRef.current = 0;
-                playNextAyahRef.current();
+                const maxRepeat = ayahRepeatCountRef.current;
+                
+                if (currentRepeatCountRef.current < maxRepeat - 1) {
+                    currentRepeatCountRef.current += 1;
+                    audio.currentTime = 0;
+                    audio.play().catch(e => {
+                        console.error("Repeat playback failed", e);
+                        playNextAyahRef.current();
+                    });
+                } else {
+                    currentRepeatCountRef.current = 0;
+                    playNextAyahRef.current();
+                }
             }
         };
         audio.onerror = () => {
@@ -997,6 +1045,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             delete audioCacheRef.current[cacheKey];
             window.dispatchEvent(new CustomEvent('voice-control-resume'));
         };
+
     
         try {
             await audio.play();
@@ -1630,7 +1679,14 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         if (hasJumpedRef.current) return;
         hasJumpedRef.current = true;
         
-        if (initialPage) {
+        if (isMemorizationMode && memorizationSettings) {
+            setTimeout(() => {
+                jumpToAyah(memorizationSettings.fromSurah, memorizationSettings.fromAyah, true);
+                setTimeout(() => {
+                    playAudio(memorizationSettings.fromSurah, memorizationSettings.fromAyah);
+                }, 500);
+            }, 100);
+        } else if (initialPage) {
             setTimeout(() => {
                 jumpToPage(initialPage, true);
             }, 100);
@@ -1645,7 +1701,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 jumpToAyah(lastPos.s || 1, lastPos.a || 1, true);
             }, 100);
         }
-    }, [jumpToAyah, jumpToPage, initialLandscape, initialSurah, initialAyah, initialPage]);
+    }, [jumpToAyah, jumpToPage, initialLandscape, initialSurah, initialAyah, initialPage, isMemorizationMode, memorizationSettings, playAudio]);
 
     const handleVoiceCommand = useCallback((text: string) => {
         console.log('QuranReader - Voice Command:', text);

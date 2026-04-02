@@ -34,8 +34,9 @@ const BACKGROUNDS = [
     { id: 'bg16', type: 'gradient', value: 'linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%)', border: '#ffd266', accent: '#880E4F' },
     { id: 'bg17', type: 'gradient', value: 'radial-gradient(circle at 50% 50%, #1a2a6c, #b21f1f, #fdbb2d)', border: '#fdbb2d', accent: '#FFF' },
     { id: 'bg18', type: 'gradient', value: 'linear-gradient(45deg, #d53369 0%, #daae51 100%)', border: '#daae51', accent: '#FFF' },
-    { id: 'bg19', type: 'gradient', value: 'linear-gradient(to right, #0f2027, #203a43, #2c5364)', border: '#4c7384', accent: '#FFD700' },
-    { id: 'bg20', type: 'gradient', value: 'radial-gradient(circle, #5c258d, #4389a2)', border: '#6db3c9', accent: '#FFF' },
+    { id: 'bg19', type: 'pattern', value: 'repeating-linear-gradient(45deg, #0f2027, #0f2027 10px, #203a43 10px, #203a43 20px)', border: '#4c7384', accent: '#FFD700' },
+    { id: 'bg20', type: 'pattern', value: 'repeating-radial-gradient(circle at 0 0, transparent 0, #5c258d 10px), repeating-linear-gradient(#4389a2, #4389a2)', border: '#6db3c9', accent: '#FFF' },
+    { id: 'bg21', type: 'pattern', value: 'radial-gradient(circle at 50% 50%, #11998e 2px, transparent 2.5px), radial-gradient(circle at 50% 50%, #38ef7d 2px, transparent 2.5px)', border: '#58ff9d', accent: '#004D40' },
 ];
 
 const FRAMES = [
@@ -342,28 +343,28 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     <div className="p-3 space-y-4">
                         {/* Share Type Selector */}
                         <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                            <button onClick={() => setShareType('text')} className={`flex-1 py-1.5 text-xs font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'text' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 dark:text-gray-300'}`}>
-                                <Type size={14} /> نص
+                            <button onClick={() => setShareType('text')} className={`flex-1 py-1 text-[10px] font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'text' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 dark:text-gray-300'}`}>
+                                <Type size={12} /> نص
                             </button>
-                            <button onClick={() => setShareType('image')} className={`flex-1 py-1.5 text-xs font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'image' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 dark:text-gray-300'}`}>
-                                <ImageIcon size={14} /> صورة
+                            <button onClick={() => setShareType('image')} className={`flex-1 py-1 text-[10px] font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'image' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 dark:text-gray-300'}`}>
+                                <ImageIcon size={12} /> صورة
                             </button>
-                            <button onClick={() => setShareType('page')} className={`flex-1 py-1.5 text-xs font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'page' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 dark:text-gray-300'}`}>
-                                <FileText size={14} /> صفحة
+                            <button onClick={() => setShareType('page')} className={`flex-1 py-1 text-[10px] font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'page' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 dark:text-gray-300'}`}>
+                                <FileText size={12} /> صفحة
                             </button>
-                            <button onClick={() => setShareType('audio')} className={`flex-1 py-1.5 text-xs font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'audio' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 dark:text-gray-300'}`}>
-                                <Volume2 size={14} /> صوت
+                            <button onClick={() => setShareType('audio')} className={`flex-1 py-1 text-[10px] font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'audio' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 dark:text-gray-300'}`}>
+                                <Volume2 size={12} /> صوت
                             </button>
                         </div>
 
                         {/* Range Selector */}
-                        <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-xl gap-4">
+                        <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 p-1.5 rounded-xl gap-3">
                             <div className="flex-1">
-                                <label className="block text-[10px] text-center text-gray-500 dark:text-gray-400 mb-1">من</label>
+                                <label className="block text-[9px] text-center text-gray-500 dark:text-gray-400 mb-0.5">من</label>
                                 <select 
                                     value={fromAyah} 
                                     onChange={(e) => setFromAyah(Number(e.target.value))}
-                                    className="w-full p-1.5 text-xs border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-center outline-none"
+                                    className="w-full p-1 text-[10px] border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-center outline-none"
                                 >
                                     {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
                                         <option key={ay.numberInSurah} value={ay.numberInSurah}>
@@ -373,11 +374,11 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 </select>
                             </div>
                             <div className="flex-1">
-                                <label className="block text-[10px] text-center text-gray-500 dark:text-gray-400 mb-1">إلى</label>
+                                <label className="block text-[9px] text-center text-gray-500 dark:text-gray-400 mb-0.5">إلى</label>
                                 <select 
                                     value={toAyah} 
                                     onChange={(e) => setToAyah(Number(e.target.value))}
-                                    className="w-full p-1.5 text-xs border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-center outline-none"
+                                    className="w-full p-1 text-[10px] border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-center outline-none"
                                 >
                                     {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
                                         <option key={ay.numberInSurah} value={ay.numberInSurah}>
@@ -487,16 +488,16 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
 
                         {/* Image Customization Controls */}
                         {shareType === 'image' && (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 {/* Background Selection */}
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">الخلفية</label>
-                                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                                    <label className="block text-[10px] font-medium text-gray-700 dark:text-gray-300 mb-1">الخلفية</label>
+                                    <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
                                         {BACKGROUNDS.map(bg => (
                                             <button
                                                 key={bg.id}
                                                 onClick={() => setSelectedBg(bg)}
-                                                className={`w-10 h-10 rounded-lg shrink-0 border-2 transition-all ${selectedBg.id === bg.id ? 'border-blue-500 scale-110 shadow-sm' : 'border-transparent'}`}
+                                                className={`w-8 h-8 rounded-lg shrink-0 border-2 transition-all ${selectedBg.id === bg.id ? 'border-blue-500 scale-110 shadow-sm' : 'border-transparent'}`}
                                                 style={{
                                                     backgroundImage: bg.value,
                                                     backgroundSize: 'cover',
@@ -509,13 +510,13 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
 
                                 {/* Frame Selection */}
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">الإطار</label>
-                                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                                    <label className="block text-[10px] font-medium text-gray-700 dark:text-gray-300 mb-1">الإطار</label>
+                                    <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
                                         {FRAMES.map(frame => (
                                             <button
                                                 key={frame.id}
                                                 onClick={() => setSelectedFrame(frame)}
-                                                className={`shrink-0 px-2.5 py-1.5 rounded-lg border transition-all text-[10px] font-medium flex items-center justify-center min-w-[70px] ${selectedFrame.id === frame.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
+                                                className={`shrink-0 px-2 py-1 rounded-lg border transition-all text-[9px] font-medium flex items-center justify-center min-w-[60px] ${selectedFrame.id === frame.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
                                             >
                                                 {frame.name}
                                             </button>
@@ -524,36 +525,36 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 </div>
 
                                 {/* Text Controls */}
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-2">
                                     {/* Font Size */}
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">حجم الخط</label>
+                                        <label className="block text-[10px] font-medium text-gray-700 dark:text-gray-300 mb-1">حجم الخط</label>
                                         <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-1 rounded-lg">
                                             <button 
                                                 onClick={() => setFontSize(prev => Math.max(12, prev - 2))}
-                                                className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded-md text-gray-600 dark:text-gray-300"
+                                                className="p-1 hover:bg-white dark:hover:bg-gray-600 rounded-md text-gray-600 dark:text-gray-300"
                                             >
-                                                <Minus size={14} />
+                                                <Minus size={12} />
                                             </button>
-                                            <span className="font-medium text-xs text-gray-700 dark:text-gray-200">{fontSize}</span>
+                                            <span className="font-medium text-[10px] text-gray-700 dark:text-gray-200">{fontSize}</span>
                                             <button 
                                                 onClick={() => setFontSize(prev => Math.min(48, prev + 2))}
-                                                className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded-md text-gray-600 dark:text-gray-300"
+                                                className="p-1 hover:bg-white dark:hover:bg-gray-600 rounded-md text-gray-600 dark:text-gray-300"
                                             >
-                                                <Plus size={14} />
+                                                <Plus size={12} />
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* Text Color */}
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">لون النص</label>
-                                        <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar bg-gray-50 dark:bg-gray-700/50 p-1.5 rounded-lg items-center">
+                                        <label className="block text-[10px] font-medium text-gray-700 dark:text-gray-300 mb-1">لون النص</label>
+                                        <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar bg-gray-50 dark:bg-gray-700/50 p-1 rounded-lg items-center">
                                             {TEXT_COLORS.map(color => (
                                                 <button
                                                     key={color}
                                                     onClick={() => setTextColor(color)}
-                                                    className={`w-6 h-6 rounded-full shrink-0 border-2 transition-all ${textColor === color ? 'border-blue-500 scale-110' : 'border-gray-300 dark:border-gray-600'}`}
+                                                    className={`w-5 h-5 rounded-full shrink-0 border-2 transition-all ${textColor === color ? 'border-blue-500 scale-110' : 'border-gray-300 dark:border-gray-600'}`}
                                                     style={{ backgroundColor: color }}
                                                 />
                                             ))}
@@ -563,13 +564,13 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
 
                                 {/* Font Selection */}
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">نوع الخط</label>
-                                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                                    <label className="block text-[10px] font-medium text-gray-700 dark:text-gray-300 mb-1">نوع الخط</label>
+                                    <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
                                         {FONTS.map(font => (
                                             <button
                                                 key={font.id}
                                                 onClick={() => setSelectedFont(font.id)}
-                                                className={`px-3 py-1.5 rounded-lg shrink-0 border transition-all text-xs ${selectedFont === font.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600'}`}
+                                                className={`px-2 py-1 rounded-lg shrink-0 border transition-all text-[10px] ${selectedFont === font.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600'}`}
                                                 style={{ fontFamily: font.id }}
                                             >
                                                 {font.name}
@@ -585,7 +586,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                         value={customText}
                                         onChange={(e) => setCustomText(e.target.value)}
                                         placeholder="نص إضافي (اختياري)..."
-                                        className="w-full p-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                        className="w-full p-1.5 text-[10px] border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                                         maxLength={50}
                                         dir="rtl"
                                     />
@@ -595,11 +596,11 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     </div>
 
                     {/* Footer */}
-                    <div className="p-3 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80">
+                    <div className="p-2 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80">
                         <button
                             onClick={handleShare}
                             disabled={isSharing}
-                            className="w-full py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70"
+                            className="w-full py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70"
                             style={{ backgroundColor: currentTheme.primary || '#3b82f6' }}
                         >
                             {isSharing ? (
