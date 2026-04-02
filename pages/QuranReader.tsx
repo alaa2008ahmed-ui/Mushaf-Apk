@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, FC } from 'react';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import './QuranReader.css'; 
-import { JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, DEFAULT_SETTINGS, FONTS, SURAH_NAMES_AR } from '../components/QuranReader/constants';
+import { ReadingMode, JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, DEFAULT_SETTINGS, FONTS, SURAH_NAMES_AR } from '../components/QuranReader/constants';
 import SearchModal from '../components/QuranReader/SearchModal';
 import ThemesModal from '../components/QuranReader/ThemesModal';
 import SettingsModal from '../components/QuranReader/SettingsModal';
@@ -11,6 +11,7 @@ import SurahJuzModal from '../components/QuranReader/SurahJuzModal';
 import { KeepAwake } from '@capacitor-community/keep-awake';
 import BookmarksModal from '../components/QuranReader/BookmarksModal';
 import MushafPage from '../components/QuranReader/MushafPage';
+import VerticalReadingView from '../components/QuranReader/VerticalReadingView';
 import Toast from '../components/QuranReader/Toast';
 import TafseerModal from '../components/QuranReader/TafseerModal';
 import ReciterSelectModal from '../components/QuranReader/ReciterSelectModal';
@@ -80,7 +81,37 @@ const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, currentTheme }
     );
 };
 
-const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage }) => {
+const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, currentTheme }: any) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 z-[300] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
+            <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl flex flex-col animate-modal-enter p-8 text-center" style={{ backgroundColor: currentTheme?.bg || '#ffffff', color: currentTheme?.text || '#000000' }}>
+                <div className="w-20 h-20 bg-green-500/20 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i className="fa-solid fa-check-double text-4xl"></i>
+                </div>
+                <h2 className="text-2xl font-bold mb-4">تقبل الله طاعتك!</h2>
+                <p className="opacity-80 mb-8 text-lg">لقد وصلت إلى نهاية وردك اليومي المحدد. يمكنك التوقف عن القراءة الآن أو الاستمرار كما تحب.</p>
+                <div className="flex flex-col gap-3">
+                    <button 
+                        onClick={onGoToWird}
+                        className="w-full py-4 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-bold text-lg transition-transform hover:scale-105 shadow-lg flex items-center justify-center gap-2"
+                    >
+                        <i className="fa-solid fa-calendar-check"></i>
+                        العودة لصفحة الورد
+                    </button>
+                    <button 
+                        onClick={onClose}
+                        className="w-full py-3 opacity-60 hover:opacity-100 font-bold"
+                    >
+                        إغلاق والاستمرار في القراءة
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
     
     // Auto-detect orientation
@@ -107,7 +138,54 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const [loadingProgress, setLoadingProgress] = useState(100);
 
     const [visiblePages, setVisiblePages] = useState<number[]>([1, 2, 3]);
+    const [wirdEndPage, setWirdEndPage] = useState<number | null>(null);
+    const [showWirdCompleteModal, setShowWirdCompleteModal] = useState(false);
+    const [hasShownWirdComplete, setHasShownWirdComplete] = useState(false);
+    const [readingMode, setReadingMode] = useState<ReadingMode>('mushaf');
+
+    useEffect(() => {
+        const saved = localStorage.getItem('dailyWirdSettings_v2');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                const activeProfile = parsed.profiles?.find((p: any) => p.id === parsed.activeId);
+                if (activeProfile && activeProfile.isActive) {
+                    const getDayRange = (day: number, settings: any) => {
+                        const TOTAL_PAGES = 604;
+                        const startPage = settings.startPage || 1;
+                        const pagesLeft = TOTAL_PAGES - startPage + 1;
+                        const offset = startPage - 1;
+
+                        if (settings.mode === 'days') {
+                            const totalDays = settings.value;
+                            const start = Math.floor(((day - 1) * pagesLeft) / totalDays) + 1 + offset;
+                            const end = Math.floor((day * pagesLeft) / totalDays) + offset;
+                            return { start, end: Math.max(start - 1, end) };
+                        } else {
+                            const pagesPerDay = settings.value;
+                            const start = (day - 1) * pagesPerDay + 1 + offset;
+                            const end = Math.min(day * pagesPerDay + offset, TOTAL_PAGES);
+                            return { start: Math.min(start, TOTAL_PAGES + 1), end };
+                        }
+                    };
+                    const { end } = getDayRange(activeProfile.currentDay, activeProfile);
+                    setWirdEndPage(end);
+                }
+            } catch (e) {}
+        }
+    }, []);
+
     const [currentAyah, setCurrentAyah] = useState<{ s: number; a: number }>({ s: 1, a: 1 });
+
+    useEffect(() => {
+        if (isWirdMode && wirdEndPage && quranData && !hasShownWirdComplete) {
+            const ayah = quranData.surahs[currentAyah.s - 1]?.ayahs[currentAyah.a - 1];
+            if (ayah && ayah.page > wirdEndPage) {
+                setShowWirdCompleteModal(true);
+                setHasShownWirdComplete(true);
+            }
+        }
+    }, [currentAyah, wirdEndPage, quranData, hasShownWirdComplete, isWirdMode]);
     const [highlightedAyahId, setHighlightedAyahId] = useState<string | null>(null);
     const [isTransparentMode, setIsTransparentMode] = useState(() => localStorage.getItem('transparent_mode' + modeSuffix) === 'true');
     const [isHideToolbarsEnabled, setIsHideToolbarsEnabled] = useState(() => localStorage.getItem('hide_toolbars_enabled' + modeSuffix) === 'true');
@@ -2159,29 +2237,45 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 handlePlayButtonPointerLeave={handlePlayButtonPointerLeave}
                 renderPlayButtonIcon={renderPlayButtonIcon}
                 reciterToast={reciterToast}
+                readingMode={readingMode}
+                setReadingMode={setReadingMode}
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
-                <div id="pages-container" className="full-mushaf-container">
-                   {[...new Set(visiblePages)].sort((a: number, b: number) => a - b).map(pageNum => {
-                       const displaySettings = ayahContextMenu.isOpen ? { ...settings, ...ayahContextMenu.tempSettings } : settings;
-                       return (
-                           <MushafPage 
-                               key={pageNum} 
-                               pageNum={pageNum} 
-                               pageData={getPageData(pageNum)} 
-                               highlightedAyahId={highlightedAyahId} 
-                               onAyahClick={handleAyahTextClick} 
-                               onVerseClick={handleVerseClick} 
-                               onVerseLongPress={handleVerseLongPress} 
-                               onAyahLongPress={handleAyahLongPress} 
-                               onInteractionStart={handleInteractionStart} 
-                               onInteractionEnd={handleInteractionEnd} 
-                               settings={displaySettings} 
-                           />
-                       );
-                   })}
-                </div>
+                {readingMode === 'mushaf' ? (
+                    <div id="pages-container" className="full-mushaf-container">
+                    {[...new Set(visiblePages)].sort((a: number, b: number) => a - b).map(pageNum => {
+                        const displaySettings = ayahContextMenu.isOpen ? { ...settings, ...ayahContextMenu.tempSettings } : settings;
+                        return (
+                            <MushafPage 
+                                key={pageNum} 
+                                pageNum={pageNum} 
+                                pageData={getPageData(pageNum)} 
+                                highlightedAyahId={highlightedAyahId} 
+                                onAyahClick={handleAyahTextClick} 
+                                onVerseClick={handleVerseClick} 
+                                onVerseLongPress={handleVerseLongPress} 
+                                onAyahLongPress={handleAyahLongPress} 
+                                onInteractionStart={handleInteractionStart} 
+                                onInteractionEnd={handleInteractionEnd} 
+                                settings={displaySettings} 
+                            />
+                        );
+                    })}
+                    </div>
+                ) : (
+                    <VerticalReadingView 
+                        quranData={quranData}
+                        readingMode={readingMode}
+                        settings={settings}
+                        currentTheme={currentTheme}
+                        currentAyah={currentAyah}
+                        onAyahClick={(s, a) => {
+                            setCurrentAyah({ s, a });
+                            setHighlightedAyahId(`${s}-${a}`);
+                        }}
+                    />
+                )}
             </div>
             <MarkerNotification isVisible={markerNotification.show} type={markerNotification.type} text={markerNotification.text} />
             
@@ -2252,6 +2346,12 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     }} 
                 />
             )}
+            <WirdCompletionModal 
+                isOpen={showWirdCompleteModal} 
+                onClose={() => setShowWirdCompleteModal(false)} 
+                onGoToWird={() => onNavigate('daily-wird')} 
+                currentTheme={currentTheme} 
+            />
             {activeModals.includes('search-modal') && <SearchModal quranData={quranData} onSelect={(s,a) => jumpToAyah(s,a, true)} onClose={() => closeModal('search-modal')} isLandscape={isLandscape} initialQuery={initialSearchQuery} />}
             {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} />}
             {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} />}

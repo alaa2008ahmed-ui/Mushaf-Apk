@@ -21,6 +21,11 @@ const TOTAL_PAGES = 604;
 
 const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, params?: any) => void }> = ({ onBack, onNavigate }) => {
   const { theme, themeKey } = useTheme();
+  const isBlackAndWhite = themeKey === 'black_and_white';
+  const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
+  const secondaryColor = isBlackAndWhite ? '#FFFFFF' : (theme.palette[1] || theme.palette[0]);
+  const btnTextColor = isBlackAndWhite ? '#000000' : '#FFFFFF';
+
   const [allSettings, setAllSettings] = useState<WirdSettings[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -171,15 +176,21 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
 
   const confirmReset = () => {
     if (settings) {
-      const newWird = {
+      const resetProfile: WirdSettings = {
         ...settings,
         currentDay: 1,
         completedDays: [],
-        startDate: new Date().toISOString(),
-        startPage: 1
+        startPage: 1,
+        isActive: true
       };
-      const newProfiles = allSettings.map(p => p.id === settings.id ? newWird : p);
+      const newProfiles = allSettings.map(p => p.id === settings.id ? resetProfile : p);
       saveAllSettings(newProfiles, settings.id);
+      
+      setTempMode('days');
+      setTempValue('30');
+      setTempName(settings.name);
+      setCalcMethod('remaining'); // Reset to default
+      setShowSettings(true);
     }
     setShowResetConfirm(false);
   };
@@ -207,14 +218,14 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   };
 
   const handleOpenQuran = (page: number) => {
-    onNavigate('quran', { page });
+    onNavigate('quran', { page, isWird: true });
   };
 
   const renderSettings = () => (
-    <div className="p-6 rounded-2xl shadow-lg border" style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}>
-      <h2 className="text-2xl font-bold mb-6 text-center">{settings ? 'تعديل الختمة' : 'إعداد ختمة جديدة'}</h2>
+    <div className="p-4 rounded-2xl shadow-lg border" style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}>
+      <h2 className="text-xl font-bold mb-4 text-center">{settings ? 'تعديل الختمة' : 'إعداد ختمة جديدة'}</h2>
       
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
           <label className="block mb-2 font-semibold">اسم المستخدم / الختمة:</label>
           <input 
@@ -341,57 +352,58 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     const hasPages = startPage <= endPage && startPage <= TOTAL_PAGES;
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Progress Bar */}
-        <div className="rounded-2xl p-6 shadow-lg border" style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}>
-          <div className="flex justify-between mb-2">
-            <span className="font-bold">نسبة الإنجاز</span>
-            <span className="font-bold text-green-500 dark:text-green-400">{progress.toFixed(1)}%</span>
+        <div className="rounded-2xl p-4 shadow-lg border" style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}>
+          <div className="flex justify-between mb-1">
+            <span className="font-bold text-sm">نسبة الإنجاز</span>
+            <span className="font-bold text-green-500 dark:text-green-400 text-sm">{progress.toFixed(1)}%</span>
           </div>
-          <div className="w-full h-4 rounded-full overflow-hidden" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+          <div className="w-full h-3 rounded-full overflow-hidden" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               className="h-full bg-gradient-to-r from-green-500 to-emerald-400"
             />
           </div>
-          <div className="flex justify-between mt-2 text-sm opacity-80">
+          <div className="flex justify-between mt-1 text-xs opacity-80">
             <span>اليوم {settings.currentDay} من {totalDays}</span>
             <span>{settings.completedDays.length} يوم مكتمل</span>
           </div>
         </div>
 
         {/* Current Wird */}
-        <div className="rounded-2xl p-6 shadow-lg border text-center" style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}>
-          <h3 className="text-xl font-bold mb-4 text-emerald-600 dark:text-emerald-400">ورد اليوم ({settings.currentDay})</h3>
+        <div className="rounded-2xl p-4 shadow-lg border text-center" style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }}>
+          <h3 className="text-lg font-bold mb-3 text-emerald-600 dark:text-emerald-400">ورد اليوم ({settings.currentDay})</h3>
           
-          <div className="flex justify-center items-center gap-4 mb-6">
+          <div className="flex justify-center items-center gap-3 mb-4">
             {hasPages ? (
               <>
-                <div className="p-4 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
-                  <p className="text-sm opacity-80 mb-1">من صفحة</p>
-                  <p className="text-3xl font-bold">{startPage}</p>
+                <div className="p-3 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
+                  <p className="text-xs opacity-80 mb-1">من صفحة</p>
+                  <p className="text-2xl font-bold">{startPage}</p>
                 </div>
-                <span className="text-2xl opacity-50">-</span>
-                <div className="p-4 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
-                  <p className="text-sm opacity-80 mb-1">إلى صفحة</p>
-                  <p className="text-3xl font-bold">{endPage}</p>
+                <span className="text-xl opacity-50">-</span>
+                <div className="p-3 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
+                  <p className="text-xs opacity-80 mb-1">إلى صفحة</p>
+                  <p className="text-2xl font-bold">{endPage}</p>
                 </div>
               </>
             ) : (
-              <div className="p-4 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
-                <p className="text-xl font-bold">لقد أكملت جميع الصفحات!</p>
+              <div className="p-3 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
+                <p className="text-lg font-bold">لقد أكملت جميع الصفحات!</p>
               </div>
             )}
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             {hasPages && (
               <button 
                 onClick={() => handleOpenQuran(startPage)}
-                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md"
+                style={{ backgroundColor: primaryColor, color: btnTextColor, border: theme.btnBorder || 'none' }}
               >
-                <BookOpen size={24} />
+                <BookOpen size={20} />
                 افتح المصحف للقراءة
               </button>
             )}
@@ -399,33 +411,51 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             {!isCompleted ? (
               <button 
                 onClick={markDayCompleted}
-                className="w-full py-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md"
+                style={{ backgroundColor: secondaryColor, color: btnTextColor, border: theme.btnBorder || 'none' }}
               >
-                <CheckCircle size={24} />
+                <CheckCircle size={20} />
                 تمت القراءة
               </button>
             ) : (
-              <div className="w-full py-4 bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30 rounded-xl font-bold flex items-center justify-center gap-2">
-                <CheckCircle size={24} />
+              <div 
+                className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-sm border shadow-sm"
+                style={{ 
+                  backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : `${secondaryColor}20`, 
+                  color: isBlackAndWhite ? '#FFFFFF' : secondaryColor,
+                  borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : `${secondaryColor}30`
+                }}
+              >
+                <CheckCircle size={20} />
                 أنجزت ورد اليوم، بارك الله فيك!
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <button 
             onClick={handleEdit}
-            className="flex-1 py-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+            className="flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm"
+            style={{ 
+              backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : `${primaryColor}10`, 
+              color: isBlackAndWhite ? '#FFFFFF' : primaryColor,
+              borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : `${primaryColor}30`
+            }}
           >
-            <Settings size={20} />
+            <Settings size={18} />
             تعديل الختمة
           </button>
           <button 
             onClick={handleReset}
-            className="flex-1 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+            className="flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm"
+            style={{ 
+              backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : '#ef444410', 
+              color: isBlackAndWhite ? '#FFFFFF' : '#ef4444',
+              borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : '#ef444430'
+            }}
           >
-            <RotateCcw size={20} />
+            <RotateCcw size={18} />
             إعادة تعيين
           </button>
         </div>
@@ -577,8 +607,8 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 overflow-y-auto p-4 pb-32">
-        <div className="max-w-md mx-auto mt-4">
+      <main className="flex-1 min-h-0 overflow-hidden p-4 flex flex-col items-center justify-center">
+        <div className="w-full max-w-md">
           {!showSettings && renderProfileSelector()}
           {showSettings || !settings ? renderSettings() : renderProgress()}
         </div>

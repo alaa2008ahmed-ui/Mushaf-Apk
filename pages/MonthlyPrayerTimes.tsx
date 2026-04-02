@@ -482,10 +482,10 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                                             }
                                         }}
                                         className="bg-black/5 dark:bg-white/5 p-3 rounded-xl outline-none focus:ring-2 transition-all"
-                                        style={{ borderColor: 'var(--card-border)' }}
+                                        style={{ borderColor: 'var(--card-border)', color: theme.textColor, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
                                     >
                                         {(calendarType === 'hijri' ? HIJRI_MONTHS : GREGORIAN_MONTHS).map((m, i) => (
-                                            <option key={i} value={i}>{m}</option>
+                                            <option key={i} value={i} style={{ backgroundColor: theme.cardBg, color: theme.textColor }}>{m}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -502,12 +502,12 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                                             }
                                         }}
                                         className="bg-black/5 dark:bg-white/5 p-3 rounded-xl outline-none focus:ring-2 transition-all"
-                                        style={{ borderColor: 'var(--card-border)' }}
+                                        style={{ borderColor: 'var(--card-border)', color: theme.textColor, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
                                     >
                                         {Array.from({ length: 20 }, (_, i) => {
                                             const baseYear = calendarType === 'hijri' ? moment().iYear() : moment().year();
                                             const year = baseYear - 10 + i;
-                                            return <option key={year} value={year}>{year}</option>;
+                                            return <option key={year} value={year} style={{ backgroundColor: theme.cardBg, color: theme.textColor }}>{year}</option>;
                                         })}
                                     </select>
                                 </div>

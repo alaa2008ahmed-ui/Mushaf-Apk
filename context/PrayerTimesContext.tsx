@@ -57,6 +57,22 @@ const DEFAULT_CONFIG: PrayerConfig = {
 
 
 // --- Helper Functions ---
+const fetchWithTimeout = async (url: string, options: any = {}, timeout = 5000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(id);
+        return response;
+    } catch (e) {
+        clearTimeout(id);
+        throw e;
+    }
+};
+
 const applyOffset = (timeStr: string, offsetMins: number) => {
     if (!timeStr || timeStr.includes('--')) return "--:--";
     let [h, m] = timeStr.split(':');
@@ -185,7 +201,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             // Try AlAdhan API first for maximum accuracy and official times
             try {
                 const timestamp = Math.floor(date.getTime() / 1000);
-                const apiRes = await fetch(`https://api.aladhan.com/v1/timings/${timestamp}?latitude=${lat}&longitude=${lng}&method=${methodId}`);
+                const apiRes = await fetchWithTimeout(`https://api.aladhan.com/v1/timings/${timestamp}?latitude=${lat}&longitude=${lng}&method=${methodId}`, {}, 5000);
                 const apiData = await apiRes.json();
                 
                 if (apiData && apiData.code === 200) {
@@ -266,45 +282,55 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
     const refreshLocation = useCallback(async () => {
         return new Promise<void>(async (resolve, reject) => {
             const fetchByIP = async () => {
-                try {
-                    let res = await fetch('https://ipapi.co/json/');
-                    if (!res.ok) throw new Error("IP fetch failed");
-                    let data = await res.json();
-                    if (data && data.latitude && data.longitude) {
-                        const newLoc = {
+                const fallbacks = [
+                    {
+                        url: 'https://ipapi.co/json/',
+                        parser: (data: any) => ({
                             lat: data.latitude,
                             lng: data.longitude,
                             cityGov: `${data.city} - ${data.region}`,
                             fullCountry: data.country_name,
                             combinedCode: data.country_calling_code
-                        };
-                        setConfig(prev => ({ ...prev, location: newLoc }));
-                        resolve();
-                    } else {
-                        throw new Error("Invalid data");
+                        })
+                    },
+                    {
+                        url: 'https://ipwho.is/',
+                        parser: (data: any) => ({
+                            lat: data.latitude,
+                            lng: data.longitude,
+                            cityGov: `${data.city} - ${data.region}`,
+                            fullCountry: data.country,
+                            combinedCode: data.calling_code ? `+${data.calling_code}` : ''
+                        })
+                    },
+                    {
+                        url: 'https://freeipapi.com/api/json',
+                        parser: (data: any) => ({
+                            lat: data.latitude,
+                            lng: data.longitude,
+                            cityGov: `${data.cityName} - ${data.regionName}`,
+                            fullCountry: data.countryName,
+                            combinedCode: data.countryCode
+                        })
                     }
-                } catch (e) {
+                ];
+
+                for (const service of fallbacks) {
                     try {
-                        let res = await fetch('https://ipwho.is/');
-                        let data = await res.json();
-                        if (data && data.latitude && data.longitude) {
-                            const newLoc = {
-                                lat: data.latitude,
-                                lng: data.longitude,
-                                cityGov: `${data.city} - ${data.region}`,
-                                fullCountry: data.country,
-                                combinedCode: data.calling_code ? `+${data.calling_code}` : ''
-                            };
+                        const res = await fetchWithTimeout(service.url, { cache: 'no-cache' }, 5000);
+                        if (!res.ok) continue;
+                        const data = await res.json();
+                        const newLoc = service.parser(data);
+                        if (newLoc.lat && newLoc.lng) {
                             setConfig(prev => ({ ...prev, location: newLoc }));
                             resolve();
-                        } else {
-                            reject(new Error("Failed to fetch IP location"));
+                            return;
                         }
-                    } catch (e2) {
-                        console.error("Failed to fetch location by IP:", e2);
-                        reject(e2);
+                    } catch (e) {
+                        console.warn(`IP location fetch failed for ${service.url}:`, e);
                     }
                 }
+                reject(new Error("Failed to fetch location by IP from all services"));
             };
 
             try {
@@ -325,7 +351,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                     cityGov: 'موقعي الحالي', fullCountry: '', combinedCode: ''
                 };
                 try {
-                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=ar`);
+                    const res = await fetchWithTimeout(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=ar`, {}, 5000);
                     const data = await res.json();
                     const addr = data.address;
                     const city = addr.village || addr.town || addr.city || "موقعي";
@@ -351,7 +377,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
     const manualSearch = useCallback(async (query: string) => {
         if(!query) return;
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&accept-language=ar&limit=1`);
+            const res = await fetchWithTimeout(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&accept-language=ar&limit=1`, {}, 5000);
             const data = await res.json();
             if(data && data.length > 0) {
                 const addr = data[0].address;
