@@ -223,6 +223,34 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             }
         }
     }, [currentAyah, wirdEndPage, quranData, hasShownWirdComplete, isWirdMode]);
+    useEffect(() => {
+        if (isWirdMode && quranData) {
+            const ayah = quranData.surahs[currentAyah.s - 1]?.ayahs[currentAyah.a - 1];
+            if (ayah) {
+                const page = ayah.page;
+                // Update localStorage for Daily Wird progress
+                const saved = localStorage.getItem('dailyWirdSettings_v2');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        const activeProfileIndex = parsed.profiles?.findIndex((p: any) => p.id === parsed.activeId);
+                        if (activeProfileIndex !== -1) {
+                            // Only update if it's a new position
+                            if (parsed.profiles[activeProfileIndex].lastPage !== page || 
+                                parsed.profiles[activeProfileIndex].lastAyah?.s !== currentAyah.s ||
+                                parsed.profiles[activeProfileIndex].lastAyah?.a !== currentAyah.a) {
+                                
+                                parsed.profiles[activeProfileIndex].lastPage = page;
+                                parsed.profiles[activeProfileIndex].lastAyah = currentAyah;
+                                localStorage.setItem('dailyWirdSettings_v2', JSON.stringify(parsed));
+                            }
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
+    }, [currentAyah, isWirdMode, quranData]);
+
     const [highlightedAyahId, setHighlightedAyahId] = useState<string | null>(null);
     const [isTransparentMode, setIsTransparentMode] = useState(() => localStorage.getItem('transparent_mode' + modeSuffix) === 'true');
     const [isHideToolbarsEnabled, setIsHideToolbarsEnabled] = useState(() => localStorage.getItem('hide_toolbars_enabled' + modeSuffix) === 'true');
@@ -1238,7 +1266,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     useEffect(() => {
         const handleThemeChange = () => {
-            const mode = isLandscapeRef.current ? '_h' : '_v';
+            const mode = modeSuffix;
             const themeId = localStorage.getItem('current_theme_id' + mode) || 'default';
             const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['default'];
             setCurrentTheme(newTheme);
@@ -2414,7 +2442,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 currentTheme={currentTheme} 
             />
             {activeModals.includes('search-modal') && <SearchModal quranData={quranData} onSelect={(s,a) => jumpToAyah(s,a, true)} onClose={() => closeModal('search-modal')} isLandscape={isLandscape} initialQuery={initialSearchQuery} readingMode={readingMode} />}
-            {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} />}
+            {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} readingMode={readingMode} />}
             {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} />}
             {activeModals.includes('settings-modal') && <SettingsModal onClose={() => closeModal('settings-modal')} onOpenModal={openModal} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} />}
             {activeModals.includes('font-modal') && <FontSelectModal isOpen={true} onClose={() => closeModal('font-modal')} isLandscape={isLandscape} currentFontId={settings.fontFamily} onSelect={(id) => {
@@ -2462,6 +2490,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 isOpen={tafseerInfo.isOpen} 
                 isLoading={isTafseerLoading} 
                 isLandscape={isLandscape}
+                currentTheme={currentTheme}
                 title={`${tafseerName} - ${tafseerInfo.surahName.replace('سورة','').trim()} - آية ${toArabic(tafseerInfo.a)}`} 
                 text={tafseerInfo.text} 
                 onClose={() => {
@@ -2476,6 +2505,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 isOpen={quranMeaningsInfo.isOpen} 
                 isLoading={isQuranMeaningsLoading} 
                 isLandscape={isLandscape}
+                currentTheme={currentTheme}
                 title={`معاني القرآن - ${quranMeaningsInfo.surahName.replace('سورة','').trim()} - آية ${toArabic(quranMeaningsInfo.a)}`} 
                 text={quranMeaningsInfo.text} 
                 onClose={() => {

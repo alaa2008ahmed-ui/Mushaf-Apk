@@ -7,30 +7,38 @@ interface TafseerModalProps {
     text: string;
     onClose: () => void;
     isLandscape?: boolean;
+    currentTheme?: any;
 }
 
-const TafseerModal: React.FC<TafseerModalProps> = ({ isOpen, isLoading, title, text, onClose, isLandscape }) => {
+const TafseerModal: React.FC<TafseerModalProps> = ({ isOpen, isLoading, title, text, onClose, isLandscape, currentTheme }) => {
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-[180] bg-black/30 flex justify-center items-center px-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl flex flex-col max-h-[85vh] shadow-2xl`} onClick={e => e.stopPropagation()}>
-                <div className="p-4 rounded-t-2xl flex justify-between items-center shadow-md theme-header-bg">
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl flex flex-col max-h-[85vh] shadow-2xl`} 
+                 style={{ 
+                     backgroundColor: currentTheme?.modalBg, 
+                     color: currentTheme?.modalText,
+                     fontFamily: currentTheme?.font
+                 }}
+                 onClick={e => e.stopPropagation()}>
+                <div className="p-4 rounded-t-2xl flex justify-between items-center shadow-md theme-header-bg"
+                     style={{ backgroundColor: currentTheme?.headerBg, color: currentTheme?.headerText }}>
                     <h3 className="font-bold text-lg">{title}</h3>
                     <button onClick={onClose} className="text-2xl hover:opacity-80 transition">&times;</button>
                 </div>
                 <div className="p-5 overflow-y-auto text-center flex-1">
                     {isLoading ? (
                         <div>
-                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600 mx-auto"></div>
+                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 mx-auto" style={{ borderColor: currentTheme?.accent || '#10b981' }}></div>
                             <p className="mt-3 opacity-60">جاري تحميل التفسير...</p>
                         </div>
                     ) : (
-                        <p className="text-lg leading-relaxed font-serif" style={{ whiteSpace: 'pre-wrap' }}>{text}</p>
+                        <p className="text-lg leading-relaxed font-serif" style={{ whiteSpace: 'pre-wrap', color: currentTheme?.modalText }}>{text}</p>
                     )}
                 </div>
-                <div className="p-2 border-t themed-card-bg rounded-b-2xl">
-                    <button onClick={onClose} className="w-full py-2 rounded-xl font-bold transition theme-btn-bg">إغلاق</button>
+                <div className="p-2 border-t rounded-b-2xl themed-card-bg" style={{ backgroundColor: currentTheme?.cardBg, borderColor: currentTheme?.cardBorder }}>
+                    <button onClick={onClose} className="w-full py-2 rounded-xl font-bold transition theme-btn-bg" style={{ backgroundColor: currentTheme?.btnBg, color: currentTheme?.btnText }}>إغلاق</button>
                 </div>
             </div>
         </div>

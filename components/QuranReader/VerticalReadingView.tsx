@@ -107,7 +107,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
         const fetchTranslation = async () => {
             if (cachedTranslationData) return;
             try {
-                const res = await fetch('/quran_en.json');
+                const res = await fetch('/en.json');
                 const data = await res.json();
                 cachedTranslationData = data;
                 setTranslationData(cachedTranslationData);
@@ -254,7 +254,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 </div>
             </div>
         );
-    }, [currentAyah, currentTheme, settings, readingMode, onAyahClick, meaningsData, tafseerData]);
+    }, [currentAyah, currentTheme, settings, readingMode, onAyahClick, meaningsData, tafseerData, translationData]);
 
     if (isLoading) {
         return (

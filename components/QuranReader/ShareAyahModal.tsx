@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, ChevronRight, ChevronLeft, Share2, Plus, Minus, Type } from 'lucide-react';
+import { X, Share2, Plus, Minus, Type, Image as ImageIcon, FileText, Volume2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -12,6 +12,7 @@ interface ShareAyahModalProps {
     currentAyah: { s: number; a: number };
     quranData: any;
     currentTheme: any;
+    readingMode?: 'mushaf' | 'tafseer' | 'meanings' | 'translation';
 }
 
 const BACKGROUNDS = [
@@ -31,6 +32,10 @@ const BACKGROUNDS = [
     { id: 'bg14', type: 'gradient', value: 'linear-gradient(135deg, #8E0E00 0%, #1F1C18 100%)', border: '#b31200', accent: '#FFD700' },
     { id: 'bg15', type: 'gradient', value: 'linear-gradient(135deg, #00C9FF 0%, #92FE9D 100%)', border: '#b3ffc2', accent: '#004D40' },
     { id: 'bg16', type: 'gradient', value: 'linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%)', border: '#ffd266', accent: '#880E4F' },
+    { id: 'bg17', type: 'gradient', value: 'radial-gradient(circle at 50% 50%, #1a2a6c, #b21f1f, #fdbb2d)', border: '#fdbb2d', accent: '#FFF' },
+    { id: 'bg18', type: 'gradient', value: 'linear-gradient(45deg, #d53369 0%, #daae51 100%)', border: '#daae51', accent: '#FFF' },
+    { id: 'bg19', type: 'gradient', value: 'linear-gradient(to right, #0f2027, #203a43, #2c5364)', border: '#4c7384', accent: '#FFD700' },
+    { id: 'bg20', type: 'gradient', value: 'radial-gradient(circle, #5c258d, #4389a2)', border: '#6db3c9', accent: '#FFF' },
 ];
 
 const FRAMES = [
@@ -89,51 +94,71 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     onClose,
     currentAyah,
     quranData,
-    currentTheme
+    currentTheme,
+    readingMode = 'mushaf'
 }) => {
+    const [shareType, setShareType] = useState<'text' | 'image' | 'page' | 'audio'>('image');
+    const [fromAyah, setFromAyah] = useState(currentAyah.a);
+    const [toAyah, setToAyah] = useState(currentAyah.a);
     const [selectedAyahs, setSelectedAyahs] = useState<{ s: number; a: number }[]>([currentAyah]);
+    
     const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0]);
     const [selectedFrame, setSelectedFrame] = useState(FRAMES[0]);
-    const [fontSize, setFontSize] = useState(24);
+    const [fontSize, setFontSize] = useState(20);
     const [textColor, setTextColor] = useState(TEXT_COLORS[0]);
     const [selectedFont, setSelectedFont] = useState(FONTS[0].id);
     const [customText, setCustomText] = useState('');
     const [isSharing, setIsSharing] = useState(false);
+    const [explanationData, setExplanationData] = useState<any>(null);
     const previewRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        const fetchExplanation = async () => {
+            if (readingMode === 'mushaf') return;
+            try {
+                let url = '';
+                if (readingMode === 'tafseer') url = '/assets/data/ar.jalalayn.json';
+                else if (readingMode === 'meanings') url = '/tafseer.json';
+                else if (readingMode === 'translation') url = '/en.json';
+                
+                if (url) {
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    setExplanationData(data);
+                }
+            } catch (e) {
+                console.error('Error fetching explanation for share:', e);
+            }
+        };
+        fetchExplanation();
+    }, [readingMode]);
+
+    useEffect(() => {
         if (isOpen) {
+            setFromAyah(currentAyah.a);
+            setToAyah(currentAyah.a);
             setSelectedAyahs([currentAyah]);
             setSelectedBg(BACKGROUNDS[0]);
             setSelectedFrame(FRAMES[0]);
-            setFontSize(24);
+            setFontSize(20);
             setTextColor(TEXT_COLORS[0]);
             setSelectedFont(FONTS[0].id);
             setCustomText('');
+            setShareType('image');
         }
     }, [isOpen, currentAyah]);
 
+    useEffect(() => {
+        const start = Math.min(fromAyah, toAyah);
+        const end = Math.max(fromAyah, toAyah);
+        const newSelected = [];
+        for (let a = start; a <= end; a++) {
+            newSelected.push({ s: currentAyah.s, a });
+        }
+        setSelectedAyahs(newSelected);
+    }, [fromAyah, toAyah, currentAyah.s]);
+
     if (!isOpen || !quranData) return null;
-
-    const handlePrevAyah = () => {
-        const first = selectedAyahs[0];
-        if (first.a > 1) {
-            setSelectedAyahs([{ s: first.s, a: first.a - 1 }, ...selectedAyahs]);
-        } else if (first.s > 1) {
-            const prevSurah = quranData.surahs[first.s - 2];
-            setSelectedAyahs([{ s: first.s - 1, a: prevSurah.ayahs.length }, ...selectedAyahs]);
-        }
-    };
-
-    const handleNextAyah = () => {
-        const last = selectedAyahs[selectedAyahs.length - 1];
-        const currentSurah = quranData.surahs[last.s - 1];
-        if (last.a < currentSurah.ayahs.length) {
-            setSelectedAyahs([...selectedAyahs, { s: last.s, a: last.a + 1 }]);
-        } else if (last.s < 114) {
-            setSelectedAyahs([...selectedAyahs, { s: last.s + 1, a: 1 }]);
-        }
-    };
 
     const getAyahText = (s: number, a: number) => {
         const surah = quranData.surahs[s - 1];
@@ -151,324 +176,443 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         return SURAH_NAMES_AR[s - 1] || '';
     };
 
-    const handleShare = async () => {
-        if (!previewRef.current || isSharing) return;
-        setIsSharing(true);
-        const shareText = `تلاوة من القرآن الكريم\n${surahInfo}\nتم الإنشاء بواسطة: مصحف احمد وليلى`;
-        try {
-            const canvas = await html2canvas(previewRef.current, {
-                scale: 2.5,
-                useCORS: true,
-                backgroundColor: '#ffffff',
-                onclone: (clonedDoc) => {
-                    // Fix for oklab/oklch colors which html2canvas doesn't support
-                    const elements = clonedDoc.getElementsByTagName('*');
-                    for (let i = 0; i < elements.length; i++) {
-                        const el = elements[i] as HTMLElement;
-                        const style = window.getComputedStyle(el);
-                        // Check common properties that might have oklab
-                        ['color', 'backgroundColor', 'borderColor', 'outlineColor'].forEach(prop => {
-                            const val = el.style.getPropertyValue(prop) || style.getPropertyValue(prop);
-                            if (val && (val.includes('oklab') || val.includes('oklch'))) {
-                                // Fallback to black for text, transparent for others
-                                el.style.setProperty(prop, prop === 'color' ? '#000000' : 'transparent', 'important');
-                            }
-                        });
-                    }
-                }
-            });
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+    const getExplanationText = (s: number, a: number) => {
+        if (!explanationData) return '';
+        if (readingMode === 'tafseer') {
+            return explanationData.data?.surahs?.[s - 1]?.ayahs?.[a - 1]?.text || explanationData[s - 1]?.ayahs?.[a - 1]?.text || '';
+        }
+        if (readingMode === 'meanings') {
+            return explanationData.find((m: any) => m.number === String(s) && m.aya === String(a))?.text || '';
+        }
+        if (readingMode === 'translation') {
+            return explanationData[s - 1]?.verses?.[a - 1]?.translation || '';
+        }
+        return '';
+    };
 
-            if (Capacitor.isNativePlatform()) {
-                const fileName = `ayah_share_${Date.now()}.jpg`;
-                const base64Data = dataUrl.split(',')[1];
-                const savedFile = await Filesystem.writeFile({
-                    path: fileName,
-                    data: base64Data,
-                    directory: Directory.Cache,
-                });
-                
+    const combinedText = selectedAyahs.map(ay => getAyahText(ay.s, ay.a) + ` ﴿${toArabic(ay.a)}﴾`).join(' ');
+    const combinedExplanation = selectedAyahs.map(ay => getExplanationText(ay.s, ay.a)).filter(t => t).join('\n');
+    const firstAyah = selectedAyahs[0];
+    const lastAyah = selectedAyahs[selectedAyahs.length - 1];
+    const surahInfo = firstAyah.s === lastAyah.s 
+        ? (firstAyah.a === lastAyah.a 
+            ? `سورة ${getSurahName(firstAyah.s)} - آية ${toArabic(firstAyah.a)}`
+            : `سورة ${getSurahName(firstAyah.s)} - آية ${toArabic(firstAyah.a)} إلى آية ${toArabic(lastAyah.a)}`)
+        : `سورة ${getSurahName(firstAyah.s)} آية ${toArabic(firstAyah.a)} - سورة ${getSurahName(lastAyah.s)} آية ${toArabic(lastAyah.a)}`;
+
+    const handleShare = async () => {
+        if (isSharing) return;
+        setIsSharing(true);
+        const shareText = `ايات من القران الكريم . بواسطة : مصحف احمد وليلى`;
+        const fullText = `${combinedText}\n\n${combinedExplanation ? combinedExplanation + '\n\n' : ''}${shareText}`;
+
+        try {
+            if (shareType === 'text') {
                 await Share.share({
                     title: 'مشاركة آية',
-                    text: shareText,
-                    url: savedFile.uri,
+                    text: fullText,
                     dialogTitle: 'مشاركة عبر'
                 });
-            } else if (navigator.share) {
-                // Web fallback
-                try {
-                    const blob = await (await fetch(dataUrl)).blob();
-                    const file = new File([blob], 'ayah.jpg', { type: 'image/jpeg' });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            title: 'مشاركة آية',
-                            text: shareText,
-                            files: [file],
-                        });
-                    } else {
-                        await navigator.share({
-                            title: 'مشاركة آية',
-                            text: shareText,
-                        });
+            } else if (shareType === 'image' && previewRef.current) {
+                const canvas = await html2canvas(previewRef.current, {
+                    scale: 2.5,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    onclone: (clonedDoc) => {
+                        const elements = clonedDoc.getElementsByTagName('*');
+                        for (let i = 0; i < elements.length; i++) {
+                            const el = elements[i] as HTMLElement;
+                            const style = window.getComputedStyle(el);
+                            ['color', 'backgroundColor', 'borderColor', 'outlineColor'].forEach(prop => {
+                                const val = el.style.getPropertyValue(prop) || style.getPropertyValue(prop);
+                                if (val && (val.includes('oklab') || val.includes('oklch'))) {
+                                    el.style.setProperty(prop, prop === 'color' ? '#000000' : 'transparent', 'important');
+                                }
+                            });
+                        }
                     }
-                } catch (e) {
-                    await navigator.share({ title: 'مشاركة آية', text: shareText });
+                });
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+
+                if (Capacitor.isNativePlatform()) {
+                    const fileName = `ayah_share_${Date.now()}.jpg`;
+                    const base64Data = dataUrl.split(',')[1];
+                    const savedFile = await Filesystem.writeFile({
+                        path: fileName,
+                        data: base64Data,
+                        directory: Directory.Cache,
+                    });
+                    
+                    await Share.share({
+                        title: 'مشاركة آية',
+                        text: shareText,
+                        url: savedFile.uri,
+                        dialogTitle: 'مشاركة عبر'
+                    });
+                } else if (navigator.share) {
+                    try {
+                        const blob = await (await fetch(dataUrl)).blob();
+                        const file = new File([blob], 'ayah.jpg', { type: 'image/jpeg' });
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                title: 'مشاركة آية',
+                                text: shareText,
+                                files: [file],
+                            });
+                        } else {
+                            await navigator.share({ title: 'مشاركة آية', text: shareText });
+                        }
+                    } catch (e) {
+                        await navigator.share({ title: 'مشاركة آية', text: shareText });
+                    }
+                } else {
+                    alert("المشاركة غير مدعومة في هذا المتصفح");
                 }
-            } else {
-                alert("المشاركة غير مدعومة في هذا المتصفح");
+            } else if (shareType === 'page') {
+                const pageNum = quranData.surahs[firstAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === firstAyah.a)?.page || 1;
+                const imageUrl = `https://quran.ksu.edu.sa/png_big/${pageNum}.png`;
+                
+                if (Capacitor.isNativePlatform()) {
+                    const res = await fetch(imageUrl);
+                    const blob = await res.blob();
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = async () => {
+                        const base64data = reader.result as string;
+                        const fileName = `page_${pageNum}.png`;
+                        const savedFile = await Filesystem.writeFile({
+                            path: fileName,
+                            data: base64data.split(',')[1],
+                            directory: Directory.Cache,
+                        });
+                        await Share.share({
+                            title: 'مشاركة صفحة',
+                            text: shareText,
+                            url: savedFile.uri,
+                            dialogTitle: 'مشاركة عبر'
+                        });
+                        setIsSharing(false);
+                    };
+                    return; // Wait for onloadend
+                } else {
+                    await Share.share({
+                        title: 'مشاركة صفحة',
+                        text: `${shareText}\n${imageUrl}`,
+                        dialogTitle: 'مشاركة عبر'
+                    });
+                }
+            } else if (shareType === 'audio') {
+                let reader = 'ar.alafasy';
+                try {
+                    const settings = JSON.parse(localStorage.getItem('quran_settings') || '{}');
+                    if (settings.reader) reader = settings.reader;
+                } catch (e) {}
+                
+                const sStr = String(firstAyah.s).padStart(3, '0');
+                const aStr = String(firstAyah.a).padStart(3, '0');
+                const audioReader = reader === 'ar.alafasy' ? 'Alafasy_128kbps' : reader;
+                const audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
+                
+                await Share.share({
+                    title: 'مشاركة تلاوة',
+                    text: `${shareText}\nاستمع للآية: ${audioUrl}`,
+                    dialogTitle: 'مشاركة عبر'
+                });
             }
         } catch (error) {
-            console.error('Error sharing image:', error);
+            console.error('Error sharing:', error);
         } finally {
             setIsSharing(false);
         }
     };
 
-    const combinedText = selectedAyahs.map(ay => getAyahText(ay.s, ay.a) + ` ﴿${ay.a}﴾`).join(' ');
-    const firstAyah = selectedAyahs[0];
-    const lastAyah = selectedAyahs[selectedAyahs.length - 1];
-    const surahInfo = firstAyah.s === lastAyah.s 
-        ? (firstAyah.a === lastAyah.a 
-            ? `سورة ${getSurahName(firstAyah.s)} - ايه ${toArabic(firstAyah.a)}`
-            : `سورة ${getSurahName(firstAyah.s)} - ايه ${toArabic(firstAyah.a)} الى ايه ${toArabic(lastAyah.a)}`)
-        : `سورة ${getSurahName(firstAyah.s)} ايه ${toArabic(firstAyah.a)} - سورة ${getSurahName(lastAyah.s)} ايه ${toArabic(lastAyah.a)}`;
-
     return (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm overflow-y-auto" dir="rtl">
-            <div className="min-h-full flex items-center justify-center p-4">
+            <div className="min-h-full flex items-center justify-center p-2 sm:p-4">
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md flex flex-col">
                     {/* Header */}
-                    <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">مشاركة آية</h3>
-                        <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
-                            <X size={20} />
+                    <div className="flex justify-between items-center p-3 border-b dark:border-gray-700">
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">مشاركة</h3>
+                        <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
+                            <X size={18} />
                         </button>
                     </div>
 
                     {/* Content */}
-                    <div className="p-4 space-y-6">
-                    {/* Preview Area */}
-                    <div className="flex justify-center drop-shadow-lg">
-                        <div 
-                            ref={previewRef}
-                            style={{
-                                position: 'relative',
-                                width: '100%',
-                                maxWidth: '350px',
-                                borderRadius: '12px',
-                                overflow: 'hidden',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                padding: '16px 24px',
-                                textAlign: 'center',
-                                backgroundImage: selectedBg.value,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                                border: `4px solid ${selectedBg.border}`,
-                                backgroundColor: '#ffffff'
-                            }}
-                        >
-                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
-                            <FrameOverlay frame={selectedFrame} />
-                            <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                                <p 
-                                    style={{ 
-                                        fontFamily: 'var(--font-thuluth)', 
-                                        fontSize: `${fontSize * 1.3}px`, 
-                                        color: selectedBg.accent, 
-                                        marginBottom: '20px',
-                                        textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                                        opacity: 1,
-                                        marginTop: '10px',
-                                        fontWeight: 'bold'
+                    <div className="p-3 space-y-4">
+                        {/* Share Type Selector */}
+                        <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                            <button onClick={() => setShareType('text')} className={`flex-1 py-1.5 text-xs font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'text' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 dark:text-gray-300'}`}>
+                                <Type size={14} /> نص
+                            </button>
+                            <button onClick={() => setShareType('image')} className={`flex-1 py-1.5 text-xs font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'image' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 dark:text-gray-300'}`}>
+                                <ImageIcon size={14} /> صورة
+                            </button>
+                            <button onClick={() => setShareType('page')} className={`flex-1 py-1.5 text-xs font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'page' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 dark:text-gray-300'}`}>
+                                <FileText size={14} /> صفحة
+                            </button>
+                            <button onClick={() => setShareType('audio')} className={`flex-1 py-1.5 text-xs font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'audio' ? 'bg-blue-500 text-white shadow' : 'text-gray-600 dark:text-gray-300'}`}>
+                                <Volume2 size={14} /> صوت
+                            </button>
+                        </div>
+
+                        {/* Range Selector */}
+                        <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-xl gap-4">
+                            <div className="flex-1">
+                                <label className="block text-[10px] text-center text-gray-500 dark:text-gray-400 mb-1">من</label>
+                                <select 
+                                    value={fromAyah} 
+                                    onChange={(e) => setFromAyah(Number(e.target.value))}
+                                    className="w-full p-1.5 text-xs border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-center outline-none"
+                                >
+                                    {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
+                                        <option key={ay.numberInSurah} value={ay.numberInSurah}>
+                                            {getSurahName(currentAyah.s)} {ay.numberInSurah}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-[10px] text-center text-gray-500 dark:text-gray-400 mb-1">إلى</label>
+                                <select 
+                                    value={toAyah} 
+                                    onChange={(e) => setToAyah(Number(e.target.value))}
+                                    className="w-full p-1.5 text-xs border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-center outline-none"
+                                >
+                                    {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
+                                        <option key={ay.numberInSurah} value={ay.numberInSurah}>
+                                            {getSurahName(currentAyah.s)} {ay.numberInSurah}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Preview Area (Only for Image) */}
+                        {shareType === 'image' && (
+                            <div className="flex justify-center drop-shadow-md">
+                                <div 
+                                    ref={previewRef}
+                                    style={{
+                                        position: 'relative',
+                                        width: '100%',
+                                        maxWidth: '320px',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '16px',
+                                        textAlign: 'center',
+                                        backgroundImage: selectedBg.value,
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: 'center',
+                                        border: `3px solid ${selectedBg.border}`,
+                                        backgroundColor: '#ffffff'
                                     }}
                                 >
-                                    بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-                                </p>
-                                <p 
-                                    style={{ 
-                                        lineHeight: '2',
-                                        fontFamily: selectedFont,
-                                        fontSize: `${fontSize}px`, 
-                                        color: textColor,
-                                        textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                                        margin: 0
-                                    }}
-                                >
-                                    {combinedText}
-                                </p>
-                                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.3)', width: '100%', paddingLeft: '8px', paddingRight: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                    <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '14px', fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
-                                        {surahInfo}
-                                    </p>
-                                    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '4px' }}>
-                                        <span 
-                                            style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '12px', fontWeight: 500, maxWidth: '50%', textAlign: 'right', lineHeight: 1.2, opacity: 0.9 }} 
+                                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
+                                    <FrameOverlay frame={selectedFrame} />
+                                    <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyItems: 'center', width: '100%' }}>
+                                        {readingMode === 'mushaf' && (
+                                            <p 
+                                                style={{ 
+                                                    fontFamily: 'var(--font-amiri-quran), var(--font-hafs), serif', 
+                                                    fontSize: `${fontSize * 1.2}px`, 
+                                                    color: selectedBg.accent, 
+                                                    marginBottom: '16px',
+                                                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                                                    opacity: 1,
+                                                    marginTop: '8px',
+                                                    fontWeight: 'bold'
+                                                }}
+                                            >
+                                                بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+                                            </p>
+                                        )}
+                                        <p 
+                                            style={{ 
+                                                lineHeight: '1.8',
+                                                fontFamily: selectedFont,
+                                                fontSize: `${fontSize}px`, 
+                                                color: textColor,
+                                                textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                                                margin: 0,
+                                                marginTop: '8px'
+                                            }}
                                         >
-                                            {customText}
-                                        </span>
-                                        <a 
-                                            href="https://play.google.com/store/apps/details?id=com.AhmedLaila.Quran&hl=ar&pli=1" 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            style={{ color: selectedBg.accent, textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '13px', fontWeight: 800, textDecoration: 'underline', textDecorationStyle: 'dotted', textUnderlineOffset: '4px', textAlign: 'left' }} 
-                                            dir="rtl"
-                                        >
-                                            مصحف احمد وليلى
-                                        </a>
+                                            {combinedText}
+                                        </p>
+                                        {readingMode !== 'mushaf' && combinedExplanation && (
+                                            <p 
+                                                style={{ 
+                                                    lineHeight: '1.5',
+                                                    fontFamily: 'sans-serif',
+                                                    fontSize: `${fontSize * 0.6}px`, 
+                                                    color: textColor,
+                                                    textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                                                    margin: '12px 0 0 0',
+                                                    opacity: 0.9,
+                                                    direction: readingMode === 'translation' ? 'ltr' : 'rtl',
+                                                    textAlign: readingMode === 'translation' ? 'left' : 'right',
+                                                    width: '100%'
+                                                }}
+                                            >
+                                                {combinedExplanation}
+                                            </p>
+                                        )}
+                                        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.3)', width: '100%', paddingLeft: '4px', paddingRight: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                                            <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '12px', fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
+                                                {surahInfo}
+                                            </p>
+                                            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2px' }}>
+                                                <span 
+                                                    style={{ color: selectedBg.accent, textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '11px', fontWeight: 800, textAlign: 'right' }} 
+                                                    dir="rtl"
+                                                >
+                                                    مصحف احمد وليلى
+                                                </span>
+                                                <span 
+                                                    style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '10px', fontWeight: 500, maxWidth: '50%', textAlign: 'left', lineHeight: 1.2, opacity: 0.9 }} 
+                                                >
+                                                    {customText}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Ayah Controls */}
-                    <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-xl">
-                        <button 
-                            onClick={handleNextAyah}
-                            className="flex items-center gap-1 px-3 py-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
-                        >
-                            <ChevronRight size={16} />
-                            الآية التالية
-                        </button>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                            {selectedAyahs.length} آيات
-                        </span>
-                        <button 
-                            onClick={handlePrevAyah}
-                            className="flex items-center gap-1 px-3 py-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
-                        >
-                            الآية السابقة
-                            <ChevronLeft size={16} />
-                        </button>
-                    </div>
-
-                    {/* Background Selection */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الخلفية</label>
-                        <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-                            {BACKGROUNDS.map(bg => (
-                                <button
-                                    key={bg.id}
-                                    onClick={() => setSelectedBg(bg)}
-                                    className={`w-12 h-12 rounded-lg shrink-0 border-2 transition-all ${selectedBg.id === bg.id ? 'border-blue-500 scale-110 shadow-md' : 'border-transparent'}`}
-                                    style={{
-                                        backgroundImage: bg.value,
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: 'center'
-                                    }}
-                                />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Frame Selection */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الإطار</label>
-                        <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-                            {FRAMES.map(frame => (
-                                <button
-                                    key={frame.id}
-                                    onClick={() => setSelectedFrame(frame)}
-                                    className={`shrink-0 px-3 py-2 rounded-lg border-2 transition-all text-xs font-medium flex items-center justify-center min-w-[80px] ${selectedFrame.id === frame.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
-                                >
-                                    {frame.name}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Text Controls */}
-                    <div className="grid grid-cols-2 gap-4">
-                        {/* Font Size */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">حجم الخط</label>
-                            <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-1 rounded-lg">
-                                <button 
-                                    onClick={() => setFontSize(prev => Math.max(12, prev - 2))}
-                                    className="p-2 hover:bg-white dark:hover:bg-gray-600 rounded-md text-gray-600 dark:text-gray-300"
-                                >
-                                    <Minus size={18} />
-                                </button>
-                                <span className="font-medium text-gray-700 dark:text-gray-200">{fontSize}</span>
-                                <button 
-                                    onClick={() => setFontSize(prev => Math.min(48, prev + 2))}
-                                    className="p-2 hover:bg-white dark:hover:bg-gray-600 rounded-md text-gray-600 dark:text-gray-300"
-                                >
-                                    <Plus size={18} />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Text Color */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">لون النص</label>
-                            <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg items-center">
-                                {TEXT_COLORS.map(color => (
-                                    <button
-                                        key={color}
-                                        onClick={() => setTextColor(color)}
-                                        className={`w-8 h-8 rounded-full shrink-0 border-2 transition-all ${textColor === color ? 'border-blue-500 scale-110' : 'border-gray-300 dark:border-gray-600'}`}
-                                        style={{ backgroundColor: color }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Font Selection */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">نوع الخط</label>
-                        <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-                            {FONTS.map(font => (
-                                <button
-                                    key={font.id}
-                                    onClick={() => setSelectedFont(font.id)}
-                                    className={`px-4 py-2 rounded-lg shrink-0 border transition-all ${selectedFont === font.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600'}`}
-                                    style={{ fontFamily: font.id }}
-                                >
-                                    {font.name}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Custom Text Input */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">نص إضافي (اختياري)</label>
-                        <input 
-                            type="text" 
-                            value={customText}
-                            onChange={(e) => setCustomText(e.target.value)}
-                            placeholder="اكتب نصاً يظهر أسفل الصورة..."
-                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                            maxLength={50}
-                            dir="rtl"
-                        />
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80">
-                    <button
-                        onClick={handleShare}
-                        disabled={isSharing}
-                        className="w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70"
-                        style={{ backgroundColor: currentTheme.primary || '#3b82f6' }}
-                    >
-                        {isSharing ? (
-                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                            <>
-                                <Share2 size={20} />
-                                مشاركة الصورة
-                            </>
                         )}
-                    </button>
+
+                        {/* Image Customization Controls */}
+                        {shareType === 'image' && (
+                            <div className="space-y-3">
+                                {/* Background Selection */}
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">الخلفية</label>
+                                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                                        {BACKGROUNDS.map(bg => (
+                                            <button
+                                                key={bg.id}
+                                                onClick={() => setSelectedBg(bg)}
+                                                className={`w-10 h-10 rounded-lg shrink-0 border-2 transition-all ${selectedBg.id === bg.id ? 'border-blue-500 scale-110 shadow-sm' : 'border-transparent'}`}
+                                                style={{
+                                                    backgroundImage: bg.value,
+                                                    backgroundSize: 'cover',
+                                                    backgroundPosition: 'center'
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Frame Selection */}
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">الإطار</label>
+                                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                                        {FRAMES.map(frame => (
+                                            <button
+                                                key={frame.id}
+                                                onClick={() => setSelectedFrame(frame)}
+                                                className={`shrink-0 px-2.5 py-1.5 rounded-lg border transition-all text-[10px] font-medium flex items-center justify-center min-w-[70px] ${selectedFrame.id === frame.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
+                                            >
+                                                {frame.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Text Controls */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    {/* Font Size */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">حجم الخط</label>
+                                        <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 p-1 rounded-lg">
+                                            <button 
+                                                onClick={() => setFontSize(prev => Math.max(12, prev - 2))}
+                                                className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded-md text-gray-600 dark:text-gray-300"
+                                            >
+                                                <Minus size={14} />
+                                            </button>
+                                            <span className="font-medium text-xs text-gray-700 dark:text-gray-200">{fontSize}</span>
+                                            <button 
+                                                onClick={() => setFontSize(prev => Math.min(48, prev + 2))}
+                                                className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded-md text-gray-600 dark:text-gray-300"
+                                            >
+                                                <Plus size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Text Color */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">لون النص</label>
+                                        <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar bg-gray-50 dark:bg-gray-700/50 p-1.5 rounded-lg items-center">
+                                            {TEXT_COLORS.map(color => (
+                                                <button
+                                                    key={color}
+                                                    onClick={() => setTextColor(color)}
+                                                    className={`w-6 h-6 rounded-full shrink-0 border-2 transition-all ${textColor === color ? 'border-blue-500 scale-110' : 'border-gray-300 dark:border-gray-600'}`}
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Font Selection */}
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">نوع الخط</label>
+                                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                                        {FONTS.map(font => (
+                                            <button
+                                                key={font.id}
+                                                onClick={() => setSelectedFont(font.id)}
+                                                className={`px-3 py-1.5 rounded-lg shrink-0 border transition-all text-xs ${selectedFont === font.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600'}`}
+                                                style={{ fontFamily: font.id }}
+                                            >
+                                                {font.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Custom Text Input */}
+                                <div>
+                                    <input 
+                                        type="text" 
+                                        value={customText}
+                                        onChange={(e) => setCustomText(e.target.value)}
+                                        placeholder="نص إضافي (اختياري)..."
+                                        className="w-full p-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                        maxLength={50}
+                                        dir="rtl"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="p-3 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80">
+                        <button
+                            onClick={handleShare}
+                            disabled={isSharing}
+                            className="w-full py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70"
+                            style={{ backgroundColor: currentTheme.primary || '#3b82f6' }}
+                        >
+                            {isSharing ? (
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                                <>
+                                    <Share2 size={16} />
+                                    مشاركة
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
-            </div>
             </div>
         </div>
     );

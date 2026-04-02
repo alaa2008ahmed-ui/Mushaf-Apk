@@ -57,7 +57,8 @@ export const QuranReaderModals = ({
     audioState,
     setAudioState,
     playSurah,
-    currentAyah
+    currentAyah,
+    readingMode
 }: any) => {
 
     return (
@@ -81,6 +82,7 @@ export const QuranReaderModals = ({
                     currentAyah={currentAyah}
                     quranData={quranData}
                     currentTheme={currentTheme}
+                    readingMode={readingMode}
                 />
             )}
 
