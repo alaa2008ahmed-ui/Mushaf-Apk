@@ -25,7 +25,7 @@ interface QuranHeaderProps {
     setReadingMode: (mode: 'mushaf' | 'tafseer' | 'meanings') => void;
 }
 
-const QuranHeader: React.FC<QuranHeaderProps> = ({
+const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
     isPageInputActive,
     pageInputRef,
     pageInput,
@@ -146,6 +146,6 @@ const QuranHeader: React.FC<QuranHeaderProps> = ({
             </div>
         </header>
     );
-};
+});
 
 export default QuranHeader;

@@ -81,7 +81,7 @@ const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, currentTheme }
     );
 };
 
-const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, currentTheme }: any) => {
+const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentTheme }: any) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[300] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
@@ -98,6 +98,14 @@ const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, currentTheme }: any)
                     >
                         <i className="fa-solid fa-calendar-check"></i>
                         العودة لصفحة الورد
+                    </button>
+                    <button 
+                        onClick={onGoHome}
+                        className="w-full py-4 bg-gray-500/10 hover:bg-gray-500/20 rounded-2xl font-bold text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2"
+                        style={{ color: currentTheme?.text || '#000000' }}
+                    >
+                        <i className="fa-solid fa-house"></i>
+                        الرئيسية
                     </button>
                     <button 
                         onClick={onClose}
@@ -2215,6 +2223,11 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }, 100);
     }, [activeModals, tafseerInfo.isOpen, tafseerSelectionInfo.isOpen]);
 
+    const handleVerticalAyahClick = useCallback((s: number, a: number) => {
+        setCurrentAyah({ s, a });
+        setHighlightedAyahId(`${s}-${a}`);
+    }, []);
+
     return (
         <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused ? 'hide-toolbars-autoscroll' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
             <QuranHeader 
@@ -2270,10 +2283,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                         settings={settings}
                         currentTheme={currentTheme}
                         currentAyah={currentAyah}
-                        onAyahClick={(s, a) => {
-                            setCurrentAyah({ s, a });
-                            setHighlightedAyahId(`${s}-${a}`);
-                        }}
+                        onAyahClick={handleVerticalAyahClick}
+                        onSettingsChange={setSettings}
                     />
                 )}
             </div>
@@ -2349,7 +2360,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             <WirdCompletionModal 
                 isOpen={showWirdCompleteModal} 
                 onClose={() => setShowWirdCompleteModal(false)} 
-                onGoToWird={() => onNavigate('daily-wird')} 
+                onGoToWird={onBack} 
+                onGoHome={() => onNavigate('home')}
                 currentTheme={currentTheme} 
             />
             {activeModals.includes('search-modal') && <SearchModal quranData={quranData} onSelect={(s,a) => jumpToAyah(s,a, true)} onClose={() => closeModal('search-modal')} isLandscape={isLandscape} initialQuery={initialSearchQuery} />}

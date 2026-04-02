@@ -22,7 +22,7 @@ interface QuranFooterProps {
     onNavigate: (pageId: string) => void;
 }
 
-const QuranFooter: React.FC<QuranFooterProps> = ({
+const QuranFooter: React.FC<QuranFooterProps> = React.memo(({
     currentTheme,
     getToolbarStyle,
     setIsFloatingMenuOpen,
@@ -106,6 +106,6 @@ const QuranFooter: React.FC<QuranFooterProps> = ({
             </button>
         </footer>
     );
-};
+});
 
 export default QuranFooter;

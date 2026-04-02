@@ -28,10 +28,16 @@ function App() {
 
   const handleNavigate = useCallback((pageId: string, params?: any) => {
     const validPages = [
-      'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
+      'home', 'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'qibla', 
       'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education', 'voice-control', 'more-menu', 'daily-wird'
     ];
+
+    if (pageId === 'home') {
+      setHistory(['home']);
+      setNavParams(null);
+      return;
+    }
 
     if (validPages.includes(pageId)) {
       setNavParams(params || null);

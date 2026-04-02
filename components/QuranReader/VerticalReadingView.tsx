@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { toArabic, SURAH_INFO, SURAH_NAMES_AR } from './constants';
 
 interface VerticalReadingViewProps {
@@ -8,19 +9,21 @@ interface VerticalReadingViewProps {
     currentTheme: any;
     currentAyah: { s: number; a: number };
     onAyahClick: (s: number, a: number) => void;
+    onSettingsChange?: (newSettings: any) => void;
 }
 
 // Global cache to ensure instant loading after first fetch
 let cachedTafseerData: any[] | null = null;
 let cachedMeaningsData: any[] | null = null;
 
-const VerticalReadingView: React.FC<VerticalReadingViewProps> = ({
+const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     quranData,
     readingMode,
     settings,
     currentTheme,
     currentAyah,
-    onAyahClick
+    onAyahClick,
+    onSettingsChange
 }) => {
     const [tafseerData, setTafseerData] = useState<any[]>(cachedTafseerData || []);
     const [meaningsData, setMeaningsData] = useState<any[]>(cachedMeaningsData || []);
@@ -29,8 +32,43 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = ({
         if (readingMode === 'meanings') return !cachedMeaningsData;
         return true;
     });
-    const containerRef = useRef<HTMLDivElement>(null);
-    const ayahRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const virtuosoRef = useRef<VirtuosoHandle>(null);
+
+    // Pinch-to-zoom refs
+    const initialPinchDistanceRef = useRef<number | null>(null);
+    const initialPinchFontSizeRef = useRef<number | null>(null);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (e.touches.length === 2) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const distance = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+            initialPinchDistanceRef.current = distance;
+            initialPinchFontSizeRef.current = settings.fontSize;
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (e.touches.length === 2 && initialPinchDistanceRef.current !== null && initialPinchFontSizeRef.current !== null && onSettingsChange) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const distance = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+            
+            const scaleFactor = distance / initialPinchDistanceRef.current;
+            const newFontSize = Math.min(Math.max(initialPinchFontSizeRef.current * scaleFactor, 1.0), 5.0);
+            
+            onSettingsChange({ ...settings, fontSize: newFontSize });
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (initialPinchDistanceRef.current !== null && onSettingsChange) {
+            localStorage.setItem('quran_settings_v', JSON.stringify(settings));
+            window.dispatchEvent(new Event('settings-change'));
+        }
+        initialPinchDistanceRef.current = null;
+        initialPinchFontSizeRef.current = null;
+    };
 
     useEffect(() => {
         const fetchTafseer = async () => {
@@ -65,16 +103,54 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = ({
         fetchMeanings();
     }, [readingMode]);
 
-    // Scroll to current ayah when it changes or when mode changes
+    // Flatten the Quran data into a single list of items (headers and ayahs)
+    const flattenedItems = useMemo(() => {
+        const items: any[] = [];
+        quranData.surahs.forEach((surah: any) => {
+            // Add Surah Header
+            items.push({
+                type: 'header',
+                surahNumber: surah.number,
+                surahName: SURAH_NAMES_AR[surah.number - 1],
+                surahType: SURAH_INFO[surah.number].type,
+                ayahCount: SURAH_INFO[surah.number].ayahs
+            });
+
+            // Add Ayahs
+            surah.ayahs.forEach((ayah: any) => {
+                items.push({
+                    type: 'ayah',
+                    surahNumber: surah.number,
+                    ayahNumber: ayah.numberInSurah,
+                    text: ayah.text,
+                    id: `${surah.number}-${ayah.numberInSurah}`
+                });
+            });
+        });
+        return items;
+    }, [quranData]);
+
+    // Find the index of the current ayah in the flattened list
+    const initialIndex = useMemo(() => {
+        const targetId = `${currentAyah.s}-${currentAyah.a}`;
+        const index = flattenedItems.findIndex(item => item.type === 'ayah' && item.id === targetId);
+        return index !== -1 ? index : 0;
+    }, [flattenedItems, currentAyah]);
+
+    // Scroll to current ayah when it changes externally
     useEffect(() => {
-        if (!isLoading) {
-            const ayahId = `${currentAyah.s}-${currentAyah.a}`;
-            const element = ayahRefs.current[ayahId];
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (!isLoading && virtuosoRef.current) {
+            const targetId = `${currentAyah.s}-${currentAyah.a}`;
+            const index = flattenedItems.findIndex(item => item.type === 'ayah' && item.id === targetId);
+            if (index !== -1) {
+                virtuosoRef.current.scrollToIndex({
+                    index,
+                    align: 'start', // Align to start for better visibility of the surah/ayah
+                    behavior: 'auto' // Instant jump, no smooth scrolling
+                });
             }
         }
-    }, [currentAyah, isLoading, readingMode]);
+    }, [currentAyah.s, currentAyah.a, isLoading, flattenedItems]);
 
     const getMeaning = (s: number, a: number) => {
         return meaningsData.find(m => m.number === String(s) && m.aya === String(a))?.text;
@@ -83,6 +159,72 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = ({
     const getTafseer = (s: number, a: number) => {
         return tafseerData[s - 1]?.ayahs[a - 1]?.text;
     };
+
+    const renderItem = useCallback((index: number, item: any) => {
+        if (item.type === 'header') {
+            return (
+                <div className="px-4 py-6">
+                    <div className="surah-header-visual relative h-14 w-full flex items-center justify-between px-6 rounded-md border-[3px] border-[#1a5d38] overflow-hidden"
+                         style={{ 
+                             background: 'linear-gradient(to bottom, #2ecc71, #27ae60)',
+                             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
+                         }}>
+                        <div className="text-white font-bold text-lg z-10 drop-shadow-md">
+                            {toArabic(item.ayahCount)} آيات
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="relative bg-[#e8f8f1] h-10 px-12 flex items-center justify-center border-2 border-[#1a5d38] shadow-inner"
+                                 style={{ borderRadius: '50px / 50px', minWidth: '240px' }}>
+                                <h2 className="text-xl font-bold text-[#1a5d38] whitespace-nowrap mb-0">
+                                    سُورَةُ {item.surahName}
+                                </h2>
+                                <div className="absolute left-0 top-0 bottom-0 w-4 border-r-2 border-[#1a5d38] rounded-l-full opacity-30"></div>
+                                <div className="absolute right-0 top-0 bottom-0 w-4 border-l-2 border-[#1a5d38] rounded-r-full opacity-30"></div>
+                            </div>
+                        </div>
+                        <div className="text-white font-bold text-lg z-10 drop-shadow-md">
+                            {item.surahType}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const isHighlighted = currentAyah.s === item.surahNumber && currentAyah.a === item.ayahNumber;
+        
+        return (
+            <div className="px-4 py-2">
+                <div 
+                    className={`ayah-item p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2' : ''}`}
+                    style={{ 
+                        backgroundColor: isHighlighted ? `${currentTheme.accent}20` : 'transparent',
+                        borderColor: isHighlighted ? currentTheme.accent : 'transparent'
+                    }}
+                    onClick={() => onAyahClick(item.surahNumber, item.ayahNumber)}
+                >
+                    <div className="ayah-text mb-4 text-right leading-relaxed" 
+                         style={{ 
+                             fontSize: `${settings.fontSize}rem`, 
+                             fontFamily: settings.fontFamily,
+                             color: currentTheme.accent
+                         }}>
+                        {item.text}
+                        <span className="inline-flex items-center justify-center w-8 h-8 mr-2 rounded-full border border-current text-sm font-bold"
+                              style={{ color: currentTheme.text }}>
+                            {toArabic(item.ayahNumber)}
+                        </span>
+                    </div>
+                    
+                    <div className="divider h-px w-full my-4 opacity-20" style={{ backgroundColor: currentTheme.text }}></div>
+                    
+                    <div className="explanation-text text-right opacity-90 leading-relaxed"
+                         style={{ fontSize: `${settings.fontSize * 0.8}rem`, color: currentTheme.text }}>
+                        {readingMode === 'tafseer' ? getTafseer(item.surahNumber, item.ayahNumber) : getMeaning(item.surahNumber, item.ayahNumber)}
+                    </div>
+                </div>
+            </div>
+        );
+    }, [currentAyah, currentTheme, settings, readingMode, onAyahClick, meaningsData, tafseerData]);
 
     if (isLoading) {
         return (
@@ -93,86 +235,23 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = ({
     }
 
     return (
-        <div ref={containerRef} className="vertical-reading-view p-4 space-y-8 overflow-y-auto h-full" style={{ direction: 'rtl', backgroundColor: currentTheme.bg }}>
-            {quranData.surahs.map((surah: any) => (
-                <div key={surah.number} className="surah-section">
-                    {/* Surah Header Visual */}
-                    <div className="surah-header-visual mb-8 relative h-14 w-full flex items-center justify-between px-6 rounded-md border-[3px] border-[#1a5d38] overflow-hidden"
-                         style={{ 
-                             background: 'linear-gradient(to bottom, #2ecc71, #27ae60)',
-                             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
-                         }}>
-                        {/* Left: Ayahs count */}
-                        <div className="text-white font-bold text-lg z-10 drop-shadow-md">
-                            {toArabic(SURAH_INFO[surah.number].ayahs)} آيات
-                        </div>
-
-                        {/* Center: Surah Name Shape */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="relative bg-[#e8f8f1] h-10 px-12 flex items-center justify-center border-2 border-[#1a5d38] shadow-inner"
-                                 style={{ 
-                                     borderRadius: '50px / 50px',
-                                     minWidth: '240px'
-                                 }}>
-                                <h2 className="text-xl font-bold text-[#1a5d38] whitespace-nowrap mb-0">
-                                    سُورَةُ {SURAH_NAMES_AR[surah.number - 1]}
-                                </h2>
-                                {/* Decorative side curves */}
-                                <div className="absolute left-0 top-0 bottom-0 w-4 border-r-2 border-[#1a5d38] rounded-l-full opacity-30"></div>
-                                <div className="absolute right-0 top-0 bottom-0 w-4 border-l-2 border-[#1a5d38] rounded-r-full opacity-30"></div>
-                            </div>
-                        </div>
-
-                        {/* Right: Surah Type */}
-                        <div className="text-white font-bold text-lg z-10 drop-shadow-md">
-                            {SURAH_INFO[surah.number].type}
-                        </div>
-                    </div>
-
-                    {/* Ayahs */}
-                    <div className="ayahs-list space-y-6">
-                        {surah.ayahs.map((ayah: any) => {
-                            const isHighlighted = currentAyah.s === surah.number && currentAyah.a === ayah.numberInSurah;
-                            const ayahId = `${surah.number}-${ayah.numberInSurah}`;
-                            
-                            return (
-                                <div 
-                                    key={ayahId}
-                                    ref={el => ayahRefs.current[ayahId] = el}
-                                    className={`ayah-item p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2' : ''}`}
-                                    style={{ 
-                                        backgroundColor: isHighlighted ? `${currentTheme.accent}20` : 'transparent',
-                                        borderColor: isHighlighted ? currentTheme.accent : 'transparent'
-                                    }}
-                                    onClick={() => onAyahClick(surah.number, ayah.numberInSurah)}
-                                >
-                                    <div className="ayah-text mb-4 text-right leading-relaxed" 
-                                         style={{ 
-                                             fontSize: `${settings.fontSize}rem`, 
-                                             fontFamily: settings.fontFamily,
-                                             color: currentTheme.accent // Distinguish Ayah with accent color
-                                         }}>
-                                        {ayah.text}
-                                        <span className="inline-flex items-center justify-center w-8 h-8 mr-2 rounded-full border border-current text-sm font-bold"
-                                              style={{ color: currentTheme.text }}>
-                                            {toArabic(ayah.numberInSurah)}
-                                        </span>
-                                    </div>
-                                    
-                                    <div className="divider h-px w-full my-4 opacity-20" style={{ backgroundColor: currentTheme.text }}></div>
-                                    
-                                    <div className="explanation-text text-right opacity-90 leading-relaxed"
-                                         style={{ fontSize: `${settings.fontSize * 0.8}rem`, color: currentTheme.text }}>
-                                        {readingMode === 'tafseer' ? getTafseer(surah.number, ayah.numberInSurah) : getMeaning(surah.number, ayah.numberInSurah)}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            ))}
+        <div 
+            className="h-full w-full overflow-hidden" 
+            style={{ direction: 'rtl', backgroundColor: currentTheme.bg }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+        >
+            <Virtuoso
+                ref={virtuosoRef}
+                data={flattenedItems}
+                initialTopMostItemIndex={initialIndex}
+                overscan={200} // Pre-render items for smoother experience
+                className="h-full scrollbar-hide"
+                itemContent={renderItem}
+            />
         </div>
     );
-};
+});
 
 export default VerticalReadingView;
