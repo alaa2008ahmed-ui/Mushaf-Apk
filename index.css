@@ -51,6 +51,7 @@
 
 /* Fix for disconnected Arabic letters in Tajweed mode */
 .ayah-text-block span,
+.ayah-text span,
 .font-quran span,
 span[class^="tajweed-"] {
   display: inline !important;
@@ -67,8 +68,10 @@ span[class^="tajweed-"] {
   white-space: nowrap !important;
 }
 
-.ayah-text-block {
+.ayah-text-block, .ayah-text {
   white-space: normal !important;
+  text-align: justify;
+  text-justify: inter-word;
 }
 
 @font-face {

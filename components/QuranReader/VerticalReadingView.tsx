@@ -18,6 +18,43 @@ let cachedTafseerData: any[] | null = null;
 let cachedMeaningsData: any[] | null = null;
 let cachedTranslationData: any[] | null = null;
 
+const fixQuranText = (text: string) => {
+    if (!text) return text;
+    // Fix for "Ibrahim" and similar words where Small Yeh (\u06e6) causes disconnection in some fonts
+    // We replace the sequence of (Heh + Kasra + Small Yeh) with (Heh + Kasra + Regular Yeh)
+    // to ensure proper shaping and connectivity.
+    return text.replace(/\u0647\u0650\u06e6/g, '\u0647\u0650\u064a');
+};
+
+const renderTajweedText = (text: string) => {
+    if (!text) return text;
+    
+    // Remove the ZWJ hack as it breaks shaping in proper Quranic fonts
+    const fixedText = text;
+
+    if (!fixedText.includes('[')) return fixedText;
+    
+    const parts = [];
+    let lastIndex = 0;
+    const regex = /\[([a-z])(?::\d+)?\[([^\]]+)\]/g;
+    let match;
+    
+    while ((match = regex.exec(fixedText)) !== null) {
+        if (match.index > lastIndex) {
+            parts.push(<span key={`text-${lastIndex}`}>{fixedText.substring(lastIndex, match.index)}</span>);
+        }
+        const colorClass = `tajweed-${match[1]}`;
+        parts.push(<span key={`tag-${match.index}`} className={colorClass}>{match[2]}</span>);
+        lastIndex = regex.lastIndex;
+    }
+    
+    if (lastIndex < fixedText.length) {
+        parts.push(<span key={`text-${lastIndex}`}>{fixedText.substring(lastIndex)}</span>);
+    }
+    
+    return parts;
+};
+
 const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     quranData,
     readingMode,
@@ -237,15 +274,17 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     }}
                     onClick={() => onAyahClick(item.surahNumber, item.ayahNumber)}
                 >
-                    <div className="ayah-text mb-4 text-right leading-relaxed" 
+                    <div className="ayah-text mb-4 text-right leading-relaxed ayah-text-block" 
                          style={{ 
                              fontSize: `${settings.fontSize}rem`, 
                              fontFamily: settings.fontFamily,
-                             color: currentTheme.accent
+                             color: currentTheme.accent,
+                             textAlign: 'justify',
+                             textJustify: 'inter-word'
                          }}>
-                        {item.text}
+                        {renderTajweedText(fixQuranText(item.text))}
                         <span className="inline-flex items-center justify-center w-8 h-8 mr-2 rounded-full border border-current text-sm font-bold"
-                              style={{ color: currentTheme.text }}>
+                              style={{ color: currentTheme.text, whiteSpace: 'nowrap' }}>
                             {toArabic(item.ayahNumber)}
                         </span>
                     </div>
