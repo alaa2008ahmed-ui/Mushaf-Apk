@@ -64,14 +64,14 @@ span[class^="tajweed-"] {
   text-rendering: optimizeLegibility !important;
   font-feature-settings: "liga" 1, "clig" 1, "kern" 1, "mark" 1, "mkmk" 1 !important;
   font-kerning: normal !important;
-  unicode-bidi: isolate !important;
-  white-space: nowrap !important;
 }
 
 .ayah-text-block, .ayah-text {
   white-space: normal !important;
   text-align: justify;
   text-justify: inter-word;
+  text-rendering: optimizeLegibility !important;
+  font-variant-ligatures: common-ligatures contextual !important;
 }
 
 @font-face {

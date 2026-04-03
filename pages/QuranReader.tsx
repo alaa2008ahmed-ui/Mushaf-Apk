@@ -2655,7 +2655,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     </div>
                 ) : (
                     <VerticalReadingView 
-                        quranData={quranData}
+                        quranData={quranUthmaniJson.data}
                         readingMode={readingMode}
                         settings={settings}
                         currentTheme={currentTheme}

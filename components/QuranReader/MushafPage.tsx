@@ -31,27 +31,25 @@ const fixQuranText = (text: string) => {
 const renderTajweedText = (text: string) => {
     if (!text) return text;
     
-    // Remove the ZWJ hack as it breaks shaping in proper Quranic fonts
-    const fixedText = text;
-
-    if (!fixedText.includes('[')) return fixedText;
+    if (!text.includes('[')) return text;
     
     const parts = [];
     let lastIndex = 0;
     const regex = /\[([a-z])(?::\d+)?\[([^\]]+)\]/g;
     let match;
     
-    while ((match = regex.exec(fixedText)) !== null) {
+    while ((match = regex.exec(text)) !== null) {
         if (match.index > lastIndex) {
-            parts.push(<span key={`text-${lastIndex}`}>{fixedText.substring(lastIndex, match.index)}</span>);
+            parts.push(<span key={`text-${lastIndex}`}>{text.substring(lastIndex, match.index)}</span>);
         }
         const colorClass = `tajweed-${match[1]}`;
-        parts.push(<span key={`tag-${match.index}`} className={colorClass}>{match[2]}</span>);
+        // Add ZWJ at the beginning and end of the tajweed span to connect to adjacent parts
+        parts.push(<span key={`tag-${match.index}`} className={colorClass}>&zwj;{match[2]}&zwj;</span>);
         lastIndex = regex.lastIndex;
     }
     
-    if (lastIndex < fixedText.length) {
-        parts.push(<span key={`text-${lastIndex}`}>{fixedText.substring(lastIndex)}</span>);
+    if (lastIndex < text.length) {
+        parts.push(<span key={`text-${lastIndex}`}>{text.substring(lastIndex)}</span>);
     }
     
     return parts;
