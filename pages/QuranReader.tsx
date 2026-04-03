@@ -492,7 +492,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 'btn-share': { bg: green, text: white, border: greenBorder }
             });
         }
-    }, [modeSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode]);
+    }, [modeSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode, mushafType]);
     
     useEffect(() => {
         if (!isLandscape) return;

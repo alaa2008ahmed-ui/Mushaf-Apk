@@ -5,6 +5,7 @@ import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { FONTS, SURAH_NAMES_AR, toArabic } from './constants';
+import MushafPage from './MushafPage';
 
 interface ShareAyahModalProps {
     isOpen: boolean;
@@ -111,8 +112,19 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const [customText, setCustomText] = useState('');
     const [isSharing, setIsSharing] = useState(false);
     const [explanationData, setExplanationData] = useState<any>(null);
+    const [appSettings, setAppSettings] = useState<any>(null);
     const previewRef = useRef<HTMLDivElement>(null);
     const hiddenCaptureRef = useRef<HTMLDivElement>(null);
+    const hiddenMushafRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const saved = localStorage.getItem('quran_settings');
+        if (saved) {
+            try {
+                setAppSettings(JSON.parse(saved));
+            } catch (e) {}
+        }
+    }, []);
 
     useEffect(() => {
         const fetchExplanation = async () => {
@@ -329,13 +341,12 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             } else if (shareType === 'page') {
                 const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
                 
-                // Find the page element or the main content container
+                // Use the hidden capture element for high-quality, zoom-independent capture
                 let captureElement: HTMLElement | null = null;
                 
                 if (readingMode === 'mushaf') {
-                    captureElement = document.querySelector(`.mushaf-page[data-page="${pageNum}"]`) as HTMLElement;
+                    captureElement = hiddenMushafRef.current;
                 } else {
-                    // For Tafseer/Meanings, use the hidden capture element
                     captureElement = hiddenCaptureRef.current;
                 }
                 
@@ -345,6 +356,15 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 
                 if (captureElement) {
                     try {
+                        // Ensure the capture element is visible for html2canvas
+                        const originalStyle = captureElement.style.cssText;
+                        captureElement.style.position = 'fixed';
+                        captureElement.style.left = '0';
+                        captureElement.style.top = '0';
+                        captureElement.style.visibility = 'visible';
+                        captureElement.style.display = 'block';
+                        captureElement.style.zIndex = '-9999';
+
                         // Ensure all images are loaded if any
                         const images = captureElement.querySelectorAll('img');
                         await Promise.all(Array.from(images).map(img => {
@@ -356,9 +376,9 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         }));
 
                         const canvas = await html2canvas(captureElement, {
-                            scale: 2,
+                            scale: 3, // High scale for crisp text
                             useCORS: true,
-                            backgroundColor: currentTheme.bg || '#ffffff',
+                            backgroundColor: readingMode === 'mushaf' ? '#ffffff' : (currentTheme.bg || '#ffffff'),
                             logging: false,
                             onclone: (clonedDoc) => {
                                 // Fix for oklch/oklab colors that html2canvas doesn't support
@@ -373,19 +393,13 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                         }
                                     });
                                 }
-                                
-                                // Ensure the cloned element is visible even if the original is hidden
-                                const clonedCapture = clonedDoc.getElementById('hidden-page-capture');
-                                if (clonedCapture) {
-                                    clonedCapture.style.position = 'relative';
-                                    clonedCapture.style.left = '0';
-                                    clonedCapture.style.top = '0';
-                                    clonedCapture.style.visibility = 'visible';
-                                    clonedCapture.style.display = 'block';
-                                }
                             }
                         });
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+                        // Restore original style
+                        captureElement.style.cssText = originalStyle;
+
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
                         if (Capacitor.isNativePlatform()) {
                             const fileName = `quran_page_${pageNum}_${Date.now()}.jpg`;
@@ -444,8 +458,17 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             } else if (shareType === 'audio') {
                 let reader = 'ar.alafasy';
                 try {
-                    const settings = JSON.parse(localStorage.getItem('quran_settings') || '{}');
-                    if (settings.reader) reader = settings.reader;
+                    // Try to find reader in any quran_settings
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith('quran_settings')) {
+                            const settings = JSON.parse(localStorage.getItem(key) || '{}');
+                            if (settings.reader) {
+                                reader = settings.reader;
+                                break;
+                            }
+                        }
+                    }
                 } catch (e) {}
                 
                 const audioReader = reader === 'ar.alafasy' ? 'Alafasy_128kbps' : reader;
@@ -454,17 +477,29 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 const fileName = `${getSurahName(firstAyah.s)}_${firstAyah.a}${firstAyah.a !== lastAyah.a ? '-' + lastAyah.a : ''}.mp3`;
 
                 try {
-                    const blobs: Blob[] = [];
-                    for (const ay of selectedAyahs) {
+                    // Fetch all ayahs in parallel for better performance
+                    const fetchPromises = selectedAyahs.map(async (ay) => {
                         const sStr = String(ay.s).padStart(3, '0');
                         const aStr = String(ay.a).padStart(3, '0');
                         const audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
+                        
                         const res = await fetch(audioUrl);
                         if (!res.ok) throw new Error(`Failed to fetch audio for ayah ${ay.a}`);
-                        blobs.push(await res.blob());
+                        return await res.arrayBuffer();
+                    });
+                    
+                    const buffers = await Promise.all(fetchPromises);
+                    
+                    // Concatenate all ArrayBuffers into a single Uint8Array
+                    const totalLength = buffers.reduce((acc, curr) => acc + curr.byteLength, 0);
+                    const combinedData = new Uint8Array(totalLength);
+                    let offset = 0;
+                    for (const buffer of buffers) {
+                        combinedData.set(new Uint8Array(buffer), offset);
+                        offset += buffer.byteLength;
                     }
                     
-                    const combinedBlob = new Blob(blobs, { type: 'audio/mpeg' });
+                    const combinedBlob = new Blob([combinedData], { type: 'audio/mpeg' });
 
                     if (Capacitor.isNativePlatform()) {
                         const base64Data = await blobToBase64(combinedBlob);
@@ -526,28 +561,71 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     };
 
     const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
-    const pageAyahs: {s: number, a: number}[] = [];
+    const pageAyahs: any[] = [];
     let pageSurahInfo = "";
-    if (readingMode !== 'mushaf') {
-        quranData.surahs.forEach((surah: any, sIdx: number) => {
-            surah.ayahs.forEach((ayah: any) => {
-                if (ayah.page === pageNum) {
-                    pageAyahs.push({ s: sIdx + 1, a: ayah.numberInSurah });
-                }
-            });
+    
+    // Always calculate pageAyahs for capture
+    quranData.surahs.forEach((surah: any, sIdx: number) => {
+        surah.ayahs.forEach((ayah: any) => {
+            if (ayah.page === pageNum) {
+                pageAyahs.push({ 
+                    ...ayah,
+                    sNum: sIdx + 1, 
+                    numberInSurah: ayah.numberInSurah, 
+                    sName: surah.name, 
+                    juz: ayah.juz, 
+                    hizbQuarter: ayah.hizbQuarter 
+                });
+            }
         });
-        
-        if (pageAyahs.length > 0) {
-            const firstPageAyah = pageAyahs[0];
-            const lastPageAyah = pageAyahs[pageAyahs.length - 1];
-            pageSurahInfo = firstPageAyah.s === lastPageAyah.s 
-                ? `سورة ${getSurahName(firstPageAyah.s)} - آية ${toArabic(firstPageAyah.a)} إلى آية ${toArabic(lastPageAyah.a)}`
-                : `سورة ${getSurahName(firstPageAyah.s)} آية ${toArabic(firstPageAyah.a)} - سورة ${getSurahName(lastPageAyah.s)} آية ${toArabic(lastPageAyah.a)}`;
-        }
+    });
+    
+    if (pageAyahs.length > 0) {
+        const firstPageAyah = pageAyahs[0];
+        const lastPageAyah = pageAyahs[pageAyahs.length - 1];
+        pageSurahInfo = firstPageAyah.sNum === lastPageAyah.sNum 
+            ? `سورة ${getSurahName(firstPageAyah.sNum)} - آية ${toArabic(firstPageAyah.numberInSurah)} إلى آية ${toArabic(lastPageAyah.numberInSurah)}`
+            : `سورة ${getSurahName(firstPageAyah.sNum)} آية ${toArabic(firstPageAyah.numberInSurah)} - سورة ${getSurahName(lastPageAyah.sNum)} آية ${toArabic(lastPageAyah.numberInSurah)}`;
     }
 
     return (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm overflow-y-auto" dir="rtl">
+            {/* Hidden Mushaf capture element for high-quality page share */}
+            <div 
+                id="hidden-mushaf-capture"
+                ref={hiddenMushafRef}
+                style={{
+                    position: 'absolute',
+                    left: '-9999px',
+                    top: '-9999px',
+                    width: '1000px', // Fixed width for high-quality capture
+                    backgroundColor: '#ffffff',
+                    padding: '60px 50px',
+                    color: '#000000',
+                    direction: 'rtl'
+                }}
+            >
+                <MushafPage 
+                    pageNum={pageNum}
+                    pageData={pageAyahs}
+                    highlightedAyahId={null}
+                    onAyahClick={() => {}}
+                    onVerseClick={() => {}}
+                    settings={appSettings || { fontSize: 1.7, fontFamily: 'var(--font-amiri-quran)', textColor: '#000000' }}
+                />
+                <div style={{ 
+                    marginTop: '30px', 
+                    paddingTop: '20px', 
+                    borderTop: '3px solid #3b82f6', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center' 
+                }}>
+                    <span style={{ fontFamily: '"Aref Ruqaa", serif', fontSize: '24px', color: '#3b82f6', fontWeight: 'bold' }}>مصحف احمد وليلى</span>
+                    <span style={{ fontSize: '16px', opacity: 0.7, fontWeight: 'bold' }}>صفحة {toArabic(pageNum)}</span>
+                </div>
+            </div>
+
             {/* Hidden capture element for Tafseer/Meanings page share */}
             {readingMode !== 'mushaf' && (
                 <div 
@@ -571,15 +649,15 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     </div>
                     
                     {pageAyahs.map((ay, idx) => {
-                        const ayahText = getAyahText(ay.s, ay.a);
-                        const explanation = getExplanationText(ay.s, ay.a);
-                        const isNewSurah = idx === 0 || pageAyahs[idx-1].s !== ay.s;
+                        const ayahText = getAyahText(ay.sNum, ay.numberInSurah);
+                        const explanation = getExplanationText(ay.sNum, ay.numberInSurah);
+                        const isNewSurah = idx === 0 || pageAyahs[idx-1].sNum !== ay.sNum;
                         
                         return (
-                            <div key={`${ay.s}-${ay.a}`} style={{ marginBottom: '25px' }}>
+                            <div key={`${ay.sNum}-${ay.numberInSurah}`} style={{ marginBottom: '25px' }}>
                                 {isNewSurah && idx > 0 && (
                                     <div style={{ textAlign: 'center', margin: '30px 0', padding: '10px', backgroundColor: `${currentTheme.accent}15`, borderRadius: '8px' }}>
-                                        <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: currentTheme.accent }}>سورة {getSurahName(ay.s)}</h3>
+                                        <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: currentTheme.accent }}>سورة {getSurahName(ay.sNum)}</h3>
                                     </div>
                                 )}
                                 <div style={{ 
@@ -590,7 +668,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                     marginBottom: '10px',
                                     textAlign: 'right'
                                 }}>
-                                    {ayahText} ﴿{toArabic(ay.a)}﴾
+                                    {ayahText} ﴿{toArabic(ay.numberInSurah)}﴾
                                 </div>
                                 {explanation && (
                                     <div style={{ 
@@ -611,8 +689,9 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         );
                     })}
                     
-                    <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #eee', textAlign: 'center', opacity: 0.6, fontSize: '14px' }}>
-                        مصحف احمد وليلى - {new Date().toLocaleDateString('ar-EG')}
+                    <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '3px solid #3b82f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontFamily: '"Aref Ruqaa", serif', fontSize: '22px', color: '#3b82f6', fontWeight: 'bold' }}>مصحف احمد وليلى</span>
+                        <span style={{ opacity: 0.7, fontSize: '14px', fontWeight: 'bold' }}>{new Date().toLocaleDateString('ar-EG')}</span>
                     </div>
                 </div>
             )}
@@ -759,7 +838,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                             </p>
                                             <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2px' }}>
                                                 <span 
-                                                    style={{ color: selectedBg.accent, textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '11px', fontWeight: 800, textAlign: 'right' }} 
+                                                    style={{ fontFamily: '"Aref Ruqaa", serif', color: selectedBg.accent, textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '14px', fontWeight: 700, textAlign: 'right' }} 
                                                     dir="rtl"
                                                 >
                                                     مصحف احمد وليلى
