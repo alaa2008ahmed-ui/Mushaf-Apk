@@ -23,7 +23,6 @@ interface PrayerConfig {
         lng: number;
     };
     isSummerTime?: boolean;
-    syncWidgetTheme?: boolean;
     nightNotifications?: {
         firstThird: boolean;
         midnight: boolean;
@@ -51,7 +50,6 @@ const DEFAULT_CONFIG: PrayerConfig = {
     mutedPrayers: { Sunrise: true },
     location: { cityGov: "الدمام - الشرقية", fullCountry: "المملكة العربية السعودية", combinedCode: "+966013", lat: 26.4207, lng: 50.0888 },
     isSummerTime: false,
-    syncWidgetTheme: true,
     nightNotifications: { firstThird: true, midnight: true, lastThird: true }
 };
 
@@ -756,8 +754,8 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 maghrib: formatTime(currentTimes.Maghrib, config.prayerOffsets.Maghrib || 0),
                 isha: formatTime(currentTimes.Isha, config.prayerOffsets.Isha || 0)
             }
-        }, config.syncWidgetTheme !== false);
-    }, [config.location, config.prayerOffsets, config.isSummerTime, config.syncWidgetTheme]);
+        });
+    }, [config.location, config.prayerOffsets, config.isSummerTime]);
 
     // --- Next Prayer & Countdown Logic ---
     useEffect(() => {

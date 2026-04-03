@@ -35,7 +35,7 @@ export interface WidgetData {
  * This function stores the data in Capacitor's default SharedPreferences
  * which the native Android Widget reads from.
  */
-export const updateAndroidWidget = async (data: WidgetData, syncTheme: boolean = false) => {
+export const updateAndroidWidget = async (data: WidgetData) => {
   if (Capacitor.getPlatform() !== 'android') return;
 
   try {

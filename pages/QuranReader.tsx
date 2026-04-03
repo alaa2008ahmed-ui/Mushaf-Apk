@@ -57,23 +57,35 @@ const parseArabicNumber = (text: string): number | null => {
     return null;
 };
 
-const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, currentTheme }: any) => {
+const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, onToggleTajweed, onSetReadingMode, useTajweed, currentTheme }: any) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[200] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
-            <div className="modal-skinned w-full max-w-sm rounded-2xl shadow-2xl flex flex-col animate-modal-enter" onClick={e => e.stopPropagation()}>
-                <div className="p-4 flex justify-between items-center h-14 flex-none theme-header-bg rounded-t-2xl">
-                    <h2 className="text-xl font-bold">خيارات الآية</h2>
-                    <button onClick={onClose} className="hover:opacity-80 rounded-full bg-white/20 w-9 h-9 flex items-center justify-center text-lg">✕</button>
-                </div>
-                <div className="p-5 flex flex-col gap-4">
+            <div className="modal-skinned w-full max-w-sm rounded-2xl shadow-2xl flex flex-col animate-modal-enter overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-5 flex flex-col gap-3">
                     <button onClick={onTafseer} style={{ backgroundColor: currentTheme?.accent || '#4f46e5', color: currentTheme?.accentText || '#ffffff' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2">
                         <i className="fa-solid fa-book-open"></i>
-                        التفسير
+                        تفسير الايه
                     </button>
                     <button onClick={onMeanings} style={{ backgroundColor: currentTheme?.highlightText || currentTheme?.accent || '#0d9488', color: currentTheme?.accentText || '#ffffff' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2">
                         <i className="fa-solid fa-language"></i>
-                        معاني القرآن
+                        معنى الايه
+                    </button>
+                    <button onClick={onToggleTajweed} style={{ backgroundColor: currentTheme?.accent || '#4f46e5', color: currentTheme?.accentText || '#ffffff' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2">
+                        <i className="fa-solid fa-wand-magic-sparkles"></i>
+                        {useTajweed ? 'صفحة القراءة' : 'صفحة التجويد'}
+                    </button>
+                    <button onClick={() => onSetReadingMode('tafseer')} style={{ backgroundColor: currentTheme?.accent || '#4f46e5', color: currentTheme?.accentText || '#ffffff' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2">
+                        <i className="fa-solid fa-book"></i>
+                        صفحة التفسير
+                    </button>
+                    <button onClick={() => onSetReadingMode('meanings')} style={{ backgroundColor: currentTheme?.accent || '#4f46e5', color: currentTheme?.accentText || '#ffffff' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2">
+                        <i className="fa-solid fa-spell-check"></i>
+                        صفحة المعانى
+                    </button>
+                    <button onClick={() => onSetReadingMode('translation')} style={{ backgroundColor: currentTheme?.accent || '#4f46e5', color: currentTheme?.accentText || '#ffffff' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2">
+                        <i className="fa-solid fa-globe"></i>
+                        صفحة الترجمة
                     </button>
                 </div>
             </div>
@@ -2732,7 +2744,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 currentTheme={currentTheme} 
             />
             {activeModals.includes('search-modal') && <SearchModal quranData={quranData} onSelect={(s,a) => jumpToAyah(s,a, true)} onClose={() => closeModal('search-modal')} isLandscape={isLandscape} initialQuery={initialSearchQuery} readingMode={readingMode} />}
-            {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} readingMode={readingMode} />}
+            {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} onNavigate={onNavigate} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} readingMode={readingMode} />}
             {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} />}
             {activeModals.includes('settings-modal') && <SettingsModal onClose={() => closeModal('settings-modal')} onOpenModal={openModal} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} />}
             {activeModals.includes('font-modal') && <FontSelectModal isOpen={true} onClose={() => closeModal('font-modal')} isLandscape={isLandscape} currentFontId={settings.fontFamily} onSelect={(id) => {
@@ -2812,6 +2824,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             <AyahActionMenu
                 isOpen={ayahActionMenu.isOpen}
                 currentTheme={currentTheme}
+                useTajweed={useTajweed}
                 onClose={() => {
                     if (ayahActionMenu.wasAutoscrolling) {
                         autoScrollPausedRef.current = false;
@@ -2827,6 +2840,15 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 onMeanings={() => {
                     setAyahActionMenu(p => ({ ...p, isOpen: false }));
                     setQuranMeaningsInfo({ isOpen: true, s: ayahActionMenu.s, a: ayahActionMenu.a, text: '', surahName: ayahActionMenu.surahName, wasAutoscrolling: ayahActionMenu.wasAutoscrolling });
+                }}
+                onToggleTajweed={() => {
+                    setAyahActionMenu(p => ({ ...p, isOpen: false }));
+                    handleMushafTypeSelect(useTajweed ? 'uthmani' : 'tajweed');
+                    setReadingMode('mushaf');
+                }}
+                onSetReadingMode={(mode: ReadingMode) => {
+                    setAyahActionMenu(p => ({ ...p, isOpen: false }));
+                    setReadingMode(mode);
                 }}
             />
             <TafseerSelectionModal 

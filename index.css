@@ -49,6 +49,28 @@
 .tajweed-h { color: #9ca3af; } /* Hamzat Wasl (Gray) */
 .tajweed-l { color: #9ca3af; } /* Lam Shamsiyyah (Gray) */
 
+/* Fix for disconnected Arabic letters in Tajweed mode */
+.ayah-text-block span,
+.font-quran span,
+span[class^="tajweed-"] {
+  display: inline !important;
+  letter-spacing: 0 !important;
+  word-spacing: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-variant-ligatures: common-ligatures contextual !important;
+  -webkit-font-smoothing: antialiased !important;
+  text-rendering: optimizeLegibility !important;
+  font-feature-settings: "liga" 1, "clig" 1, "kern" 1, "mark" 1, "mkmk" 1 !important;
+  font-kerning: normal !important;
+  unicode-bidi: isolate !important;
+  white-space: nowrap !important;
+}
+
+.ayah-text-block {
+  white-space: normal !important;
+}
+
 @font-face {
   font-family: 'KFGQPC Uthman Taha Naskh';
   src: url('https://cdn.jsdelivr.net/gh/Guepard/quran-fonts@master/fonts/KFGQPC-HAFS.woff2') format('woff2');
