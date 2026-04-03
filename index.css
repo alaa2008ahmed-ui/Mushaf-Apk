@@ -74,6 +74,12 @@ span[class^="tajweed-"] {
   font-variant-ligatures: common-ligatures contextual !important;
 }
 
+.page-content {
+  text-align: justify;
+  text-justify: inter-word;
+  text-align-last: justify;
+}
+
 @font-face {
   font-family: 'KFGQPC Uthman Taha Naskh';
   src: url('https://cdn.jsdelivr.net/gh/Guepard/quran-fonts@master/fonts/KFGQPC-HAFS.woff2') format('woff2');

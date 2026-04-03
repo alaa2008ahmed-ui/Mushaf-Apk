@@ -125,7 +125,8 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
         fontFamily: settings?.fontFamily || 'var(--font-amiri-quran)',
         color: settings?.theme === 'dark' ? '#fff' : (settings?.textColor || '#000'),
         textAlign: 'justify' as const,
-        textJustify: 'inter-word' as const
+        textJustify: 'inter-word' as const,
+        textAlignLast: 'justify' as const
     };
 
     const headerStyle = {

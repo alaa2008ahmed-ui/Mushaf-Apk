@@ -237,7 +237,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     }}
                     onClick={() => onAyahClick(item.surahNumber, item.ayahNumber)}
                 >
-                    <div className="ayah-text mb-4 text-right leading-relaxed ayah-text-block" 
+                    <div className="ayah-text mb-4 text-right leading-relaxed" 
                          style={{ 
                              fontSize: `${settings.fontSize}rem`, 
                              fontFamily: settings.fontFamily,

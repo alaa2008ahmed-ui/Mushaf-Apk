@@ -425,10 +425,11 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                         font-feature-settings: "liga" 1, "clig" 1, "kern" 1, "mark" 1, "mkmk" 1 !important;
                                         font-kerning: normal !important;
                                         unicode-bidi: isolate !important;
-                                        white-space: nowrap !important;
                                     }
                                     .ayah-text-block {
                                         white-space: normal !important;
+                                        text-align: justify !important;
+                                        text-justify: inter-word !important;
                                     }
                                     .mushaf-page, .vertical-reading-view, #hidden-mushaf-capture, #hidden-capture-element {
                                         direction: rtl !important;
@@ -1027,13 +1028,10 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     {/* Footer */}
                     <div className="p-2 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 flex gap-2">
                         <button
-                            onClick={() => {
-                                onClose();
-                                if (onNavigate) onNavigate('home');
-                            }}
+                            onClick={onClose}
                             className="flex-1 py-2 rounded-xl text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center justify-center gap-2 transition-all hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95"
                         >
-                            <Home size={16} />
+                            <Share2 size={16} className="rotate-180" />
                             رجوع
                         </button>
                         <button
