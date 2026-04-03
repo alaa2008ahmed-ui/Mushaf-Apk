@@ -241,13 +241,11 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                          style={{ 
                              fontSize: `${settings.fontSize}rem`, 
                              fontFamily: settings.fontFamily,
-                             color: currentTheme.accent,
-                             textAlign: 'justify',
-                             textJustify: 'inter-word'
+                             color: currentTheme.accent
                          }}>
                         {item.text}
                         <span className="inline-flex items-center justify-center w-8 h-8 mr-2 rounded-full border border-current text-sm font-bold"
-                              style={{ color: currentTheme.text, whiteSpace: 'nowrap' }}>
+                              style={{ color: currentTheme.text }}>
                             {toArabic(item.ayahNumber)}
                         </span>
                     </div>

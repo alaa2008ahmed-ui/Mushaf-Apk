@@ -60,6 +60,8 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         setSettings(newSettings);
         try {
             localStorage.setItem(THEME_SETTINGS_KEY, JSON.stringify(newSettings));
+            // Dispatch event to notify other components (like PrayerTimesContext) to update widget
+            window.dispatchEvent(new Event('themeChanged'));
         } catch (e) {
             console.warn('Failed to save theme settings:', e);
         }

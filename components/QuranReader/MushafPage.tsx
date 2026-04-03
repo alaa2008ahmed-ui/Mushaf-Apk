@@ -31,25 +31,27 @@ const fixQuranText = (text: string) => {
 const renderTajweedText = (text: string) => {
     if (!text) return text;
     
-    if (!text.includes('[')) return text;
+    // Remove the ZWJ hack as it breaks shaping in proper Quranic fonts
+    const fixedText = text;
+
+    if (!fixedText.includes('[')) return fixedText;
     
     const parts = [];
     let lastIndex = 0;
     const regex = /\[([a-z])(?::\d+)?\[([^\]]+)\]/g;
     let match;
     
-    while ((match = regex.exec(text)) !== null) {
+    while ((match = regex.exec(fixedText)) !== null) {
         if (match.index > lastIndex) {
-            parts.push(<span key={`text-${lastIndex}`}>{text.substring(lastIndex, match.index)}</span>);
+            parts.push(<span key={`text-${lastIndex}`}>{fixedText.substring(lastIndex, match.index)}</span>);
         }
         const colorClass = `tajweed-${match[1]}`;
-        // Add ZWJ at the beginning and end of the tajweed span to connect to adjacent parts
-        parts.push(<span key={`tag-${match.index}`} className={colorClass}>&zwj;{match[2]}&zwj;</span>);
+        parts.push(<span key={`tag-${match.index}`} className={colorClass}>{match[2]}</span>);
         lastIndex = regex.lastIndex;
     }
     
-    if (lastIndex < text.length) {
-        parts.push(<span key={`text-${lastIndex}`}>{text.substring(lastIndex)}</span>);
+    if (lastIndex < fixedText.length) {
+        parts.push(<span key={`text-${lastIndex}`}>{fixedText.substring(lastIndex)}</span>);
     }
     
     return parts;
@@ -123,10 +125,7 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
     const pageStyle = {
         fontSize: settings ? `${settings.fontSize}rem` : '1.7rem',
         fontFamily: settings?.fontFamily || 'var(--font-amiri-quran)',
-        color: settings?.theme === 'dark' ? '#fff' : (settings?.textColor || '#000'),
-        textAlign: 'justify' as const,
-        textJustify: 'inter-word' as const,
-        textAlignLast: 'justify' as const
+        color: settings?.theme === 'dark' ? '#fff' : (settings?.textColor || '#000')
     };
 
     const headerStyle = {

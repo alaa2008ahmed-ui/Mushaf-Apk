@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Share2, Plus, Minus, Type, Image as ImageIcon, FileText, Volume2, Home } from 'lucide-react';
+import { X, Share2, Plus, Minus, Type, Image as ImageIcon, FileText, Volume2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -10,7 +10,6 @@ import MushafPage from './MushafPage';
 interface ShareAyahModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onNavigate?: (pageId: string) => void;
     currentAyah: { s: number; a: number };
     quranData: any;
     currentTheme: any;
@@ -95,7 +94,6 @@ const TEXT_COLORS = [
 const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     isOpen,
     onClose,
-    onNavigate,
     currentAyah,
     quranData,
     currentTheme,
@@ -291,31 +289,6 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     useCORS: true,
                     backgroundColor: '#ffffff',
                     onclone: (clonedDoc) => {
-                        // Fix for broken Arabic letters in Tajweed mode
-                        const style = clonedDoc.createElement('style');
-                        style.innerHTML = `
-                            .ayah-text-block span,
-                            .font-quran span,
-                            span[class^="tajweed-"] {
-                                display: inline !important;
-                                letter-spacing: 0 !important;
-                                word-spacing: 0 !important;
-                                padding: 0 !important;
-                                margin: 0 !important;
-                                font-variant-ligatures: common-ligatures contextual !important;
-                                -webkit-font-smoothing: antialiased !important;
-                                text-rendering: optimizeLegibility !important;
-                                font-feature-settings: "liga" 1, "clig" 1, "kern" 1, "mark" 1, "mkmk" 1 !important;
-                                font-kerning: normal !important;
-                                unicode-bidi: isolate !important;
-                                white-space: nowrap !important;
-                            }
-                            .ayah-text-block {
-                                white-space: normal !important;
-                            }
-                        `;
-                        clonedDoc.head.appendChild(style);
-
                         const elements = clonedDoc.getElementsByTagName('*');
                         for (let i = 0; i < elements.length; i++) {
                             const el = elements[i] as HTMLElement;
@@ -408,40 +381,6 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             backgroundColor: readingMode === 'mushaf' ? '#ffffff' : (currentTheme.bg || '#ffffff'),
                             logging: false,
                             onclone: (clonedDoc) => {
-                                // Fix for broken Arabic letters in Tajweed mode
-                                const style = clonedDoc.createElement('style');
-                                style.innerHTML = `
-                                    .ayah-text-block span,
-                                    .font-quran span,
-                                    span[class^="tajweed-"] {
-                                        display: inline !important;
-                                        letter-spacing: 0 !important;
-                                        word-spacing: 0 !important;
-                                        padding: 0 !important;
-                                        margin: 0 !important;
-                                        font-variant-ligatures: common-ligatures contextual !important;
-                                        -webkit-font-smoothing: antialiased !important;
-                                        text-rendering: optimizeLegibility !important;
-                                        font-feature-settings: "liga" 1, "clig" 1, "kern" 1, "mark" 1, "mkmk" 1 !important;
-                                        font-kerning: normal !important;
-                                        unicode-bidi: isolate !important;
-                                    }
-                                    .ayah-text-block {
-                                        white-space: normal !important;
-                                        text-align: justify !important;
-                                        text-justify: inter-word !important;
-                                    }
-                                    .mushaf-page, .vertical-reading-view, #hidden-mushaf-capture, #hidden-capture-element {
-                                        direction: rtl !important;
-                                        text-align: right !important;
-                                        white-space: normal !important;
-                                    }
-                                    .ayah-text {
-                                        line-height: 1.8 !important;
-                                    }
-                                `;
-                                clonedDoc.head.appendChild(style);
-
                                 // Fix for oklch/oklab colors that html2canvas doesn't support
                                 const elements = clonedDoc.getElementsByTagName('*');
                                 for (let i = 0; i < elements.length; i++) {
@@ -1026,18 +965,11 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     </div>
 
                     {/* Footer */}
-                    <div className="p-2 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 flex gap-2">
-                        <button
-                            onClick={onClose}
-                            className="flex-1 py-2 rounded-xl text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center justify-center gap-2 transition-all hover:bg-gray-300 dark:hover:bg-gray-600 active:scale-95"
-                        >
-                            <Share2 size={16} className="rotate-180" />
-                            رجوع
-                        </button>
+                    <div className="p-2 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80">
                         <button
                             onClick={handleShare}
                             disabled={isSharing}
-                            className="flex-[2] py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70"
+                            className="w-full py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70"
                             style={{ backgroundColor: currentTheme.primary || '#3b82f6' }}
                         >
                             {isSharing ? (

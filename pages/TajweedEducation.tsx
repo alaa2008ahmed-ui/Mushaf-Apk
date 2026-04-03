@@ -2334,7 +2334,7 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (sur
                     <React.Fragment key={i}>
                         {part}
                         {i < parts.length - 1 && (
-                            <span style={{ color: color, backgroundColor: `${color}15` }} className="font-bold inline">
+                            <span style={{ color: color, backgroundColor: `${color}15` }} className="font-bold px-1 rounded-md mx-1">
                                 {highlightedWord}
                             </span>
                         )}
