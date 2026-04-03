@@ -309,29 +309,6 @@ function PrayerTimes({ onBack, onNavigate }) {
                         })}
                     </div>
                     
-                    {/* Widget Theme Sync Toggle */}
-                    <div className="mt-6 p-4 rounded-2xl flex items-center justify-between" style={{ backgroundColor: isBlackAndWhite ? '#f3f4f6' : `${primaryColor}15`, color: isBlackAndWhite ? '#000' : theme.textColor }}>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-full" style={{ backgroundColor: isBlackAndWhite ? '#e5e7eb' : `${primaryColor}30` }}>
-                                <Palette className="w-5 h-5" style={{ color: isBlackAndWhite ? '#4b5563' : primaryColor }} />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-sm">مزامنة ثيم التطبيق المصغر</h3>
-                                <p className="text-xs opacity-70 mt-0.5">تطبيق ألوان التطبيق على ويدجت الشاشة</p>
-                            </div>
-                        </div>
-                        <button 
-                            onClick={() => {
-                                const newState = config.syncWidgetTheme === false ? true : false;
-                                updateConfig({ syncWidgetTheme: newState });
-                                showToast(newState ? "تم تفعيل مزامنة ثيم الويدجت" : "تم إيقاف مزامنة ثيم الويدجت");
-                            }}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${config.syncWidgetTheme !== false ? 'bg-emerald-500' : 'bg-gray-300'}`}
-                        >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${config.syncWidgetTheme !== false ? '-translate-x-6' : '-translate-x-1'}`} />
-                        </button>
-                    </div>
-
                     <p className="text-center text-sm mt-6 opacity-70" style={{ color: secondaryColor }}>
                         (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
                     </p>
@@ -366,7 +343,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                     {toastMessage}
                 </div>
             )}
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
             <TutorialOverlay tutorialId="prayer-times-tutorial" steps={prayerTutorialSteps} />
         </div>
     );

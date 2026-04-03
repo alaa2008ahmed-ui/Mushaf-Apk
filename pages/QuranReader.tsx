@@ -2621,6 +2621,20 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 useTajweed={useTajweed}
                 handleMushafTypeSelect={handleMushafTypeSelect}
             />
+            <FloatingMenu 
+                isFloatingMenuOpen={isFloatingMenuOpen}
+                floatingMenuRef={floatingMenuRef}
+                openModal={openModal}
+                setIsFloatingMenuOpen={setIsFloatingMenuOpen}
+                getToolbarStyle={getToolbarStyle}
+                currentTheme={currentTheme}
+                initialLandscape={initialLandscape}
+                onNavigate={onNavigate}
+                readingMode={readingMode}
+                setReadingMode={setReadingMode}
+                useTajweed={useTajweed}
+                handleMushafTypeSelect={handleMushafTypeSelect}
+            />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
                 {readingMode === 'mushaf' ? (
@@ -2692,7 +2706,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 getToolbarStyle={getToolbarStyle}
                 setIsFloatingMenuOpen={setIsFloatingMenuOpen}
                 isFloatingMenuOpen={isFloatingMenuOpen}
-                floatingMenuRef={floatingMenuRef}
                 openModal={openModal}
                 menuButtonRef={menuButtonRef}
                 handleBookmarkButtonPointerDown={handleBookmarkButtonPointerDown}
@@ -2703,8 +2716,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 handleAutoScrollButtonPointerLeave={handleAutoScrollButtonPointerLeave}
                 autoScrollState={autoScrollState}
                 onBack={onBack}
-                initialLandscape={initialLandscape}
-                onNavigate={onNavigate}
             />
             {isAutoScrollSettingsOpen && (
             <AutoScrollSettingsModal

@@ -56,9 +56,9 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
       case 'monthly-prayer-times':
         return <MonthlyPrayerTimes onBack={onBack} />;
       case 'qibla':
-        return <Qibla onBack={onBack} />;
+        return <Qibla onBack={onBack} onNavigate={onNavigate} />;
       case 'sabah-masaa':
-        return <AdkarSabahMasaa onBack={onBack} />;
+        return <AdkarSabahMasaa onBack={onBack} onNavigate={onNavigate} />;
       case 'adia':
         return <Adia onBack={onBack} />;
       case 'nawawi':
@@ -66,7 +66,7 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
       case 'calculators':
         return <Calculators onBack={onBack} />;
       case 'voice-control':
-        return <VoiceControlPage onBack={onBack} />;
+        return <VoiceControlPage onBack={onBack} onNavigate={onNavigate} />;
       case 'more-menu':
         return <MoreMenuPage onBack={onBack} onNavigate={onNavigate} />;
       case 'daily-wird':

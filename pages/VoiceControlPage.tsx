@@ -46,7 +46,7 @@ const AVAILABLE_ACTIONS = [
     { id: 'disable_voice_control', name: 'إيقاف التحكم الصوتي' },
 ];
 
-const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: string) => void }> = ({ onBack, onNavigate }) => {
     const { theme } = useTheme();
     const { 
         isEnabled, 
@@ -288,7 +288,7 @@ const VoiceControlPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </div>
             </main>
 
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
         </div>
     );
 };

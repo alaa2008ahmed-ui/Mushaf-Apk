@@ -9,7 +9,7 @@ import ZoomModal from '../components/AdkarSabahMasaa/ZoomModal';
 
 const ADHKAR_STATUS_KEY = 'sabah_masaa_status_v1';
 
-function AdkarSabahMasaa({ onBack }) {
+function AdkarSabahMasaa({ onBack, onNavigate }) {
     const [adhkarTab, setAdhkarTab] = useState('morning');
     const [adhkarCounts, setAdhkarCounts] = useState({});
     const [zoomedDhikr, setZoomedDhikr] = useState(null);
@@ -113,7 +113,7 @@ function AdkarSabahMasaa({ onBack }) {
                 </div>
             </main>
             
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
 
             <ZoomModal zoomedDhikr={zoomedDhikr} onClose={closeZoomModal} />
         </div>

@@ -9,7 +9,7 @@ import { VisualQibla, ARQibla, SunMoonQibla, ShadowQibla } from '../components/Q
 const toRad = (deg) => deg * Math.PI / 180;
 const toDeg = (rad) => rad * 180 / Math.PI;
 
-function Qibla({ onBack }) {
+function Qibla({ onBack, onNavigate }) {
     const { theme } = useTheme();
     const { config, refreshLocation } = usePrayerTimes();
     const [heading, setHeading] = useState(0);
@@ -258,7 +258,7 @@ function Qibla({ onBack }) {
 
             </main>
             
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
         </div>
     );
 }

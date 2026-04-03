@@ -396,29 +396,6 @@
 .btn-purple { background-color: #7e22ce; border-color: #6b21a8; width: 100%; } 
 .btn-purple:hover { background-color: #6b21a8; }
 
-#floating-menu {
-    position: absolute;
-    bottom: calc(100% + 12px);
-    left: 50%;
-    transform: translateX(-50%) translateY(20px) scale(0.95);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    z-index: 80;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.quran-reader-container.landscape-mode #floating-menu {
-    bottom: calc(100% + 12px);
-}
-#floating-menu.open {
-    transform: translateX(-50%) translateY(0) scale(1);
-    opacity: 1;
-    visibility: visible;
-}
-
 #header {
     height: calc(3.5rem + var(--logical-safe-top));
     padding-top: var(--logical-safe-top) !important;
@@ -676,7 +653,6 @@
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
-    transform: translateY(20px) scale(0.95) !important;
 }
 
 /* Smart Notification Toast */

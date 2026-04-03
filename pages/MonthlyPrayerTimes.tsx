@@ -399,7 +399,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                     <button 
                         onClick={onBack} 
                         className="bar-button btn-3d-effect !flex-[2] max-w-[160px] py-2.5 px-4 rounded-xl shadow-lg"
-                        style={{ background: theme.palette[0], color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
+                        style={{ background: '#8B5CF6', color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
                     >
                         <span className="text-xl">🏠</span>
                         <span className="hidden sm:inline">الرئيسية</span>

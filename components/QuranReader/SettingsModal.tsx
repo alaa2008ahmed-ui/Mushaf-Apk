@@ -43,7 +43,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         const saved = localStorage.getItem('show_sajdah_card' + modeSuffix);
         return saved !== null ? saved === 'true' : true;
     });
-    const [useTajweed, setUseTajweed] = useState(() => localStorage.getItem('use_tajweed_quran' + modeSuffix) === 'true');
     const [isHideToolbarsEnabled, setIsHideToolbarsEnabled] = useState(() => localStorage.getItem('hide_toolbars_enabled' + modeSuffix) === 'true');
 
     const [activeColorField, setActiveColorField] = useState<'textColor' | 'bgColor' | 'highlightTextColor' | null>(null);
@@ -107,7 +106,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         },
         {
             id: 'toggles',
-            text: 'خيارات اضافيه لاظهار شرح السجده والمصحف المجود واخفاء الاشرطه اثناء التمرير التلقائى',
+            text: 'خيارات اضافيه لاظهار شرح السجده واخفاء الاشرطه اثناء التمرير التلقائى',
             position: { top: '750px' },
             arrow: 'up',
             selector: '#toggles-section',
@@ -163,13 +162,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         localStorage.setItem('show_sajdah_card' + modeSuffix, String(checked));
         window.dispatchEvent(new Event('settings-change'));
         showToast(checked ? 'تم تفعيل بطاقة السجدة الكبرى' : 'تم إيقاف بطاقة السجدة الكبرى');
-    };
-
-    const handleTajweedToggle = (checked: boolean) => {
-        setUseTajweed(checked);
-        localStorage.setItem('use_tajweed_quran' + modeSuffix, String(checked));
-        window.dispatchEvent(new Event('settings-change'));
-        showToast(checked ? 'تم تفعيل المصحف المجود' : 'تم إيقاف المصحف المجود');
     };
 
     const handleHideToolbarsToggle = (checked: boolean) => {
@@ -347,16 +339,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                 <div className="relative inline-block w-10 align-middle select-none">
                                     <input type="checkbox" id="show-sajdah-card" checked={showSajdahCard} onChange={(e) => handleSajdahCardToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
                                     <label htmlFor="show-sajdah-card" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${showSajdahCard ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-bold opacity-80">المصحف المجود</label>
-                                <div className="relative inline-block w-10 align-middle select-none">
-                                    <input type="checkbox" id="use-tajweed" checked={useTajweed} onChange={(e) => handleTajweedToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                                    <label htmlFor="use-tajweed" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${useTajweed ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
                                 </div>
                             </div>
                         </div>
