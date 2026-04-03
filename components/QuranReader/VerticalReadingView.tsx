@@ -9,6 +9,7 @@ interface VerticalReadingViewProps {
     currentTheme: any;
     currentAyah: { s: number; a: number };
     onAyahClick: (s: number, a: number) => void;
+    onVisibleAyahChange?: (s: number, a: number) => void;
     onSettingsChange?: (newSettings: any) => void;
     modeSuffix?: string;
 }
@@ -25,6 +26,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     currentTheme,
     currentAyah,
     onAyahClick,
+    onVisibleAyahChange,
     onSettingsChange,
     modeSuffix = '_v'
 }) => {
@@ -291,6 +293,15 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 overscan={200} // Pre-render items for smoother experience
                 className="h-full scrollbar-hide"
                 itemContent={renderItem}
+                rangeChanged={(range) => {
+                    if (onVisibleAyahChange) {
+                        const centerIndex = Math.floor((range.startIndex + range.endIndex) / 2);
+                        const item = flattenedItems[centerIndex];
+                        if (item && item.type === 'ayah') {
+                            onVisibleAyahChange(item.surahNumber, item.ayahNumber);
+                        }
+                    }
+                }}
             />
         </div>
     );

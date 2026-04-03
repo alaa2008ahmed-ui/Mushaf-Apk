@@ -189,13 +189,16 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     }, []);
 
     const [readingMode, setReadingMode] = useState<ReadingMode>(() => {
+        if (isWirdMode || isMemorizationMode) return 'mushaf';
         const saved = localStorage.getItem('last_reading_mode');
         return (saved as ReadingMode) || 'mushaf';
     });
     
     useEffect(() => {
-        localStorage.setItem('last_reading_mode', readingMode);
-    }, [readingMode]);
+        if (!isWirdMode && !isMemorizationMode) {
+            localStorage.setItem('last_reading_mode', readingMode);
+        }
+    }, [readingMode, isWirdMode, isMemorizationMode]);
     const modeSuffix = localIsMemorizationMode 
         ? `_memorization_${isLandscape ? 'h' : 'v'}` 
         : isWirdMode 
@@ -2612,6 +2615,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 reciterToast={reciterToast}
                 readingMode={readingMode}
                 setReadingMode={setReadingMode}
+                isWirdMode={isWirdMode}
                 isMemorizationMode={localIsMemorizationMode}
                 memorizationSettings={localMemorizationSettings}
                 useTajweed={useTajweed}
@@ -2643,12 +2647,19 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     </div>
                 ) : (
                     <VerticalReadingView 
-                        quranData={quranData}
-                        readingMode={readingMode}
+                        quranData={quranUthmaniJson.data}
+                        readingMode={readingMode as any}
                         settings={settings}
                         currentTheme={currentTheme}
                         currentAyah={currentAyah}
                         onAyahClick={handleVerticalAyahClick}
+                        onVisibleAyahChange={(s, a) => {
+                            if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
+                                setCurrentAyah({ s, a });
+                                currentAyahRef.current = { s, a };
+                                localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
+                            }
+                        }}
                         onSettingsChange={setSettings}
                         modeSuffix={modeSuffix}
                     />

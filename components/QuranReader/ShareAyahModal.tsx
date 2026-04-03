@@ -358,7 +358,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     try {
                         // Ensure the capture element is visible for html2canvas
                         const originalStyle = captureElement.style.cssText;
-                        captureElement.style.position = 'fixed';
+                        captureElement.style.position = 'absolute';
                         captureElement.style.left = '0';
                         captureElement.style.top = '0';
                         captureElement.style.visibility = 'visible';
@@ -965,11 +965,17 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     </div>
 
                     {/* Footer */}
-                    <div className="p-2 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80">
+                    <div className="p-2 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 flex gap-2">
+                        <button
+                            onClick={onClose}
+                            className="flex-1 py-2 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
+                        >
+                            رجوع
+                        </button>
                         <button
                             onClick={handleShare}
                             disabled={isSharing}
-                            className="w-full py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70"
+                            className="flex-1 py-2 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70"
                             style={{ backgroundColor: currentTheme.primary || '#3b82f6' }}
                         >
                             {isSharing ? (

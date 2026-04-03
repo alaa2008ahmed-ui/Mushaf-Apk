@@ -23,6 +23,7 @@ interface QuranHeaderProps {
     reciterToast: { show: boolean; name: string };
     readingMode: 'mushaf' | 'tafseer' | 'meanings' | 'translation';
     setReadingMode: (mode: 'mushaf' | 'tafseer' | 'meanings' | 'translation') => void;
+    isWirdMode?: boolean;
     isMemorizationMode?: boolean;
     memorizationSettings?: any;
     useTajweed: boolean;
@@ -51,6 +52,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
     reciterToast,
     readingMode,
     setReadingMode,
+    isWirdMode = false,
     isMemorizationMode = false,
     memorizationSettings,
     useTajweed,
@@ -128,27 +130,31 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                                 <i className="fa-solid fa-book-open w-5"></i>
                                 <span>المجود</span>
                             </button>
-                            <button 
-                                onClick={() => { setReadingMode('tafseer'); setIsModeMenuOpen(false); }}
-                                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'tafseer' ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
-                            >
-                                <i className="fa-solid fa-book-open-reader w-5"></i>
-                                <span>التفسير</span>
-                            </button>
-                            <button 
-                                onClick={() => { setReadingMode('meanings'); setIsModeMenuOpen(false); }}
-                                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'meanings' ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
-                            >
-                                <i className="fa-solid fa-language w-5"></i>
-                                <span>المعاني</span>
-                            </button>
-                            <button 
-                                onClick={() => { setReadingMode('translation'); setIsModeMenuOpen(false); }}
-                                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'translation' ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
-                            >
-                                <i className="fa-solid fa-globe w-5"></i>
-                                <span>الترجمة</span>
-                            </button>
+                            {(!isWirdMode && !isMemorizationMode) && (
+                                <>
+                                    <button 
+                                        onClick={() => { setReadingMode('tafseer'); setIsModeMenuOpen(false); }}
+                                        className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'tafseer' ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
+                                    >
+                                        <i className="fa-solid fa-book-open-reader w-5"></i>
+                                        <span>التفسير</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => { setReadingMode('meanings'); setIsModeMenuOpen(false); }}
+                                        className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'meanings' ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
+                                    >
+                                        <i className="fa-solid fa-language w-5"></i>
+                                        <span>المعاني</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => { setReadingMode('translation'); setIsModeMenuOpen(false); }}
+                                        className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'translation' ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
+                                    >
+                                        <i className="fa-solid fa-globe w-5"></i>
+                                        <span>الترجمة</span>
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </>
                 )}
