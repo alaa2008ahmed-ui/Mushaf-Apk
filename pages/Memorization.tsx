@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, HelpCircle, Repeat, Play, User, ArrowLeftRight, CheckSquare, Minus, Plus } from 'lucide-react';
+import { ArrowRight, HelpCircle, Repeat, Play, User, ArrowLeftRight, CheckSquare, Minus, Plus, BookOpen } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import InteractiveBackground from '../components/InteractiveBackground';
 import quranData from '../data/quran-uthmani.json';
 import { SURAH_NAMES_AR, MEMORIZATION_READERS } from '../components/QuranReader/constants';
 import BottomBar from '../components/BottomBar';
+import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 
 interface MemorizationProps {
     onBack: () => void;
@@ -25,6 +26,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const [linkedRepeat, setLinkedRepeat] = useState(true);
     const [pauseLength, setPauseLength] = useState(1);
     const [testAfterSession, setTestAfterSession] = useState(false);
+    const [mushafType, setMushafType] = useState<'uthmani' | 'tajweed'>('tajweed');
 
     const [showHelpModal, setShowHelpModal] = useState(false);
     const [showExplanationModal, setShowExplanationModal] = useState(false);
@@ -48,6 +50,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 setLinkedRepeat(parsed.linkedRepeat !== undefined ? parsed.linkedRepeat : true);
                 setPauseLength(parsed.pauseLength || 1);
                 setTestAfterSession(parsed.testAfterSession || false);
+                setMushafType(parsed.mushafType || 'tajweed');
             } catch (e) {
                 console.error("Failed to load memorization settings", e);
             }
@@ -78,10 +81,11 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
             ayahRepeat,
             linkedRepeat,
             pauseLength,
-            testAfterSession
+            testAfterSession,
+            mushafType
         };
         localStorage.setItem('memorization_settings_v1', JSON.stringify(settings));
-    }, [selectedReader, fromSurah, fromAyah, toSurah, toAyah, rangeRepeat, ayahRepeat, linkedRepeat, pauseLength, testAfterSession]);
+    }, [selectedReader, fromSurah, fromAyah, toSurah, toAyah, rangeRepeat, ayahRepeat, linkedRepeat, pauseLength, testAfterSession, mushafType]);
 
     const handleStart = () => {
         const session = localStorage.getItem('memorization_session_v1');
@@ -96,6 +100,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const startNewSession = () => {
         onNavigate('quran', {
             isMemorization: true,
+            mushafType,
             memorizationSettings: {
                 reader: selectedReader,
                 fromSurah,
@@ -106,7 +111,8 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 ayahRepeat,
                 linkedRepeat,
                 pauseLength,
-                testAfterSession
+                testAfterSession,
+                mushafType
             }
         });
     };
@@ -114,11 +120,39 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const resumeSession = () => {
         onNavigate('quran', {
             isMemorization: true,
+            mushafType: savedSession.settings?.mushafType || 'tajweed',
             memorizationSettings: savedSession.settings,
             initialSurah: savedSession.currentAyah.s,
             initialAyah: savedSession.currentAyah.a
         });
     };
+
+    const memorizationTutorialSteps: TutorialStep[] = [
+        {
+            id: 'reader-select',
+            text: 'اختيار القارئ: يمكنك اختيار القارئ المفضل لك من هنا.',
+            position: { top: '30%' },
+            arrow: 'up',
+            selector: '#reader-select-container',
+            icon: <User className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'ayah-range',
+            text: 'نطاق الآيات: حدد السورة والآية التي تود البدء منها والانتهاء إليها.',
+            position: { top: '40%' },
+            arrow: 'up',
+            selector: '#ayah-range-container',
+            icon: <ArrowLeftRight className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'start-btn',
+            text: 'بدء الحفظ: اضغط هنا للبدء في جلسة التحفيظ.',
+            position: { bottom: '100px' },
+            arrow: 'down',
+            selector: '#btn-start-memorization',
+            icon: <Play className="w-8 h-8 text-white" />
+        }
+    ];
 
     const getAyahsCount = (surahNum: number) => {
         return quranData.data.surahs[surahNum - 1]?.ayahs.length || 0;
@@ -172,13 +206,14 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
 
                 <main className="flex-1 overflow-y-auto p-4 space-y-6 hide-scrollbar">
                     {/* Reader Selection */}
-                    <div className="space-y-2">
+                    <div className="space-y-2" id="reader-select-container">
                         <div className="flex items-center justify-end gap-2 font-bold text-lg" style={{ color: 'var(--text-color)' }}>
                             <span>اختر اسم القارئ</span>
                             <User size={24} />
                         </div>
                         <div className="relative">
                             <select 
+                                id="reader-select"
                                 value={selectedReader}
                                 onChange={(e) => { setSelectedReader(e.target.value); setSavedSession(null); }}
                                 className="w-full p-4 rounded-2xl appearance-none outline-none text-right font-medium text-lg shadow-sm border"
@@ -194,8 +229,31 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                         </div>
                     </div>
 
+                    {/* Mushaf Type Selection */}
+                    <div className="space-y-2" id="mushaf-type-container">
+                        <div className="flex items-center justify-end gap-2 font-bold text-lg" style={{ color: 'var(--text-color)' }}>
+                            <span>نوع المصحف</span>
+                            <BookOpen size={24} />
+                        </div>
+                        <div className="relative">
+                            <select 
+                                id="mushaf-type-select"
+                                value={mushafType}
+                                onChange={(e) => { setMushafType(e.target.value as 'uthmani' | 'tajweed'); setSavedSession(null); }}
+                                className="w-full p-4 rounded-2xl appearance-none outline-none text-right font-medium text-lg shadow-sm border"
+                                style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
+                            >
+                                <option value="uthmani">المصحف العادي</option>
+                                <option value="tajweed">المصحف المجود</option>
+                            </select>
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px]" style={{ borderTopColor: 'var(--text-color)' }}></div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Ayah Range */}
-                    <div className="space-y-4">
+                    <div className="space-y-4" id="ayah-range-container">
                         <div className="flex items-center justify-end gap-2 font-bold text-lg" style={{ color: 'var(--text-color)' }}>
                             <span>نطاق الآيات</span>
                             <ArrowLeftRight size={24} />
@@ -491,6 +549,8 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                     </div>
                 </div>
             )}
+
+            <TutorialOverlay tutorialId="memorization-tutorial" steps={memorizationTutorialSteps} />
         </div>
     );
 };

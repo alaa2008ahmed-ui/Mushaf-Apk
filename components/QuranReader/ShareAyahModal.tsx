@@ -162,12 +162,23 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
 
     if (!isOpen || !quranData) return null;
 
+    const stripTajweedTags = (text: string) => {
+        if (!text) return '';
+        return text.replace(/\[([a-z])(?::\d+)?\[([^\]]+)\]/g, '$2');
+    };
+
+    const fixQuranText = (text: string) => {
+        if (!text) return "";
+        return text.replace(/\u0647\u0650\u06E6/g, "\u0647\u0650\u064a");
+    };
+
     const getAyahText = (s: number, a: number) => {
         const surah = quranData.surahs[s - 1];
         if (!surah) return '';
         const ayah = surah.ayahs.find((ay: any) => ay.numberInSurah === a);
         if (!ayah) return '';
-        let text = ayah.text;
+        let text = stripTajweedTags(ayah.text);
+        text = fixQuranText(text);
         if (s !== 1 && s !== 9 && a === 1) {
             text = text.replace('بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', '').replace('بِّسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', '').trim();
         }
@@ -437,21 +448,26 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     if (settings.reader) reader = settings.reader;
                 } catch (e) {}
                 
-                const sStr = String(firstAyah.s).padStart(3, '0');
-                const aStr = String(firstAyah.a).padStart(3, '0');
                 const audioReader = reader === 'ar.alafasy' ? 'Alafasy_128kbps' : reader;
-                const audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
                 
                 // Custom file name: SurahName_AyahRange.mp3
                 const fileName = `${getSurahName(firstAyah.s)}_${firstAyah.a}${firstAyah.a !== lastAyah.a ? '-' + lastAyah.a : ''}.mp3`;
 
                 try {
-                    const res = await fetch(audioUrl);
-                    if (!res.ok) throw new Error('Failed to fetch audio');
-                    const blob = await res.blob();
+                    const blobs: Blob[] = [];
+                    for (const ay of selectedAyahs) {
+                        const sStr = String(ay.s).padStart(3, '0');
+                        const aStr = String(ay.a).padStart(3, '0');
+                        const audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
+                        const res = await fetch(audioUrl);
+                        if (!res.ok) throw new Error(`Failed to fetch audio for ayah ${ay.a}`);
+                        blobs.push(await res.blob());
+                    }
+                    
+                    const combinedBlob = new Blob(blobs, { type: 'audio/mpeg' });
 
                     if (Capacitor.isNativePlatform()) {
-                        const base64Data = await blobToBase64(blob);
+                        const base64Data = await blobToBase64(combinedBlob);
                         const savedFile = await Filesystem.writeFile({
                             path: fileName,
                             data: base64Data.split(',')[1],
@@ -464,7 +480,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             dialogTitle: 'مشاركة عبر'
                         });
                     } else if (navigator.share) {
-                        const file = new File([blob], fileName, { type: 'audio/mpeg' });
+                        const file = new File([combinedBlob], fileName, { type: 'audio/mpeg' });
                         if (navigator.canShare && navigator.canShare({ files: [file] })) {
                             await navigator.share({
                                 title: 'مشاركة تلاوة',

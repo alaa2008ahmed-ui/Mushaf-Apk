@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { CheckCircle, BookOpen, RotateCcw, Play, Settings, X, User, Plus, Trash2, ChevronDown, Edit2 } from 'lucide-react';
 import BottomBar from '../components/BottomBar';
 import ResetConfirmModal from '../components/DailyWird/ResetConfirmModal';
+import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 
 interface WirdSettings {
   id: string;
@@ -17,6 +18,7 @@ interface WirdSettings {
   startPage?: number;
   lastPage?: number;
   lastAyah?: { s: number; a: number };
+  mushafType?: 'uthmani' | 'tajweed';
 }
 
 const TOTAL_PAGES = 604;
@@ -34,6 +36,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   const [tempMode, setTempMode] = useState<'days' | 'pages'>('days');
   const [tempValue, setTempValue] = useState<string>('30');
   const [tempName, setTempName] = useState<string>('');
+  const [tempMushafType, setTempMushafType] = useState<'uthmani' | 'tajweed'>('uthmani');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [calcMethod, setCalcMethod] = useState<'remaining' | 'total'>('remaining');
@@ -104,7 +107,8 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       isActive: true,
       startPage: startPage,
       lastPage: undefined,
-      lastAyah: undefined
+      lastAyah: undefined,
+      mushafType: tempMushafType
     };
 
     let newProfiles: WirdSettings[];
@@ -122,6 +126,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     setTempMode('days');
     setTempValue('30');
     setTempName('');
+    setTempMushafType('uthmani');
     setActiveId(null); // This tells handleStart to create a new one
     setShowSettings(true);
   };
@@ -132,6 +137,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     setTempMode(profile.mode);
     setTempValue(profile.value.toString());
     setTempName(profile.name);
+    setTempMushafType(profile.mushafType || 'uthmani');
     setShowSettings(true);
     setShowProfileMenu(false);
   };
@@ -161,6 +167,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       setTempMode(settings.mode);
       setTempValue(settings.value.toString());
       setTempName(settings.name);
+      setTempMushafType(settings.mushafType || 'uthmani');
       setShowSettings(true);
     }
   };
@@ -199,6 +206,33 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     setShowResetConfirm(false);
   };
 
+  const dailyWirdTutorialSteps: TutorialStep[] = [
+    {
+      id: 'wird-progress',
+      text: 'نسبة الإنجاز: هنا يمكنك متابعة تقدمك في الختمة الحالية.',
+      position: { top: '30%' },
+      arrow: 'up',
+      selector: '#wird-progress-container',
+      icon: <CheckCircle className="w-8 h-8 text-white" />
+    },
+    {
+      id: 'wird-today',
+      text: 'ورد اليوم: يعرض لك الصفحات المخصصة للقراءة اليوم.',
+      position: { top: '40%' },
+      arrow: 'up',
+      selector: '#wird-today-container',
+      icon: <BookOpen className="w-8 h-8 text-white" />
+    },
+    {
+      id: 'wird-actions',
+      text: 'إجراءات الختمة: يمكنك فتح المصحف للقراءة، أو تحديد الورد كمكتمل، أو تعديل إعدادات الختمة.',
+      position: { bottom: '150px' },
+      arrow: 'down',
+      selector: '#wird-actions-container',
+      icon: <Play className="w-8 h-8 text-white" />
+    }
+  ];
+
   const markDayCompleted = () => {
     if (!settings) return;
     const newCompleted = [...settings.completedDays, settings.currentDay];
@@ -228,7 +262,8 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       page: page, 
       surah: initialAyah?.s, 
       ayah: initialAyah?.a, 
-      isWird: true 
+      isWird: true,
+      mushafType: settings?.mushafType || 'uthmani'
     });
   };
 
@@ -263,6 +298,24 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
               className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMode === 'pages' ? 'border-green-500 bg-green-500/10 text-green-600 dark:text-green-400' : 'border-gray-300 dark:border-gray-600'}`}
             >
               حسب الصفحات
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="block mb-2 font-semibold">نوع المصحف:</label>
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setTempMushafType('uthmani')}
+              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMushafType === 'uthmani' ? 'border-green-500 bg-green-500/10 text-green-600 dark:text-green-400' : 'border-gray-300 dark:border-gray-600'}`}
+            >
+              المصحف العادي
+            </button>
+            <button 
+              onClick={() => setTempMushafType('tajweed')}
+              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMushafType === 'tajweed' ? 'border-green-500 bg-green-500/10 text-green-600 dark:text-green-400' : 'border-gray-300 dark:border-gray-600'}`}
+            >
+              المصحف المجود
             </button>
           </div>
         </div>
@@ -366,7 +419,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     return (
       <div className="space-y-4">
         {/* Progress Bar */}
-        <div className="rounded-2xl p-4 shadow-lg border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+        <div id="wird-progress-container" className="rounded-2xl p-4 shadow-lg border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
           <div className="flex justify-between mb-1">
             <span className="font-bold text-sm">نسبة الإنجاز</span>
             <span className="font-bold text-green-500 dark:text-green-400 text-sm">{progress.toFixed(1)}%</span>
@@ -385,7 +438,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
 
         {/* Current Wird */}
-        <div className="rounded-2xl p-4 shadow-lg border text-center" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+        <div id="wird-today-container" className="rounded-2xl p-4 shadow-lg border text-center" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
           <h3 className="text-lg font-bold mb-3 text-emerald-600 dark:text-emerald-400">ورد اليوم ({settings.currentDay})</h3>
           
           <div className="flex justify-center items-center gap-3 mb-4">
@@ -408,7 +461,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2" id="wird-actions-container">
             {hasPages && (
               <button 
                 onClick={() => {
@@ -641,6 +694,8 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         onClose={() => setShowResetConfirm(false)}
         onConfirm={confirmReset}
       />
+
+      <TutorialOverlay tutorialId="daily-wird-tutorial" steps={dailyWirdTutorialSteps} />
     </div>
   );
 };

@@ -611,7 +611,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
 
                             if (nightNotifs.firstThird && firstThirdDate > new Date()) {
                                 notificationsToSchedule.push({
-                                    id: (day * 100) + 50,
+                                    id: 1000 + (day * 10) + 1,
                                     title: 'أول الليل',
                                     text: 'قال رسول الله ﷺ: "أفضل الصلاة بعد الفريضة صلاة الليل"',
                                     trigger: { at: firstThirdDate },
@@ -628,7 +628,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
 
                             if (nightNotifs.midnight && midnightDate > new Date()) {
                                 notificationsToSchedule.push({
-                                    id: (day * 100) + 51,
+                                    id: 1000 + (day * 10) + 2,
                                     title: 'منتصف الليل',
                                     text: 'قال رسول الله ﷺ: "عليكم بقيام الليل فإنه دأب الصالحين قبلكم، وقربة إلى الله تعالى"',
                                     trigger: { at: midnightDate },
@@ -645,7 +645,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
 
                             if (nightNotifs.lastThird && lastThirdDate > new Date()) {
                                 notificationsToSchedule.push({
-                                    id: (day * 100) + 52,
+                                    id: 1000 + (day * 10) + 3,
                                     title: 'الثلث الأخير من الليل',
                                     text: 'قال ﷺ: "ينزل ربنا تبارك وتعالى كل ليلة إلى السماء الدنيا حين يبقى ثلث الليل الآخر، فيقول: من يدعوني فأستجيب له..."',
                                     trigger: { at: lastThirdDate },
@@ -658,6 +658,27 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                                     androidAllowWhileIdle: true,
                                     androidWakeUpScreen: true
                                 });
+                            }
+
+                            // Surah Al-Kahf reminder on Thursday night (1 hour after Maghrib)
+                            if (date.getDay() === 4) {
+                                const kahfDate = new Date(maghribDate.getTime() + 60 * 60000);
+                                if (kahfDate > new Date()) {
+                                    notificationsToSchedule.push({
+                                        id: 2000 + day,
+                                        title: 'تذكير بسورة الكهف',
+                                        text: 'قال رسول الله ﷺ: "من قرأ سورة الكهف في يوم الجمعة أضاء له من النور ما بين الجمعتين"',
+                                        trigger: { at: kahfDate },
+                                        foreground: true,
+                                        priority: 1,
+                                        androidChannelId: 'night_times_channel',
+                                        androidChannelName: 'تنبيهات أوقات الليل',
+                                        androidChannelDescription: 'إشعارات لأوقات أول الليل، منتصف الليل، والثلث الأخير',
+                                        androidChannelImportance: 4,
+                                        androidAllowWhileIdle: true,
+                                        androidWakeUpScreen: true
+                                    });
+                                }
                             }
                         }
 
@@ -724,7 +745,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             next_prayer_name: currentNext.name,
             next_prayer_id: currentNext.key.toLowerCase(),
             remaining_time: currentCountdown.split(':').slice(0, 2).join(':'), // HH:MM
-            target_time_millis: currentNext.date.getTime(),
+            target_time_millis: Date.now() + (currentNext.date.getTime() - currentNext.cityNow.getTime()),
             midnight: `منتصف الليل : ${to12h(nightTimes.midnight)}`,
             last_third: `الثلث الأخير : ${to12h(nightTimes.lastThird)}`,
             times: {

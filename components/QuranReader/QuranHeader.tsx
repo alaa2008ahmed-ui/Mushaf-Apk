@@ -25,6 +25,8 @@ interface QuranHeaderProps {
     setReadingMode: (mode: 'mushaf' | 'tafseer' | 'meanings' | 'translation') => void;
     isMemorizationMode?: boolean;
     memorizationSettings?: any;
+    useTajweed: boolean;
+    handleMushafTypeSelect: (type: 'uthmani' | 'tajweed') => void;
 }
 
 const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
@@ -50,7 +52,9 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
     readingMode,
     setReadingMode,
     isMemorizationMode = false,
-    memorizationSettings
+    memorizationSettings,
+    useTajweed,
+    handleMushafTypeSelect
 }) => {
     const [isModeMenuOpen, setIsModeMenuOpen] = React.useState(false);
 
@@ -102,7 +106,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                     className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 flex items-center justify-center flex-shrink-0 aspect-square"
                     style={getToolbarStyle('audio', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
                 >
-                    <i className={`fa-solid ${readingMode === 'mushaf' ? 'fa-book-quran' : readingMode === 'tafseer' ? 'fa-book-open-reader' : 'fa-language'}`}></i>
+                    <i className={`fa-solid ${readingMode === 'mushaf' ? (useTajweed ? 'fa-book-open' : 'fa-book-quran') : readingMode === 'tafseer' ? 'fa-book-open-reader' : 'fa-language'}`}></i>
                 </button>
                 
                 {isModeMenuOpen && (
@@ -111,11 +115,18 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                         <div className="absolute top-full left-0 mt-2 w-40 rounded-xl shadow-2xl z-[110] overflow-hidden animate-fadeIn"
                              style={{ backgroundColor: currentTheme.cardBg, color: currentTheme.cardText, border: `1px solid ${currentTheme.cardBorder}` }}>
                             <button 
-                                onClick={() => { setReadingMode('mushaf'); setIsModeMenuOpen(false); }}
-                                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'mushaf' ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
+                                onClick={() => { setReadingMode('mushaf'); handleMushafTypeSelect('uthmani'); setIsModeMenuOpen(false); }}
+                                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'mushaf' && !useTajweed ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
                             >
                                 <i className="fa-solid fa-book-quran w-5"></i>
                                 <span>المصحف</span>
+                            </button>
+                            <button 
+                                onClick={() => { setReadingMode('mushaf'); handleMushafTypeSelect('tajweed'); setIsModeMenuOpen(false); }}
+                                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'mushaf' && useTajweed ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
+                            >
+                                <i className="fa-solid fa-book-open w-5"></i>
+                                <span>المجود</span>
                             </button>
                             <button 
                                 onClick={() => { setReadingMode('tafseer'); setIsModeMenuOpen(false); }}
