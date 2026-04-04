@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle } from 'lucide-react';
+import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download } from 'lucide-react';
 
 interface FloatingMenuProps {
     isFloatingMenuOpen: boolean;
@@ -18,7 +18,9 @@ interface FloatingMenuProps {
 
 const ALL_SHORTCUTS = [
     { id: 'prayer-times', label: 'مواقيت الصلاة', icon: <Clock size={18} /> },
+    { id: 'monthly-prayer-times', label: 'مواقيت الصلاة الشهرية', icon: <Calendar size={18} /> },
     { id: 'sabah-masaa', label: 'الأذكار', icon: <Sun size={18} /> },
+    { id: 'salah-adhkar', label: 'أذكار الصلاة', icon: <Book size={18} /> },
     { id: 'qibla', label: 'القبلة', icon: <Compass size={18} /> },
     { id: 'adia', label: 'الأدعية', icon: <Heart size={18} /> },
     { id: 'hisn-muslim', label: 'حصن المسلم', icon: <Book size={18} /> },
@@ -29,6 +31,10 @@ const ALL_SHORTCUTS = [
     { id: 'nawawi', label: 'الأربعون النووية', icon: <FileText size={18} /> },
     { id: 'hajj-umrah', label: 'الحج والعمرة', icon: <Info size={18} /> },
     { id: 'voice-control', label: 'التحكم الصوتي', icon: <Mic size={18} /> },
+    { id: 'daily-wird', label: 'الورد اليومي', icon: <Calendar size={18} /> },
+    { id: 'memorization', label: 'التحفيظ', icon: <Brain size={18} /> },
+    { id: 'tajweed-education', label: 'تعليم التجويد', icon: <BookOpen size={18} /> },
+    { id: 'quran-download', label: 'تحميل المصحف', icon: <Download size={18} /> },
 ];
 
 const DEFAULT_SHORTCUTS = ['prayer-times', 'sabah-masaa', 'qibla', 'adia', 'hisn-muslim'];
@@ -131,13 +137,6 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} />
                             <MenuItem icon={<Headphones size={18} />} label="الصوتيات" onClick={() => handleAction(() => openModal('reciter-modal'))} iconColor={iconColor} />
                             <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} />
-                        </MenuSection>
-
-                        {/* التحفيظ والورد */}
-                        <MenuSection title="التحفيظ" iconColor={iconColor}>
-                            <MenuItem icon={<Brain size={18} />} label="التحفيظ" onClick={() => handleAction(() => onNavigate('memorization'))} iconColor={iconColor} />
-                            <MenuItem icon={<Calendar size={18} />} label="الورد اليومي" onClick={() => handleAction(() => onNavigate('daily-wird'))} iconColor={iconColor} />
-                            <MenuItem icon={<BookOpen size={18} />} label="تعليم التجويد" onClick={() => handleAction(() => onNavigate('tajweed-education'))} iconColor={iconColor} />
                         </MenuSection>
 
                         {/* اختصارات أخرى */}
