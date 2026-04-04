@@ -98,8 +98,8 @@ const GridSection: React.FC<GridSectionProps> = ({
                         onClick={() => !isEditMode && onNavigate(item.id)} 
                         className={item.id === 'more' ? "w-[calc(50%-6px)] h-full" : "w-full h-full"}
                         color={
-                            themeKey === 'default' ? (
-                                ['quran', 'listen', 'prayer-times'].includes(item.id) ? '#059669' : '#8b5cf6'
+                            themeKey === 'olive_grove' ? (
+                                ['quran', 'listen', 'prayer-times'].includes(item.id) ? '#4D7C0F' : '#65A30D'
                             ) : (item.customColor || theme.palette[DEFAULT_MENU_ITEMS.find(d => d.id === item.id)?.colorIndex ?? item.colorIndex])
                         } 
                         border={theme.btnBorder} 

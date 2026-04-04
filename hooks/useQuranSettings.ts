@@ -17,11 +17,11 @@ export const useQuranSettings = (initialLandscape: boolean, modeSuffix: string) 
 
     const [settings, setSettings] = useState(() => {
         const saved = localStorage.getItem('quran_settings' + modeSuffix);
-        const defaultTheme = THEMES['default'];
+        const defaultTheme = THEMES['olive'];
         return saved ? JSON.parse(saved) : {
             fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
             highlightTextColor: defaultTheme.highlightText || defaultTheme.accent,
-            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'default', scrollMinutes: 20, tafseer: 'ar.jalalayn',
+            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'olive', scrollMinutes: 20, tafseer: 'ar.jalalayn',
             hideUIOnAutoScroll: false,
             lockHighlightColor: false
         };
@@ -30,8 +30,8 @@ export const useQuranSettings = (initialLandscape: boolean, modeSuffix: string) 
     useEffect(() => { settingsRef.current = settings; }, [settings]);
 
     const [currentTheme, setCurrentTheme] = useState(() => {
-        const themeId = localStorage.getItem('current_theme_id' + modeSuffix) || 'default';
-        return THEMES[themeId as keyof typeof THEMES] || THEMES['default'];
+        const themeId = localStorage.getItem('current_theme_id' + modeSuffix) || 'olive';
+        return THEMES[themeId as keyof typeof THEMES] || THEMES['olive'];
     });
 
     const [toolbarColors, setToolbarColors] = useState(() => {
@@ -43,26 +43,24 @@ export const useQuranSettings = (initialLandscape: boolean, modeSuffix: string) 
             } catch (e) {}
         }
         
-        const theme = THEMES['default'];
-        const black = "#000000";
-        const white = "#ffffff";
+        const theme = THEMES['olive'];
         
         return {
-            'top-toolbar': { bg: white, border: black },
-            'bottom-toolbar': { bg: white, border: black },
-            'surah': { bg: white, text: black, border: black, font: theme.font },
-            'juz': { bg: white, text: black, border: black, font: theme.font },
-            'page': { bg: white, text: black, border: black, font: theme.font },
-            'audio': { bg: white, text: black, border: black },
-            'btn-settings': { bg: white, text: black, border: black },
-            'btn-home': { bg: white, text: black, border: black },
-            'btn-bookmark': { bg: white, text: black, border: black },
-            'btn-bookmarks-list': { bg: white, text: black, border: black },
-            'btn-themes': { bg: white, text: black, border: black },
-            'btn-autoscroll': { bg: white, text: black, border: black },
-            'btn-menu': { bg: white, text: black, border: black },
-            'btn-search': { bg: white, text: black, border: black },
-            'btn-share': { bg: white, text: black, border: black }
+            'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
+            'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder },
+            'surah': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+            'juz': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+            'page': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+            'audio': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-home': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
         };
     });
 

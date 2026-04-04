@@ -115,25 +115,22 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
         
         localStorage.setItem('current_theme_id' + modeSuffix, themeId);
         
-        const white = "#ffffff";
-        const themeColor = themeId === 'default' ? '#000000' : (theme.accent || theme.barText || "#000000");
-        
         const themeColors = { 
-            'top-toolbar': { bg: white, border: themeColor }, 
-            'bottom-toolbar': { bg: white, border: themeColor }, 
-            'surah': { bg: white, text: themeColor, border: themeColor, font: theme.font }, 
-            'juz': { bg: white, text: themeColor, border: themeColor, font: theme.font }, 
-            'page': { bg: white, text: themeColor, border: themeColor, font: theme.font }, 
-            'audio': { bg: white, text: themeColor, border: themeColor }, 
-            'btn-settings': { bg: white, text: themeColor, border: themeColor }, 
-            'btn-home': { bg: white, text: themeColor, border: themeColor }, 
-            'btn-bookmark': { bg: white, text: themeColor, border: themeColor }, 
-            'btn-bookmarks-list': { bg: white, text: themeColor, border: themeColor }, 
-            'btn-themes': { bg: white, text: themeColor, border: themeColor }, 
-            'btn-autoscroll': { bg: white, text: themeColor, border: themeColor }, 
-            'btn-menu': { bg: white, text: themeColor, border: themeColor }, 
-            'btn-search': { bg: white, text: themeColor, border: themeColor },
-            'btn-share': { bg: white, text: themeColor, border: themeColor }
+            'top-toolbar': { bg: theme.barBg, border: theme.barBorder }, 
+            'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder }, 
+            'surah': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font }, 
+            'juz': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font }, 
+            'page': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font }, 
+            'audio': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
+            'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
+            'btn-home': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
+            'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
+            'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
+            'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
+            'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
+            'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
+            'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
         };
 
         localStorage.setItem('toolbar_colors_v2' + modeSuffix, JSON.stringify(themeColors));

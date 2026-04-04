@@ -208,7 +208,7 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                                 placeholder="بحث في السور..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full p-2 pr-10 rounded-xl bg-white/20 border border-white/30 text-white placeholder:text-white/60 text-sm focus:outline-none focus:ring-2 focus:ring-white/50 transition-all"
+                                className="w-full p-2 pr-10 rounded-xl bg-white border border-gray-300 text-black placeholder:text-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                             />
                             <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-sm opacity-70"></i>
                         </div>

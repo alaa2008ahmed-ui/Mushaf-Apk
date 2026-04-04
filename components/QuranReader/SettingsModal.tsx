@@ -225,7 +225,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                             </div>
                             <div 
                                 className={`h-8 w-full rounded border shadow-sm cursor-pointer ${activeColorField === 'highlightTextColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                style={renderCheckerboard(settings.highlightTextColor || THEMES['default'].highlightText)}
+                                style={renderCheckerboard(settings.highlightTextColor || THEMES['olive'].highlightText)}
                                 onClick={() => setActiveColorField(activeColorField === 'highlightTextColor' ? null : 'highlightTextColor')}
                             ></div>
                         </div>

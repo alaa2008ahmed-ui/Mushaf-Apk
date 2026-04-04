@@ -118,14 +118,16 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                              style={{ backgroundColor: currentTheme.cardBg, color: currentTheme.cardText, border: `1px solid ${currentTheme.cardBorder}` }}>
                             <button 
                                 onClick={() => { setReadingMode('mushaf'); handleMushafTypeSelect('uthmani'); setIsModeMenuOpen(false); }}
-                                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'mushaf' && !useTajweed ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
+                                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition border-2 rounded-lg my-1 ${readingMode === 'mushaf' && !useTajweed ? 'font-bold' : 'hover:bg-black/5 border-transparent'}`}
+                                style={readingMode === 'mushaf' && !useTajweed ? { color: currentTheme.accent, borderColor: currentTheme.accent } : {}}
                             >
                                 <i className="fa-solid fa-book-quran w-5"></i>
                                 <span>المصحف</span>
                             </button>
                             <button 
                                 onClick={() => { setReadingMode('mushaf'); handleMushafTypeSelect('tajweed'); setIsModeMenuOpen(false); }}
-                                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'mushaf' && useTajweed ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
+                                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition border-2 rounded-lg my-1 ${readingMode === 'mushaf' && useTajweed ? 'font-bold' : 'hover:bg-black/5 border-transparent'}`}
+                                style={readingMode === 'mushaf' && useTajweed ? { color: currentTheme.accent, borderColor: currentTheme.accent } : {}}
                             >
                                 <i className="fa-solid fa-book-open w-5"></i>
                                 <span>المجود</span>
@@ -134,21 +136,24 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                                 <>
                                     <button 
                                         onClick={() => { setReadingMode('tafseer'); setIsModeMenuOpen(false); }}
-                                        className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'tafseer' ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
+                                        className={`w-full px-4 py-3 text-right flex items-center gap-3 transition border-2 rounded-lg my-1 ${readingMode === 'tafseer' ? 'font-bold' : 'hover:bg-black/5 border-transparent'}`}
+                                        style={readingMode === 'tafseer' ? { color: currentTheme.accent, borderColor: currentTheme.accent } : {}}
                                     >
                                         <i className="fa-solid fa-book-open-reader w-5"></i>
                                         <span>التفسير</span>
                                     </button>
                                     <button 
                                         onClick={() => { setReadingMode('meanings'); setIsModeMenuOpen(false); }}
-                                        className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'meanings' ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
+                                        className={`w-full px-4 py-3 text-right flex items-center gap-3 transition border-2 rounded-lg my-1 ${readingMode === 'meanings' ? 'font-bold' : 'hover:bg-black/5 border-transparent'}`}
+                                        style={readingMode === 'meanings' ? { color: currentTheme.accent, borderColor: currentTheme.accent } : {}}
                                     >
                                         <i className="fa-solid fa-language w-5"></i>
                                         <span>المعاني</span>
                                     </button>
                                     <button 
                                         onClick={() => { setReadingMode('translation'); setIsModeMenuOpen(false); }}
-                                        className={`w-full px-4 py-3 text-right flex items-center gap-3 transition ${readingMode === 'translation' ? 'bg-black/5 font-bold' : 'hover:bg-black/5'}`}
+                                        className={`w-full px-4 py-3 text-right flex items-center gap-3 transition border-2 rounded-lg my-1 ${readingMode === 'translation' ? 'font-bold' : 'hover:bg-black/5 border-transparent'}`}
+                                        style={readingMode === 'translation' ? { color: currentTheme.accent, borderColor: currentTheme.accent } : {}}
                                     >
                                         <i className="fa-solid fa-globe w-5"></i>
                                         <span>الترجمة</span>

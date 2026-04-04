@@ -253,7 +253,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
               {!isEditMode && (
                   <div className="themed-card p-2.5 rounded-2xl text-center w-full max-w-sm mx-auto mt-4 mb-4 relative">
                       <FloatingNeonTicker />
-                      <p className="text-[14px] font-bold" style={{ color: themeKey === 'default' ? '#10b981' : theme.textColor }}>
+                      <p className="text-[14px] font-bold" style={{ color: themeKey === 'olive_grove' ? '#65A30D' : theme.textColor }}>
                           اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
                       </p>
                   </div>

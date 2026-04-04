@@ -19,8 +19,8 @@ export const useQuranEventListeners = (
     useEffect(() => {
         const handleThemeChange = () => {
             const mode = isLandscapeRef.current ? '_h' : '_v';
-            const themeId = localStorage.getItem('current_theme_id' + mode) || 'default';
-            const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['default'];
+            const themeId = localStorage.getItem('current_theme_id' + mode) || 'olive';
+            const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['olive'];
             setCurrentTheme(newTheme);
             
             const savedSettings = localStorage.getItem('quran_settings' + mode);
@@ -37,24 +37,22 @@ export const useQuranEventListeners = (
                     setToolbarColors(parsed);
                 } catch (e) {}
             } else {
-                const theme = THEMES['default'];
-                const black = "#000000";
-                const white = "#ffffff";
+                const theme = THEMES['olive'];
                 setToolbarColors({
-                    'top-toolbar': { bg: white, border: black },
-                    'bottom-toolbar': { bg: white, border: black },
-                    'surah': { bg: white, text: black, border: black, font: theme.font },
-                    'juz': { bg: white, text: black, border: black, font: theme.font },
-                    'page': { bg: white, text: black, border: black, font: theme.font },
-                    'audio': { bg: white, text: black, border: black },
-                    'btn-settings': { bg: white, text: black, border: black },
-                    'btn-home': { bg: white, text: black, border: black },
-                    'btn-bookmark': { bg: white, text: black, border: black },
-                    'btn-bookmarks-list': { bg: white, text: black, border: black },
-                    'btn-themes': { bg: white, text: black, border: black },
-                    'btn-autoscroll': { bg: white, text: black, border: black },
-                    'btn-menu': { bg: white, text: black, border: black },
-                    'btn-search': { bg: white, text: black, border: black }
+                    'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
+                    'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder },
+                    'surah': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                    'juz': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                    'page': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                    'audio': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-home': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
                 });
             }
 
@@ -93,24 +91,22 @@ export const useQuranEventListeners = (
                     setToolbarColors(parsed);
                 } catch (e) {}
             } else {
-                const theme = THEMES['default'];
-                const black = "#000000";
-                const white = "#ffffff";
+                const theme = THEMES['olive'];
                 setToolbarColors({
-                    'top-toolbar': { bg: white, border: black },
-                    'bottom-toolbar': { bg: white, border: black },
-                    'surah': { bg: white, text: black, border: black, font: theme.font },
-                    'juz': { bg: white, text: black, border: black, font: theme.font },
-                    'page': { bg: white, text: black, border: black, font: theme.font },
-                    'audio': { bg: white, text: black, border: black },
-                    'btn-settings': { bg: white, text: black, border: black },
-                    'btn-home': { bg: white, text: black, border: black },
-                    'btn-bookmark': { bg: white, text: black, border: black },
-                    'btn-bookmarks-list': { bg: white, text: black, border: black },
-                    'btn-themes': { bg: white, text: black, border: black },
-                    'btn-autoscroll': { bg: white, text: black, border: black },
-                    'btn-menu': { bg: white, text: black, border: black },
-                    'btn-search': { bg: white, text: black, border: black }
+                    'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
+                    'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder },
+                    'surah': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                    'juz': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                    'page': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                    'audio': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-home': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
                 });
             }
             

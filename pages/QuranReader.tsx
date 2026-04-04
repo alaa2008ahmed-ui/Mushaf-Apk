@@ -62,16 +62,12 @@ const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, currentTheme }
     return (
         <div className="fixed inset-0 z-[200] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
             <div className="modal-skinned w-full max-w-sm rounded-2xl shadow-2xl flex flex-col animate-modal-enter" onClick={e => e.stopPropagation()}>
-                <div className="p-4 flex justify-between items-center h-14 flex-none theme-header-bg rounded-t-2xl">
-                    <h2 className="text-xl font-bold">خيارات الآية</h2>
-                    <button onClick={onClose} className="hover:opacity-80 rounded-full bg-white/20 w-9 h-9 flex items-center justify-center text-lg">✕</button>
-                </div>
                 <div className="p-5 flex flex-col gap-4">
-                    <button onClick={onTafseer} style={{ backgroundColor: currentTheme?.accent || '#4f46e5', color: currentTheme?.accentText || '#ffffff' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2">
+                    <button onClick={onTafseer} style={{ border: `2px solid ${currentTheme?.accent || '#4f46e5'}`, color: currentTheme?.accent || '#4f46e5', backgroundColor: 'transparent' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
                         <i className="fa-solid fa-book-open"></i>
                         التفسير
                     </button>
-                    <button onClick={onMeanings} style={{ backgroundColor: currentTheme?.highlightText || currentTheme?.accent || '#0d9488', color: currentTheme?.accentText || '#ffffff' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2">
+                    <button onClick={onMeanings} style={{ border: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, color: currentTheme?.highlightText || currentTheme?.accent || '#0d9488', backgroundColor: 'transparent' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
                         <i className="fa-solid fa-language"></i>
                         معاني القرآن
                     </button>
@@ -696,25 +692,23 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
         
         const theme = THEMES['olive'];
-        const black = "#000000";
-        const white = "#ffffff";
         
         return {
-            'top-toolbar': { bg: white, border: black },
-            'bottom-toolbar': { bg: white, border: black },
-            'surah': { bg: white, text: black, border: black, font: theme.font },
-            'juz': { bg: white, text: black, border: black, font: theme.font },
-            'page': { bg: white, text: black, border: black, font: theme.font },
-            'audio': { bg: white, text: black, border: black },
-            'btn-settings': { bg: white, text: black, border: black },
-            'btn-home': { bg: white, text: black, border: black },
-            'btn-bookmark': { bg: white, text: black, border: black },
-            'btn-bookmarks-list': { bg: white, text: black, border: black },
-            'btn-themes': { bg: white, text: black, border: black },
-            'btn-autoscroll': { bg: white, text: black, border: black },
-            'btn-menu': { bg: white, text: black, border: black },
-            'btn-search': { bg: white, text: black, border: black },
-            'btn-share': { bg: white, text: black, border: black }
+            'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
+            'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder },
+            'surah': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+            'juz': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+            'page': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+            'audio': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-home': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+            'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
         };
     });
 

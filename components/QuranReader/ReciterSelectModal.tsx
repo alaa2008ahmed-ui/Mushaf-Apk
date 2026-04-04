@@ -41,8 +41,12 @@ const ReciterSelectModal: React.FC<ReciterSelectModalProps> = ({ onClose, curren
                             key={r.id} 
                             ref={currentReader === r.id ? selectedRef : null}
                             onClick={() => handleSelect(r.id)}
-                            className={`w-full text-right p-3 rounded-xl border-2 transition-all font-bold flex flex-col justify-center items-center text-center ${currentReader === r.id ? 'theme-accent-btn' : 'border-transparent hover:opacity-80'}`}
-                            style={currentReader !== r.id ? { backgroundColor: 'var(--qr-card-bg)', color: 'var(--qr-card-text)', borderColor: 'var(--qr-card-border)' } : {}}
+                            className={`w-full text-right p-3 rounded-xl border-2 transition-all font-bold flex flex-col justify-center items-center text-center ${currentReader === r.id ? '' : 'hover:opacity-80'}`}
+                            style={{ 
+                                backgroundColor: 'var(--qr-card-bg)', 
+                                color: currentReader === r.id ? 'var(--qr-accent)' : 'var(--qr-card-text)', 
+                                borderColor: currentReader === r.id ? 'var(--qr-accent)' : 'var(--qr-card-border)' 
+                            }}
                         >
                             <div className="flex flex-col justify-center items-center w-full gap-2">
                                 <span className="text-sm">{r.name}</span>

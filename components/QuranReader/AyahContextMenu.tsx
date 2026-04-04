@@ -60,7 +60,7 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
                             <label className="text-sm font-bold opacity-80 mb-2 text-center">لون التحديد</label>
                             <div 
                                 className={`h-12 w-full rounded-xl border shadow-sm cursor-pointer ${ayahContextColorField === 'highlightTextColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
-                                style={renderCheckerboard(tempSettings.highlightTextColor || THEMES['default'].highlightText)}
+                                style={renderCheckerboard(tempSettings.highlightTextColor || THEMES['olive'].highlightText)}
                                 onClick={() => setAyahContextColorField(ayahContextColorField === 'highlightTextColor' ? null : 'highlightTextColor')}
                             ></div>
                         </div>
