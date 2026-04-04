@@ -14,12 +14,6 @@ const BookmarksModal: React.FC<BookmarksModalProps> = ({ bookmarks, quranData, o
     return (
         <div className="fixed inset-0 z-[100] bg-black/30 flex justify-center pt-10 px-4 animate-fadeIn backdrop-blur-sm" onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-2xl'} rounded-t-2xl flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
-                <div className="p-4 theme-header-bg rounded-t-2xl flex justify-between items-center">
-                    <h3 className="font-bold text-lg">
-                        الإشارات المرجعية
-                    </h3>
-                    <button onClick={onClose} className="text-2xl">&times;</button>
-                </div>
                 <div className="overflow-y-auto p-4 flex-1 flex flex-col gap-3">
                     {bookmarks.length === 0 ? (
                         <div className="col-span-full text-center p-4 font-bold">لا توجد إشارات مرجعية محفوظة</div>

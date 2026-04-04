@@ -193,10 +193,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
     return (
         <div className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-[150] flex items-center justify-center p-4 animate-fadeIn`} onClick={handleClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md sm:max-w-2xl'} rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
-                <div className="p-3 flex justify-between items-center h-12 flex-none theme-header-bg">
-                    <h2 className="text-lg font-bold">إعدادات العرض</h2>
-                    <button onClick={handleClose} className="hover:opacity-80 rounded-full bg-white/20 w-8 h-8 flex items-center justify-center">✕</button>
-                </div>
                 <div className={`p-3 overflow-y-auto text-center flex-1 ${isLandscape ? 'grid grid-cols-2 gap-x-6 gap-y-2' : 'space-y-2'}`}>
                     <div id="font-size-section" className={`${isLandscape ? 'col-span-2' : ''} border-b pb-2 border-gray-200 dark:border-gray-700 space-y-2`}>
                         <div className="flex items-center justify-between mt-3">
@@ -226,16 +222,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         <div className="flex flex-col">
                             <div className="flex items-center justify-between mb-1">
                                 <label className="text-xs font-bold opacity-80">لون التحديد</label>
-                                <div className="flex items-center gap-1">
-                                    <input 
-                                        type="checkbox" 
-                                        id="lock-highlight-color" 
-                                        checked={settings.lockHighlightColor} 
-                                        onChange={(e) => updateSetting('lockHighlightColor', e.target.checked)} 
-                                        className="w-3 h-3 accent-emerald-500"
-                                    />
-                                    <label htmlFor="lock-highlight-color" className="text-[9px] font-bold opacity-70 cursor-pointer">قفل</label>
-                                </div>
                             </div>
                             <div 
                                 className={`h-8 w-full rounded border shadow-sm cursor-pointer ${activeColorField === 'highlightTextColor' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
@@ -339,16 +325,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                 <div className="relative inline-block w-10 align-middle select-none">
                                     <input type="checkbox" id="show-sajdah-card" checked={showSajdahCard} onChange={(e) => handleSajdahCardToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
                                     <label htmlFor="show-sajdah-card" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${showSajdahCard ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-bold opacity-80">إخفاء الأشرطة</label>
-                                <div className="relative inline-block w-10 align-middle select-none">
-                                    <input type="checkbox" id="hide-toolbars" checked={isHideToolbarsEnabled} onChange={(e) => handleHideToolbarsToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                                    <label htmlFor="hide-toolbars" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${isHideToolbarsEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
                                 </div>
                             </div>
                         </div>

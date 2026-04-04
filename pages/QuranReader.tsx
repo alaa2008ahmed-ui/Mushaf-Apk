@@ -414,8 +414,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         const initialSettings = { ...DEFAULT_SETTINGS, ...baseSettings };
         setSettings(initialSettings);
 
-        const themeId = localStorage.getItem('current_theme_id' + mode) || 'default';
-        const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['default'];
+        const themeId = localStorage.getItem('current_theme_id' + mode) || 'olive';
+        const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['olive'];
         setCurrentTheme(newTheme);
         
         const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
@@ -472,7 +472,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 setToolbarColors(colors);
             } catch (e) {}
         } else {
-            const theme = THEMES['default'];
+            const theme = THEMES['olive'];
             const green = "#10b981"; const greenBorder = "#059669";
             const purple = "#7e22ce"; const purpleBorder = "#6b21a8";
             const purpleText = "#6d28d9";
@@ -627,11 +627,11 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const [settings, setSettings] = useState(() => {
         const mode = initialLandscape ? '_h' : '_v';
         const saved = localStorage.getItem('quran_settings' + mode);
-        const defaultTheme = THEMES['default'];
+        const defaultTheme = THEMES['olive'];
         return saved ? JSON.parse(saved) : {
             fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
             highlightTextColor: defaultTheme.highlightText || defaultTheme.accent,
-            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'default', scrollMinutes: 20, tafseer: 'ar.jalalayn',
+            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'olive', scrollMinutes: 20, tafseer: 'ar.jalalayn',
             hideUIOnAutoScroll: false,
             lockHighlightColor: false
         };
@@ -639,8 +639,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     const [currentTheme, setCurrentTheme] = useState(() => {
         const mode = initialLandscape ? '_h' : '_v';
-        const themeId = localStorage.getItem('current_theme_id' + mode) || 'default';
-        return THEMES[themeId as keyof typeof THEMES] || THEMES['default'];
+        const themeId = localStorage.getItem('current_theme_id' + mode) || 'olive';
+        return THEMES[themeId as keyof typeof THEMES] || THEMES['olive'];
     });
 
     // Keep screen awake logic
@@ -695,7 +695,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             } catch (e) {}
         }
         
-        const theme = THEMES['default'];
+        const theme = THEMES['olive'];
         const black = "#000000";
         const white = "#ffffff";
         
@@ -1535,8 +1535,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     useEffect(() => {
         const handleThemeChange = () => {
             const mode = modeSuffix;
-            const themeId = localStorage.getItem('current_theme_id' + mode) || 'default';
-            const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['default'];
+            const themeId = localStorage.getItem('current_theme_id' + mode) || 'olive';
+            const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['olive'];
             setCurrentTheme(newTheme);
             
             const savedSettings = localStorage.getItem('quran_settings' + mode);
@@ -1553,7 +1553,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     setToolbarColors(parsed);
                 } catch (e) {}
             } else {
-                const theme = THEMES['default'];
+                const theme = THEMES['olive'];
                 const black = "#000000";
                 const white = "#ffffff";
                 setToolbarColors({
@@ -1606,7 +1606,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     setToolbarColors(parsed);
                 } catch (e) {}
             } else {
-                const theme = THEMES['default'];
+                const theme = THEMES['olive'];
                 const black = "#000000";
                 const white = "#ffffff";
                 setToolbarColors({
@@ -2446,7 +2446,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         let finalBg = bg;
         let backdrop = 'none';
         let finalShadow: string | undefined = undefined;
-        if (isTransparentMode && (type === 'top-toolbar' || type === 'bottom-toolbar')) {
+        if ((isTransparentMode || isHideToolbarsEnabled) && (type === 'top-toolbar' || type === 'bottom-toolbar')) {
             finalBg = 'transparent';
             border = 'transparent';
             finalShadow = 'none';
@@ -2566,7 +2566,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     }, []);
 
     return (
-        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused ? 'hide-toolbars-autoscroll' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
+        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode || isHideToolbarsEnabled ? 'is-transparent-mode' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
             <QuranHeader 
                 isPageInputActive={isPageInputActive}
                 pageInputRef={pageInputRef}
@@ -2611,6 +2611,10 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 showToast={showToast}
                 isWirdMode={isWirdMode}
                 isMemorizationMode={localIsMemorizationMode}
+                settings={settings}
+                updateSetting={updateSetting}
+                isHideToolbarsEnabled={isHideToolbarsEnabled}
+                setIsHideToolbarsEnabled={setIsHideToolbarsEnabled}
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">

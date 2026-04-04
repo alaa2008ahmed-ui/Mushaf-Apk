@@ -18,6 +18,10 @@ interface FloatingMenuProps {
     showToast: (msg: string) => void;
     isWirdMode?: boolean;
     isMemorizationMode?: boolean;
+    settings: any;
+    updateSetting: (key: string, value: any) => void;
+    isHideToolbarsEnabled: boolean;
+    setIsHideToolbarsEnabled: (value: boolean) => void;
 }
 
 const ALL_SHORTCUTS = [
@@ -58,7 +62,11 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     handleMushafTypeSelect,
     showToast,
     isWirdMode = false,
-    isMemorizationMode = false
+    isMemorizationMode = false,
+    settings,
+    updateSetting,
+    isHideToolbarsEnabled,
+    setIsHideToolbarsEnabled
 }) => {
     const [selectedShortcuts, setSelectedShortcuts] = useState<string[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -155,20 +163,19 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
             {/* The Main Menu Container */}
             <div 
                 id="floating-menu" 
-                className={`w-max min-w-[220px] max-w-[85vw] bg-white rounded-2xl shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
+                className={`w-[260px] max-w-[85vw] bg-white rounded-2xl shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
                 style={{ fontFamily: currentTheme.font }}
             >
                 {!isAddModalOpen ? (
                     /* Main Menu Content */
                     <div className="p-4 flex flex-col gap-4 overflow-y-auto flex-grow custom-scrollbar">
                         {/* نوع المصحف */}
-                        <div className="flex flex-col gap-2">
-                            <div className="text-right font-bold text-xs px-1 opacity-70" style={{ color: iconColor }}>نوع المصحف</div>
-                            <div className="flex flex-col gap-1">
+                        <MenuSection title="نوع المصحف" iconColor={iconColor}>
+                            <div className="flex flex-col gap-1 mb-2">
                                 <button 
                                     className={`w-full py-2.5 px-4 rounded-xl text-sm flex items-center justify-between transition-all ${!useTajweed ? 'bg-gray-100 font-bold' : 'hover:bg-gray-50'}`} 
                                     onClick={() => handleAction(() => { setReadingMode('mushaf'); handleMushafTypeSelect('uthmani'); })} 
-                                    style={{ color: !useTajweed ? iconColor : '#4b5563' }}
+                                    style={{ color: !useTajweed ? '#000000' : '#4b5563' }}
                                 >
                                     <div className="flex items-center gap-3">
                                         <BookText size={18} style={{ color: iconColor }} />
@@ -179,7 +186,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                 <button 
                                     className={`w-full py-2.5 px-4 rounded-xl text-sm flex items-center justify-between transition-all ${useTajweed ? 'bg-gray-100 font-bold' : 'hover:bg-gray-50'}`} 
                                     onClick={() => handleAction(() => { setReadingMode('mushaf'); handleMushafTypeSelect('tajweed'); })} 
-                                    style={{ color: useTajweed ? iconColor : '#4b5563' }}
+                                    style={{ color: useTajweed ? '#000000' : '#4b5563' }}
                                 >
                                     <div className="flex items-center gap-3">
                                         <BookOpen size={18} style={{ color: iconColor }} />
@@ -188,7 +195,11 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                     {useTajweed && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: iconColor }}></div>}
                                 </button>
                             </div>
-                        </div>
+                            <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} />
+                            <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} />
+                            <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} />
+                            <MenuItem icon={<Headphones size={18} />} label="الصوتيات" onClick={() => handleAction(() => openModal('reciter-modal'))} iconColor={iconColor} />
+                        </MenuSection>
 
                         {/* الإعدادات والبحث */}
                         <MenuSection title="الإعدادات والبحث" iconColor={iconColor}>
@@ -199,45 +210,75 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                     className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full"
                                 >
                                     <div style={{ color: iconColor }}><Palette size={18} /></div>
-                                    <span className="text-sm text-gray-800 font-bold flex-1">المظهر</span>
+                                    <span className="text-sm font-bold flex-1" style={{ color: '#000000' }}>المظهر</span>
                                     <ChevronDown size={16} className={`transition-transform duration-200 ${isThemesOpen ? 'rotate-180' : ''}`} style={{ color: iconColor }} />
                                 </button>
                                 
                                 {isThemesOpen && (
-                                    <div className="grid grid-cols-3 gap-y-4 gap-x-2 p-3 bg-gray-50/80 rounded-xl mt-1 mb-2 animate-fadeIn">
-                                        {Object.entries(THEMES).map(([id, theme]: [string, any]) => (
-                                            <button
-                                                key={id}
-                                                onClick={() => {
-                                                    applyTheme(id);
-                                                    setIsFloatingMenuOpen(false);
-                                                }}
-                                                className="flex flex-col items-center gap-1.5 group"
-                                            >
-                                                <div 
-                                                    className={`w-10 h-10 rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id ? 'scale-110 border-gray-400 shadow-md' : 'border-transparent hover:scale-105'}`}
-                                                    style={{ backgroundColor: theme.accent || theme.barText || '#000000' }}
-                                                >
-                                                    {localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id && (
-                                                        <div className="w-2 h-2 rounded-full bg-white shadow-sm"></div>
-                                                    )}
+                                    <div className="flex flex-col gap-3 p-3 bg-gray-50/80 rounded-xl mt-1 mb-2 animate-fadeIn">
+                                        <div className="border-b border-gray-200 pb-3 mb-1 space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-xs font-bold opacity-80" style={{ color: '#000000' }}>قفل لون التحديد</label>
+                                                <div className="relative inline-block w-8 align-middle select-none">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        id="menu-lock-highlight" 
+                                                        checked={settings?.lockHighlightColor || false} 
+                                                        onChange={(e) => updateSetting('lockHighlightColor', e.target.checked)} 
+                                                        className="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer"
+                                                    />
+                                                    <label htmlFor="menu-lock-highlight" className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${settings?.lockHighlightColor ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
                                                 </div>
-                                                <span className="text-[10px] font-bold opacity-80 truncate w-full text-center leading-tight" style={{ color: iconColor }}>{theme.name}</span>
-                                            </button>
-                                        ))}
+                                            </div>
+                                            
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-xs font-bold opacity-80" style={{ color: '#000000' }}>إخفاء الأشرطة</label>
+                                                <div className="relative inline-block w-8 align-middle select-none">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        id="menu-hide-toolbars" 
+                                                        checked={isHideToolbarsEnabled} 
+                                                        onChange={(e) => {
+                                                            setIsHideToolbarsEnabled(e.target.checked);
+                                                            const modeSuffix = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
+                                                            localStorage.setItem('hide_toolbars_enabled' + modeSuffix, String(e.target.checked));
+                                                            window.dispatchEvent(new Event('settings-change'));
+                                                            showToast(e.target.checked ? 'تم تفعيل إخفاء الأشرطة' : 'تم تعطيل إخفاء الأشرطة');
+                                                        }} 
+                                                        className="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer"
+                                                    />
+                                                    <label htmlFor="menu-hide-toolbars" className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${isHideToolbarsEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-y-4 gap-x-2">
+                                            {Object.entries(THEMES).map(([id, theme]: [string, any]) => (
+                                                <button
+                                                    key={id}
+                                                    onClick={() => {
+                                                        applyTheme(id);
+                                                        setIsFloatingMenuOpen(false);
+                                                    }}
+                                                    className="flex flex-col items-center gap-1.5 group"
+                                                >
+                                                    <div 
+                                                        className={`w-10 h-10 rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id ? 'scale-110 border-gray-400 shadow-md' : 'border-transparent hover:scale-105'}`}
+                                                        style={{ backgroundColor: theme.accent || theme.barText || '#000000' }}
+                                                    >
+                                                        {localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id && (
+                                                            <div className="w-2 h-2 rounded-full bg-white shadow-sm"></div>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[10px] font-bold opacity-80 truncate w-full text-center leading-tight" style={{ color: '#000000' }}>{theme.name}</span>
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>
                             <MenuItem icon={<Settings size={18} />} label="الإعدادات" onClick={() => handleAction(() => openModal('settings-modal'))} iconColor={iconColor} />
                             <MenuItem icon={<Bookmark size={18} />} label="العلامات المرجعية" onClick={() => handleAction(() => openModal('bookmarks-modal'))} iconColor={iconColor} />
-                        </MenuSection>
-
-                        {/* الخصائص */}
-                        <MenuSection title="الخصائص" iconColor={iconColor}>
-                            <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} />
-                            <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} />
-                            <MenuItem icon={<Headphones size={18} />} label="الصوتيات" onClick={() => handleAction(() => openModal('reciter-modal'))} iconColor={iconColor} />
-                            <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} />
                         </MenuSection>
 
                         {/* اختصارات أخرى */}
@@ -329,7 +370,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
 const MenuSection: React.FC<{ title: string, children: React.ReactNode, iconColor: string }> = ({ title, children, iconColor }) => (
     <div className="flex flex-col">
         <div className="bg-blue-50/50 py-1.5 px-3 rounded-md mb-2 text-right">
-            <span className="text-xs font-bold" style={{ color: iconColor }}>{title}</span>
+            <span className="text-xs font-bold" style={{ color: '#000000' }}>{title}</span>
         </div>
         <div className="flex flex-col px-2">
             {children}
@@ -340,7 +381,7 @@ const MenuSection: React.FC<{ title: string, children: React.ReactNode, iconColo
 const MenuItem: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void, iconColor: string }> = ({ icon, label, onClick, iconColor }) => (
     <button onClick={onClick} className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full">
         <div style={{ color: iconColor }}>{icon}</div>
-        <span className="text-sm font-bold flex-1" style={{ color: iconColor }}>{label}</span>
+        <span className="text-sm font-bold flex-1" style={{ color: '#000000' }}>{label}</span>
     </button>
 );
 

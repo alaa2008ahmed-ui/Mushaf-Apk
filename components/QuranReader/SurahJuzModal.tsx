@@ -200,12 +200,8 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
     return (
         <div className={`fixed inset-0 z-[100] bg-black/30 flex justify-center items-center p-4 animate-fadeIn backdrop-blur-sm`} onClick={onClose}>
             <div className={`modal-skinned w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
-                <div className="p-4 theme-header-bg flex flex-col gap-3">
-                    <div className="flex justify-between items-center">
-                        <h3 className="font-bold text-lg">انتقال سريع</h3>
-                        <button onClick={onClose} className="text-2xl hover:opacity-70 transition-opacity">&times;</button>
-                    </div>
-                    {!isLandscape && (
+                {!isLandscape && (
+                    <div className="p-4 theme-header-bg flex flex-col gap-3">
                         <div className="relative">
                             <input
                                 type="text"
@@ -216,27 +212,10 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                             />
                             <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-sm opacity-70"></i>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 <div className="flex flex-1 overflow-hidden themed-card-bg">
-                    {/* Hizb Quarter Column */}
-                    <div className="flex-1 flex flex-col border-l border-gray-200 dark:border-gray-700">
-                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b border-gray-200 dark:border-gray-700">الحزب</div>
-                        <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            {Array.from({ length: 240 }, (_, i) => i + 1).map(hq => (
-                                <button
-                                    key={hq}
-                                    ref={el => hizbRefs.current[hq] = el}
-                                    onClick={() => handleHizbQuarterClick(hq)}
-                                    className={`w-full p-2 rounded text-xs font-bold transition ${selectedHizbQuarter === hq ? 'theme-accent-btn shadow-md' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                >
-                                    {formatHizbQuarter(hq)}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
                     {/* Juz Column */}
                     <div className="flex-1 flex flex-col border-l border-gray-200 dark:border-gray-700">
                         <div className="p-2 text-center text-xs font-bold opacity-60 border-b border-gray-200 dark:border-gray-700">الجزء</div>
@@ -276,7 +255,7 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                     </div>
 
                     {/* Ayah Column */}
-                    <div className="flex-1 flex flex-col">
+                    <div className="flex-1 flex flex-col border-l border-gray-200 dark:border-gray-700">
                         <div className="p-2 text-center text-xs font-bold opacity-60 border-b border-gray-200 dark:border-gray-700">الآية</div>
                         <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {Array.from({ length: ayahsCount }, (_, i) => i + 1).map(a => (
@@ -287,6 +266,23 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                                     className={`w-full p-2 rounded text-sm font-bold transition ${selectedAyah === a ? 'theme-accent-btn shadow-md' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
                                 >
                                     {toArabic(a)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Hizb Quarter Column */}
+                    <div className="flex-1 flex flex-col">
+                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b border-gray-200 dark:border-gray-700">الحزب</div>
+                        <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            {Array.from({ length: 240 }, (_, i) => i + 1).map(hq => (
+                                <button
+                                    key={hq}
+                                    ref={el => hizbRefs.current[hq] = el}
+                                    onClick={() => handleHizbQuarterClick(hq)}
+                                    className={`w-full p-2 rounded text-xs font-bold transition ${selectedHizbQuarter === hq ? 'theme-accent-btn shadow-md' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                                >
+                                    {formatHizbQuarter(hq)}
                                 </button>
                             ))}
                         </div>
