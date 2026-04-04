@@ -88,7 +88,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
     const saveElementChanges = () => {
         if (!editingType) return;
         
-        const colors = JSON.parse(localStorage.getItem('toolbar_colors' + modeSuffix) || '{}');
+        const colors = JSON.parse(localStorage.getItem('toolbar_colors_v2' + modeSuffix) || '{}');
         const newConfig = { ...editConfig };
         
         colors[editingType] = newConfig;
@@ -111,7 +111,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
             delete colors.unifiedApplied;
         }
         
-        localStorage.setItem('toolbar_colors' + modeSuffix, JSON.stringify(colors));
+        localStorage.setItem('toolbar_colors_v2' + modeSuffix, JSON.stringify(colors));
         window.dispatchEvent(new Event('theme-change'));
         setEditingType(null);
         showToast('تم حفظ التعديلات');

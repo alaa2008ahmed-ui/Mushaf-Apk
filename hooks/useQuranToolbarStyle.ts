@@ -24,7 +24,7 @@ export const useQuranToolbarStyle = (toolbarColors: any, currentTheme: any, isTr
 
         return { 
             backgroundColor: finalBg, 
-            color: defaultText, 
+            color: config?.text || defaultText, 
             borderColor: border, 
             fontFamily: config?.font || 'inherit',
             opacity: 1,

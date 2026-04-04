@@ -30,40 +30,31 @@ export const useQuranEventListeners = (
                 setSettings(DEFAULT_SETTINGS);
             }
             
-            const savedToolbarColors = localStorage.getItem('toolbar_colors' + mode);
+            const savedToolbarColors = localStorage.getItem('toolbar_colors_v2' + mode);
             if (savedToolbarColors) {
                 try {
                     const parsed = JSON.parse(savedToolbarColors);
-                    if (parsed['surah']?.text === "#10b981" && parsed['juz']?.text === "#6d28d9") {
-                        parsed['surah'].text = "#6d28d9";
-                        parsed['surah'].border = "#6d28d9";
-                        parsed['juz'].text = "#10b981";
-                        parsed['juz'].border = "#10b981";
-                        localStorage.setItem('toolbar_colors' + mode, JSON.stringify(parsed));
-                    }
                     setToolbarColors(parsed);
                 } catch (e) {}
             } else {
                 const theme = THEMES['default'];
-                const green = "#10b981"; const greenBorder = "#059669";
-                const purple = "#7e22ce"; const purpleBorder = "#6b21a8";
-                const purpleText = "#6d28d9";
-                const white = "#ffffff"; const grayBorder = "#e5e7eb";
+                const black = "#000000";
+                const white = "#ffffff";
                 setToolbarColors({
-                    'top-toolbar': { bg: white, border: grayBorder },
-                    'bottom-toolbar': { bg: white, border: grayBorder },
-                    'surah': { bg: white, text: purpleText, border: purpleText, font: theme.font },
-                    'juz': { bg: white, text: green, border: green, font: theme.font },
-                    'page': { bg: white, text: purpleText, border: purpleText, font: theme.font },
-                    'audio': { bg: white, text: green, border: green },
-                    'btn-settings': { bg: purple, text: white, border: purpleBorder },
-                    'btn-home': { bg: green, text: white, border: greenBorder },
-                    'btn-bookmark': { bg: green, text: white, border: greenBorder },
-                    'btn-bookmarks-list': { bg: green, text: white, border: greenBorder },
-                    'btn-themes': { bg: green, text: white, border: greenBorder },
-                    'btn-autoscroll': { bg: purple, text: white, border: purpleBorder },
-                    'btn-menu': { bg: purple, text: white, border: purpleBorder },
-                    'btn-search': { bg: purple, text: white, border: purpleBorder }
+                    'top-toolbar': { bg: white, border: black },
+                    'bottom-toolbar': { bg: white, border: black },
+                    'surah': { bg: white, text: black, border: black, font: theme.font },
+                    'juz': { bg: white, text: black, border: black, font: theme.font },
+                    'page': { bg: white, text: black, border: black, font: theme.font },
+                    'audio': { bg: white, text: black, border: black },
+                    'btn-settings': { bg: white, text: black, border: black },
+                    'btn-home': { bg: white, text: black, border: black },
+                    'btn-bookmark': { bg: white, text: black, border: black },
+                    'btn-bookmarks-list': { bg: white, text: black, border: black },
+                    'btn-themes': { bg: white, text: black, border: black },
+                    'btn-autoscroll': { bg: white, text: black, border: black },
+                    'btn-menu': { bg: white, text: black, border: black },
+                    'btn-search': { bg: white, text: black, border: black }
                 });
             }
 
@@ -95,40 +86,31 @@ export const useQuranEventListeners = (
             const saved = localStorage.getItem('quran_settings' + mode);
             if (saved) setSettings(JSON.parse(saved));
             
-            const savedToolbarColors = localStorage.getItem('toolbar_colors' + mode);
+            const savedToolbarColors = localStorage.getItem('toolbar_colors_v2' + mode);
             if (savedToolbarColors) {
                 try {
                     const parsed = JSON.parse(savedToolbarColors);
-                    if (parsed['surah']?.text === "#10b981" && parsed['juz']?.text === "#6d28d9") {
-                        parsed['surah'].text = "#6d28d9";
-                        parsed['surah'].border = "#6d28d9";
-                        parsed['juz'].text = "#10b981";
-                        parsed['juz'].border = "#10b981";
-                        localStorage.setItem('toolbar_colors' + mode, JSON.stringify(parsed));
-                    }
                     setToolbarColors(parsed);
                 } catch (e) {}
             } else {
                 const theme = THEMES['default'];
-                const green = "#10b981"; const greenBorder = "#059669";
-                const purple = "#7e22ce"; const purpleBorder = "#6b21a8";
-                const purpleText = "#6d28d9";
-                const white = "#ffffff"; const grayBorder = "#e5e7eb";
+                const black = "#000000";
+                const white = "#ffffff";
                 setToolbarColors({
-                    'top-toolbar': { bg: white, border: grayBorder },
-                    'bottom-toolbar': { bg: white, border: grayBorder },
-                    'surah': { bg: white, text: purpleText, border: purpleText, font: theme.font },
-                    'juz': { bg: white, text: green, border: green, font: theme.font },
-                    'page': { bg: white, text: purpleText, border: purpleText, font: theme.font },
-                    'audio': { bg: white, text: green, border: green },
-                    'btn-settings': { bg: purple, text: white, border: purpleBorder },
-                    'btn-home': { bg: green, text: white, border: greenBorder },
-                    'btn-bookmark': { bg: green, text: white, border: greenBorder },
-                    'btn-bookmarks-list': { bg: green, text: white, border: greenBorder },
-                    'btn-themes': { bg: green, text: white, border: greenBorder },
-                    'btn-autoscroll': { bg: purple, text: white, border: purpleBorder },
-                    'btn-menu': { bg: purple, text: white, border: purpleBorder },
-                    'btn-search': { bg: purple, text: white, border: purpleBorder }
+                    'top-toolbar': { bg: white, border: black },
+                    'bottom-toolbar': { bg: white, border: black },
+                    'surah': { bg: white, text: black, border: black, font: theme.font },
+                    'juz': { bg: white, text: black, border: black, font: theme.font },
+                    'page': { bg: white, text: black, border: black, font: theme.font },
+                    'audio': { bg: white, text: black, border: black },
+                    'btn-settings': { bg: white, text: black, border: black },
+                    'btn-home': { bg: white, text: black, border: black },
+                    'btn-bookmark': { bg: white, text: black, border: black },
+                    'btn-bookmarks-list': { bg: white, text: black, border: black },
+                    'btn-themes': { bg: white, text: black, border: black },
+                    'btn-autoscroll': { bg: white, text: black, border: black },
+                    'btn-menu': { bg: white, text: black, border: black },
+                    'btn-search': { bg: white, text: black, border: black }
                 });
             }
             

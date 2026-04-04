@@ -104,7 +104,7 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
             };
         }
 
-        localStorage.setItem('toolbar_colors' + modeSuffix, JSON.stringify(themeColors));
+        localStorage.setItem('toolbar_colors_v2' + modeSuffix, JSON.stringify(themeColors));
 
         // Update quran_settings to match the theme's colors and font
         const savedSettings = JSON.parse(localStorage.getItem('quran_settings' + modeSuffix) || '{}');
