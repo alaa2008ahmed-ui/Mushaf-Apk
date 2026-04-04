@@ -327,7 +327,10 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     const [highlightedAyahId, setHighlightedAyahId] = useState<string | null>(null);
     const [isTransparentMode, setIsTransparentMode] = useState(() => localStorage.getItem('transparent_mode' + modeSuffix) === 'true');
-    const [isHideToolbarsEnabled, setIsHideToolbarsEnabled] = useState(() => localStorage.getItem('hide_toolbars_enabled' + modeSuffix) === 'true');
+    const [isHideToolbarsEnabled, setIsHideToolbarsEnabled] = useState(() => {
+        const saved = localStorage.getItem('hide_toolbars_enabled' + modeSuffix);
+        return saved !== null ? saved === 'true' : true;
+    });
     const [lastInteractionType, setLastInteractionType] = useState<'page' | 'ayah'>(() => {
         const saved = localStorage.getItem('last_interaction_type' + modeSuffix);
         return (saved as 'page' | 'ayah') || 'page';
@@ -469,26 +472,27 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             } catch (e) {}
         } else {
             const theme = THEMES['olive'];
-            const green = "#10b981"; const greenBorder = "#059669";
-            const purple = "#7e22ce"; const purpleBorder = "#6b21a8";
-            const purpleText = "#6d28d9";
-            const white = "#ffffff"; const grayBorder = "#e5e7eb";
+            const oliveAccent = theme.accent;
+            const oliveBarBg = theme.barBg;
+            const oliveBarBorder = theme.barBorder?.split(' ')[2] || "#d1d5db";
+            const white = "#ffffff";
+            
             setToolbarColors({
-                'top-toolbar': { bg: white, border: grayBorder },
-                'bottom-toolbar': { bg: white, border: grayBorder },
-                'surah': { bg: white, text: purpleText, border: purpleText, font: theme.font },
-                'juz': { bg: white, text: green, border: green, font: theme.font },
-                'page': { bg: white, text: purpleText, border: purpleText, font: theme.font },
-                'audio': { bg: white, text: green, border: green },
-                'btn-settings': { bg: purple, text: white, border: purpleBorder },
-                'btn-home': { bg: purple, text: white, border: purpleBorder },
-                'btn-bookmark': { bg: green, text: white, border: greenBorder },
-                'btn-bookmarks-list': { bg: green, text: white, border: greenBorder },
-                'btn-themes': { bg: green, text: white, border: greenBorder },
-                'btn-autoscroll': { bg: purple, text: white, border: purpleBorder },
-                'btn-menu': { bg: purple, text: white, border: purpleBorder },
-                'btn-search': { bg: purple, text: white, border: purpleBorder },
-                'btn-share': { bg: green, text: white, border: greenBorder }
+                'top-toolbar': { bg: oliveBarBg, border: oliveBarBorder },
+                'bottom-toolbar': { bg: oliveBarBg, border: oliveBarBorder },
+                'surah': { bg: white, text: oliveAccent, border: oliveAccent, font: theme.font },
+                'juz': { bg: white, text: oliveAccent, border: oliveAccent, font: theme.font },
+                'page': { bg: white, text: oliveAccent, border: oliveAccent, font: theme.font },
+                'audio': { bg: white, text: oliveAccent, border: oliveAccent },
+                'btn-settings': { bg: oliveAccent, text: white, border: oliveAccent },
+                'btn-home': { bg: oliveAccent, text: white, border: oliveAccent },
+                'btn-bookmark': { bg: oliveAccent, text: white, border: oliveAccent },
+                'btn-bookmarks-list': { bg: oliveAccent, text: white, border: oliveAccent },
+                'btn-themes': { bg: oliveAccent, text: white, border: oliveAccent },
+                'btn-autoscroll': { bg: oliveAccent, text: white, border: oliveAccent },
+                'btn-menu': { bg: oliveAccent, text: white, border: oliveAccent },
+                'btn-search': { bg: oliveAccent, text: white, border: oliveAccent },
+                'btn-share': { bg: oliveAccent, text: white, border: oliveAccent }
             });
         }
     }, [modeSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode, mushafType]);
@@ -2440,7 +2444,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         let finalBg = bg;
         let backdrop = 'none';
         let finalShadow: string | undefined = undefined;
-        if ((isTransparentMode || isHideToolbarsEnabled) && (type === 'top-toolbar' || type === 'bottom-toolbar')) {
+        if (isTransparentMode && (type === 'top-toolbar' || type === 'bottom-toolbar')) {
             finalBg = 'transparent';
             border = 'transparent';
             finalShadow = 'none';
@@ -2560,7 +2564,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     }, []);
 
     return (
-        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode || isHideToolbarsEnabled ? 'is-transparent-mode' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
+        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
             <QuranHeader 
                 isPageInputActive={isPageInputActive}
                 pageInputRef={pageInputRef}
