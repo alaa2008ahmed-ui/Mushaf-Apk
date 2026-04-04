@@ -737,6 +737,27 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
         const dayNamesAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
         const currentDayName = dayNamesAr[new Date().getDay()];
         
+        const getTimestamp = (timeStr: string, offset: number, isTomorrow: boolean = false) => {
+            const adjusted = applyOffset(timeStr, offset + (isSummerTimeActive ? 60 : 0));
+            if (!adjusted || adjusted.includes('--')) return 0;
+            let [hh, mm] = adjusted.split(':');
+            
+            const cityTimezone = localStorage.getItem('grandLocationTimezone');
+            let cityNow = new Date();
+            if (cityTimezone) {
+                try {
+                    const cityTimeStr = cityNow.toLocaleString('en-US', { timeZone: cityTimezone });
+                    cityNow = new Date(cityTimeStr);
+                } catch (e) {}
+            }
+            
+            let pDate = new Date(cityNow);
+            if (isTomorrow) pDate.setDate(pDate.getDate() + 1);
+            pDate.setHours(parseInt(hh), parseInt(mm), 0, 0);
+            
+            return Date.now() + (pDate.getTime() - cityNow.getTime());
+        };
+
         updateAndroidWidget({
             hijri: currentDates.hijri,
             gregorian: currentDates.gregorian,
@@ -755,6 +776,20 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 asr: formatTime(currentTimes.Asr, config.prayerOffsets.Asr || 0),
                 maghrib: formatTime(currentTimes.Maghrib, config.prayerOffsets.Maghrib || 0),
                 isha: formatTime(currentTimes.Isha, config.prayerOffsets.Isha || 0)
+            },
+            timestamps: {
+                fajr: getTimestamp(currentTimes.Fajr, config.prayerOffsets.Fajr || 0),
+                sunrise: getTimestamp(currentTimes.Sunrise, config.prayerOffsets.Sunrise || 0),
+                dhuhr: getTimestamp(currentTimes.Dhuhr, config.prayerOffsets.Dhuhr || 0),
+                asr: getTimestamp(currentTimes.Asr, config.prayerOffsets.Asr || 0),
+                maghrib: getTimestamp(currentTimes.Maghrib, config.prayerOffsets.Maghrib || 0),
+                isha: getTimestamp(currentTimes.Isha, config.prayerOffsets.Isha || 0),
+                nextFajr: getTimestamp(currentTimes.Fajr, config.prayerOffsets.Fajr || 0, true),
+                nextSunrise: getTimestamp(currentTimes.Sunrise, config.prayerOffsets.Sunrise || 0, true),
+                nextDhuhr: getTimestamp(currentTimes.Dhuhr, config.prayerOffsets.Dhuhr || 0, true),
+                nextAsr: getTimestamp(currentTimes.Asr, config.prayerOffsets.Asr || 0, true),
+                nextMaghrib: getTimestamp(currentTimes.Maghrib, config.prayerOffsets.Maghrib || 0, true),
+                nextIsha: getTimestamp(currentTimes.Isha, config.prayerOffsets.Isha || 0, true)
             }
         }, config.syncWidgetTheme !== false);
     }, [config.location, config.prayerOffsets, config.isSummerTime, config.syncWidgetTheme]);

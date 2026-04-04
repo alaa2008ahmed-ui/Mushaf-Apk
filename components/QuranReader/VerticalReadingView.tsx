@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { toArabic, SURAH_INFO, SURAH_NAMES_AR } from './constants';
+import { renderTajweedText } from './MushafPage';
 
 interface VerticalReadingViewProps {
     quranData: any;
@@ -245,7 +246,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                              fontFamily: settings.fontFamily,
                              color: currentTheme.accent
                          }}>
-                        {item.text}
+                        {renderTajweedText(item.text)}
                         <span className="inline-flex items-center justify-center w-8 h-8 mr-2 rounded-full border border-current text-sm font-bold"
                               style={{ color: currentTheme.text }}>
                             {toArabic(item.ayahNumber)}

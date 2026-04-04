@@ -28,7 +28,7 @@ const fixQuranText = (text: string) => {
     return text.replace(/\u0647\u0650\u06e6/g, '\u0647\u0650\u064a');
 };
 
-const renderTajweedText = (text: string) => {
+export const renderTajweedText = (text: string) => {
     if (!text) return text;
     
     // Remove the ZWJ hack as it breaks shaping in proper Quranic fonts
@@ -36,25 +36,69 @@ const renderTajweedText = (text: string) => {
 
     if (!fixedText.includes('[')) return fixedText;
     
-    const parts = [];
-    let lastIndex = 0;
-    const regex = /\[([a-z])(?::\d+)?\[([^\]]+)\]/g;
+    // Tokenize the text to handle nested tags like [o[ُوٓ[s[اْ]‌ۖ]
+    const regex = /\[([a-z])(?::\d+)?\[|\]/g;
     let match;
+    let lastIndex = 0;
+    const tokens = [];
     
     while ((match = regex.exec(fixedText)) !== null) {
         if (match.index > lastIndex) {
-            parts.push(<span key={`text-${lastIndex}`}>{fixedText.substring(lastIndex, match.index)}</span>);
+            tokens.push({ type: 'text', value: fixedText.substring(lastIndex, match.index) });
         }
-        const colorClass = `tajweed-${match[1]}`;
-        parts.push(<span key={`tag-${match.index}`} className={colorClass}>{match[2]}</span>);
+        if (match[0] === ']') {
+            tokens.push({ type: 'end' });
+        } else {
+            tokens.push({ type: 'start', tag: match[1] });
+        }
         lastIndex = regex.lastIndex;
     }
-    
     if (lastIndex < fixedText.length) {
-        parts.push(<span key={`text-${lastIndex}`}>{fixedText.substring(lastIndex)}</span>);
+        tokens.push({ type: 'text', value: fixedText.substring(lastIndex) });
     }
+
+    // Build a tree from tokens
+    const root: any = { type: 'root', children: [] };
+    const stack = [root];
     
-    return parts;
+    for (const token of tokens) {
+        const current = stack[stack.length - 1];
+        if (token.type === 'text') {
+            current.children.push(token.value);
+        } else if (token.type === 'start') {
+            const node = { type: 'tag', tag: token.tag, children: [] };
+            current.children.push(node);
+            stack.push(node);
+        } else if (token.type === 'end') {
+            if (stack.length > 1) {
+                stack.pop();
+            } else {
+                // Unbalanced ']', treat as text
+                current.children.push(']');
+            }
+        }
+    }
+
+    // Recursively render the tree
+    const renderNode = (node: any, keyPrefix: string): React.ReactNode => {
+        if (typeof node === 'string') {
+            return <React.Fragment key={keyPrefix}>{node}</React.Fragment>;
+        }
+        if (node.type === 'root') {
+            return <>{node.children.map((child: any, i: number) => renderNode(child, `${keyPrefix}-${i}`))}</>;
+        }
+        if (node.type === 'tag') {
+            const colorClass = `tajweed-${node.tag}`;
+            return (
+                <span key={keyPrefix} className={colorClass}>
+                    {node.children.map((child: any, i: number) => renderNode(child, `${keyPrefix}-${i}`))}
+                </span>
+            );
+        }
+        return null;
+    };
+
+    return renderNode(root, 'root');
 };
 
 const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme }) => {

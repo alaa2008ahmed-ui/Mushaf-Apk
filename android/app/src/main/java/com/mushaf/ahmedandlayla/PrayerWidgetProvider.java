@@ -48,23 +48,83 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
             try {
                 JSONObject data = new JSONObject(prayerJson);
                 JSONObject times = data.getJSONObject("times");
-                String nextPrayerId = data.getString("next_prayer_id");
+                String nextPrayerId = data.has("next_prayer_id") ? data.getString("next_prayer_id") : "";
+                String nextPrayerName = data.has("next_prayer_name") ? data.getString("next_prayer_name") : "";
+                long targetTimeMillis = data.has("target_time_millis") ? data.getLong("target_time_millis") : 0;
+
+                // حساب الصلاة القادمة بناءً على الوقت الحالي إذا توفرت الطوابع الزمنية
+                if (data.has("timestamps")) {
+                    JSONObject timestamps = data.getJSONObject("timestamps");
+                    long now = System.currentTimeMillis();
+                    
+                    String[] prayerIds = {
+                        "fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha", 
+                        "nextFajr", "nextSunrise", "nextDhuhr", "nextAsr", "nextMaghrib", "nextIsha"
+                    };
+                    String[] prayerNames = {
+                        "الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء", 
+                        "الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء"
+                    };
+                    
+                    for (int i = 0; i < prayerIds.length; i++) {
+                        if (timestamps.has(prayerIds[i])) {
+                            long pTime = timestamps.getLong(prayerIds[i]);
+                            if (pTime > now) {
+                                targetTimeMillis = pTime;
+                                String id = prayerIds[i];
+                                if (id.startsWith("next")) {
+                                    id = id.substring(4).toLowerCase();
+                                }
+                                nextPrayerId = id;
+                                nextPrayerName = prayerNames[i];
+                                break;
+                            }
+                        }
+                    }
+                }
 
                 // تحديث التاريخ الهجري ومعلومات الصلاة القادمة
                 views.setTextViewText(R.id.widget_hijri_date, data.getString("day") + "، " + data.getString("hijri"));
                 views.setTextViewText(R.id.widget_gregorian_date, data.getString("gregorian"));
-                views.setTextViewText(R.id.widget_next_prayer_name, data.getString("next_prayer_name") + " بعد");
+                views.setTextViewText(R.id.widget_next_prayer_name, nextPrayerName + " بعد");
                 
-                if (data.has("target_time_millis")) {
-                    long targetTimeMillis = data.getLong("target_time_millis");
+                if (targetTimeMillis > 0) {
                     long remainingMillis = targetTimeMillis - System.currentTimeMillis();
-                    long base = android.os.SystemClock.elapsedRealtime() + remainingMillis;
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                        views.setBoolean(R.id.widget_next_prayer_time, "setCountDown", true);
+                    
+                    if (remainingMillis <= 0) {
+                        views.setChronometer(R.id.widget_next_prayer_time, android.os.SystemClock.elapsedRealtime(), "00:00:00", false);
+                    } else {
+                        long base = android.os.SystemClock.elapsedRealtime() + remainingMillis;
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                            views.setBoolean(R.id.widget_next_prayer_time, "setCountDown", true);
+                        }
+                        views.setChronometer(R.id.widget_next_prayer_time, base, "%s", true);
+                        
+                        // جدولة تحديث الريدجت عند دخول وقت الصلاة القادمة
+                        Intent updateIntent = new Intent(context, PrayerWidgetProvider.class);
+                        updateIntent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+                        updateIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, new int[]{appWidgetId});
+                        
+                        PendingIntent pendingUpdate = PendingIntent.getBroadcast(
+                                context, appWidgetId, updateIntent, 
+                                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                                
+                        android.app.AlarmManager alarmManager = (android.app.AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+                        if (alarmManager != null) {
+                            // إضافة ثانية واحدة للتأكد من أن الوقت قد دخل فعلاً عند التحديث
+                            long alarmTime = targetTimeMillis + 1000;
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                                alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC, alarmTime, pendingUpdate);
+                            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+                                alarmManager.setExact(android.app.AlarmManager.RTC, alarmTime, pendingUpdate);
+                            } else {
+                                alarmManager.set(android.app.AlarmManager.RTC, alarmTime, pendingUpdate);
+                            }
+                        }
                     }
-                    views.setChronometer(R.id.widget_next_prayer_time, base, "%s", true);
                 } else {
-                    views.setTextViewText(R.id.widget_next_prayer_time, data.getString("remaining_time"));
+                    // Fallback if target_time_millis is not available
+                    views.setChronometer(R.id.widget_next_prayer_time, android.os.SystemClock.elapsedRealtime(), data.getString("remaining_time"), false);
                 }
                 
                 views.setTextViewText(R.id.widget_midnight, data.getString("midnight"));
@@ -98,8 +158,6 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                     views.setInt(R.id.widget_root, "setBackgroundColor", bgColor);
                     views.setInt(R.id.widget_left_section, "setBackgroundColor", accentColor);
                     views.setInt(R.id.widget_bottom_section, "setBackgroundColor", accentColor);
-                    // ملاحظة: قد نفقد الحواف المستديرة عند استخدام setBackgroundColor مباشرة
-                    // ولكن هذا يضمن تغيير اللون كما طلب المستخدم
                 }
 
                 views.setTextColor(R.id.widget_next_prayer_name, highlightColor);

@@ -27,8 +27,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
 
     const stripTajweedTags = (text: string) => {
         if (!text) return '';
-        // Remove [tag[text]] or [tag:num[text]]
-        return text.replace(/\[([a-z])(?::\d+)?\[([^\]]+)\]/g, '$2');
+        // Remove [tag[ and ] to handle nested tags correctly
+        return text.replace(/\[[a-z](?::\d+)?\[/g, '').replace(/\]/g, '');
     };
 
     const fixQuranText = (text: string) => {

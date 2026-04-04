@@ -176,7 +176,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
 
     const stripTajweedTags = (text: string) => {
         if (!text) return '';
-        return text.replace(/\[([a-z])(?::\d+)?\[([^\]]+)\]/g, '$2');
+        return text.replace(/\[[a-z](?::\d+)?\[/g, '').replace(/\]/g, '');
     };
 
     const fixQuranText = (text: string) => {
