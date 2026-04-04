@@ -98,17 +98,9 @@ const GridSection: React.FC<GridSectionProps> = ({
                         onClick={() => !isEditMode && onNavigate(item.id)} 
                         className={item.id === 'more' ? "w-[calc(50%-6px)] h-full" : "w-full h-full"}
                         color={
-                            (item.id === 'quran' && themeKey === 'default') ? '#059669' : 
-                            (item.id === 'listen' && themeKey === 'default') ? '#059669' : 
-                            (item.id === 'prayer-times' && themeKey === 'default') ? '#059669' : 
-                            (item.id === 'tasbeeh' && themeKey === 'default') ? '#8b5cf6' : 
-                            (item.id === 'calendar' && themeKey === 'default') ? '#8b5cf6' : 
-                            (item.id === 'qibla' && themeKey === 'default') ? '#8b5cf6' : 
-                            (item.id === 'calculators' && themeKey === 'default') ? '#8b5cf6' : 
-                            (item.id === 'hisn-muslim' && themeKey === 'default') ? '#8b5cf6' : 
-                            (item.id === 'salah-adhkar' && themeKey === 'default') ? '#8b5cf6' : 
-                            (item.id === 'more' && themeKey === 'default') ? '#8b5cf6' : 
-                            (item.customColor || theme.palette[DEFAULT_MENU_ITEMS.find(d => d.id === item.id)?.colorIndex ?? item.colorIndex])
+                            themeKey === 'default' ? (
+                                ['quran', 'listen', 'prayer-times'].includes(item.id) ? '#059669' : '#8b5cf6'
+                            ) : (item.customColor || theme.palette[DEFAULT_MENU_ITEMS.find(d => d.id === item.id)?.colorIndex ?? item.colorIndex])
                         } 
                         border={theme.btnBorder} 
                         isEditMode={isEditMode}

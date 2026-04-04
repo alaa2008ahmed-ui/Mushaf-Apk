@@ -21,6 +21,20 @@ export interface WidgetData {
     maghrib: string;
     isha: string;
   };
+  timestamps?: {
+    fajr: number;
+    sunrise: number;
+    dhuhr: number;
+    asr: number;
+    maghrib: number;
+    isha: number;
+    nextFajr: number;
+    nextSunrise: number;
+    nextDhuhr: number;
+    nextAsr: number;
+    nextMaghrib: number;
+    nextIsha: number;
+  };
   theme?: {
     themeKey: string;
     primaryColor: string;

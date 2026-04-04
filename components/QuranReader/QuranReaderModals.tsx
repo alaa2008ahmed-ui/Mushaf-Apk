@@ -4,7 +4,7 @@ import BookmarksModal from './BookmarksModal';
 import ThemesModal from './ThemesModal';
 import TafseerModal from './TafseerModal';
 import TafseerSelectionModal from './TafseerSelectionModal';
-import AyahContextMenu from './AyahContextMenu';
+import AyahOptionsMenu from './AyahOptionsMenu';
 import SajdahCardModal from './SajdahCardModal';
 import FontSelectModal from './FontSelectModal';
 import ReciterSelectModal from './ReciterSelectModal';
@@ -220,8 +220,8 @@ export const QuranReaderModals = ({
                 />
             )}
 
-            {ayahContextMenu.isOpen && (
-                <AyahContextMenu
+            {ayahContextMenu.isOpen && !ayahContextMenu.isCustomizing && (
+                <AyahOptionsMenu
                     x={ayahContextMenu.x}
                     y={ayahContextMenu.y}
                     onClose={() => setAyahContextMenu({ isOpen: false, x: 0, y: 0, s: 0, a: 0, tempSettings: null })}
@@ -236,6 +236,9 @@ export const QuranReaderModals = ({
                     onBookmark={() => {
                         saveBookmark();
                         setAyahContextMenu({ isOpen: false, x: 0, y: 0, s: 0, a: 0, tempSettings: null });
+                    }}
+                    onCustomize={() => {
+                        setAyahContextMenu((prev: any) => ({ ...prev, isCustomizing: true }));
                     }}
                     currentTheme={currentTheme}
                 />

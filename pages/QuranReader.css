@@ -371,16 +371,16 @@
 #surah-name-header, #juz-number-header { font-family: var(--font-amiri); }
 #header-page { font-family: var(--font-hafs); }
 
-#surah-name-header { background: #fff; color: #10b981; border-color: #10b981; flex: 1; min-width: 0; margin: 0 4px; font-size: 1rem; }
-#juz-number-header { background: #fff; color: #6d28d9; border-color: #6d28d9; width: auto; min-width: 60px; padding: 0 10px; flex-shrink: 0; font-size: 0.8rem; }
-#header-page { background: #fff; color: #6d28d9; border-color: #6d28d9; width: 80px; min-width: 80px; box-sizing: border-box; padding: 0 10px; flex-shrink: 0; font-size: 0.8rem; }
-#btn-play { background: #fff; color: #10b981; border-color: #10b981; width: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 0; }
+#surah-name-header { flex: 1; min-width: 0; margin: 0 4px; font-size: 1rem; }
+#juz-number-header { width: auto; min-width: 60px; padding: 0 10px; flex-shrink: 0; font-size: 0.8rem; }
+#header-page { width: 80px; min-width: 80px; box-sizing: border-box; padding: 0 10px; flex-shrink: 0; font-size: 0.8rem; }
+#btn-play { width: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 0; }
 #btn-play i { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
 
-.dark #surah-name-header { background-color: #1f2937; color: #34d399; border-color: #34d399; }
-.dark #juz-number-header { background-color: #1f2937; color: #a78bfa; border-color: #a78bfa; }
-.dark #header-page { background-color: #1f2937; color: #a78bfa; border-color: #a78bfa; }
-.dark #btn-play { background-color: #1f2937; color: #34d399; border-color: #34d399; }
+.dark #surah-name-header { }
+.dark #juz-number-header { }
+.dark #header-page { }
+.dark #btn-play { }
 
 .bottom-bar-button {
     display: flex; justify-content: center; align-items: center; padding: 4px 12px; border-radius: 0.75rem;
@@ -391,10 +391,10 @@
     font-family: var(--font-ui);
     border: 2px solid;
 }
-.btn-green { background-color: #10b981; border-color: #059669; width: 100%; } 
-.btn-green:hover { background-color: #059669; }
-.btn-purple { background-color: #7e22ce; border-color: #6b21a8; width: 100%; } 
-.btn-purple:hover { background-color: #6b21a8; }
+.btn-green { width: 100%; } 
+.btn-green:hover { opacity: 0.8; }
+.btn-purple { width: 100%; } 
+.btn-purple:hover { opacity: 0.8; }
 
 #header {
     height: calc(3.5rem + var(--logical-safe-top));

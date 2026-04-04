@@ -222,9 +222,9 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                         </svg>
                                         
                                         <div className="surah-header-content" style={{ color: headerText }}>
-                                            <div className="surah-header-right-text">{SURAH_INFO[ayah.sNum]?.type}</div>
+                                            <div className="surah-header-right-text" style={{ color: cartoucheText }}>{SURAH_INFO[ayah.sNum]?.type}</div>
                                             <div className="surah-header-center-text" style={{ color: cartoucheText }}>{ayah.sName.replace('سورة', '').trim()}</div>
-                                            <div className="surah-header-left-text">{toArabic(SURAH_INFO[ayah.sNum]?.ayahs || 0)} آيات</div>
+                                            <div className="surah-header-left-text" style={{ color: cartoucheText }}>{toArabic(SURAH_INFO[ayah.sNum]?.ayahs || 0)} آيات</div>
                                         </div>
                                     </div> 
                                     {ayah.sNum !== 1 && ayah.sNum !== 9 && (

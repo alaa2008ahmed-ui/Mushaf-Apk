@@ -56,53 +56,27 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
 
         localStorage.setItem('current_theme_id' + modeSuffix, themeId);
         
-        // Handle Transparency
-        // FIX: Removed check for `theme.isGlass` as the property does not exist on the theme objects.
-        
-        // Generate Theme Colors
         let themeColors = {};
-        if (themeId === 'default') {
-             const green = "#10b981"; const greenBorder = "#059669";
-             const purple = "#7e22ce"; const purpleBorder = "#6b21a8";
-             const purpleText = "#6d28d9";
-             const white = "#ffffff"; const grayBorder = "#e5e7eb";
-             
-             themeColors = {
-                'top-toolbar': { bg: white, border: grayBorder },
-                'bottom-toolbar': { bg: white, border: grayBorder },
-                'surah': { bg: white, text: purpleText, border: purpleText, font: theme.font },
-                'juz': { bg: white, text: green, border: green, font: theme.font },
-                'page': { bg: white, text: purpleText, border: purpleText, font: theme.font },
-                'audio': { bg: white, text: green, border: green },
-                'btn-settings': { bg: purple, text: white, border: purpleBorder },
-                'btn-home': { bg: purple, text: white, border: purpleBorder },
-                'btn-bookmark': { bg: green, text: white, border: greenBorder },
-                'btn-bookmarks-list': { bg: green, text: white, border: greenBorder },
-                'btn-themes': { bg: green, text: white, border: greenBorder },
-                'btn-autoscroll': { bg: purple, text: white, border: purpleBorder },
-                'btn-menu': { bg: purple, text: white, border: purpleBorder },
-                'btn-search': { bg: purple, text: white, border: purpleBorder },
-                'btn-share': { bg: green, text: white, border: greenBorder }
-             };
-        } else {
-             themeColors = { 
-                 'top-toolbar': { bg: theme.barBg, border: theme.barBorder }, 
-                 'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder }, 
-                 'surah': { bg: theme.barBg, text: theme.barText, border: theme.barBorder, font: theme.font }, 
-                 'juz': { bg: theme.barBg, text: theme.barText, border: theme.barBorder, font: theme.font }, 
-                 'page': { bg: theme.barBg, text: theme.barText, border: theme.barBorder, font: theme.font }, 
-                 'audio': { bg: theme.barBg, text: theme.barText, border: theme.barBorder }, 
-                 'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg }, 
-                 'btn-home': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg }, 
-                 'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg }, 
-                 'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg }, 
-                 'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg }, 
-                 'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg }, 
-                 'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg }, 
-                 'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg },
-                 'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.btnBg }
-            };
-        }
+        const white = "#ffffff";
+        const themeColor = themeId === 'default' ? '#000000' : (theme.accent || theme.barText || "#000000");
+        
+        themeColors = { 
+            'top-toolbar': { bg: white, border: themeColor }, 
+            'bottom-toolbar': { bg: white, border: themeColor }, 
+            'surah': { bg: white, text: themeColor, border: themeColor, font: theme.font }, 
+            'juz': { bg: white, text: themeColor, border: themeColor, font: theme.font }, 
+            'page': { bg: white, text: themeColor, border: themeColor, font: theme.font }, 
+            'audio': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-settings': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-home': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-bookmark': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-bookmarks-list': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-themes': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-autoscroll': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-menu': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-search': { bg: white, text: themeColor, border: themeColor },
+            'btn-share': { bg: white, text: themeColor, border: themeColor }
+        };
 
         localStorage.setItem('toolbar_colors_v2' + modeSuffix, JSON.stringify(themeColors));
 
@@ -111,8 +85,8 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
         const baseSettings = { ...DEFAULT_SETTINGS, ...savedSettings };
         const updatedSettings = {
             ...baseSettings,
-            bgColor: theme.bg,
-            textColor: theme.text,
+            bgColor: "#ffffff",
+            textColor: "#000000",
             fontFamily: theme.font,
             ...(baseSettings.lockHighlightColor ? {} : { highlightTextColor: theme.highlightText || theme.accent }),
             theme: themeId

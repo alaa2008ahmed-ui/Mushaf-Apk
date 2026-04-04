@@ -344,7 +344,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const [activeModals, setActiveModals] = useState<string[]>([]);
     const [initialSearchQuery, setInitialSearchQuery] = useState<string | undefined>(undefined);
     const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
-    const [ayahContextMenu, setAyahContextMenu] = useState<{isOpen: boolean, x: number, y: number, s: number, a: number, tempSettings: any}>({isOpen: false, x: 0, y: 0, s: 0, a: 0, tempSettings: DEFAULT_SETTINGS});
+    const [ayahContextMenu, setAyahContextMenu] = useState<{isOpen: boolean, isCustomizing: boolean, x: number, y: number, s: number, a: number, tempSettings: any}>({isOpen: false, isCustomizing: false, x: 0, y: 0, s: 0, a: 0, tempSettings: DEFAULT_SETTINGS});
     const [ayahContextColorField, setAyahContextColorField] = useState<'textColor' | 'bgColor' | 'highlightTextColor' | null>(null);
 
     const PREDEFINED_COLORS = [
@@ -1374,7 +1374,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     const handleAyahLongPress = useCallback((s: number, a: number, x: number, y: number) => {
         if (isLandscapeRef.current) return;
-        setAyahContextMenu({ isOpen: true, x, y, s, a, tempSettings: { ...settingsRef.current } });
+        setAyahContextMenu({ isOpen: true, isCustomizing: false, x, y, s, a, tempSettings: { ...settingsRef.current } });
     }, []);
 
     const handleTafseerSelect = useCallback((tafseerId: string) => {
@@ -2539,9 +2539,10 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const tafseerName = TAFSEERS.find(t => t.id === settings.tafseer)?.name || 'التفسير';
 
     const renderPlayButtonIcon = () => {
-        if (isAudioLoading) return <i className="fa-solid fa-spinner fa-spin text-emerald-500 text-xl"></i>;
-        if (isPlaying) return <i className="fa-solid fa-circle-pause text-red-500 text-2xl"></i>;
-        return <i className="fa-solid fa-circle-play text-emerald-600 text-2xl"></i>;
+        const iconColor = currentTheme.barText || '#000000';
+        if (isAudioLoading) return <i className="fa-solid fa-spinner fa-spin text-xl" style={{ color: iconColor }}></i>;
+        if (isPlaying) return <i className="fa-solid fa-circle-pause text-2xl" style={{ color: '#ef4444' }}></i>;
+        return <i className="fa-solid fa-circle-play text-2xl" style={{ color: iconColor }}></i>;
     };
 
     const handleInteractionStart = useCallback(() => {
@@ -2601,12 +2602,15 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 setIsFloatingMenuOpen={setIsFloatingMenuOpen}
                 getToolbarStyle={getToolbarStyle}
                 currentTheme={currentTheme}
-                initialLandscape={initialLandscape}
+                isLandscape={isLandscape}
                 onNavigate={onNavigate}
                 readingMode={readingMode}
                 setReadingMode={setReadingMode}
                 useTajweed={useTajweed}
                 handleMushafTypeSelect={handleMushafTypeSelect}
+                showToast={showToast}
+                isWirdMode={isWirdMode}
+                isMemorizationMode={localIsMemorizationMode}
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
@@ -2655,7 +2659,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             <MarkerNotification isVisible={markerNotification.show} type={markerNotification.type} text={markerNotification.text} />
             
             <AyahContextMenu 
-                isOpen={ayahContextMenu.isOpen && !initialLandscape}
+                isOpen={ayahContextMenu.isOpen && ayahContextMenu.isCustomizing && !initialLandscape}
                 tempSettings={ayahContextMenu.tempSettings}
                 ayahContextColorField={ayahContextColorField}
                 setAyahContextColorField={setAyahContextColorField}

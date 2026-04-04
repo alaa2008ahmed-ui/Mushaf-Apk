@@ -28,11 +28,15 @@ export const presetThemes: { [key: string]: Theme } = {
         isOriginal: true,
         textColor: "#000000",
         font: "'Cairo', sans-serif",
-        palette: ["#14b8a6", "#7C3AED", "#0d9488"],
+        palette: ["#059669", "#8b5cf6", "#059669"],
         barBg: "#FFFFFF",
-        barBorder: "1px solid #F3F4F6",
-        topBarBg: "#14b8a6",
-        topBarText: "#FFFFFF"
+        barBorder: "1px solid #000000",
+        topBarBg: "#FFFFFF",
+        topBarText: "#000000",
+        btnBg: "#FFFFFF",
+        btnText: "#FFFFFF",
+        btnBorder: "1px solid #000000",
+        accent: "#000000"
     },
     black_and_white: {
         name: "أبيض وأسود",

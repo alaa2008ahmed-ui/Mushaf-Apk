@@ -71,7 +71,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                         label={item.label}
                                         onClick={() => onNavigate(item.id)}
                                         className="w-full h-full"
-                                        color={themeKey === 'default' ? (item.colorIndex === 0 ? '#10b981' : '#8b5cf6') : (theme.palette[item.colorIndex] || theme.palette[0])}
+                                        color={themeKey === 'default' ? (['quran', 'listen', 'prayer-times', 'daily-wird', 'memorization'].includes(item.id) ? '#059669' : '#8b5cf6') : (theme.palette[item.colorIndex] || theme.palette[0])}
                                         border={theme.btnBorder}
                                         isGlass={theme.isGlass}
                                         btnText={theme.btnText}

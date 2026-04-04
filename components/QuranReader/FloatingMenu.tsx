@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download } from 'lucide-react';
+import { THEMES, DEFAULT_SETTINGS } from './constants';
 
 interface FloatingMenuProps {
     isFloatingMenuOpen: boolean;
@@ -8,12 +9,15 @@ interface FloatingMenuProps {
     setIsFloatingMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
     getToolbarStyle: (id: string, bg: string, text: string, border: string) => React.CSSProperties;
     currentTheme: any;
-    initialLandscape: boolean;
+    isLandscape: boolean;
     onNavigate: (pageId: string) => void;
     readingMode: 'mushaf' | 'tafseer' | 'meanings' | 'translation';
     setReadingMode: (mode: 'mushaf' | 'tafseer' | 'meanings' | 'translation') => void;
     useTajweed: boolean;
     handleMushafTypeSelect: (type: 'uthmani' | 'tajweed') => void;
+    showToast: (msg: string) => void;
+    isWirdMode?: boolean;
+    isMemorizationMode?: boolean;
 }
 
 const ALL_SHORTCUTS = [
@@ -46,16 +50,26 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     setIsFloatingMenuOpen,
     getToolbarStyle,
     currentTheme,
-    initialLandscape,
+    isLandscape,
     onNavigate,
     readingMode,
     setReadingMode,
     useTajweed,
-    handleMushafTypeSelect
+    handleMushafTypeSelect,
+    showToast,
+    isWirdMode = false,
+    isMemorizationMode = false
 }) => {
     const [selectedShortcuts, setSelectedShortcuts] = useState<string[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [tempShortcuts, setTempShortcuts] = useState<string[]>([]);
+    const [isThemesOpen, setIsThemesOpen] = useState(false);
+
+    useEffect(() => {
+        if (isFloatingMenuOpen) {
+            setIsThemesOpen(false);
+        }
+    }, [isFloatingMenuOpen]);
 
     useEffect(() => {
         const saved = localStorage.getItem('quran_menu_shortcuts');
@@ -77,7 +91,60 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
         setIsAddModalOpen(false);
     };
 
-    const iconColor = currentTheme.btnBg || '#10b981';
+    const iconColor = currentTheme.accent || '#000000';
+
+    const applyTheme = (themeId: string) => {
+        const theme = THEMES[themeId as keyof typeof THEMES];
+        if (!theme) return;
+
+        const modeSuffix = isMemorizationMode 
+            ? `_memorization_${isLandscape ? 'h' : 'v'}` 
+            : isWirdMode 
+                ? `_wird_${isLandscape ? 'h' : 'v'}` 
+                : readingMode === 'mushaf' 
+                    ? (isLandscape ? '_h' : '_v') 
+                    : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
+        
+        localStorage.setItem('current_theme_id' + modeSuffix, themeId);
+        
+        const white = "#ffffff";
+        const themeColor = themeId === 'default' ? '#000000' : (theme.accent || theme.barText || "#000000");
+        
+        const themeColors = { 
+            'top-toolbar': { bg: white, border: themeColor }, 
+            'bottom-toolbar': { bg: white, border: themeColor }, 
+            'surah': { bg: white, text: themeColor, border: themeColor, font: theme.font }, 
+            'juz': { bg: white, text: themeColor, border: themeColor, font: theme.font }, 
+            'page': { bg: white, text: themeColor, border: themeColor, font: theme.font }, 
+            'audio': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-settings': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-home': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-bookmark': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-bookmarks-list': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-themes': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-autoscroll': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-menu': { bg: white, text: themeColor, border: themeColor }, 
+            'btn-search': { bg: white, text: themeColor, border: themeColor },
+            'btn-share': { bg: white, text: themeColor, border: themeColor }
+        };
+
+        localStorage.setItem('toolbar_colors_v2' + modeSuffix, JSON.stringify(themeColors));
+
+        const savedSettings = JSON.parse(localStorage.getItem('quran_settings' + modeSuffix) || '{}');
+        const baseSettings = { ...DEFAULT_SETTINGS, ...savedSettings };
+        const updatedSettings = {
+            ...baseSettings,
+            bgColor: "#ffffff",
+            textColor: "#000000",
+            fontFamily: theme.font,
+            ...(baseSettings.lockHighlightColor ? {} : { highlightTextColor: theme.highlightText || theme.accent }),
+            theme: themeId
+        };
+        localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(updatedSettings));
+
+        window.dispatchEvent(new Event('theme-change'));
+        showToast(`تم تطبيق ثيم: ${theme.name}`);
+    };
 
     return (
         <div 
@@ -104,8 +171,8 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                     style={{ color: !useTajweed ? iconColor : '#4b5563' }}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <BookText size={18} />
-                                        <span className="whitespace-nowrap">العثماني</span>
+                                        <BookText size={18} style={{ color: iconColor }} />
+                                        <span className="whitespace-nowrap font-bold">العثماني</span>
                                     </div>
                                     {!useTajweed && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: iconColor }}></div>}
                                 </button>
@@ -115,8 +182,8 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                     style={{ color: useTajweed ? iconColor : '#4b5563' }}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <BookOpen size={18} />
-                                        <span className="whitespace-nowrap">التجويد</span>
+                                        <BookOpen size={18} style={{ color: iconColor }} />
+                                        <span className="whitespace-nowrap font-bold">التجويد</span>
                                     </div>
                                     {useTajweed && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: iconColor }}></div>}
                                 </button>
@@ -126,7 +193,41 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                         {/* الإعدادات والبحث */}
                         <MenuSection title="الإعدادات والبحث" iconColor={iconColor}>
                             <MenuItem icon={<Search size={18} />} label="البحث" onClick={() => handleAction(() => openModal('search-modal'))} iconColor={iconColor} />
-                            <MenuItem icon={<Palette size={18} />} label="المظهر" onClick={() => handleAction(() => openModal('themes-modal'))} iconColor={iconColor} />
+                            <div className="flex flex-col">
+                                <button 
+                                    onClick={() => setIsThemesOpen(!isThemesOpen)} 
+                                    className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full"
+                                >
+                                    <div style={{ color: iconColor }}><Palette size={18} /></div>
+                                    <span className="text-sm text-gray-800 font-bold flex-1">المظهر</span>
+                                    <ChevronDown size={16} className={`transition-transform duration-200 ${isThemesOpen ? 'rotate-180' : ''}`} style={{ color: iconColor }} />
+                                </button>
+                                
+                                {isThemesOpen && (
+                                    <div className="grid grid-cols-3 gap-y-4 gap-x-2 p-3 bg-gray-50/80 rounded-xl mt-1 mb-2 animate-fadeIn">
+                                        {Object.entries(THEMES).map(([id, theme]: [string, any]) => (
+                                            <button
+                                                key={id}
+                                                onClick={() => {
+                                                    applyTheme(id);
+                                                    setIsFloatingMenuOpen(false);
+                                                }}
+                                                className="flex flex-col items-center gap-1.5 group"
+                                            >
+                                                <div 
+                                                    className={`w-10 h-10 rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id ? 'scale-110 border-gray-400 shadow-md' : 'border-transparent hover:scale-105'}`}
+                                                    style={{ backgroundColor: theme.accent || theme.barText || '#000000' }}
+                                                >
+                                                    {localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id && (
+                                                        <div className="w-2 h-2 rounded-full bg-white shadow-sm"></div>
+                                                    )}
+                                                </div>
+                                                <span className="text-[10px] font-bold opacity-80 truncate w-full text-center leading-tight" style={{ color: iconColor }}>{theme.name}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                             <MenuItem icon={<Settings size={18} />} label="الإعدادات" onClick={() => handleAction(() => openModal('settings-modal'))} iconColor={iconColor} />
                             <MenuItem icon={<Bookmark size={18} />} label="العلامات المرجعية" onClick={() => handleAction(() => openModal('bookmarks-modal'))} iconColor={iconColor} />
                         </MenuSection>
@@ -163,8 +264,8 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                     <div className="flex flex-col h-full overflow-hidden">
                         <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
                             <div className="flex items-center gap-2">
-                                <Plus size={20} style={{ color: iconColor }} />
-                                <h3 className="font-bold text-sm" style={{ color: iconColor }}>تخصيص الاختصارات</h3>
+                                <Plus size={20} style={{ color: '#000000' }} />
+                                <h3 className="font-bold text-sm" style={{ color: '#000000' }}>تخصيص الاختصارات</h3>
                             </div>
                             <button onClick={() => setIsAddModalOpen(false)} className="p-1.5 hover:bg-gray-200 rounded-full transition-colors text-gray-400">
                                 <X size={18} />
@@ -187,13 +288,13 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                             }}
                                             className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full group"
                                         >
-                                            <div style={{ color: isSelected ? iconColor : '#9ca3af' }} className="transition-colors">
+                                            <div style={{ color: isSelected ? '#000000' : '#9ca3af' }} className="transition-colors">
                                                 {shortcut.icon}
                                             </div>
                                             <span className={`text-sm flex-1 transition-all ${isSelected ? 'text-gray-900 font-bold' : 'text-gray-500'}`}>
                                                 {shortcut.label}
                                             </span>
-                                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 group-hover:border-gray-400'}`}>
+                                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-black border-black text-white' : 'border-gray-300 group-hover:border-gray-400'}`}>
                                                 {isSelected && <Save size={12} />}
                                             </div>
                                         </button>
@@ -206,7 +307,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             <button 
                                 onClick={saveShortcuts}
                                 className="flex-1 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
-                                style={{ backgroundColor: iconColor }}
+                                style={{ backgroundColor: '#000000' }}
                             >
                                 <Save size={16} />
                                 حفظ
@@ -239,7 +340,7 @@ const MenuSection: React.FC<{ title: string, children: React.ReactNode, iconColo
 const MenuItem: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void, iconColor: string }> = ({ icon, label, onClick, iconColor }) => (
     <button onClick={onClick} className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full">
         <div style={{ color: iconColor }}>{icon}</div>
-        <span className="text-sm text-gray-800 font-medium flex-1">{label}</span>
+        <span className="text-sm font-bold flex-1" style={{ color: iconColor }}>{label}</span>
     </button>
 );
 
