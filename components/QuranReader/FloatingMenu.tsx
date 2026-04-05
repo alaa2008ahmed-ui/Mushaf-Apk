@@ -160,7 +160,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
             {/* The Main Menu Container */}
             <div 
                 id="floating-menu" 
-                className={`w-[260px] max-w-[85vw] bg-white rounded-2xl shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
+                className={`w-[200px] max-w-[85vw] bg-white rounded-2xl shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
                 style={{ fontFamily: currentTheme.font }}
             >
                 {!isAddModalOpen ? (

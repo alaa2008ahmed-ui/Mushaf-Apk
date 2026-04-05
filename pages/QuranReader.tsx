@@ -472,27 +472,23 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             } catch (e) {}
         } else {
             const theme = THEMES['olive'];
-            const oliveAccent = theme.accent;
-            const oliveBarBg = theme.barBg;
-            const oliveBarBorder = theme.barBorder?.split(' ')[2] || "#d1d5db";
-            const white = "#ffffff";
             
             setToolbarColors({
-                'top-toolbar': { bg: oliveBarBg, border: oliveBarBorder },
-                'bottom-toolbar': { bg: oliveBarBg, border: oliveBarBorder },
-                'surah': { bg: white, text: oliveAccent, border: oliveAccent, font: theme.font },
-                'juz': { bg: white, text: oliveAccent, border: oliveAccent, font: theme.font },
-                'page': { bg: white, text: oliveAccent, border: oliveAccent, font: theme.font },
-                'audio': { bg: white, text: oliveAccent, border: oliveAccent },
-                'btn-settings': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-home': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-bookmark': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-bookmarks-list': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-themes': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-autoscroll': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-menu': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-search': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-share': { bg: oliveAccent, text: white, border: oliveAccent }
+                'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
+                'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder },
+                'surah': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                'juz': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                'page': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                'audio': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-home': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
             });
         }
     }, [modeSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode, mushafType]);
@@ -625,8 +621,15 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const wasAutoscrollingBeforeModal = useRef(false);
 
     const [settings, setSettings] = useState(() => {
-        const mode = initialLandscape ? '_h' : '_v';
-        const saved = localStorage.getItem('quran_settings' + mode);
+        const initialReadingMode = (localStorage.getItem('last_reading_mode') as ReadingMode) || 'mushaf';
+        const modeSuffix = localIsMemorizationMode 
+            ? `_memorization_${initialLandscape ? 'h' : 'v'}` 
+            : isWirdMode 
+                ? `_wird_${initialLandscape ? 'h' : 'v'}` 
+                : initialReadingMode === 'mushaf' 
+                    ? (initialLandscape ? '_h' : '_v') 
+                    : `_${initialReadingMode}_${initialLandscape ? 'h' : 'v'}`;
+        const saved = localStorage.getItem('quran_settings' + modeSuffix);
         const defaultTheme = THEMES['olive'];
         return saved ? JSON.parse(saved) : {
             fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
@@ -638,8 +641,15 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     });
 
     const [currentTheme, setCurrentTheme] = useState(() => {
-        const mode = initialLandscape ? '_h' : '_v';
-        const themeId = localStorage.getItem('current_theme_id' + mode) || 'olive';
+        const initialReadingMode = (localStorage.getItem('last_reading_mode') as ReadingMode) || 'mushaf';
+        const modeSuffix = localIsMemorizationMode 
+            ? `_memorization_${initialLandscape ? 'h' : 'v'}` 
+            : isWirdMode 
+                ? `_wird_${initialLandscape ? 'h' : 'v'}` 
+                : initialReadingMode === 'mushaf' 
+                    ? (initialLandscape ? '_h' : '_v') 
+                    : `_${initialReadingMode}_${initialLandscape ? 'h' : 'v'}`;
+        const themeId = localStorage.getItem('current_theme_id' + modeSuffix) || 'olive';
         return THEMES[themeId as keyof typeof THEMES] || THEMES['olive'];
     });
 
