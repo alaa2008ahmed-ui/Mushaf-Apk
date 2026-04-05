@@ -12,10 +12,6 @@ const FontSelectModal: FC<{
     return (
         <div className="fixed inset-0 z-[300] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md sm:max-w-2xl'} rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
-                <div className="p-4 theme-header-bg rounded-t-2xl flex justify-between items-center h-14 flex-none">
-                    <h3 className="font-bold text-lg">اختر نوع الخط</h3>
-                    <button onClick={onClose} className="hover:opacity-80 rounded-full bg-white/20 w-8 h-8 flex items-center justify-center">✕</button>
-                </div>
                 <div className={`p-3 overflow-y-auto flex-1 grid ${isLandscape ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2'}`}>
                     {FONTS.map(f => (
                         <button 

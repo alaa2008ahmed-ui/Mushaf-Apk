@@ -32,11 +32,6 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
                 className="ayah-context-menu modal-skinned w-full max-w-sm rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-modal-enter" 
                 onClick={e => e.stopPropagation()}
             >
-                <div className="p-4 flex justify-between items-center h-14 flex-none theme-header-bg rounded-t-2xl">
-                    <h2 className="text-xl font-bold">تخصيص الآية</h2>
-                    <button onClick={() => setAyahContextMenu((p: any) => ({...p, isOpen: false}))} className="hover:opacity-80 rounded-full bg-white/20 w-9 h-9 flex items-center justify-center text-lg">✕</button>
-                </div>
-                
                 <div className="p-5 overflow-y-auto flex-1 space-y-6">
                     {/* Colors Section */}
                     <div className="grid grid-cols-3 gap-5 border-b pb-6 border-gray-200 dark:border-gray-700">

@@ -218,10 +218,6 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
     return (
         <div className={`fixed inset-0 z-[200] bg-black/30 flex justify-center ${isLandscape ? 'items-start pt-0 px-0' : 'items-center px-4'} backdrop-blur-sm animate-fadeIn`} onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none' : 'max-w-lg rounded-2xl max-h-[90vh]'} flex flex-col shadow-2xl`} onClick={e => e.stopPropagation()}>
-                <div className={`p-4 flex justify-between items-center shadow-md theme-header-bg ${isLandscape ? 'rounded-none' : 'rounded-t-2xl'}`}>
-                    <h3 className="font-bold text-lg">البحث في المصحف</h3>
-                    <button onClick={onClose} className="text-2xl hover:opacity-80 transition">&times;</button>
-                </div>
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="relative">
                         <input 

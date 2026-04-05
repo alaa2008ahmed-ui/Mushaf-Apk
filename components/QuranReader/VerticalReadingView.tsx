@@ -229,7 +229,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                                      backgroundColor: cartoucheBg,
                                      borderColor: headerBorder
                                  }}>
-                                <h2 className="text-base sm:text-xl font-bold whitespace-nowrap mb-0" style={{ color: cartoucheText }}>
+                                <h2 className="text-base sm:text-xl font-bold whitespace-nowrap mb-0" style={{ color: cartoucheText, transform: 'translateY(-4px)' }}>
                                     سُورَةُ {item.surahName}
                                 </h2>
                                 <div className="absolute left-0 top-0 bottom-0 w-4 border-r-2 rounded-l-full opacity-30" style={{ borderColor: headerBorder }}></div>

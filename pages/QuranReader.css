@@ -310,6 +310,7 @@
     color: #000000; /* Black text on light background */
     margin-top: 0;
     line-height: 1.4;
+    transform: translateY(-8px);
 }
 
 /* Dark Mode Adjustments */

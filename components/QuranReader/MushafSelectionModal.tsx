@@ -11,9 +11,6 @@ const MushafSelectionModal: FC<{
     return (
         <div className="fixed inset-0 z-[300] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-2xl' : 'max-w-sm sm:max-w-2xl'} rounded-2xl shadow-2xl flex flex-col max-h-[80vh]`} onClick={e => e.stopPropagation()}>
-                <div className="p-4 theme-header-bg rounded-t-2xl text-center">
-                    <h3 className="font-bold text-lg">اختر نوع المصحف</h3>
-                </div>
                 <div className={`p-4 flex-1 grid ${isLandscape ? 'grid-cols-2 gap-4' : 'grid-cols-1 sm:grid-cols-2 gap-4'}`}>
                     <button onClick={() => onSelect('uthmani')} 
                         className={`w-full p-4 rounded-xl text-center font-bold transition flex flex-col justify-center items-center gap-2 ${currentType === 'uthmani' ? '' : 'hover:opacity-80'}`} 

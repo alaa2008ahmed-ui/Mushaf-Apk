@@ -645,7 +645,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     <div style={{ width: '25%', textAlign: 'center', fontSize: '24px', fontWeight: 'bold', fontFamily: '"Cairo", sans-serif' }}>
                         {surahInfo?.type}
                     </div>
-                    <div style={{ width: '50%', textAlign: 'center', fontSize: '36px', fontWeight: 'bold', fontFamily: '"Amiri Quran", serif', marginTop: '-10px' }}>
+                    <div style={{ width: '50%', textAlign: 'center', fontSize: '36px', fontWeight: 'bold', fontFamily: '"Amiri Quran", serif', transform: 'translateY(-12px)' }}>
                         سُورَةُ {surahName.replace('سورة', '').trim()}
                     </div>
                     <div style={{ width: '25%', textAlign: 'center', fontSize: '24px', fontWeight: 'bold', fontFamily: '"Cairo", sans-serif' }}>
@@ -686,7 +686,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     onAyahClick={() => {}}
                     onVerseClick={() => {}}
                     settings={appSettings || { fontSize: 1.7, fontFamily: 'var(--font-amiri-quran)', textColor: '#000000' }}
-                    useTajweed={useTajweed}
+                    useTajweed={false}
                 />
                     <div style={{ 
                         marginTop: '30px', 
@@ -784,7 +784,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 </div>
             )}
 
-            <div className="min-h-full flex items-start justify-center p-2 sm:p-4 pt-20">
+            <div className="min-h-full flex items-center justify-center p-2 sm:p-4">
                 <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col" style={{ color: currentTheme.textColor || '#000000' }}>
                     {/* Content */}
                     <div className="p-3 space-y-4">
