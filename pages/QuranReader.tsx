@@ -161,7 +161,7 @@ const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentThem
     );
 };
 
-const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any, mushafType?: 'uthmani' | 'tajweed' }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings, mushafType }) => {
+const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any, mushafType?: 'uthmani' | 'tajweed', isPractical?: boolean }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings, mushafType, isPractical }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [savedSession, setSavedSession] = useState<any>(null);
@@ -222,21 +222,24 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const [useTajweed, setUseTajweed] = useState(() => {
-        if (mushafType) return mushafType === 'tajweed';
+        if (isPractical || mushafType === 'tajweed') return true;
+        if (mushafType === 'uthmani') return false;
         if (localIsMemorizationMode) return true;
         return localStorage.getItem('use_tajweed_quran' + modeSuffix) === 'true';
     });
     const [quranData, setQuranData] = useState<any>(quranTajweedJson.data);
 
     useEffect(() => {
-        if (mushafType) {
-            setUseTajweed(mushafType === 'tajweed');
+        if (isPractical || mushafType === 'tajweed') {
+            setUseTajweed(true);
             setQuranData(quranTajweedJson.data);
+        } else if (mushafType === 'uthmani') {
+            setUseTajweed(false);
         } else if (localIsMemorizationMode) {
             setUseTajweed(true);
             setQuranData(quranTajweedJson.data);
         }
-    }, [localIsMemorizationMode, mushafType]);
+    }, [localIsMemorizationMode, mushafType, isPractical]);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStatus, setLoadingStatus] = useState('');
     const [loadingProgress, setLoadingProgress] = useState(100);
@@ -2625,6 +2628,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 setIsHideToolbarsEnabled={setIsHideToolbarsEnabled}
                 isTransparentMode={isTransparentMode}
                 setIsTransparentMode={setIsTransparentMode}
+                isPractical={isPractical}
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">

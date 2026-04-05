@@ -245,7 +245,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                 style={{ borderColor: 'var(--card-border)' }}
                             >
                                 <div className="flex items-center gap-2">
-                                    <span>تحميل قراء صفحة التحفيظ</span>
+                                    <span>تحميل القراء</span>
                                     <i className="fa-solid fa-cloud-arrow-down text-emerald-500"></i>
                                 </div>
                                 <i className="fa-solid fa-chevron-left text-gray-500 text-[10px]"></i>
@@ -579,7 +579,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
             {showDownloadModal && (
                 <QuranDownloadModal 
                     onClose={() => setShowDownloadModal(false)} 
-                    quranData={quranData} 
+                    quranData={quranData.data} 
                     showToast={showToast} 
                     isLandscape={false} 
                     readersList={MEMORIZATION_READERS}

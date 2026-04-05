@@ -2204,7 +2204,7 @@ const TAJWEED_RULES: TajweedRule[] = [
     }
 ];
 
-const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (surah?: number, ayah?: number) => void }> = ({ onBack, onNavigateToMushaf }) => {
+const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (surah?: number, ayah?: number) => void, navParams?: any }> = ({ onBack, onNavigateToMushaf, navParams }) => {
     const { theme } = useTheme();
     const [selectedRule, setSelectedRule] = useState<string | null>(null);
     const [playingAudio, setPlayingAudio] = useState<string | null>(null);
@@ -2376,6 +2376,14 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (sur
 
     const progressPercentage = Math.round((completedRules.length / TAJWEED_RULES.length) * 100);
 
+    const handleHomeClick = () => {
+        if (navParams?.isPractical && onNavigateToMushaf) {
+            onNavigateToMushaf(navParams.surah, navParams.ayah);
+        } else {
+            onBack();
+        }
+    };
+
     return (
         <div 
             className="h-screen bg-transparent text-[var(--text-color)] flex flex-col overflow-hidden relative"
@@ -2386,7 +2394,7 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (sur
             <header className="app-top-bar">
                 <div className="app-top-bar__inner flex items-center justify-center px-4">
                     {onNavigateToMushaf && (
-                        <button onClick={() => onNavigateToMushaf()} className="absolute right-4 p-2 hover:bg-white/10 rounded-full transition-colors z-10" title="العودة للقراءة">
+                        <button onClick={() => onNavigateToMushaf(navParams?.surah, navParams?.ayah)} className="absolute right-4 p-2 hover:bg-white/10 rounded-full transition-colors z-10" title="العودة للقراءة">
                             <i className="fa-solid fa-book-quran text-xl"></i>
                         </button>
                     )}
@@ -2663,7 +2671,7 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (sur
                 )}
             </AnimatePresence>
             
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
         </div>
     );
 };

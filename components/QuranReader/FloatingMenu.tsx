@@ -24,6 +24,7 @@ interface FloatingMenuProps {
     setIsHideToolbarsEnabled: (value: boolean) => void;
     isTransparentMode: boolean;
     setIsTransparentMode: (value: boolean) => void;
+    isPractical?: boolean;
 }
 
 const ALL_SHORTCUTS = [
@@ -71,7 +72,8 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     isHideToolbarsEnabled,
     setIsHideToolbarsEnabled,
     isTransparentMode,
-    setIsTransparentMode
+    setIsTransparentMode,
+    isPractical = false
 }) => {
     const [selectedShortcuts, setSelectedShortcuts] = useState<string[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -172,36 +174,52 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                     /* Main Menu Content */
                     <div className="p-4 flex flex-col gap-4 overflow-y-auto flex-grow custom-scrollbar">
                         {/* نوع المصحف */}
-                        <MenuSection title="نوع المصحف" iconColor={iconColor} titleColor="#2563eb">
-                            <div className="flex flex-col gap-1 mb-2">
-                                <button 
-                                    className={`w-full py-2.5 px-4 rounded-xl text-sm flex items-center justify-between transition-all ${!useTajweed ? 'bg-gray-100 font-bold' : 'hover:bg-gray-50'}`} 
-                                    onClick={() => handleAction(() => { setReadingMode('mushaf'); handleMushafTypeSelect('uthmani'); })} 
-                                    style={{ color: !useTajweed ? '#000000' : '#4b5563' }}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <BookText size={18} style={{ color: iconColor }} />
-                                        <span className="whitespace-nowrap font-bold">العثماني</span>
-                                    </div>
-                                    {!useTajweed && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: iconColor }}></div>}
-                                </button>
-                                <button 
-                                    className={`w-full py-2.5 px-4 rounded-xl text-sm flex items-center justify-between transition-all ${useTajweed ? 'bg-gray-100 font-bold' : 'hover:bg-gray-50'}`} 
-                                    onClick={() => handleAction(() => { setReadingMode('mushaf'); handleMushafTypeSelect('tajweed'); })} 
-                                    style={{ color: useTajweed ? '#000000' : '#4b5563' }}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <BookOpen size={18} style={{ color: iconColor }} />
-                                        <span className="whitespace-nowrap font-bold">التجويد</span>
-                                    </div>
-                                    {useTajweed && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: iconColor }}></div>}
-                                </button>
-                            </div>
-                            <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} />
-                            <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} />
-                            <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} />
-                            <MenuItem icon={<Headphones size={18} />} label="الصوتيات" onClick={() => handleAction(() => openModal('reciter-modal'))} iconColor={iconColor} />
-                        </MenuSection>
+                        {!isPractical && (
+                            <MenuSection title="نوع المصحف" iconColor={iconColor} titleColor="#2563eb">
+                                <div className="flex flex-col gap-1 mb-2">
+                                    <button 
+                                        className={`w-full py-2.5 px-4 rounded-xl text-sm flex items-center justify-between transition-all ${!useTajweed ? 'bg-gray-100 font-bold' : 'hover:bg-gray-50'}`} 
+                                        onClick={() => handleAction(() => { setReadingMode('mushaf'); handleMushafTypeSelect('uthmani'); })} 
+                                        style={{ color: !useTajweed ? '#000000' : '#4b5563' }}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <BookText size={18} style={{ color: iconColor }} />
+                                            <span className="whitespace-nowrap font-bold">العثماني</span>
+                                        </div>
+                                        {!useTajweed && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: iconColor }}></div>}
+                                    </button>
+                                    <button 
+                                        className={`w-full py-2.5 px-4 rounded-xl text-sm flex items-center justify-between transition-all ${useTajweed ? 'bg-gray-100 font-bold' : 'hover:bg-gray-50'}`} 
+                                        onClick={() => handleAction(() => { setReadingMode('mushaf'); handleMushafTypeSelect('tajweed'); })} 
+                                        style={{ color: useTajweed ? '#000000' : '#4b5563' }}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <BookOpen size={18} style={{ color: iconColor }} />
+                                            <span className="whitespace-nowrap font-bold">التجويد</span>
+                                        </div>
+                                        {useTajweed && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: iconColor }}></div>}
+                                    </button>
+                                </div>
+                                <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} />
+                                <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} />
+                                <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} />
+                                <MenuItem icon={<Headphones size={18} />} label="الصوتيات" onClick={() => handleAction(() => openModal('reciter-modal'))} iconColor={iconColor} />
+                            </MenuSection>
+                        )}
+
+                        {isPractical && (
+                            <MenuSection title="وضع التطبيق العملي" iconColor={iconColor} titleColor="#2563eb">
+                                <div className="bg-blue-50 p-3 rounded-xl mb-2">
+                                    <p className="text-xs text-blue-800 leading-relaxed">
+                                        أنت الآن في وضع التطبيق العملي للمصحف المجود.
+                                    </p>
+                                </div>
+                                <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} />
+                                <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} />
+                                <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} />
+                                <MenuItem icon={<Headphones size={18} />} label="الصوتيات" onClick={() => handleAction(() => openModal('reciter-modal'))} iconColor={iconColor} />
+                            </MenuSection>
+                        )}
 
                         {/* الإعدادات والبحث */}
                         <MenuSection title="الإعدادات والبحث" iconColor={iconColor} titleColor="#16a34a">

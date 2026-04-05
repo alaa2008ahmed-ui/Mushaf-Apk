@@ -813,260 +813,254 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         </div>
 
                         {/* Range Selector */}
-                        {shareType !== 'page' && (
-                            <div className="flex justify-between items-center bg-gray-50 p-1.5 rounded-xl gap-3 mt-3">
-                                <div className="flex-1">
-                                    <label className="block text-[9px] text-center text-gray-500 mb-0.5">من</label>
-                                    <select 
-                                        value={fromAyah} 
-                                        onChange={(e) => setFromAyah(Number(e.target.value))}
-                                        className="w-full p-1 text-[10px] border rounded-lg bg-white text-center outline-none"
-                                    >
-                                        {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
-                                            <option key={ay.numberInSurah} value={ay.numberInSurah}>
-                                                {getSurahName(currentAyah.s)} {ay.numberInSurah}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="flex-1">
-                                    <label className="block text-[9px] text-center text-gray-500 mb-0.5">إلى</label>
-                                    <select 
-                                        value={toAyah} 
-                                        onChange={(e) => setToAyah(Number(e.target.value))}
-                                        className="w-full p-1 text-[10px] border rounded-lg bg-white text-center outline-none"
-                                    >
-                                        {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
-                                            <option key={ay.numberInSurah} value={ay.numberInSurah}>
-                                                {getSurahName(currentAyah.s)} {ay.numberInSurah}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                        <div className={`flex justify-between items-center bg-gray-50 p-1.5 rounded-xl gap-3 mt-3 transition-opacity ${shareType === 'page' ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <div className="flex-1">
+                                <label className="block text-[9px] text-center text-gray-500 mb-0.5">من</label>
+                                <select 
+                                    value={fromAyah} 
+                                    onChange={(e) => setFromAyah(Number(e.target.value))}
+                                    className="w-full p-1 text-[10px] border rounded-lg bg-white text-center outline-none"
+                                >
+                                    {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
+                                        <option key={ay.numberInSurah} value={ay.numberInSurah}>
+                                            {getSurahName(currentAyah.s)} {ay.numberInSurah}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
-                        )}
+                            <div className="flex-1">
+                                <label className="block text-[9px] text-center text-gray-500 mb-0.5">إلى</label>
+                                <select 
+                                    value={toAyah} 
+                                    onChange={(e) => setToAyah(Number(e.target.value))}
+                                    className="w-full p-1 text-[10px] border rounded-lg bg-white text-center outline-none"
+                                >
+                                    {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
+                                        <option key={ay.numberInSurah} value={ay.numberInSurah}>
+                                            {getSurahName(currentAyah.s)} {ay.numberInSurah}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Scrollable Content */}
                     <div className="p-3 space-y-4 overflow-y-auto flex-1">
-                        {/* Preview Area (Only for Image) */}
-                        {shareType === 'image' && (
-                            <div className="flex justify-center drop-shadow-md">
-                                <div 
-                                    ref={previewRef}
-                                    style={{
-                                        position: 'relative',
-                                        width: '100%',
-                                        maxWidth: '320px',
-                                        borderRadius: '12px',
-                                        overflow: 'hidden',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        padding: '16px',
-                                        textAlign: 'center',
-                                        background: selectedBg.value,
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: 'center',
-                                        border: `3px solid ${selectedBg.border}`
-                                    }}
-                                >
-                                    {selectedBg.id !== 'bg_white' && (
-                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
-                                    )}
-                                    <FrameOverlay frame={selectedFrame} />
-                                    <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyItems: 'center', width: '100%' }}>
-                                        {readingMode === 'mushaf' && (
-                                            <p 
-                                                style={{ 
-                                                    fontFamily: 'var(--font-amiri-quran), var(--font-hafs), serif', 
-                                                    fontSize: `${fontSize * 1.2}px`, 
-                                                    color: selectedBg.accent, 
-                                                    marginBottom: '16px',
-                                                    textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)',
-                                                    opacity: 1,
-                                                    marginTop: '8px',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >
-                                                بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-                                            </p>
-                                        )}
+                        {/* Preview Area (Always rendered, disabled if not image) */}
+                        <div className={`flex justify-center drop-shadow-md transition-opacity ${shareType !== 'image' ? 'opacity-40 pointer-events-none grayscale-[0.5]' : ''}`}>
+                            <div 
+                                ref={previewRef}
+                                style={{
+                                    position: 'relative',
+                                    width: '100%',
+                                    maxWidth: '320px',
+                                    borderRadius: '12px',
+                                    overflow: 'hidden',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '16px',
+                                    textAlign: 'center',
+                                    background: selectedBg.value,
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    border: `3px solid ${selectedBg.border}`
+                                }}
+                            >
+                                {selectedBg.id !== 'bg_white' && (
+                                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
+                                )}
+                                <FrameOverlay frame={selectedFrame} />
+                                <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyItems: 'center', width: '100%' }}>
+                                    {readingMode === 'mushaf' && (
                                         <p 
                                             style={{ 
-                                                lineHeight: '1.8',
-                                                fontFamily: selectedFont,
-                                                fontSize: `${fontSize * 1.15}px`, 
-                                                color: textColor,
+                                                fontFamily: 'var(--font-amiri-quran), var(--font-hafs), serif', 
+                                                fontSize: `${fontSize * 1.2}px`, 
+                                                color: selectedBg.accent, 
+                                                marginBottom: '16px',
                                                 textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)',
-                                                margin: 0,
+                                                opacity: 1,
                                                 marginTop: '8px',
                                                 fontWeight: 'bold'
                                             }}
                                         >
-                                            {selectedAyahs.map((ay, idx) => (
-                                                <React.Fragment key={idx}>
-                                                    {renderTajweedText(getAyahText(ay.s, ay.a, false), useTajweed, { textColor: textColor })}
-                                                    {` ﴿${toArabic(ay.a)}﴾ `}
-                                                </React.Fragment>
-                                            ))}
+                                            بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
                                         </p>
-                                        {combinedExplanation && (
-                                            <p 
-                                                style={{ 
-                                                    lineHeight: '1.5',
-                                                    fontFamily: 'sans-serif',
-                                                    fontSize: `${fontSize * 0.6}px`, 
-                                                    color: textColor,
-                                                    textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                                                    margin: '12px 0 0 0',
-                                                    opacity: 0.9,
-                                                    direction: (readingMode === 'translation' || propSettings?.tafseer === 'en.json') ? 'ltr' : 'rtl',
-                                                    textAlign: (readingMode === 'translation' || propSettings?.tafseer === 'en.json') ? 'left' : 'right',
-                                                    width: '100%'
-                                                }}
+                                    )}
+                                    <p 
+                                        style={{ 
+                                            lineHeight: '1.8',
+                                            fontFamily: selectedFont,
+                                            fontSize: `${fontSize * 1.15}px`, 
+                                            color: textColor,
+                                            textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)',
+                                            margin: 0,
+                                            marginTop: '8px',
+                                            fontWeight: 'bold'
+                                        }}
+                                    >
+                                        {selectedAyahs.map((ay, idx) => (
+                                            <React.Fragment key={idx}>
+                                                {renderTajweedText(getAyahText(ay.s, ay.a, false), useTajweed, { textColor: textColor })}
+                                                {` ﴿${toArabic(ay.a)}﴾ `}
+                                            </React.Fragment>
+                                        ))}
+                                    </p>
+                                    {combinedExplanation && (
+                                        <p 
+                                            style={{ 
+                                                lineHeight: '1.5',
+                                                fontFamily: 'sans-serif',
+                                                fontSize: `${fontSize * 0.6}px`, 
+                                                color: textColor,
+                                                textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                                                margin: '12px 0 0 0',
+                                                opacity: 0.9,
+                                                direction: (readingMode === 'translation' || propSettings?.tafseer === 'en.json') ? 'ltr' : 'rtl',
+                                                textAlign: (readingMode === 'translation' || propSettings?.tafseer === 'en.json') ? 'left' : 'right',
+                                                width: '100%'
+                                            }}
+                                        >
+                                            {combinedExplanation}
+                                        </p>
+                                    )}
+                                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.3)', width: '100%', paddingLeft: '4px', paddingRight: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                                        <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '12px', fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
+                                            {surahInfo}
+                                        </p>
+                                        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2px' }}>
+                                            <span 
+                                                style={{ fontFamily: '"Aref Ruqaa", serif', color: selectedBg.accent, textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '14px', fontWeight: 700, textAlign: 'right' }} 
+                                                dir="rtl"
                                             >
-                                                {combinedExplanation}
-                                            </p>
-                                        )}
-                                        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.3)', width: '100%', paddingLeft: '4px', paddingRight: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                                            <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '12px', fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
-                                                {surahInfo}
-                                            </p>
-                                            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2px' }}>
-                                                <span 
-                                                    style={{ fontFamily: '"Aref Ruqaa", serif', color: selectedBg.accent, textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '14px', fontWeight: 700, textAlign: 'right' }} 
-                                                    dir="rtl"
-                                                >
-                                                    مصحف احمد وليلى
-                                                </span>
-                                                <span 
-                                                    style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '10px', fontWeight: 500, maxWidth: '50%', textAlign: 'left', lineHeight: 1.2, opacity: 0.9 }} 
-                                                >
-                                                    {customText}
-                                                </span>
-                                            </div>
+                                                مصحف احمد وليلى
+                                            </span>
+                                            <span 
+                                                style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '10px', fontWeight: 500, maxWidth: '50%', textAlign: 'left', lineHeight: 1.2, opacity: 0.9 }} 
+                                            >
+                                                {customText}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        </div>
 
-                        {/* Image Customization Controls */}
-                        {shareType === 'image' && (
-                            <div className="space-y-2">
-                                {/* Background Selection */}
+                        {/* Image Customization Controls (Always rendered, disabled if not image) */}
+                        <div className={`space-y-2 transition-opacity ${shareType !== 'image' ? 'opacity-40 pointer-events-none' : ''}`}>
+                            {/* Background Selection */}
+                            <div>
+                                <label className="block text-[10px] font-medium text-gray-700 mb-1">الخلفية</label>
+                                <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
+                                    {BACKGROUNDS.map(bg => (
+                                        <button
+                                            key={bg.id}
+                                            onClick={() => setSelectedBg(bg)}
+                                            className={`w-8 h-8 rounded-lg shrink-0 border-2 transition-all ${selectedBg.id === bg.id ? 'scale-110 shadow-sm' : 'border-transparent'}`}
+                                            style={{
+                                                background: bg.value,
+                                                backgroundSize: 'cover',
+                                                backgroundPosition: 'center',
+                                                borderColor: selectedBg.id === bg.id ? (currentTheme.accent || '#3b82f6') : 'transparent'
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Frame Selection */}
+                            <div>
+                                <label className="block text-[10px] font-medium text-gray-700 mb-1">الإطار</label>
+                                <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
+                                    {FRAMES.map(frame => (
+                                        <button
+                                            key={frame.id}
+                                            onClick={() => setSelectedFrame(frame)}
+                                            className={`shrink-0 px-2 py-1 rounded-lg border transition-all text-[9px] font-medium flex items-center justify-center min-w-[60px] ${selectedFrame.id === frame.id ? 'bg-blue-50 text-blue-700 shadow-sm' : 'border-gray-200 bg-white text-gray-700'}`}
+                                            style={selectedFrame.id === frame.id ? { borderColor: currentTheme.accent || '#3b82f6', color: currentTheme.accent || '#1d4ed8' } : {}}
+                                        >
+                                            {frame.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Text Controls */}
+                            <div className="grid grid-cols-2 gap-2">
+                                {/* Font Size */}
                                 <div>
-                                    <label className="block text-[10px] font-medium text-gray-700 mb-1">الخلفية</label>
-                                    <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
-                                        {BACKGROUNDS.map(bg => (
+                                    <label className="block text-[10px] font-medium text-gray-700 mb-1">حجم الخط</label>
+                                    <div className="flex items-center justify-between bg-gray-50 p-1 rounded-lg">
+                                        <button 
+                                            onClick={() => setFontSize(prev => Math.max(12, prev - 2))}
+                                            className="p-1 hover:bg-white rounded-md text-gray-600"
+                                        >
+                                            <Minus size={12} />
+                                        </button>
+                                        <span className="font-medium text-[10px] text-gray-700">{fontSize}</span>
+                                        <button 
+                                            onClick={() => setFontSize(prev => Math.min(48, prev + 2))}
+                                            className="p-1 hover:bg-white rounded-md text-gray-600"
+                                        >
+                                            <Plus size={12} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Text Color */}
+                                <div>
+                                    <label className="block text-[10px] font-medium text-gray-700 mb-1">لون النص</label>
+                                    <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar bg-gray-50 p-1 rounded-lg items-center">
+                                        {TEXT_COLORS.map(color => (
                                             <button
-                                                key={bg.id}
-                                                onClick={() => setSelectedBg(bg)}
-                                                className={`w-8 h-8 rounded-lg shrink-0 border-2 transition-all ${selectedBg.id === bg.id ? 'scale-110 shadow-sm' : 'border-transparent'}`}
-                                                style={{
-                                                    background: bg.value,
-                                                    backgroundSize: 'cover',
-                                                    backgroundPosition: 'center',
-                                                    borderColor: selectedBg.id === bg.id ? (currentTheme.accent || '#3b82f6') : 'transparent'
-                                                }}
+                                                key={color}
+                                                onClick={() => setTextColor(color)}
+                                                className={`w-5 h-5 rounded-full shrink-0 border-2 transition-all ${textColor === color ? 'scale-110' : 'border-gray-300'}`}
+                                                style={{ backgroundColor: color, borderColor: textColor === color ? (currentTheme.accent || '#3b82f6') : '#d1d5db' }}
                                             />
                                         ))}
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* Frame Selection */}
-                                <div>
-                                    <label className="block text-[10px] font-medium text-gray-700 mb-1">الإطار</label>
-                                    <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
-                                        {FRAMES.map(frame => (
-                                            <button
-                                                key={frame.id}
-                                                onClick={() => setSelectedFrame(frame)}
-                                                className={`shrink-0 px-2 py-1 rounded-lg border transition-all text-[9px] font-medium flex items-center justify-center min-w-[60px] ${selectedFrame.id === frame.id ? 'bg-blue-50 text-blue-700 shadow-sm' : 'border-gray-200 bg-white text-gray-700'}`}
-                                                style={selectedFrame.id === frame.id ? { borderColor: currentTheme.accent || '#3b82f6', color: currentTheme.accent || '#1d4ed8' } : {}}
-                                            >
-                                                {frame.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Text Controls */}
-                                <div className="grid grid-cols-2 gap-2">
-                                    {/* Font Size */}
-                                    <div>
-                                        <label className="block text-[10px] font-medium text-gray-700 mb-1">حجم الخط</label>
-                                        <div className="flex items-center justify-between bg-gray-50 p-1 rounded-lg">
-                                            <button 
-                                                onClick={() => setFontSize(prev => Math.max(12, prev - 2))}
-                                                className="p-1 hover:bg-white rounded-md text-gray-600"
-                                            >
-                                                <Minus size={12} />
-                                            </button>
-                                            <span className="font-medium text-[10px] text-gray-700">{fontSize}</span>
-                                            <button 
-                                                onClick={() => setFontSize(prev => Math.min(48, prev + 2))}
-                                                className="p-1 hover:bg-white rounded-md text-gray-600"
-                                            >
-                                                <Plus size={12} />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Text Color */}
-                                    <div>
-                                        <label className="block text-[10px] font-medium text-gray-700 mb-1">لون النص</label>
-                                        <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar bg-gray-50 p-1 rounded-lg items-center">
-                                            {TEXT_COLORS.map(color => (
-                                                <button
-                                                    key={color}
-                                                    onClick={() => setTextColor(color)}
-                                                    className={`w-5 h-5 rounded-full shrink-0 border-2 transition-all ${textColor === color ? 'scale-110' : 'border-gray-300'}`}
-                                                    style={{ backgroundColor: color, borderColor: textColor === color ? (currentTheme.accent || '#3b82f6') : '#d1d5db' }}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Font Selection */}
-                                <div>
-                                    <label className="block text-[10px] font-medium text-gray-700 mb-1">نوع الخط</label>
-                                    <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
-                                        {FONTS.map(font => (
-                                            <button
-                                                key={font.id}
-                                                onClick={() => setSelectedFont(font.id)}
-                                                className={`px-2 py-1 rounded-lg shrink-0 border transition-all text-[10px] ${selectedFont === font.id ? 'text-white' : 'bg-gray-50 text-gray-700 border-gray-300'}`}
-                                                style={{ 
-                                                    fontFamily: font.id,
-                                                    backgroundColor: selectedFont === font.id ? (currentTheme.accent || '#3b82f6') : 'transparent',
-                                                    borderColor: selectedFont === font.id ? (currentTheme.accent || '#3b82f6') : '#d1d5db'
-                                                }}
-                                            >
-                                                {font.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Custom Text Input */}
-                                <div>
-                                    <input 
-                                        type="text" 
-                                        value={customText}
-                                        onChange={(e) => setCustomText(e.target.value)}
-                                        placeholder="نص إضافي (اختياري)..."
-                                        className="w-full p-1.5 text-[10px] border border-gray-300 rounded-lg bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all"
-                                        style={{ focusRingColor: currentTheme.accent || '#3b82f6' } as any}
-                                        maxLength={50}
-                                        dir="rtl"
-                                    />
+                            {/* Font Selection */}
+                            <div>
+                                <label className="block text-[10px] font-medium text-gray-700 mb-1">نوع الخط</label>
+                                <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
+                                    {FONTS.map(font => (
+                                        <button
+                                            key={font.id}
+                                            onClick={() => setSelectedFont(font.id)}
+                                            className={`px-2 py-1 rounded-lg shrink-0 border transition-all text-[10px] ${selectedFont === font.id ? 'text-white' : 'bg-gray-50 text-gray-700 border-gray-300'}`}
+                                            style={{ 
+                                                fontFamily: font.id,
+                                                backgroundColor: selectedFont === font.id ? (currentTheme.accent || '#3b82f6') : 'transparent',
+                                                borderColor: selectedFont === font.id ? (currentTheme.accent || '#3b82f6') : '#d1d5db'
+                                            }}
+                                        >
+                                            {font.name}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
-                        )}
+
+                            {/* Custom Text Input */}
+                            <div>
+                                <input 
+                                    type="text" 
+                                    value={customText}
+                                    onChange={(e) => setCustomText(e.target.value)}
+                                    placeholder="نص إضافي (اختياري)..."
+                                    className="w-full p-1.5 text-[10px] border border-gray-300 rounded-lg bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all"
+                                    style={{ focusRingColor: currentTheme.accent || '#3b82f6' } as any}
+                                    maxLength={50}
+                                    dir="rtl"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Footer */}
