@@ -9,8 +9,8 @@ const SajdahCardModal: FC<{
     if (!info.show) return null;
 
     return (
-        <div className="fixed inset-0 z-[250] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl shadow-2xl flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[250] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
                 <div className="p-5 overflow-y-auto text-right leading-relaxed space-y-4 text-sm flex-1">
                     <div>
                         <p><b>1. تعريف سجود التلاوة</b></p>

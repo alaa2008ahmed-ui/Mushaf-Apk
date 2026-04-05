@@ -18,6 +18,7 @@ interface ShareAyahModalProps {
 }
 
 const BACKGROUNDS = [
+    { id: 'bg_white', type: 'solid', value: '#ffffff', border: '#cccccc', accent: '#000000' },
     { id: 'bg1', type: 'gradient', value: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)', border: '#4a72b8', accent: '#FFD700' },
     { id: 'bg2', type: 'gradient', value: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', border: '#58ff9d', accent: '#004D40' },
     { id: 'bg3', type: 'gradient', value: 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)', border: '#ae4dff', accent: '#00FFCC' },
@@ -109,7 +110,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0]);
     const [selectedFrame, setSelectedFrame] = useState(FRAMES[0]);
     const [fontSize, setFontSize] = useState(20);
-    const [textColor, setTextColor] = useState(TEXT_COLORS[0]);
+    const [textColor, setTextColor] = useState(TEXT_COLORS[1]);
     const [selectedFont, setSelectedFont] = useState(FONTS[0].id);
     const [customText, setCustomText] = useState('');
     const [isSharing, setIsSharing] = useState(false);
@@ -157,7 +158,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             setSelectedBg(BACKGROUNDS[0]);
             setSelectedFrame(FRAMES[0]);
             setFontSize(20);
-            setTextColor(TEXT_COLORS[0]);
+            setTextColor(TEXT_COLORS[1]);
             setSelectedFont(FONTS[0].id);
             setCustomText('');
             setShareType('image');
@@ -657,7 +658,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm overflow-y-auto" dir="rtl">
+        <div className="fixed inset-0 z-[100] bg-transparent overflow-y-auto flex items-center justify-center p-4" dir="rtl">
             {/* Hidden Mushaf capture element for high-quality page share */}
             <div 
                 id="hidden-mushaf-capture"
@@ -719,14 +720,14 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         left: '-9999px',
                         top: '-9999px',
                         width: '1200px', // Fixed width for consistent capture
-                        backgroundColor: currentTheme.bg || '#ffffff',
+                        backgroundColor: '#ffffff',
                         padding: '60px',
-                        color: currentTheme.text || '#000000',
+                        color: '#000000',
                         direction: 'rtl'
                     }}
                 >
-                    <div style={{ textAlign: 'center', marginBottom: '40px', borderBottom: `3px solid ${currentTheme.accent}`, paddingBottom: '20px' }}>
-                        <h2 style={{ fontSize: '36px', fontWeight: 'bold', color: currentTheme.accent }}>
+                    <div style={{ textAlign: 'center', marginBottom: '40px', borderBottom: `3px solid #16a34a`, paddingBottom: '20px' }}>
+                        <h2 style={{ fontSize: '36px', fontWeight: 'bold', color: '#16a34a' }}>
                             صفحة {toArabic(pageNum)} - {pageSurahInfo}
                         </h2>
                         {pageAyahs.length > 0 && pageAyahs[0].sNum === pageAyahs[pageAyahs.length - 1].sNum && (
@@ -744,15 +745,15 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         return (
                             <div key={`${ay.sNum}-${ay.numberInSurah}`} style={{ marginBottom: '35px' }}>
                                 {isNewSurah && idx > 0 && (
-                                    <div style={{ textAlign: 'center', margin: '40px 0', padding: '15px', backgroundColor: `${currentTheme.accent}15`, borderRadius: '12px' }}>
-                                        <h3 style={{ fontSize: '28px', fontWeight: 'bold', color: currentTheme.accent }}>سورة {getSurahName(ay.sNum)}</h3>
+                                    <div style={{ textAlign: 'center', margin: '40px 0', padding: '15px', backgroundColor: `rgba(22, 163, 74, 0.1)`, borderRadius: '12px' }}>
+                                        <h3 style={{ fontSize: '28px', fontWeight: 'bold', color: '#16a34a' }}>سورة {getSurahName(ay.sNum)}</h3>
                                     </div>
                                 )}
                                 <div style={{ 
                                     fontSize: '32px', 
                                     lineHeight: '1.8', 
                                     fontFamily: 'var(--font-amiri-quran), serif',
-                                    color: currentTheme.accent,
+                                    color: '#16a34a',
                                     marginBottom: '15px',
                                     textAlign: 'right'
                                 }}>
@@ -762,7 +763,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                     <div style={{ 
                                         fontSize: '24px', 
                                         lineHeight: '1.8', 
-                                        color: currentTheme.text,
+                                        color: '#000000',
                                         opacity: 0.9,
                                         textAlign: readingMode === 'translation' ? 'left' : 'right',
                                         direction: readingMode === 'translation' ? 'ltr' : 'rtl',
@@ -785,9 +786,10 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             )}
 
             <div className="min-h-full flex items-center justify-center p-2 sm:p-4">
-                <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col" style={{ color: currentTheme.textColor || '#000000' }}>
-                    {/* Content */}
-                    <div className="p-3 space-y-4">
+                <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md flex flex-col max-h-[90vh]" style={{ color: currentTheme.textColor || '#000000' }}>
+                    
+                    {/* Sticky Header Section */}
+                    <div className="p-3 pb-2 border-b border-gray-100 shrink-0 z-10 bg-white rounded-t-2xl">
                         {/* Share Type Selector */}
                         <div className="flex bg-gray-100 rounded-lg p-1">
                             <button onClick={() => setShareType('text')} className={`flex-1 py-1 text-[10px] font-medium rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'text' ? 'text-white shadow' : 'text-gray-600'}`} style={{ backgroundColor: shareType === 'text' ? (currentTheme.accent || '#3b82f6') : 'transparent' }}>
@@ -806,7 +808,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
 
                         {/* Range Selector */}
                         {shareType !== 'page' && (
-                            <div className="flex justify-between items-center bg-gray-50 p-1.5 rounded-xl gap-3">
+                            <div className="flex justify-between items-center bg-gray-50 p-1.5 rounded-xl gap-3 mt-3">
                                 <div className="flex-1">
                                     <label className="block text-[9px] text-center text-gray-500 mb-0.5">من</label>
                                     <select 
@@ -837,7 +839,10 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 </div>
                             </div>
                         )}
+                    </div>
 
+                    {/* Scrollable Content */}
+                    <div className="p-3 space-y-4 overflow-y-auto flex-1">
                         {/* Preview Area (Only for Image) */}
                         {shareType === 'image' && (
                             <div className="flex justify-center drop-shadow-md">
@@ -855,14 +860,15 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                         justifyContent: 'center',
                                         padding: '16px',
                                         textAlign: 'center',
-                                        backgroundImage: selectedBg.value,
+                                        background: selectedBg.value,
                                         backgroundSize: 'cover',
                                         backgroundPosition: 'center',
-                                        border: `3px solid ${selectedBg.border}`,
-                                        backgroundColor: '#ffffff'
+                                        border: `3px solid ${selectedBg.border}`
                                     }}
                                 >
-                                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
+                                    {selectedBg.id !== 'bg_white' && (
+                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
+                                    )}
                                     <FrameOverlay frame={selectedFrame} />
                                     <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyItems: 'center', width: '100%' }}>
                                         {readingMode === 'mushaf' && (
@@ -872,7 +878,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                                     fontSize: `${fontSize * 1.2}px`, 
                                                     color: selectedBg.accent, 
                                                     marginBottom: '16px',
-                                                    textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                                                    textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)',
                                                     opacity: 1,
                                                     marginTop: '8px',
                                                     fontWeight: 'bold'
@@ -887,7 +893,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                                 fontFamily: selectedFont,
                                                 fontSize: `${fontSize * 1.15}px`, 
                                                 color: textColor,
-                                                textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                                                textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)',
                                                 margin: 0,
                                                 marginTop: '8px',
                                                 fontWeight: 'bold'
@@ -954,7 +960,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                                 onClick={() => setSelectedBg(bg)}
                                                 className={`w-8 h-8 rounded-lg shrink-0 border-2 transition-all ${selectedBg.id === bg.id ? 'scale-110 shadow-sm' : 'border-transparent'}`}
                                                 style={{
-                                                    backgroundImage: bg.value,
+                                                    background: bg.value,
                                                     backgroundSize: 'cover',
                                                     backgroundPosition: 'center',
                                                     borderColor: selectedBg.id === bg.id ? (currentTheme.accent || '#3b82f6') : 'transparent'

@@ -59,8 +59,8 @@ const parseArabicNumber = (text: string): number | null => {
 const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, currentTheme }: any) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[200] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
-            <div className="modal-skinned w-full max-w-sm rounded-2xl shadow-2xl flex flex-col animate-modal-enter" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
+            <div className="modal-skinned w-full max-w-sm rounded-2xl shadow-2xl flex flex-col animate-modal-enter border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
                 <div className="p-5 flex flex-col gap-4">
                     <button onClick={onTafseer} style={{ border: `2px solid ${currentTheme?.accent || '#4f46e5'}`, color: currentTheme?.accent || '#4f46e5', backgroundColor: 'transparent' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
                         <i className="fa-solid fa-book-open"></i>
@@ -79,8 +79,8 @@ const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, currentTheme }
 const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentTheme, onMarkCompleted }: any) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[300] bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
-            <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl flex flex-col animate-modal-enter p-8 text-center" 
+        <div className="fixed inset-0 z-[300] bg-transparent flex items-center justify-center p-4 animate-fadeIn">
+            <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl flex flex-col animate-modal-enter p-8 text-center border border-gray-200 dark:border-gray-700" 
                  style={{ 
                      backgroundColor: 'var(--modal-bg)', 
                      color: 'var(--modal-text)', 
@@ -130,8 +130,8 @@ const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentThe
 const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentTheme, savedSession }: any) => {
     if (!isOpen || !savedSession) return null;
     return (
-        <div className="fixed inset-0 z-[400] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
-            <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center animate-modal-enter"
+        <div className="fixed inset-0 z-[400] bg-transparent flex items-center justify-center p-4 animate-fadeIn">
+            <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center animate-modal-enter border border-gray-200 dark:border-gray-700"
                  style={{ backgroundColor: 'var(--modal-bg)', color: 'var(--modal-text)', border: `2px solid var(--color-primary)`, fontFamily: currentTheme?.font }}>
                 <div className="w-16 h-16 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i className="fa-solid fa-play text-3xl"></i>
@@ -333,7 +333,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const [isTransparentMode, setIsTransparentMode] = useState(() => localStorage.getItem('transparent_mode' + modeSuffix) === 'true');
     const [isHideToolbarsEnabled, setIsHideToolbarsEnabled] = useState(() => {
         const saved = localStorage.getItem('hide_toolbars_enabled' + modeSuffix);
-        return saved !== null ? saved === 'true' : true;
+        return saved !== null ? saved === 'true' : false;
     });
     const isHideToolbarsEnabledRef = useRef(isHideToolbarsEnabled);
     useEffect(() => { isHideToolbarsEnabledRef.current = isHideToolbarsEnabled; }, [isHideToolbarsEnabled]);

@@ -25,6 +25,9 @@ const ZoomModal: React.FC<ZoomModalProps> = ({ zoomedDhikr, onClose }) => {
                         {zoomedDhikr.source}
                     </p>
                 )}
+                <div className="mt-8">
+                    <button onClick={onClose} className="w-full py-3 rounded-xl font-bold bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">إغلاق</button>
+                </div>
             </div>
         </div>
     );

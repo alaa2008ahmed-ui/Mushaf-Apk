@@ -10,8 +10,8 @@ const FontSelectModal: FC<{
 }> = ({ isOpen, onClose, onSelect, currentFontId, isLandscape }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[300] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md sm:max-w-2xl'} rounded-2xl shadow-2xl flex flex-col max-h-[85vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[300] bg-transparent flex justify-center items-center p-4 animate-fadeIn" onClick={onClose}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md sm:max-w-2xl'} rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col max-h-[90vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
                 <div className={`p-3 overflow-y-auto flex-1 grid ${isLandscape ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2'}`}>
                     {FONTS.map(f => (
                         <button 
@@ -25,6 +25,9 @@ const FontSelectModal: FC<{
                             {currentFontId === f.id && <i className="fa-solid fa-check text-xs"></i>}
                         </button>
                     ))}
+                </div>
+                <div className="p-3 border-t themed-card-bg rounded-b-2xl">
+                    <button onClick={onClose} className="w-full py-2 rounded-xl font-bold theme-btn-bg">إغلاق</button>
                 </div>
             </div>
         </div>

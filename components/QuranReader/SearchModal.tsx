@@ -216,8 +216,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
     };
 
     return (
-        <div className={`fixed inset-0 z-[200] bg-black/30 flex justify-center ${isLandscape ? 'items-start pt-0 px-0' : 'items-center px-4'} backdrop-blur-sm animate-fadeIn`} onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none' : 'max-w-lg rounded-2xl max-h-[90vh]'} flex flex-col shadow-2xl`} onClick={e => e.stopPropagation()}>
+        <div className={`fixed inset-0 z-[200] bg-transparent flex justify-center items-center p-4 animate-fadeIn`} onClick={onClose}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none' : 'max-w-lg rounded-2xl max-h-[90vh]'} flex flex-col shadow-2xl border border-gray-200 dark:border-gray-700`} onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="relative">
                         <input 
@@ -317,6 +317,9 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                             عرض المزيد من النتائج ({toArabic(results.length - visibleCount)} متبقية)
                         </button>
                     )}
+                </div>
+                <div className="p-3 border-t themed-card-bg rounded-b-2xl">
+                    <button onClick={onClose} className="w-full py-2 rounded-xl font-bold theme-btn-bg">إغلاق</button>
                 </div>
             </div>
         </div>
