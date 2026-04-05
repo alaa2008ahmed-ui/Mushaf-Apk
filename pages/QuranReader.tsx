@@ -194,13 +194,40 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             localStorage.setItem('last_reading_mode', readingMode);
         }
     }, [readingMode, isWirdMode, isMemorizationMode]);
-    const modeSuffix = localIsMemorizationMode 
-        ? `_memorization_${isLandscape ? 'h' : 'v'}` 
-        : isWirdMode 
-            ? `_wird_${isLandscape ? 'h' : 'v'}` 
-            : readingMode === 'mushaf' 
-                ? (isLandscape ? '_h' : '_v') 
-                : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
+    const baseModeSuffix = isPractical
+        ? `_practical_${isLandscape ? 'h' : 'v'}`
+        : localIsMemorizationMode 
+            ? `_memorization_${isLandscape ? 'h' : 'v'}` 
+            : isWirdMode 
+                ? `_wird_${isLandscape ? 'h' : 'v'}` 
+                : readingMode === 'mushaf' 
+                    ? (isLandscape ? '_h' : '_v') 
+                    : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
+
+    const [useTajweed, setUseTajweed] = useState(() => {
+        if (isPractical || mushafType === 'tajweed') return true;
+        if (mushafType === 'uthmani') return false;
+        if (localIsMemorizationMode) return true;
+        return localStorage.getItem('use_tajweed_quran' + baseModeSuffix) === 'true';
+    });
+
+    const modeSuffix = (readingMode === 'mushaf' && useTajweed && !isPractical && !localIsMemorizationMode && !isWirdMode)
+        ? `_tajweed_${isLandscape ? 'h' : 'v'}`
+        : baseModeSuffix;
+
+    const [quranData, setQuranData] = useState<any>(quranTajweedJson.data);
+
+    useEffect(() => {
+        if (isPractical || mushafType === 'tajweed') {
+            setUseTajweed(true);
+            setQuranData(quranTajweedJson.data);
+        } else if (mushafType === 'uthmani') {
+            setUseTajweed(false);
+        } else if (localIsMemorizationMode) {
+            setUseTajweed(true);
+            setQuranData(quranTajweedJson.data);
+        }
+    }, [localIsMemorizationMode, mushafType, isPractical]);
 
     const hasJumpedRef = useRef(false);
 
@@ -220,26 +247,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const isUserScrollingRef = useRef(isUserScrolling);
     useEffect(() => { isUserScrollingRef.current = isUserScrolling; }, [isUserScrolling]);
     const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    const [useTajweed, setUseTajweed] = useState(() => {
-        if (isPractical || mushafType === 'tajweed') return true;
-        if (mushafType === 'uthmani') return false;
-        if (localIsMemorizationMode) return true;
-        return localStorage.getItem('use_tajweed_quran' + modeSuffix) === 'true';
-    });
-    const [quranData, setQuranData] = useState<any>(quranTajweedJson.data);
-
-    useEffect(() => {
-        if (isPractical || mushafType === 'tajweed') {
-            setUseTajweed(true);
-            setQuranData(quranTajweedJson.data);
-        } else if (mushafType === 'uthmani') {
-            setUseTajweed(false);
-        } else if (localIsMemorizationMode) {
-            setUseTajweed(true);
-            setQuranData(quranTajweedJson.data);
-        }
-    }, [localIsMemorizationMode, mushafType, isPractical]);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStatus, setLoadingStatus] = useState('');
     const [loadingProgress, setLoadingProgress] = useState(100);
@@ -450,7 +457,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         setActiveModals([]);
         setIsFloatingMenuOpen(false);
 
-        if (!hasJumpedRef.current && (initialSurah || initialPage || localIsMemorizationMode || isWirdMode)) {
+        if (!hasJumpedRef.current && (initialSurah || initialPage || localIsMemorizationMode || isWirdMode || isPractical)) {
             // Do not jump to lastPos on initial mount if we have initial params
         } else {
             // Prevent scroll listener from overwriting position during transition
@@ -500,7 +507,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
             });
         }
-    }, [modeSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode, mushafType]);
+    }, [modeSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode, mushafType, isPractical]);
     
     useEffect(() => {
         if (!isLandscape) return;
