@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { toArabic } from './constants';
 import { X } from 'lucide-react';
+import { renderTajweedText } from './MushafPage';
 
 interface SearchModalProps {
     quranData: any;
@@ -9,9 +10,11 @@ interface SearchModalProps {
     isLandscape?: boolean;
     initialQuery?: string;
     readingMode?: string;
+    useTajweed?: boolean;
+    currentTheme?: any;
 }
 
-const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose, isLandscape, initialQuery, readingMode = 'mushaf' }) => {
+const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose, isLandscape, initialQuery, readingMode = 'mushaf', useTajweed = false, currentTheme }) => {
     const modeSuffix = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
     const [query, setQuery] = useState(() => initialQuery || localStorage.getItem('search_query' + modeSuffix) || '');
     const [results, setResults] = useState<any[]>(() => {
@@ -84,6 +87,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                     if (regex.test(cleanText)) {
                         foundResults.push({ 
                             text: fixQuranText(cleanText), 
+                            rawText: fixQuranText(rawText),
                             surah: surah.number, 
                             surahName: surah.name, 
                             ayah: ayah.numberInSurah, 
@@ -296,7 +300,10 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                                             <div key={idx} className="search-context-block search-main-ayah !mb-0" onClick={() => { onSelect(r.surah, r.ayah); onClose(); }}>
                                                 <div className="search-context-label !text-[10px] !mb-1">آية {toArabic(r.ayah)} - صفحة {toArabic(r.page)}</div>
                                                 <div className="search-context-ayah !text-sm">
-                                                    {highlightText(r.text, r.highlightRegex)}
+                                                    {useTajweed 
+                                                        ? renderTajweedText(r.rawText || r.text, useTajweed, currentTheme)
+                                                        : highlightText(r.text, r.highlightRegex)
+                                                    }
                                                 </div>
                                             </div>
                                         ))}

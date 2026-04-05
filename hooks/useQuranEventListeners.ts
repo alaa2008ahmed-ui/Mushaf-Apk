@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { DEFAULT_SETTINGS, THEMES } from '../components/QuranReader/constants';
-import quranUthmaniJson from '../data/quran-uthmani.json';
 import quranTajweedJson from '../data/quran-tajweed.json';
 
 export const useQuranEventListeners = (
@@ -58,7 +57,7 @@ export const useQuranEventListeners = (
 
             const tajweedSetting = localStorage.getItem('use_tajweed_quran' + mode) === 'true';
             setUseTajweed(tajweedSetting);
-            setQuranData(tajweedSetting ? quranTajweedJson.data : quranUthmaniJson.data);
+            setQuranData(quranTajweedJson.data);
 
             const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
             setIsTransparentMode(transSetting);
@@ -112,7 +111,7 @@ export const useQuranEventListeners = (
             
             const tajweedSetting = localStorage.getItem('use_tajweed_quran' + mode) === 'true';
             setUseTajweed(tajweedSetting);
-            setQuranData(tajweedSetting ? quranTajweedJson.data : quranUthmaniJson.data);
+            setQuranData(quranTajweedJson.data);
             
             const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
             setIsTransparentMode(transSetting);

@@ -258,7 +258,7 @@ function Qibla({ onBack, onNavigate }) {
 
             </main>
             
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
         </div>
     );
 }

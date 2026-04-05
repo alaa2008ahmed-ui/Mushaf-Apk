@@ -13,6 +13,7 @@ interface VerticalReadingViewProps {
     onVisibleAyahChange?: (s: number, a: number) => void;
     onSettingsChange?: (newSettings: any) => void;
     modeSuffix?: string;
+    useTajweed?: boolean;
 }
 
 // Global cache to ensure instant loading after first fetch
@@ -29,7 +30,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     onAyahClick,
     onVisibleAyahChange,
     onSettingsChange,
-    modeSuffix = '_v'
+    modeSuffix = '_v',
+    useTajweed = false
 }) => {
     const [tafseerData, setTafseerData] = useState<any[]>(cachedTafseerData || []);
     const [meaningsData, setMeaningsData] = useState<any[]>(cachedMeaningsData || []);
@@ -263,7 +265,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                              fontFamily: settings.fontFamily,
                              color: currentTheme.accent
                          }}>
-                        {renderTajweedText(item.text)}
+                        {renderTajweedText(item.text, useTajweed, currentTheme)}
                         <span className="inline-flex items-center justify-center w-8 h-8 mr-2 rounded-full border border-current text-sm font-bold"
                               style={{ color: currentTheme.text }}>
                             {toArabic(item.ayahNumber)}

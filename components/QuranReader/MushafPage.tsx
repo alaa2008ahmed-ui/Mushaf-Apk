@@ -18,6 +18,7 @@ interface MushafPageProps {
         theme: string;
     };
     currentTheme?: any;
+    useTajweed?: boolean;
 }
 
 const fixQuranText = (text: string) => {
@@ -28,80 +29,67 @@ const fixQuranText = (text: string) => {
     return text.replace(/\u0647\u0650\u06e6/g, '\u0647\u0650\u064a');
 };
 
-export const renderTajweedText = (text: string) => {
+export const renderTajweedText = (text: string, useTajweed: boolean = false, currentTheme?: any) => {
     if (!text) return text;
     
-    // Remove the ZWJ hack as it breaks shaping in proper Quranic fonts
-    const fixedText = text;
-
-    if (!fixedText.includes('[')) return fixedText;
+    if (!text.includes('[')) return text;
     
-    // Tokenize the text to handle nested tags like [o[ُوٓ[s[اْ]‌ۖ]
-    const regex = /\[([a-z])(?::\d+)?\[|\]/g;
-    let match;
-    let lastIndex = 0;
-    const tokens = [];
-    
-    while ((match = regex.exec(fixedText)) !== null) {
-        if (match.index > lastIndex) {
-            tokens.push({ type: 'text', value: fixedText.substring(lastIndex, match.index) });
-        }
-        if (match[0] === ']') {
-            tokens.push({ type: 'end' });
-        } else {
-            tokens.push({ type: 'start', tag: match[1] });
-        }
-        lastIndex = regex.lastIndex;
-    }
-    if (lastIndex < fixedText.length) {
-        tokens.push({ type: 'text', value: fixedText.substring(lastIndex) });
+    if (!useTajweed) {
+        // Strip Tajweed tags to display text without coloring
+        return text.replace(/\[([a-z])(?::\d+)?\[/g, '').replace(/\]/g, '');
     }
 
-    // Build a tree from tokens
-    const root: any = { type: 'root', children: [] };
-    const stack = [root];
-    
-    for (const token of tokens) {
-        const current = stack[stack.length - 1];
-        if (token.type === 'text') {
-            current.children.push(token.value);
-        } else if (token.type === 'start') {
-            const node = { type: 'tag', tag: token.tag, children: [] };
-            current.children.push(node);
-            stack.push(node);
-        } else if (token.type === 'end') {
-            if (stack.length > 1) {
-                stack.pop();
-            } else {
-                // Unbalanced ']', treat as text
-                current.children.push(']');
-            }
-        }
-    }
-
-    // Recursively render the tree
-    const renderNode = (node: any, keyPrefix: string): React.ReactNode => {
-        if (typeof node === 'string') {
-            return <React.Fragment key={keyPrefix}>{node}</React.Fragment>;
-        }
-        if (node.type === 'root') {
-            return <>{node.children.map((child: any, i: number) => renderNode(child, `${keyPrefix}-${i}`))}</>;
-        }
-        if (node.type === 'tag') {
-            const colorClass = `tajweed-${node.tag}`;
-            return (
-                <span key={keyPrefix} className={colorClass}>
-                    {node.children.map((child: any, i: number) => renderNode(child, `${keyPrefix}-${i}`))}
-                </span>
-            );
-        }
-        return null;
+    // Tajweed coloring logic
+    const tajweedColors: { [key: string]: string } = {
+        'm': '#FF0000', // Madd (Red)
+        'o': '#FF0000', // Madd (Red)
+        'p': '#FF0000', // Madd (Red)
+        'g': '#008000', // Ghunnah (Green)
+        'q': '#0000FF', // Qalqalah (Blue)
+        'f': '#808080', // Ikhfa (Gray)
+        'u': '#808080', // Idgham (Gray)
+        'a': '#808080', // Idgham (Gray)
+        'i': '#2E8B57', // Iqlab (SeaGreen)
+        'l': currentTheme?.textColor || currentTheme?.text || '#000000', // Lam of Allah (Theme text, will be bold)
+        'n': '#FFA500', // Ghunnah/Other (Orange)
+        'h': '#AAAAAA', // Hamzatul Wasl (Light Gray)
+        's': '#AAAAAA', // Silent (Light Gray)
     };
 
-    return renderNode(root, 'root');
+    const parts: React.ReactNode[] = [];
+    let currentPos = 0;
+    const regex = /\[([a-z])(?::\d+)?\[(.*?)\]/g;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+        // Add text before the match
+        if (match.index > currentPos) {
+            parts.push(text.substring(currentPos, match.index));
+        }
+
+        const rule = match[1];
+        const content = match[2];
+        const color = tajweedColors[rule] || '#000000';
+        const isBold = rule === 'l';
+
+        parts.push(
+            <span key={match.index} style={{ color, fontWeight: isBold ? 'bold' : 'normal' }}>
+                {content}
+            </span>
+        );
+
+        currentPos = regex.lastIndex;
+    }
+
+    // Add remaining text
+    if (currentPos < text.length) {
+        parts.push(text.substring(currentPos));
+    }
+
+    return parts;
 };
 
-const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme }) => {
+const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme, useTajweed }) => {
     const pageRef = useRef<HTMLDivElement | null>(null);
     const longPressTimer = useRef<number | null>(null);
     const isLongPressTriggered = useRef(false);
@@ -256,7 +244,7 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                 data-hizb-quarter={ayah.hizbQuarter}
                             >
                                 {isNewQuarter && <span className="hizb-quarter-marker">۞</span>}
-                                {renderTajweedText(text.replace(/\s+/g, ' ').trim())}
+                                {renderTajweedText(text.replace(/\s+/g, ' ').trim(), useTajweed, currentTheme)}
                                 {isSajdah && <span className="sajdah-icon-inline">۩</span>}
                                 <span className="verse-container" 
                                     onClick={(e) => {

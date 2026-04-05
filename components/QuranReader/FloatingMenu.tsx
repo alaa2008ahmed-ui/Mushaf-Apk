@@ -160,14 +160,14 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
             {/* The Main Menu Container */}
             <div 
                 id="floating-menu" 
-                className={`w-[200px] max-w-[85vw] bg-white rounded-2xl shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
+                className={`w-[260px] max-w-[85vw] bg-white rounded-2xl shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
                 style={{ fontFamily: currentTheme.font }}
             >
                 {!isAddModalOpen ? (
                     /* Main Menu Content */
                     <div className="p-4 flex flex-col gap-4 overflow-y-auto flex-grow custom-scrollbar">
                         {/* نوع المصحف */}
-                        <MenuSection title="نوع المصحف" iconColor={iconColor} titleColor="#2563eb">
+                        <MenuSection title="نوع المصحف" iconColor={iconColor}>
                             <div className="flex flex-col gap-1 mb-2">
                                 <button 
                                     className={`w-full py-2.5 px-4 rounded-xl text-sm flex items-center justify-between transition-all ${!useTajweed ? 'bg-gray-100 font-bold' : 'hover:bg-gray-50'}`} 
@@ -199,7 +199,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                         </MenuSection>
 
                         {/* الإعدادات والبحث */}
-                        <MenuSection title="الإعدادات والبحث" iconColor={iconColor} titleColor="#059669">
+                        <MenuSection title="الإعدادات والبحث" iconColor={iconColor}>
                             <MenuItem icon={<Search size={18} />} label="البحث" onClick={() => handleAction(() => openModal('search-modal'))} iconColor={iconColor} />
                             <div className="flex flex-col">
                                 <button 
@@ -279,7 +279,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                         </MenuSection>
 
                         {/* اختصارات أخرى */}
-                        <MenuSection title="اختصارات أخرى" iconColor={iconColor} titleColor="#d97706">
+                        <MenuSection title="اختصارات أخرى" iconColor={iconColor}>
                             {ALL_SHORTCUTS.filter(s => selectedShortcuts.includes(s.id)).map(shortcut => (
                                 <MenuItem 
                                     key={shortcut.id}
@@ -364,10 +364,10 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     );
 };
 
-const MenuSection: React.FC<{ title: string, children: React.ReactNode, iconColor: string, titleColor?: string }> = ({ title, children, iconColor, titleColor = '#000000' }) => (
+const MenuSection: React.FC<{ title: string, children: React.ReactNode, iconColor: string }> = ({ title, children, iconColor }) => (
     <div className="flex flex-col">
         <div className="bg-blue-50/50 py-1.5 px-3 rounded-md mb-2 text-right">
-            <span className="text-xs font-bold" style={{ color: titleColor }}>{title}</span>
+            <span className="text-xs font-bold" style={{ color: '#000000' }}>{title}</span>
         </div>
         <div className="flex flex-col px-2">
             {children}

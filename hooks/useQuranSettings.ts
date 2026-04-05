@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DEFAULT_SETTINGS, THEMES } from '../components/QuranReader/constants';
-import quranUthmaniJson from '../data/quran-uthmani.json';
 import quranTajweedJson from '../data/quran-tajweed.json';
 
 export const useQuranSettings = (initialLandscape: boolean, modeSuffix: string) => {
@@ -8,7 +7,7 @@ export const useQuranSettings = (initialLandscape: boolean, modeSuffix: string) 
     const [quranData, setQuranData] = useState<any>(null);
 
     useEffect(() => {
-        const data = useTajweed ? quranTajweedJson.data : quranUthmaniJson.data;
+        const data = quranTajweedJson.data;
         setQuranData(data);
     }, [useTajweed]);
     
