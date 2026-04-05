@@ -216,6 +216,11 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
     }, [isLandscapeUIHidden, modeSuffix]);
 
+    const [isUserScrolling, setIsUserScrolling] = useState(false);
+    const isUserScrollingRef = useRef(isUserScrolling);
+    useEffect(() => { isUserScrollingRef.current = isUserScrolling; }, [isUserScrolling]);
+    const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     const [useTajweed, setUseTajweed] = useState(() => {
         if (mushafType) return mushafType === 'tajweed';
         if (localIsMemorizationMode) return true;
@@ -330,6 +335,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         const saved = localStorage.getItem('hide_toolbars_enabled' + modeSuffix);
         return saved !== null ? saved === 'true' : true;
     });
+    const isHideToolbarsEnabledRef = useRef(isHideToolbarsEnabled);
+    useEffect(() => { isHideToolbarsEnabledRef.current = isHideToolbarsEnabled; }, [isHideToolbarsEnabled]);
     const [lastInteractionType, setLastInteractionType] = useState<'page' | 'ayah'>(() => {
         const saved = localStorage.getItem('last_interaction_type' + modeSuffix);
         return (saved as 'page' | 'ayah') || 'page';
@@ -412,8 +419,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         const initialSettings = { ...DEFAULT_SETTINGS, ...baseSettings };
         setSettings(initialSettings);
 
-        const themeId = localStorage.getItem('current_theme_id' + mode) || 'olive';
-        const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['olive'];
+        const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
+        const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
         setCurrentTheme(newTheme);
         
         const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
@@ -470,28 +477,24 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 setToolbarColors(colors);
             } catch (e) {}
         } else {
-            const theme = THEMES['olive'];
-            const oliveAccent = theme.accent;
-            const oliveBarBg = theme.barBg;
-            const oliveBarBorder = theme.barBorder?.split(' ')[2] || "#d1d5db";
-            const white = "#ffffff";
+            const theme = THEMES['night_sky'];
             
             setToolbarColors({
-                'top-toolbar': { bg: oliveBarBg, border: oliveBarBorder },
-                'bottom-toolbar': { bg: oliveBarBg, border: oliveBarBorder },
-                'surah': { bg: white, text: oliveAccent, border: oliveAccent, font: theme.font },
-                'juz': { bg: white, text: oliveAccent, border: oliveAccent, font: theme.font },
-                'page': { bg: white, text: oliveAccent, border: oliveAccent, font: theme.font },
-                'audio': { bg: white, text: oliveAccent, border: oliveAccent },
-                'btn-settings': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-home': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-bookmark': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-bookmarks-list': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-themes': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-autoscroll': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-menu': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-search': { bg: oliveAccent, text: white, border: oliveAccent },
-                'btn-share': { bg: oliveAccent, text: white, border: oliveAccent }
+                'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
+                'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder },
+                'surah': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                'juz': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                'page': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                'audio': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-home': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
             });
         }
     }, [modeSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode, mushafType]);
@@ -626,11 +629,11 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const [settings, setSettings] = useState(() => {
         const mode = initialLandscape ? '_h' : '_v';
         const saved = localStorage.getItem('quran_settings' + mode);
-        const defaultTheme = THEMES['olive'];
+        const defaultTheme = THEMES['night_sky'];
         return saved ? JSON.parse(saved) : {
             fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
             highlightTextColor: defaultTheme.highlightText || defaultTheme.accent,
-            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'olive', scrollMinutes: 20, tafseer: 'ar.jalalayn',
+            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'night_sky', scrollMinutes: 20, tafseer: 'ar.jalalayn',
             hideUIOnAutoScroll: false,
             lockHighlightColor: false
         };
@@ -638,8 +641,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     const [currentTheme, setCurrentTheme] = useState(() => {
         const mode = initialLandscape ? '_h' : '_v';
-        const themeId = localStorage.getItem('current_theme_id' + mode) || 'olive';
-        return THEMES[themeId as keyof typeof THEMES] || THEMES['olive'];
+        const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
+        return THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
     });
 
     // Keep screen awake logic
@@ -694,7 +697,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             } catch (e) {}
         }
         
-        const theme = THEMES['olive'];
+        const theme = THEMES['night_sky'];
         
         return {
             'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
@@ -1532,8 +1535,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     useEffect(() => {
         const handleThemeChange = () => {
             const mode = modeSuffix;
-            const themeId = localStorage.getItem('current_theme_id' + mode) || 'olive';
-            const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['olive'];
+            const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
+            const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
             setCurrentTheme(newTheme);
             
             const savedSettings = localStorage.getItem('quran_settings' + mode);
@@ -1550,25 +1553,23 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     setToolbarColors(parsed);
                 } catch (e) {}
             } else {
-                const theme = THEMES['olive'];
-                const black = "#000000";
-                const white = "#ffffff";
+                const theme = THEMES['night_sky'];
                 setToolbarColors({
-                    'top-toolbar': { bg: white, border: black },
-                    'bottom-toolbar': { bg: white, border: black },
-                    'surah': { bg: white, text: black, border: black, font: theme.font },
-                    'juz': { bg: white, text: black, border: black, font: theme.font },
-                    'page': { bg: white, text: black, border: black, font: theme.font },
-                    'audio': { bg: white, text: black, border: black },
-                    'btn-settings': { bg: white, text: black, border: black },
-                    'btn-home': { bg: white, text: black, border: black },
-                    'btn-bookmark': { bg: white, text: black, border: black },
-                    'btn-bookmarks-list': { bg: white, text: black, border: black },
-                    'btn-themes': { bg: white, text: black, border: black },
-                    'btn-autoscroll': { bg: white, text: black, border: black },
-                    'btn-menu': { bg: white, text: black, border: black },
-                    'btn-search': { bg: white, text: black, border: black },
-                    'btn-share': { bg: white, text: black, border: black }
+                    'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
+                    'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder },
+                    'surah': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                    'juz': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                    'page': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                    'audio': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-home': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
                 });
             }
 
@@ -1603,25 +1604,23 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     setToolbarColors(parsed);
                 } catch (e) {}
             } else {
-                const theme = THEMES['olive'];
-                const black = "#000000";
-                const white = "#ffffff";
+                const theme = THEMES['night_sky'];
                 setToolbarColors({
-                    'top-toolbar': { bg: white, border: black },
-                    'bottom-toolbar': { bg: white, border: black },
-                    'surah': { bg: white, text: black, border: black, font: theme.font },
-                    'juz': { bg: white, text: black, border: black, font: theme.font },
-                    'page': { bg: white, text: black, border: black, font: theme.font },
-                    'audio': { bg: white, text: black, border: black },
-                    'btn-settings': { bg: white, text: black, border: black },
-                    'btn-home': { bg: white, text: black, border: black },
-                    'btn-bookmark': { bg: white, text: black, border: black },
-                    'btn-bookmarks-list': { bg: white, text: black, border: black },
-                    'btn-themes': { bg: white, text: black, border: black },
-                    'btn-autoscroll': { bg: white, text: black, border: black },
-                    'btn-menu': { bg: white, text: black, border: black },
-                    'btn-search': { bg: white, text: black, border: black },
-                    'btn-share': { bg: white, text: black, border: black }
+                    'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
+                    'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder },
+                    'surah': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                    'juz': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                    'page': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
+                    'audio': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-home': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
+                    'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
                 });
             }
             
@@ -1733,6 +1732,18 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         if (!contentEl) return;
     
         const handleScroll = () => {
+            if (isHideToolbarsEnabledRef.current && !autoScrollStateRef.current.isActive) {
+                if (!isUserScrollingRef.current) {
+                    setIsUserScrolling(true);
+                }
+                if (scrollTimeoutRef.current) {
+                    clearTimeout(scrollTimeoutRef.current);
+                }
+                scrollTimeoutRef.current = setTimeout(() => {
+                    setIsUserScrolling(false);
+                }, 500);
+            }
+
             const { scrollTop, scrollHeight, clientHeight } = contentEl;
 
             if (scrollTop < clientHeight) {
@@ -2563,7 +2574,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     }, []);
 
     return (
-        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
+        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${(isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused) || (isHideToolbarsEnabled && isUserScrolling) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
             <QuranHeader 
                 isPageInputActive={isPageInputActive}
                 pageInputRef={pageInputRef}
@@ -2612,6 +2623,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 updateSetting={updateSetting}
                 isHideToolbarsEnabled={isHideToolbarsEnabled}
                 setIsHideToolbarsEnabled={setIsHideToolbarsEnabled}
+                isTransparentMode={isTransparentMode}
+                setIsTransparentMode={setIsTransparentMode}
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">

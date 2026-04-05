@@ -34,6 +34,15 @@ function App() {
     ];
 
     if (pageId === 'home') {
+      const quranIndex = history.lastIndexOf('quran');
+      const quranLandscapeIndex = history.lastIndexOf('quran-landscape');
+      const targetIndex = Math.max(quranIndex, quranLandscapeIndex);
+      
+      if (targetIndex !== -1 && targetIndex < history.length - 1) {
+        setHistory(prev => prev.slice(0, targetIndex + 1));
+        return;
+      }
+
       setHistory(['home']);
       setNavParams(null);
       return;

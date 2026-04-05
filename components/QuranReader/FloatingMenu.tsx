@@ -22,6 +22,8 @@ interface FloatingMenuProps {
     updateSetting: (key: string, value: any) => void;
     isHideToolbarsEnabled: boolean;
     setIsHideToolbarsEnabled: (value: boolean) => void;
+    isTransparentMode: boolean;
+    setIsTransparentMode: (value: boolean) => void;
 }
 
 const ALL_SHORTCUTS = [
@@ -43,6 +45,7 @@ const ALL_SHORTCUTS = [
     { id: 'memorization', label: 'التحفيظ', icon: <Brain size={18} /> },
     { id: 'tajweed-education', label: 'تعليم التجويد', icon: <BookOpen size={18} /> },
     { id: 'quran-download', label: 'تحميل المصحف', icon: <Download size={18} /> },
+    { id: 'tafseer-download', label: 'تحميل التفسير', icon: <Download size={18} /> },
 ];
 
 const DEFAULT_SHORTCUTS = ['prayer-times', 'sabah-masaa', 'qibla', 'adia', 'hisn-muslim'];
@@ -66,7 +69,9 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     settings,
     updateSetting,
     isHideToolbarsEnabled,
-    setIsHideToolbarsEnabled
+    setIsHideToolbarsEnabled,
+    isTransparentMode,
+    setIsTransparentMode
 }) => {
     const [selectedShortcuts, setSelectedShortcuts] = useState<string[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -139,8 +144,8 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
         const baseSettings = { ...DEFAULT_SETTINGS, ...savedSettings };
         const updatedSettings = {
             ...baseSettings,
-            bgColor: "#ffffff",
-            textColor: "#000000",
+            bgColor: theme.bg || "#ffffff",
+            textColor: theme.text || "#000000",
             fontFamily: theme.font,
             ...(baseSettings.lockHighlightColor ? {} : { highlightTextColor: theme.highlightText || theme.accent }),
             theme: themeId
@@ -167,7 +172,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                     /* Main Menu Content */
                     <div className="p-4 flex flex-col gap-4 overflow-y-auto flex-grow custom-scrollbar">
                         {/* نوع المصحف */}
-                        <MenuSection title="نوع المصحف" iconColor={iconColor}>
+                        <MenuSection title="نوع المصحف" iconColor={iconColor} titleColor="#2563eb">
                             <div className="flex flex-col gap-1 mb-2">
                                 <button 
                                     className={`w-full py-2.5 px-4 rounded-xl text-sm flex items-center justify-between transition-all ${!useTajweed ? 'bg-gray-100 font-bold' : 'hover:bg-gray-50'}`} 
@@ -199,8 +204,10 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                         </MenuSection>
 
                         {/* الإعدادات والبحث */}
-                        <MenuSection title="الإعدادات والبحث" iconColor={iconColor}>
+                        <MenuSection title="الإعدادات والبحث" iconColor={iconColor} titleColor="#16a34a">
                             <MenuItem icon={<Search size={18} />} label="البحث" onClick={() => handleAction(() => openModal('search-modal'))} iconColor={iconColor} />
+                            <MenuItem icon={<Settings size={18} />} label="الإعدادات" onClick={() => handleAction(() => openModal('settings-modal'))} iconColor={iconColor} />
+                            <MenuItem icon={<Bookmark size={18} />} label="العلامات المرجعية" onClick={() => handleAction(() => openModal('bookmarks-modal'))} iconColor={iconColor} />
                             <div className="flex flex-col">
                                 <button 
                                     onClick={() => setIsThemesOpen(!isThemesOpen)} 
@@ -234,17 +241,17 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                                     <input 
                                                         type="checkbox" 
                                                         id="menu-hide-toolbars" 
-                                                        checked={isHideToolbarsEnabled} 
+                                                        checked={isTransparentMode} 
                                                         onChange={(e) => {
-                                                            setIsHideToolbarsEnabled(e.target.checked);
+                                                            setIsTransparentMode(e.target.checked);
                                                             const modeSuffix = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
-                                                            localStorage.setItem('hide_toolbars_enabled' + modeSuffix, String(e.target.checked));
+                                                            localStorage.setItem('transparent_mode' + modeSuffix, String(e.target.checked));
                                                             window.dispatchEvent(new Event('settings-change'));
                                                             showToast(e.target.checked ? 'تم تفعيل إخفاء الأشرطة' : 'تم تعطيل إخفاء الأشرطة');
                                                         }} 
                                                         className="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer"
                                                     />
-                                                    <label htmlFor="menu-hide-toolbars" className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${isHideToolbarsEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                                    <label htmlFor="menu-hide-toolbars" className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${isTransparentMode ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
                                                 </div>
                                             </div>
                                         </div>
@@ -274,18 +281,24 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                     </div>
                                 )}
                             </div>
-                            <MenuItem icon={<Settings size={18} />} label="الإعدادات" onClick={() => handleAction(() => openModal('settings-modal'))} iconColor={iconColor} />
-                            <MenuItem icon={<Bookmark size={18} />} label="العلامات المرجعية" onClick={() => handleAction(() => openModal('bookmarks-modal'))} iconColor={iconColor} />
                         </MenuSection>
 
                         {/* اختصارات أخرى */}
-                        <MenuSection title="اختصارات أخرى" iconColor={iconColor}>
+                        <MenuSection title="اختصارات أخرى" iconColor={iconColor} titleColor="#d97706">
                             {ALL_SHORTCUTS.filter(s => selectedShortcuts.includes(s.id)).map(shortcut => (
                                 <MenuItem 
                                     key={shortcut.id}
                                     icon={shortcut.icon} 
                                     label={shortcut.label} 
-                                    onClick={() => handleAction(() => onNavigate(shortcut.id))} 
+                                    onClick={() => handleAction(() => {
+                                        if (shortcut.id === 'quran-download') {
+                                            openModal('quran-download-modal');
+                                        } else if (shortcut.id === 'tafseer-download') {
+                                            openModal('tafsir-download-modal');
+                                        } else {
+                                            onNavigate(shortcut.id);
+                                        }
+                                    })} 
                                     iconColor={iconColor} 
                                 />
                             ))}
@@ -345,7 +358,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             <button 
                                 onClick={saveShortcuts}
                                 className="flex-1 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
-                                style={{ backgroundColor: '#000000' }}
+                                style={{ backgroundColor: iconColor }}
                             >
                                 <Save size={16} />
                                 حفظ
@@ -364,10 +377,10 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     );
 };
 
-const MenuSection: React.FC<{ title: string, children: React.ReactNode, iconColor: string }> = ({ title, children, iconColor }) => (
+const MenuSection: React.FC<{ title: string, children: React.ReactNode, iconColor: string, titleColor?: string }> = ({ title, children, iconColor, titleColor = '#000000' }) => (
     <div className="flex flex-col">
         <div className="bg-blue-50/50 py-1.5 px-3 rounded-md mb-2 text-right">
-            <span className="text-xs font-bold" style={{ color: '#000000' }}>{title}</span>
+            <span className="text-xs font-bold" style={{ color: titleColor }}>{title}</span>
         </div>
         <div className="flex flex-col px-2">
             {children}

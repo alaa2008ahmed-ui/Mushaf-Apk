@@ -34,14 +34,14 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
     const [settings, setSettings] = useState<ThemeSettings>(() => {
         try {
             const saved = localStorage.getItem(THEME_SETTINGS_KEY);
-            return saved ? JSON.parse(saved) : { themeKey: 'olive_grove' };
+            return saved ? JSON.parse(saved) : { themeKey: 'default' };
         } catch (e) {
-            return { themeKey: 'olive_grove' };
+            return { themeKey: 'default' };
         }
     });
 
     const theme = useMemo(() => {
-        const baseTheme = presetThemes[settings.themeKey] || presetThemes.olive_grove;
+        const baseTheme = presetThemes[settings.themeKey] || presetThemes.default;
         const isDark = !baseTheme.bgColor || 
             ['#191D3A', '#0C0A09', '#000000', '#4C1D95', '#7C2D12', '#1E40AF', '#1E1B4B', '#1C1917', '#0B0F19', '#3E2723', '#450A0A', '#064E3B', '#0F766E', '#155E75', '#581C87', '#0F172A', '#2E1065', '#0B0F19', '#022C22'].includes(baseTheme.bgColor.toUpperCase());
         const isGlass = settings.themeKey.includes('glass') || settings.themeKey.includes('emerald') || settings.themeKey.includes('crystal');
