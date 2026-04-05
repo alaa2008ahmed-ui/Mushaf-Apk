@@ -343,7 +343,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                     {toastMessage}
                 </div>
             )}
-            <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
             <TutorialOverlay tutorialId="prayer-times-tutorial" steps={prayerTutorialSteps} />
         </div>
     );

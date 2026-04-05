@@ -715,23 +715,14 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         position: 'absolute',
                         left: '-9999px',
                         top: '-9999px',
-                        width: '800px', // Fixed width for consistent capture
-                        backgroundColor: currentTheme.bg || '#ffffff',
-                        padding: '40px',
-                        color: currentTheme.text || '#000000',
+                        width: '1000px', // Fixed width for consistent capture
+                        backgroundColor: '#ffffff',
+                        padding: '60px 50px',
+                        color: '#000000',
                         direction: 'rtl'
                     }}
                 >
-                    <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: `2px solid ${currentTheme.accent}`, paddingBottom: '15px' }}>
-                        <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: currentTheme.accent }}>
-                            صفحة {toArabic(pageNum)} - {pageSurahInfo}
-                        </h2>
-                        {pageAyahs.length > 0 && pageAyahs[0].sNum === pageAyahs[pageAyahs.length - 1].sNum && (
-                            <p style={{ fontSize: '18px', color: '#666', marginTop: '4px', fontWeight: 'bold' }}>
-                                {getSurahMetadata(pageAyahs[0].sNum)}
-                            </p>
-                        )}
-                    </div>
+                    {renderShareHeader()}
                     
                     {pageAyahs.map((ay, idx) => {
                         const ayahText = getAyahText(ay.sNum, ay.numberInSurah);
@@ -741,15 +732,15 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         return (
                             <div key={`${ay.sNum}-${ay.numberInSurah}`} style={{ marginBottom: '25px' }}>
                                 {isNewSurah && idx > 0 && (
-                                    <div style={{ textAlign: 'center', margin: '30px 0', padding: '10px', backgroundColor: `${currentTheme.accent}15`, borderRadius: '8px' }}>
-                                        <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: currentTheme.accent }}>سورة {getSurahName(ay.sNum)}</h3>
+                                    <div style={{ textAlign: 'center', margin: '30px 0', padding: '10px', backgroundColor: `#16a34a15`, borderRadius: '8px' }}>
+                                        <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#16a34a' }}>سورة {getSurahName(ay.sNum)}</h3>
                                     </div>
                                 )}
                                 <div style={{ 
                                     fontSize: '22px', 
                                     lineHeight: '1.8', 
                                     fontFamily: 'var(--font-amiri-quran), serif',
-                                    color: currentTheme.accent,
+                                    color: '#16a34a',
                                     marginBottom: '10px',
                                     textAlign: 'right'
                                 }}>
@@ -759,7 +750,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                     <div style={{ 
                                         fontSize: '16px', 
                                         lineHeight: '1.6', 
-                                        color: currentTheme.text,
+                                        color: '#000000',
                                         opacity: 0.9,
                                         textAlign: readingMode === 'translation' ? 'left' : 'right',
                                         direction: readingMode === 'translation' ? 'ltr' : 'rtl',
@@ -774,9 +765,24 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         );
                     })}
                     
-                    <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '3px solid #3b82f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontFamily: '"Aref Ruqaa", serif', fontSize: '22px', color: '#3b82f6', fontWeight: 'bold' }}>مصحف احمد وليلى</span>
-                        <span style={{ opacity: 0.7, fontSize: '14px', fontWeight: 'bold' }}>{new Date().toLocaleDateString('ar-EG')}</span>
+                    <div style={{ 
+                        marginTop: '30px', 
+                        paddingTop: '20px', 
+                        borderTop: '3px solid #3b82f6', 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontFamily: '"Aref Ruqaa", serif', fontSize: '24px', color: '#3b82f6', fontWeight: 'bold' }}>مصحف احمد وليلى</span>
+                            <span style={{ fontSize: '16px', opacity: 0.7, fontWeight: 'bold' }}>صفحة {toArabic(pageNum)}</span>
+                        </div>
+                        {pageAyahs.length > 0 && pageAyahs[0].sNum === pageAyahs[pageAyahs.length - 1].sNum && (
+                            <p style={{ fontSize: '18px', color: '#666', margin: 0, fontWeight: 'bold' }}>
+                                {getSurahMetadata(pageAyahs[0].sNum)}
+                            </p>
+                        )}
                     </div>
                 </div>
             )}

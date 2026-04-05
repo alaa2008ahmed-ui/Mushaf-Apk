@@ -685,7 +685,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
       </main>
 
-      <BottomBar onHomeClick={() => onNavigate('more-menu')} onThemesClick={() => {}} showThemes={false} />
+      <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
 
       {renderDeleteConfirmModal()}
 

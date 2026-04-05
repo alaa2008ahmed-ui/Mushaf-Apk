@@ -434,7 +434,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 </div>
             </div>
             
-            <BottomBar onHomeClick={() => onNavigate('more-menu')} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
 
             {/* Help Modal */}
             {showHelpModal && (

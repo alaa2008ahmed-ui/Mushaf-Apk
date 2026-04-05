@@ -217,6 +217,7 @@ function AppContent({
         onNavigate={handleNavigate} 
         onOpenThemes={toggleThemeSelector}
         navParams={navParams}
+        history={history}
       />
 
       {/* Global Voice Control Toggle */}

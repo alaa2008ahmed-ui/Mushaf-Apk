@@ -288,7 +288,7 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                 </div>
             </main>
 
-            <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
         </div>
     );
 };
