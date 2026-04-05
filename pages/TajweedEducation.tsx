@@ -2217,12 +2217,42 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (sur
     const userAudioRef = useRef<HTMLAudioElement | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
+    const isNavigatingToMushaf = useRef(false);
 
     useEffect(() => {
         const savedProgress = localStorage.getItem('tajweed_progress');
         if (savedProgress) {
             setCompletedRules(JSON.parse(savedProgress));
         }
+
+        const savedRule = localStorage.getItem('tajweed_selected_rule');
+        if (savedRule) {
+            setSelectedRule(savedRule);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (selectedRule) {
+            localStorage.setItem('tajweed_selected_rule', selectedRule);
+        } else {
+            localStorage.removeItem('tajweed_selected_rule');
+        }
+    }, [selectedRule]);
+
+    useEffect(() => {
+        return () => {
+            // Stop audio when leaving the page, unless we are going to the Mushaf for practical application
+            if (!isNavigatingToMushaf.current) {
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                    audioRef.current.currentTime = 0;
+                }
+                if (userAudioRef.current) {
+                    userAudioRef.current.pause();
+                    userAudioRef.current.currentTime = 0;
+                }
+            }
+        };
     }, []);
 
     useEffect(() => {
@@ -2539,7 +2569,10 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (sur
                                                         {/* Mushaf Integration Button */}
                                                         {onNavigateToMushaf && (
                                                             <button 
-                                                                onClick={() => onNavigateToMushaf(example.surah, example.ayah)}
+                                                                onClick={() => {
+                                                                    isNavigatingToMushaf.current = true;
+                                                                    onNavigateToMushaf(example.surah, example.ayah);
+                                                                }}
                                                                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold shadow-sm transition-all hover:opacity-90"
                                                                 style={{ 
                                                                     backgroundColor: theme.palette[0], 

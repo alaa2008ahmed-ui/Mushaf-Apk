@@ -15,6 +15,7 @@ interface ShareAyahModalProps {
     currentTheme: any;
     readingMode?: 'mushaf' | 'tafseer' | 'meanings' | 'translation';
     useTajweed?: boolean;
+    settings?: any;
 }
 
 const BACKGROUNDS = [
@@ -100,7 +101,8 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     quranData,
     currentTheme,
     readingMode = 'mushaf',
-    useTajweed = false
+    useTajweed = false,
+    settings: propSettings
 }) => {
     const [shareType, setShareType] = useState<'text' | 'image' | 'page' | 'audio'>('image');
     const [fromAyah, setFromAyah] = useState(currentAyah.a);
@@ -131,12 +133,13 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
 
     useEffect(() => {
         const fetchExplanation = async () => {
-            if (readingMode === 'mushaf') return;
             try {
                 let url = '';
-                if (readingMode === 'tafseer') url = '/assets/data/ar.jalalayn.json';
-                else if (readingMode === 'meanings') url = '/tafseer.json';
-                else if (readingMode === 'translation') url = '/en.json';
+                const activeMode = readingMode === 'mushaf' ? (propSettings?.tafseer || 'ar.jalalayn') : readingMode;
+                
+                if (activeMode === 'tafseer' || activeMode === 'ar.jalalayn') url = '/assets/data/ar.jalalayn.json';
+                else if (activeMode === 'meanings' || activeMode === 'tafseer.json') url = '/tafseer.json';
+                else if (activeMode === 'translation' || activeMode === 'en.json') url = '/en.json';
                 
                 if (url) {
                     const res = await fetch(url);
@@ -148,7 +151,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             }
         };
         fetchExplanation();
-    }, [readingMode]);
+    }, [readingMode, propSettings?.tafseer]);
 
     useEffect(() => {
         if (isOpen) {
@@ -206,13 +209,16 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
 
     const getExplanationText = (s: number, a: number) => {
         if (!explanationData) return '';
-        if (readingMode === 'tafseer') {
+        
+        const activeMode = readingMode === 'mushaf' ? (propSettings?.tafseer || 'ar.jalalayn') : readingMode;
+
+        if (activeMode === 'tafseer' || activeMode === 'ar.jalalayn') {
             return explanationData.data?.surahs?.[s - 1]?.ayahs?.[a - 1]?.text || explanationData[s - 1]?.ayahs?.[a - 1]?.text || '';
         }
-        if (readingMode === 'meanings') {
+        if (activeMode === 'meanings' || activeMode === 'tafseer.json') {
             return explanationData.find((m: any) => m.number === String(s) && m.aya === String(a))?.text || '';
         }
-        if (readingMode === 'translation') {
+        if (activeMode === 'translation' || activeMode === 'en.json') {
             return explanationData[s - 1]?.verses?.[a - 1]?.translation || '';
         }
         return '';
@@ -786,7 +792,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             )}
 
             <div className="min-h-full flex items-center justify-center p-2 sm:p-4">
-                <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md flex flex-col max-h-[90vh]" style={{ color: currentTheme.textColor || '#000000' }}>
+                <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-[360px] flex flex-col h-[650px] max-h-[90vh]" style={{ color: currentTheme.textColor || '#000000' }}>
                     
                     {/* Sticky Header Section */}
                     <div className="p-3 pb-2 border-b border-gray-100 shrink-0 z-10 bg-white rounded-t-2xl">
@@ -906,7 +912,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                                 </React.Fragment>
                                             ))}
                                         </p>
-                                        {readingMode !== 'mushaf' && combinedExplanation && (
+                                        {combinedExplanation && (
                                             <p 
                                                 style={{ 
                                                     lineHeight: '1.5',
@@ -916,8 +922,8 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                                     textShadow: '0 1px 2px rgba(0,0,0,0.5)',
                                                     margin: '12px 0 0 0',
                                                     opacity: 0.9,
-                                                    direction: readingMode === 'translation' ? 'ltr' : 'rtl',
-                                                    textAlign: readingMode === 'translation' ? 'left' : 'right',
+                                                    direction: (readingMode === 'translation' || propSettings?.tafseer === 'en.json') ? 'ltr' : 'rtl',
+                                                    textAlign: (readingMode === 'translation' || propSettings?.tafseer === 'en.json') ? 'left' : 'right',
                                                     width: '100%'
                                                 }}
                                             >

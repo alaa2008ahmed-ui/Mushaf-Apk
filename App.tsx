@@ -34,6 +34,13 @@ function App() {
     ];
 
     if (pageId === 'home') {
+      // If we are in the Mushaf and it's a practical application from Tajweed,
+      // the Home button should take us back to Tajweed.
+      if (history[history.length - 1] === 'quran' && navParams?.isPractical) {
+        setHistory(prev => (prev.length > 1 ? prev.slice(0, -1) : prev));
+        return;
+      }
+
       const quranIndex = history.lastIndexOf('quran');
       const quranLandscapeIndex = history.lastIndexOf('quran-landscape');
       const targetIndex = Math.max(quranIndex, quranLandscapeIndex);

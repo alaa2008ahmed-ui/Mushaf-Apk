@@ -32,13 +32,13 @@ interface AppRouterProps {
 const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenThemes, navParams }) => {
     switch(page) {
       case 'quran':
-        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={false} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} mushafType={navParams?.mushafType} />;
+        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={false} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} mushafType={navParams?.mushafType} isPractical={navParams?.isPractical} />;
       case 'quran-landscape':
-        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={true} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} mushafType={navParams?.mushafType} />;
+        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={true} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} mushafType={navParams?.mushafType} isPractical={navParams?.isPractical} />;
       case 'quran-download':
         return <QuranDownload onBack={onBack} />;
       case 'tajweed-education':
-        return <TajweedEducation onBack={onBack} onNavigateToMushaf={(surah, ayah) => onNavigate('quran', { surah, ayah })} />;
+        return <TajweedEducation onBack={onBack} onNavigateToMushaf={(surah, ayah) => onNavigate('quran', { surah, ayah, isPractical: true, mushafType: 'tajweed' })} />;
       case 'salah-adhkar':
         return <AthkarAlSalah onBack={onBack} />;
       case 'calendar':

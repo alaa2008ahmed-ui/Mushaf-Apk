@@ -26,7 +26,7 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
                         className={homeButtonClass}
                         style={{ background: themeKey === 'olive_grove' ? '#4D7C0F' : theme.palette[0], color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
                     >
-                        <span className="text-xl">{homeLabel === "رجوع" ? "⬅️" : "🏠"}</span>
+                        <span className="text-xl">🏠</span>
                         <span className="hidden sm:inline">{homeLabel}</span>
                     </button>
                 )}
