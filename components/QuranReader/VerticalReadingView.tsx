@@ -41,6 +41,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
         return true;
     });
     const virtuosoRef = useRef<VirtuosoHandle>(null);
+    const isInternalClickRef = useRef(false);
 
     // Pinch-to-zoom refs
     const initialPinchDistanceRef = useRef<number | null>(null);
@@ -155,16 +156,29 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     // Find the index of the current ayah in the flattened list
     const initialIndex = useMemo(() => {
         const targetId = `${currentAyah.s}-${currentAyah.a}`;
-        const index = flattenedItems.findIndex(item => item.type === 'ayah' && item.id === targetId);
+        let index = flattenedItems.findIndex(item => item.type === 'ayah' && item.id === targetId);
+        if (index !== -1 && currentAyah.a === 1 && index > 0 && flattenedItems[index - 1].type === 'header') {
+            index = index - 1;
+        }
         return index !== -1 ? index : 0;
     }, [flattenedItems, currentAyah]);
 
     // Scroll to current ayah when it changes externally
     useEffect(() => {
         if (!isLoading && virtuosoRef.current) {
+            if (isInternalClickRef.current) {
+                isInternalClickRef.current = false;
+                return;
+            }
             const targetId = `${currentAyah.s}-${currentAyah.a}`;
-            const index = flattenedItems.findIndex(item => item.type === 'ayah' && item.id === targetId);
+            let index = flattenedItems.findIndex(item => item.type === 'ayah' && item.id === targetId);
+            
             if (index !== -1) {
+                // If it's the first ayah, scroll to the header instead so the user sees the Surah title
+                if (currentAyah.a === 1 && index > 0 && flattenedItems[index - 1].type === 'header') {
+                    index = index - 1;
+                }
+                
                 virtuosoRef.current.scrollToIndex({
                     index,
                     align: 'start', // Align to start for better visibility of the surah/ayah
@@ -196,31 +210,31 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
             return (
                 <div className="px-4 py-6">
-                    <div className="surah-header-visual relative h-14 w-full flex items-center justify-between px-6 rounded-md border-[3px] overflow-hidden"
+                    <div className="surah-header-visual relative h-14 w-full flex items-center justify-between px-2 sm:px-6 rounded-md border-[3px] overflow-hidden"
                          style={{ 
                              background: headerBg,
                              borderColor: headerBorder,
                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
                          }}>
-                        <div className="font-bold text-lg z-10 drop-shadow-md" style={{ color: headerText }}>
+                        <div className="font-bold text-sm sm:text-lg z-10 drop-shadow-md whitespace-nowrap" style={{ color: headerText }}>
                             {toArabic(item.ayahCount)} آيات
                         </div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="relative h-10 px-12 flex items-center justify-center border-2 shadow-inner"
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="relative h-10 px-6 sm:px-12 flex items-center justify-center border-2 shadow-inner max-w-[50%] sm:max-w-none"
                                  style={{ 
                                      borderRadius: '50px / 50px', 
-                                     minWidth: '240px',
+                                     minWidth: '140px',
                                      backgroundColor: cartoucheBg,
                                      borderColor: headerBorder
                                  }}>
-                                <h2 className="text-xl font-bold whitespace-nowrap mb-0" style={{ color: cartoucheText }}>
+                                <h2 className="text-base sm:text-xl font-bold whitespace-nowrap mb-0" style={{ color: cartoucheText }}>
                                     سُورَةُ {item.surahName}
                                 </h2>
                                 <div className="absolute left-0 top-0 bottom-0 w-4 border-r-2 rounded-l-full opacity-30" style={{ borderColor: headerBorder }}></div>
                                 <div className="absolute right-0 top-0 bottom-0 w-4 border-l-2 rounded-r-full opacity-30" style={{ borderColor: headerBorder }}></div>
                             </div>
                         </div>
-                        <div className="font-bold text-lg z-10 drop-shadow-md" style={{ color: headerText }}>
+                        <div className="font-bold text-sm sm:text-lg z-10 drop-shadow-md whitespace-nowrap" style={{ color: headerText }}>
                             {item.surahType}
                         </div>
                     </div>
@@ -238,7 +252,10 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                         backgroundColor: isHighlighted ? `${currentTheme.accent}20` : 'transparent',
                         borderColor: isHighlighted ? currentTheme.accent : 'transparent'
                     }}
-                    onClick={() => onAyahClick(item.surahNumber, item.ayahNumber)}
+                    onClick={() => {
+                        isInternalClickRef.current = true;
+                        onAyahClick(item.surahNumber, item.ayahNumber);
+                    }}
                 >
                     <div className="ayah-text mb-4 text-right leading-relaxed" 
                          style={{ 
@@ -294,15 +311,6 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 overscan={200} // Pre-render items for smoother experience
                 className="h-full scrollbar-hide"
                 itemContent={renderItem}
-                rangeChanged={(range) => {
-                    if (onVisibleAyahChange) {
-                        const centerIndex = Math.floor((range.startIndex + range.endIndex) / 2);
-                        const item = flattenedItems[centerIndex];
-                        if (item && item.type === 'ayah') {
-                            onVisibleAyahChange(item.surahNumber, item.ayahNumber);
-                        }
-                    }
-                }}
             />
         </div>
     );

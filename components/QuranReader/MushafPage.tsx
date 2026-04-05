@@ -174,7 +174,8 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
 
     const headerStyle = {
         fontSize: settings ? `${settings.fontSize * 0.94}rem` : '1.6rem',
-        fontFamily: settings?.fontFamily || 'var(--font-amiri-quran)'
+        fontFamily: settings?.fontFamily || 'var(--font-amiri-quran)',
+        color: currentTheme?.accent || '#6d28d9'
     };
 
     return (

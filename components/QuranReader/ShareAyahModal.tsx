@@ -4,7 +4,7 @@ import html2canvas from 'html2canvas';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
-import { FONTS, SURAH_NAMES_AR, toArabic } from './constants';
+import { FONTS, SURAH_NAMES_AR, toArabic, SURAH_INFO } from './constants';
 import MushafPage from './MushafPage';
 
 interface ShareAyahModalProps {
@@ -595,6 +595,65 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             : `سورة ${getSurahName(firstPageAyah.sNum)} آية ${toArabic(firstPageAyah.numberInSurah)} - سورة ${getSurahName(lastPageAyah.sNum)} آية ${toArabic(lastPageAyah.numberInSurah)}`;
     }
 
+    const renderShareHeader = () => {
+        if (pageAyahs.length === 0) return null;
+        const firstAyah = pageAyahs[0];
+        const surahNum = firstAyah.sNum;
+        const surahName = SURAH_NAMES_AR[surahNum - 1];
+        const surahInfo = SURAH_INFO[surahNum];
+
+        const headerBg = '#ffffff';
+        const headerBorder = '#16a34a'; // Green
+        const headerText = '#16a34a';
+
+        return (
+            <div style={{
+                position: 'relative',
+                width: '100%',
+                height: '80px',
+                marginBottom: '30px',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#ffffff',
+            }}>
+                <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} viewBox="0 0 600 80" preserveAspectRatio="none">
+                    {/* Outer Green Box with Double Border */}
+                    <rect x="2" y="2" width="596" height="76" fill={headerBg} stroke={headerBorder} strokeWidth="3" />
+                    <rect x="8" y="8" width="584" height="64" fill="none" stroke={headerBorder} strokeWidth="1" />
+                    
+                    {/* Center Cartouche Background (Light) */}
+                    <path d="M 180 10 L 420 10 Q 440 10 445 25 L 450 40 L 445 55 Q 440 70 420 70 L 180 70 Q 160 70 155 55 L 150 40 L 155 25 Q 160 10 180 10 Z" fill={headerBg} stroke={headerBorder} strokeWidth="2" />
+                    
+                    {/* Inner decorative line for cartouche */}
+                    <path d="M 185 15 L 415 15 Q 430 15 434 25 L 438 40 L 434 55 Q 430 65 415 65 L 185 65 Q 170 65 166 55 L 162 40 L 166 25 Q 170 15 185 15 Z" fill="none" stroke={headerBorder} strokeWidth="1" />
+                </svg>
+                
+                <div style={{
+                    position: 'relative',
+                    zIndex: 10,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0 40px',
+                    color: headerText,
+                }}>
+                    <div style={{ width: '25%', textAlign: 'center', fontSize: '24px', fontWeight: 'bold', fontFamily: '"Cairo", sans-serif' }}>
+                        {surahInfo?.type}
+                    </div>
+                    <div style={{ width: '50%', textAlign: 'center', fontSize: '36px', fontWeight: 'bold', fontFamily: '"Amiri Quran", serif' }}>
+                        سُورَةُ {surahName.replace('سورة', '').trim()}
+                    </div>
+                    <div style={{ width: '25%', textAlign: 'center', fontSize: '24px', fontWeight: 'bold', fontFamily: '"Cairo", sans-serif' }}>
+                        {toArabic(surahInfo?.ayahs || 0)} آيات
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm overflow-y-auto" dir="rtl">
             {/* Hidden Mushaf capture element for high-quality page share */}
@@ -612,6 +671,12 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     direction: 'rtl'
                 }}
             >
+                <style>{`
+                    #hidden-mushaf-capture .surah-header-container {
+                        display: none !important;
+                    }
+                `}</style>
+                {renderShareHeader()}
                 <MushafPage 
                     pageNum={pageNum}
                     pageData={pageAyahs}
