@@ -472,27 +472,24 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     }
                 }
             } else if (shareType === 'audio') {
-                let reader = 'ar.alafasy';
-                try {
-                    // Try to find reader in any quran_settings
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const key = localStorage.key(i);
-                        if (key && key.startsWith('quran_settings')) {
-                            const settings = JSON.parse(localStorage.getItem(key) || '{}');
-                            if (settings.reader) {
-                                reader = settings.reader;
-                                break;
-                            }
-                        }
-                    }
-                } catch (e) {}
-                
+                let reader = propSettings?.reader || appSettings?.reader || 'Alafasy_128kbps';
                 const audioReader = reader === 'ar.alafasy' ? 'Alafasy_128kbps' : reader;
                 
                 // Custom file name: SurahName_AyahRange.mp3
                 const fileName = `${getSurahName(firstAyah.s)}_${firstAyah.a}${firstAyah.a !== lastAyah.a ? '-' + lastAyah.a : ''}.mp3`;
 
                 try {
+                    // Helper to strip ID3v2 tags to allow better concatenation
+                    const stripID3v2 = (buffer: ArrayBuffer) => {
+                        const uint8 = new Uint8Array(buffer);
+                        if (uint8.length > 10 && uint8[0] === 0x49 && uint8[1] === 0x44 && uint8[2] === 0x33) { // "ID3"
+                            // Size is 4 bytes starting at offset 6, each byte is 7-bit (synchsafe)
+                            const size = (uint8[6] << 21) | (uint8[7] << 14) | (uint8[8] << 7) | uint8[9];
+                            return buffer.slice(size + 10);
+                        }
+                        return buffer;
+                    };
+
                     // Fetch all ayahs in parallel for better performance
                     const fetchPromises = selectedAyahs.map(async (ay) => {
                         const sStr = String(ay.s).padStart(3, '0');
@@ -501,21 +498,12 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         
                         const res = await fetch(audioUrl);
                         if (!res.ok) throw new Error(`Failed to fetch audio for ayah ${ay.a}`);
-                        return await res.arrayBuffer();
+                        const buffer = await res.arrayBuffer();
+                        return stripID3v2(buffer);
                     });
                     
                     const buffers = await Promise.all(fetchPromises);
-                    
-                    // Concatenate all ArrayBuffers into a single Uint8Array
-                    const totalLength = buffers.reduce((acc, curr) => acc + curr.byteLength, 0);
-                    const combinedData = new Uint8Array(totalLength);
-                    let offset = 0;
-                    for (const buffer of buffers) {
-                        combinedData.set(new Uint8Array(buffer), offset);
-                        offset += buffer.byteLength;
-                    }
-                    
-                    const combinedBlob = new Blob([combinedData], { type: 'audio/mpeg' });
+                    const combinedBlob = new Blob(buffers, { type: 'audio/mpeg' });
 
                     if (Capacitor.isNativePlatform()) {
                         const base64Data = await blobToBase64(combinedBlob);
@@ -546,6 +534,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             });
                         }
                     } else {
+                        // Fallback to text share if nothing else works
                         await Share.share({
                             title: 'مشاركة تلاوة',
                             text: shareText,
