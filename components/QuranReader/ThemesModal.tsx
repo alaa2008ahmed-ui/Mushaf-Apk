@@ -6,10 +6,10 @@ interface ThemesModalProps {
     showToast: (msg: string) => void;
     isLandscape: boolean;
     readingMode: string;
+    modeSuffix: string;
 }
 
-const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandscape, readingMode }) => {
-    const modeSuffix = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
+const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandscape, readingMode, modeSuffix }) => {
     const currentThemeId = localStorage.getItem('current_theme_id' + modeSuffix) || 'olive';
     const activeTheme = THEMES[currentThemeId as keyof typeof THEMES] || THEMES['olive'];
 

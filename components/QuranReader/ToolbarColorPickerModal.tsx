@@ -8,11 +8,11 @@ interface ToolbarColorPickerModalProps {
     currentTheme: any;
     toolbarColors: any;
     isLandscape: boolean;
+    modeSuffix: string;
 }
 
 // FIX: Add `onOpenModal` to props destructuring to make it available in the component.
-const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClose, onOpenModal, showToast, currentTheme, toolbarColors, isLandscape }) => {
-    const modeSuffix = isLandscape ? '_h' : '_v';
+const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClose, onOpenModal, showToast, currentTheme, toolbarColors, isLandscape, modeSuffix }) => {
     const [isClosing, setIsClosing] = useState(false);
 
     const handleClose = () => {

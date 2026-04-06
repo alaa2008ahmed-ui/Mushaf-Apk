@@ -15,6 +15,7 @@ interface ShareAyahModalProps {
     currentTheme: any;
     readingMode?: 'mushaf' | 'tafseer' | 'meanings' | 'translation';
     useTajweed?: boolean;
+    isPractical?: boolean;
     settings?: any;
 }
 
@@ -102,6 +103,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     currentTheme,
     readingMode = 'mushaf',
     useTajweed = false,
+    isPractical = false,
     settings: propSettings
 }) => {
     const [shareType, setShareType] = useState<'text' | 'image' | 'page' | 'audio'>('image');
@@ -866,7 +868,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                     >
                                         {selectedAyahs.map((ay, idx) => (
                                             <React.Fragment key={idx}>
-                                                <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: renderTajweedTextHtml(getAyahText(ay.s, ay.a, false), useTajweed, { textColor: textColor }) }} />
+                                                <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: renderTajweedTextHtml(getAyahText(ay.s, ay.a, false), false, { textColor: textColor }) }} />
                                                 {` ﴿${toArabic(ay.a)}﴾ `}
                                             </React.Fragment>
                                         ))}
