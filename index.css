@@ -119,3 +119,9 @@ input[type=number] {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+.font-quran {
+  font-family: "Amiri Quran", serif;
+  direction: rtl;
+  unicode-bidi: isolate;
+}

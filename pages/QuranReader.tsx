@@ -219,9 +219,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         return localStorage.getItem('use_tajweed_quran' + baseModeSuffix) === 'true';
     });
 
-    const modeSuffix = (readingMode === 'mushaf' && useTajweed && !isPractical && !localIsMemorizationMode && !isWirdMode)
-        ? `_tajweed_${isLandscape ? 'h' : 'v'}`
-        : baseModeSuffix;
+    const modeSuffix = baseModeSuffix;
+    const bookmarkSuffix = baseModeSuffix + (useTajweed ? '_tajweed' : '');
 
     const [quranData, setQuranData] = useState<any>(quranTajweedJson.data);
 
@@ -666,8 +665,17 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const lastNotifiedJuz = useRef<number | null>(null);
     const [bookmarks, setBookmarks] = useState(() => {
         const mode = initialLandscape ? '_h' : '_v';
-        return JSON.parse(localStorage.getItem('quran_bookmarks_list' + mode) || '[]');
+        const initialUseTajweed = isPractical || mushafType === 'tajweed' || localIsMemorizationMode || localStorage.getItem('use_tajweed_quran' + (isPractical ? `_practical_${mode}` : localIsMemorizationMode ? `_memorization_${mode}` : isWirdMode ? `_wird_${mode}` : readingMode === 'mushaf' ? mode : `_${readingMode}_${mode}`)) === 'true';
+        const bSuffix = (isPractical ? `_practical_${mode}` : localIsMemorizationMode ? `_memorization_${mode}` : isWirdMode ? `_wird_${mode}` : readingMode === 'mushaf' ? mode : `_${readingMode}_${mode}`) + (initialUseTajweed ? '_tajweed' : '');
+        return JSON.parse(localStorage.getItem('quran_bookmarks_list' + bSuffix) || '[]');
     });
+
+    // Update bookmarks when mode or tajweed changes
+    useEffect(() => {
+        const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + bookmarkSuffix);
+        const parsedBookmarks = savedBookmarks ? JSON.parse(savedBookmarks) : [];
+        setBookmarks(parsedBookmarks);
+    }, [bookmarkSuffix]);
 
     const [sajdahInfo, setSajdahInfo] = useState<{ show: boolean; surah?: string; ayah?: number }>({ show: false });
     const [sajdahCardInfo, setSajdahCardInfo] = useState({ show: false, surah: '', ayah: 0, juz: 0, page: 0, wasAutoscrolling: false, wasPlaying: false });
@@ -1754,7 +1762,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             const hideToolbarsSetting = localStorage.getItem('hide_toolbars_enabled' + mode) === 'true';
             if (isHideToolbarsEnabled !== hideToolbarsSetting) setIsHideToolbarsEnabled(hideToolbarsSetting);
 
-            const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + mode);
+            const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + bookmarkSuffix);
             const parsedBookmarks = savedBookmarks ? JSON.parse(savedBookmarks) : [];
             setBookmarks(prev => {
                 if (JSON.stringify(prev) === JSON.stringify(parsedBookmarks)) return prev;
@@ -2041,23 +2049,29 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     }, [quranData, jumpToAyah, getPageData, showToast]);
 
     useEffect(() => {
+        if (initialSurah && initialAyah) {
+            setTimeout(() => {
+                if (isMountedRef.current) {
+                    jumpToAyah(initialSurah, initialAyah, true);
+                }
+            }, 300); // Increased timeout for better reliability
+            hasJumpedRef.current = true;
+            return;
+        }
+
         if (hasJumpedRef.current) return;
         hasJumpedRef.current = true;
         
         if (localIsMemorizationMode && localMemorizationSettings) {
             setTimeout(() => {
-                const startS = initialSurah || localMemorizationSettings.fromSurah;
-                const startA = initialAyah || localMemorizationSettings.fromAyah;
+                const startS = localMemorizationSettings.fromSurah;
+                const startA = localMemorizationSettings.fromAyah;
                 jumpToAyah(startS, startA, true);
                 setTimeout(() => {
                     if (isMountedRef.current) {
                         playAudio(startS, startA);
                     }
                 }, 500);
-            }, 100);
-        } else if (initialSurah && initialAyah) {
-            setTimeout(() => {
-                jumpToAyah(initialSurah, initialAyah, true);
             }, 100);
         } else if (initialPage) {
             setTimeout(() => {
@@ -2316,7 +2330,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const saveBookmark = () => { 
         const current = currentAyahRef.current;
         if (!current) { showToast('اختر آية أولاً'); return; } 
-        const stored = JSON.parse(localStorage.getItem('quran_bookmarks_list' + modeSuffix) || '[]'); 
+        const stored = JSON.parse(localStorage.getItem('quran_bookmarks_list' + bookmarkSuffix) || '[]'); 
         const date = new Date(); 
         const newBookmark = { 
             id: Date.now(), 
@@ -2326,13 +2340,13 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             time: date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) 
         }; 
         const newBookmarks = [newBookmark, ...stored]; 
-        localStorage.setItem('quran_bookmarks_list' + modeSuffix, JSON.stringify(newBookmarks)); 
+        localStorage.setItem('quran_bookmarks_list' + bookmarkSuffix, JSON.stringify(newBookmarks)); 
         setBookmarks(newBookmarks); 
         showToast(`تم حفظ الإشارة المرجعية`); 
     };
     const deleteBookmark = (id:number) => { 
         const newBookmarks = bookmarks.filter((b:any) => b.id !== id); 
-        localStorage.setItem('quran_bookmarks_list' + modeSuffix, JSON.stringify(newBookmarks)); 
+        localStorage.setItem('quran_bookmarks_list' + bookmarkSuffix, JSON.stringify(newBookmarks)); 
         setBookmarks(newBookmarks); 
     };
 
@@ -2884,8 +2898,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 isLandscape={isLandscape}
             />
         )}
-        {activeModals.includes('surah-modal') && <SurahJuzModal type="surah" quranData={quranData} onSelect={(s, a) => { closeModal('surah-modal'); setTimeout(() => jumpToAyah(s, a, true), 0); }} onClose={() => closeModal('surah-modal')} isLandscape={initialLandscape} currentSelection={currentAyah.s} currentAyah={currentAyah} />}
-            {activeModals.includes('juz-modal') && <SurahJuzModal type="juz" quranData={quranData} onSelect={(s, a) => { closeModal('juz-modal'); setTimeout(() => jumpToAyah(s, a, true), 0); }} onClose={() => closeModal('juz-modal')} isLandscape={initialLandscape} currentSelection={juz} currentAyah={currentAyah} />}
+        {activeModals.includes('surah-modal') && <SurahJuzModal type="surah" quranData={quranData} onSelect={(s, a) => { closeModal('surah-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('surah-modal')} isLandscape={initialLandscape} currentSelection={currentAyah.s} currentAyah={currentAyah} />}
+            {activeModals.includes('juz-modal') && <SurahJuzModal type="juz" quranData={quranData} onSelect={(s, a) => { closeModal('juz-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('juz-modal')} isLandscape={initialLandscape} currentSelection={juz} currentAyah={currentAyah} />}
             {activeModals.includes('bookmarks-modal') && (
                 <BookmarksModal 
                     bookmarks={bookmarks} 

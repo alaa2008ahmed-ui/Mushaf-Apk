@@ -2691,7 +2691,7 @@ const TajweedEducation: React.FC<{
                                     <BottomBar 
                                         onHomeClick={() => { setSelectedRule(null); setPlayingAudio(null); setUserPlayingAudio(null); setRecordingId(null); }} 
                                         onThemesClick={onOpenThemes || (() => {})} 
-                                        showThemes={!!onOpenThemes} 
+                                        showThemes={false} 
                                         homeLabel="رجوع" 
                                     />
                                 </>
@@ -2701,7 +2701,7 @@ const TajweedEducation: React.FC<{
                 )}
             </AnimatePresence>
             
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={onOpenThemes || (() => {})} showThemes={!!onOpenThemes} />
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={onOpenThemes || (() => {})} showThemes={false} />
         </div>
     );
 };

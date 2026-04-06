@@ -127,6 +127,8 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
         onNavigate('quran', {
             isMemorization: true,
             mushafType,
+            initialSurah: fromSurah,
+            initialAyah: fromAyah,
             memorizationSettings: {
                 reader: selectedReader,
                 fromSurah,
@@ -229,6 +231,8 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
         onNavigate('quran', {
             isMemorization: true,
             mushafType: 'tajweed',
+            initialSurah: range.fromSurah,
+            initialAyah: range.fromAyah,
             memorizationSettings: {
                 reader: range.readerId,
                 fromSurah: range.fromSurah,

@@ -3,6 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, XCircle, HelpCircle, ArrowRight } from 'lucide-react';
 import { toArabic } from './constants';
 
+const stripTajweed = (text: string) => {
+    if (!text) return '';
+    return text.replace(/\[([a-z])(?::\d+)?\[/g, '').replace(/\]/g, '').trim();
+};
+
 interface ReviewTestModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -141,7 +146,7 @@ const ReviewTestModal: React.FC<ReviewTestModalProps> = ({
                             <div className="p-4 rounded-2xl bg-black/5 border border-dashed opacity-60" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
                                 <div className="text-xs mb-2 opacity-50">الآية السابقة:</div>
                                 <div className="text-lg leading-relaxed font-trad" style={{ fontFamily: 'Amiri' }}>
-                                    {prevAyah.text}
+                                    {stripTajweed(prevAyah.text)}
                                     <span className="inline-flex items-center justify-center w-6 h-6 mr-2 rounded-full border border-current text-[10px]">
                                         {toArabic(prevAyah.ayahNumber)}
                                     </span>
@@ -179,7 +184,7 @@ const ReviewTestModal: React.FC<ReviewTestModalProps> = ({
                                     }`}
                                 >
                                     <div className="flex-1 text-base leading-relaxed font-medium">
-                                        {option.text}
+                                        {stripTajweed(option.text)}
                                     </div>
                                     <div className="shrink-0">
                                         {isCorrectOption ? <CheckCircle2 className="text-emerald-500" size={20} /> : 
