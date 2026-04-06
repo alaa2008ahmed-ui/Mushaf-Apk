@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import InteractiveBackground from '../components/InteractiveBackground';
@@ -33,6 +33,10 @@ interface MoreMenuPageProps {
 
 const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
     const { theme, themeKey } = useTheme();
+    const [visibleItems, setVisibleItems] = useState<string[]>(() => {
+        const savedVisible = localStorage.getItem('visibleMenuItems');
+        return savedVisible ? JSON.parse(savedVisible) : ALL_MENU_ITEMS.map(i => i.id);
+    });
 
     const moreMenuTutorialSteps: TutorialStep[] = [
         {
@@ -62,22 +66,26 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                 <div className="flex-1 overflow-y-auto pb-32 hide-scrollbar">
                     <div className="main-layout px-4 flex flex-col pt-6" style={{ fontFamily: theme.font }}>
                         <div className="grid grid-cols-2 gap-3 w-full max-w-sm mx-auto">
-                            {ALL_MENU_ITEMS.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className={item.className}
-                                >
-                                    <NavButton
-                                        label={item.label}
-                                        onClick={() => onNavigate(item.id)}
-                                        className="w-full h-full"
-                                        color={themeKey === 'olive_grove' ? (['quran', 'listen', 'prayer-times', 'daily-wird', 'memorization'].includes(item.id) ? '#4D7C0F' : '#65A30D') : (theme.palette[item.colorIndex] || theme.palette[0])}
-                                        border={theme.btnBorder}
-                                        isGlass={theme.isGlass}
-                                        btnText={theme.btnText}
-                                    />
-                                </div>
-                            ))}
+                            {ALL_MENU_ITEMS.map((item) => {
+                                const isVisible = visibleItems.includes(item.id);
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className={`${item.className} transition-all duration-300 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
+                                        style={{ visibility: isVisible ? 'visible' : 'hidden' }}
+                                    >
+                                        <NavButton
+                                            label={item.label}
+                                            onClick={() => onNavigate(item.id)}
+                                            className="w-full h-full"
+                                            color={themeKey === 'olive_grove' ? (['quran', 'listen', 'prayer-times', 'daily-wird', 'memorization'].includes(item.id) ? '#4D7C0F' : '#65A30D') : (theme.palette[item.colorIndex] || theme.palette[0])}
+                                            border={theme.btnBorder}
+                                            isGlass={theme.isGlass}
+                                            btnText={theme.btnText}
+                                        />
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

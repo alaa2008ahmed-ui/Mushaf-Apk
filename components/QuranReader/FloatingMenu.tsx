@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download } from 'lucide-react';
-import { THEMES, DEFAULT_SETTINGS } from './constants';
+import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download, Type } from 'lucide-react';
+import { THEMES, DEFAULT_SETTINGS, READERS, MEMORIZATION_READERS } from './constants';
 
 interface FloatingMenuProps {
     isFloatingMenuOpen: boolean;
     floatingMenuRef: React.RefObject<HTMLDivElement>;
-    openModal: (modalId: string) => void;
+    openModal: (modalId: string, params?: any) => void;
     setIsFloatingMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
     getToolbarStyle: (id: string, bg: string, text: string, border: string) => React.CSSProperties;
     currentTheme: any;
@@ -28,28 +28,13 @@ interface FloatingMenuProps {
 }
 
 const ALL_SHORTCUTS = [
-    { id: 'prayer-times', label: 'مواقيت الصلاة', icon: <Clock size={18} /> },
-    { id: 'monthly-prayer-times', label: 'مواقيت الصلاة الشهرية', icon: <Calendar size={18} /> },
-    { id: 'sabah-masaa', label: 'الأذكار', icon: <Sun size={18} /> },
-    { id: 'salah-adhkar', label: 'أذكار الصلاة', icon: <Book size={18} /> },
-    { id: 'qibla', label: 'القبلة', icon: <Compass size={18} /> },
-    { id: 'adia', label: 'الأدعية', icon: <Heart size={18} /> },
-    { id: 'hisn-muslim', label: 'حصن المسلم', icon: <Book size={18} /> },
-    { id: 'tasbeeh', label: 'التسبيح', icon: <Smartphone size={18} /> },
-    { id: 'calendar', label: 'التقويم الهجري', icon: <Calendar size={18} /> },
-    { id: 'listen', label: 'الاستماع', icon: <Headphones size={18} /> },
-    { id: 'calculators', label: 'الحسابات', icon: <Calculator size={18} /> },
-    { id: 'nawawi', label: 'الأربعون النووية', icon: <FileText size={18} /> },
-    { id: 'hajj-umrah', label: 'الحج والعمرة', icon: <Info size={18} /> },
-    { id: 'voice-control', label: 'التحكم الصوتي', icon: <Mic size={18} /> },
-    { id: 'daily-wird', label: 'الورد اليومي', icon: <Calendar size={18} /> },
-    { id: 'memorization', label: 'التحفيظ', icon: <Brain size={18} /> },
-    { id: 'tajweed-education', label: 'تعليم التجويد', icon: <BookOpen size={18} /> },
-    { id: 'quran-download', label: 'تحميل المصحف', icon: <Download size={18} /> },
+    { id: 'quran-download-parent', label: 'تحميل القرآن', icon: <Download size={18} /> },
     { id: 'tafseer-download', label: 'تحميل التفسير', icon: <Download size={18} /> },
+    { id: 'interface-customization', label: 'تخصيص الواجهة', icon: <Palette size={18} /> },
+    { id: 'font-type', label: 'نوع الخط', icon: <Type size={18} /> },
 ];
 
-const DEFAULT_SHORTCUTS = ['prayer-times', 'sabah-masaa', 'qibla', 'adia', 'hisn-muslim'];
+const DEFAULT_SHORTCUTS = ['quran-download-parent', 'tafseer-download', 'interface-customization', 'font-type'];
 
 const FloatingMenu: React.FC<FloatingMenuProps> = ({
     isFloatingMenuOpen,
@@ -79,17 +64,28 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [tempShortcuts, setTempShortcuts] = useState<string[]>([]);
     const [isThemesOpen, setIsThemesOpen] = useState(false);
+    const [isDownloadSubMenuOpen, setIsDownloadSubMenuOpen] = useState(false);
 
     useEffect(() => {
         if (isFloatingMenuOpen) {
             setIsThemesOpen(false);
+            setIsDownloadSubMenuOpen(false);
         }
     }, [isFloatingMenuOpen]);
 
     useEffect(() => {
         const saved = localStorage.getItem('quran_menu_shortcuts');
         if (saved) {
-            setSelectedShortcuts(JSON.parse(saved));
+            const parsed = JSON.parse(saved);
+            const validShortcuts = parsed.filter((id: string) => ALL_SHORTCUTS.some(s => s.id === id));
+            
+            // If all saved shortcuts were removed or if we want to ensure the new ones are there
+            if (validShortcuts.length === 0) {
+                setSelectedShortcuts(DEFAULT_SHORTCUTS);
+                localStorage.setItem('quran_menu_shortcuts', JSON.stringify(DEFAULT_SHORTCUTS));
+            } else {
+                setSelectedShortcuts(validShortcuts);
+            }
         } else {
             setSelectedShortcuts(DEFAULT_SHORTCUTS);
         }
@@ -304,28 +300,58 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                         {/* اختصارات أخرى */}
                         <MenuSection title="اختصارات أخرى" iconColor={iconColor} titleColor="#d97706">
                             {ALL_SHORTCUTS.filter(s => selectedShortcuts.includes(s.id)).map(shortcut => (
-                                <MenuItem 
-                                    key={shortcut.id}
-                                    icon={shortcut.icon} 
-                                    label={shortcut.label} 
-                                    onClick={() => handleAction(() => {
-                                        if (shortcut.id === 'quran-download') {
-                                            openModal('quran-download-modal');
-                                        } else if (shortcut.id === 'tafseer-download') {
-                                            openModal('tafsir-download-modal');
-                                        } else {
-                                            onNavigate(shortcut.id);
-                                        }
-                                    })} 
-                                    iconColor={iconColor} 
-                                />
+                                <React.Fragment key={shortcut.id}>
+                                    <MenuItem 
+                                        icon={shortcut.icon} 
+                                        label={shortcut.label} 
+                                        onClick={() => {
+                                            if (shortcut.id === 'quran-download-parent') {
+                                                setIsDownloadSubMenuOpen(!isDownloadSubMenuOpen);
+                                            } else {
+                                                handleAction(() => {
+                                                    if (shortcut.id === 'tafseer-download') {
+                                                        openModal('tafsir-download-modal');
+                                                    } else if (shortcut.id === 'interface-customization') {
+                                                        openModal('toolbar-color-picker-modal');
+                                                    } else if (shortcut.id === 'font-type') {
+                                                        openModal('font-modal');
+                                                    } else {
+                                                        onNavigate(shortcut.id);
+                                                    }
+                                                });
+                                            }
+                                        }} 
+                                        iconColor={iconColor} 
+                                        showChevron={shortcut.id === 'quran-download-parent'}
+                                        isExpanded={shortcut.id === 'quran-download-parent' && isDownloadSubMenuOpen}
+                                    />
+                                    {shortcut.id === 'quran-download-parent' && isDownloadSubMenuOpen && (
+                                        <div className="flex flex-col gap-1 p-2 bg-gray-50/80 rounded-xl mt-1 mb-2 animate-fadeIn">
+                                            <MenuItem 
+                                                icon={<Download size={16} />} 
+                                                label="تحميل المصحف" 
+                                                onClick={() => handleAction(() => openModal('quran-download-modal'))} 
+                                                iconColor={iconColor} 
+                                                isSubItem
+                                            />
+                                            <MenuItem 
+                                                icon={<Headphones size={16} />} 
+                                                label="تحميل الاستماع" 
+                                                onClick={() => handleAction(() => openModal('quran-download-modal', { readersList: READERS, mode: 'surah' }))} 
+                                                iconColor={iconColor} 
+                                                isSubItem
+                                            />
+                                            <MenuItem 
+                                                icon={<Brain size={16} />} 
+                                                label="تحميل التحفيظ" 
+                                                onClick={() => handleAction(() => openModal('quran-download-modal', { readersList: MEMORIZATION_READERS, mode: 'ayah' }))} 
+                                                iconColor={iconColor} 
+                                                isSubItem
+                                            />
+                                        </div>
+                                    )}
+                                </React.Fragment>
                             ))}
-                            <MenuItem 
-                                icon={<Plus size={18} />} 
-                                label="إضافة" 
-                                onClick={() => { setTempShortcuts([...selectedShortcuts]); setIsAddModalOpen(true); }} 
-                                iconColor={iconColor} 
-                            />
                         </MenuSection>
                     </div>
                 ) : (
@@ -406,10 +432,13 @@ const MenuSection: React.FC<{ title: string, children: React.ReactNode, iconColo
     </div>
 );
 
-const MenuItem: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void, iconColor: string }> = ({ icon, label, onClick, iconColor }) => (
-    <button onClick={onClick} className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full">
+const MenuItem: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void, iconColor: string, showChevron?: boolean, isExpanded?: boolean, isSubItem?: boolean }> = ({ icon, label, onClick, iconColor, showChevron, isExpanded, isSubItem }) => (
+    <button onClick={onClick} className={`flex items-center gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full ${isSubItem ? 'px-2 py-2 border-0' : ''}`}>
         <div style={{ color: iconColor }}>{icon}</div>
-        <span className="text-sm font-bold flex-1" style={{ color: '#000000' }}>{label}</span>
+        <span className={`${isSubItem ? 'text-xs' : 'text-sm'} font-bold flex-1`} style={{ color: '#000000' }}>{label}</span>
+        {showChevron && (
+            <ChevronDown size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} style={{ color: iconColor }} />
+        )}
     </button>
 );
 

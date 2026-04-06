@@ -6,6 +6,7 @@ import WhatsAppButton from '../components/WhatsAppButton';
 import InteractiveBackground from '../components/InteractiveBackground';
 import { verses } from '../data/mainMenuData';
 import MenuCustomizationModal from '../components/MenuCustomizationModal';
+import PasscodeModal from '../components/PasscodeModal';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import VerseSection from '../components/MainMenu/VerseSection';
 import TitleSection from '../components/MainMenu/TitleSection';
@@ -13,6 +14,27 @@ import GridSection from '../components/MainMenu/GridSection';
 import FloatingNeonTicker from '../components/FloatingNeonTicker';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { Mic, Palette, LayoutGrid, BookOpen } from 'lucide-react';
+
+const ALL_POSSIBLE_ITEMS = [
+    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
+    { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-10", colorIndex: 0 },
+    { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
+    { id: 'daily-wird', label: "📅 الورد اليومي", className: "col-span-2 h-10", colorIndex: 0 },
+    { id: 'memorization', label: "🧠 التحفيظ", className: "col-span-2 h-10", colorIndex: 0 },
+    { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
+    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "h-10", colorIndex: 1 },
+    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-10", colorIndex: 1 },
+    { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "h-10", colorIndex: 1 },
+    { id: 'tasbeeh', label: "📿 السبحة", className: "h-10", colorIndex: 1 },
+    { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 1 },
+    { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
+    { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
+    { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
+    { id: 'tajweed-education', label: "📖 تعليم التجويد", className: "h-10", colorIndex: 1 },
+    { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
+    { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "h-10", colorIndex: 1 },
+    { id: 'more', label: "✨ المزيد", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
+];
 
 const DEFAULT_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
@@ -44,24 +66,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
     if (savedLayout) {
         try {
             const parsed = JSON.parse(savedLayout);
-            const updated = parsed.map((item: any) => {
-                if (item.id === 'calculators' || item.id === 'calendar') {
-                    const { customColor, ...rest } = item;
-                    return rest;
-                }
-                if (item.id === 'more' && !item.className.includes('flex justify-center')) {
-                    return { ...item, className: "col-span-2 h-10 flex justify-center" };
-                }
-                return item;
-            });
-            
-            const qiblaIndex = updated.findIndex((i: any) => i.id === 'qibla');
-            const hisnIndex = updated.findIndex((i: any) => i.id === 'hisn-muslim');
-            
-            if (hisnIndex > qiblaIndex + 2) {
-                return DEFAULT_MENU_ITEMS;
-            }
-            return updated;
+            return parsed;
         } catch (e) {
             return DEFAULT_MENU_ITEMS;
         }
@@ -69,6 +74,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
     return DEFAULT_MENU_ITEMS;
   });
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
+  const [isPasscodeOpen, setIsPasscodeOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [verseFontSize, setVerseFontSize] = useState(() => {
       const saved = localStorage.getItem('mainMenuVerseFontSize');
@@ -217,7 +223,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
                     currentVerse={currentVerse}
                     verseFontSize={verseFontSize}
                     setVerseFontSize={setVerseFontSize}
-                    setIsCustomizationOpen={setIsCustomizationOpen}
+                    setIsCustomizationOpen={setIsPasscodeOpen}
                     theme={theme}
                     themeKey={themeKey}
                 />
@@ -265,10 +271,16 @@ function MainMenu({ onNavigate, onOpenThemes }) {
       <BottomBar onHomeClick={() => {}} onThemesClick={onOpenThemes} showHome={false} showThemes={true} />
       <WhatsAppButton />
       
+      <PasscodeModal 
+        isOpen={isPasscodeOpen}
+        onClose={() => setIsPasscodeOpen(false)}
+        onSuccess={() => setIsCustomizationOpen(true)}
+      />
+
       <MenuCustomizationModal 
         isOpen={isCustomizationOpen}
         onClose={() => setIsCustomizationOpen(false)}
-        allItems={DEFAULT_MENU_ITEMS}
+        allItems={ALL_POSSIBLE_ITEMS}
         visibleIds={visibleItems}
         onSave={handleSaveCustomization}
       />

@@ -191,14 +191,11 @@
 }
 
 .page-content {
-    text-align: justify;
-    text-align-last: center;
+    text-align: center;
     line-height: 2.5;
     font-size: 1.7rem;
     letter-spacing: normal; 
     word-spacing: normal;
-    font-feature-settings: "liga" 1, "dlig" 1, "kern" 1, "mark" 1, "mkmk" 1;
-    text-rendering: optimizeLegibility;
 }
 
 .page-footer {
@@ -217,10 +214,6 @@
     padding: 0; 
     border-radius: 6px; 
     transition: background-color 0.2s; 
-    font-variant-ligatures: common-ligatures discretionary-ligatures contextual;
-    -webkit-font-variant-ligatures: common-ligatures discretionary-ligatures contextual;
-    text-rendering: optimizeLegibility;
-    font-feature-settings: "liga" 1, "dlig" 1, "kern" 1, "mark" 1, "mkmk" 1;
 }
 .ayah-text-block.highlighted { 
     background-color: transparent !important;

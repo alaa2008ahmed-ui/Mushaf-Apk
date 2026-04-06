@@ -21,7 +21,7 @@ interface MushafPageProps {
     useTajweed?: boolean;
 }
 
-const fixQuranText = (text: string) => {
+export const fixQuranText = (text: string) => {
     if (!text) return text;
     // Fix for "Ibrahim" and similar words where Small Yeh (\u06e6) causes disconnection in some fonts
     // We replace the sequence of (Heh + Kasra + Small Yeh) with (Heh + Kasra + Regular Yeh)
@@ -32,11 +32,13 @@ const fixQuranText = (text: string) => {
 export const renderTajweedText = (text: string, useTajweed: boolean = false, currentTheme?: any) => {
     if (!text) return text;
     
-    if (!text.includes('[')) return text;
+    const fixedText = fixQuranText(text);
+    
+    if (!fixedText.includes('[')) return fixedText;
     
     if (!useTajweed) {
         // Strip Tajweed tags to display text without coloring
-        return text.replace(/\[([a-z])(?::\d+)?\[/g, '').replace(/\]/g, '');
+        return fixedText.replace(/\[([a-z])(?::\d+)?\[/g, '').replace(/\]/g, '');
     }
 
     // Tajweed coloring logic
@@ -61,10 +63,10 @@ export const renderTajweedText = (text: string, useTajweed: boolean = false, cur
     const regex = /\[([a-z])(?::\d+)?\[(.*?)\]/g;
     let match;
 
-    while ((match = regex.exec(text)) !== null) {
+    while ((match = regex.exec(fixedText)) !== null) {
         // Add text before the match
         if (match.index > currentPos) {
-            parts.push(text.substring(currentPos, match.index));
+            parts.push(fixedText.substring(currentPos, match.index));
         }
 
         const rule = match[1];
@@ -82,8 +84,8 @@ export const renderTajweedText = (text: string, useTajweed: boolean = false, cur
     }
 
     // Add remaining text
-    if (currentPos < text.length) {
-        parts.push(text.substring(currentPos));
+    if (currentPos < fixedText.length) {
+        parts.push(fixedText.substring(currentPos));
     }
 
     return parts;

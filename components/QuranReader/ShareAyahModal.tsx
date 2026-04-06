@@ -754,21 +754,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 }}>
                                     {ayahText} ﴿{toArabic(ay.numberInSurah)}﴾
                                 </div>
-                                {explanation && (
-                                    <div style={{ 
-                                        fontSize: '24px', 
-                                        lineHeight: '1.8', 
-                                        color: '#000000',
-                                        opacity: 0.9,
-                                        textAlign: readingMode === 'translation' ? 'left' : 'right',
-                                        direction: readingMode === 'translation' ? 'ltr' : 'rtl',
-                                        padding: '20px',
-                                        backgroundColor: 'rgba(0,0,0,0.03)',
-                                        borderRadius: '12px'
-                                    }}>
-                                        {explanation}
-                                    </div>
-                                )}
+                                    {/* Translation removed as requested: Quranic text only for page share */}
                             </div>
                         );
                     })}
@@ -898,24 +884,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                             </React.Fragment>
                                         ))}
                                     </p>
-                                    {combinedExplanation && (
-                                        <p 
-                                            style={{ 
-                                                lineHeight: '1.5',
-                                                fontFamily: 'sans-serif',
-                                                fontSize: `${fontSize * 0.6}px`, 
-                                                color: textColor,
-                                                textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                                                margin: '12px 0 0 0',
-                                                opacity: 0.9,
-                                                direction: (readingMode === 'translation' || propSettings?.tafseer === 'en.json') ? 'ltr' : 'rtl',
-                                                textAlign: (readingMode === 'translation' || propSettings?.tafseer === 'en.json') ? 'left' : 'right',
-                                                width: '100%'
-                                            }}
-                                        >
-                                            {combinedExplanation}
-                                        </p>
-                                    )}
+                                    {/* Translation removed as requested: Quranic text only for image share */}
                                     <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.3)', width: '100%', paddingLeft: '4px', paddingRight: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                                         <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '12px', fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
                                             {surahInfo}

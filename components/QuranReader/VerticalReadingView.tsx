@@ -49,18 +49,24 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     const initialPinchDistanceRef = useRef<number | null>(null);
     const initialPinchFontSizeRef = useRef<number | null>(null);
 
+    const [localFontSize, setLocalFontSize] = useState(settings.fontSize);
+
+    useEffect(() => {
+        setLocalFontSize(settings.fontSize);
+    }, [settings.fontSize]);
+
     const handleTouchStart = (e: React.TouchEvent) => {
         if (e.touches.length === 2) {
             const touch1 = e.touches[0];
             const touch2 = e.touches[1];
             const distance = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
             initialPinchDistanceRef.current = distance;
-            initialPinchFontSizeRef.current = settings.fontSize;
+            initialPinchFontSizeRef.current = localFontSize;
         }
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
-        if (e.touches.length === 2 && initialPinchDistanceRef.current !== null && initialPinchFontSizeRef.current !== null && onSettingsChange) {
+        if (e.touches.length === 2 && initialPinchDistanceRef.current !== null && initialPinchFontSizeRef.current !== null) {
             const touch1 = e.touches[0];
             const touch2 = e.touches[1];
             const distance = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
@@ -68,13 +74,15 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
             const scaleFactor = distance / initialPinchDistanceRef.current;
             const newFontSize = Math.min(Math.max(initialPinchFontSizeRef.current * scaleFactor, 1.0), 5.0);
             
-            onSettingsChange({ ...settings, fontSize: newFontSize });
+            setLocalFontSize(newFontSize);
         }
     };
 
     const handleTouchEnd = () => {
         if (initialPinchDistanceRef.current !== null && onSettingsChange) {
-            localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(settings));
+            const newSettings = { ...settings, fontSize: localFontSize };
+            onSettingsChange(newSettings);
+            localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
             window.dispatchEvent(new Event('settings-change'));
         }
         initialPinchDistanceRef.current = null;
@@ -261,7 +269,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 >
                     <div className="ayah-text mb-4 text-right leading-relaxed" 
                          style={{ 
-                             fontSize: `${settings.fontSize}rem`, 
+                             fontSize: `${localFontSize}rem`, 
                              fontFamily: settings.fontFamily,
                              color: currentTheme.accent
                          }}>
@@ -276,7 +284,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     
                     <div className="explanation-text text-right opacity-90 leading-relaxed"
                          style={{ 
-                             fontSize: `${settings.fontSize * 0.8}rem`, 
+                             fontSize: `${localFontSize * 0.8}rem`, 
                              color: currentTheme.text,
                              direction: readingMode === 'translation' ? 'ltr' : 'rtl',
                              textAlign: readingMode === 'translation' ? 'left' : 'right'
