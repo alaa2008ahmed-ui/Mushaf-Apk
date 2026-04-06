@@ -14,6 +14,7 @@ interface VerticalReadingViewProps {
     onSettingsChange?: (newSettings: any) => void;
     modeSuffix?: string;
     useTajweed?: boolean;
+    hideVerses?: boolean;
 }
 
 // Global cache to ensure instant loading after first fetch
@@ -31,7 +32,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     onVisibleAyahChange,
     onSettingsChange,
     modeSuffix = '_v',
-    useTajweed = false
+    useTajweed = false,
+    hideVerses = false
 }) => {
     const [tafseerData, setTafseerData] = useState<any[]>(cachedTafseerData || []);
     const [meaningsData, setMeaningsData] = useState<any[]>(cachedMeaningsData || []);
@@ -267,11 +269,14 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                         onAyahClick(item.surahNumber, item.ayahNumber);
                     }}
                 >
-                    <div className="ayah-text mb-4 text-right leading-relaxed" 
+                    <div className="ayah-text mb-4 text-right leading-relaxed transition-all duration-500" 
                          style={{ 
                              fontSize: `${localFontSize}rem`, 
                              fontFamily: settings.fontFamily,
-                             color: currentTheme.accent
+                             color: currentTheme.accent,
+                             filter: hideVerses && !isHighlighted ? 'blur(8px)' : 'none',
+                             opacity: hideVerses && !isHighlighted ? 0.3 : 1,
+                             cursor: hideVerses ? 'pointer' : 'default'
                          }}>
                         {renderTajweedText(item.text, useTajweed, currentTheme)}
                         <span className="inline-flex items-center justify-center w-8 h-8 mr-2 rounded-full border border-current text-sm font-bold"

@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { baseAthkar, specialZikr, prayerOptions, fajrDhikr, fajrMaghribDhikr } from '../data/athkarAlSalahData';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 
-function AthkarAlSalah({ onBack }) {
+function AthkarAlSalah({ onBack, onNavigate }) {
     const { theme } = useTheme();
     const [currentPrayer, setCurrentPrayer] = useState(null);
     const [athkarList, setAthkarList] = useState([]);
@@ -79,6 +79,8 @@ function AthkarAlSalah({ onBack }) {
     const handleHomeClick = () => {
         if (currentPrayer) {
             setCurrentPrayer(null);
+        } else if (onNavigate) {
+            onNavigate('home');
         } else {
             onBack();
         }

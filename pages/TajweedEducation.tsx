@@ -2204,7 +2204,12 @@ const TAJWEED_RULES: TajweedRule[] = [
     }
 ];
 
-const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (surah?: number, ayah?: number) => void, navParams?: any }> = ({ onBack, onNavigateToMushaf, navParams }) => {
+const TajweedEducation: React.FC<{ 
+    onBack: () => void, 
+    onNavigate?: (pageId: string, params?: any) => void,
+    onNavigateToMushaf?: (surah?: number, ayah?: number) => void, 
+    navParams?: any 
+}> = ({ onBack, onNavigate, onNavigateToMushaf, navParams }) => {
     const { theme } = useTheme();
     const [selectedRule, setSelectedRule] = useState<string | null>(null);
     const [playingAudio, setPlayingAudio] = useState<string | null>(null);
@@ -2377,8 +2382,8 @@ const TajweedEducation: React.FC<{ onBack: () => void, onNavigateToMushaf?: (sur
     const progressPercentage = Math.round((completedRules.length / TAJWEED_RULES.length) * 100);
 
     const handleHomeClick = () => {
-        if (navParams?.isPractical && onNavigateToMushaf) {
-            onNavigateToMushaf(navParams.surah, navParams.ayah);
+        if (onNavigate) {
+            onNavigate('home');
         } else {
             onBack();
         }

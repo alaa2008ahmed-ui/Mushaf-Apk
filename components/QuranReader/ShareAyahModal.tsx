@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Share2, Plus, Minus, Type, Image as ImageIcon, FileText, Volume2 } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import domtoimage from 'dom-to-image-more';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
@@ -300,66 +300,69 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     alert("المشاركة غير مدعومة في هذا المتصفح");
                 }
             } else if (shareType === 'image' && previewRef.current) {
-                const canvas = await html2canvas(previewRef.current, {
-                    scale: 2.5,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    onclone: (clonedDoc) => {
-                        const elements = clonedDoc.getElementsByTagName('*');
-                        for (let i = 0; i < elements.length; i++) {
-                            const el = elements[i] as HTMLElement;
-                            const style = window.getComputedStyle(el);
-                            ['color', 'backgroundColor', 'borderColor', 'outlineColor'].forEach(prop => {
-                                const val = el.style.getPropertyValue(prop) || style.getPropertyValue(prop);
-                                if (val && (val.includes('oklab') || val.includes('oklch'))) {
-                                    el.style.setProperty(prop, prop === 'color' ? '#000000' : 'transparent', 'important');
-                                }
-                            });
+                try {
+                    // Use dom-to-image-more for better RTL and Tajweed support
+                    const dataUrl = await domtoimage.toJpeg(previewRef.current, {
+                        quality: 0.95,
+                        bgcolor: '#ffffff',
+                        width: previewRef.current.offsetWidth * 2,
+                        height: previewRef.current.offsetHeight * 2,
+                        style: {
+                            transform: 'scale(2)',
+                            transformOrigin: 'top left',
+                            width: previewRef.current.offsetWidth + 'px',
+                            height: previewRef.current.offsetHeight + 'px',
+                            fontFeatureSettings: '"kern", "liga", "clig", "calt"',
+                            textRendering: 'optimizeLegibility'
                         }
-                    }
-                });
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                    });
 
-                if (Capacitor.isNativePlatform()) {
-                    const fileName = `ayah_share_${Date.now()}.jpg`;
-                    const base64Data = dataUrl.split(',')[1];
-                    const savedFile = await Filesystem.writeFile({
-                        path: fileName,
-                        data: base64Data,
-                        directory: Directory.Cache,
-                    });
-                    
-                    await Share.share({
-                        title: 'مشاركة آية',
-                        text: shareText,
-                        url: savedFile.uri,
-                        dialogTitle: 'مشاركة عبر'
-                    });
-                } else if (navigator.share) {
-                    try {
-                        const blob = await (await fetch(dataUrl)).blob();
-                        const file = new File([blob], 'ayah.jpg', { type: 'image/jpeg' });
-                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            await navigator.share({
-                                title: 'مشاركة آية',
-                                text: shareText,
-                                files: [file],
-                            });
-                        } else {
+                    if (Capacitor.isNativePlatform()) {
+                        const fileName = `ayah_share_${Date.now()}.jpg`;
+                        const base64Data = dataUrl.split(',')[1];
+                        const savedFile = await Filesystem.writeFile({
+                            path: fileName,
+                            data: base64Data,
+                            directory: Directory.Cache,
+                        });
+                        
+                        await Share.share({
+                            title: 'مشاركة آية',
+                            text: shareText,
+                            url: savedFile.uri,
+                            dialogTitle: 'مشاركة عبر'
+                        });
+                    } else if (navigator.share) {
+                        try {
+                            const blob = await (await fetch(dataUrl)).blob();
+                            const file = new File([blob], 'ayah.jpg', { type: 'image/jpeg' });
+                            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                await navigator.share({
+                                    title: 'مشاركة آية',
+                                    text: shareText,
+                                    files: [file],
+                                });
+                            } else {
+                                await navigator.share({ title: 'مشاركة آية', text: shareText });
+                            }
+                        } catch (e) {
                             await navigator.share({ title: 'مشاركة آية', text: shareText });
                         }
-                    } catch (e) {
-                        await navigator.share({ title: 'مشاركة آية', text: shareText });
+                    } else {
+                        // Fallback: download the image
+                        const link = document.createElement('a');
+                        link.download = `ayah_${Date.now()}.jpg`;
+                        link.href = dataUrl;
+                        link.click();
                     }
-                } else {
-                    alert("المشاركة غير مدعومة في هذا المتصفح");
+                } catch (e) {
+                    console.error('Error sharing image:', e);
+                    alert("حدث خطأ أثناء إنشاء الصورة");
                 }
             } else if (shareType === 'page') {
                 const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
                 
-                // Use the hidden capture element for high-quality, zoom-independent capture
                 let captureElement: HTMLElement | null = null;
-                
                 if (readingMode === 'mushaf') {
                     captureElement = hiddenMushafRef.current;
                 } else {
@@ -372,7 +375,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 
                 if (captureElement) {
                     try {
-                        // Ensure the capture element is visible for html2canvas
+                        // Ensure the capture element is visible for capture
                         const originalStyle = captureElement.style.cssText;
                         captureElement.style.position = 'absolute';
                         captureElement.style.left = '0';
@@ -381,41 +384,22 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         captureElement.style.display = 'block';
                         captureElement.style.zIndex = '-9999';
 
-                        // Ensure all images are loaded if any
-                        const images = captureElement.querySelectorAll('img');
-                        await Promise.all(Array.from(images).map(img => {
-                            if (img.complete) return Promise.resolve();
-                            return new Promise(resolve => {
-                                img.onload = resolve;
-                                img.onerror = resolve;
-                            });
-                        }));
-
-                        const canvas = await html2canvas(captureElement, {
-                            scale: 3, // High scale for crisp text
-                            useCORS: true,
-                            backgroundColor: readingMode === 'mushaf' ? '#ffffff' : (currentTheme.bg || '#ffffff'),
-                            logging: false,
-                            onclone: (clonedDoc) => {
-                                // Fix for oklch/oklab colors that html2canvas doesn't support
-                                const elements = clonedDoc.getElementsByTagName('*');
-                                for (let i = 0; i < elements.length; i++) {
-                                    const el = elements[i] as HTMLElement;
-                                    const style = window.getComputedStyle(el);
-                                    ['color', 'backgroundColor', 'borderColor', 'outlineColor'].forEach(prop => {
-                                        const val = el.style.getPropertyValue(prop) || style.getPropertyValue(prop);
-                                        if (val && (val.includes('oklab') || val.includes('oklch'))) {
-                                            el.style.setProperty(prop, prop === 'color' ? '#000000' : 'transparent', 'important');
-                                        }
-                                    });
-                                }
+                        // Use dom-to-image-more for page capture
+                        const dataUrl = await domtoimage.toJpeg(captureElement, {
+                            quality: 0.95,
+                            bgcolor: readingMode === 'mushaf' ? '#ffffff' : (currentTheme.bg || '#ffffff'),
+                            width: captureElement.offsetWidth * 1.5,
+                            height: captureElement.offsetHeight * 1.5,
+                            style: {
+                                transform: 'scale(1.5)',
+                                transformOrigin: 'top left',
+                                width: captureElement.offsetWidth + 'px',
+                                height: captureElement.offsetHeight + 'px'
                             }
                         });
 
                         // Restore original style
                         captureElement.style.cssText = originalStyle;
-
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
                         if (Capacitor.isNativePlatform()) {
                             const fileName = `quran_page_${pageNum}_${Date.now()}.jpg`;
@@ -448,7 +432,6 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 });
                             }
                         } else {
-                            // Fallback for browsers that don't support sharing
                             const link = document.createElement('a');
                             link.download = `page_${pageNum}.jpg`;
                             link.href = dataUrl;
@@ -475,8 +458,16 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 let reader = propSettings?.reader || appSettings?.reader || 'Alafasy_128kbps';
                 const audioReader = reader === 'ar.alafasy' ? 'Alafasy_128kbps' : reader;
                 
+                // Ensure we have the latest selected ayahs
+                const start = Math.min(fromAyah, toAyah);
+                const end = Math.max(fromAyah, toAyah);
+                const ayahsToShare = [];
+                for (let a = start; a <= end; a++) {
+                    ayahsToShare.push({ s: currentAyah.s, a });
+                }
+
                 // Custom file name: SurahName_AyahRange.mp3
-                const fileName = `${getSurahName(firstAyah.s)}_${firstAyah.a}${firstAyah.a !== lastAyah.a ? '-' + lastAyah.a : ''}.mp3`;
+                const fileName = `${getSurahName(currentAyah.s)}_${start}${start !== end ? '-' + end : ''}.mp3`;
 
                 try {
                     // Helper to strip ID3v2 tags to allow better concatenation
@@ -491,7 +482,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     };
 
                     // Fetch all ayahs in parallel for better performance
-                    const fetchPromises = selectedAyahs.map(async (ay) => {
+                    const fetchPromises = ayahsToShare.map(async (ay) => {
                         const sStr = String(ay.s).padStart(3, '0');
                         const aStr = String(ay.a).padStart(3, '0');
                         const audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
@@ -534,28 +525,15 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             });
                         }
                     } else {
-                        // Fallback to text share if nothing else works
-                        await Share.share({
-                            title: 'مشاركة تلاوة',
-                            text: shareText,
-                            dialogTitle: 'مشاركة عبر'
-                        });
+                        // Fallback: download the audio
+                        const link = document.createElement('a');
+                        link.download = fileName;
+                        link.href = URL.createObjectURL(combinedBlob);
+                        link.click();
                     }
                 } catch (e) {
                     console.error('Error sharing audio file:', e);
-                    // Fallback to text share
-                    if (Capacitor.isNativePlatform()) {
-                        await Share.share({
-                            title: 'مشاركة تلاوة',
-                            text: shareText,
-                            dialogTitle: 'مشاركة عبر'
-                        });
-                    } else if (navigator.share) {
-                        await navigator.share({
-                            title: 'مشاركة تلاوة',
-                            text: shareText,
-                        });
-                    }
+                    alert("حدث خطأ أثناء تحميل الملفات الصوتية");
                 }
             }
         } catch (error) {
@@ -874,7 +852,11 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                             textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)',
                                             margin: 0,
                                             marginTop: '8px',
-                                            fontWeight: 'bold'
+                                            fontWeight: 'bold',
+                                            whiteSpace: 'normal',
+                                            wordBreak: 'keep-all',
+                                            fontFeatureSettings: '"kern", "liga", "clig", "calt"',
+                                            textRendering: 'optimizeLegibility'
                                         }}
                                     >
                                         {selectedAyahs.map((ay, idx) => (

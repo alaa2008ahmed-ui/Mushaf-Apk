@@ -75,7 +75,7 @@ export const renderTajweedText = (text: string, useTajweed: boolean = false, cur
         const isBold = rule === 'l';
 
         parts.push(
-            <span key={match.index} style={{ color, fontWeight: isBold ? 'bold' : 'normal' }}>
+            <span key={match.index} style={{ color, fontWeight: isBold ? 'bold' : 'normal', unicodeBidi: 'isolate' }}>
                 {content}
             </span>
         );

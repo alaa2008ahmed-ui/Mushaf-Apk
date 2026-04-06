@@ -36,11 +36,11 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
       case 'quran-landscape':
         return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={true} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} mushafType={navParams?.mushafType} isPractical={navParams?.isPractical} />;
       case 'quran-download':
-        return <QuranDownload onBack={onBack} />;
+        return <QuranDownload onBack={onBack} onNavigate={onNavigate} />;
       case 'tajweed-education':
-        return <TajweedEducation onBack={onBack} onNavigateToMushaf={(surah, ayah) => onNavigate('quran', { surah, ayah, isPractical: true, mushafType: 'tajweed' })} navParams={navParams} />;
+        return <TajweedEducation onBack={onBack} onNavigate={onNavigate} onNavigateToMushaf={(surah, ayah) => onNavigate('quran', { surah, ayah, isPractical: true, mushafType: 'tajweed' })} navParams={navParams} />;
       case 'salah-adhkar':
-        return <AthkarAlSalah onBack={onBack} />;
+        return <AthkarAlSalah onBack={onBack} onNavigate={onNavigate} />;
       case 'calendar':
         return <HijriCalendar onBack={onBack} />;
       case 'listen':

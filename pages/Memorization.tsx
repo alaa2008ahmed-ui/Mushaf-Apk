@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, HelpCircle, Repeat, Play, User, ArrowLeftRight, CheckSquare, Minus, Plus, BookOpen } from 'lucide-react';
+import { ArrowRight, HelpCircle, Repeat, Play, User, ArrowLeftRight, CheckSquare, Minus, Plus, BookOpen, Calendar, List, Trophy, Trash2, RotateCcw } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import InteractiveBackground from '../components/InteractiveBackground';
 import quranData from '../data/quran-tajweed.json';
@@ -8,6 +8,7 @@ import BottomBar from '../components/BottomBar';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { QuranDownloadModal } from '../components/QuranReader/DownloadModals';
 import Toast from '../components/QuranReader/Toast';
+import { memorizationService, MemorizedRange } from '../src/services/memorizationService';
 import './QuranReader.css';
 
 interface MemorizationProps {
@@ -30,6 +31,8 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const [pauseLength, setPauseLength] = useState(1);
     const [testAfterSession, setTestAfterSession] = useState(false);
     const [mushafType, setMushafType] = useState<'uthmani' | 'tajweed'>('tajweed');
+    const [activeTab, setActiveTab] = useState<'setup' | 'review'>('setup');
+    const [memorizedRanges, setMemorizedRanges] = useState<MemorizedRange[]>([]);
 
     const [showHelpModal, setShowHelpModal] = useState(false);
     const [showExplanationModal, setShowExplanationModal] = useState(false);
@@ -77,6 +80,9 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 }
             } catch (e) {}
         }
+
+        // Load memorized ranges
+        setMemorizedRanges(memorizationService.getMemorizedRanges());
     }, []);
 
     // Save settings to localStorage whenever they change
@@ -108,6 +114,16 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     };
 
     const startNewSession = () => {
+        // Save to history if it's a new range
+        memorizationService.saveRange({
+            fromSurah,
+            fromAyah,
+            toSurah,
+            toAyah,
+            readerId: selectedReader
+        });
+        setMemorizedRanges(memorizationService.getMemorizedRanges());
+
         onNavigate('quran', {
             isMemorization: true,
             mushafType,
@@ -203,6 +219,33 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
         </div>
     );
 
+    const handleDeleteRange = (id: string) => {
+        memorizationService.deleteRange(id);
+        setMemorizedRanges(memorizationService.getMemorizedRanges());
+        showToast('تم حذف النطاق من المراجعة');
+    };
+
+    const handleReviewRange = (range: MemorizedRange) => {
+        onNavigate('quran', {
+            isMemorization: true,
+            mushafType: 'tajweed',
+            memorizationSettings: {
+                reader: range.readerId,
+                fromSurah: range.fromSurah,
+                fromAyah: range.fromAyah,
+                toSurah: range.toSurah,
+                toAyah: range.toAyah,
+                rangeRepeat: 3,
+                ayahRepeat: 1,
+                linkedRepeat: true,
+                pauseLength: 1,
+                testAfterSession: true,
+                mushafType: 'tajweed',
+                isReviewMode: true // New flag for review mode
+            }
+        });
+    };
+
     return (
         <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, color: 'var(--text-color)' }}>
             <div className="relative z-10 flex flex-col h-full">
@@ -215,7 +258,34 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 </header>
 
                 <main className="flex-1 overflow-y-auto p-3 space-y-3 hide-scrollbar" dir="rtl">
-                    {/* Reader Selection */}
+                    {/* Tabs */}
+                    <div className="flex p-1 rounded-xl bg-black/5 border mb-2" style={{ borderColor: 'var(--card-border)' }}>
+                        <button 
+                            onClick={() => setActiveTab('setup')}
+                            className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'setup' ? 'bg-white shadow-sm' : 'opacity-50'}`}
+                            style={{ color: activeTab === 'setup' ? theme.btnBg : 'var(--text-color)' }}
+                        >
+                            <BookOpen size={18} />
+                            إعداد الحفظ
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('review')}
+                            className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'review' ? 'bg-white shadow-sm' : 'opacity-50'}`}
+                            style={{ color: activeTab === 'review' ? theme.btnBg : 'var(--text-color)' }}
+                        >
+                            <Calendar size={18} />
+                            جدول المراجعة
+                            {memorizedRanges.length > 0 && (
+                                <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">
+                                    {memorizedRanges.length}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+
+                    {activeTab === 'setup' ? (
+                        <>
+                            {/* Reader Selection */}
                     <div className="space-y-1.5" id="reader-select-container">
                         <div className="flex items-center justify-start gap-2 font-bold text-base" style={{ color: 'var(--text-color)' }}>
                             <span>اختر اسم القارئ</span>
@@ -445,17 +515,107 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                             ></div>
                         </label>
                     </div>
+                        </>
+                    ) : (
+                        <div className="space-y-4 animate-fadeIn">
+                            {/* Review Stats */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-4 rounded-2xl border text-center" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+                                    <div className="w-10 h-10 bg-emerald-500/10 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <Trophy size={20} />
+                                    </div>
+                                    <div className="text-2xl font-bold">{memorizedRanges.length}</div>
+                                    <div className="text-[10px] opacity-50">نطاق تم حفظه</div>
+                                </div>
+                                <div className="p-4 rounded-2xl border text-center" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+                                    <div className="w-10 h-10 bg-blue-500/10 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <RotateCcw size={20} />
+                                    </div>
+                                    <div className="text-2xl font-bold">
+                                        {memorizedRanges.filter(r => r.nextReviewDate <= Date.now()).length}
+                                    </div>
+                                    <div className="text-[10px] opacity-50">بانتظار المراجعة</div>
+                                </div>
+                            </div>
+
+                            {/* Review List */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between px-1">
+                                    <h3 className="font-bold text-base">قائمة المراجعة</h3>
+                                    <List size={18} className="opacity-50" />
+                                </div>
+
+                                {memorizedRanges.length === 0 ? (
+                                    <div className="p-8 text-center opacity-50 space-y-2">
+                                        <Calendar size={48} className="mx-auto opacity-20" />
+                                        <p>لا توجد محفوظات حالياً</p>
+                                        <p className="text-xs">ابدأ بحفظ نطاق جديد ليظهر هنا</p>
+                                    </div>
+                                ) : (
+                                    memorizedRanges.map((range) => {
+                                        const isDue = range.nextReviewDate <= Date.now();
+                                        return (
+                                            <div 
+                                                key={range.id} 
+                                                className="p-4 rounded-2xl border space-y-3 relative overflow-hidden"
+                                                style={{ backgroundColor: 'var(--card-bg)', borderColor: isDue ? 'rgba(16, 185, 129, 0.3)' : 'var(--card-border)' }}
+                                            >
+                                                {isDue && <div className="absolute top-0 right-0 w-1 h-full bg-emerald-500"></div>}
+                                                
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <div className="font-bold text-sm">
+                                                            سورة {SURAH_NAMES_AR[range.fromSurah - 1]}
+                                                        </div>
+                                                        <div className="text-xs opacity-60">
+                                                            الآيات: {range.fromAyah} - {range.toAyah}
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isDue ? 'bg-emerald-500/10 text-emerald-600' : 'bg-gray-500/10 opacity-50'}`}>
+                                                            {isDue ? 'حان وقت المراجعة' : 'مراجعة قادمة'}
+                                                        </div>
+                                                        <div className="text-[9px] opacity-40 mt-1">
+                                                            {new Date(range.nextReviewDate).toLocaleDateString('ar-SA')}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-2 pt-1">
+                                                    <button 
+                                                        onClick={() => handleReviewRange(range)}
+                                                        className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+                                                    >
+                                                        <Play size={14} />
+                                                        بدء المراجعة
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDeleteRange(range.id)}
+                                                        className="w-10 h-10 flex items-center justify-center rounded-xl border border-red-500/20 text-red-500 hover:bg-red-500/5 transition-all"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </main>
 
                 {/* Start Button */}
-                <div className="p-3 border-t shrink-0 pb-20 mb-2" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', zIndex: 20 }}>
-                    <button 
-                        onClick={handleStart}
-                        className="w-full py-3 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white"
-                    >
-                        ابدأ جلسة التحفيظ
-                    </button>
-                </div>
+                {activeTab === 'setup' && (
+                    <div className="p-3 border-t shrink-0 pb-20 mb-2" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', zIndex: 20 }}>
+                        <button 
+                            onClick={handleStart}
+                            className="w-full py-3 rounded-xl font-bold text-base shadow-lg transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                            ابدأ جلسة التحفيظ
+                        </button>
+                    </div>
+                )}
             </div>
             
             <BottomBar onHomeClick={() => onNavigate('more-menu')} onThemesClick={() => {}} showThemes={false} />

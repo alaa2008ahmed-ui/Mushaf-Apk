@@ -29,8 +29,10 @@ import FloatingMenu from '../components/QuranReader/FloatingMenu';
 import AyahContextMenu from '../components/QuranReader/AyahContextMenu';
 import ShareAyahModal from '../components/QuranReader/ShareAyahModal';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
-import { MousePointer2, Move, ZoomIn, LayoutGrid, Mic, Bookmark, Home, Share2, BookOpen } from 'lucide-react';
+import { MousePointer2, Move, ZoomIn, LayoutGrid, Mic, Bookmark, Home, Share2, BookOpen, Trophy, Play } from 'lucide-react';
 import quranTajweedJson from '../data/quran-tajweed.json';
+import ReviewTestModal from '../components/QuranReader/ReviewTestModal';
+import { memorizationService } from '../src/services/memorizationService';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { parseVoiceCommand, normalizeArabic } from '../utils/voiceParser';
 
@@ -167,6 +169,12 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const [savedSession, setSavedSession] = useState<any>(null);
     const [localIsMemorizationMode, setLocalIsMemorizationMode] = useState(isMemorizationMode);
     const [localMemorizationSettings, setLocalMemorizationSettings] = useState(memorizationSettings);
+    const [isHideMode, setIsHideMode] = useState(memorizationSettings?.isReviewMode || false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordedAudio, setRecordedAudio] = useState<string | null>(null);
+    const [showReviewTest, setShowReviewTest] = useState(false);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
     
     // Auto-detect orientation
     useEffect(() => {
@@ -291,6 +299,50 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     }, [isWirdMode]);
 
     const [currentAyah, setCurrentAyah] = useState<{ s: number; a: number }>({ s: 1, a: 1 });
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                setRecordedAudio(audioUrl);
+                setIsRecording(false);
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+            showToast('بدأ التسجيل...');
+        } catch (err) {
+            console.error("Error starting recording", err);
+            showToast('فشل بدء التسجيل');
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            showToast('تم إيقاف التسجيل');
+        }
+    };
+
+    const playRecordedAudio = () => {
+        if (recordedAudio) {
+            const audio = new Audio(recordedAudio);
+            audio.play();
+        }
+    };
 
     useEffect(() => {
         if (isWirdMode && wirdEndPage && quranData && !hasShownWirdComplete) {
@@ -2773,6 +2825,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                         }}
                         onSettingsChange={setSettings}
                         modeSuffix={modeSuffix}
+                        hideVerses={isHideMode}
                     />
                 )}
             </div>
@@ -2988,6 +3041,71 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             />
             <Toast message={toast.message} show={toast.show} onClose={handleToastClose} />
             <TutorialOverlay tutorialId="quran-reader-tutorial" steps={quranTutorialSteps} />
+            
+            {/* Memorization Review Controls */}
+            {localIsMemorizationMode && (
+                <div className="fixed bottom-24 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-none">
+                    <div className="flex justify-between items-end w-full pointer-events-auto">
+                        <div className="flex flex-col gap-2">
+                            <button 
+                                onClick={() => setIsHideMode(!isHideMode)}
+                                className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all active:scale-90 ${isHideMode ? 'bg-emerald-600 text-white' : 'bg-white/90 text-gray-700'}`}
+                                title={isHideMode ? "إظهار الآيات" : "إخفاء الآيات"}
+                            >
+                                {isHideMode ? <BookOpen size={24} /> : <LayoutGrid size={24} />}
+                            </button>
+                            <button 
+                                onClick={() => setShowReviewTest(true)}
+                                className="w-12 h-12 rounded-full shadow-lg flex items-center justify-center bg-white/90 text-gray-700 transition-all active:scale-90"
+                                title="اختبار الحفظ"
+                            >
+                                <Trophy size={24} className="text-amber-500" />
+                            </button>
+                            <button 
+                                onClick={isRecording ? stopRecording : startRecording}
+                                className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all active:scale-90 ${isRecording ? 'bg-red-600 text-white animate-pulse' : 'bg-white/90 text-gray-700'}`}
+                                title={isRecording ? "إيقاف التسجيل" : "بدء التسجيل"}
+                            >
+                                <Mic size={24} />
+                            </button>
+                            {recordedAudio && !isRecording && (
+                                <button 
+                                    onClick={playRecordedAudio}
+                                    className="w-12 h-12 rounded-full shadow-lg flex items-center justify-center bg-blue-600 text-white transition-all active:scale-90"
+                                    title="تشغيل التسجيل"
+                                >
+                                    <Play size={24} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showReviewTest && localMemorizationSettings && (
+                <ReviewTestModal 
+                    isOpen={showReviewTest}
+                    onClose={() => setShowReviewTest(false)}
+                    quranData={quranTajweedJson.data}
+                    fromSurah={localMemorizationSettings.fromSurah}
+                    fromAyah={localMemorizationSettings.fromAyah}
+                    toSurah={localMemorizationSettings.toSurah}
+                    toAyah={localMemorizationSettings.toAyah}
+                    currentTheme={currentTheme}
+                    onComplete={(success) => {
+                        setShowReviewTest(false);
+                        if (success) {
+                            showToast('أحسنت! لقد نجحت في الاختبار');
+                            // Update review schedule if in review mode
+                            if (localMemorizationSettings.isReviewMode) {
+                                // We need the range ID, but for now let's just show success
+                            }
+                        } else {
+                            showToast('تحتاج لمزيد من المراجعة، حاول مرة أخرى');
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 };

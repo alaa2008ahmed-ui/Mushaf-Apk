@@ -4,7 +4,7 @@ import { toArabic } from '../components/QuranReader/constants';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 
-const QuranDownload: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const QuranDownload: React.FC<{ onBack: () => void, onNavigate?: (pageId: string, params?: any) => void }> = ({ onBack, onNavigate }) => {
     const { theme } = useTheme();
     const [downloadedSurahs, setDownloadedSurahs] = useState<number[]>(() => {
         const saved = localStorage.getItem('downloaded_surahs');
@@ -78,7 +78,7 @@ const QuranDownload: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 ))}
             </main>
 
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={onNavigate ? () => onNavigate('home') : onBack} onThemesClick={() => {}} showThemes={false} />
         </div>
     );
 };
