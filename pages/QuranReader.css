@@ -194,8 +194,22 @@
     text-align: center;
     line-height: 2.5;
     font-size: 1.7rem;
-    letter-spacing: normal; 
+    letter-spacing: 0; 
     word-spacing: normal;
+    /* Rendering Properties for Arabic Shaping */
+    text-rendering: optimizeLegibility;
+    font-variant-ligatures: common-ligatures;
+    font-feature-settings: "kern", "liga", "clig", "calt", "ccmp";
+    -webkit-font-smoothing: antialiased;
+}
+
+/* CSS Fix: display: contents for spans to maintain Arabic shaping across all Quran text containers */
+.page-content span, 
+.ayah-text span, 
+.ayah-text-block span,
+.search-context-ayah span,
+.share-preview-text span {
+    display: contents !important;
 }
 
 .page-footer {
@@ -214,6 +228,9 @@
     padding: 0; 
     border-radius: 6px; 
     transition: background-color 0.2s; 
+    font-feature-settings: "kern", "liga", "clig", "calt", "ccmp";
+    letter-spacing: 0;
+    text-rendering: optimizeLegibility;
 }
 .ayah-text-block.highlighted { 
     background-color: transparent !important;

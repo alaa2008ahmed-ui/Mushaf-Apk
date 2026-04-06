@@ -5,7 +5,7 @@ import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { FONTS, SURAH_NAMES_AR, toArabic, SURAH_INFO } from './constants';
-import MushafPage, { renderTajweedText } from './MushafPage';
+import MushafPage, { renderTajweedTextHtml } from './MushafPage';
 
 interface ShareAyahModalProps {
     isOpen: boolean;
@@ -844,6 +844,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                         </p>
                                     )}
                                     <p 
+                                        className="share-preview-text"
                                         style={{ 
                                             lineHeight: '1.8',
                                             fontFamily: selectedFont,
@@ -854,14 +855,15 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                             marginTop: '8px',
                                             fontWeight: 'bold',
                                             whiteSpace: 'normal',
+                                            letterSpacing: 0,
                                             wordBreak: 'keep-all',
-                                            fontFeatureSettings: '"kern", "liga", "clig", "calt"',
+                                            fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"',
                                             textRendering: 'optimizeLegibility'
                                         }}
                                     >
                                         {selectedAyahs.map((ay, idx) => (
                                             <React.Fragment key={idx}>
-                                                {renderTajweedText(getAyahText(ay.s, ay.a, false), useTajweed, { textColor: textColor })}
+                                                <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: renderTajweedTextHtml(getAyahText(ay.s, ay.a, false), useTajweed, { textColor: textColor }) }} />
                                                 {` ﴿${toArabic(ay.a)}﴾ `}
                                             </React.Fragment>
                                         ))}

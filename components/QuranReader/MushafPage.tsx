@@ -24,71 +24,49 @@ interface MushafPageProps {
 export const fixQuranText = (text: string) => {
     if (!text) return text;
     // Fix for "Ibrahim" and similar words where Small Yeh (\u06e6) causes disconnection in some fonts
-    // We replace the sequence of (Heh + Kasra + Small Yeh) with (Heh + Kasra + Regular Yeh)
-    // to ensure proper shaping and connectivity.
     return text.replace(/\u0647\u0650\u06e6/g, '\u0647\u0650\u064a');
 };
 
-export const renderTajweedText = (text: string, useTajweed: boolean = false, currentTheme?: any) => {
+/**
+ * Regex Cleaner: Removes hidden characters that break Arabic shaping
+ * like Tatweel (\u0640) and Zero Width Joiner (\u200D).
+ */
+export const cleanArabicText = (text: string) => {
+    if (!text) return text;
+    return text.replace(/[\u0640\u200D]/g, '');
+};
+
+/**
+ * Renders Tajweed text as an HTML string to be used with dangerouslySetInnerHTML.
+ * This ensures that no extra spaces are added between spans, which would break Arabic shaping.
+ */
+export const renderTajweedTextHtml = (text: string, useTajweed: boolean = false, currentTheme?: any) => {
     if (!text) return text;
     
-    const fixedText = fixQuranText(text);
+    let processedText = fixQuranText(text);
+    // Removed cleanArabicText as it might remove characters needed for shaping in some fonts
     
-    if (!fixedText.includes('[')) return fixedText;
+    if (!processedText.includes('[')) return processedText;
     
     if (!useTajweed) {
-        // Strip Tajweed tags to display text without coloring
-        return fixedText.replace(/\[([a-z])(?::\d+)?\[/g, '').replace(/\]/g, '');
+        return processedText.replace(/\[([a-z])(?::\d+)?\[/g, '').replace(/\]/g, '');
     }
 
-    // Tajweed coloring logic
     const tajweedColors: { [key: string]: string } = {
-        'm': '#FF0000', // Madd (Red)
-        'o': '#FF0000', // Madd (Red)
-        'p': '#FF0000', // Madd (Red)
-        'g': '#008000', // Ghunnah (Green)
-        'q': '#0000FF', // Qalqalah (Blue)
-        'f': '#808080', // Ikhfa (Gray)
-        'u': '#808080', // Idgham (Gray)
-        'a': '#808080', // Idgham (Gray)
-        'i': '#2E8B57', // Iqlab (SeaGreen)
-        'l': currentTheme?.textColor || currentTheme?.text || '#000000', // Lam of Allah (Theme text, will be bold)
-        'n': '#FFA500', // Ghunnah/Other (Orange)
-        'h': '#AAAAAA', // Hamzatul Wasl (Light Gray)
-        's': '#AAAAAA', // Silent (Light Gray)
+        'm': '#FF0000', 'o': '#FF0000', 'p': '#FF0000',
+        'g': '#008000', 'q': '#0000FF', 'f': '#808080',
+        'u': '#808080', 'a': '#808080', 'i': '#2E8B57',
+        'l': currentTheme?.textColor || currentTheme?.text || '#000000',
+        'n': '#FFA500', 'h': '#AAAAAA', 's': '#AAAAAA',
     };
 
-    const parts: React.ReactNode[] = [];
-    let currentPos = 0;
-    const regex = /\[([a-z])(?::\d+)?\[(.*?)\]/g;
-    let match;
-
-    while ((match = regex.exec(fixedText)) !== null) {
-        // Add text before the match
-        if (match.index > currentPos) {
-            parts.push(fixedText.substring(currentPos, match.index));
-        }
-
-        const rule = match[1];
-        const content = match[2];
+    return processedText.replace(/\[([a-z])(?::\d+)?\[(.*?)\]/g, (match, rule, content) => {
         const color = tajweedColors[rule] || '#000000';
         const isBold = rule === 'l';
-
-        parts.push(
-            <span key={match.index} style={{ color, fontWeight: isBold ? 'bold' : 'normal', unicodeBidi: 'isolate' }}>
-                {content}
-            </span>
-        );
-
-        currentPos = regex.lastIndex;
-    }
-
-    // Add remaining text
-    if (currentPos < fixedText.length) {
-        parts.push(fixedText.substring(currentPos));
-    }
-
-    return parts;
+        // We use display: contents to maintain Arabic shaping across span boundaries.
+        // We also add it inline to ensure it's applied even if CSS is delayed or scoped.
+        return `<span style="color: ${color}; font-weight: ${isBold ? 'bold' : 'normal'}; display: contents;">${content}</span>`;
+    });
 };
 
 const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme, useTajweed }) => {
@@ -159,7 +137,10 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
     const pageStyle = {
         fontSize: settings ? `${settings.fontSize}rem` : '1.7rem',
         fontFamily: settings?.fontFamily || 'var(--font-amiri-quran)',
-        color: settings?.theme === 'dark' ? '#fff' : (settings?.textColor || '#000')
+        color: settings?.theme === 'dark' ? '#fff' : (settings?.textColor || '#000'),
+        letterSpacing: 0,
+        fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"',
+        textRendering: 'optimizeLegibility'
     };
 
     const headerStyle = {
@@ -246,7 +227,12 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                 data-hizb-quarter={ayah.hizbQuarter}
                             >
                                 {isNewQuarter && <span className="hizb-quarter-marker">۞</span>}
-                                {renderTajweedText(text.replace(/\s+/g, ' ').trim(), useTajweed, currentTheme)}
+                                <span 
+                                    style={{ display: 'contents' }}
+                                    dangerouslySetInnerHTML={{ 
+                                        __html: renderTajweedTextHtml(text.replace(/\s+/g, ' ').trim(), useTajweed, currentTheme) 
+                                    }} 
+                                />
                                 {isSajdah && <span className="sajdah-icon-inline">۩</span>}
                                 <span className="verse-container" 
                                     onClick={(e) => {

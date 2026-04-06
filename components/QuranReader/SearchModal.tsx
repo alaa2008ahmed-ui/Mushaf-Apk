@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { toArabic } from './constants';
 import { X } from 'lucide-react';
-import { renderTajweedText } from './MushafPage';
+import { renderTajweedTextHtml } from './MushafPage';
 
 interface SearchModalProps {
     quranData: any;
@@ -295,9 +295,9 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                                         {group.ayahs.map((r, idx) => (
                                             <div key={idx} className="search-context-block search-main-ayah !mb-0" onClick={() => { onSelect(r.surah, r.ayah); onClose(); }}>
                                                 <div className="search-context-label !text-[10px] !mb-1">آية {toArabic(r.ayah)} - صفحة {toArabic(r.page)}</div>
-                                                <div className="search-context-ayah !text-sm">
+                                                <div className="search-context-ayah !text-sm" style={{ letterSpacing: 0, fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"', textRendering: 'optimizeLegibility' }}>
                                                     {useTajweed 
-                                                        ? renderTajweedText(r.rawText || r.text, useTajweed, currentTheme)
+                                                        ? <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: renderTajweedTextHtml(r.rawText || r.text, useTajweed, currentTheme) }} />
                                                         : highlightText(r.text, r.highlightRegex)
                                                     }
                                                 </div>
