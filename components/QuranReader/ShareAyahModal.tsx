@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Share2, Plus, Minus, Type, Image as ImageIcon, FileText, Volume2 } from 'lucide-react';
-import domtoimage from 'dom-to-image-more';
+import html2canvas from 'html2canvas';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
@@ -209,8 +209,9 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
 
     const getExplanationText = (s: number, a: number) => {
         if (!explanationData) return '';
+        if (readingMode === 'mushaf') return '';
         
-        const activeMode = readingMode === 'mushaf' ? (propSettings?.tafseer || 'ar.jalalayn') : readingMode;
+        const activeMode = readingMode;
 
         if (activeMode === 'tafseer' || activeMode === 'ar.jalalayn') {
             return explanationData.data?.surahs?.[s - 1]?.ayahs?.[a - 1]?.text || explanationData[s - 1]?.ayahs?.[a - 1]?.text || '';
@@ -301,21 +302,14 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 }
             } else if (shareType === 'image' && previewRef.current) {
                 try {
-                    // Use dom-to-image-more for better RTL and Tajweed support
-                    const dataUrl = await domtoimage.toJpeg(previewRef.current, {
-                        quality: 0.95,
-                        bgcolor: '#ffffff',
-                        width: previewRef.current.offsetWidth * 2,
-                        height: previewRef.current.offsetHeight * 2,
-                        style: {
-                            transform: 'scale(2)',
-                            transformOrigin: 'top left',
-                            width: previewRef.current.offsetWidth + 'px',
-                            height: previewRef.current.offsetHeight + 'px',
-                            fontFeatureSettings: '"kern", "liga", "clig", "calt"',
-                            textRendering: 'optimizeLegibility'
-                        }
+                    const canvas = await html2canvas(previewRef.current, {
+                        scale: 2,
+                        backgroundColor: '#ffffff',
+                        useCORS: true,
+                        allowTaint: true,
+                        logging: false
                     });
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
                     if (Capacitor.isNativePlatform()) {
                         const fileName = `ayah_share_${Date.now()}.jpg`;
@@ -384,19 +378,14 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         captureElement.style.display = 'block';
                         captureElement.style.zIndex = '-9999';
 
-                        // Use dom-to-image-more for page capture
-                        const dataUrl = await domtoimage.toJpeg(captureElement, {
-                            quality: 0.95,
-                            bgcolor: readingMode === 'mushaf' ? '#ffffff' : (currentTheme.bg || '#ffffff'),
-                            width: captureElement.offsetWidth * 1.5,
-                            height: captureElement.offsetHeight * 1.5,
-                            style: {
-                                transform: 'scale(1.5)',
-                                transformOrigin: 'top left',
-                                width: captureElement.offsetWidth + 'px',
-                                height: captureElement.offsetHeight + 'px'
-                            }
+                        const canvas = await html2canvas(captureElement, {
+                            scale: 1.5,
+                            backgroundColor: readingMode === 'mushaf' ? '#ffffff' : (currentTheme.bg || '#ffffff'),
+                            useCORS: true,
+                            allowTaint: true,
+                            logging: false
                         });
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
                         // Restore original style
                         captureElement.style.cssText = originalStyle;
@@ -732,7 +721,21 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 }}>
                                     {ayahText} ﴿{toArabic(ay.numberInSurah)}﴾
                                 </div>
-                                    {/* Translation removed as requested: Quranic text only for page share */}
+                                {explanation && (
+                                    <div style={{
+                                        fontSize: '24px',
+                                        lineHeight: '1.6',
+                                        fontFamily: 'var(--font-cairo), sans-serif',
+                                        color: '#333333',
+                                        textAlign: 'right',
+                                        backgroundColor: '#f8fafc',
+                                        padding: '15px',
+                                        borderRadius: '8px',
+                                        borderRight: '4px solid #3b82f6'
+                                    }}>
+                                        {explanation}
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
@@ -868,7 +871,21 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                             </React.Fragment>
                                         ))}
                                     </p>
-                                    {/* Translation removed as requested: Quranic text only for image share */}
+                                    {combinedExplanation && (
+                                        <p style={{
+                                            fontFamily: 'var(--font-cairo), sans-serif',
+                                            fontSize: `${fontSize * 0.8}px`,
+                                            color: textColor,
+                                            opacity: 0.9,
+                                            marginTop: '12px',
+                                            textAlign: 'center',
+                                            lineHeight: '1.6',
+                                            textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 1px 2px rgba(0,0,0,0.5)',
+                                            maxWidth: '90%'
+                                        }}>
+                                            {combinedExplanation}
+                                        </p>
+                                    )}
                                     <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.3)', width: '100%', paddingLeft: '4px', paddingRight: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                                         <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '12px', fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
                                             {surahInfo}
