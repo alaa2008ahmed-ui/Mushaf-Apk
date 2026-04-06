@@ -1772,6 +1772,11 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 if (isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
             }
         };
+
+        // Initial load for the current modeSuffix
+        handleThemeChange();
+        handleSettingsChange();
+
         window.addEventListener('theme-change', handleThemeChange);
         window.addEventListener('settings-change', handleSettingsChange);
         return () => {

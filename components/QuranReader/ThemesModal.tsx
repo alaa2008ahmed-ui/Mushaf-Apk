@@ -81,8 +81,8 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
         const baseSettings = { ...DEFAULT_SETTINGS, ...savedSettings };
         const updatedSettings = {
             ...baseSettings,
-            bgColor: "#ffffff",
-            textColor: "#000000",
+            bgColor: theme.bg,
+            textColor: theme.text,
             fontFamily: theme.font,
             ...(baseSettings.lockHighlightColor ? {} : { highlightTextColor: theme.highlightText || theme.accent }),
             theme: themeId

@@ -305,13 +305,13 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             } else if (shareType === 'image' && previewRef.current) {
                 try {
                     const canvas = await html2canvas(previewRef.current, {
-                        scale: 2,
+                        scale: 3,
                         backgroundColor: '#ffffff',
                         useCORS: true,
                         allowTaint: true,
                         logging: false
                     });
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
 
                     if (Capacitor.isNativePlatform()) {
                         const fileName = `ayah_share_${Date.now()}.jpg`;
@@ -381,13 +381,13 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         captureElement.style.zIndex = '-9999';
 
                         const canvas = await html2canvas(captureElement, {
-                            scale: 1.5,
+                            scale: 2.5,
                             backgroundColor: readingMode === 'mushaf' ? '#ffffff' : (currentTheme.bg || '#ffffff'),
                             useCORS: true,
                             allowTaint: true,
                             logging: false
                         });
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
 
                         // Restore original style
                         captureElement.style.cssText = originalStyle;
@@ -447,7 +447,20 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 }
             } else if (shareType === 'audio') {
                 let reader = propSettings?.reader || appSettings?.reader || 'Alafasy_128kbps';
-                const audioReader = reader === 'ar.alafasy' ? 'Alafasy_128kbps' : reader;
+                // Map some common IDs if they come in different formats
+                const readerMap: Record<string, string> = {
+                    'ar.alafasy': 'Alafasy_128kbps',
+                    'ar.abdulbasitmurattal': 'Abdul_Basit_Murattal_192kbps',
+                    'ar.abdulbasitmujawwad': 'Abdul_Basit_Mujawwad_128kbps',
+                    'ar.abdullahbasfar': 'Abdullah_Basfar_192kbps',
+                    'ar.abdurrahmaansudais': 'Abdurrahmaan_As-Sudais_192kbps',
+                    'ar.hudhaify': 'Hudhaify_128kbps',
+                    'ar.minshawi': 'Minshawy_Murattal_128kbps',
+                    'ar.minshawimujawwad': 'Minshawy_Mujawwad_64kbps',
+                    'ar.husary': 'Husary_128kbps',
+                    'ar.mahermuaiqly': 'MaherAlMuaiqly128kbps'
+                };
+                const audioReader = readerMap[reader] || reader;
                 
                 // Ensure we have the latest selected ayahs
                 const start = Math.min(fromAyah, toAyah);
@@ -458,18 +471,31 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 }
 
                 // Custom file name: SurahName_AyahRange.mp3
-                const fileName = `${getSurahName(currentAyah.s)}_${start}${start !== end ? '-' + end : ''}.mp3`;
+                const fileName = `Quran_${getSurahName(currentAyah.s)}_${start}${start !== end ? '-' + end : ''}.mp3`;
 
                 try {
-                    // Helper to strip ID3v2 tags to allow better concatenation
-                    const stripID3v2 = (buffer: ArrayBuffer) => {
-                        const uint8 = new Uint8Array(buffer);
+                    // Helper to strip ID3v2 and ID3v1 tags to allow better concatenation
+                    const cleanAudioBuffer = (buffer: ArrayBuffer) => {
+                        let uint8 = new Uint8Array(buffer);
+                        let startOffset = 0;
+                        let endOffset = uint8.length;
+
+                        // Strip ID3v2 (at the beginning)
                         if (uint8.length > 10 && uint8[0] === 0x49 && uint8[1] === 0x44 && uint8[2] === 0x33) { // "ID3"
-                            // Size is 4 bytes starting at offset 6, each byte is 7-bit (synchsafe)
                             const size = (uint8[6] << 21) | (uint8[7] << 14) | (uint8[8] << 7) | uint8[9];
-                            return buffer.slice(size + 10);
+                            startOffset = size + 10;
                         }
-                        return buffer;
+
+                        // Strip ID3v1 (at the end - 128 bytes starting with "TAG")
+                        if (uint8.length > 128) {
+                            const tagOffset = uint8.length - 128;
+                            if (uint8[tagOffset] === 0x54 && uint8[tagOffset + 1] === 0x41 && uint8[tagOffset + 2] === 0x47) { // "TAG"
+                                endOffset = tagOffset;
+                            }
+                        }
+
+                        if (startOffset >= endOffset) return buffer;
+                        return buffer.slice(startOffset, endOffset);
                     };
 
                     // Fetch all ayahs in parallel for better performance
@@ -481,7 +507,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         const res = await fetch(audioUrl);
                         if (!res.ok) throw new Error(`Failed to fetch audio for ayah ${ay.a}`);
                         const buffer = await res.arrayBuffer();
-                        return stripID3v2(buffer);
+                        return cleanAudioBuffer(buffer);
                     });
                     
                     const buffers = await Promise.all(fetchPromises);

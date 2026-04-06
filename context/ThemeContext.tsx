@@ -124,7 +124,7 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         
         const isDark = theme.isDark;
 
-        // Apply shared colors/styles
+        root.style.setProperty('--bg-color', theme.bgColor || '#0D1B2A');
         root.style.setProperty('--text-color', theme.textColor);
         root.style.setProperty('--text-color-muted', isDark ? '#94a3b8' : '#64748b');
 

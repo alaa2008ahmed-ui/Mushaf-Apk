@@ -38,7 +38,7 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
       case 'quran-download':
         return <QuranDownload onBack={onBack} onNavigate={onNavigate} />;
       case 'tajweed-education':
-        return <TajweedEducation onBack={onBack} onNavigate={onNavigate} onNavigateToMushaf={(surah, ayah) => onNavigate('quran', { surah, ayah, isPractical: true, mushafType: 'tajweed' })} navParams={navParams} />;
+        return <TajweedEducation onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} onNavigateToMushaf={(surah, ayah) => onNavigate('quran', { surah, ayah, isPractical: true, mushafType: 'tajweed' })} navParams={navParams} />;
       case 'salah-adhkar':
         return <AthkarAlSalah onBack={onBack} onNavigate={onNavigate} />;
       case 'calendar':

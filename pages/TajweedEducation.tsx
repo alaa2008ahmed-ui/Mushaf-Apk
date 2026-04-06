@@ -2208,11 +2208,13 @@ const TajweedEducation: React.FC<{
     onBack: () => void, 
     onNavigate?: (pageId: string, params?: any) => void,
     onNavigateToMushaf?: (surah?: number, ayah?: number) => void, 
+    onOpenThemes?: () => void,
     navParams?: any 
-}> = ({ onBack, onNavigate, onNavigateToMushaf, navParams }) => {
-    const { theme } = useTheme();
+}> = ({ onBack, onNavigate, onNavigateToMushaf, onOpenThemes, navParams }) => {
+    const { theme, themeKey } = useTheme();
     const [selectedRule, setSelectedRule] = useState<string | null>(null);
     const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+    const [userPlayingAudio, setUserPlayingAudio] = useState<string | null>(null);
     const [recordingId, setRecordingId] = useState<string | null>(null);
     const [userRecordings, setUserRecordings] = useState<Record<string, string>>({});
     const [completedRules, setCompletedRules] = useState<string[]>([]);
@@ -2243,6 +2245,18 @@ const TajweedEducation: React.FC<{
             localStorage.removeItem('tajweed_selected_rule');
         }
     }, [selectedRule]);
+
+    useEffect(() => {
+        if (!playingAudio && audioRef.current) {
+            audioRef.current.pause();
+        }
+    }, [playingAudio]);
+
+    useEffect(() => {
+        if (!userPlayingAudio && userAudioRef.current) {
+            userAudioRef.current.pause();
+        }
+    }, [userPlayingAudio]);
 
     useEffect(() => {
         return () => {
@@ -2315,8 +2329,19 @@ const TajweedEducation: React.FC<{
         if (!userAudioRef.current) userAudioRef.current = new Audio();
         else userAudioRef.current.pause();
 
+        if (userPlayingAudio === url) {
+            setUserPlayingAudio(null);
+            return;
+        }
+
+        setUserPlayingAudio(url);
         userAudioRef.current.src = url;
-        userAudioRef.current.play();
+        userAudioRef.current.play().catch(err => {
+            console.error("User audio playback failed:", err);
+            setUserPlayingAudio(null);
+        });
+
+        userAudioRef.current.onended = () => setUserPlayingAudio(null);
     };
 
     const startRecording = async (exampleId: string) => {
@@ -2569,13 +2594,13 @@ const TajweedEducation: React.FC<{
                                                                 onClick={() => playUserRecording(userRecordings[example.id])}
                                                                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold shadow-sm"
                                                                 style={{ 
-                                                                    backgroundColor: `${theme.palette[1] || theme.palette[0]}20`, 
-                                                                    color: theme.palette[1] || theme.palette[0],
+                                                                    backgroundColor: userPlayingAudio === userRecordings[example.id] ? theme.palette[0] : `${theme.palette[1] || theme.palette[0]}20`, 
+                                                                    color: userPlayingAudio === userRecordings[example.id] ? 'white' : (theme.palette[1] || theme.palette[0]),
                                                                     border: `1px solid ${theme.palette[1] || theme.palette[0]}50`
                                                                 }}
                                                             >
-                                                                <i className="fa-solid fa-headphones"></i>
-                                                                استمع لتسجيلك
+                                                                <i className={`fa-solid ${userPlayingAudio === userRecordings[example.id] ? 'fa-pause' : 'fa-headphones'}`}></i>
+                                                                {userPlayingAudio === userRecordings[example.id] ? 'إيقاف الاستماع' : 'استمع لتسجيلك'}
                                                             </button>
                                                         )}
 
@@ -2664,9 +2689,9 @@ const TajweedEducation: React.FC<{
                                         </div>
                                     </div>
                                     <BottomBar 
-                                        onHomeClick={() => { setSelectedRule(null); setPlayingAudio(null); setRecordingId(null); }} 
-                                        onThemesClick={() => {}} 
-                                        showThemes={false} 
+                                        onHomeClick={() => { setSelectedRule(null); setPlayingAudio(null); setUserPlayingAudio(null); setRecordingId(null); }} 
+                                        onThemesClick={onOpenThemes || (() => {})} 
+                                        showThemes={!!onOpenThemes} 
                                         homeLabel="رجوع" 
                                     />
                                 </>
@@ -2676,7 +2701,7 @@ const TajweedEducation: React.FC<{
                 )}
             </AnimatePresence>
             
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={onOpenThemes || (() => {})} showThemes={!!onOpenThemes} />
         </div>
     );
 };
