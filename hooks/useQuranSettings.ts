@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DEFAULT_SETTINGS, THEMES } from '../components/QuranReader/constants';
-import quranTajweedJson from '../data/quran-tajweed.json';
+import { quranData as quranJsonData } from '../utils/quranData';
+const quranJson = { data: quranJsonData };
 
 export const useQuranSettings = (initialLandscape: boolean, modeSuffix: string) => {
-    const [useTajweed, setUseTajweed] = useState(() => localStorage.getItem('use_tajweed_quran' + modeSuffix) === 'true');
     const [quranData, setQuranData] = useState<any>(null);
 
     useEffect(() => {
-        const data = quranTajweedJson.data;
+        const data = quranJson.data;
         setQuranData(data);
-    }, [useTajweed]);
+    }, []);
     
     const [isTransparentMode, setIsTransparentMode] = useState(() => localStorage.getItem('transparent_mode' + modeSuffix) === 'true');
     const [isHideToolbarsEnabled, setIsHideToolbarsEnabled] = useState(() => localStorage.getItem('hide_toolbars_enabled' + modeSuffix) === 'true');
@@ -81,7 +81,6 @@ export const useQuranSettings = (initialLandscape: boolean, modeSuffix: string) 
     };
 
     return {
-        useTajweed, setUseTajweed,
         quranData, setQuranData,
         isTransparentMode, setIsTransparentMode,
         isHideToolbarsEnabled, setIsHideToolbarsEnabled,

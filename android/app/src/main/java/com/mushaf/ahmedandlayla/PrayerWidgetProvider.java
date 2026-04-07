@@ -35,19 +35,9 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
         // قراءة البيانات من مخزن Capacitor المشترك
         SharedPreferences prefs = context.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
         String prayerJson = prefs.getString("widget_prayer_data", null);
-        String widgetDesign = prefs.getString("widget_design", "design1");
-
-        int layoutId = R.layout.prayer_widget;
-        if ("design2".equals(widgetDesign)) {
-            layoutId = R.layout.prayer_widget_design2;
-        } else if ("design3".equals(widgetDesign)) {
-            layoutId = R.layout.prayer_widget_design3;
-        } else if ("design4".equals(widgetDesign)) {
-            layoutId = R.layout.prayer_widget_design4;
-        }
 
         // ربط الواجهة (الريدجت) مع الحزمة الصحيحة
-        RemoteViews views = new RemoteViews(context.getPackageName(), layoutId);
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.prayer_widget);
 
         // جعل الريدجت يفتح التطبيق عند الضغط عليه
         Intent intent = new Intent(context, MainActivity.class);

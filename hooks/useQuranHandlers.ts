@@ -24,11 +24,9 @@ export const useQuranHandlers = (
     setIsPageInputActive: React.Dispatch<React.SetStateAction<boolean>>,
     autoScrollState: any,
     showToast: (msg: string) => void,
-    setUseTajweed: React.Dispatch<React.SetStateAction<boolean>>,
     setQuranData: React.Dispatch<React.SetStateAction<any>>,
     closeModal: (modalName: string) => void,
-    quranTajweedJson: any,
-    quranUthmaniJson: any
+    quranJson: any
 ) => {
 
     const handleAyahTextClick = useCallback((s: number, a: number) => {
@@ -133,15 +131,12 @@ export const useQuranHandlers = (
         setIsPageInputActive(true);
     }, [initialLandscape, autoScrollState.isActive, autoScrollState.isPaused, autoScrollPausedRef, setAutoScrollState, setIsPageInputActive]);
 
-    const handleMushafTypeSelect = useCallback((type: 'uthmani' | 'tajweed') => {
-        const isTajweed = type === 'tajweed';
-        localStorage.setItem('use_tajweed_quran' + modeSuffix, String(isTajweed));
-        setUseTajweed(isTajweed);
-        setQuranData(isTajweed ? quranTajweedJson.data : quranUthmaniJson.data);
+    const handleMushafTypeSelect = useCallback(() => {
+        setQuranData(quranJson.data);
         closeModal('mushaf-selection-modal');
-        showToast(isTajweed ? 'تم تفعيل المصحف المجود' : 'تم تفعيل المصحف العثماني');
+        showToast('تم تفعيل المصحف العثماني');
         window.dispatchEvent(new Event('settings-change'));
-    }, [modeSuffix, setUseTajweed, setQuranData, quranTajweedJson, quranUthmaniJson, closeModal, showToast]);
+    }, [setQuranData, quranJson, closeModal, showToast]);
 
     const handleInteractionStart = useCallback(() => {
         if (autoScrollStateRef.current.isActive && !autoScrollStateRef.current.isPaused) {

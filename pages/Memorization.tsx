@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight, HelpCircle, Repeat, Play, User, ArrowLeftRight, CheckSquare, Minus, Plus, BookOpen, Calendar, List, Trophy, Trash2, RotateCcw } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import InteractiveBackground from '../components/InteractiveBackground';
-import quranData from '../data/quran-tajweed.json';
+import { quranData as quranJsonData } from '../utils/quranData';
+const quranData = { data: quranJsonData };
 import { SURAH_NAMES_AR, MEMORIZATION_READERS } from '../components/QuranReader/constants';
 import BottomBar from '../components/BottomBar';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
@@ -30,7 +31,6 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const [linkedRepeat, setLinkedRepeat] = useState(true);
     const [pauseLength, setPauseLength] = useState(1);
     const [testAfterSession, setTestAfterSession] = useState(false);
-    const [mushafType, setMushafType] = useState<'uthmani' | 'tajweed'>('tajweed');
     const [activeTab, setActiveTab] = useState<'setup' | 'review'>('setup');
     const [memorizedRanges, setMemorizedRanges] = useState<MemorizedRange[]>([]);
 
@@ -63,7 +63,6 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 setLinkedRepeat(parsed.linkedRepeat !== undefined ? parsed.linkedRepeat : true);
                 setPauseLength(parsed.pauseLength || 1);
                 setTestAfterSession(parsed.testAfterSession || false);
-                setMushafType(parsed.mushafType || 'tajweed');
             } catch (e) {
                 console.error("Failed to load memorization settings", e);
             }
@@ -97,11 +96,10 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
             ayahRepeat,
             linkedRepeat,
             pauseLength,
-            testAfterSession,
-            mushafType
+            testAfterSession
         };
         localStorage.setItem('memorization_settings_v1', JSON.stringify(settings));
-    }, [selectedReader, fromSurah, fromAyah, toSurah, toAyah, rangeRepeat, ayahRepeat, linkedRepeat, pauseLength, testAfterSession, mushafType]);
+    }, [selectedReader, fromSurah, fromAyah, toSurah, toAyah, rangeRepeat, ayahRepeat, linkedRepeat, pauseLength, testAfterSession]);
 
     const handleStart = () => {
         const session = localStorage.getItem('memorization_session_v1');
@@ -126,7 +124,6 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
 
         onNavigate('quran', {
             isMemorization: true,
-            mushafType,
             initialSurah: fromSurah,
             initialAyah: fromAyah,
             memorizationSettings: {
@@ -139,8 +136,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 ayahRepeat,
                 linkedRepeat,
                 pauseLength,
-                testAfterSession,
-                mushafType
+                testAfterSession
             }
         });
     };
@@ -148,7 +144,6 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const resumeSession = () => {
         onNavigate('quran', {
             isMemorization: true,
-            mushafType: savedSession.settings?.mushafType || 'tajweed',
             memorizationSettings: savedSession.settings,
             initialSurah: savedSession.currentAyah.s,
             initialAyah: savedSession.currentAyah.a
@@ -230,7 +225,6 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const handleReviewRange = (range: MemorizedRange) => {
         onNavigate('quran', {
             isMemorization: true,
-            mushafType: 'tajweed',
             initialSurah: range.fromSurah,
             initialAyah: range.fromAyah,
             memorizationSettings: {
@@ -244,7 +238,6 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 linkedRepeat: true,
                 pauseLength: 1,
                 testAfterSession: true,
-                mushafType: 'tajweed',
                 isReviewMode: true // New flag for review mode
             }
         });
@@ -327,28 +320,6 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                         </div>
                     </div>
 
-                    {/* Mushaf Type Selection */}
-                    <div className="space-y-1.5" id="mushaf-type-container">
-                        <div className="flex items-center justify-start gap-2 font-bold text-base" style={{ color: 'var(--text-color)' }}>
-                            <span>نوع المصحف</span>
-                            <BookOpen size={20} />
-                        </div>
-                        <div className="relative">
-                            <select 
-                                id="mushaf-type-select"
-                                value={mushafType}
-                                onChange={(e) => { setMushafType(e.target.value as 'uthmani' | 'tajweed'); setSavedSession(null); }}
-                                className="w-full p-3 rounded-xl appearance-none outline-none text-right font-medium text-base shadow-sm border"
-                                style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
-                            >
-                                <option value="uthmani">المصحف العادي</option>
-                                <option value="tajweed">المصحف المجود</option>
-                            </select>
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px]" style={{ borderTopColor: 'var(--text-color)' }}></div>
-                            </div>
-                        </div>
-                    </div>
 
                     {/* Ayah Range */}
                     <div className="space-y-2" id="ayah-range-container">

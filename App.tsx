@@ -11,7 +11,6 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { PrayerTimesProvider } from './context/PrayerTimesContext';
 import { VoiceControlProvider } from './context/VoiceControlContext';
 import { TutorialProvider } from './context/TutorialContext';
-import { preloadTajweedAudio } from './utils/audioCache';
 import { Mic, MicOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTheme } from './context/ThemeContext';
@@ -30,13 +29,13 @@ function App() {
     const validPages = [
       'home', 'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'qibla', 
-      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'tajweed-education', 'voice-control', 'more-menu', 'daily-wird', 'memorization'
+      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'more-menu', 'daily-wird', 'memorization'
     ];
 
     if (pageId === 'home') {
       // If we are in the Mushaf and it's a practical application from Tajweed,
       // the Home button should take us back to Tajweed.
-      if (history[history.length - 1] === 'quran' && navParams?.isPractical) {
+      if (history[history.length - 1] === 'quran') {
         setHistory(prev => (prev.length > 1 ? prev.slice(0, -1) : prev));
         return;
       }
@@ -112,7 +111,6 @@ function App() {
     else if (action === 'open_prayer' || (action === 'ui_click' && params?.label?.includes('صلاه'))) handleNavigate('prayer-times');
     else if (action === 'open_qibla' || (action === 'ui_click' && params?.label?.includes('قبله'))) handleNavigate('qibla');
     else if (action === 'open_tasbeeh' || (action === 'ui_click' && params?.label?.includes('مسبحه'))) handleNavigate('tasbeeh');
-    else if (action === 'open_tajweed' || (action === 'ui_click' && params?.label?.includes('تجويد'))) handleNavigate('tajweed-education');
     else if (action === 'open_nawawi' || (action === 'ui_click' && params?.label?.includes('اربعون'))) handleNavigate('nawawi');
     else if (action === 'open_calculators' || (action === 'ui_click' && params?.label?.includes('حاسبه'))) handleNavigate('calculators');
     else if (action === 'open_listen' || (action === 'ui_click' && params?.label?.includes('استماع'))) handleNavigate('listen');
@@ -201,11 +199,6 @@ function AppContent({
   useEffect(() => {
     setCurrentPage(page);
   }, [page, setCurrentPage]);
-
-  useEffect(() => {
-    // Start preloading tajweed audio in the background
-    preloadTajweedAudio();
-  }, []);
 
   useWakeLock();
 

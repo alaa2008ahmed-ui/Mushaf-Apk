@@ -18,7 +18,6 @@ interface WirdSettings {
   startPage?: number;
   lastPage?: number;
   lastAyah?: { s: number; a: number };
-  mushafType?: 'uthmani' | 'tajweed';
 }
 
 const TOTAL_PAGES = 604;
@@ -36,7 +35,6 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   const [tempMode, setTempMode] = useState<'days' | 'pages'>('days');
   const [tempValue, setTempValue] = useState<string>('30');
   const [tempName, setTempName] = useState<string>('');
-  const [tempMushafType, setTempMushafType] = useState<'uthmani' | 'tajweed'>('uthmani');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [calcMethod, setCalcMethod] = useState<'remaining' | 'total'>('remaining');
@@ -107,8 +105,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       isActive: true,
       startPage: startPage,
       lastPage: undefined,
-      lastAyah: undefined,
-      mushafType: tempMushafType
+      lastAyah: undefined
     };
 
     let newProfiles: WirdSettings[];
@@ -126,7 +123,6 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     setTempMode('days');
     setTempValue('30');
     setTempName('');
-    setTempMushafType('uthmani');
     setActiveId(null); // This tells handleStart to create a new one
     setShowSettings(true);
   };
@@ -137,7 +133,6 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     setTempMode(profile.mode);
     setTempValue(profile.value.toString());
     setTempName(profile.name);
-    setTempMushafType(profile.mushafType || 'uthmani');
     setShowSettings(true);
     setShowProfileMenu(false);
   };
@@ -167,7 +162,6 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       setTempMode(settings.mode);
       setTempValue(settings.value.toString());
       setTempName(settings.name);
-      setTempMushafType(settings.mushafType || 'uthmani');
       setShowSettings(true);
     }
   };
@@ -262,8 +256,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       page: page, 
       surah: initialAyah?.s, 
       ayah: initialAyah?.a, 
-      isWird: true,
-      mushafType: settings?.mushafType || 'uthmani'
+      isWird: true
     });
   };
 
@@ -302,23 +295,6 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
           </div>
         </div>
 
-        <div>
-          <label className="block mb-2 font-semibold">نوع المصحف:</label>
-          <div className="flex gap-4">
-            <button 
-              onClick={() => setTempMushafType('uthmani')}
-              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMushafType === 'uthmani' ? 'border-green-500 bg-green-500/10 text-green-600 dark:text-green-400' : 'border-gray-300 dark:border-gray-600'}`}
-            >
-              المصحف العادي
-            </button>
-            <button 
-              onClick={() => setTempMushafType('tajweed')}
-              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMushafType === 'tajweed' ? 'border-green-500 bg-green-500/10 text-green-600 dark:text-green-400' : 'border-gray-300 dark:border-gray-600'}`}
-            >
-              المصحف المجود
-            </button>
-          </div>
-        </div>
 
         <div>
           <label className="block mb-2 font-semibold">

@@ -18,13 +18,11 @@ interface MushafPageProps {
         theme: string;
     };
     currentTheme?: any;
-    useTajweed?: boolean;
 }
 
 export const fixQuranText = (text: string) => {
     if (!text) return text;
-    // Fix for "Ibrahim" and similar words where Small Yeh (\u06e6) causes disconnection in some fonts
-    return text.replace(/\u0647\u0650\u06e6/g, '\u0647\u0650\u064a');
+    return text.replace(/۞/g, '');
 };
 
 /**
@@ -40,36 +38,12 @@ export const cleanArabicText = (text: string) => {
  * Renders Tajweed text as an HTML string to be used with dangerouslySetInnerHTML.
  * This ensures that no extra spaces are added between spans, which would break Arabic shaping.
  */
-export const renderTajweedTextHtml = (text: string, useTajweed: boolean = false, currentTheme?: any) => {
+export const renderTajweedTextHtml = (text: string) => {
     if (!text) return text;
-    
-    let processedText = fixQuranText(text);
-    // Removed cleanArabicText as it might remove characters needed for shaping in some fonts
-    
-    if (!processedText.includes('[')) return processedText;
-    
-    if (!useTajweed) {
-        return processedText.replace(/\[([a-z])(?::\d+)?\[/g, '').replace(/\]/g, '');
-    }
-
-    const tajweedColors: { [key: string]: string } = {
-        'm': '#FF0000', 'o': '#FF0000', 'p': '#FF0000',
-        'g': '#008000', 'q': '#0000FF', 'f': '#808080',
-        'u': '#808080', 'a': '#808080', 'i': '#2E8B57',
-        'l': currentTheme?.textColor || currentTheme?.text || '#000000',
-        'n': '#FFA500', 'h': '#AAAAAA', 's': '#AAAAAA',
-    };
-
-    return processedText.replace(/\[([a-z])(?::\d+)?\[(.*?)\]+/g, (match, rule, content) => {
-        const color = tajweedColors[rule] || '#000000';
-        const isBold = rule === 'l';
-        // We use display: contents to maintain Arabic shaping across span boundaries.
-        // We also add it inline to ensure it's applied even if CSS is delayed or scoped.
-        return `<span style="color: ${color}; font-weight: ${isBold ? 'bold' : 'normal'}; display: contents;">${content}</span>`;
-    });
+    return fixQuranText(text);
 };
 
-const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme, useTajweed }) => {
+const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme }) => {
     const pageRef = useRef<HTMLDivElement | null>(null);
     const longPressTimer = useRef<number | null>(null);
     const isLongPressTriggered = useRef(false);
@@ -159,10 +133,8 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                     
                     // Detect Hizb Quarter change
                     const prevAyah = index > 0 ? pageData[index - 1] : null;
-                    const isNewQuarter = prevAyah ? (ayah.hizbQuarter !== prevAyah.hizbQuarter) : false;
-                    // Note: For the first ayah of the page, we might miss the marker if it changed between pages.
-                    // But usually markers are at the start of pages or handled by the reader.
-                    // We can also check if (ayah.hizbQuarter - 1) * some_logic matches.
+                    const hasMarkerInText = ayah.text.includes('۞');
+                    const isNewQuarter = (prevAyah ? (ayah.hizbQuarter !== prevAyah.hizbQuarter) : false) || hasMarkerInText;
                     
                     const text = fixQuranText((ayah.numberInSurah === 1 && ayah.sNum !== 1 && ayah.sNum !== 9) 
                         ? ayah.text.replace('بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', '').replace('بِّسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', '').trim() 
@@ -230,7 +202,7 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                 <span 
                                     style={{ display: 'contents' }}
                                     dangerouslySetInnerHTML={{ 
-                                        __html: renderTajweedTextHtml(text.replace(/\s+/g, ' ').trim(), useTajweed, currentTheme) 
+                                        __html: renderTajweedTextHtml(text.replace(/\s+/g, ' ').trim()) 
                                     }} 
                                 />
                                 {isSajdah && <span className="sajdah-icon-inline">۩</span>}

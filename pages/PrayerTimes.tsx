@@ -309,31 +309,6 @@ function PrayerTimes({ onBack, onNavigate }) {
                         })}
                     </div>
                     
-                    <div className="mt-8 mb-4 p-4 rounded-2xl border themed-card-border shadow-sm themed-bg">
-                        <h3 className="text-sm font-bold mb-4 text-center" style={{ color: primaryColor }}>تصميم الويدجت (الشاشة الرئيسية)</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                            {[
-                                { id: 'design1', name: 'التصميم الافتراضي' },
-                                { id: 'design2', name: 'التصميم الثاني' },
-                                { id: 'design3', name: 'التصميم الثالث' },
-                                { id: 'design4', name: 'التصميم الرابع' }
-                            ].map(design => (
-                                <button
-                                    key={design.id}
-                                    onClick={() => updateConfig({ widgetDesign: design.id })}
-                                    className={`p-3 rounded-xl border-2 transition-all flex items-center justify-center ${config.widgetDesign === design.id || (!config.widgetDesign && design.id === 'design1') ? 'shadow-md scale-105' : 'opacity-70 hover:opacity-100'}`}
-                                    style={{ 
-                                        borderColor: config.widgetDesign === design.id || (!config.widgetDesign && design.id === 'design1') ? primaryColor : 'transparent',
-                                        backgroundColor: 'var(--card-bg)',
-                                        color: 'var(--card-text)'
-                                    }}
-                                >
-                                    <span className="text-xs font-bold">{design.name}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                    
                     <p className="text-center text-sm mt-6 opacity-70" style={{ color: secondaryColor }}>
                         (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
                     </p>

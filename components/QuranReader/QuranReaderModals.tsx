@@ -31,8 +31,6 @@ export const QuranReaderModals = ({
     setIsTransparentMode,
     isHideToolbarsEnabled,
     setIsHideToolbarsEnabled,
-    useTajweed,
-    handleMushafTypeSelect,
     showSajdahCard,
     setShowSajdahCard,
     modeSuffix,
@@ -185,14 +183,6 @@ export const QuranReaderModals = ({
                 />
             )}
 
-            {activeModals.includes('mushaf-selection-modal') && (
-                <MushafSelectionModal
-                    onClose={() => closeModal('mushaf-selection-modal')}
-                    useTajweed={useTajweed}
-                    onSelect={handleMushafTypeSelect}
-                    isLandscape={isLandscapeRef.current}
-                />
-            )}
 
             {tafseerInfo.isOpen && (
                 <TafseerModal

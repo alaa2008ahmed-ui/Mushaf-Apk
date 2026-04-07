@@ -14,8 +14,6 @@ interface ShareAyahModalProps {
     quranData: any;
     currentTheme: any;
     readingMode?: 'mushaf' | 'tafseer' | 'meanings' | 'translation';
-    useTajweed?: boolean;
-    isPractical?: boolean;
     settings?: any;
 }
 
@@ -102,8 +100,6 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     quranData,
     currentTheme,
     readingMode = 'mushaf',
-    useTajweed = false,
-    isPractical = false,
     settings: propSettings
 }) => {
     const [shareType, setShareType] = useState<'text' | 'image' | 'page' | 'audio'>('image');
@@ -183,13 +179,12 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     if (!isOpen || !quranData) return null;
 
     const stripTajweedTags = (text: string) => {
-        if (!text) return '';
-        return text.replace(/\[[a-z](?::\d+)?\[/g, '').replace(/\]/g, '');
+        return text;
     };
 
     const fixQuranText = (text: string) => {
         if (!text) return "";
-        return text.replace(/\u0647\u0650\u06E6/g, "\u0647\u0650\u064a");
+        return text.replace(/۞/g, '');
     };
 
     const getAyahText = (s: number, a: number, strip: boolean = true) => {
@@ -894,7 +889,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                     >
                                         {selectedAyahs.map((ay, idx) => (
                                             <React.Fragment key={idx}>
-                                                <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: renderTajweedTextHtml(getAyahText(ay.s, ay.a, false), false, { textColor: textColor }) }} />
+                                                <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: renderTajweedTextHtml(getAyahText(ay.s, ay.a, false)) }} />
                                                 {` ﴿${toArabic(ay.a)}﴾ `}
                                             </React.Fragment>
                                         ))}

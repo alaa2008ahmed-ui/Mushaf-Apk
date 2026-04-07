@@ -24,7 +24,6 @@ interface PrayerConfig {
     };
     isSummerTime?: boolean;
     syncWidgetTheme?: boolean;
-    widgetDesign?: string;
     nightNotifications?: {
         firstThird: boolean;
         midnight: boolean;
@@ -53,7 +52,6 @@ const DEFAULT_CONFIG: PrayerConfig = {
     location: { cityGov: "الدمام - الشرقية", fullCountry: "المملكة العربية السعودية", combinedCode: "+966013", lat: 26.4207, lng: 50.0888 },
     isSummerTime: false,
     syncWidgetTheme: true,
-    widgetDesign: 'design1',
     nightNotifications: { firstThird: true, midnight: true, lastThird: true }
 };
 
@@ -189,16 +187,6 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('prayerFinal_v33', JSON.stringify(config));
         // Re-calculate times when config changes (e.g. location)
         fetchTimesForLocation(config.location);
-        
-        // Save widget design to Capacitor preferences for native access
-        if (Capacitor.getPlatform() === 'android' && config.widgetDesign) {
-            import('@capacitor/preferences').then(({ Preferences }) => {
-                Preferences.set({
-                    key: 'widget_design',
-                    value: config.widgetDesign || 'design1'
-                });
-            });
-        }
     }, [config]);
 
     // --- Calculation Logic ---

@@ -21,7 +21,6 @@ const ALL_MENU_ITEMS = [
     { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
     { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
-    { id: 'tajweed-education', label: "📖 تعليم التجويد", className: "h-10", colorIndex: 1 },
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
     { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "h-10", colorIndex: 1 },
 ];

@@ -14,7 +14,6 @@ import Nawawi from '../pages/Nawawi';
 import QuranReader from '../pages/QuranReader';
 import QuranDownload from '../pages/QuranDownload';
 import Calculators from '../pages/Calculators';
-import TajweedEducation from '../pages/TajweedEducation';
 import VoiceControlPage from '../pages/VoiceControlPage';
 import MoreMenuPage from '../pages/MoreMenuPage';
 import MonthlyPrayerTimes from '../pages/MonthlyPrayerTimes';
@@ -32,13 +31,11 @@ interface AppRouterProps {
 const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenThemes, navParams }) => {
     switch(page) {
       case 'quran':
-        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={false} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} mushafType={navParams?.mushafType} isPractical={navParams?.isPractical} />;
+        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={false} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} />;
       case 'quran-landscape':
-        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={true} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} mushafType={navParams?.mushafType} isPractical={navParams?.isPractical} />;
+        return <QuranReader onBack={onBack} onNavigate={onNavigate} initialLandscape={true} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} />;
       case 'quran-download':
         return <QuranDownload onBack={onBack} onNavigate={onNavigate} />;
-      case 'tajweed-education':
-        return <TajweedEducation onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} onNavigateToMushaf={(surah, ayah) => onNavigate('quran', { surah, ayah, isPractical: true, mushafType: 'tajweed' })} navParams={navParams} />;
       case 'salah-adhkar':
         return <AthkarAlSalah onBack={onBack} onNavigate={onNavigate} />;
       case 'calendar':

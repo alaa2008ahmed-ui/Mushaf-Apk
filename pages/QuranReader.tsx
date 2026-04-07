@@ -31,7 +31,7 @@ import AyahContextMenu from '../components/QuranReader/AyahContextMenu';
 import ShareAyahModal from '../components/QuranReader/ShareAyahModal';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { MousePointer2, Move, ZoomIn, LayoutGrid, Mic, Bookmark, Home, Share2, BookOpen, Trophy, Play } from 'lucide-react';
-import quranTajweedJson from '../data/quran-tajweed.json';
+import { quranData as quranJsonData } from '../utils/quranData';
 import ReviewTestModal from '../components/QuranReader/ReviewTestModal';
 import { memorizationService } from '../src/services/memorizationService';
 import { registerBackInterceptor } from '../hooks/useBackButton';
@@ -164,7 +164,7 @@ const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentThem
     );
 };
 
-const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any, mushafType?: 'uthmani' | 'tajweed', isPractical?: boolean }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings, mushafType, isPractical }) => {
+const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [savedSession, setSavedSession] = useState<any>(null);
@@ -203,9 +203,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
             localStorage.setItem('last_reading_mode', readingMode);
         }
     }, [readingMode, isWirdMode, isMemorizationMode]);
-    const baseModeSuffix = isPractical
-        ? `_practical_${isLandscape ? 'h' : 'v'}`
-        : localIsMemorizationMode 
+    const baseModeSuffix = localIsMemorizationMode 
             ? `_memorization_${isLandscape ? 'h' : 'v'}` 
             : isWirdMode 
                 ? `_wird_${isLandscape ? 'h' : 'v'}` 
@@ -213,29 +211,10 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     ? (isLandscape ? '_h' : '_v') 
                     : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
 
-    const [useTajweed, setUseTajweed] = useState(() => {
-        if (isPractical || mushafType === 'tajweed') return true;
-        if (mushafType === 'uthmani') return false;
-        if (localIsMemorizationMode) return true;
-        return localStorage.getItem('use_tajweed_quran' + baseModeSuffix) === 'true';
-    });
-
     const modeSuffix = baseModeSuffix;
-    const bookmarkSuffix = baseModeSuffix + (useTajweed ? '_tajweed' : '');
+    const bookmarkSuffix = baseModeSuffix;
 
-    const [quranData, setQuranData] = useState<any>(quranTajweedJson.data);
-
-    useEffect(() => {
-        if (isPractical || mushafType === 'tajweed') {
-            if (useTajweed !== true) setUseTajweed(true);
-            setQuranData(quranTajweedJson.data);
-        } else if (mushafType === 'uthmani') {
-            if (useTajweed !== false) setUseTajweed(false);
-        } else if (localIsMemorizationMode) {
-            if (useTajweed !== true) setUseTajweed(true);
-            setQuranData(quranTajweedJson.data);
-        }
-    }, [localIsMemorizationMode, mushafType, isPractical, useTajweed]);
+    const [quranData, setQuranData] = useState(quranJsonData);
 
     const hasJumpedRef = useRef(false);
 
@@ -463,20 +442,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     // Load settings based on orientation and mode
     useEffect(() => {
         const mode = modeSuffix;
-        const baseMode = baseModeSuffix;
         
-        if (mushafType) {
-            const targetTajweed = mushafType === 'tajweed';
-            if (useTajweed !== targetTajweed) setUseTajweed(targetTajweed);
-        } else if (localIsMemorizationMode) {
-            if (useTajweed !== true) setUseTajweed(true);
-        } else {
-            const tajweedSetting = localStorage.getItem('use_tajweed_quran' + baseMode) === 'true';
-            if (useTajweed !== tajweedSetting) {
-                setUseTajweed(tajweedSetting);
-            }
-        }
-
         const savedSettings = localStorage.getItem('quran_settings' + mode);
         const baseSettings = savedSettings ? JSON.parse(savedSettings) : {};
         const initialSettings = { ...DEFAULT_SETTINGS, ...baseSettings };
@@ -525,7 +491,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         setActiveModals([]);
         setIsFloatingMenuOpen(false);
 
-        if (!hasJumpedRef.current && (initialSurah || initialPage || localIsMemorizationMode || isWirdMode || isPractical)) {
+        if (!hasJumpedRef.current && (initialSurah || initialPage || localIsMemorizationMode || isWirdMode)) {
             // Do not jump to lastPos on initial mount if we have initial params
         } else {
             // Prevent scroll listener from overwriting position during transition
@@ -575,7 +541,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
             });
         }
-    }, [modeSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode, mushafType, isPractical]);
+    }, [modeSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode]);
     
     useEffect(() => {
         if (!isLandscape) return;
@@ -666,8 +632,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const lastNotifiedJuz = useRef<number | null>(null);
     const [bookmarks, setBookmarks] = useState(() => {
         const mode = initialLandscape ? '_h' : '_v';
-        const initialUseTajweed = isPractical || mushafType === 'tajweed' || localIsMemorizationMode || localStorage.getItem('use_tajweed_quran' + (isPractical ? `_practical_${mode}` : localIsMemorizationMode ? `_memorization_${mode}` : isWirdMode ? `_wird_${mode}` : readingMode === 'mushaf' ? mode : `_${readingMode}_${mode}`)) === 'true';
-        const bSuffix = (isPractical ? `_practical_${mode}` : localIsMemorizationMode ? `_memorization_${mode}` : isWirdMode ? `_wird_${mode}` : readingMode === 'mushaf' ? mode : `_${readingMode}_${mode}`) + (initialUseTajweed ? '_tajweed' : '');
+        const bSuffix = (localIsMemorizationMode ? `_memorization_${mode}` : isWirdMode ? `_wird_${mode}` : readingMode === 'mushaf' ? mode : `_${readingMode}_${mode}`);
         return JSON.parse(localStorage.getItem('quran_bookmarks_list' + bSuffix) || '[]');
     });
 
@@ -824,7 +789,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         },
         {
             id: 'mode-switch',
-            text: 'وضع القراءة: اضغط هنا للتبديل بين المصحف العادي، المصحف المجود، التفسير، المعاني، والترجمة.',
+            text: 'وضع القراءة: اضغط هنا للتبديل بين المصحف، التفسير، المعاني، والترجمة.',
             position: { top: '70px', left: '70px' },
             arrow: 'up',
             selector: '#btn-mode-switch',
@@ -1073,7 +1038,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         setSajdahCardInfo({ show: false, surah: '', ayah: 0, juz: 0, page: 0, wasAutoscrolling: false, wasPlaying: false });
     };
 
-    const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false, retries: number = 10) => {
+    const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false, retries: number = 50) => {
         const el = document.getElementById(`ayah-${s}-${a}`);
         if (el) {
             const container = mushafContentRef.current;
@@ -1614,13 +1579,10 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         }
     };
 
-    const handleMushafTypeSelect = (type: 'uthmani' | 'tajweed') => {
-        const isTajweed = type === 'tajweed';
-        localStorage.setItem('use_tajweed_quran' + baseModeSuffix, String(isTajweed));
-        if (useTajweed !== isTajweed) setUseTajweed(isTajweed);
-        setQuranData(quranTajweedJson.data);
+    const handleMushafTypeSelect = () => {
+        setQuranData(quranJsonData);
         closeModal('mushaf-selection-modal');
-        showToast(isTajweed ? 'تم تفعيل المصحف المجود' : 'تم تفعيل المصحف العثماني');
+        showToast('تم تفعيل المصحف العثماني');
         window.dispatchEvent(new Event('settings-change'));
     };
 
@@ -1683,10 +1645,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                     return defaultColors;
                 });
             }
-
-            const tajweedSetting = localStorage.getItem('use_tajweed_quran' + baseModeSuffix) === 'true';
-            if (useTajweed !== tajweedSetting) setUseTajweed(tajweedSetting);
-            setQuranData(quranTajweedJson.data);
+            
+            setQuranData(quranJsonData);
 
             const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
             if (isTransparentMode !== transSetting) setIsTransparentMode(transSetting);
@@ -1755,9 +1715,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 });
             }
             
-            const tajweedSetting = localStorage.getItem('use_tajweed_quran' + baseModeSuffix) === 'true';
-            if (useTajweed !== tajweedSetting) setUseTajweed(tajweedSetting);
-            setQuranData(quranTajweedJson.data);
+            setQuranData(quranJsonData);
             
             const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
             if (isTransparentMode !== transSetting) setIsTransparentMode(transSetting);
@@ -2022,23 +1980,26 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         if (instant) {
             flushSync(() => {
                 setVisiblePages([...new Set([p, p + 1, p + 2, p - 1, p - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b));
+                handleAyahClick(s, a);
                 if (!isPageInputActiveRef.current) {
                     setActiveModals([]);
                 }
             });
-            scrollToAyah(s, a, true);
-            handleAyahClick(s, a);
+            // Small delay to ensure DOM is ready after flushSync
             setTimeout(() => {
-                isJumpingRef.current = false;
-            }, 500);
+                scrollToAyah(s, a, true);
+                setTimeout(() => {
+                    isJumpingRef.current = false;
+                }, 500);
+            }, 0);
         } else {
             setVisiblePages([...new Set([p, p + 1, p + 2, p - 1, p - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b));
+            handleAyahClick(s, a);
             if (!isPageInputActiveRef.current) {
                 setActiveModals([]);
             }
             setTimeout(() => {
                 scrollToAyah(s, a, false);
-                handleAyahClick(s, a);
                 setTimeout(() => {
                     isJumpingRef.current = false;
                 }, 500);
@@ -2790,7 +2751,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 isWirdMode={isWirdMode}
                 isMemorizationMode={localIsMemorizationMode}
                 memorizationSettings={localMemorizationSettings}
-                useTajweed={useTajweed}
                 handleMushafTypeSelect={handleMushafTypeSelect}
             />
             <FloatingMenu 
@@ -2804,7 +2764,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 onNavigate={onNavigate}
                 readingMode={readingMode}
                 setReadingMode={setReadingMode}
-                useTajweed={useTajweed}
                 handleMushafTypeSelect={handleMushafTypeSelect}
                 showToast={showToast}
                 isWirdMode={isWirdMode}
@@ -2815,7 +2774,6 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 setIsHideToolbarsEnabled={setIsHideToolbarsEnabled}
                 isTransparentMode={isTransparentMode}
                 setIsTransparentMode={setIsTransparentMode}
-                isPractical={isPractical}
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
@@ -2837,20 +2795,18 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                                 onInteractionEnd={handleInteractionEnd} 
                                 settings={displaySettings} 
                                 currentTheme={currentTheme}
-                                useTajweed={useTajweed}
                             />
                         );
                     })}
                     </div>
                 ) : (
                     <VerticalReadingView 
-                        quranData={quranTajweedJson.data}
+                        quranData={quranJsonData}
                         readingMode={readingMode as any}
                         settings={settings}
                         currentTheme={currentTheme}
                         currentAyah={currentAyah}
                         onAyahClick={handleVerticalAyahClick}
-                        useTajweed={useTajweed}
                         onVisibleAyahChange={(s, a) => {
                             if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
                                 setCurrentAyah({ s, a });
@@ -2938,8 +2894,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 onMarkCompleted={handleMarkWirdCompleted}
                 currentTheme={currentTheme} 
             />
-            {activeModals.includes('search-modal') && <SearchModal quranData={quranData} onSelect={(s,a) => jumpToAyah(s,a, true)} onClose={() => closeModal('search-modal')} isLandscape={isLandscape} initialQuery={initialSearchQuery} readingMode={readingMode} useTajweed={useTajweed} currentTheme={currentTheme} />}
-            {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} readingMode={readingMode} useTajweed={useTajweed} settings={settings} isPractical={isPractical} />}
+            {activeModals.includes('search-modal') && <SearchModal quranData={quranData} onSelect={(s,a) => jumpToAyah(s,a, true)} onClose={() => closeModal('search-modal')} isLandscape={isLandscape} initialQuery={initialSearchQuery} readingMode={readingMode} currentTheme={currentTheme} />}
+            {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} readingMode={readingMode} settings={settings} />}
             {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={modeSuffix} />}
             {activeModals.includes('settings-modal') && <SettingsModal onClose={() => closeModal('settings-modal')} onOpenModal={openModal} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={modeSuffix} />}
             {activeModals.includes('font-modal') && <FontSelectModal isOpen={true} onClose={() => closeModal('font-modal')} isLandscape={isLandscape} currentFontId={settings.fontFamily} onSelect={(id) => {
@@ -3063,7 +3019,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 isLandscape={isLandscape}
                 onClose={() => closeModal('mushaf-selection-modal')}
                 onSelect={handleMushafTypeSelect}
-                currentType={useTajweed ? 'tajweed' : 'uthmani'}
+                currentType={'uthmani'}
             />
             <SajdahCardModal info={sajdahCardInfo} onClose={handleCloseSajdahCard} isLandscape={isLandscape} />
             <ResumeSessionModal 
@@ -3121,7 +3077,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 <ReviewTestModal 
                     isOpen={showReviewTest}
                     onClose={() => setShowReviewTest(false)}
-                    quranData={quranTajweedJson.data}
+                    quranData={quranJsonData}
                     fromSurah={localMemorizationSettings.fromSurah}
                     fromAyah={localMemorizationSettings.fromAyah}
                     toSurah={localMemorizationSettings.toSurah}

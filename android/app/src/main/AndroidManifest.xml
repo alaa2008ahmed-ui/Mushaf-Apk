@@ -61,15 +61,6 @@
                 android:resource="@xml/prayer_widget_info" />
         </receiver>
 
-        <receiver android:name=".PrayerWidgetProvider4x1" android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/prayer_widget_info_4x1" />
-        </receiver>
-
     </application>
 
 </manifest>

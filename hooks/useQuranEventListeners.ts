@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import { DEFAULT_SETTINGS, THEMES } from '../components/QuranReader/constants';
-import quranTajweedJson from '../data/quran-tajweed.json';
+import { quranData as quranJsonData } from '../utils/quranData';
+const quranJson = { data: quranJsonData };
 
 export const useQuranEventListeners = (
     isLandscapeRef: React.MutableRefObject<boolean>,
     setCurrentTheme: React.Dispatch<React.SetStateAction<any>>,
     setSettings: React.Dispatch<React.SetStateAction<any>>,
     setToolbarColors: React.Dispatch<React.SetStateAction<any>>,
-    setUseTajweed: React.Dispatch<React.SetStateAction<boolean>>,
     setQuranData: React.Dispatch<React.SetStateAction<any>>,
     setIsTransparentMode: React.Dispatch<React.SetStateAction<boolean>>,
     setIsHideToolbarsEnabled: React.Dispatch<React.SetStateAction<boolean>>,
@@ -54,10 +54,8 @@ export const useQuranEventListeners = (
                     'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
                 });
             }
-
-            const tajweedSetting = localStorage.getItem('use_tajweed_quran' + mode) === 'true';
-            setUseTajweed(tajweedSetting);
-            setQuranData(quranTajweedJson.data);
+            
+            setQuranData(quranJson.data);
 
             const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
             setIsTransparentMode(transSetting);
@@ -109,9 +107,7 @@ export const useQuranEventListeners = (
                 });
             }
             
-            const tajweedSetting = localStorage.getItem('use_tajweed_quran' + mode) === 'true';
-            setUseTajweed(tajweedSetting);
-            setQuranData(quranTajweedJson.data);
+            setQuranData(quranJson.data);
             
             const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
             setIsTransparentMode(transSetting);
@@ -138,5 +134,5 @@ export const useQuranEventListeners = (
             window.removeEventListener('theme-change', handleThemeChange);
             window.removeEventListener('settings-change', handleSettingsChange);
         };
-    }, [isLandscapeRef, setCurrentTheme, setSettings, setToolbarColors, setUseTajweed, setQuranData, setIsTransparentMode, setIsHideToolbarsEnabled, setBookmarks, setShowSajdahCard, setIsLandscapeUIHidden]);
+    }, [isLandscapeRef, setCurrentTheme, setSettings, setToolbarColors, setQuranData, setIsTransparentMode, setIsHideToolbarsEnabled, setBookmarks, setShowSajdahCard, setIsLandscapeUIHidden]);
 };

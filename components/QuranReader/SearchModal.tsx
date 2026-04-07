@@ -10,11 +10,10 @@ interface SearchModalProps {
     isLandscape?: boolean;
     initialQuery?: string;
     readingMode?: string;
-    useTajweed?: boolean;
     currentTheme?: any;
 }
 
-const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose, isLandscape, initialQuery, readingMode = 'mushaf', useTajweed = false, currentTheme }) => {
+const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose, isLandscape, initialQuery, readingMode = 'mushaf', currentTheme }) => {
     const modeSuffix = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
     const [query, setQuery] = useState(() => initialQuery || localStorage.getItem('search_query' + modeSuffix) || '');
     const [results, setResults] = useState<any[]>(() => {
@@ -29,15 +28,12 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
     const searchTimeoutRef = useRef<any>(null);
 
     const stripTajweedTags = (text: string) => {
-        if (!text) return '';
-        // Remove [tag[ and ] to handle nested tags correctly
-        return text.replace(/\[[a-z](?::\d+)?\[/g, '').replace(/\]/g, '');
+        return text;
     };
 
     const fixQuranText = (text: string) => {
         if (!text) return "";
-        // Fix for "Ibrahim" disconnected display issue in some fonts
-        return text.replace(/\u0647\u0650\u06E6/g, "\u0647\u0650\u064a");
+        return text.replace(/۞/g, '');
     };
 
     const normalizeArabic = (text: string) => {
@@ -296,10 +292,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                                             <div key={idx} className="search-context-block search-main-ayah !mb-0" onClick={() => { onSelect(r.surah, r.ayah); onClose(); }}>
                                                 <div className="search-context-label !text-[10px] !mb-1">آية {toArabic(r.ayah)} - صفحة {toArabic(r.page)}</div>
                                                 <div className="search-context-ayah !text-sm" style={{ letterSpacing: 0, fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"', textRendering: 'optimizeLegibility' }}>
-                                                    {useTajweed 
-                                                        ? <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: renderTajweedTextHtml(r.rawText || r.text, useTajweed, currentTheme) }} />
-                                                        : highlightText(r.text, r.highlightRegex)
-                                                    }
+                                                    {highlightText(r.text, r.highlightRegex)}
                                                 </div>
                                             </div>
                                         ))}
