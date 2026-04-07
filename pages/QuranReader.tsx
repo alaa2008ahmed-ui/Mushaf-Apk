@@ -1089,15 +1089,38 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         setSajdahCardInfo({ show: false, surah: '', ayah: 0, juz: 0, page: 0, wasAutoscrolling: false, wasPlaying: false });
     };
 
-    const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false, retries: number = 50) => {
-        if (!document.getElementById('pages-container')) {
+    const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false, retries: number = 50, isPageJump: boolean = false) => {
+        const container = document.getElementById('mushaf-content');
+        if (!document.getElementById('pages-container') || !container) {
             isJumpingRef.current = false;
             return;
         }
         
         const el = document.getElementById(`ayah-${s}-${a}`);
         if (el) {
-            el.scrollIntoView({ block: 'center', behavior: instant ? 'auto' : 'smooth' });
+            const scrollElToCenter = (element: HTMLElement) => {
+                const containerRect = container.getBoundingClientRect();
+                const elRect = element.getBoundingClientRect();
+                
+                let targetScrollTop = container.scrollTop + (elRect.top - containerRect.top) - (containerRect.height / 2) + (elRect.height / 2);
+                
+                if (isPageJump) {
+                    // Find the page element that contains this ayah
+                    const pageEl = element.closest('.mushaf-page');
+                    if (pageEl) {
+                        const pageRect = pageEl.getBoundingClientRect();
+                        targetScrollTop = container.scrollTop + (pageRect.top - containerRect.top);
+                    }
+                }
+                
+                if (instant) {
+                    container.scrollTop = targetScrollTop;
+                } else {
+                    container.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+                }
+            };
+
+            scrollElToCenter(el);
             
             if (instant) {
                 // Call it a few more times to combat layout shift from images/fonts loading
@@ -1105,7 +1128,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 const interval = setInterval(() => {
                     const currentEl = document.getElementById(`ayah-${s}-${a}`);
                     if (currentEl) {
-                        currentEl.scrollIntoView({ block: 'center', behavior: 'auto' });
+                        scrollElToCenter(currentEl);
                     }
                     count++;
                     if (count > 5) clearInterval(interval);
@@ -1117,7 +1140,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 isJumpingRef.current = false;
             }, 600);
         } else if (retries > 0) {
-            setTimeout(() => scrollToAyah(s, a, instant, retries - 1), 50);
+            setTimeout(() => scrollToAyah(s, a, instant, retries - 1, isPageJump), 50);
         } else {
             // Reset jumping state if we failed to find the element
             isJumpingRef.current = false;
@@ -2026,9 +2049,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         return pagesMap.get(Number(pageNum)) || [];
     }, [pagesMap]);
 
-    const jumpToAyah = useCallback((s: number, a: number, instant: boolean = false) => {
+    const jumpToAyah = useCallback((s: number, a: number, instant: boolean = false, isPageJump: boolean = false) => {
         if (isJumpingRef.current && !instant) return;
-        setLastInteractionType('ayah');
+        setLastInteractionType(isPageJump ? 'page' : 'ayah');
         stopAudio();
         if (!quranData) return;
         const surah = quranData.surahs.find((su:any) => su.number === s);
@@ -2038,27 +2061,30 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         isJumpingRef.current = true;
         lastNotifiedJuz.current = null;
         lastNotifiedQuarter.current = null;
-        const p = Number(ayah.page);
         
-        setVisiblePages([...new Set([p, p + 1, p + 2, p - 1, p - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b));
-        handleAyahClick(s, a);
-        if (!isPageInputActiveRef.current) {
-            setActiveModals([]);
-        }
-
-        // Use requestAnimationFrame to ensure React has rendered the page
-        requestAnimationFrame(() => {
-            setTimeout(() => {
-                scrollToAyah(s, a, instant);
-            }, 10);
+        const p = Number(ayah.page);
+        // Add 2 to the target page to fix the offset issue reported by the user
+        const targetPage = Math.min(604, p + 2);
+        
+        flushSync(() => {
+            setVisiblePages([...new Set([targetPage, targetPage + 1, targetPage + 2, targetPage - 1, targetPage - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b));
+            handleAyahClick(s, a);
+            if (!isPageInputActiveRef.current) {
+                setActiveModals([]);
+            }
         });
+
+        scrollToAyah(s, a, instant, 50, isPageJump);
     }, [quranData, handleAyahClick, stopAudio, scrollToAyah]);
 
     const jumpToPage = useCallback((pageNum: number, instant: boolean = true) => {
         if (!quranData || isNaN(pageNum) || pageNum < 1 || pageNum > 604) return;
         setLastInteractionType('page');
         
-        const pageData = getPageData(pageNum);
+        // Add 2 to the target page to fix the offset issue reported by the user
+        const targetPageNum = Math.min(604, pageNum + 2);
+        
+        const pageData = getPageData(targetPageNum);
         if (pageData && pageData.length > 0) {
             // Sort by surah number then ayah number to get the absolute first ayah of the page
             const sortedAyahs = [...pageData].sort((a: any, b: any) => {
@@ -2066,9 +2092,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 return a.numberInSurah - b.numberInSurah;
             });
             const firstAyah = sortedAyahs[0];
-            jumpToAyah(firstAyah.sNum, firstAyah.numberInSurah, instant);
+            jumpToAyah(firstAyah.sNum, firstAyah.numberInSurah, instant, true);
         } else {
-            showToast(`لا توجد بيانات لصفحة ${toArabic(pageNum)}`);
+            showToast(`لا توجد بيانات لصفحة ${toArabic(targetPageNum)}`);
         }
     }, [quranData, jumpToAyah, getPageData, showToast]);
 
