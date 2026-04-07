@@ -392,13 +392,13 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         captureElement.style.zIndex = '-9999';
 
                         const canvas = await html2canvas(captureElement, {
-                            scale: 5,
+                            scale: 3, // 1080px * 3 = 3240px width (safe for mobile canvas limits)
                             backgroundColor: readingMode === 'mushaf' ? '#ffffff' : (currentTheme.bg || '#ffffff'),
                             useCORS: true,
                             allowTaint: true,
                             logging: false
                         });
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
 
                         // Restore original style
                         captureElement.style.cssText = originalStyle;
@@ -485,7 +485,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 const fileName = `Quran_${getSurahName(currentAyah.s)}_${start}${start !== end ? '-' + end : ''}.mp3`;
 
                 try {
-                    // Helper to strip ID3v2, ID3v1 tags, and Xing/Info headers to allow better concatenation
+                    // Helper to strip ID3v2, ID3v1 tags, and neutralize Xing/Info headers
                     const cleanAudioBuffer = (buffer: ArrayBuffer) => {
                         let uint8 = new Uint8Array(buffer);
                         let startOffset = 0;
@@ -505,46 +505,19 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             }
                         }
 
-                        // Find the first valid MP3 frame sync
-                        let firstFrameOffset = startOffset;
-                        for (let i = startOffset; i < endOffset - 1; i++) {
-                            if (uint8[i] === 0xFF && (uint8[i+1] & 0xE0) === 0xE0) {
-                                // Verify it's a valid frame header
-                                const version = (uint8[i+1] & 0x18) >> 3;
-                                const layer = (uint8[i+1] & 0x06) >> 1;
-                                if (version !== 1 && layer !== 0) {
-                                    firstFrameOffset = i;
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        startOffset = firstFrameOffset;
-
-                        // Look for Xing/Info header in the first frame
-                        const searchLimit = Math.min(startOffset + 200, endOffset);
-                        let hasXing = false;
+                        // Neutralize Xing/Info headers by overwriting them with zeros
+                        // This prevents players from using the first file's duration for the concatenated file
+                        const searchLimit = Math.min(startOffset + 1000, endOffset);
                         for (let i = startOffset; i < searchLimit - 4; i++) {
                             if (
                                 (uint8[i] === 0x58 && uint8[i+1] === 0x69 && uint8[i+2] === 0x6E && uint8[i+3] === 0x67) || // Xing
                                 (uint8[i] === 0x49 && uint8[i+1] === 0x6E && uint8[i+2] === 0x66 && uint8[i+3] === 0x6F)    // Info
                             ) {
-                                hasXing = true;
+                                uint8[i] = 0;
+                                uint8[i+1] = 0;
+                                uint8[i+2] = 0;
+                                uint8[i+3] = 0;
                                 break;
-                            }
-                        }
-
-                        if (hasXing) {
-                            // Skip this frame. Find the NEXT frame sync.
-                            for (let i = startOffset + 100; i < endOffset - 1; i++) {
-                                if (uint8[i] === 0xFF && (uint8[i+1] & 0xE0) === 0xE0) {
-                                    const version = (uint8[i+1] & 0x18) >> 3;
-                                    const layer = (uint8[i+1] & 0x06) >> 1;
-                                    if (version !== 1 && layer !== 0) {
-                                        startOffset = i;
-                                        break;
-                                    }
-                                }
                             }
                         }
 
@@ -552,35 +525,65 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         return buffer.slice(startOffset, endOffset);
                     };
 
-                    // Fetch all ayahs in parallel for better performance
-                    const fetchPromises = ayahsToShare.map(async (ay) => {
-                        const sStr = String(ay.s).padStart(3, '0');
-                        const aStr = String(ay.a).padStart(3, '0');
-                        const audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
-                        
-                        const res = await fetch(audioUrl);
-                        if (!res.ok) throw new Error(`Failed to fetch audio for ayah ${ay.a}`);
-                        const buffer = await res.arrayBuffer();
-                        return cleanAudioBuffer(buffer);
-                    });
+                    // Fetch ayahs sequentially to prevent memory/network crash
+                    const buffers: ArrayBuffer[] = [];
                     
-                    const buffers = await Promise.all(fetchPromises);
-                    const combinedBlob = new Blob(buffers, { type: 'audio/mpeg' });
-
                     if (Capacitor.isNativePlatform()) {
-                        const base64Data = await blobToBase64(combinedBlob);
-                        const savedFile = await Filesystem.writeFile({
+                        let isFirst = true;
+                        for (const ay of ayahsToShare) {
+                            const sStr = String(ay.s).padStart(3, '0');
+                            const aStr = String(ay.a).padStart(3, '0');
+                            const audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
+                            
+                            const res = await fetch(audioUrl);
+                            if (!res.ok) throw new Error(`Failed to fetch audio for ayah ${ay.a}`);
+                            const buffer = await res.arrayBuffer();
+                            const cleanedBuffer = cleanAudioBuffer(buffer);
+                            
+                            const base64Data = await blobToBase64(new Blob([cleanedBuffer]));
+                            const dataToWrite = base64Data.split(',')[1];
+                            
+                            if (isFirst) {
+                                await Filesystem.writeFile({
+                                    path: fileName,
+                                    data: dataToWrite,
+                                    directory: Directory.Cache,
+                                });
+                                isFirst = false;
+                            } else {
+                                await Filesystem.appendFile({
+                                    path: fileName,
+                                    data: dataToWrite,
+                                    directory: Directory.Cache,
+                                });
+                            }
+                        }
+                        
+                        const savedFile = await Filesystem.getUri({
                             path: fileName,
-                            data: base64Data.split(',')[1],
                             directory: Directory.Cache,
                         });
+                        
                         await Share.share({
                             title: 'مشاركة تلاوة',
                             text: shareText,
                             url: savedFile.uri,
                             dialogTitle: 'مشاركة عبر'
                         });
-                    } else if (navigator.share) {
+                    } else {
+                        // Web fallback
+                        for (const ay of ayahsToShare) {
+                            const sStr = String(ay.s).padStart(3, '0');
+                            const aStr = String(ay.a).padStart(3, '0');
+                            const audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
+                            
+                            const res = await fetch(audioUrl);
+                            if (!res.ok) throw new Error(`Failed to fetch audio for ayah ${ay.a}`);
+                            const buffer = await res.arrayBuffer();
+                            buffers.push(cleanAudioBuffer(buffer));
+                        }
+                        
+                        const combinedBlob = new Blob(buffers, { type: 'audio/mpeg' });
                         const file = new File([combinedBlob], fileName, { type: 'audio/mpeg' });
                         if (navigator.canShare && navigator.canShare({ files: [file] })) {
                             await navigator.share({
@@ -589,18 +592,11 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 files: [file],
                             });
                         } else {
-                            // Fallback to text only if file share not supported
-                            await navigator.share({
-                                title: 'مشاركة تلاوة',
-                                text: shareText,
-                            });
+                            const link = document.createElement('a');
+                            link.download = fileName;
+                            link.href = URL.createObjectURL(combinedBlob);
+                            link.click();
                         }
-                    } else {
-                        // Fallback: download the audio
-                        const link = document.createElement('a');
-                        link.download = fileName;
-                        link.href = URL.createObjectURL(combinedBlob);
-                        link.click();
                     }
                 } catch (e) {
                     console.error('Error sharing audio file:', e);
@@ -818,7 +814,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     position: 'absolute',
                     left: '-9999px',
                     top: '-9999px',
-                    width: '1000px', // Fixed width for high-quality capture
+                    width: '1080px', // Fixed width for high-quality capture
                     backgroundColor: '#ffffff',
                     padding: '60px 50px',
                     color: '#000000',
@@ -829,6 +825,10 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     #hidden-mushaf-capture .surah-header-container {
                         display: none !important;
                     }
+                    #hidden-mushaf-capture .ayah-text-block {
+                        font-size: 42px !important;
+                        line-height: 2.2 !important;
+                    }
                 `}</style>
                 {renderShareHeader()}
                 <MushafPage 
@@ -837,7 +837,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     highlightedAyahId={null}
                     onAyahClick={() => {}}
                     onVerseClick={() => {}}
-                    settings={appSettings || { fontSize: 1.7, fontFamily: 'var(--font-amiri-quran)', textColor: '#000000' }}
+                    settings={appSettings || { fontSize: 2.5, fontFamily: 'var(--font-amiri-quran)', textColor: '#000000' }}
                     useTajweed={false}
                 />
                     <div style={{ 
@@ -870,7 +870,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         position: 'absolute',
                         left: '-9999px',
                         top: '-9999px',
-                        width: '1200px', // Fixed width for consistent capture
+                        width: '1080px', // Fixed width for consistent capture
                         backgroundColor: '#ffffff',
                         padding: '60px',
                         color: '#000000',
@@ -878,11 +878,11 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     }}
                 >
                     <div style={{ textAlign: 'center', marginBottom: '40px', borderBottom: `3px solid #16a34a`, paddingBottom: '20px' }}>
-                        <h2 style={{ fontSize: '36px', fontWeight: 'bold', color: '#16a34a' }}>
+                        <h2 style={{ fontSize: '42px', fontWeight: 'bold', color: '#16a34a' }}>
                             صفحة {toArabic(pageNum)} - {pageSurahInfo}
                         </h2>
                         {pageAyahs.length > 0 && pageAyahs[0].sNum === pageAyahs[pageAyahs.length - 1].sNum && (
-                            <p style={{ fontSize: '24px', color: '#666', marginTop: '8px', fontWeight: 'bold' }}>
+                            <p style={{ fontSize: '28px', color: '#666', marginTop: '8px', fontWeight: 'bold' }}>
                                 {getSurahMetadata(pageAyahs[0].sNum)}
                             </p>
                         )}
@@ -894,33 +894,33 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         const isNewSurah = idx === 0 || pageAyahs[idx-1].sNum !== ay.sNum;
                         
                         return (
-                            <div key={`${ay.sNum}-${ay.numberInSurah}`} style={{ marginBottom: '35px' }}>
+                            <div key={`${ay.sNum}-${ay.numberInSurah}`} style={{ marginBottom: '40px' }}>
                                 {isNewSurah && idx > 0 && (
                                     <div style={{ textAlign: 'center', margin: '40px 0', padding: '15px', backgroundColor: `rgba(22, 163, 74, 0.1)`, borderRadius: '12px' }}>
-                                        <h3 style={{ fontSize: '28px', fontWeight: 'bold', color: '#16a34a' }}>سورة {getSurahName(ay.sNum)}</h3>
+                                        <h3 style={{ fontSize: '32px', fontWeight: 'bold', color: '#16a34a' }}>سورة {getSurahName(ay.sNum)}</h3>
                                     </div>
                                 )}
                                 <div style={{ 
-                                    fontSize: '32px', 
-                                    lineHeight: '1.8', 
+                                    fontSize: '38px', 
+                                    lineHeight: '2.2', 
                                     fontFamily: 'var(--font-amiri-quran), serif',
                                     color: '#16a34a',
-                                    marginBottom: '15px',
+                                    marginBottom: '20px',
                                     textAlign: 'right'
                                 }}>
                                     {ayahText} ﴿{toArabic(ay.numberInSurah)}﴾
                                 </div>
                                 {explanation && (
                                     <div style={{
-                                        fontSize: '24px',
-                                        lineHeight: '1.6',
+                                        fontSize: '28px',
+                                        lineHeight: '1.8',
                                         fontFamily: 'var(--font-cairo), sans-serif',
                                         color: '#333333',
                                         textAlign: 'right',
                                         backgroundColor: '#f8fafc',
-                                        padding: '15px',
-                                        borderRadius: '8px',
-                                        borderRight: '4px solid #3b82f6'
+                                        padding: '25px',
+                                        borderRadius: '12px',
+                                        borderRight: '6px solid #3b82f6'
                                     }}>
                                         {explanation}
                                     </div>

@@ -1080,31 +1080,25 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         
         const el = document.getElementById(`ayah-${s}-${a}`);
         if (el) {
-            const container = mushafContentRef.current;
-            if (container) {
-                const containerRect = container.getBoundingClientRect();
-                const elRect = el.getBoundingClientRect();
-                
-                // If element has no height yet, it might be rendering. Retry.
-                if (elRect.height === 0 && retries > 0) {
-                    setTimeout(() => scrollToAyah(s, a, instant, retries - 1), 50);
-                    return;
-                }
-
-                const scrollTop = container.scrollTop + elRect.top - containerRect.top - (containerRect.height / 2) + (elRect.height / 2);
-                if (instant) {
-                    container.scrollTop = scrollTop;
-                } else {
-                    container.scrollTo({ top: scrollTop, behavior: 'smooth' });
-                }
-            } else {
-                el.scrollIntoView({ block: 'center', behavior: instant ? 'auto' : 'smooth' });
+            el.scrollIntoView({ block: 'center', behavior: instant ? 'auto' : 'smooth' });
+            
+            if (instant) {
+                // Call it a few more times to combat layout shift from images/fonts loading
+                let count = 0;
+                const interval = setInterval(() => {
+                    const currentEl = document.getElementById(`ayah-${s}-${a}`);
+                    if (currentEl) {
+                        currentEl.scrollIntoView({ block: 'center', behavior: 'auto' });
+                    }
+                    count++;
+                    if (count > 5) clearInterval(interval);
+                }, 100);
             }
             
             // Reset jumping state after a short delay to allow scroll to complete
             setTimeout(() => {
                 isJumpingRef.current = false;
-            }, 500);
+            }, 600);
         } else if (retries > 0) {
             setTimeout(() => scrollToAyah(s, a, instant, retries - 1), 50);
         } else {
@@ -2035,9 +2029,12 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             setActiveModals([]);
         }
 
-        setTimeout(() => {
-            scrollToAyah(s, a, instant);
-        }, 50);
+        // Use requestAnimationFrame to ensure React has rendered the page
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                scrollToAyah(s, a, instant);
+            }, 10);
+        });
     }, [quranData, handleAyahClick, stopAudio, scrollToAyah]);
 
     const jumpToPage = useCallback((pageNum: number, instant: boolean = true) => {

@@ -235,12 +235,12 @@
     text-rendering: optimizeLegibility;
 }
 .ayah-text-block.highlighted { 
-    background-color: transparent !important;
+    background-color: rgba(128, 128, 128, 0.15) !important;
     color: var(--qr-highlight-text, #d97706) !important;
     text-shadow: 0 0 1px currentColor;
 }
 .dark .ayah-text-block.highlighted { 
-    background-color: transparent !important; 
+    background-color: rgba(255, 255, 255, 0.15) !important; 
     color: var(--qr-highlight-text, #fbbf24) !important;
 }
 
