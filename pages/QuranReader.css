@@ -191,9 +191,7 @@
 }
 
 .page-content {
-    text-align: justify;
-    text-align-last: center;
-    text-justify: inter-word;
+    text-align: center;
     line-height: 2.5;
     font-size: 1.7rem;
     letter-spacing: 0; 
