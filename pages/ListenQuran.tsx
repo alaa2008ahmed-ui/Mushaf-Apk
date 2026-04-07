@@ -298,7 +298,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
 
 
                 <div className="themed-card rounded-3xl p-6 space-y-5 flex-shrink-0">
-                    <div className="w-full space-y-1.5">
+                    <div className="w-full space-y-1.5" dir="ltr">
                         <input
                             type="range"
                             min="0"

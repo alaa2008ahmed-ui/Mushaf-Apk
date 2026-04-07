@@ -54,33 +54,37 @@ const FRAMES = [
     { id: 'f8', name: 'أنيق أبيض', type: 'elegant', color: '#ffffff' },
 ];
 
-const FrameOverlay = ({ frame }: { frame: typeof FRAMES[0] }) => {
+const FrameOverlay = ({ frame, scale = 1 }: { frame: typeof FRAMES[0], scale?: number }) => {
     if (frame.type === 'none') return null;
     
     const color = frame.color;
+    const padding = 10 * scale;
+    const borderW = 3 * scale;
+    const cornerW = 8 * scale;
+    const cornerOffset = -4 * scale;
 
     if (frame.type === 'double') {
-        return <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', bottom: '10px', border: `3px double ${color}`, borderRadius: '8px', pointerEvents: 'none', zIndex: 5 }} />;
+        return <div style={{ position: 'absolute', top: `${padding}px`, left: `${padding}px`, right: `${padding}px`, bottom: `${padding}px`, border: `${borderW}px double ${color}`, borderRadius: `${8 * scale}px`, pointerEvents: 'none', zIndex: 5 }} />;
     }
     if (frame.type === 'corner-diamonds') {
         return (
-            <div style={{ position: 'absolute', top: '14px', left: '14px', right: '14px', bottom: '14px', border: `1px solid ${color}`, pointerEvents: 'none', zIndex: 5 }}>
-                <div style={{ position: 'absolute', top: '-4px', left: '-4px', width: '8px', height: '8px', backgroundColor: color, transform: 'rotate(45deg)' }} />
-                <div style={{ position: 'absolute', top: '-4px', right: '-4px', width: '8px', height: '8px', backgroundColor: color, transform: 'rotate(45deg)' }} />
-                <div style={{ position: 'absolute', bottom: '-4px', left: '-4px', width: '8px', height: '8px', backgroundColor: color, transform: 'rotate(45deg)' }} />
-                <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', width: '8px', height: '8px', backgroundColor: color, transform: 'rotate(45deg)' }} />
+            <div style={{ position: 'absolute', top: `${14 * scale}px`, left: `${14 * scale}px`, right: `${14 * scale}px`, bottom: `${14 * scale}px`, border: `${1 * scale}px solid ${color}`, pointerEvents: 'none', zIndex: 5 }}>
+                <div style={{ position: 'absolute', top: `${cornerOffset}px`, left: `${cornerOffset}px`, width: `${cornerW}px`, height: `${cornerW}px`, backgroundColor: color, transform: 'rotate(45deg)' }} />
+                <div style={{ position: 'absolute', top: `${cornerOffset}px`, right: `${cornerOffset}px`, width: `${cornerW}px`, height: `${cornerW}px`, backgroundColor: color, transform: 'rotate(45deg)' }} />
+                <div style={{ position: 'absolute', bottom: `${cornerOffset}px`, left: `${cornerOffset}px`, width: `${cornerW}px`, height: `${cornerW}px`, backgroundColor: color, transform: 'rotate(45deg)' }} />
+                <div style={{ position: 'absolute', bottom: `${cornerOffset}px`, right: `${cornerOffset}px`, width: `${cornerW}px`, height: `${cornerW}px`, backgroundColor: color, transform: 'rotate(45deg)' }} />
             </div>
         );
     }
     if (frame.type === 'mihrab') {
         return (
-            <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', bottom: '10px', border: `2px solid ${color}`, borderTopLeftRadius: '60px', borderTopRightRadius: '60px', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px', pointerEvents: 'none', zIndex: 5 }} />
+            <div style={{ position: 'absolute', top: `${padding}px`, left: `${padding}px`, right: `${padding}px`, bottom: `${padding}px`, border: `${2 * scale}px solid ${color}`, borderTopLeftRadius: `${60 * scale}px`, borderTopRightRadius: `${60 * scale}px`, borderBottomLeftRadius: `${8 * scale}px`, borderBottomRightRadius: `${8 * scale}px`, pointerEvents: 'none', zIndex: 5 }} />
         );
     }
     if (frame.type === 'elegant') {
         return (
-            <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', bottom: '10px', border: `1px solid ${color}`, borderRadius: '12px', pointerEvents: 'none', zIndex: 5 }}>
-                <div style={{ position: 'absolute', top: '4px', left: '4px', right: '4px', bottom: '4px', border: `1px solid ${color}`, borderRadius: '8px', opacity: 0.5 }} />
+            <div style={{ position: 'absolute', top: `${padding}px`, left: `${padding}px`, right: `${padding}px`, bottom: `${padding}px`, border: `${1 * scale}px solid ${color}`, borderRadius: `${12 * scale}px`, pointerEvents: 'none', zIndex: 5 }}>
+                <div style={{ position: 'absolute', top: `${4 * scale}px`, left: `${4 * scale}px`, right: `${4 * scale}px`, bottom: `${4 * scale}px`, border: `${1 * scale}px solid ${color}`, borderRadius: `${8 * scale}px`, opacity: 0.5 }} />
             </div>
         );
     }
@@ -117,6 +121,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const [explanationData, setExplanationData] = useState<any>(null);
     const [appSettings, setAppSettings] = useState<any>(null);
     const previewRef = useRef<HTMLDivElement>(null);
+    const hiddenImageCaptureRef = useRef<HTMLDivElement>(null);
     const hiddenCaptureRef = useRef<HTMLDivElement>(null);
     const hiddenMushafRef = useRef<HTMLDivElement>(null);
 
@@ -297,16 +302,27 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 } else {
                     alert("المشاركة غير مدعومة في هذا المتصفح");
                 }
-            } else if (shareType === 'image' && previewRef.current) {
+            } else if (shareType === 'image' && hiddenImageCaptureRef.current) {
                 try {
-                    const canvas = await html2canvas(previewRef.current, {
-                        scale: 5,
-                        backgroundColor: '#ffffff',
+                    const captureElement = hiddenImageCaptureRef.current;
+                    const originalStyle = captureElement.style.cssText;
+                    captureElement.style.position = 'absolute';
+                    captureElement.style.left = '0';
+                    captureElement.style.top = '0';
+                    captureElement.style.visibility = 'visible';
+                    captureElement.style.display = 'flex';
+                    captureElement.style.zIndex = '-9999';
+
+                    const canvas = await html2canvas(captureElement, {
+                        scale: 2, // 1080px * 2 = 2160px width
+                        backgroundColor: null,
                         useCORS: true,
                         allowTaint: true,
                         logging: false
                     });
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                    
+                    captureElement.style.cssText = originalStyle;
 
                     if (Capacitor.isNativePlatform()) {
                         const fileName = `ayah_share_${Date.now()}.jpg`;
@@ -489,21 +505,46 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             }
                         }
 
-                        // Look for Xing/Info header in the first 2000 bytes after ID3
-                        const searchLimit = Math.min(startOffset + 2000, endOffset);
+                        // Find the first valid MP3 frame sync
+                        let firstFrameOffset = startOffset;
+                        for (let i = startOffset; i < endOffset - 1; i++) {
+                            if (uint8[i] === 0xFF && (uint8[i+1] & 0xE0) === 0xE0) {
+                                // Verify it's a valid frame header
+                                const version = (uint8[i+1] & 0x18) >> 3;
+                                const layer = (uint8[i+1] & 0x06) >> 1;
+                                if (version !== 1 && layer !== 0) {
+                                    firstFrameOffset = i;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        startOffset = firstFrameOffset;
+
+                        // Look for Xing/Info header in the first frame
+                        const searchLimit = Math.min(startOffset + 200, endOffset);
+                        let hasXing = false;
                         for (let i = startOffset; i < searchLimit - 4; i++) {
                             if (
                                 (uint8[i] === 0x58 && uint8[i+1] === 0x69 && uint8[i+2] === 0x6E && uint8[i+3] === 0x67) || // Xing
                                 (uint8[i] === 0x49 && uint8[i+1] === 0x6E && uint8[i+2] === 0x66 && uint8[i+3] === 0x6F)    // Info
                             ) {
-                                // Found Xing/Info. Find the next frame sync (0xFF 0xEx or 0xFF 0xFX)
-                                for (let j = i + 4; j < searchLimit - 1; j++) {
-                                    if (uint8[j] === 0xFF && (uint8[j+1] & 0xE0) === 0xE0) {
-                                        startOffset = j;
+                                hasXing = true;
+                                break;
+                            }
+                        }
+
+                        if (hasXing) {
+                            // Skip this frame. Find the NEXT frame sync.
+                            for (let i = startOffset + 100; i < endOffset - 1; i++) {
+                                if (uint8[i] === 0xFF && (uint8[i+1] & 0xE0) === 0xE0) {
+                                    const version = (uint8[i+1] & 0x18) >> 3;
+                                    const layer = (uint8[i+1] & 0x06) >> 1;
+                                    if (version !== 1 && layer !== 0) {
+                                        startOffset = i;
                                         break;
                                     }
                                 }
-                                break;
                             }
                         }
 
@@ -662,6 +703,113 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-[100] bg-transparent overflow-y-auto flex items-center justify-center p-4" dir="rtl">
+            {/* Hidden capture element for High Quality Image Share */}
+            <div 
+                id="hidden-image-capture"
+                ref={hiddenImageCaptureRef}
+                style={{
+                    position: 'absolute',
+                    left: '-9999px',
+                    top: '-9999px',
+                    width: '1080px',
+                    minHeight: '1080px',
+                    borderRadius: '40px',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '60px',
+                    textAlign: 'center',
+                    background: selectedBg.value,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    border: `10px solid ${selectedBg.border}`,
+                    direction: 'rtl'
+                }}
+            >
+                {selectedBg.id !== 'bg_white' && (
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
+                )}
+                <FrameOverlay frame={selectedFrame} scale={3.375} />
+                <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyItems: 'center', width: '100%' }}>
+                    {readingMode === 'mushaf' && (
+                        <p 
+                            style={{ 
+                                fontFamily: 'var(--font-amiri-quran), var(--font-hafs), serif', 
+                                fontSize: `${fontSize * 1.2 * 3.375}px`, 
+                                color: selectedBg.accent, 
+                                marginBottom: '50px',
+                                textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 6px 12px rgba(0,0,0,0.5)',
+                                opacity: 1,
+                                marginTop: '20px',
+                                fontWeight: 'bold'
+                            }}
+                        >
+                            بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+                        </p>
+                    )}
+                    <p 
+                        className="share-preview-text"
+                        style={{ 
+                            lineHeight: '1.8',
+                            fontFamily: selectedFont,
+                            fontSize: `${fontSize * 1.15 * 3.375}px`, 
+                            color: textColor,
+                            textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 6px 12px rgba(0,0,0,0.5)',
+                            margin: 0,
+                            marginTop: '20px',
+                            fontWeight: 'bold',
+                            whiteSpace: 'normal',
+                            letterSpacing: 0,
+                            wordBreak: 'keep-all',
+                            fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"',
+                            textRendering: 'optimizeLegibility'
+                        }}
+                    >
+                        {selectedAyahs.map((ay, idx) => (
+                            <React.Fragment key={idx}>
+                                <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: renderTajweedTextHtml(getAyahText(ay.s, ay.a, false)) }} />
+                                {` ﴿${toArabic(ay.a)}﴾ `}
+                            </React.Fragment>
+                        ))}
+                    </p>
+                    {combinedExplanation && (
+                        <p style={{
+                            fontFamily: 'var(--font-cairo), sans-serif',
+                            fontSize: `${fontSize * 0.8 * 3.375}px`,
+                            color: textColor,
+                            opacity: 0.9,
+                            marginTop: '40px',
+                            textAlign: 'center',
+                            lineHeight: '1.6',
+                            textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 3px 6px rgba(0,0,0,0.5)',
+                            maxWidth: '90%'
+                        }}>
+                            {combinedExplanation}
+                        </p>
+                    )}
+                    <div style={{ marginTop: '40px', paddingTop: '40px', borderTop: '3px solid rgba(255, 255, 255, 0.3)', width: '100%', paddingLeft: '15px', paddingRight: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                        <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 3px 6px rgba(0,0,0,0.5)', fontSize: '40px', fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
+                            {surahInfo}
+                        </p>
+                        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '10px' }}>
+                            <span 
+                                style={{ fontFamily: '"Aref Ruqaa", serif', color: selectedBg.accent, textShadow: '0 3px 9px rgba(0,0,0,0.8)', fontSize: '48px', fontWeight: 700, textAlign: 'right' }} 
+                                dir="rtl"
+                            >
+                                مصحف احمد وليلى
+                            </span>
+                            <span 
+                                style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 3px 6px rgba(0,0,0,0.5)', fontSize: '34px', fontWeight: 500, maxWidth: '50%', textAlign: 'left', lineHeight: 1.2, opacity: 0.9 }} 
+                            >
+                                {customText}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Hidden Mushaf capture element for high-quality page share */}
             <div 
                 id="hidden-mushaf-capture"
