@@ -281,7 +281,15 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const [currentAyah, setCurrentAyah] = useState<{ s: number; a: number }>({ s: 1, a: 1 });
 
+    const recordedAudioRef = useRef<HTMLAudioElement | null>(null);
+
     const startRecording = async () => {
+        stopAudio(); // Stop reciter audio
+        if (recordedAudioRef.current) {
+            recordedAudioRef.current.pause();
+            recordedAudioRef.current = null;
+        }
+
         try {
             if (Capacitor.isNativePlatform()) {
                 const hasPermission = await VoiceRecorder.hasAudioRecordingPermission();
@@ -351,8 +359,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
 
     const playRecordedAudio = () => {
+        stopAudio(); // Stop reciter audio
+        if (recordedAudioRef.current) {
+            recordedAudioRef.current.pause();
+        }
         if (recordedAudio) {
             const audio = new Audio(recordedAudio);
+            recordedAudioRef.current = audio;
             audio.play();
         }
     };
@@ -995,6 +1008,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         if (currentAudioRef.current) {
             currentAudioRef.current.pause();
             currentAudioRef.current.onended = null;
+        }
+        if (recordedAudioRef.current) {
+            recordedAudioRef.current.pause();
+            recordedAudioRef.current = null;
         }
         if (pauseTimeoutRef.current) {
             clearTimeout(pauseTimeoutRef.current);
@@ -3066,7 +3083,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             <TutorialOverlay tutorialId="quran-reader-tutorial" steps={quranTutorialSteps} />
             
             {/* Memorization Review Controls */}
-            {localIsMemorizationMode && (
+            {localIsMemorizationMode && localMemorizationSettings?.isReviewMode && (
                 <div className="fixed bottom-24 left-4 right-4 z-50 flex flex-col gap-3 pointer-events-none">
                     <div className="flex justify-between items-end w-full pointer-events-auto">
                         <div className="flex flex-col gap-2">

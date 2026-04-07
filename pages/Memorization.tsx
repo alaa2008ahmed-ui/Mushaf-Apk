@@ -47,6 +47,17 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
         setTimeout(() => setToast({ show: false, message: '' }), 3000);
     };
 
+    useEffect(() => {
+        // Stop audio when unmounting Memorization page
+        return () => {
+            const audioElements = document.querySelectorAll('audio');
+            audioElements.forEach(audio => {
+                audio.pause();
+                audio.src = '';
+            });
+        };
+    }, []);
+
     // Load settings from localStorage
     useEffect(() => {
         const savedSettings = localStorage.getItem('memorization_settings_v1');
