@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, FC } from 'react';
+import { flushSync } from 'react-dom';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import './QuranReader.css'; 
 import { ReadingMode, JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, MEMORIZATION_READERS, DEFAULT_SETTINGS, FONTS, SURAH_NAMES_AR } from '../components/QuranReader/constants';
@@ -1091,7 +1092,9 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 el.scrollIntoView({ block: 'center', behavior: instant ? 'auto' : 'smooth' });
             }
         } else if (retries > 0) {
-            setTimeout(() => scrollToAyah(s, a, instant, retries - 1), 100);
+            // Use a much shorter delay for instant jumps to ensure "instantaneous" feel
+            const delay = instant ? 10 : 100;
+            setTimeout(() => scrollToAyah(s, a, instant, retries - 1), delay);
         }
     }, []);
 
@@ -2015,18 +2018,31 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         lastNotifiedJuz.current = null;
         lastNotifiedQuarter.current = null;
         const p = Number(ayah.page);
-        setVisiblePages([...new Set([p, p + 1, p + 2, p - 1, p - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b));
         
-        setTimeout(() => {
-            scrollToAyah(s, a, instant);
+        if (instant) {
+            flushSync(() => {
+                setVisiblePages([...new Set([p, p + 1, p + 2, p - 1, p - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b));
+                if (!isPageInputActiveRef.current) {
+                    setActiveModals([]);
+                }
+            });
+            scrollToAyah(s, a, true);
             handleAyahClick(s, a);
             setTimeout(() => {
                 isJumpingRef.current = false;
             }, 500);
-        }, 150);
-        
-        if (!isPageInputActiveRef.current) {
-            setActiveModals([]);
+        } else {
+            setVisiblePages([...new Set([p, p + 1, p + 2, p - 1, p - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b));
+            if (!isPageInputActiveRef.current) {
+                setActiveModals([]);
+            }
+            setTimeout(() => {
+                scrollToAyah(s, a, false);
+                handleAyahClick(s, a);
+                setTimeout(() => {
+                    isJumpingRef.current = false;
+                }, 500);
+            }, 150);
         }
     }, [quranData, handleAyahClick, stopAudio, scrollToAyah]);
 

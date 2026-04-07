@@ -60,7 +60,7 @@ export const renderTajweedTextHtml = (text: string, useTajweed: boolean = false,
         'n': '#FFA500', 'h': '#AAAAAA', 's': '#AAAAAA',
     };
 
-    return processedText.replace(/\[([a-z])(?::\d+)?\[(.*?)\]/g, (match, rule, content) => {
+    return processedText.replace(/\[([a-z])(?::\d+)?\[(.*?)\]+/g, (match, rule, content) => {
         const color = tajweedColors[rule] || '#000000';
         const isBold = rule === 'l';
         // We use display: contents to maintain Arabic shaping across span boundaries.

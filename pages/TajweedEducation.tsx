@@ -2258,6 +2258,29 @@ const TajweedEducation: React.FC<{
         }
     }, [userPlayingAudio]);
 
+    // Scroll to last played example when a rule is selected
+    useEffect(() => {
+        if (selectedRule) {
+            const lastExampleId = localStorage.getItem(`tajweed_last_example_${selectedRule}`);
+            if (lastExampleId) {
+                // Wait for modal animation to complete
+                setTimeout(() => {
+                    const element = document.getElementById(`example-${lastExampleId}`);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Add a temporary highlight
+                        element.style.transition = 'background-color 0.5s';
+                        const originalBg = element.style.backgroundColor;
+                        element.style.backgroundColor = `${theme.palette[0]}15`;
+                        setTimeout(() => {
+                            element.style.backgroundColor = originalBg;
+                        }, 2000);
+                    }
+                }, 600);
+            }
+        }
+    }, [selectedRule, theme.palette]);
+
     useEffect(() => {
         return () => {
             // Stop audio when leaving the page, unless we are going to the Mushaf for practical application
@@ -2302,7 +2325,13 @@ const TajweedEducation: React.FC<{
         }
     };
 
-    const playAudio = async (url: string) => {
+    const playAudio = async (url: string, exampleId?: string) => {
+        // Stop user audio if playing
+        if (userAudioRef.current) {
+            userAudioRef.current.pause();
+            setUserPlayingAudio(null);
+        }
+
         if (!audioRef.current) audioRef.current = new Audio();
         else audioRef.current.pause();
 
@@ -2313,6 +2342,11 @@ const TajweedEducation: React.FC<{
 
         setPlayingAudio(url);
         
+        // Save last played example for this rule
+        if (exampleId && selectedRule) {
+            localStorage.setItem(`tajweed_last_example_${selectedRule}`, exampleId);
+        }
+
         // Try to get from cache first for instant playback
         const finalUrl = await getCachedAudioUrl(url);
         audioRef.current.src = finalUrl;
@@ -2325,7 +2359,13 @@ const TajweedEducation: React.FC<{
         audioRef.current.onended = () => setPlayingAudio(null);
     };
 
-    const playUserRecording = (url: string) => {
+    const playUserRecording = (url: string, exampleId?: string) => {
+        // Stop sheikh audio if playing
+        if (audioRef.current) {
+            audioRef.current.pause();
+            setPlayingAudio(null);
+        }
+
         if (!userAudioRef.current) userAudioRef.current = new Audio();
         else userAudioRef.current.pause();
 
@@ -2335,6 +2375,12 @@ const TajweedEducation: React.FC<{
         }
 
         setUserPlayingAudio(url);
+
+        // Save last played example for this rule
+        if (exampleId && selectedRule) {
+            localStorage.setItem(`tajweed_last_example_${selectedRule}`, exampleId);
+        }
+
         userAudioRef.current.src = url;
         userAudioRef.current.play().catch(err => {
             console.error("User audio playback failed:", err);
@@ -2549,7 +2595,7 @@ const TajweedEducation: React.FC<{
                                             </h3>
                                             
                                             {rule.examples.map((example, index) => (
-                                                <div key={example.id} className="p-5 rounded-2xl border shadow-sm" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+                                                <div key={example.id} id={`example-${example.id}`} className="p-5 rounded-2xl border shadow-sm transition-colors duration-300" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
                                                     <div className="flex justify-between items-center mb-3">
                                                         <span className="text-xs font-bold px-2 py-1 rounded-md" style={{ backgroundColor: `${theme.palette[0]}20`, color: theme.palette[0] }}>مثال {index + 1}</span>
                                                         {example.description && <span className="text-xs opacity-70">{example.description}</span>}
@@ -2562,7 +2608,7 @@ const TajweedEducation: React.FC<{
                                                     <div className="flex flex-wrap items-center justify-center gap-3">
                                                         {/* Play Sheikh Audio */}
                                                         <button 
-                                                            onClick={() => playAudio(example.audioUrl)}
+                                                            onClick={() => playAudio(example.audioUrl, example.id)}
                                                             className="flex-1 min-w-[100px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-all shadow-sm"
                                                             style={{ 
                                                                 backgroundColor: playingAudio === example.audioUrl ? theme.palette[0] : 'var(--card-bg-hover)', 
@@ -2591,7 +2637,7 @@ const TajweedEducation: React.FC<{
                                                         {/* Play User Audio */}
                                                         {userRecordings[example.id] && (
                                                             <button 
-                                                                onClick={() => playUserRecording(userRecordings[example.id])}
+                                                                onClick={() => playUserRecording(userRecordings[example.id], example.id)}
                                                                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold shadow-sm"
                                                                 style={{ 
                                                                     backgroundColor: userPlayingAudio === userRecordings[example.id] ? theme.palette[0] : `${theme.palette[1] || theme.palette[0]}20`, 
@@ -2609,6 +2655,10 @@ const TajweedEducation: React.FC<{
                                                             <button 
                                                                 onClick={() => {
                                                                     isNavigatingToMushaf.current = true;
+                                                                    // Save current position before navigating
+                                                                    if (selectedRule) {
+                                                                        localStorage.setItem(`tajweed_last_example_${selectedRule}`, example.id);
+                                                                    }
                                                                     onNavigateToMushaf(example.surah, example.ayah);
                                                                 }}
                                                                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold shadow-sm transition-all hover:opacity-90"
@@ -2689,7 +2739,21 @@ const TajweedEducation: React.FC<{
                                         </div>
                                     </div>
                                     <BottomBar 
-                                        onHomeClick={() => { setSelectedRule(null); setPlayingAudio(null); setUserPlayingAudio(null); setRecordingId(null); }} 
+                                        onHomeClick={() => { 
+                                            // Explicitly stop audio when exiting card
+                                            if (audioRef.current) {
+                                                audioRef.current.pause();
+                                                audioRef.current.currentTime = 0;
+                                            }
+                                            if (userAudioRef.current) {
+                                                userAudioRef.current.pause();
+                                                userAudioRef.current.currentTime = 0;
+                                            }
+                                            setSelectedRule(null); 
+                                            setPlayingAudio(null); 
+                                            setUserPlayingAudio(null); 
+                                            setRecordingId(null); 
+                                        }} 
                                         onThemesClick={onOpenThemes || (() => {})} 
                                         showThemes={false} 
                                         homeLabel="رجوع" 

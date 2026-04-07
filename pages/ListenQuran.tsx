@@ -47,6 +47,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
     
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const autoPlayNextRef = useRef(false);
+    const objectUrlRef = useRef<string | null>(null);
 
     useEffect(() => {
         try {
@@ -116,6 +117,10 @@ function ListenQuran({ onBack, onOpenThemes }) {
         return () => {
             audio.pause();
             audio.src = '';
+            if (objectUrlRef.current) {
+                URL.revokeObjectURL(objectUrlRef.current);
+                objectUrlRef.current = null;
+            }
             audio.removeEventListener('timeupdate', handleTimeUpdate);
             audio.removeEventListener('durationchange', handleDurationChange);
             audio.removeEventListener('play', handlePlay);
@@ -168,12 +173,19 @@ function ListenQuran({ onBack, onOpenThemes }) {
 
         const loadAudio = async () => {
             try {
+                if (objectUrlRef.current) {
+                    URL.revokeObjectURL(objectUrlRef.current);
+                    objectUrlRef.current = null;
+                }
+
                 const cache = await caches.open('quran-audio-cache');
                 const match = await cache.match(audioUrl);
                 
                 if (match) {
                     const blob = await match.blob();
-                    audio.src = URL.createObjectURL(blob);
+                    const url = URL.createObjectURL(blob);
+                    objectUrlRef.current = url;
+                    audio.src = url;
                 } else {
                     audio.src = audioUrl;
                 }

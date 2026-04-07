@@ -449,15 +449,20 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
             }
 
             const response = await fetch(url, { signal: abortControllerRef.current?.signal });
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) throw new Error(`فشل التحميل: ${response.status} ${response.statusText}`);
             
             const blob = await response.blob();
-            await cache.put(url, new Response(blob));
+            if (blob.size < 1000) throw new Error('الملف المحمل غير صالح أو صغير جداً');
+            
+            await cache.put(url, new Response(blob, {
+                headers: { 'Content-Type': 'audio/mpeg' }
+            }));
             storeAudioOffline(fileName, blob);
             
         } catch (e) {
-            console.error(e);
+            console.error('Download Ayah Error:', e);
             if ((e as Error).name === 'AbortError') throw e;
+            throw e;
         }
     };
 
@@ -476,15 +481,20 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
             }
 
             const response = await fetch(url, { signal: abortControllerRef.current?.signal });
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) throw new Error(`فشل التحميل: ${response.status} ${response.statusText}`);
             
             const blob = await response.blob();
-            await cache.put(url, new Response(blob));
+            if (blob.size < 1000) throw new Error('الملف المحمل غير صالح أو صغير جداً');
+
+            await cache.put(url, new Response(blob, {
+                headers: { 'Content-Type': 'audio/mpeg' }
+            }));
             storeAudioOffline(fileName, blob);
             
         } catch (e) {
-            console.error(e);
+            console.error('Download Surah Error:', e);
             if ((e as Error).name === 'AbortError') throw e;
+            throw e;
         }
     };
 
