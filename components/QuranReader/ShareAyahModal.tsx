@@ -300,7 +300,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             } else if (shareType === 'image' && previewRef.current) {
                 try {
                     const canvas = await html2canvas(previewRef.current, {
-                        scale: 3,
+                        scale: 5,
                         backgroundColor: '#ffffff',
                         useCORS: true,
                         allowTaint: true,
@@ -376,7 +376,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         captureElement.style.zIndex = '-9999';
 
                         const canvas = await html2canvas(captureElement, {
-                            scale: 2.5,
+                            scale: 5,
                             backgroundColor: readingMode === 'mushaf' ? '#ffffff' : (currentTheme.bg || '#ffffff'),
                             useCORS: true,
                             allowTaint: true,
@@ -469,7 +469,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 const fileName = `Quran_${getSurahName(currentAyah.s)}_${start}${start !== end ? '-' + end : ''}.mp3`;
 
                 try {
-                    // Helper to strip ID3v2 and ID3v1 tags to allow better concatenation
+                    // Helper to strip ID3v2, ID3v1 tags, and Xing/Info headers to allow better concatenation
                     const cleanAudioBuffer = (buffer: ArrayBuffer) => {
                         let uint8 = new Uint8Array(buffer);
                         let startOffset = 0;
@@ -486,6 +486,24 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             const tagOffset = uint8.length - 128;
                             if (uint8[tagOffset] === 0x54 && uint8[tagOffset + 1] === 0x41 && uint8[tagOffset + 2] === 0x47) { // "TAG"
                                 endOffset = tagOffset;
+                            }
+                        }
+
+                        // Look for Xing/Info header in the first 2000 bytes after ID3
+                        const searchLimit = Math.min(startOffset + 2000, endOffset);
+                        for (let i = startOffset; i < searchLimit - 4; i++) {
+                            if (
+                                (uint8[i] === 0x58 && uint8[i+1] === 0x69 && uint8[i+2] === 0x6E && uint8[i+3] === 0x67) || // Xing
+                                (uint8[i] === 0x49 && uint8[i+1] === 0x6E && uint8[i+2] === 0x66 && uint8[i+3] === 0x6F)    // Info
+                            ) {
+                                // Found Xing/Info. Find the next frame sync (0xFF 0xEx or 0xFF 0xFX)
+                                for (let j = i + 4; j < searchLimit - 1; j++) {
+                                    if (uint8[j] === 0xFF && (uint8[j+1] & 0xE0) === 0xE0) {
+                                        startOffset = j;
+                                        break;
+                                    }
+                                }
+                                break;
                             }
                         }
 

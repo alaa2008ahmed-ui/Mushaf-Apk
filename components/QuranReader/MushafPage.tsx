@@ -18,6 +18,7 @@ interface MushafPageProps {
         theme: string;
     };
     currentTheme?: any;
+    hideVerses?: boolean;
 }
 
 export const fixQuranText = (text: string) => {
@@ -43,7 +44,7 @@ export const renderTajweedTextHtml = (text: string) => {
     return fixQuranText(text);
 };
 
-const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme }) => {
+const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme, hideVerses }) => {
     const pageRef = useRef<HTMLDivElement | null>(null);
     const longPressTimer = useRef<number | null>(null);
     const isLongPressTriggered = useRef(false);
@@ -178,7 +179,7 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                             )}
                             <span 
                                 id={id} 
-                                className={`ayah-text-block ${highlightedAyahId === id ? 'highlighted' : ''} ${isSajdah ? 'ayah-sajdah' : ''}`} 
+                                className={`ayah-text-block ${highlightedAyahId === id ? 'highlighted' : ''} ${isSajdah ? 'ayah-sajdah' : ''} ${hideVerses && highlightedAyahId !== id ? 'hide-text' : ''}`} 
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (!isLongPressTriggered.current) {
@@ -231,19 +232,22 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                         e.stopPropagation();
                                     }}
                                 >
-                                    <span className="verse-bracket">﴿</span>
-                                    <span className="verse-num-inner">{toArabic(ayah.numberInSurah)}</span>
-                                    <span className="verse-bracket">﴾</span>
+                                    <span className="verse-bracket" style={{ color: currentTheme?.accent || '#d97706' }}>﴿</span>
+                                    <span className="verse-num-inner" style={{ color: currentTheme?.accent || '#1d4ed8' }}>{toArabic(ayah.numberInSurah)}</span>
+                                    <span className="verse-bracket" style={{ color: currentTheme?.accent || '#d97706' }}>﴾</span>
                                 </span>
                             </span>
                         </React.Fragment>
                     );
                 })}
             </div>
-            <div className="page-footer">
-                <span className="page-number-bracket">﴿</span>
-                <span className="page-number-text">{toArabic(pageNum)}</span>
-                <span className="page-number-bracket">﴾</span>
+            <div className="page-footer" style={{ flexDirection: 'column' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <span className="page-number-bracket" style={{ color: currentTheme?.accent || '#d97706' }}>﴿</span>
+                    <span className="page-number-text" style={{ color: currentTheme?.accent || '#1d4ed8' }}>{toArabic(pageNum)}</span>
+                    <span className="page-number-bracket" style={{ color: currentTheme?.accent || '#d97706' }}>﴾</span>
+                </div>
+                <div style={{ width: '100%', height: '1px', backgroundColor: currentTheme?.accent || '#d97706', marginTop: '8px', opacity: 0.5 }}></div>
             </div>
         </div>
     );

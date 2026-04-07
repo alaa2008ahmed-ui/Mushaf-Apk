@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, FC } from 'react';
 import { flushSync } from 'react-dom';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
+import { Capacitor } from '@capacitor/core';
+import { VoiceRecorder } from 'capacitor-voice-recorder';
 import './QuranReader.css'; 
 import { ReadingMode, JUZ_MAP, toArabic, THEMES, TAFSEERS, READERS, MEMORIZATION_READERS, DEFAULT_SETTINGS, FONTS, SURAH_NAMES_AR } from '../components/QuranReader/constants';
 import SearchModal from '../components/QuranReader/SearchModal';
@@ -281,35 +283,67 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
 
     const startRecording = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
-            mediaRecorderRef.current = mediaRecorder;
-            audioChunksRef.current = [];
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunksRef.current.push(event.data);
+            if (Capacitor.isNativePlatform()) {
+                const hasPermission = await VoiceRecorder.hasAudioRecordingPermission();
+                if (!hasPermission.value) {
+                    const request = await VoiceRecorder.requestAudioRecordingPermission();
+                    if (!request.value) {
+                        showToast('الرجاء منح صلاحية الميكروفون');
+                        return;
+                    }
                 }
-            };
+                
+                const result = await VoiceRecorder.startRecording();
+                if (result.value) {
+                    setIsRecording(true);
+                    showToast('بدأ التسجيل...');
+                } else {
+                    showToast('فشل بدء التسجيل');
+                }
+            } else {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream);
+                mediaRecorderRef.current = mediaRecorder;
+                audioChunksRef.current = [];
 
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                setRecordedAudio(audioUrl);
-                setIsRecording(false);
-            };
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunksRef.current.push(event.data);
+                    }
+                };
 
-            mediaRecorder.start();
-            setIsRecording(true);
-            showToast('بدأ التسجيل...');
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    setRecordedAudio(audioUrl);
+                    setIsRecording(false);
+                };
+
+                mediaRecorder.start();
+                setIsRecording(true);
+                showToast('بدأ التسجيل...');
+            }
         } catch (err) {
             console.error("Error starting recording", err);
             showToast('فشل بدء التسجيل');
         }
     };
 
-    const stopRecording = () => {
-        if (mediaRecorderRef.current && isRecording) {
+    const stopRecording = async () => {
+        if (Capacitor.isNativePlatform() && isRecording) {
+            try {
+                const result = await VoiceRecorder.stopRecording();
+                if (result.value && result.value.recordDataBase64) {
+                    const audioUrl = `data:${result.value.mimeType};base64,${result.value.recordDataBase64}`;
+                    setRecordedAudio(audioUrl);
+                    setIsRecording(false);
+                    showToast('تم إيقاف التسجيل');
+                }
+            } catch (err) {
+                console.error("Error stopping recording", err);
+                showToast('فشل إيقاف التسجيل');
+            }
+        } else if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
             mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
             showToast('تم إيقاف التسجيل');
@@ -1042,23 +1076,27 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         const el = document.getElementById(`ayah-${s}-${a}`);
         if (el) {
             const container = mushafContentRef.current;
-            if (container) {
+            if (instant) {
+                el.scrollIntoView({ block: 'center', behavior: 'auto' });
+            } else if (container) {
                 if (isLandscapeRef.current) {
-                    // In landscape mode (rotated), we use offsetTop for more reliable scrolling
                     const targetScroll = el.offsetTop - (container.clientHeight / 2) + (el.clientHeight / 2);
-                    container.scrollTo({ top: targetScroll, behavior: instant ? 'auto' : 'smooth' });
+                    container.scrollTo({ top: targetScroll, behavior: 'smooth' });
                 } else {
                     const containerRect = container.getBoundingClientRect();
                     const elRect = el.getBoundingClientRect();
+                    if (elRect.height === 0 && retries > 0) {
+                        setTimeout(() => scrollToAyah(s, a, instant, retries - 1), 50);
+                        return;
+                    }
                     const scrollTop = container.scrollTop + elRect.top - containerRect.top - (containerRect.height / 2) + (elRect.height / 2);
-                    container.scrollTo({ top: scrollTop, behavior: instant ? 'auto' : 'smooth' });
+                    container.scrollTo({ top: scrollTop, behavior: 'smooth' });
                 }
             } else {
-                el.scrollIntoView({ block: 'center', behavior: instant ? 'auto' : 'smooth' });
+                el.scrollIntoView({ block: 'center', behavior: 'smooth' });
             }
         } else if (retries > 0) {
-            // Use a much shorter delay for instant jumps to ensure "instantaneous" feel
-            const delay = instant ? 10 : 100;
+            const delay = instant ? 10 : 50;
             setTimeout(() => scrollToAyah(s, a, instant, retries - 1), delay);
         }
     }, []);
@@ -1962,8 +2000,8 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     const getPageData = useCallback((pageNum: number) => {
         return pagesMap.get(Number(pageNum)) || [];
     }, [pagesMap]);
-    
-    const jumpToAyah = useCallback((s, a, instant = false) => {
+
+    const jumpToAyah = useCallback((s: number, a: number, instant: boolean = false) => {
         if (isJumpingRef.current && !instant) return;
         setLastInteractionType('ayah');
         stopAudio();
@@ -1977,34 +2015,18 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
         lastNotifiedQuarter.current = null;
         const p = Number(ayah.page);
         
-        if (instant) {
-            flushSync(() => {
-                setVisiblePages([...new Set([p, p + 1, p + 2, p - 1, p - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b));
-                handleAyahClick(s, a);
-                if (!isPageInputActiveRef.current) {
-                    setActiveModals([]);
-                }
-            });
-            // Small delay to ensure DOM is ready after flushSync
-            setTimeout(() => {
-                scrollToAyah(s, a, true);
-                setTimeout(() => {
-                    isJumpingRef.current = false;
-                }, 500);
-            }, 0);
-        } else {
-            setVisiblePages([...new Set([p, p + 1, p + 2, p - 1, p - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b));
-            handleAyahClick(s, a);
-            if (!isPageInputActiveRef.current) {
-                setActiveModals([]);
-            }
-            setTimeout(() => {
-                scrollToAyah(s, a, false);
-                setTimeout(() => {
-                    isJumpingRef.current = false;
-                }, 500);
-            }, 150);
+        setVisiblePages([...new Set([p, p + 1, p + 2, p - 1, p - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b));
+        handleAyahClick(s, a);
+        if (!isPageInputActiveRef.current) {
+            setActiveModals([]);
         }
+
+        setTimeout(() => {
+            scrollToAyah(s, a, instant);
+            setTimeout(() => {
+                isJumpingRef.current = false;
+            }, 500);
+        }, 50);
     }, [quranData, handleAyahClick, stopAudio, scrollToAyah]);
 
     const jumpToPage = useCallback((pageNum: number, instant: boolean = true) => {
@@ -2795,6 +2817,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                                 onInteractionEnd={handleInteractionEnd} 
                                 settings={displaySettings} 
                                 currentTheme={currentTheme}
+                                hideVerses={isHideMode}
                             />
                         );
                     })}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
-import { RECITERS, SURAH_LIST } from '../data/listenQuranData';
+import { RECITERS } from '../components/QuranReader/constants';
+import { SURAH_LIST } from '../data/listenQuranData';
 import ReciterSelectModal from '../components/QuranReader/ReciterSelectModal';
 import ListenSurahSelectModal from '../components/QuranReader/ListenSurahSelectModal';
 import { QuranDownloadModal } from '../components/QuranReader/DownloadModals';

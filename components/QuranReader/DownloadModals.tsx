@@ -42,20 +42,35 @@ const getAyahsForJuz = (juzNumber: number, quranData: any) => {
     return ayahsToDownload;
 };
 
-const checkSurahDownloaded = async (readerId: string, surahNumber: number, quranData: any) => {
+const getSanitizedReaderId = (readerId: string) => {
+    if (readerId.startsWith('http')) {
+        return readerId.replace(/https?:\/\//, '').replace(/\//g, '_').replace(/\./g, '_');
+    }
+    return readerId;
+};
+
+const checkSurahDownloaded = async (readerId: string, surahNumber: number, quranData: any, mode: 'ayah' | 'surah' = 'ayah') => {
     try {
         const downloadedFiles = JSON.parse(localStorage.getItem('downloaded_audio_files') || '[]');
         if (downloadedFiles.length === 0) return false;
         
-        const surah = quranData.surahs.find((s: any) => s.number === surahNumber);
-        if (!surah) return false;
-        
-        for (let i = 1; i <= surah.ayahs.length; i++) {
-            const fileName = `${readerId}_${surahNumber}_${i}.mp3`;
-            const exists = downloadedFiles.some((file: any) => file.fileName === fileName);
-            if (!exists) return false;
+        const sanitizedId = getSanitizedReaderId(readerId);
+        const surahStr = String(surahNumber).padStart(3, '0');
+
+        if (mode === 'surah') {
+            const fileName = `${sanitizedId}_${surahStr}.mp3`;
+            return downloadedFiles.some((file: any) => file.fileName === fileName);
+        } else {
+            const surah = quranData.surahs.find((s: any) => s.number === surahNumber);
+            if (!surah) return false;
+            
+            for (let i = 1; i <= surah.ayahs.length; i++) {
+                const fileName = `${sanitizedId}_${surahNumber}_${i}.mp3`;
+                const exists = downloadedFiles.some((file: any) => file.fileName === fileName);
+                if (!exists) return false;
+            }
+            return true;
         }
-        return true;
     } catch (e) {
         console.error('Error checking surah download:', e);
         return false;
@@ -177,19 +192,20 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
         try {
             const downloadedFiles = JSON.parse(localStorage.getItem('downloaded_audio_files') || '[]');
             const downloadedSet = new Set(downloadedFiles.map((f: any) => f.fileName));
+            const sanitizedId = getSanitizedReaderId(selectedReader);
 
             const dSurahs: string[] = [];
             for (const surah of quranData.surahs) {
                 let allItemsDownloaded = true;
+                const surahStr = String(surah.number).padStart(3, '0');
                 if (mode === 'surah') {
-                    const surahStr = String(surah.number).padStart(3, '0');
-                    const fileName = `${selectedReader}_${surahStr}.mp3`;
+                    const fileName = `${sanitizedId}_${surahStr}.mp3`;
                     if (!downloadedSet.has(fileName)) {
                         allItemsDownloaded = false;
                     }
                 } else {
                     for (let i = 1; i <= surah.ayahs.length; i++) {
-                        if (!downloadedSet.has(`${selectedReader}_${surah.number}_${i}.mp3`)) {
+                        if (!downloadedSet.has(`${sanitizedId}_${surah.number}_${i}.mp3`)) {
                             allItemsDownloaded = false;
                             break;
                         }
@@ -207,7 +223,7 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
                     const surahsInJuz = Array.from(new Set(ayahs.map(a => a.surah)));
                     for (const sNum of surahsInJuz) {
                         const surahStr = String(sNum).padStart(3, '0');
-                        const fileName = `${selectedReader}_${surahStr}.mp3`;
+                        const fileName = `${sanitizedId}_${surahStr}.mp3`;
                         if (!downloadedSet.has(fileName)) {
                             allItemsDownloaded = false;
                             break;
@@ -215,7 +231,7 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
                     }
                 } else {
                     for (const a of ayahs) {
-                        if (!downloadedSet.has(`${selectedReader}_${a.surah}_${a.ayah}.mp3`)) {
+                        if (!downloadedSet.has(`${sanitizedId}_${a.surah}_${a.ayah}.mp3`)) {
                             allItemsDownloaded = false;
                             break;
                         }
@@ -323,6 +339,7 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
             
             const downloadedFiles = JSON.parse(localStorage.getItem('downloaded_audio_files') || '[]');
             const downloadedSet = new Set(downloadedFiles.map((f: any) => f.fileName));
+            const sanitizedId = getSanitizedReaderId(selectedReader);
             
             const finalItemsList = [];
             let alreadyDownloadedCount = 0;
@@ -332,7 +349,7 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
                 if (mode === 'surah') {
                     const surahNum = parseInt(itemKey);
                     const surahStr = String(surahNum).padStart(3, '0');
-                    fileName = `${selectedReader}_${surahStr}.mp3`;
+                    fileName = `${sanitizedId}_${surahStr}.mp3`;
                     if (downloadedSet.has(fileName)) {
                         alreadyDownloadedCount++;
                     } else {
@@ -340,7 +357,7 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
                     }
                 } else {
                     const [surah, ayah] = itemKey.split('_').map(Number);
-                    fileName = `${selectedReader}_${surah}_${ayah}.mp3`;
+                    fileName = `${sanitizedId}_${surah}_${ayah}.mp3`;
                     if (downloadedSet.has(fileName)) {
                         alreadyDownloadedCount++;
                     } else {
@@ -438,7 +455,8 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
         const surahStr = String(surah).padStart(3, '0');
         const ayahStr = String(ayah).padStart(3, '0');
         const url = `https://everyayah.com/data/${readerId}/${surahStr}${ayahStr}.mp3`;
-        const fileName = `${readerId}_${surah}_${ayah}.mp3`;
+        const sanitizedId = getSanitizedReaderId(readerId);
+        const fileName = `${sanitizedId}_${surah}_${ayah}.mp3`;
         
         try {
             const cache = await caches.open('quran-audio-cache');
@@ -466,11 +484,17 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
         }
     };
 
-    const downloadSurahFile = async (readerUrl: string, surah: number) => {
+    const downloadSurahFile = async (readerId: string, surah: number) => {
         const surahStr = String(surah).padStart(3, '0');
-        const baseUrl = readerUrl.endsWith('/') ? readerUrl.slice(0, -1) : readerUrl;
-        const url = `${baseUrl}/${surahStr}.mp3`;
-        const fileName = `${readerUrl}_${surahStr}.mp3`;
+        let url = '';
+        if (readerId.startsWith('http')) {
+            const baseUrl = readerId.endsWith('/') ? readerId.slice(0, -1) : readerId;
+            url = `${baseUrl}/${surahStr}.mp3`;
+        } else {
+            url = `https://everyayah.com/data/${readerId}/${surahStr}.mp3`;
+        }
+        const sanitizedId = getSanitizedReaderId(readerId);
+        const fileName = `${sanitizedId}_${surahStr}.mp3`;
         
         try {
             const cache = await caches.open('quran-audio-cache');

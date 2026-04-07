@@ -191,7 +191,9 @@
 }
 
 .page-content {
-    text-align: center;
+    text-align: justify;
+    text-align-last: center;
+    text-justify: inter-word;
     line-height: 2.5;
     font-size: 1.7rem;
     letter-spacing: 0; 
@@ -240,6 +242,11 @@
 .dark .ayah-text-block.highlighted { 
     background-color: transparent !important; 
     color: var(--qr-highlight-text, #fbbf24) !important;
+}
+
+.ayah-text-block.hide-text {
+    color: transparent !important;
+    text-shadow: none !important;
 }
 
 .ayah-sajdah {

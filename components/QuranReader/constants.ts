@@ -19,8 +19,34 @@ export const THEMES = {
     pink: { id: "pink", name: "وردي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#db2777", barBorder: "#db2777", btnBg: "#ffffff", btnText: "#db2777", accent: "#db2777", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#db2777", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#db2777", sajdah: "#db2777", highlightText: "#db2777" },
     cyan: { id: "cyan", name: "سماوي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#0891b2", barBorder: "#0891b2", btnBg: "#ffffff", btnText: "#0891b2", accent: "#0891b2", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#0891b2", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#0891b2", sajdah: "#0891b2", highlightText: "#0891b2" },
     gray: { id: "gray", name: "رمادي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#475569", barBorder: "#475569", btnBg: "#ffffff", btnText: "#475569", accent: "#475569", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#475569", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#475569", sajdah: "#475569", highlightText: "#475569" },
-    black: { id: "black", name: "أسود", bg: "#000000", text: "#ffffff", font: "var(--font-amiri)", barBg: "#000000", barText: "#ffffff", barBorder: "#333333", btnBg: "#000000", btnText: "#ffffff", accent: "#ffffff", accentText: "#000000", modalBg: "#000000", modalText: "#ffffff", headerBg: "#000000", headerText: "#ffffff", cardBg: "#000000", cardText: "#ffffff", cardBorder: "#333333", sajdah: "#ffffff", highlightText: "#831843" }
+    black: { id: "black", name: "أسود", bg: "#000000", text: "#ffffff", font: "var(--font-amiri)", barBg: "#000000", barText: "#ffffff", barBorder: "#1a1a1a", btnBg: "#111111", btnText: "#ffffff", accent: "#10b981", accentText: "#ffffff", modalBg: "#000000", modalText: "#ffffff", headerBg: "#000000", headerText: "#10b981", cardBg: "#0a0a0a", cardText: "#ffffff", cardBorder: "#1a1a1a", sajdah: "#10b981", highlightText: "#10b981" }
 };
+export const RECITERS = [
+    { id: 'https://server11.mp3quran.net/shatri', name: 'أبو بكر الشاطري' },
+    { id: 'https://server10.mp3quran.net/ajm', name: 'أحمد بن علي العجمي' },
+    { id: 'https://server6.mp3quran.net/akdr', name: 'إبراهيم الأخضر' },
+    { id: 'https://server6.mp3quran.net/kurdi', name: 'رعد محمد الكردي' },
+    { id: 'https://server7.mp3quran.net/s_gmd', name: 'سعد الغامدي' },
+    { id: 'https://server7.mp3quran.net/shur', name: 'سعود الشريم' },
+    { id: 'https://server6.mp3quran.net/shl', name: 'سهل ياسين' },
+    { id: 'https://server8.mp3quran.net/bu_khtr', name: 'صلاح بو خاطر' },
+    { id: 'https://server8.mp3quran.net/basit', name: 'عبدالباسط عبدالصمد' },
+    { id: 'https://server11.mp3quran.net/sds', name: 'عبدالرحمن السديس' },
+    { id: 'https://server12.mp3quran.net/kyat', name: 'عبدالله خياط' },
+    { id: 'https://server8.mp3quran.net/mtrod', name: 'عبدالله مطرود' },
+    { id: 'https://server9.mp3quran.net/hthfi', name: 'علي الحذيفي' },
+    { id: 'https://server8.mp3quran.net/frs_a', name: 'فارس عباد' },
+    { id: 'https://server12.mp3quran.net/maher', name: 'ماهر المعيقلي' },
+    { id: 'https://server10.mp3quran.net/minsh', name: 'محمد صديق المنشاوي' },
+    { id: 'https://server12.mp3quran.net/tblawi', name: 'محمد محمود الطبلاوي' },
+    { id: 'https://server13.mp3quran.net/husr', name: 'محمود خليل الحصري' },
+    { id: 'https://server8.mp3quran.net/bna', name: 'محمود علي البنا' },
+    { id: 'https://server8.mp3quran.net/afs', name: 'مشاري راشد العفاسي' },
+    { id: 'https://server8.mp3quran.net/mustafa', name: 'مصطفى إسماعيل' },
+    { id: 'https://server6.mp3quran.net/qtm', name: 'ناصر القطامي' },
+    { id: 'https://server11.mp3quran.net/yasser', name: 'ياسر الدوسري' }
+];
+
 export const MEMORIZATION_READERS = [
     { id: 'Alafasy_128kbps', name: 'مشاري العفاسي' },
     { id: 'Abdul_Basit_Mujawwad_128kbps', name: 'عبد الباسط عبد الصمد' },
@@ -78,24 +104,15 @@ export const TAFSEERS = [{ id: 'ar.jalalayn', name: 'تفسير الجلالين
 export const FONTS = [
     { id: "var(--font-amiri)", name: "نسخ" },
     { id: "var(--font-noto)", name: "نسخ حديث" },
-    { id: "var(--font-gulzar)", name: "نستعليق" },
-    { id: "var(--font-cairo)", name: "القاهرة" },
-    { id: "var(--font-messiri)", name: "المسيري" },
     { id: "var(--font-lateef)", name: "تراثي" },
-    { id: "var(--font-tajawal)", name: "تجوّل" },
     { id: "var(--font-thuluth)", name: "ثلوث" },
-    { id: "var(--font-digital)", name: "رقمي" },
-    { id: "var(--font-rakkas)", name: "رقاص" },
     { id: "var(--font-aref)", name: "رقعة" },
-    { id: "var(--font-changa)", name: "شنقة" },
     { id: "var(--font-harmattan)", name: "ورش" },
     { id: "var(--font-amiri-quran)", name: "حفص" },
     { id: "'Me Quran'", name: "خط المصحف" },
     { id: "var(--font-katibeh)", name: "قطيبة" },
     { id: "var(--font-qalam)", name: "قلم" },
     { id: "var(--font-kufi)", name: "كوفي" },
-    { id: "var(--font-kufam)", name: "كوفي حديث" },
-    { id: "var(--font-lalezar)", name: "لالزار" },
     { id: "'KFGQPC Uthman Taha Naskh'", name: "مجمع الملك فهد" },
     { id: "var(--font-scheherazade)", name: "مجود" },
     { id: "var(--font-mirza)", name: "ميرزا" }
