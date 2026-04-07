@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download, Type } from 'lucide-react';
+import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download, Type, Shield } from 'lucide-react';
 import { THEMES, DEFAULT_SETTINGS, READERS, MEMORIZATION_READERS, RECITERS } from './constants';
 
 interface FloatingMenuProps {
+    page: string;
     isFloatingMenuOpen: boolean;
     floatingMenuRef: React.RefObject<HTMLDivElement>;
     openModal: (modalId: string, params?: any) => void;
@@ -27,13 +28,15 @@ interface FloatingMenuProps {
 const ALL_SHORTCUTS = [
     { id: 'quran-download-parent', label: 'تحميل القرآن', icon: <Download size={18} /> },
     { id: 'tafseer-download', label: 'تحميل التفسير', icon: <Download size={18} /> },
+    { id: 'audio', label: 'الصوتيات', icon: <Headphones size={18} /> },
     { id: 'interface-customization', label: 'تخصيص الواجهة', icon: <Palette size={18} /> },
     { id: 'font-type', label: 'نوع الخط', icon: <Type size={18} /> },
 ];
 
-const DEFAULT_SHORTCUTS = ['quran-download-parent', 'tafseer-download', 'interface-customization', 'font-type'];
+const DEFAULT_SHORTCUTS = ['quran-download-parent', 'tafseer-download', 'audio', 'interface-customization', 'font-type'];
 
 const FloatingMenu: React.FC<FloatingMenuProps> = ({
+    page,
     isFloatingMenuOpen,
     floatingMenuRef,
     openModal,
@@ -165,11 +168,10 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                     <div className="p-4 flex flex-col gap-4 overflow-y-auto flex-grow custom-scrollbar">
                         {/* خيارات القراءة */}
                         <MenuSection title="خيارات القراءة" iconColor={iconColor} titleColor="#2563eb">
-                            <MenuItem icon={<BookText size={18} />} label="المصحف" onClick={() => handleAction(() => { setReadingMode('mushaf'); })} iconColor={iconColor} />
-                            <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} />
-                            <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} />
-                            <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} />
-                            <MenuItem icon={<Headphones size={18} />} label="الصوتيات" onClick={() => handleAction(() => openModal('reciter-modal'))} iconColor={iconColor} />
+                            <MenuItem icon={<BookText size={18} />} label="المصحف" onClick={() => handleAction(() => { setReadingMode('mushaf'); })} iconColor={iconColor} isActive={readingMode === 'mushaf'} />
+                            <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} isActive={readingMode === 'tafseer'} />
+                            <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} isActive={readingMode === 'meanings'} />
+                            <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} isActive={readingMode === 'translation'} />
                         </MenuSection>
 
                         {/* الإعدادات والبحث */}
@@ -180,10 +182,10 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             <div className="flex flex-col">
                                 <button 
                                     onClick={() => setIsThemesOpen(!isThemesOpen)} 
-                                    className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full"
+                                    className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full"
                                 >
                                     <div style={{ color: iconColor }}><Palette size={18} /></div>
-                                    <span className="text-sm font-bold flex-1" style={{ color: '#000000' }}>المظهر</span>
+                                    <span className="text-sm font-bold flex-1" style={{ color: isThemesOpen ? iconColor : '#000000' }}>المظهر</span>
                                     <ChevronDown size={16} className={`transition-transform duration-200 ${isThemesOpen ? 'rotate-180' : ''}`} style={{ color: iconColor }} />
                                 </button>
                                 
@@ -236,7 +238,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                                     className="flex flex-col items-center gap-1.5 group"
                                                 >
                                                     <div 
-                                                        className={`w-10 h-10 rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id ? 'scale-110 border-gray-400 shadow-md' : 'border-transparent hover:scale-105'}`}
+                                                        className={`w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id ? 'scale-110 border-gray-400 shadow-md' : 'border-transparent hover:scale-105'}`}
                                                         style={{ backgroundColor: id === 'black' ? '#000000' : (theme.accent || theme.barText || '#000000') }}
                                                     >
                                                         {localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id && (
@@ -266,6 +268,8 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                                 handleAction(() => {
                                                     if (shortcut.id === 'tafseer-download') {
                                                         openModal('tafsir-download-modal');
+                                                    } else if (shortcut.id === 'audio') {
+                                                        openModal('reciter-modal');
                                                     } else if (shortcut.id === 'interface-customization') {
                                                         openModal('toolbar-color-picker-modal');
                                                     } else if (shortcut.id === 'font-type') {
@@ -279,6 +283,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                         iconColor={iconColor} 
                                         showChevron={shortcut.id === 'quran-download-parent'}
                                         isExpanded={shortcut.id === 'quran-download-parent' && isDownloadSubMenuOpen}
+                                        isActive={page === shortcut.id}
                                     />
                                     {shortcut.id === 'quran-download-parent' && isDownloadSubMenuOpen && (
                                         <div className="flex flex-col gap-1 p-2 bg-gray-50/80 rounded-xl mt-1 mb-2 animate-fadeIn">
@@ -336,7 +341,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                                     setTempShortcuts([...tempShortcuts, shortcut.id]);
                                                 }
                                             }}
-                                            className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full group"
+                                            className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full group"
                                         >
                                             <div style={{ color: isSelected ? '#000000' : '#9ca3af' }} className="transition-colors">
                                                 {shortcut.icon}
@@ -378,7 +383,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
 
 const MenuSection: React.FC<{ title: string, children: React.ReactNode, iconColor: string, titleColor?: string }> = ({ title, children, iconColor, titleColor = '#000000' }) => (
     <div className="flex flex-col">
-        <div className="bg-blue-50/50 py-1.5 px-3 rounded-md mb-2 text-right">
+        <div className="bg-blue-50/50 py-1 px-3 rounded-md mb-1 text-right">
             <span className="text-xs font-bold" style={{ color: titleColor }}>{title}</span>
         </div>
         <div className="flex flex-col px-2">
@@ -387,10 +392,10 @@ const MenuSection: React.FC<{ title: string, children: React.ReactNode, iconColo
     </div>
 );
 
-const MenuItem: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void, iconColor: string, showChevron?: boolean, isExpanded?: boolean, isSubItem?: boolean }> = ({ icon, label, onClick, iconColor, showChevron, isExpanded, isSubItem }) => (
-    <button onClick={onClick} className={`flex items-center gap-3 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full ${isSubItem ? 'px-2 py-2 border-0' : ''}`}>
+const MenuItem: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void, iconColor: string, showChevron?: boolean, isExpanded?: boolean, isSubItem?: boolean, isActive?: boolean }> = ({ icon, label, onClick, iconColor, showChevron, isExpanded, isSubItem, isActive }) => (
+    <button onClick={onClick} className={`flex items-center gap-3 py-2 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full ${isSubItem ? 'px-2 py-1.5 border-0' : ''}`}>
         <div style={{ color: iconColor }}>{icon}</div>
-        <span className={`${isSubItem ? 'text-xs' : 'text-sm'} font-bold flex-1`} style={{ color: '#000000' }}>{label}</span>
+        <span className={`${isSubItem ? 'text-xs' : 'text-sm'} font-bold flex-1`} style={{ color: isActive ? iconColor : '#000000' }}>{label}</span>
         {showChevron && (
             <ChevronDown size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} style={{ color: iconColor }} />
         )}

@@ -166,7 +166,7 @@ const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentThem
     );
 };
 
-const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any }> = ({ onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings }) => {
+const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any }> = ({ page, onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [savedSession, setSavedSession] = useState<any>(null);
@@ -2712,7 +2712,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
     
     const surahName = quranData?.surahs[currentAyah.s - 1]?.name.replace('سورة', '').trim() || '';
     const juz = JUZ_MAP.slice().reverse().find(j => (currentAyah.s > j.s) || (currentAyah.s === j.s && currentAyah.a >= j.a))?.j || 1;
-    const page = quranData?.surahs[currentAyah.s - 1]?.ayahs.find((ay:any) => ay.numberInSurah === currentAyah.a)?.page || 1;
+    const currentPageNumber = quranData?.surahs[currentAyah.s - 1]?.ayahs.find((ay:any) => ay.numberInSurah === currentAyah.a)?.page || 1;
     const tafseerName = TAFSEERS.find(t => t.id === settings.tafseer)?.name || 'التفسير';
 
     const renderPlayButtonIcon = () => {
@@ -2756,7 +2756,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 handlePageInputBlur={handlePageInputBlur}
                 handlePageInputKeyDown={handlePageInputKeyDown}
                 handlePageButtonClick={handlePageButtonClick}
-                page={page}
+                page={currentPageNumber}
                 surahName={surahName}
                 currentAyah={currentAyah}
                 juz={juz}
@@ -2776,6 +2776,7 @@ const QuranReader: FC<{ onBack: () => void, onNavigate: (pageId: string) => void
                 handleMushafTypeSelect={handleMushafTypeSelect}
             />
             <FloatingMenu 
+                page={page}
                 isFloatingMenuOpen={isFloatingMenuOpen}
                 floatingMenuRef={floatingMenuRef}
                 openModal={openModal}

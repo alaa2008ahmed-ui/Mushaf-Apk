@@ -241,13 +241,13 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                     );
                 })}
             </div>
-            <div className="page-footer" style={{ flexDirection: 'column' }}>
+            <div className="page-footer" style={{ flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <span className="page-number-bracket" style={{ color: currentTheme?.accent || '#d97706' }}>﴿</span>
                     <span className="page-number-text" style={{ color: currentTheme?.accent || '#1d4ed8' }}>{toArabic(pageNum)}</span>
                     <span className="page-number-bracket" style={{ color: currentTheme?.accent || '#d97706' }}>﴾</span>
                 </div>
-                <div style={{ width: '100%', height: '1px', backgroundColor: currentTheme?.accent || '#d97706', marginTop: '8px', opacity: 0.5 }}></div>
+                <div style={{ width: '60%', height: '2px', backgroundColor: currentTheme?.accent || '#d97706', marginTop: '12px', opacity: 0.7, borderRadius: '1px' }}></div>
             </div>
         </div>
     );

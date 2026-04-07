@@ -221,7 +221,7 @@
 }
 .page-number-bracket { color: #d97706; font-family: var(--font-hafs), serif; font-size: 1.6rem; margin: 0 2px; font-weight: normal; }
 .dark .page-number-bracket { color: #fbbf24; }
-.page-number-text { color: #1d4ed8; font-weight: bold; font-size: 1.3rem; font-family: var(--font-default); position: relative; top: 4px; margin: 0 2px;}
+.page-number-text { color: #1d4ed8; font-weight: bold; font-size: 1.3rem; font-family: var(--font-default); position: relative; margin: 0 2px;}
 .dark .page-number-text { color: #60a5fa; }
 
 .ayah-text-block { 
