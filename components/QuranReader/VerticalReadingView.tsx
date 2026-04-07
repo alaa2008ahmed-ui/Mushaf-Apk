@@ -43,6 +43,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     });
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const isInternalClickRef = useRef(false);
+    const lastScrolledAyahRef = useRef<{s: number, a: number} | null>(null);
 
     // Pinch-to-zoom refs
     const initialPinchDistanceRef = useRef<number | null>(null);
@@ -177,6 +178,9 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
         if (!isLoading && virtuosoRef.current) {
             if (isInternalClickRef.current) {
                 isInternalClickRef.current = false;
+                return;
+            }
+            if (lastScrolledAyahRef.current?.s === currentAyah.s && lastScrolledAyahRef.current?.a === currentAyah.a) {
                 return;
             }
             const targetId = `${currentAyah.s}-${currentAyah.a}`;
@@ -326,6 +330,21 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 overscan={200} // Pre-render items for smoother experience
                 className="h-full scrollbar-hide"
                 itemContent={renderItem}
+                rangeChanged={(range) => {
+                    const item = flattenedItems[range.startIndex];
+                    if (item) {
+                        if (item.type === 'ayah') {
+                            lastScrolledAyahRef.current = { s: item.surahNumber, a: item.ayahNumber };
+                            onVisibleAyahChange?.(item.surahNumber, item.ayahNumber);
+                        } else if (item.type === 'header' && range.startIndex + 1 < flattenedItems.length) {
+                            const nextItem = flattenedItems[range.startIndex + 1];
+                            if (nextItem.type === 'ayah') {
+                                lastScrolledAyahRef.current = { s: nextItem.surahNumber, a: nextItem.ayahNumber };
+                                onVisibleAyahChange?.(nextItem.surahNumber, nextItem.ayahNumber);
+                            }
+                        }
+                    }
+                }}
             />
         </div>
     );

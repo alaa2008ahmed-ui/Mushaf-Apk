@@ -1073,31 +1073,43 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
 
     const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false, retries: number = 50) => {
+        if (!document.getElementById('pages-container')) {
+            isJumpingRef.current = false;
+            return;
+        }
+        
         const el = document.getElementById(`ayah-${s}-${a}`);
         if (el) {
             const container = mushafContentRef.current;
-            if (instant) {
-                el.scrollIntoView({ block: 'center', behavior: 'auto' });
-            } else if (container) {
-                if (isLandscapeRef.current) {
-                    const targetScroll = el.offsetTop - (container.clientHeight / 2) + (el.clientHeight / 2);
-                    container.scrollTo({ top: targetScroll, behavior: 'smooth' });
+            if (container) {
+                const containerRect = container.getBoundingClientRect();
+                const elRect = el.getBoundingClientRect();
+                
+                // If element has no height yet, it might be rendering. Retry.
+                if (elRect.height === 0 && retries > 0) {
+                    setTimeout(() => scrollToAyah(s, a, instant, retries - 1), 50);
+                    return;
+                }
+
+                const scrollTop = container.scrollTop + elRect.top - containerRect.top - (containerRect.height / 2) + (elRect.height / 2);
+                if (instant) {
+                    container.scrollTop = scrollTop;
                 } else {
-                    const containerRect = container.getBoundingClientRect();
-                    const elRect = el.getBoundingClientRect();
-                    if (elRect.height === 0 && retries > 0) {
-                        setTimeout(() => scrollToAyah(s, a, instant, retries - 1), 50);
-                        return;
-                    }
-                    const scrollTop = container.scrollTop + elRect.top - containerRect.top - (containerRect.height / 2) + (elRect.height / 2);
                     container.scrollTo({ top: scrollTop, behavior: 'smooth' });
                 }
             } else {
-                el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                el.scrollIntoView({ block: 'center', behavior: instant ? 'auto' : 'smooth' });
             }
+            
+            // Reset jumping state after a short delay to allow scroll to complete
+            setTimeout(() => {
+                isJumpingRef.current = false;
+            }, 500);
         } else if (retries > 0) {
-            const delay = instant ? 10 : 50;
-            setTimeout(() => scrollToAyah(s, a, instant, retries - 1), delay);
+            setTimeout(() => scrollToAyah(s, a, instant, retries - 1), 50);
+        } else {
+            // Reset jumping state if we failed to find the element
+            isJumpingRef.current = false;
         }
     }, []);
 
@@ -1870,6 +1882,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         if (!contentEl) return;
     
         const handleScroll = () => {
+            if (isJumpingRef.current) return;
+            
             if (isHideToolbarsEnabledRef.current && !autoScrollStateRef.current.isActive) {
                 if (!isUserScrollingRef.current) {
                     setIsUserScrolling(true);
@@ -1911,7 +1925,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 });
             }
     
-            if (autoScrollState.isActive || isJumpingRef.current) return;
+            if (autoScrollState.isActive) return;
     
             const now = Date.now();
             if (now - lastScrollUpdateTime.current < 100) return;
@@ -2023,9 +2037,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
         setTimeout(() => {
             scrollToAyah(s, a, instant);
-            setTimeout(() => {
-                isJumpingRef.current = false;
-            }, 500);
         }, 50);
     }, [quranData, handleAyahClick, stopAudio, scrollToAyah]);
 
@@ -2036,7 +2047,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         const pageData = getPageData(pageNum);
         if (pageData && pageData.length > 0) {
             // Sort by surah number then ayah number to get the absolute first ayah of the page
-            const sortedAyahs = pageData.sort((a: any, b: any) => {
+            const sortedAyahs = [...pageData].sort((a: any, b: any) => {
                 if (a.sNum !== b.sNum) return a.sNum - b.sNum;
                 return a.numberInSurah - b.numberInSurah;
             });
