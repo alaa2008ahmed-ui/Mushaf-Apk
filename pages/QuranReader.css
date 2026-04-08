@@ -60,6 +60,18 @@
     background-color: var(--bg-color, #f3f4f6);
 }
 
+.quran-reader-container::before {
+    content: '';
+    position: absolute;
+    top: var(--logical-safe-top);
+    bottom: var(--logical-safe-bottom);
+    left: var(--logical-safe-left);
+    right: var(--logical-safe-right);
+    border: 4px double var(--quran-border-color, #000);
+    pointer-events: none;
+    z-index: 100;
+}
+
 .quran-reader-container ::-webkit-scrollbar { display: none; }
 
 .quran-reader-container.dark { background-color: #000; color: #fff; }
@@ -79,8 +91,8 @@
     left: 0;
     right: 0;
     z-index: 100;
-    padding-top: var(--logical-safe-top) !important;
-    height: calc(50px + var(--logical-safe-top));
+    padding-top: calc(var(--logical-safe-top) + 4px) !important;
+    height: calc(50px + var(--logical-safe-top) + 4px);
 }
 
 .quran-reader-container.is-transparent-mode:not(.landscape-mode) #bottom-bar {
@@ -89,8 +101,8 @@
     left: 0;
     right: 0;
     z-index: 100;
-    padding-bottom: var(--logical-safe-bottom) !important;
-    height: calc(48px + var(--logical-safe-bottom));
+    padding-bottom: calc(var(--logical-safe-bottom) + 4px) !important;
+    height: calc(48px + var(--logical-safe-bottom) + 4px);
 }
 
 .quran-reader-container.is-transparent-mode:not(.landscape-mode) #mushaf-content {
@@ -413,15 +425,15 @@
 .btn-purple:hover { opacity: 0.8; }
 
 #header {
-    height: calc(3.5rem + var(--logical-safe-top));
-    padding-top: var(--logical-safe-top) !important;
+    height: calc(3.5rem + var(--logical-safe-top) + 4px);
+    padding-top: calc(var(--logical-safe-top) + 4px) !important;
     padding-left: var(--logical-safe-left) !important;
     padding-right: var(--logical-safe-right) !important;
     transition: transform 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
 }
 #bottom-bar {
-    height: calc(3.5rem + var(--logical-safe-bottom));
-    padding-bottom: var(--logical-safe-bottom) !important;
+    height: calc(3.5rem + var(--logical-safe-bottom) + 4px);
+    padding-bottom: calc(var(--logical-safe-bottom) + 4px) !important;
     padding-left: var(--logical-safe-left) !important;
     padding-right: var(--logical-safe-right) !important;
     transition: transform 0.3s ease, opacity 0.3s ease, margin-bottom 0.3s ease;
