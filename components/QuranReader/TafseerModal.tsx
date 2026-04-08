@@ -15,7 +15,7 @@ const TafseerModal: React.FC<TafseerModalProps> = ({ isOpen, isLoading, title, t
 
     return (
         <div className="fixed inset-0 z-[180] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl flex flex-col max-h-[90vh] shadow-2xl border border-gray-200 dark:border-gray-700`} 
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl flex flex-col max-h-[90vh] shadow-2xl`} 
                  style={{ 
                      backgroundColor: currentTheme?.modalBg, 
                      color: currentTheme?.modalText,

@@ -30,7 +30,7 @@ const Toast: React.FC<ToastProps> = ({ message, show, onClose }) => {
     if (!shouldRender) return null;
 
     return (
-        <div id="message-toast" className={isVisible ? 'show' : ''} style={{ backgroundColor: 'var(--qr-modal-bg)', color: 'var(--qr-modal-text)', border: '1px solid var(--qr-card-border)' }}>
+        <div id="message-toast" className={`${isVisible ? 'show' : ''} modal-skinned`}>
             <div className="p-2 rounded-full theme-header-bg">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>

@@ -65,13 +65,13 @@ const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, currentTheme }
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[200] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
-            <div className="modal-skinned w-full max-w-sm rounded-2xl shadow-2xl flex flex-col animate-modal-enter border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
+            <div className="modal-skinned w-full max-w-sm rounded-2xl shadow-2xl flex flex-col animate-modal-enter" onClick={e => e.stopPropagation()}>
                 <div className="p-5 flex flex-col gap-4">
-                    <button onClick={onTafseer} style={{ border: `2px solid ${currentTheme?.accent || '#4f46e5'}`, color: currentTheme?.accent || '#4f46e5', backgroundColor: 'transparent' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
+                    <button onClick={onTafseer} style={{ borderTop: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderBottom: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderLeft: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderRight: `2px solid ${currentTheme?.accent || '#4f46e5'}`, color: currentTheme?.accent || '#4f46e5', backgroundColor: 'transparent' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
                         <i className="fa-solid fa-book-open"></i>
                         التفسير
                     </button>
-                    <button onClick={onMeanings} style={{ border: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, color: currentTheme?.highlightText || currentTheme?.accent || '#0d9488', backgroundColor: 'transparent' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
+                    <button onClick={onMeanings} style={{ borderTop: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, borderBottom: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, borderLeft: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, borderRight: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, color: currentTheme?.highlightText || currentTheme?.accent || '#0d9488', backgroundColor: 'transparent' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
                         <i className="fa-solid fa-language"></i>
                         معاني القرآن
                     </button>
@@ -85,11 +85,8 @@ const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentThe
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[300] bg-transparent flex items-center justify-center p-4 animate-fadeIn">
-            <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl flex flex-col animate-modal-enter p-8 text-center border border-gray-200 dark:border-gray-700" 
+            <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl flex flex-col animate-modal-enter p-8 text-center" 
                  style={{ 
-                     backgroundColor: 'var(--modal-bg)', 
-                     color: 'var(--modal-text)', 
-                     border: `2px solid var(--color-primary)`,
                      fontFamily: currentTheme?.font
                  }}>
                 <div className="w-24 h-24 bg-green-500/20 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8">
@@ -136,8 +133,8 @@ const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentThem
     if (!isOpen || !savedSession) return null;
     return (
         <div className="fixed inset-0 z-[400] bg-transparent flex items-center justify-center p-4 animate-fadeIn">
-            <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center animate-modal-enter border border-gray-200 dark:border-gray-700"
-                 style={{ backgroundColor: 'var(--modal-bg)', color: 'var(--modal-text)', border: `2px solid var(--color-primary)`, fontFamily: currentTheme?.font }}>
+            <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center animate-modal-enter"
+                 style={{ fontFamily: currentTheme?.font }}>
                 <div className="w-16 h-16 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i className="fa-solid fa-play text-3xl"></i>
                 </div>
@@ -1042,8 +1039,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         };
     }, [localIsMemorizationMode, stopAudio]);
     const showMarkerNotification = useCallback((type: 'juz' | 'quarter' | 'sajda' | 'surah', text: string) => {
-        setMarkerNotification({ show: true, type, text });
-        setTimeout(() => setMarkerNotification(prev => ({ ...prev, show: false })), 2000);
+        // Disabled as per user request to hide completely
+        return;
+        // setMarkerNotification({ show: true, type, text });
+        // setTimeout(() => setMarkerNotification(prev => ({ ...prev, show: false })), 2000);
     }, []);
 
     const handleSajdahVisible = useCallback((surahName: string, sNum: number, ayahNum: number) => {
@@ -2638,12 +2637,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
 
     const handlePageButtonClick = () => {
-        if (initialLandscape) return; // Disable page search in landscape mode
         if (autoScrollState.isActive && !autoScrollState.isPaused) {
             autoScrollPausedRef.current = true;
             setAutoScrollState(p => ({ ...p, isPaused: true }));
         }
         setIsPageInputActive(true);
+        setPageInput('');
+        setTimeout(() => pageInputRef.current?.focus(), 100);
     };
 
     const getToolbarStyle = (type: string, defaultBg: string, defaultText: string, defaultBorder: string) => {
@@ -2669,10 +2669,16 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             finalShadow = 'none';
         }
 
+        const isMainBar = type === 'top-toolbar' || type === 'bottom-toolbar';
+        const borderStyle = `1px solid ${border}`;
+
         return { 
             backgroundColor: finalBg, 
             color: config?.text || defaultText, 
-            borderColor: border, 
+            borderTop: type === 'top-toolbar' ? '0px none' : borderStyle,
+            borderBottom: type === 'bottom-toolbar' ? '0px none' : borderStyle,
+            borderLeft: isMainBar ? '0px none' : borderStyle,
+            borderRight: isMainBar ? '0px none' : borderStyle,
             fontFamily: config?.font || 'inherit',
             opacity: 1,
             backdropFilter: backdrop,
@@ -2787,7 +2793,19 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     }, [visiblePages]);
 
     return (
-        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${(isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused) || (isHideToolbarsEnabled && isUserScrolling) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ backgroundColor: settings.bgColor, color: settings.textColor, fontFamily: settings.fontFamily, position: 'relative', height: '100dvh', overflow: 'hidden' } as React.CSSProperties}>
+        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${(isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused) || (isHideToolbarsEnabled && isUserScrolling) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ 
+            backgroundColor: settings.bgColor, 
+            color: settings.textColor, 
+            fontFamily: settings.fontFamily, 
+            position: 'relative', 
+            height: '100dvh', 
+            overflow: 'hidden',
+            borderTop: `4px double ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+            borderBottom: `4px double ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+            borderLeft: `4px double ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+            borderRight: `4px double ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+            boxSizing: 'border-box'
+        } as React.CSSProperties}>
             <QuranHeader 
                 isPageInputActive={isPageInputActive}
                 pageInputRef={pageInputRef}

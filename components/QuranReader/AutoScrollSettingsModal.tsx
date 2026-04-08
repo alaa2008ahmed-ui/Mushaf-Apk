@@ -11,7 +11,7 @@ const AutoScrollSettingsModal: FC<{
     const options = Array.from({length: 56}, (_, i) => i + 5);
     return (
         <div className="fixed inset-0 z-[300] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-sm sm:max-w-2xl'} rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-sm sm:max-w-2xl'} rounded-2xl shadow-2xl flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
                 <div className="p-4 overflow-y-auto flex-1">
                     <div className="mb-2 font-bold text-center">وقت التمرير (بالدقائق)</div>
                     <div className={`grid ${isLandscape ? 'grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2' : 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2'}`}>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { SAJDAH_LOCATIONS, toArabic, SURAH_INFO } from './constants';
+import { SAJDAH_LOCATIONS, toArabic, SURAH_INFO, getAyahCountText } from './constants';
 
 interface MushafPageProps {
     pageNum: number;
@@ -126,14 +126,28 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
     };
 
     const borderColor = currentTheme?.palette?.[0] || currentTheme?.accent || '#d97706';
-    const pageNumColor = currentTheme?.palette?.[1] || currentTheme?.textColor || '#1d4ed8';
-    const bracketColor = currentTheme?.palette?.[2] || currentTheme?.accent || '#d97706';
+    
+    // Use contrasting colors for page numbers as requested
+    // If theme is blue-ish, use purple/orange. If green, use blue/red.
+    const getContrastingColors = () => {
+        const themeId = currentTheme?.id || 'night_sky';
+        switch(themeId) {
+            case 'night_sky': return { num: '#9333ea', bracket: '#9333ea' }; // Purple for both
+            case 'green': return { num: '#dc2626', bracket: '#dc2626' }; // Red for both
+            case 'red': return { num: '#2563eb', bracket: '#2563eb' }; // Blue for both
+            case 'deep_black': return { num: '#f59e0b', bracket: '#f59e0b' }; // Orange for both
+            default: return { 
+                num: currentTheme?.sajdah || '#9333ea', 
+                bracket: currentTheme?.sajdah || '#9333ea' 
+            };
+        }
+    };
+
+    const { num: pageNumColor, bracket: bracketColor } = getContrastingColors();
 
     return (
         <div id={`page-${pageNum}`} className={`mushaf-page ${pageNum === 1 ? 'first-page' : ''}`} data-page={pageNum} ref={pageRef} style={{ 
             backgroundColor: 'transparent',
-            borderLeft: `6px double ${borderColor}`,
-            borderRight: `6px double ${borderColor}`,
             boxSizing: 'border-box'
         }}>
             <div className="page-content" style={pageStyle}>
@@ -165,12 +179,11 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                 <> 
                                     <div className="surah-header-container">
                                         <svg className="surah-header-bg" viewBox="0 0 600 80" preserveAspectRatio="none">
-                                            {/* Outer Green Box with Double Border */}
-                                            <rect x="2" y="2" width="596" height="76" fill={headerBg} stroke={headerBorder} strokeWidth="2" />
-                                            <rect x="6" y="6" width="588" height="68" fill="none" stroke={headerText} strokeWidth="1" opacity="0.3" />
+                                            {/* Outer Green Box with Single Border */}
+                                            <rect x="2" y="2" width="596" height="76" fill={headerBg} stroke={headerBorder} strokeWidth="1.5" />
                                             
                                             {/* Center Cartouche Background (Light) - Shrunken Width */}
-                                            <path d="M 180 10 L 420 10 Q 440 10 445 25 L 450 40 L 445 55 Q 440 70 420 70 L 180 70 Q 160 70 155 55 L 150 40 L 155 25 Q 160 10 180 10 Z" fill={cartoucheBg} stroke={headerBorder} strokeWidth="2" />
+                                            <path d="M 180 10 L 420 10 Q 440 10 445 25 L 450 40 L 445 55 Q 440 70 420 70 L 180 70 Q 160 70 155 55 L 150 40 L 155 25 Q 160 10 180 10 Z" fill={cartoucheBg} stroke={headerBorder} strokeWidth="1.5" />
                                             
                                             {/* Inner decorative line for cartouche - Shrunken Width */}
                                             <path d="M 185 15 L 415 15 Q 430 15 434 25 L 438 40 L 434 55 Q 430 65 415 65 L 185 65 Q 170 65 166 55 L 162 40 L 166 25 Q 170 15 185 15 Z" fill="none" stroke={headerBorder} strokeWidth="1" opacity="0.3" />
@@ -179,7 +192,7 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                         <div className="surah-header-content" style={{ color: headerText }}>
                                             <div className="surah-header-right-text" style={{ color: cartoucheText }}>{SURAH_INFO[ayah.sNum]?.type}</div>
                                             <div className="surah-header-center-text" style={{ color: cartoucheText }}>{ayah.sName.replace('سورة', '').trim()}</div>
-                                            <div className="surah-header-left-text" style={{ color: cartoucheText }}>{toArabic(SURAH_INFO[ayah.sNum]?.ayahs || 0)} آيات</div>
+                                            <div className="surah-header-left-text" style={{ color: cartoucheText }}>{getAyahCountText(SURAH_INFO[ayah.sNum]?.ayahs || 0)}</div>
                                         </div>
                                     </div> 
                                     {ayah.sNum !== 1 && ayah.sNum !== 9 && (
@@ -257,7 +270,7 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                     <span className="page-number-text" style={{ color: pageNumColor }}>{toArabic(pageNum)}</span>
                     <span className="page-number-bracket" style={{ color: bracketColor }}>﴾</span>
                 </div>
-                <div style={{ width: '60%', height: '2px', backgroundColor: borderColor, marginTop: '12px', opacity: 0.7, borderRadius: '1px' }}></div>
+                <div style={{ width: '60%', height: '2.5px', backgroundColor: bracketColor, marginTop: '12px', opacity: 0.8, borderRadius: '2px' }}></div>
             </div>
         </div>
     );

@@ -57,7 +57,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
     const [isModeMenuOpen, setIsModeMenuOpen] = React.useState(false);
 
     return (
-        <header id="header" className={`header-default flex-none z-50 flex items-center px-4 justify-between border-b shadow-xl w-full gap-2`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
+        <header id="header" className={`header-default flex-none z-50 flex items-center px-4 justify-between border shadow-xl w-full gap-2`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
             <button 
                 id="surah-name-header" 
                 onClick={() => openModal('surah-modal')}
@@ -99,62 +99,6 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
             
             <div className="relative flex-shrink-0">
                 <button 
-                    id="btn-mode-switch"
-                    onClick={() => setIsModeMenuOpen(!isModeMenuOpen)}
-                    className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 flex items-center justify-center flex-shrink-0 aspect-square"
-                    style={getToolbarStyle('audio', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
-                >
-                    <i className={`fa-solid ${readingMode === 'mushaf' ? 'fa-book-quran' : readingMode === 'tafseer' ? 'fa-book-open-reader' : 'fa-language'}`}></i>
-                </button>
-                
-                {isModeMenuOpen && (
-                    <>
-                        <div className="fixed inset-0 z-[100]" onClick={() => setIsModeMenuOpen(false)}></div>
-                        <div className="absolute top-full left-0 mt-2 w-40 rounded-xl shadow-2xl z-[110] overflow-hidden animate-fadeIn"
-                             style={{ backgroundColor: currentTheme.cardBg, color: currentTheme.cardText, border: `1px solid ${currentTheme.cardBorder}` }}>
-                            <button 
-                                onClick={() => { setReadingMode('mushaf'); setIsModeMenuOpen(false); }}
-                                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition border-2 rounded-lg my-1 ${readingMode === 'mushaf' ? 'font-bold' : 'hover:bg-black/5 border-transparent'}`}
-                                style={readingMode === 'mushaf' ? { color: currentTheme.accent, borderColor: currentTheme.accent } : {}}
-                            >
-                                <i className="fa-solid fa-book-quran w-5"></i>
-                                <span>المصحف</span>
-                            </button>
-                            {(!isWirdMode && !isMemorizationMode) && (
-                                <>
-                                    <button 
-                                        onClick={() => { setReadingMode('tafseer'); setIsModeMenuOpen(false); }}
-                                        className={`w-full px-4 py-3 text-right flex items-center gap-3 transition border-2 rounded-lg my-1 ${readingMode === 'tafseer' ? 'font-bold' : 'hover:bg-black/5 border-transparent'}`}
-                                        style={readingMode === 'tafseer' ? { color: currentTheme.accent, borderColor: currentTheme.accent } : {}}
-                                    >
-                                        <i className="fa-solid fa-book-open-reader w-5"></i>
-                                        <span>التفسير</span>
-                                    </button>
-                                    <button 
-                                        onClick={() => { setReadingMode('meanings'); setIsModeMenuOpen(false); }}
-                                        className={`w-full px-4 py-3 text-right flex items-center gap-3 transition border-2 rounded-lg my-1 ${readingMode === 'meanings' ? 'font-bold' : 'hover:bg-black/5 border-transparent'}`}
-                                        style={readingMode === 'meanings' ? { color: currentTheme.accent, borderColor: currentTheme.accent } : {}}
-                                    >
-                                        <i className="fa-solid fa-language w-5"></i>
-                                        <span>المعاني</span>
-                                    </button>
-                                    <button 
-                                        onClick={() => { setReadingMode('translation'); setIsModeMenuOpen(false); }}
-                                        className={`w-full px-4 py-3 text-right flex items-center gap-3 transition border-2 rounded-lg my-1 ${readingMode === 'translation' ? 'font-bold' : 'hover:bg-black/5 border-transparent'}`}
-                                        style={readingMode === 'translation' ? { color: currentTheme.accent, borderColor: currentTheme.accent } : {}}
-                                    >
-                                        <i className="fa-solid fa-globe w-5"></i>
-                                        <span>الترجمة</span>
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </>
-                )}
-            </div>
-
-            <div className="relative flex-shrink-0">
-                <button 
                     id="btn-play" 
                     onPointerDown={handlePlayButtonPointerDown}
                     onPointerUp={handlePlayButtonPointerUp}
@@ -165,8 +109,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                     {renderPlayButtonIcon()}
                 </button>
                 {reciterToast.show && (
-                    <div className="absolute top-full left-0 mt-2 px-3 py-1 text-xs rounded-lg shadow-lg whitespace-nowrap z-[100] animate-fadeIn font-bold pointer-events-none"
-                            style={{ backgroundColor: currentTheme.cardBg, color: currentTheme.cardText, border: `1px solid ${currentTheme.cardBorder}` }}>
+                    <div className="absolute top-full left-0 mt-2 px-3 py-1 text-xs rounded-lg shadow-lg whitespace-nowrap z-[100] animate-fadeIn font-bold pointer-events-none modal-skinned">
                         {reciterToast.name}
                     </div>
                 )}

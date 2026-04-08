@@ -199,7 +199,7 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
 
     return (
         <div className={`fixed inset-0 z-[100] bg-transparent flex justify-center items-center p-4 animate-fadeIn`} onClick={onClose}>
-            <div className={`modal-skinned w-full max-w-4xl rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-[90vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
                 {!isLandscape && (
                     <div className="p-4 theme-header-bg flex flex-col gap-3">
                         <div className="relative">

@@ -72,7 +72,8 @@
       
       .app-top-bar {
           background: rgb(var(--top-bar-rgb, 26, 34, 51));
-          color: var(--top-bar-text, var(--text-color, #ffffff)); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); border-bottom: 1px solid var(--bottom-bar-border, #334155);
+          color: var(--top-bar-text, var(--text-color, #ffffff)); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); 
+          border: 1px solid var(--bottom-bar-border, #334155);
           position: sticky; top: 0; z-index: 40;
           padding-top: env(safe-area-inset-top);
       }
@@ -84,7 +85,7 @@
       .app-bottom-bar {
           position: fixed; bottom: 0; left: 0; right: 0;
           background-color: var(--bottom-bar-bg, #1e293b);
-          border-top: 1px solid var(--bottom-bar-border, #334155);
+          border: 1px solid var(--bottom-bar-border, #334155);
           box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.3); z-index: 50; padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
           transition: background-color 0.15s ease, border-top 0.15s ease;
       }

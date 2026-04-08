@@ -11,7 +11,7 @@ const FontSelectModal: FC<{
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[300] bg-transparent flex justify-center items-center p-4 animate-fadeIn" onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md sm:max-w-2xl'} rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col max-h-[90vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md sm:max-w-2xl'} rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
                 <div className={`p-3 overflow-y-auto flex-1 grid ${isLandscape ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2'}`}>
                     {FONTS.map(f => (
                         <button 

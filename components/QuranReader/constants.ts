@@ -253,6 +253,15 @@ export const SURAH_NAMES_AR = [
 
 export const toArabic = (n: number | string) => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
 
+export const getAyahCountText = (count: number) => {
+    const arabicCount = toArabic(count);
+    const lastTwo = count % 100;
+    if (count === 0) return `٠ آية`;
+    // Arabic grammar: 3-10 uses plural "Ayat", others use singular "Ayah"
+    if (lastTwo >= 3 && lastTwo <= 10) return `${arabicCount} آيات`;
+    return `${arabicCount} آية`;
+};
+
 export const DEFAULT_SETTINGS = {
     fontSize: 1.7,
     fontFamily: "var(--font-amiri)",

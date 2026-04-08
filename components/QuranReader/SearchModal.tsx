@@ -213,7 +213,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
 
     return (
         <div className={`fixed inset-0 z-[200] bg-transparent flex justify-center items-center p-4 animate-fadeIn`} onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none' : 'max-w-lg rounded-2xl max-h-[90vh]'} flex flex-col shadow-2xl border border-gray-200 dark:border-gray-700`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none' : 'max-w-lg rounded-2xl max-h-[90vh]'} flex flex-col shadow-2xl`} onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="relative">
                         <input 

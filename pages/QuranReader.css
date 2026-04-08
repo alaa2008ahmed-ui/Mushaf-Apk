@@ -123,7 +123,7 @@
     transition: all 0.3s ease;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid var(--qr-card-border, #10b981);
     background-color: var(--qr-modal-bg, #ffffff);
     color: var(--qr-modal-text, #000000);
 }

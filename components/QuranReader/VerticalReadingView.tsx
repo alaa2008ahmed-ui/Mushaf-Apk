@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
-import { toArabic, SURAH_INFO, SURAH_NAMES_AR } from './constants';
+import { toArabic, SURAH_INFO, SURAH_NAMES_AR, getAyahCountText } from './constants';
 
 interface VerticalReadingViewProps {
     quranData: any;
@@ -230,7 +230,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
                          }}>
                         <div className="font-bold text-sm sm:text-lg z-10 drop-shadow-md whitespace-nowrap" style={{ color: headerText }}>
-                            {toArabic(item.ayahCount)} آيات
+                            {getAyahCountText(item.ayahCount)}
                         </div>
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <div className="relative h-10 px-6 sm:px-12 flex items-center justify-center border-2 shadow-inner max-w-[50%] sm:max-w-none"

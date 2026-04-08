@@ -161,7 +161,13 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
             <div 
                 id="floating-menu" 
                 className={`w-[260px] max-w-[85vw] bg-white rounded-2xl shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
-                style={{ fontFamily: currentTheme.font }}
+                style={{ 
+                    fontFamily: currentTheme.font,
+                    borderTop: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+                    borderBottom: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+                    borderLeft: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+                    borderRight: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`
+                }}
             >
                 {!isAddModalOpen ? (
                     /* Main Menu Content */

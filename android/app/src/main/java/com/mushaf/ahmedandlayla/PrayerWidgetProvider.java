@@ -57,6 +57,9 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
         if (text == null) return "";
         if (isArabic) return text; // JS sends Arabic by default
 
+        // Remove Arabic diacritics (harakat) for easier matching
+        text = text.replaceAll("[\\u064B-\\u065F\\u0670]", "");
+
         // Prayer Names
         text = text.replace("الفجر", "Fajr");
         text = text.replace("الشروق", "Sunrise");
@@ -98,8 +101,10 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
         text = text.replace("صفر", "Safar");
         text = text.replace("ربيع الأول", "Rabi' al-Awwal");
         text = text.replace("ربيع الآخر", "Rabi' al-Thani");
+        text = text.replace("ربيع الثاني", "Rabi' al-Thani");
         text = text.replace("جمادى الأولى", "Jumada al-Awwal");
         text = text.replace("جمادى الآخرة", "Jumada al-Thani");
+        text = text.replace("جمادى الثانية", "Jumada al-Thani");
         text = text.replace("رجب", "Rajab");
         text = text.replace("شعبان", "Sha'ban");
         text = text.replace("رمضان", "Ramadan");
