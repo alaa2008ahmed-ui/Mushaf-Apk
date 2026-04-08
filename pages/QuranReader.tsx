@@ -2865,19 +2865,20 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     }, [visiblePages]);
 
     return (
-        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${(isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused) || (isHideToolbarsEnabled && isUserScrolling) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ 
-            backgroundColor: settings.bgColor, 
-            color: settings.textColor, 
-            fontFamily: settings.fontFamily, 
-            position: 'relative', 
-            height: '100dvh', 
-            overflow: 'hidden',
-            borderTop: `4px double ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
-            borderBottom: `4px double ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
-            borderLeft: `4px double ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
-            borderRight: `4px double ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
-            boxSizing: 'border-box'
-        } as React.CSSProperties}>
+        <div style={{ backgroundColor: settings.bgColor, height: '100dvh', width: '100vw', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', boxSizing: 'border-box' }}>
+            <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${(isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused) || (isHideToolbarsEnabled && isUserScrolling) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ 
+                backgroundColor: settings.bgColor, 
+                color: settings.textColor, 
+                fontFamily: settings.fontFamily, 
+                position: 'relative', 
+                height: '100%', 
+                overflow: 'hidden',
+                borderTop: `4px double ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+                borderBottom: `4px double ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+                borderLeft: `4px double ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+                borderRight: `4px double ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+                boxSizing: 'border-box'
+            } as React.CSSProperties}>
             <QuranHeader 
                 isPageInputActive={isPageInputActive}
                 pageInputRef={pageInputRef}
@@ -3254,6 +3255,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     }}
                 />
             )}
+        </div>
         </div>
     );
 };
