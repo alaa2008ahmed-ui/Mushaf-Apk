@@ -54,6 +54,7 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
         const theme = THEMES[themeId as keyof typeof THEMES];
         if (!theme) return;
 
+        localStorage.getItem('current_theme_id' + modeSuffix);
         localStorage.setItem('current_theme_id' + modeSuffix, themeId);
         
         const themeColors = { 

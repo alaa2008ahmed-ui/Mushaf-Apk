@@ -65,10 +65,10 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                 style={getToolbarStyle('surah', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
             >
                 <span className="flex items-center justify-center leading-none">
-                    {surahName} - {isMemorizationMode && memorizationSettings ? (
-                        <>الآيات {toArabic(memorizationSettings.fromAyah)} - {toArabic(memorizationSettings.toAyah)}</>
+                    {isMemorizationMode && memorizationSettings ? (
+                        <>{toArabic(currentAyah.s)} سورة {surahName} - الآيات {toArabic(memorizationSettings.fromAyah)} - {toArabic(memorizationSettings.toAyah)} - جزء {toArabic(juz)}</>
                     ) : (
-                        <>آية {toArabic(currentAyah.a)}</>
+                        <>{toArabic(currentAyah.s)} سورة {surahName} - ايه {toArabic(currentAyah.a)} - جزء {toArabic(juz)}</>
                     )}
                 </span>
             </button>

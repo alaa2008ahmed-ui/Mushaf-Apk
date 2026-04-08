@@ -340,6 +340,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                 </div>
                             </div>
                         </div>
+                        <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
+                            <button onClick={() => onOpenModal('notification-settings-modal')} className="w-full flex items-center justify-between py-1">
+                                <label className="text-sm font-bold opacity-80 cursor-pointer">الإشعارات</label>
+                                <i className="fa-solid fa-bell text-emerald-500"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div id="downloads-section" className="space-y-1">

@@ -26,6 +26,8 @@ import ScrollSpeedModal from '../components/QuranReader/ScrollSpeedModal';
 import AutoScrollSettingsModal from '../components/QuranReader/AutoScrollSettingsModal';
 import ReadingTimer from '../components/QuranReader/ReadingTimer';
 import MarkerNotification from '../components/QuranReader/MarkerNotification';
+import JuzNotification from '../components/QuranReader/JuzNotification';
+import NotificationSettingsModal from '../components/QuranReader/NotificationSettingsModal';
 import QuranHeader from '../components/QuranReader/QuranHeader';
 import QuranFooter from '../components/QuranReader/QuranFooter';
 import FloatingMenu from '../components/QuranReader/FloatingMenu';
@@ -233,6 +235,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const isUserScrollingRef = useRef(isUserScrolling);
     useEffect(() => { isUserScrollingRef.current = isUserScrolling; }, [isUserScrolling]);
     const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const markerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStatus, setLoadingStatus] = useState('');
     const [loadingProgress, setLoadingProgress] = useState(100);
@@ -671,7 +674,41 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     
     const [toast, setToast] = useState({ show: false, message: '' });
     const [reciterToast, setReciterToast] = useState({ show: false, name: '' });
-    const [markerNotification, setMarkerNotification] = useState<{ show: boolean, type: 'juz' | 'quarter' | 'sajda' | 'surah', text: string }>({ show: false, type: 'juz', text: '' });
+    const [markerNotification, setMarkerNotification] = useState<{ show: boolean, type: 'quarter' | 'sajda' | 'surah', text: string }>({ show: false, type: 'quarter', text: '' });
+    const [juzNotification, setJuzNotification] = useState({ show: false, text: '' });
+    const juzTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const [notificationSettings, setNotificationSettings] = useState(() => {
+        const saved = localStorage.getItem('notification_settings' + modeSuffix);
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error('Error parsing notification settings', e);
+            }
+        }
+        return {
+            quarter: true,
+            juz: true,
+            sajda: true,
+            themes: true,
+            downloads: true,
+            bookmarks: true,
+            general: true
+        };
+    });
+
+    useEffect(() => {
+        const handleUpdate = () => {
+            const saved = localStorage.getItem('notification_settings' + modeSuffix);
+            if (saved) {
+                try {
+                    setNotificationSettings(JSON.parse(saved));
+                } catch (e) {}
+            }
+        };
+        window.addEventListener('notification-settings-change', handleUpdate);
+        return () => window.removeEventListener('notification-settings-change', handleUpdate);
+    }, [modeSuffix]);
     const lastNotifiedQuarter = useRef<number | null>(null);
     const lastNotifiedJuz = useRef<number | null>(null);
     const [bookmarks, setBookmarks] = useState(() => {
@@ -999,7 +1036,23 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
     }, [isPageInputActive]);
 
-    const showToast = useCallback((message: string) => setToast({ show: true, message }), []);
+    const showToast = useCallback((message: string) => {
+        // Check notification settings
+        const isTheme = message.includes('ثيم') || message.includes('الشفافية') || message.includes('لون التحديد');
+        const isDownload = message.includes('تحميل') || message.includes('محملة مسبقاً');
+        const isBookmark = message.includes('الإشارة المرجعية');
+        
+        if (isTheme && notificationSettings.themes === false) return;
+        if (isDownload && notificationSettings.downloads === false) return;
+        if (isBookmark && notificationSettings.bookmarks === false) return;
+        if (!isTheme && !isDownload && !isBookmark && notificationSettings.general === false) {
+            // Only allow critical messages if general is off? 
+            // For now, respect the user's wish to turn off general notifications
+            return;
+        }
+
+        setToast({ show: true, message });
+    }, [notificationSettings]);
     
     const stopAudio = useCallback(() => {
         if (currentAudioRef.current) {
@@ -1038,12 +1091,18 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             stopAudio();
         };
     }, [localIsMemorizationMode, stopAudio]);
-    const showMarkerNotification = useCallback((type: 'juz' | 'quarter' | 'sajda' | 'surah', text: string) => {
-        // Disabled as per user request to hide completely
-        return;
-        // setMarkerNotification({ show: true, type, text });
-        // setTimeout(() => setMarkerNotification(prev => ({ ...prev, show: false })), 2000);
-    }, []);
+    const showMarkerNotification = useCallback((type: 'quarter' | 'sajda' | 'surah', text: string) => {
+        // Map types to settings
+        const settingKey = type === 'quarter' ? 'quarter' : type === 'sajda' ? 'sajda' : 'general';
+        if (!notificationSettings[settingKey]) return;
+        
+        if (markerTimeoutRef.current) clearTimeout(markerTimeoutRef.current);
+        setMarkerNotification({ show: true, type, text });
+        markerTimeoutRef.current = setTimeout(() => {
+            setMarkerNotification(prev => ({ ...prev, show: false }));
+            markerTimeoutRef.current = null;
+        }, 3500);
+    }, [notificationSettings]);
 
     const handleSajdahVisible = useCallback((surahName: string, sNum: number, ayahNum: number) => {
         if (sajdahCardInfoRef.current.show) return;
@@ -1973,6 +2032,12 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         setCurrentAyah({ s, a });
                         localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
 
+                        // Detect Surah change
+                        if (s !== prevAyah.s) {
+                            const surahName = SURAH_NAMES_AR[s - 1];
+                            showMarkerNotification('surah', `بداية سورة ${surahName}`);
+                        }
+
                         const juzAttr = (ayahBlock as HTMLElement).dataset.juz;
                         const quarterAttr = (ayahBlock as HTMLElement).dataset.hizbQuarter;
                         
@@ -1980,7 +2045,14 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         if (juzAttr) {
                             const newJuz = parseInt(juzAttr, 10);
                             if (lastNotifiedJuz.current !== null && newJuz !== lastNotifiedJuz.current) {
-                                showMarkerNotification('juz', `بداية الجزء ${toArabic(newJuz)}`);
+                                if (notificationSettings.juz !== false) {
+                                    if (juzTimeoutRef.current) clearTimeout(juzTimeoutRef.current);
+                                    setJuzNotification({ show: true, text: `بداية الجزء ${toArabic(newJuz)}` });
+                                    juzTimeoutRef.current = setTimeout(() => {
+                                        setJuzNotification(prev => ({ ...prev, show: false }));
+                                        juzTimeoutRef.current = null;
+                                    }, 4000);
+                                }
                             }
                             lastNotifiedJuz.current = newJuz;
                         }
@@ -2756,7 +2828,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     if (isLoading) { return <div id="loader" className="fixed inset-0 bg-[#1f2937] text-white z-[9999] flex flex-col items-center justify-center"><div className="text-2xl font-bold mb-4">جاري تحميل المصحف...</div><div className="w-64 h-2 bg-gray-700 rounded-full overflow-hidden"><div id="progress-bar" className="h-full bg-green-500 transition-all duration-300" style={{width: `${loadingProgress}%`}}></div></div><div id="loader-status" className="mt-2 text-sm text-gray-400">{loadingStatus}</div></div> }
     
-    const surahName = quranData?.surahs[currentAyah.s - 1]?.name.replace('سورة', '').trim() || '';
+    const surahName = SURAH_NAMES_AR[currentAyah.s - 1] || '';
     const juz = JUZ_MAP.slice().reverse().find(j => (currentAyah.s > j.s) || (currentAyah.s === j.s && currentAyah.a >= j.a))?.j || 1;
     const currentPageNumber = quranData?.surahs[currentAyah.s - 1]?.ayahs.find((ay:any) => ay.numberInSurah === currentAyah.a)?.page || 1;
     const tafseerName = TAFSEERS.find(t => t.id === settings.tafseer)?.name || 'التفسير';
@@ -2981,6 +3053,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} readingMode={readingMode} settings={settings} />}
             {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={modeSuffix} />}
             {activeModals.includes('settings-modal') && <SettingsModal onClose={() => closeModal('settings-modal')} onOpenModal={openModal} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={modeSuffix} />}
+            {activeModals.includes('notification-settings-modal') && <NotificationSettingsModal onClose={() => closeModal('notification-settings-modal')} showToast={showToast} isLandscape={isLandscape} modeSuffix={modeSuffix} />}
             {activeModals.includes('font-modal') && <FontSelectModal isOpen={true} onClose={() => closeModal('font-modal')} isLandscape={isLandscape} currentFontId={settings.fontFamily} onSelect={(id) => {
                 const newSettings = { ...settings, fontFamily: id };
                 setSettings(newSettings);
@@ -3113,6 +3186,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 currentTheme={currentTheme} 
                 savedSession={savedSession} 
             />
+            <JuzNotification isVisible={juzNotification.show} text={juzNotification.text} currentTheme={currentTheme} />
             <Toast message={toast.message} show={toast.show} onClose={handleToastClose} />
             <TutorialOverlay tutorialId="quran-reader-tutorial" steps={quranTutorialSteps} />
             

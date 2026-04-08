@@ -28,7 +28,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
 
     const [rangeRepeat, setRangeRepeat] = useState(1);
     const [ayahRepeat, setAyahRepeat] = useState(1);
-    const [linkedRepeat, setLinkedRepeat] = useState(true);
+    const [linkedRepeat, setLinkedRepeat] = useState(false);
     const [pauseLength, setPauseLength] = useState(1);
     const [testAfterSession, setTestAfterSession] = useState(false);
     const [activeTab, setActiveTab] = useState<'setup' | 'review'>('setup');
@@ -71,7 +71,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 setToAyah(parsed.toAyah || 7);
                 setRangeRepeat(parsed.rangeRepeat || 1);
                 setAyahRepeat(parsed.ayahRepeat || 1);
-                setLinkedRepeat(parsed.linkedRepeat !== undefined ? parsed.linkedRepeat : true);
+                setLinkedRepeat(parsed.linkedRepeat !== undefined ? parsed.linkedRepeat : false);
                 setPauseLength(parsed.pauseLength || 1);
                 setTestAfterSession(parsed.testAfterSession || false);
             } catch (e) {
@@ -246,7 +246,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 toAyah: range.toAyah,
                 rangeRepeat: 3,
                 ayahRepeat: 1,
-                linkedRepeat: true,
+                linkedRepeat: false,
                 pauseLength: 1,
                 testAfterSession: true,
                 isReviewMode: true // New flag for review mode

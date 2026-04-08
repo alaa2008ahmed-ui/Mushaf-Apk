@@ -244,6 +244,19 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             : `سورة ${getSurahName(firstAyah.s)} - آية ${toArabic(firstAyah.a)} إلى آية ${toArabic(lastAyah.a)} (${getSurahMetadata(firstAyah.s)})`)
         : `سورة ${getSurahName(firstAyah.s)} آية ${toArabic(firstAyah.a)} - سورة ${getSurahName(lastAyah.s)} آية ${toArabic(lastAyah.a)}`;
 
+    const [toolbarHeights, setToolbarHeights] = useState({ top: 56, bottom: 64 });
+
+    useEffect(() => {
+        const header = document.getElementById('header');
+        const footer = document.getElementById('bottom-bar');
+        if (header && footer) {
+            setToolbarHeights({
+                top: header.offsetHeight,
+                bottom: footer.offsetHeight
+            });
+        }
+    }, []);
+
     const handleShare = async () => {
         if (isSharing) return;
         setIsSharing(true);
@@ -314,7 +327,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     captureElement.style.zIndex = '-9999';
 
                     const canvas = await html2canvas(captureElement, {
-                        scale: 1.2,
+                        scale: 3,
                         backgroundColor: null,
                         useCORS: true,
                         allowTaint: true,
@@ -393,7 +406,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         captureElement.style.zIndex = '-9999';
 
                         const canvas = await html2canvas(captureElement, {
-                            scale: 1.2,
+                            scale: 3,
                             backgroundColor: readingMode === 'mushaf' ? '#ffffff' : (currentTheme.bg || '#ffffff'),
                             useCORS: true,
                             allowTaint: true,
@@ -700,7 +713,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] bg-transparent overflow-y-auto flex items-center justify-center p-4" dir="rtl">
+        <div className="fixed z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center overflow-hidden" style={{ top: `${toolbarHeights.top}px`, bottom: `${toolbarHeights.bottom}px`, left: 0, right: 0 }} dir="rtl" onClick={onClose}>
             {/* Hidden capture element for High Quality Image Share */}
             <div 
                 id="hidden-image-capture"
@@ -872,19 +885,19 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         position: 'absolute',
                         left: '-9999px',
                         top: '-9999px',
-                        width: '1080px', // Fixed width for consistent capture
+                        width: '1600px', // Wider width for Tafseer/Meanings as requested
                         backgroundColor: '#ffffff',
-                        padding: '60px',
+                        padding: '80px',
                         color: '#000000',
                         direction: 'rtl'
                     }}
                 >
-                    <div style={{ textAlign: 'center', marginBottom: '40px', borderBottom: `3px solid #16a34a`, paddingBottom: '20px' }}>
-                        <h2 style={{ fontSize: '42px', fontWeight: 'bold', color: '#16a34a' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '60px', borderBottom: `4px solid #16a34a`, paddingBottom: '30px' }}>
+                        <h2 style={{ fontSize: '60px', fontWeight: 'bold', color: '#16a34a' }}>
                             صفحة {toArabic(pageNum)} - {pageSurahInfo}
                         </h2>
                         {pageAyahs.length > 0 && pageAyahs[0].sNum === pageAyahs[pageAyahs.length - 1].sNum && (
-                            <p style={{ fontSize: '28px', color: '#666', marginTop: '8px', fontWeight: 'bold' }}>
+                            <p style={{ fontSize: '40px', color: '#666', marginTop: '12px', fontWeight: 'bold' }}>
                                 {getSurahMetadata(pageAyahs[0].sNum)}
                             </p>
                         )}
@@ -896,33 +909,33 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         const isNewSurah = idx === 0 || pageAyahs[idx-1].sNum !== ay.sNum;
                         
                         return (
-                            <div key={`${ay.sNum}-${ay.numberInSurah}`} style={{ marginBottom: '40px' }}>
+                            <div key={`${ay.sNum}-${ay.numberInSurah}`} style={{ marginBottom: '60px' }}>
                                 {isNewSurah && idx > 0 && (
-                                    <div style={{ textAlign: 'center', margin: '40px 0', padding: '15px', backgroundColor: `rgba(22, 163, 74, 0.1)`, borderRadius: '12px' }}>
-                                        <h3 style={{ fontSize: '32px', fontWeight: 'bold', color: '#16a34a' }}>سورة {getSurahName(ay.sNum)}</h3>
+                                    <div style={{ textAlign: 'center', margin: '60px 0', padding: '20px', backgroundColor: `rgba(22, 163, 74, 0.1)`, borderRadius: '18px' }}>
+                                        <h3 style={{ fontSize: '48px', fontWeight: 'bold', color: '#16a34a' }}>سورة {getSurahName(ay.sNum)}</h3>
                                     </div>
                                 )}
                                 <div style={{ 
-                                    fontSize: '38px', 
+                                    fontSize: '54px', 
                                     lineHeight: '2.2', 
                                     fontFamily: 'var(--font-amiri-quran), serif',
                                     color: '#16a34a',
-                                    marginBottom: '20px',
+                                    marginBottom: '30px',
                                     textAlign: 'right'
                                 }}>
                                     {ayahText} ﴿{toArabic(ay.numberInSurah)}﴾
                                 </div>
                                 {explanation && (
                                     <div style={{
-                                        fontSize: '28px',
+                                        fontSize: '40px',
                                         lineHeight: '1.8',
                                         fontFamily: 'var(--font-cairo), sans-serif',
                                         color: '#333333',
                                         textAlign: 'right',
                                         backgroundColor: '#f8fafc',
-                                        padding: '25px',
-                                        borderRadius: '12px',
-                                        borderRight: '6px solid #3b82f6'
+                                        padding: '35px',
+                                        borderRadius: '18px',
+                                        borderRight: '10px solid #3b82f6'
                                     }}>
                                         {explanation}
                                     </div>
@@ -931,15 +944,15 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         );
                     })}
                     
-                    <div style={{ marginTop: '50px', paddingTop: '25px', borderTop: '4px solid #3b82f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontFamily: 'var(--font-lateef), serif', fontSize: '32px', color: '#3b82f6', fontWeight: 'bold' }}>مصحف احمد وليلى</span>
-                        <span style={{ opacity: 0.7, fontSize: '20px', fontWeight: 'bold' }}>{new Date().toLocaleDateString('ar-EG')}</span>
+                    <div style={{ marginTop: '70px', paddingTop: '35px', borderTop: '6px solid #3b82f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontFamily: 'var(--font-lateef), serif', fontSize: '48px', color: '#3b82f6', fontWeight: 'bold' }}>مصحف احمد وليلى</span>
+                        <span style={{ opacity: 0.7, fontSize: '28px', fontWeight: 'bold' }}>{new Date().toLocaleDateString('ar-EG')}</span>
                     </div>
                 </div>
             )}
 
-            <div className="min-h-full flex items-center justify-center p-2 sm:p-4">
-                <div className="modal-skinned rounded-2xl shadow-2xl w-full max-w-[360px] flex flex-col h-[650px] max-h-[90vh]" style={{ color: currentTheme.textColor || '#000000' }}>
+            <div className="w-full h-full flex items-center justify-center p-2" onClick={e => e.stopPropagation()}>
+                <div className="modal-skinned rounded-2xl shadow-2xl w-full max-w-lg flex flex-col h-full overflow-hidden" style={{ color: currentTheme.textColor || '#000000' }}>
                     
                     {/* Sticky Header Section */}
                     <div className="p-3 pb-2 border-b border-gray-100 shrink-0 z-10 bg-white rounded-t-2xl">
@@ -1019,6 +1032,31 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 {selectedBg.id !== 'bg_white' && (
                                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
                                 )}
+                                
+                                {shareType === 'page' && (
+                                    <div className="absolute inset-0 bg-white/95 flex flex-col items-center justify-center z-[30] rounded-xl border-2 border-emerald-500 animate-fadeIn">
+                                        <FileText size={48} className="text-emerald-600 mb-3" />
+                                        <span className="font-bold text-emerald-800 text-lg">مشاركة الصفحة كاملة</span>
+                                        <span className="text-sm text-gray-500 mt-2 px-4 text-center">سيتم تصدير الصفحة {toArabic(pageNum)} بجودة فائقة الدقة (4K)</span>
+                                    </div>
+                                )}
+
+                                {shareType === 'audio' && (
+                                    <div className="absolute inset-0 bg-blue-50/95 flex flex-col items-center justify-center z-[30] rounded-xl border-2 border-blue-500 animate-fadeIn">
+                                        <Volume2 size={48} className="text-blue-600 mb-3" />
+                                        <span className="font-bold text-blue-800 text-lg">مشاركة تلاوة صوتية</span>
+                                        <span className="text-sm text-gray-500 mt-2 px-4 text-center">سيتم دمج تلاوة الآيات المختارة في ملف MP3 واحد</span>
+                                    </div>
+                                )}
+
+                                {shareType === 'text' && (
+                                    <div className="absolute inset-0 bg-gray-50/95 flex flex-col items-center justify-center z-[30] rounded-xl border-2 border-gray-400 animate-fadeIn">
+                                        <Type size={48} className="text-gray-600 mb-3" />
+                                        <span className="font-bold text-gray-800 text-lg">مشاركة النص فقط</span>
+                                        <span className="text-sm text-gray-500 mt-2 px-4 text-center">سيتم نسخ نص الآيات مع التفسير المختار للمشاركة</span>
+                                    </div>
+                                )}
+
                                 <FrameOverlay frame={selectedFrame} />
                                 <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyItems: 'center', width: '100%' }}>
                                     {readingMode === 'mushaf' && (

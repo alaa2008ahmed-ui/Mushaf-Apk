@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download, Type, Shield } from 'lucide-react';
+import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download, Type, Shield, Bell } from 'lucide-react';
 import { THEMES, DEFAULT_SETTINGS, READERS, MEMORIZATION_READERS, RECITERS } from './constants';
 
 interface FloatingMenuProps {
@@ -31,9 +31,10 @@ const ALL_SHORTCUTS = [
     { id: 'audio', label: 'الصوتيات', icon: <Headphones size={18} /> },
     { id: 'interface-customization', label: 'تخصيص الواجهة', icon: <Palette size={18} /> },
     { id: 'font-type', label: 'نوع الخط', icon: <Type size={18} /> },
+    { id: 'notification-settings', label: 'الإشعارات', icon: <Bell size={18} /> },
 ];
 
-const DEFAULT_SHORTCUTS = ['quran-download-parent', 'tafseer-download', 'audio', 'interface-customization', 'font-type'];
+const DEFAULT_SHORTCUTS = ['quran-download-parent', 'tafseer-download', 'audio', 'interface-customization', 'font-type', 'notification-settings'];
 
 const FloatingMenu: React.FC<FloatingMenuProps> = ({
     page,
@@ -280,6 +281,8 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                                         openModal('toolbar-color-picker-modal');
                                                     } else if (shortcut.id === 'font-type') {
                                                         openModal('font-modal');
+                                                    } else if (shortcut.id === 'notification-settings') {
+                                                        openModal('notification-settings-modal');
                                                     } else {
                                                         onNavigate(shortcut.id);
                                                     }
