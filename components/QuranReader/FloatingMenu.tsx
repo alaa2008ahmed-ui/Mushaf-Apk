@@ -239,10 +239,10 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                                 >
                                                     <div 
                                                         className={`w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id ? 'scale-110 border-gray-400 shadow-md' : 'border-transparent hover:scale-105'}`}
-                                                        style={{ backgroundColor: id === 'black' ? '#000000' : (theme.accent || theme.barText || '#000000') }}
+                                                        style={{ backgroundColor: id === 'deep_black' ? '#000000' : (theme.accent || theme.barText || '#000000') }}
                                                     >
                                                         {localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id && (
-                                                            <div className={`w-2 h-2 rounded-full shadow-sm ${id === 'black' ? 'bg-emerald-500' : 'bg-white'}`}></div>
+                                                            <div className={`w-2 h-2 rounded-full shadow-sm ${id === 'deep_black' ? 'bg-emerald-500' : 'bg-white'}`}></div>
                                                         )}
                                                     </div>
                                                     <span className="text-[10px] font-bold opacity-80 truncate w-full text-center leading-tight" style={{ color: '#000000' }}>{theme.name}</span>

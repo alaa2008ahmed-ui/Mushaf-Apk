@@ -53,10 +53,73 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
         return builder.toString();
     }
 
+    static String translate(String text, boolean isArabic) {
+        if (text == null) return "";
+        if (isArabic) return text; // JS sends Arabic by default
+
+        // Prayer Names
+        text = text.replace("الفجر", "Fajr");
+        text = text.replace("الشروق", "Sunrise");
+        text = text.replace("الظهر", "Dhuhr");
+        text = text.replace("العصر", "Asr");
+        text = text.replace("المغرب", "Maghrib");
+        text = text.replace("العشاء", "Isha");
+
+        // Labels
+        text = text.replace("بعد", "After");
+        text = text.replace("منتصف الليل", "Midnight");
+        text = text.replace("الثلث الأخير", "Last Third");
+        
+        // Days
+        text = text.replace("الأحد", "Sunday");
+        text = text.replace("الإثنين", "Monday");
+        text = text.replace("الثلاثاء", "Tuesday");
+        text = text.replace("الأربعاء", "Wednesday");
+        text = text.replace("الخميس", "Thursday");
+        text = text.replace("الجمعة", "Friday");
+        text = text.replace("السبت", "Saturday");
+
+        // Months (Gregorian)
+        text = text.replace("يناير", "January");
+        text = text.replace("فبراير", "February");
+        text = text.replace("مارس", "March");
+        text = text.replace("أبريل", "April");
+        text = text.replace("مايو", "May");
+        text = text.replace("يونيو", "June");
+        text = text.replace("يوليو", "July");
+        text = text.replace("أغسطس", "August");
+        text = text.replace("سبتمبر", "September");
+        text = text.replace("أكتوبر", "October");
+        text = text.replace("نوفمبر", "November");
+        text = text.replace("ديسمبر", "December");
+
+        // Months (Hijri)
+        text = text.replace("المحرم", "Muharram");
+        text = text.replace("صفر", "Safar");
+        text = text.replace("ربيع الأول", "Rabi' al-Awwal");
+        text = text.replace("ربيع الآخر", "Rabi' al-Thani");
+        text = text.replace("جمادى الأولى", "Jumada al-Awwal");
+        text = text.replace("جمادى الآخرة", "Jumada al-Thani");
+        text = text.replace("رجب", "Rajab");
+        text = text.replace("شعبان", "Sha'ban");
+        text = text.replace("رمضان", "Ramadan");
+        text = text.replace("شوال", "Shawwal");
+        text = text.replace("ذو القعدة", "Dhu al-Qi'dah");
+        text = text.replace("ذو الحجة", "Dhu al-Hijjah");
+
+        // Separators
+        text = text.replace("،", ",");
+
+        return text;
+    }
+
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         // قراءة البيانات من مخزن Capacitor المشترك
         SharedPreferences prefs = context.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
         String prayerJson = prefs.getString("widget_prayer_data", null);
+
+        // Check system language
+        boolean isArabic = java.util.Locale.getDefault().getLanguage().equals("ar");
 
         // ربط الواجهة (الريدجت) مع الحزمة الصحيحة
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.prayer_widget);
@@ -83,10 +146,15 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                         "fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha", 
                         "nextFajr", "nextSunrise", "nextDhuhr", "nextAsr", "nextMaghrib", "nextIsha"
                     };
-                    String[] prayerNames = {
+                    String[] prayerNamesAr = {
                         "الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء", 
                         "الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء"
                     };
+                    String[] prayerNamesEn = {
+                        "Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha", 
+                        "Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"
+                    };
+                    String[] prayerNames = isArabic ? prayerNamesAr : prayerNamesEn;
                     
                     for (int i = 0; i < prayerIds.length; i++) {
                         if (timestamps.has(prayerIds[i])) {
@@ -106,9 +174,9 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                 }
 
                 // تحديث التاريخ الهجري ومعلومات الصلاة القادمة
-                views.setTextViewText(R.id.widget_hijri_date, formatNumerals(data.getString("day") + "، " + data.getString("hijri")));
-                views.setTextViewText(R.id.widget_gregorian_date, formatNumerals(data.getString("gregorian")));
-                views.setTextViewText(R.id.widget_next_prayer_name, nextPrayerName + " بعد");
+                views.setTextViewText(R.id.widget_hijri_date, formatNumerals(translate(data.getString("day") + "، " + data.getString("hijri"), isArabic)));
+                views.setTextViewText(R.id.widget_gregorian_date, formatNumerals(translate(data.getString("gregorian"), isArabic)));
+                views.setTextViewText(R.id.widget_next_prayer_name, translate(nextPrayerName + " بعد", isArabic));
                 
                 if (targetTimeMillis > 0) {
                     long remainingMillis = targetTimeMillis - System.currentTimeMillis();
@@ -149,10 +217,17 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                     views.setTextViewText(R.id.widget_next_prayer_time, formatNumerals(data.getString("remaining_time")));
                 }
                 
-                views.setTextViewText(R.id.widget_midnight, formatNumerals(data.getString("midnight")));
-                views.setTextViewText(R.id.widget_last_third, formatNumerals(data.getString("last_third")));
+                views.setTextViewText(R.id.widget_midnight, formatNumerals(translate(data.getString("midnight"), isArabic)));
+                views.setTextViewText(R.id.widget_last_third, formatNumerals(translate(data.getString("last_third"), isArabic)));
 
                 // تحديث أوقات الصلوات
+                views.setTextViewText(R.id.name_fajr, isArabic ? "الفجر" : "Fajr");
+                views.setTextViewText(R.id.name_sunrise, isArabic ? "الشروق" : "Sunrise");
+                views.setTextViewText(R.id.name_dhuhr, isArabic ? "الظهر" : "Dhuhr");
+                views.setTextViewText(R.id.name_asr, isArabic ? "العصر" : "Asr");
+                views.setTextViewText(R.id.name_maghrib, isArabic ? "المغرب" : "Maghrib");
+                views.setTextViewText(R.id.name_isha, isArabic ? "العشاء" : "Isha");
+
                 views.setTextViewText(R.id.time_fajr, formatNumerals(times.getString("fajr")));
                 views.setTextViewText(R.id.time_sunrise, formatNumerals(times.getString("sunrise")));
                 views.setTextViewText(R.id.time_dhuhr, formatNumerals(times.getString("dhuhr")));
