@@ -125,8 +125,17 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
         color: currentTheme?.accent || '#6d28d9'
     };
 
+    const borderColor = currentTheme?.palette?.[0] || currentTheme?.accent || '#d97706';
+    const pageNumColor = currentTheme?.palette?.[1] || currentTheme?.textColor || '#1d4ed8';
+    const bracketColor = currentTheme?.palette?.[2] || currentTheme?.accent || '#d97706';
+
     return (
-        <div id={`page-${pageNum}`} className={`mushaf-page ${pageNum === 1 ? 'first-page' : ''}`} data-page={pageNum} ref={pageRef} style={{ backgroundColor: 'transparent' }}>
+        <div id={`page-${pageNum}`} className={`mushaf-page ${pageNum === 1 ? 'first-page' : ''}`} data-page={pageNum} ref={pageRef} style={{ 
+            backgroundColor: 'transparent',
+            borderLeft: `6px double ${borderColor}`,
+            borderRight: `6px double ${borderColor}`,
+            boxSizing: 'border-box'
+        }}>
             <div className="page-content" style={pageStyle}>
                 {pageData.map((ayah, index) => {
                     const isSajdah = SAJDAH_LOCATIONS.some(sl => sl.s === ayah.sNum && sl.a === ayah.numberInSurah);
@@ -244,11 +253,11 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
             </div>
             <div className="page-footer" style={{ flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <span className="page-number-bracket" style={{ color: currentTheme?.accent || '#d97706' }}>﴿</span>
-                    <span className="page-number-text" style={{ color: currentTheme?.accent || '#1d4ed8' }}>{toArabic(pageNum)}</span>
-                    <span className="page-number-bracket" style={{ color: currentTheme?.accent || '#d97706' }}>﴾</span>
+                    <span className="page-number-bracket" style={{ color: bracketColor }}>﴿</span>
+                    <span className="page-number-text" style={{ color: pageNumColor }}>{toArabic(pageNum)}</span>
+                    <span className="page-number-bracket" style={{ color: bracketColor }}>﴾</span>
                 </div>
-                <div style={{ width: '60%', height: '2px', backgroundColor: currentTheme?.accent || '#d97706', marginTop: '12px', opacity: 0.7, borderRadius: '1px' }}></div>
+                <div style={{ width: '60%', height: '2px', backgroundColor: borderColor, marginTop: '12px', opacity: 0.7, borderRadius: '1px' }}></div>
             </div>
         </div>
     );
