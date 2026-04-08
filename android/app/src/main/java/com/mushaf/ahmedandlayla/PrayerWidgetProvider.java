@@ -31,6 +31,21 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
         updateAppWidget(context, appWidgetManager, appWidgetId);
     }
 
+    static String toArabicNumerals(String input) {
+        if (input == null) return "";
+        char[] arabicChars = {'٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'};
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            if (Character.isDigit(c)) {
+                builder.append(arabicChars[Character.getNumericValue(c)]);
+            } else {
+                builder.append(c);
+            }
+        }
+        return builder.toString();
+    }
+
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         // قراءة البيانات من مخزن Capacitor المشترك
         SharedPreferences prefs = context.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
@@ -84,8 +99,8 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                 }
 
                 // تحديث التاريخ الهجري ومعلومات الصلاة القادمة
-                views.setTextViewText(R.id.widget_hijri_date, data.getString("day") + "، " + data.getString("hijri"));
-                views.setTextViewText(R.id.widget_gregorian_date, data.getString("gregorian"));
+                views.setTextViewText(R.id.widget_hijri_date, toArabicNumerals(data.getString("day") + "، " + data.getString("hijri")));
+                views.setTextViewText(R.id.widget_gregorian_date, toArabicNumerals(data.getString("gregorian")));
                 views.setTextViewText(R.id.widget_next_prayer_name, nextPrayerName + " بعد");
                 
                 if (targetTimeMillis > 0) {
@@ -124,19 +139,19 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                     }
                 } else {
                     // Fallback if target_time_millis is not available
-                    views.setChronometer(R.id.widget_next_prayer_time, android.os.SystemClock.elapsedRealtime(), data.getString("remaining_time"), false);
+                    views.setTextViewText(R.id.widget_next_prayer_time, toArabicNumerals(data.getString("remaining_time")));
                 }
                 
-                views.setTextViewText(R.id.widget_midnight, data.getString("midnight"));
-                views.setTextViewText(R.id.widget_last_third, data.getString("last_third"));
+                views.setTextViewText(R.id.widget_midnight, toArabicNumerals(data.getString("midnight")));
+                views.setTextViewText(R.id.widget_last_third, toArabicNumerals(data.getString("last_third")));
 
                 // تحديث أوقات الصلوات
-                views.setTextViewText(R.id.time_fajr, times.getString("fajr"));
-                views.setTextViewText(R.id.time_sunrise, times.getString("sunrise"));
-                views.setTextViewText(R.id.time_dhuhr, times.getString("dhuhr"));
-                views.setTextViewText(R.id.time_asr, times.getString("asr"));
-                views.setTextViewText(R.id.time_maghrib, times.getString("maghrib"));
-                views.setTextViewText(R.id.time_isha, times.getString("isha"));
+                views.setTextViewText(R.id.time_fajr, toArabicNumerals(times.getString("fajr")));
+                views.setTextViewText(R.id.time_sunrise, toArabicNumerals(times.getString("sunrise")));
+                views.setTextViewText(R.id.time_dhuhr, toArabicNumerals(times.getString("dhuhr")));
+                views.setTextViewText(R.id.time_asr, toArabicNumerals(times.getString("asr")));
+                views.setTextViewText(R.id.time_maghrib, toArabicNumerals(times.getString("maghrib")));
+                views.setTextViewText(R.id.time_isha, toArabicNumerals(times.getString("isha")));
 
                 // إعداد الألوان (تصفير الألوان)
                 int defaultColor = Color.parseColor("#000000");
