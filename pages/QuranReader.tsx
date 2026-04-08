@@ -1104,15 +1104,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 
                 let targetScrollTop = container.scrollTop + (elRect.top - containerRect.top) - (containerRect.height / 2) + (elRect.height / 2);
                 
-                if (isPageJump) {
-                    // Find the page element that contains this ayah
-                    const pageEl = element.closest('.mushaf-page');
-                    if (pageEl) {
-                        const pageRect = pageEl.getBoundingClientRect();
-                        targetScrollTop = container.scrollTop + (pageRect.top - containerRect.top);
-                    }
-                }
-                
                 if (instant) {
                     container.scrollTop = targetScrollTop;
                 } else {
@@ -2063,8 +2054,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         lastNotifiedQuarter.current = null;
         
         const p = Number(ayah.page);
-        // Add 2 to the target page to fix the offset issue reported by the user
-        const targetPage = Math.min(604, p + 2);
+        const targetPage = p;
         
         flushSync(() => {
             setVisiblePages([...new Set([targetPage, targetPage + 1, targetPage + 2, targetPage - 1, targetPage - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b));
@@ -2081,8 +2071,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         if (!quranData || isNaN(pageNum) || pageNum < 1 || pageNum > 604) return;
         setLastInteractionType('page');
         
-        // Add 2 to the target page to fix the offset issue reported by the user
-        const targetPageNum = Math.min(604, pageNum + 2);
+        const targetPageNum = pageNum;
         
         const pageData = getPageData(targetPageNum);
         if (pageData && pageData.length > 0) {
@@ -2870,6 +2859,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                                 settings={displaySettings} 
                                 currentTheme={currentTheme}
                                 hideVerses={isHideMode}
+                                memorizationSettings={localMemorizationSettings}
                             />
                         );
                     })}

@@ -19,11 +19,12 @@ interface MushafPageProps {
     };
     currentTheme?: any;
     hideVerses?: boolean;
+    memorizationSettings?: any;
 }
 
 export const fixQuranText = (text: string) => {
     if (!text) return text;
-    return text.replace(/۞/g, '');
+    return text.replace(/[۞۩]/g, '');
 };
 
 /**
@@ -44,7 +45,7 @@ export const renderTajweedTextHtml = (text: string) => {
     return fixQuranText(text);
 };
 
-const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme, hideVerses }) => {
+const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme, hideVerses, memorizationSettings }) => {
     const pageRef = useRef<HTMLDivElement | null>(null);
     const longPressTimer = useRef<number | null>(null);
     const isLongPressTriggered = useRef(false);

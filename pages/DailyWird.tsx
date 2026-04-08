@@ -252,8 +252,9 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   };
 
   const handleOpenQuran = (page: number, initialAyah?: { s: number; a: number }) => {
+    const targetPage = Math.max(1, page - 2);
     onNavigate('quran', { 
-      page: page, 
+      page: targetPage, 
       surah: initialAyah?.s, 
       ayah: initialAyah?.a, 
       isWird: true

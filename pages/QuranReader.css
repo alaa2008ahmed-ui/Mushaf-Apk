@@ -191,7 +191,9 @@
 }
 
 .page-content {
-    text-align: center;
+    text-align: justify;
+    text-align-last: center;
+    text-justify: auto;
     line-height: 2.5;
     font-size: 1.7rem;
     letter-spacing: 0; 
@@ -204,9 +206,8 @@
 }
 
 /* CSS Fix: display: contents for spans to maintain Arabic shaping across all Quran text containers */
-.page-content span, 
 .ayah-text span, 
-.ayah-text-block span,
+.ayah-text-block > span[style*="display: contents"] span,
 .search-context-ayah span,
 .share-preview-text span {
     display: contents !important;
@@ -233,12 +234,12 @@
     text-rendering: optimizeLegibility;
 }
 .ayah-text-block.highlighted { 
-    background-color: rgba(128, 128, 128, 0.15) !important;
+    background-color: transparent !important;
     color: var(--qr-highlight-text, #d97706) !important;
     text-shadow: 0 0 1px currentColor;
 }
 .dark .ayah-text-block.highlighted { 
-    background-color: rgba(255, 255, 255, 0.15) !important; 
+    background-color: transparent !important; 
     color: var(--qr-highlight-text, #fbbf24) !important;
 }
 
@@ -261,14 +262,14 @@
 }
 
 .sajdah-icon-inline {
-    color: var(--qr-accent, #10b981);
+    color: var(--color-sajdah, #d97706);
     font-size: 1.2em;
     margin: 0 4px;
     vertical-align: middle;
     font-family: var(--font-hafs);
 }
 
-.verse-container { cursor: pointer; display: inline-block; }
+.verse-container { cursor: pointer; display: inline; }
 .verse-bracket { color: #059669; font-weight: bold; font-family: var(--font-hafs); font-size: 0.8em; }
 .verse-num-inner { color: #b91c1c; font-weight: bold; font-family: var(--font-hafs); padding: 0 1px; transition: color 0.2s; font-size: 0.8em; }
 .dark .verse-bracket { color: #34d399; }
