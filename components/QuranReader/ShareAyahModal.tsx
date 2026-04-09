@@ -15,6 +15,7 @@ interface ShareAyahModalProps {
     currentTheme: any;
     readingMode?: 'mushaf' | 'tafseer' | 'meanings' | 'translation';
     settings?: any;
+    showToast?: (msg: string) => void;
 }
 
 const BACKGROUNDS = [
@@ -104,7 +105,8 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     quranData,
     currentTheme,
     readingMode = 'mushaf',
-    settings: propSettings
+    settings: propSettings,
+    showToast
 }) => {
     const [shareType, setShareType] = useState<'text' | 'image' | 'page' | 'audio'>('image');
     const [fromAyah, setFromAyah] = useState(currentAyah.a);
@@ -119,6 +121,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const [customText, setCustomText] = useState('');
     const [isSharing, setIsSharing] = useState(false);
     const [isCopying, setIsCopying] = useState(false);
+    const [showCopySuccess, setShowCopySuccess] = useState(false);
     const [explanationData, setExplanationData] = useState<any>(null);
     const [appSettings, setAppSettings] = useState<any>(null);
     const previewRef = useRef<HTMLDivElement>(null);
@@ -314,7 +317,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         text: fullText,
                     });
                 } else {
-                    alert("المشاركة غير مدعومة في هذا المتصفح");
+                    showToast?.("المشاركة غير مدعومة في هذا المتصفح");
                 }
             } else if (shareType === 'image' && hiddenImageCaptureRef.current) {
                 try {
@@ -379,7 +382,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     }
                 } catch (e) {
                     console.error('Error sharing image:', e);
-                    alert("حدث خطأ أثناء إنشاء الصورة");
+                    showToast?.("حدث خطأ أثناء إنشاء الصورة");
                 }
             } else if (shareType === 'page') {
                 const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
@@ -640,7 +643,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     }
                 } catch (e) {
                     console.error('Error sharing audio file:', e);
-                    alert("حدث خطأ أثناء تحميل الملفات الصوتية");
+                    showToast?.("حدث خطأ أثناء تحميل الملفات الصوتية");
                 }
             }
         } catch (error) {
@@ -658,10 +661,10 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         
         try {
             await navigator.clipboard.writeText(fullText);
-            alert("تم نسخ النص بنجاح");
+            setShowCopySuccess(true);
         } catch (err) {
             console.error('Failed to copy text: ', err);
-            alert("فشل نسخ النص");
+            showToast?.("فشل نسخ النص");
         } finally {
             setIsCopying(false);
         }
@@ -1353,6 +1356,29 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     </div>
                 </div>
             </div>
+
+            {showCopySuccess && (
+                <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center px-4 animate-fadeIn" onClick={() => setShowCopySuccess(false)}>
+                    <div className="modal-skinned w-full max-w-xs rounded-2xl overflow-hidden shadow-2xl animate-scaleIn" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 flex flex-col items-center text-center gap-4">
+                            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                <i className="fa-solid fa-check text-3xl"></i>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-1">تم النسخ!</h3>
+                                <p className="text-sm text-gray-600">تم نسخ نص الآيات بنجاح إلى الحافظة</p>
+                            </div>
+                            <button 
+                                onClick={() => setShowCopySuccess(false)}
+                                className="w-full py-3 rounded-xl font-bold text-white transition-all active:scale-95 shadow-md"
+                                style={{ backgroundColor: currentTheme.accent || '#16a34a' }}
+                            >
+                                موافق
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -370,15 +370,22 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     };
 
     return (
-        <div 
-            ref={floatingMenuRef}
-            className={`fixed top-[calc(3.5rem+var(--logical-safe-top))] bottom-[calc(3.5rem+var(--logical-safe-bottom))] right-4 z-[1000] flex items-start gap-4 pointer-events-none`}
-            dir="rtl"
-        >
+        <>
+            {/* Backdrop to block interaction with background and close menu on click */}
+            <div 
+                className={`fixed inset-0 z-[999] transition-opacity duration-300 ${isFloatingMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                onClick={() => setIsFloatingMenuOpen(false)}
+                style={{ backgroundColor: 'rgba(0,0,0,0.05)' }}
+            />
+            <div 
+                ref={floatingMenuRef}
+                className={`fixed top-[calc(3.5rem+var(--logical-safe-top))] bottom-[calc(3.5rem+var(--logical-safe-bottom))] right-4 z-[1000] flex items-start gap-4 pointer-events-none`}
+                dir="rtl"
+            >
             {/* The Main Menu Container */}
             <div 
                 id="floating-menu" 
-                className={`w-[260px] max-w-[85vw] bg-white rounded-2xl shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
+                className={`w-[200px] max-w-[85vw] bg-white rounded-2xl shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
                 style={{ 
                     fontFamily: currentTheme.font,
                     borderTop: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
@@ -1072,6 +1079,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                 )}
             </div>
         </div>
+        </>
     );
 };
 
@@ -1185,6 +1193,7 @@ const ToolbarColorPickerContent: React.FC<{
         setToolbarColors(newColors);
         localStorage.setItem('toolbar_colors_v2' + modeSuffix, JSON.stringify(newColors));
         window.dispatchEvent(new Event('theme-change'));
+        setActivePicker(null);
     };
 
     const resetColors = () => {
@@ -1213,44 +1222,45 @@ const ToolbarColorPickerContent: React.FC<{
                 استعادة الألوان الافتراضية
             </button>
 
-            {activePicker && (
-                <div className="p-4 bg-white rounded-2xl border-2 border-gray-100 shadow-sm space-y-3 animate-fadeIn">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-gray-700">
-                            اختر لون {activePicker.type === 'bg' ? 'الخلفية' : activePicker.type === 'text' ? 'النص' : 'الحدود'}
-                        </span>
-                        <button onClick={() => setActivePicker(null)} className="p-1 hover:bg-gray-100 rounded-full">
-                            <X size={14} className="text-gray-400" />
-                        </button>
-                    </div>
-                    <div className="grid grid-cols-7 gap-1.5">
-                        {PRESET_COLORS.map((color, i) => {
-                            const currentValue = toolbarColors[activePicker.sectionId]?.[activePicker.type] || 
-                                (activePicker.type === 'bg' ? currentTheme.barBg : activePicker.type === 'text' ? currentTheme.barText : currentTheme.barBorder);
-                            const isSelected = currentValue === color;
-                            
-                            return (
-                                <button
-                                    key={i}
-                                    onClick={() => updateColor(activePicker.sectionId, activePicker.type, color)}
-                                    className={`w-full aspect-square rounded-lg border-2 transition-all flex items-center justify-center relative overflow-hidden ${isSelected ? 'border-emerald-500 scale-110 z-10 shadow-md' : 'border-transparent hover:scale-105'}`}
-                                    style={{ 
-                                        backgroundColor: color === 'transparent' ? 'white' : color,
-                                        backgroundImage: color === 'transparent' ? 'repeating-conic-gradient(#e5e7eb 0% 25%, #ffffff 0% 50%)' : 'none',
-                                        backgroundSize: color === 'transparent' ? '8px 8px' : 'auto'
-                                    }}
-                                >
-                                    {isSelected && <Check size={12} className={color === '#ffffff' || color === 'transparent' ? 'text-emerald-600' : 'text-white'} />}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
             {sections.map(section => (
                 <div key={section.id} className="p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-3">
                     <h4 className="text-xs font-bold text-gray-700">{section.label}</h4>
+                    
+                    {activePicker?.sectionId === section.id && (
+                        <div className="p-3 bg-white rounded-xl border-2 border-emerald-100 shadow-sm space-y-3 animate-fadeIn">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-gray-700">
+                                    اختر لون {activePicker.type === 'bg' ? 'الخلفية' : activePicker.type === 'text' ? 'النص' : 'الحدود'}
+                                </span>
+                                <button onClick={() => setActivePicker(null)} className="p-1 hover:bg-gray-100 rounded-full">
+                                    <X size={12} className="text-gray-400" />
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-6 gap-1">
+                                {PRESET_COLORS.map((color, i) => {
+                                    const currentValue = toolbarColors[activePicker.sectionId]?.[activePicker.type] || 
+                                        (activePicker.type === 'bg' ? currentTheme.barBg : activePicker.type === 'text' ? currentTheme.barText : currentTheme.barBorder);
+                                    const isSelected = currentValue === color;
+                                    
+                                    return (
+                                        <button
+                                            key={i}
+                                            onClick={() => updateColor(activePicker.sectionId, activePicker.type, color)}
+                                            className={`w-full aspect-square rounded-lg border transition-all flex items-center justify-center relative overflow-hidden ${isSelected ? 'border-emerald-500 scale-110 z-10 shadow-sm' : 'border-gray-100 hover:scale-105'}`}
+                                            style={{ 
+                                                backgroundColor: color === 'transparent' ? 'white' : color,
+                                                backgroundImage: color === 'transparent' ? 'repeating-conic-gradient(#e5e7eb 0% 25%, #ffffff 0% 50%)' : 'none',
+                                                backgroundSize: color === 'transparent' ? '8px 8px' : 'auto'
+                                            }}
+                                        >
+                                            {isSelected && <Check size={10} className={color === '#ffffff' || color === 'transparent' ? 'text-emerald-600' : 'text-white'} />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="flex gap-4">
                         {[
                             { type: 'bg' as const, label: 'الخلفية', defaultValue: currentTheme.barBg || '#ffffff' },

@@ -36,7 +36,7 @@ const QuranFooter: React.FC<QuranFooterProps> = React.memo(({
     onBack
 }) => {
     return (
-        <footer id="bottom-bar" className={`footer-default flex-none border shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 flex justify-around items-center px-1 py-1 w-full`} style={getToolbarStyle('bottom-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
+        <footer id="bottom-bar" className={`footer-default flex-none border shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 flex justify-around items-center px-1 py-1 w-full ${isFloatingMenuOpen ? 'pointer-events-none opacity-50' : ''}`} style={getToolbarStyle('bottom-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
             <button 
                 id="btn-share" 
                 onClick={() => openModal('share-ayah')} 
