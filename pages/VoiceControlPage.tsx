@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useVoiceControl, VoiceCommand } from '../context/VoiceControlContext';
-import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, RotateCcw, ChevronRight, WifiOff } from 'lucide-react';
+import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, RotateCcw, ChevronRight, WifiOff, BookOpen } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import BottomBar from '../components/BottomBar';
+import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 
 const AVAILABLE_ACTIONS = [
     { id: 'go_home', name: 'الرئيسية' },
@@ -107,6 +108,29 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
         }
     };
 
+    const voiceControlTutorialSteps: TutorialStep[] = [
+        {
+            id: 'voice-welcome',
+            text: 'التحكم الصوتي: ميزة ثورية تتيح لك التحكم في التطبيق بالكامل عبر أوامرك الصوتية.',
+            position: { top: '20%' },
+            icon: <Mic className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'voice-toggle',
+            text: 'تفعيل الخدمة: اضغط هنا لتشغيل أو إيقاف خاصية الاستماع للأوامر الصوتية.',
+            position: { top: '30%' },
+            arrow: 'up',
+            selector: '#voice-toggle-btn',
+            icon: <Mic className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'voice-commands',
+            text: 'دليل الأوامر: استعرض قائمة الأوامر المتاحة وكيفية نطقها للوصول السريع لأي قسم.',
+            position: { top: '50%' },
+            icon: <ChevronRight className="w-8 h-8 text-white" />
+        }
+    ];
+
     return (
         <div className="h-screen flex flex-col bg-transparent overflow-hidden">
             <header className="app-top-bar">
@@ -136,6 +160,7 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                         {/* Mic Button Section */}
                         <div className="flex flex-col items-center justify-center space-y-3">
                             <motion.button 
+                                id="voice-toggle-btn"
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={handleToggleVoiceControl}
@@ -289,6 +314,7 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
             </main>
 
             <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
+            <TutorialOverlay tutorialId="voice-control-tutorial" steps={voiceControlTutorialSteps} />
         </div>
     );
 };

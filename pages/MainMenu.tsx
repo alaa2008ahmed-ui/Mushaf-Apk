@@ -117,7 +117,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
   const homeTutorialSteps: TutorialStep[] = [
     {
       id: 'welcome',
-      text: 'أهلاً بك في تطبيق "مُصْحَفُ أَحْمَدَ وَلَيْلَى". إليك جولة سريعة للتعرف على المميزات.',
+      text: 'أهلاً بك في تطبيق "مُصْحَفُ أَحْمَدَ وَلَيْلَى". إليك جولة سريعة للتعرف على المميزات الجديدة في هذا التحديث.',
       position: { top: '20%' },
       selector: '#app-title',
       arrow: 'up',
@@ -125,7 +125,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
     },
     {
       id: 'verse',
-      text: 'هنا تجد آية يومية متجددة لتدبر كتاب الله.',
+      text: 'آية اليوم: تدبر آية جديدة يومياً. يمكنك الآن الضغط مطولاً على الآية لتخصيص مظهرها (الخط، الألوان، الخلفية).',
       position: { top: '30%' },
       selector: '#verse-section',
       arrow: 'up',
@@ -133,30 +133,38 @@ function MainMenu({ onNavigate, onOpenThemes }) {
     },
     {
       id: 'grid',
-      text: 'من هنا يمكنك الوصول السريع لجميع أقسام التطبيق.',
+      text: 'الأقسام الرئيسية: تم إضافة "الورد اليومي" و"التحفيظ" لتسهيل متابعة ختمتك وحفظك.',
       position: { top: '50%' },
       selector: '#grid-section',
       icon: <LayoutGrid className="w-8 h-8 text-white" />
     },
     {
       id: 'voice',
-      text: 'يمكنك تفعيل التحكم الصوتي للتنقل بين الصفحات وقراءة القرآن بصوتك.',
+      text: 'التحكم الصوتي: ميزة جديدة تتيح لك التنقل في التطبيق وقراءة القرآن باستخدام أوامرك الصوتية.',
       position: { bottom: '120px', left: '20px' },
       selector: '#voice-control-btn',
       arrow: 'down',
       icon: <Mic className="w-8 h-8 text-white" />
     },
     {
+      id: 'more-page',
+      text: 'صفحة المزيد: اكتشف جميع أقسام التطبيق الإضافية والمميزات الجديدة في مكان واحد.',
+      position: { bottom: '150px', right: '50%' },
+      selector: '[data-id="nav-button-more"]',
+      arrow: 'down',
+      icon: <LayoutGrid className="w-8 h-8 text-white" />
+    },
+    {
       id: 'themes',
-      text: 'خصص مظهر التطبيق والألوان بما يناسب ذوقك.',
-      position: { bottom: '100px', right: '20px' },
+      text: 'تخصيص المظهر: اختر من بين مجموعة واسعة من الثيمات والألوان التي تناسب ذوقك.',
+      position: { bottom: '80px', left: '20%' },
       selector: '#themes-btn',
       arrow: 'down',
       icon: <Palette className="w-8 h-8 text-white" />
     },
     {
       id: 'whatsapp',
-      text: 'يمكنك التواصل لاعطاء اقتراحات او تعديلات بالتواصل مع رقم الهاتف على الواتساب.',
+      text: 'تواصل معنا: يمكنك إرسال اقتراحاتك أو طلب تعديلات عبر الواتساب مباشرة.',
       position: { bottom: '100px', right: '20px' },
       selector: '#whatsapp-button-container',
       arrow: 'down',

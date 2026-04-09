@@ -1207,10 +1207,13 @@ const ToolbarColorPickerContent: React.FC<{
         { id: 'top-toolbar', label: 'الشريط العلوي' },
         { id: 'bottom-toolbar', label: 'الشريط السفلي' },
         { id: 'surah', label: 'زر السورة' },
-        { id: 'juz', label: 'زر الجزء' },
         { id: 'page', label: 'زر الصفحة' },
         { id: 'audio', label: 'أزرار الصوت' },
         { id: 'btn-menu', label: 'زر القائمة' },
+        { id: 'btn-home', label: 'زر الرئيسية' },
+        { id: 'btn-autoscroll', label: 'زر التمرير' },
+        { id: 'btn-share', label: 'زر المشاركة' },
+        { id: 'btn-bookmark', label: 'زر حفظ الإشارة' },
     ];
 
     return (

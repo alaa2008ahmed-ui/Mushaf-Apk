@@ -578,7 +578,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
                 'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder },
                 'surah': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder, font: theme.font },
-                'juz': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder, font: theme.font },
                 'page': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder, font: theme.font },
                 'audio': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
                 'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
@@ -767,6 +766,21 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const isJumpingRef = useRef(false);
     const wasAutoscrollingBeforeModal = useRef(false);
 
+    const isAnyMenuOpen = isFloatingMenuOpen || 
+                          activeModals.length > 0 || 
+                          ayahContextMenu.isOpen || 
+                          showWirdCompleteModal || 
+                          showResumeModal || 
+                          showReviewTest || 
+                          isRecording ||
+                          tafseerInfo.isOpen ||
+                          quranMeaningsInfo.isOpen ||
+                          quranTranslationInfo.isOpen ||
+                          ayahActionMenu.isOpen ||
+                          tafseerSelectionInfo.isOpen ||
+                          isAutoScrollSettingsOpen ||
+                          sajdahCardInfo.show;
+
     const [settings, setSettings] = useState(() => {
         const mode = initialLandscape ? '_h' : '_v';
         const saved = localStorage.getItem('quran_settings' + mode);
@@ -894,7 +908,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         },
         {
             id: 'ayah-text',
-            text: 'تفاعل مع الايه اضغط على نص الايه مطولا لعرض لون ونوع الخط ولون الخلفيه ولون التحديد',
+            text: 'تفاعل مع الآية: اضغط مطولاً على نص الآية لتخصيص نوع الخط، لون الخلفية، ولون التحديد بسرعة.',
             position: { top: '300px' },
             arrow: 'up',
             selector: '.ayah-text-block',
@@ -902,7 +916,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         },
         {
             id: 'ayah-number',
-            text: 'رقم الايه لعرض التفسير واضغط مطولا للاختيار من التفسيرات المختلفه',
+            text: 'التفسير: اضغط على رقم الآية لعرض التفسير، واضغط مطولاً للاختيار من بين تفاسير مختلفة.',
             position: { top: '350px' },
             arrow: 'up',
             selector: '.verse-container',
@@ -916,7 +930,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         },
         {
             id: 'main-menu',
-            text: 'القائمة العائمة: اضغط هنا للوصول السريع للبحث، المظهر، قائمة العلامات، والإعدادات العامة.',
+            text: 'القائمة الجانبية: اضغط هنا للوصول لخيارات البحث، المظهر، التحميلات، وتخصيص ألوان الأزرار.',
             position: { bottom: '80px', right: '20px' },
             arrow: 'down',
             selector: '#btn-menu',
@@ -924,7 +938,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         },
         {
             id: 'bookmark-feature',
-            text: 'حفظ العلامة: اضغط لحفظ موضعك الحالي، واضغط مطولاً لعرض وإدارة قائمة علاماتك.',
+            text: 'حفظ العلامة: اضغط لحفظ موضعك الحالي، واضغط مطولاً لإدارة قائمة علاماتك.',
             position: { bottom: '80px', right: '35%' },
             arrow: 'down',
             selector: '#btn-bookmark',
@@ -932,7 +946,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         },
         {
             id: 'autoscroll-feature',
-            text: 'التمرير التلقائي: اضغط لبدء أو إيقاف التمرير، واضغط مطولاً لضبط السرعة والأوقات المفضلة.',
+            text: 'التمرير التلقائي: اضغط لبدء أو إيقاف التمرير، واضغط مطولاً لضبط السرعة المفضلة.',
             position: { bottom: '80px', left: '35%' },
             arrow: 'down',
             selector: '#btn-autoscroll',
@@ -2940,6 +2954,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 handleMushafTypeSelect={handleMushafTypeSelect}
                 setIsFloatingMenuOpen={setIsFloatingMenuOpen}
                 isFloatingMenuOpen={isFloatingMenuOpen}
+                isAnyMenuOpen={isAnyMenuOpen}
             />
             <FloatingMenu 
                 page={page}
@@ -3058,6 +3073,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 getToolbarStyle={getToolbarStyle}
                 setIsFloatingMenuOpen={setIsFloatingMenuOpen}
                 isFloatingMenuOpen={isFloatingMenuOpen}
+                isAnyMenuOpen={isAnyMenuOpen}
                 openModal={openModal}
                 menuButtonRef={menuButtonRef}
                 handleBookmarkButtonPointerDown={handleBookmarkButtonPointerDown}

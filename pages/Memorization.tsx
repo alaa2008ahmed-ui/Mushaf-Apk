@@ -163,8 +163,14 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
 
     const memorizationTutorialSteps: TutorialStep[] = [
         {
+            id: 'memo-welcome',
+            text: 'التحفيظ: ميزة جديدة لمساعدتك على حفظ القرآن الكريم وتثبيته عبر خطط منظمة.',
+            position: { top: '20%' },
+            icon: <BookOpen className="w-8 h-8 text-white" />
+        },
+        {
             id: 'reader-select',
-            text: 'اختيار القارئ: يمكنك اختيار القارئ المفضل لك من هنا.',
+            text: 'اختيار القارئ: اختر القارئ الذي تفضل الاستماع إليه أثناء الحفظ.',
             position: { top: '30%' },
             arrow: 'up',
             selector: '#reader-select-container',
@@ -172,7 +178,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
         },
         {
             id: 'ayah-range',
-            text: 'نطاق الآيات: حدد السورة والآية التي تود البدء منها والانتهاء إليها.',
+            text: 'نطاق الآيات: حدد السورة والآيات التي تود حفظها أو مراجعتها بدقة.',
             position: { top: '40%' },
             arrow: 'up',
             selector: '#ayah-range-container',
@@ -180,7 +186,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
         },
         {
             id: 'start-btn',
-            text: 'بدء الحفظ: اضغط هنا للبدء في جلسة التحفيظ.',
+            text: 'بدء الحفظ: اضغط هنا للانتقال لصفحة التحفيظ والبدء في رحلة الحفظ.',
             position: { bottom: '100px' },
             arrow: 'down',
             selector: '#btn-start-memorization',

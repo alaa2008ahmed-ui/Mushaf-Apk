@@ -53,7 +53,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
     const settingsTutorialSteps: TutorialStep[] = [
         {
             id: 'font-size',
-            text: 'تحكم في حجم الخط بما يتناسب مع راحتك.',
+            text: 'حجم الخط: تحكم في حجم الخط بما يتناسب مع راحتك أثناء القراءة.',
             position: { top: '150px' },
             arrow: 'up',
             selector: '#font-size-section',
@@ -61,7 +61,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         },
         {
             id: 'colors',
-            text: 'غير ألوان النص والخلفية والتحديد لتجربة قراءة مخصصة.',
+            text: 'الألوان المخصصة: غير ألوان النص والخلفية والتحديد لتجربة قراءة مريحة لعينيك.',
             position: { top: '250px' },
             arrow: 'up',
             selector: '#colors-section',
@@ -69,7 +69,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         },
         {
             id: 'font-family',
-            text: 'اختر نوع الخط الذي تفضله للقراءة.',
+            text: 'نوع الخط: اختر من بين مجموعة متنوعة من الخطوط العربية الأصيلة.',
             position: { top: '350px' },
             arrow: 'up',
             selector: '#font-family-section',
@@ -77,7 +77,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         },
         {
             id: 'reciter',
-            text: 'اختر قارئك المفضل من قائمة القراء المتاحين.',
+            text: 'القارئ المفضل: اختر قارئك المفضل للاستماع إلى التلاوة العطرة.',
             position: { top: '420px' },
             arrow: 'up',
             selector: '#reciter-section',
@@ -85,7 +85,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         },
         {
             id: 'ayah-repeat',
-            text: 'حدد عدد مرات تكرار الآية الواحدة عند الاستماع.',
+            text: 'تكرار الآيات: ميزة مفيدة للحفظ، تتيح لك تكرار الآية الواحدة عدة مرات.',
             position: { top: '500px' },
             arrow: 'up',
             selector: '#ayah-repeat-section',
@@ -93,7 +93,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         },
         {
             id: 'tafseer',
-            text: 'اختر كتاب التفسير الذي تود عرضه مع الآيات.',
+            text: 'اختيار التفسير: حدد كتاب التفسير الذي تود الرجوع إليه لتدبر المعاني.',
             position: { top: '580px' },
             arrow: 'up',
             selector: '#tafseer-section',
@@ -101,7 +101,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         },
         {
             id: 'scroll-speed',
-            text: 'اضبط سرعة التمرير التلقائي للصفحة.',
+            text: 'سرعة التمرير: اضبط سرعة التمرير التلقائي لتناسب سرعة قراءتك.',
             position: { top: '650px' },
             arrow: 'up',
             selector: '#scroll-speed-section',
@@ -109,7 +109,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         },
         {
             id: 'toggles',
-            text: 'خيارات اضافيه لاظهار شرح السجده واخفاء الاشرطه اثناء التمرير التلقائى',
+            text: 'خيارات إضافية: تحكم في إظهار بطاقة السجدة وإخفاء الأشرطة أثناء القراءة.',
             position: { top: '750px' },
             arrow: 'up',
             selector: '#toggles-section',
@@ -117,7 +117,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         },
         {
             id: 'interface-customization',
-            text: 'تخصيص الواجهة: يمكنك تغيير ألوان شريط الأدوات والعناصر الأخرى لتناسب ذوقك.',
+            text: 'تخصيص الواجهة: ميزة جديدة تتيح لك تغيير ألوان شريط الأدوات والأزرار بالكامل.',
             position: { bottom: '150px' },
             arrow: 'down',
             selector: '#interface-customization-btn',
@@ -125,7 +125,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         },
         {
             id: 'downloads',
-            text: 'تحميل المحتوى: يمكنك تحميل القرآن الكريم أو التفسير للاستخدام بدون إنترنت.',
+            text: 'التحميل للاستخدام أوفلاين: حمل المصحف والتفسير ليعمل التطبيق بدون إنترنت.',
             position: { bottom: '100px' },
             arrow: 'down',
             selector: '#downloads-only-section',

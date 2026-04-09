@@ -202,8 +202,14 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
 
   const dailyWirdTutorialSteps: TutorialStep[] = [
     {
+      id: 'wird-welcome',
+      text: 'الورد اليومي: ميزة جديدة لمساعدتك على ختم القرآن الكريم بانتظام حسب خطتك الخاصة.',
+      position: { top: '20%' },
+      icon: <BookOpen className="w-8 h-8 text-white" />
+    },
+    {
       id: 'wird-progress',
-      text: 'نسبة الإنجاز: هنا يمكنك متابعة تقدمك في الختمة الحالية.',
+      text: 'نسبة الإنجاز: تابع تقدمك اليومي ومدى اقترابك من ختم القرآن.',
       position: { top: '30%' },
       arrow: 'up',
       selector: '#wird-progress-container',
@@ -211,7 +217,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     },
     {
       id: 'wird-today',
-      text: 'ورد اليوم: يعرض لك الصفحات المخصصة للقراءة اليوم.',
+      text: 'ورد اليوم: يعرض لك الصفحات المطلوب قراءتها اليوم. يمكنك الضغط لفتح المصحف مباشرة.',
       position: { top: '40%' },
       arrow: 'up',
       selector: '#wird-today-container',
@@ -219,7 +225,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     },
     {
       id: 'wird-actions',
-      text: 'إجراءات الختمة: يمكنك فتح المصحف للقراءة، أو تحديد الورد كمكتمل، أو تعديل إعدادات الختمة.',
+      text: 'إدارة الختمة: يمكنك تعديل الخطة، إضافة مستخدمين آخرين، أو إعادة تعيين الختمة من هنا.',
       position: { bottom: '150px' },
       arrow: 'down',
       selector: '#wird-actions-container',

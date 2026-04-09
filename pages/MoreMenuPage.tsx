@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import InteractiveBackground from '../components/InteractiveBackground';
 import NavButton from '../components/MainMenu/NavButton';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, Mic } from 'lucide-react';
 
 const ALL_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
@@ -43,6 +43,20 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
             text: 'هنا تجد جميع أقسام التطبيق في مكان واحد لسهولة الوصول.',
             position: { top: '30%' },
             icon: <LayoutGrid className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'new-features',
+            text: 'إضافات جديدة: تم إضافة "الورد اليومي"، "التحفيظ"، و"التحكم الصوتي" في هذا التحديث.',
+            position: { top: '40%' },
+            icon: <LayoutGrid className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'voice-control-highlight',
+            text: 'التحكم الصوتي: يمكنك الآن التحكم في التطبيق بالكامل باستخدام صوتك فقط.',
+            position: { bottom: '150px' },
+            selector: '[data-id="nav-button-voice-control"]',
+            arrow: 'down',
+            icon: <Mic className="w-8 h-8 text-white" />
         }
     ];
 

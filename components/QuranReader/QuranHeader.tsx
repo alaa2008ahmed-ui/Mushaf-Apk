@@ -29,6 +29,7 @@ interface QuranHeaderProps {
     memorizationSettings?: any;
     setIsFloatingMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
     isFloatingMenuOpen: boolean;
+    isAnyMenuOpen: boolean;
 }
 
 const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
@@ -57,16 +58,17 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
     isMemorizationMode = false,
     memorizationSettings,
     setIsFloatingMenuOpen,
-    isFloatingMenuOpen
+    isFloatingMenuOpen,
+    isAnyMenuOpen
 }) => {
     const [isModeMenuOpen, setIsModeMenuOpen] = React.useState(false);
 
     return (
-        <header id="header" className={`header-default flex-none z-50 flex items-center px-4 justify-between border shadow-xl w-full gap-2 ${isFloatingMenuOpen ? 'pointer-events-none opacity-50' : ''}`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
+        <header id="header" className={`header-default flex-none z-50 flex items-center px-6 justify-between border shadow-xl w-full gap-2 ${isAnyMenuOpen ? 'pointer-events-none opacity-50' : ''}`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
             <button 
                 id="btn-menu-header" 
                 onClick={() => setIsFloatingMenuOpen(p => !p)}
-                className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 flex items-center justify-center flex-shrink-0 aspect-square pointer-events-auto opacity-100" 
+                className={`top-bar-text-button !rounded-full !w-10 !h-10 !p-0 flex items-center justify-center flex-shrink-0 aspect-square ${isFloatingMenuOpen ? 'pointer-events-auto opacity-100' : (isAnyMenuOpen ? 'pointer-events-none opacity-50' : 'pointer-events-auto opacity-100')}`} 
                 style={getToolbarStyle('btn-menu', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBorder || currentTheme.btnBg)}
                 title="القائمة"
             >
