@@ -138,7 +138,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
     if (editingType) {
         return (
             <div className="fixed inset-0 z-[220] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" onClick={() => setEditingType(null)}>
-                <div className={`modal-skinned w-full ${isLandscape ? 'max-w-2xl' : 'max-w-sm'} rounded-3xl shadow-2xl overflow-hidden animate-modal-enter flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
+                <div className={`modal-skinned w-full ${isLandscape ? 'max-w-2xl' : 'max-w-md'} rounded-3xl shadow-2xl overflow-hidden animate-modal-enter flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
                     <div className="theme-header-bg p-4 flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <Palette className="w-5 h-5" />
@@ -187,7 +187,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                             </div>
                         )}
 
-                        <div className={`grid gap-4 ${isLandscape && editingType.includes('toolbar') ? 'col-span-2 grid-cols-3' : 'grid-cols-1'}`}>
+                        <div className={`grid gap-4 ${isLandscape && editingType.includes('toolbar') ? 'col-span-2 grid-cols-3' : (editingType.includes('toolbar') ? 'grid-cols-2' : 'grid-cols-3')}`}>
                             <div className="space-y-2">
                                 <label className="text-xs font-bold opacity-60 px-1">لون الخلفية</label>
                                 <button 
@@ -224,21 +224,16 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                             </div>
                             
                             {activeColorField && (
-                                <div className="col-span-full themed-card-bg p-4 rounded-2xl border border-gray-200 dark:border-gray-700 mt-2 animate-fadeIn shadow-inner">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <span className="text-sm font-bold opacity-80">
-                                            اختر لون {activeColorField === 'bg' ? 'الخلفية' : activeColorField === 'text' ? 'النص/الأيقونة' : 'الحدود'}
-                                        </span>
-                                    </div>
-                                    <div className="grid grid-cols-6 sm:grid-cols-8 gap-3">
+                                <div className="col-span-full themed-card-bg p-1.5 rounded-2xl border border-gray-200 dark:border-gray-700 mt-2 animate-fadeIn shadow-inner">
+                                    <div className="grid grid-cols-5 gap-3">
                                         {PREDEFINED_COLORS.map(c => (
                                             <button
                                                 key={c}
                                                 onClick={() => setEditConfig({...editConfig, [activeColorField]: c})}
-                                                className={`h-10 rounded-lg border-2 transition-all hover:scale-110 active:scale-90 flex items-center justify-center ${editConfig[activeColorField] === c ? 'border-emerald-500 shadow-md z-10' : 'border-transparent'}`}
+                                                className={`h-12 rounded-lg border-2 transition-all hover:scale-110 active:scale-90 flex items-center justify-center ${editConfig[activeColorField] === c ? 'border-emerald-500 shadow-md z-10' : 'border-transparent'}`}
                                                 style={renderCheckerboard(c)}
                                             >
-                                                {editConfig[activeColorField] === c && <Check className="w-4 h-4 text-emerald-500" />}
+                                                {editConfig[activeColorField] === c && <Check className="w-5 h-5 text-emerald-500" />}
                                             </button>
                                         ))}
                                     </div>

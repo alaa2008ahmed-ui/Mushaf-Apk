@@ -267,8 +267,12 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     };
 
     const downloadSpecificTafsir = async (tafsirId: string, surahNumber: number) => {
-        const url = `https://api.alquran.cloud/v1/surah/${surahNumber}/${tafsirId}`;
         const fileName = `${tafsirId}_${surahNumber}_tafsir.json`;
+        // Check if already downloaded
+        if (localStorage.getItem(`tafsir_content_${fileName}`)) {
+            return;
+        }
+        const url = `https://api.alquran.cloud/v1/surah/${surahNumber}/${tafsirId}`;
         try {
             const response = await fetch(url, { signal: abortControllerRef.current?.signal });
             if (!response.ok) throw new Error(`فشل تحميل التفسير: ${response.status}`);
@@ -364,10 +368,37 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                     }
                 }
 
-                const total = itemsToDownload.length;
+                // Filter out already downloaded items
+                const downloadedAudio = JSON.parse(localStorage.getItem('downloaded_audio_files') || '[]');
+                const downloadedAudioSet = new Set(downloadedAudio.map((f: any) => f.fileName));
+                const sanitizedId = getSanitizedReaderId(selectedReader);
+                
+                const finalItemsToDownload = itemsToDownload.filter(item => {
+                    let fileName = '';
+                    if (item.a === 0) {
+                        fileName = `${sanitizedId}_${String(item.s).padStart(3, '0')}.mp3`;
+                    } else {
+                        fileName = `${sanitizedId}_${item.s}_${item.a}.mp3`;
+                    }
+                    return !downloadedAudioSet.has(fileName);
+                });
+
+                const total = finalItemsToDownload.length;
+                if (total === 0 && itemsToDownload.length > 0) {
+                    setStatus('جميع العناصر المحددة محملة مسبقاً');
+                    showToast('جميع العناصر المحددة محملة مسبقاً');
+                    setIsDownloading(false);
+                    return;
+                }
+                
+                const skippedCount = itemsToDownload.length - total;
+                if (skippedCount > 0) {
+                    showToast(`تم تخطي ${skippedCount} عنصر محمل مسبقاً`);
+                }
+
                 for (let i = 0; i < total; i++) {
                     if (abortControllerRef.current?.signal.aborted) break;
-                    const item = itemsToDownload[i];
+                    const item = finalItemsToDownload[i];
                     
                     if (item.a === 0) {
                         setStatus(`جاري تحميل سورة ${SURAH_NAMES_AR[item.s - 1]}...`);
@@ -393,10 +424,32 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                 }
 
                 const itemsList = Array.from(surahsToDownload).sort((a, b) => a - b);
-                const total = itemsList.length;
+                
+                // Filter out already downloaded tafseers
+                const downloadedTafseer = JSON.parse(localStorage.getItem('downloaded_tafsir_files') || '[]');
+                const downloadedTafseerSet = new Set(downloadedTafseer.map((f: any) => f.fileName));
+                
+                const finalTafseersToDownload = itemsList.filter(s => {
+                    const fileName = `${selectedTafsir}_${s}_tafsir.json`;
+                    return !downloadedTafseerSet.has(fileName);
+                });
+
+                const total = finalTafseersToDownload.length;
+                if (total === 0 && itemsList.length > 0) {
+                    setStatus('جميع التفاسير المحددة محملة مسبقاً');
+                    showToast('جميع التفاسير المحددة محملة مسبقاً');
+                    setIsDownloading(false);
+                    return;
+                }
+
+                const skippedCount = itemsList.length - total;
+                if (skippedCount > 0) {
+                    showToast(`تم تخطي ${skippedCount} تفسير محمل مسبقاً`);
+                }
+
                 for (let i = 0; i < total; i++) {
                     if (abortControllerRef.current?.signal.aborted) break;
-                    const s = itemsList[i];
+                    const s = finalTafseersToDownload[i];
                     setStatus(`جاري تحميل تفسير سورة ${SURAH_NAMES_AR[s - 1]}...`);
                     await downloadSpecificTafsir(selectedTafsir, s);
                     setProgress(((i + 1) / total) * 100);
@@ -1343,16 +1396,8 @@ const ToolbarColorPickerContent: React.FC<{
                     <h4 className="text-xs font-bold text-gray-700">{section.label}</h4>
                     
                     {activePicker?.sectionId === section.id && (
-                        <div className="p-3 bg-white rounded-xl border-2 border-emerald-100 shadow-sm space-y-3 animate-fadeIn">
-                            <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-gray-700">
-                                    اختر لون {activePicker.type === 'bg' ? 'الخلفية' : activePicker.type === 'text' ? 'النص' : 'الحدود'}
-                                </span>
-                                <button onClick={() => setActivePicker(null)} className="p-1 hover:bg-gray-100 rounded-full">
-                                    <X size={12} className="text-gray-400" />
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-6 gap-1">
+                        <div className="p-1.5 bg-white rounded-xl border-2 border-emerald-100 shadow-sm animate-fadeIn">
+                            <div className="grid grid-cols-5 gap-3 px-0.5">
                                 {PRESET_COLORS.map((color, i) => {
                                     const currentValue = toolbarColors[activePicker.sectionId]?.[activePicker.type] || 
                                         (activePicker.type === 'bg' ? currentTheme.barBg : activePicker.type === 'text' ? currentTheme.barText : currentTheme.barBorder);
@@ -1362,7 +1407,7 @@ const ToolbarColorPickerContent: React.FC<{
                                         <button
                                             key={i}
                                             onClick={() => updateColor(activePicker.sectionId, activePicker.type, color)}
-                                            className={`w-full aspect-square rounded-lg border transition-all flex items-center justify-center relative overflow-hidden ${isSelected ? 'border-emerald-500 scale-110 z-10 shadow-sm' : 'border-gray-100 hover:scale-105'}`}
+                                            className={`w-full aspect-square rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${isSelected ? 'border-emerald-500 scale-110 z-10 shadow-sm' : 'border-gray-100 hover:scale-105'}`}
                                             style={{ 
                                                 backgroundColor: color === 'transparent' ? 'white' : color,
                                                 backgroundImage: color === 'transparent' ? 'repeating-conic-gradient(#e5e7eb 0% 25%, #ffffff 0% 50%)' : 'none',
