@@ -64,7 +64,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
     const [isModeMenuOpen, setIsModeMenuOpen] = React.useState(false);
 
     return (
-        <header id="header" className={`header-default flex-none z-50 flex items-center justify-between border shadow-xl w-full gap-2 ${isAnyMenuOpen ? 'pointer-events-none opacity-50' : ''}`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
+        <header id="header" className={`header-default flex-none z-50 flex items-center justify-between border shadow-xl w-full gap-1 ${isAnyMenuOpen ? 'pointer-events-none opacity-50' : ''}`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
             <button 
                 id="btn-menu-header" 
                 onClick={() => setIsFloatingMenuOpen(p => !p)}
@@ -77,14 +77,14 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
             <button 
                 id="surah-name-header" 
                 onClick={() => openModal('surah-modal')}
-                className="top-bar-text-button flex items-center justify-center leading-none !pt-0" 
+                className="top-bar-text-button flex items-center justify-center leading-none !pt-0 flex-1 min-w-0 mx-0.5" 
                 style={getToolbarStyle('surah', currentTheme.barBg, currentTheme.barText, currentTheme.btnBorder || currentTheme.barBorder)}
             >
-                <span className="flex items-center justify-center leading-none">
+                <span className="flex items-center justify-center leading-none whitespace-nowrap overflow-hidden px-1 w-full" style={{ fontSize: 'clamp(9px, 2.8vw, 14px)' }}>
                     {isMemorizationMode && memorizationSettings ? (
-                        <>{toArabic(currentAyah.s)} سورة {surahName} - الآيات {toArabic(memorizationSettings.fromAyah)} - {toArabic(memorizationSettings.toAyah)} - جزء {toArabic(juz)}</>
+                        <>{toArabic(currentAyah.s)} - سورة {surahName} - الآيات {toArabic(memorizationSettings.fromAyah)} - {toArabic(memorizationSettings.toAyah)} - جزء {toArabic(juz)}</>
                     ) : (
-                        <>{toArabic(currentAyah.s)} سورة {surahName} - ايه {toArabic(currentAyah.a)} - جزء {toArabic(juz)}</>
+                        <>{toArabic(currentAyah.s)} - سورة {surahName} - ايه {toArabic(currentAyah.a)} - جزء {toArabic(juz)}</>
                     )}
                 </span>
             </button>
