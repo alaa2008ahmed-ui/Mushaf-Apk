@@ -11,6 +11,7 @@ interface AyahContextMenuProps {
     PREDEFINED_COLORS: string[];
     openModal: (modalId: string) => void;
     onSave: () => void;
+    onTranslation: () => void;
 }
 
 const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
@@ -22,7 +23,8 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
     renderCheckerboard,
     PREDEFINED_COLORS,
     openModal,
-    onSave
+    onSave,
+    onTranslation
 }) => {
     if (!isOpen) return null;
 
@@ -102,7 +104,14 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
                     </div>
 
                     {/* Save and Close Button */}
-                    <div className="pt-4">
+                    <div className="pt-4 flex flex-col gap-3">
+                        <button 
+                            onClick={onTranslation}
+                            className="w-full py-4 rounded-2xl bg-indigo-600 text-white text-base font-bold shadow-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-3"
+                        >
+                            <i className="fa-solid fa-language text-lg"></i>
+                            <span>عرض الترجمة</span>
+                        </button>
                         <button 
                             onClick={onSave}
                             className="w-full py-4 rounded-2xl bg-emerald-600 text-white text-base font-bold shadow-lg hover:bg-emerald-700 transition-colors flex items-center justify-center gap-3"

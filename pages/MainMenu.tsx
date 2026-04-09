@@ -12,6 +12,7 @@ import VerseSection from '../components/MainMenu/VerseSection';
 import TitleSection from '../components/MainMenu/TitleSection';
 import GridSection from '../components/MainMenu/GridSection';
 import FloatingNeonTicker from '../components/FloatingNeonTicker';
+import VerseContextMenu from '../components/MainMenu/VerseContextMenu';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { Mic, Palette, LayoutGrid, BookOpen } from 'lucide-react';
 
@@ -79,6 +80,39 @@ function MainMenu({ onNavigate, onOpenThemes }) {
       const saved = localStorage.getItem('mainMenuVerseFontSize');
       return saved ? parseFloat(saved) : 1.25;
   });
+  const [verseSettings, setVerseSettings] = useState(() => {
+      const saved = localStorage.getItem('mainMenuVerseSettings');
+      return saved ? JSON.parse(saved) : {
+          fontFamily: theme.font,
+          bgColor: 'transparent',
+          textColor: theme.textColor
+      };
+  });
+  const [isVerseMenuOpen, setIsVerseMenuOpen] = useState(false);
+
+  const PREDEFINED_COLORS = [
+      '#ffffff', '#f3f4f6', '#9ca3af', '#4b5563', '#000000',
+      '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
+      '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
+      '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
+      '#f43f5e', '#78716c', '#57534e', 'transparent'
+  ];
+
+  const renderCheckerboard = (color: string) => {
+      if (color === 'transparent' || color === 'rgba(0, 0, 0, 0)') {
+          return {
+              backgroundColor: '#ffffff',
+              backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%)',
+              backgroundSize: '8px 8px'
+          };
+      }
+      return { backgroundColor: color };
+  };
+
+  const handleSaveVerseSettings = (newSettings: any) => {
+      setVerseSettings(newSettings);
+      localStorage.setItem('mainMenuVerseSettings', JSON.stringify(newSettings));
+  };
 
   const homeTutorialSteps: TutorialStep[] = [
     {
@@ -222,9 +256,10 @@ function MainMenu({ onNavigate, onOpenThemes }) {
                     currentVerse={currentVerse}
                     verseFontSize={verseFontSize}
                     setVerseFontSize={setVerseFontSize}
-                    setIsCustomizationOpen={setIsPasscodeOpen}
+                    setIsCustomizationOpen={setIsVerseMenuOpen}
                     theme={theme}
                     themeKey={themeKey}
+                    verseSettings={verseSettings}
                 />
               </div>
 
@@ -282,6 +317,16 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         allItems={ALL_POSSIBLE_ITEMS}
         visibleIds={visibleItems}
         onSave={handleSaveCustomization}
+      />
+
+      <VerseContextMenu 
+        isOpen={isVerseMenuOpen}
+        onClose={() => setIsVerseMenuOpen(false)}
+        settings={verseSettings}
+        onSave={handleSaveVerseSettings}
+        currentTheme={theme}
+        renderCheckerboard={renderCheckerboard}
+        PREDEFINED_COLORS={PREDEFINED_COLORS}
       />
 
       <TutorialOverlay 

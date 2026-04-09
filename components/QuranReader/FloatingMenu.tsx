@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download, Type, Shield, Bell } from 'lucide-react';
-import { THEMES, DEFAULT_SETTINGS, READERS, MEMORIZATION_READERS, RECITERS } from './constants';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download, Type, Shield, Bell, Check, Loader2 } from 'lucide-react';
+import { THEMES, DEFAULT_SETTINGS, READERS, MEMORIZATION_READERS, RECITERS, FONTS, TAFSEERS, JUZ_MAP, SURAH_NAMES_AR } from './constants';
+import { quranData } from '../../utils/quranData';
 
 interface FloatingMenuProps {
     page: string;
@@ -23,6 +24,9 @@ interface FloatingMenuProps {
     setIsHideToolbarsEnabled: (value: boolean) => void;
     isTransparentMode: boolean;
     setIsTransparentMode: (value: boolean) => void;
+    bookmarks?: any[];
+    deleteBookmark?: (id: number) => void;
+    jumpToAyah?: (s: number, a: number, closeMenu?: boolean) => void;
 }
 
 const ALL_SHORTCUTS = [
@@ -57,17 +61,33 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     setIsHideToolbarsEnabled,
     isTransparentMode,
     setIsTransparentMode,
+    bookmarks = [],
+    deleteBookmark,
+    jumpToAyah,
 }) => {
     const [selectedShortcuts, setSelectedShortcuts] = useState<string[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [tempShortcuts, setTempShortcuts] = useState<string[]>([]);
-    const [isThemesOpen, setIsThemesOpen] = useState(false);
-    const [isDownloadSubMenuOpen, setIsDownloadSubMenuOpen] = useState(false);
+    
+    // Selection State for Downloads
+    const [selectedReader, setSelectedReader] = useState(settings.reader || READERS[0].id);
+    const [selectedTafsir, setSelectedTafsir] = useState(settings.tafseer || TAFSEERS[0].id);
+    const [selectedSurahs, setSelectedSurahs] = useState<string[]>([]);
+    const [selectedJuzs, setSelectedJuzs] = useState<string[]>([]);
+    
+    // Download Status State
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [status, setStatus] = useState('');
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    type MenuView = 'main' | 'themes' | 'download_quran_menu' | 'download_tafseer' | 'audio' | 'interface' | 'font' | 'notifications' | 'download_quran' | 'download_listening' | 'download_memorization' | 'bookmarks';
+    const [currentView, setCurrentView] = useState<MenuView>('main');
 
     useEffect(() => {
         if (isFloatingMenuOpen) {
-            setIsThemesOpen(false);
-            setIsDownloadSubMenuOpen(false);
+            setCurrentView('main');
+            setIsAddModalOpen(false);
         }
     }, [isFloatingMenuOpen]);
 
@@ -100,6 +120,203 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
         setIsAddModalOpen(false);
     };
 
+    // --- Download Logic ---
+    const getSanitizedReaderId = (readerId: string) => {
+        if (readerId.startsWith('http')) {
+            return readerId.replace(/https?:\/\//, '').replace(/\//g, '_').replace(/\./g, '_');
+        }
+        return readerId;
+    };
+
+    const storeAudioOffline = (fileName: string, blob: Blob) => {
+        try {
+            const downloadedFiles = JSON.parse(localStorage.getItem('downloaded_audio_files') || '[]');
+            const fileRecord = { fileName, timestamp: Date.now(), size: blob.size };
+            const existingIndex = downloadedFiles.findIndex((file: any) => file.fileName === fileName);
+            if(existingIndex !== -1) downloadedFiles[existingIndex] = fileRecord;
+            else downloadedFiles.push(fileRecord);
+            localStorage.setItem('downloaded_audio_files', JSON.stringify(downloadedFiles));
+        } catch (e) { console.error('Error storing audio offline:', e); }
+    };
+
+    const storeTafsirOffline = (fileName: string, data: any) => {
+        try {
+            const downloadedTafsir = JSON.parse(localStorage.getItem('downloaded_tafsir_files') || '[]');
+            const fileRecord = { fileName, data, timestamp: Date.now() };
+            const existingIndex = downloadedTafsir.findIndex((file: any) => file.fileName === fileName);
+            if(existingIndex !== -1) downloadedTafsir[existingIndex] = fileRecord;
+            else downloadedTafsir.push(fileRecord);
+            localStorage.setItem('downloaded_tafsir_files', JSON.stringify(downloadedTafsir));
+            localStorage.setItem(`tafsir_content_${fileName}`, JSON.stringify(data));
+        } catch (e) { console.error('Error storing tafsir offline:', e); }
+    };
+
+    const downloadAyah = async (readerId: string, surah: number, ayah: number) => {
+        const surahStr = String(surah).padStart(3, '0');
+        const ayahStr = String(ayah).padStart(3, '0');
+        const url = `https://everyayah.com/data/${readerId}/${surahStr}${ayahStr}.mp3`;
+        const sanitizedId = getSanitizedReaderId(readerId);
+        const fileName = `${sanitizedId}_${surah}_${ayah}.mp3`;
+        
+        try {
+            const cache = await caches.open('quran-audio-cache');
+            const match = await cache.match(url);
+            if (match) {
+                storeAudioOffline(fileName, await match.blob());
+                return;
+            }
+            const response = await fetch(url, { signal: abortControllerRef.current?.signal });
+            if (!response.ok) throw new Error(`فشل التحميل: ${response.status}`);
+            const blob = await response.blob();
+            await cache.put(url, new Response(blob, { headers: { 'Content-Type': 'audio/mpeg' } }));
+            storeAudioOffline(fileName, blob);
+        } catch (e) { if ((e as Error).name !== 'AbortError') throw e; }
+    };
+
+    const downloadSurahFile = async (readerId: string, surah: number) => {
+        const surahStr = String(surah).padStart(3, '0');
+        let url = readerId.startsWith('http') 
+            ? `${readerId.endsWith('/') ? readerId.slice(0, -1) : readerId}/${surahStr}.mp3`
+            : `https://everyayah.com/data/${readerId}/${surahStr}.mp3`;
+        const sanitizedId = getSanitizedReaderId(readerId);
+        const fileName = `${sanitizedId}_${surahStr}.mp3`;
+        
+        try {
+            const cache = await caches.open('quran-audio-cache');
+            const match = await cache.match(url);
+            if (match) {
+                storeAudioOffline(fileName, await match.blob());
+                return;
+            }
+            const response = await fetch(url, { signal: abortControllerRef.current?.signal });
+            if (!response.ok) throw new Error(`فشل التحميل: ${response.status}`);
+            const blob = await response.blob();
+            await cache.put(url, new Response(blob, { headers: { 'Content-Type': 'audio/mpeg' } }));
+            storeAudioOffline(fileName, blob);
+        } catch (e) { if ((e as Error).name !== 'AbortError') throw e; }
+    };
+
+    const downloadSpecificTafsir = async (tafsirId: string, surahNumber: number) => {
+        const url = `https://api.alquran.cloud/v1/surah/${surahNumber}/${tafsirId}`;
+        const fileName = `${tafsirId}_${surahNumber}_tafsir.json`;
+        try {
+            const response = await fetch(url, { signal: abortControllerRef.current?.signal });
+            if (!response.ok) throw new Error(`فشل تحميل التفسير: ${response.status}`);
+            const data = await response.json();
+            storeTafsirOffline(fileName, data.data);
+        } catch (e) { if ((e as Error).name !== 'AbortError') throw e; }
+    };
+
+    const getAyahsForJuz = (juzNumber: number) => {
+        const ayahsToDownload: {surah: number, ayah: number}[] = [];
+        const startJuz = JUZ_MAP[juzNumber - 1];
+        const endJuz = juzNumber < 30 ? JUZ_MAP[juzNumber] : null;
+        let currentSurah = startJuz.s;
+        let currentAyah = startJuz.a;
+        while (true) {
+            if (endJuz && currentSurah === endJuz.s && currentAyah === endJuz.a) break;
+            ayahsToDownload.push({surah: currentSurah, ayah: currentAyah});
+            const surahData = quranData.surahs.find((s: any) => s.number === currentSurah);
+            if (!surahData) break;
+            if (currentAyah < surahData.ayahs.length) currentAyah++;
+            else { currentSurah++; currentAyah = 1; if (currentSurah > 114) break; }
+        }
+        return ayahsToDownload;
+    };
+
+    const startDownload = async (type: 'quran' | 'tafseer', mode: 'ayah' | 'surah' = 'ayah') => {
+        if (isDownloading) {
+            abortControllerRef.current?.abort();
+            setIsDownloading(false);
+            return;
+        }
+
+        if (selectedSurahs.length === 0 && selectedJuzs.length === 0) {
+            showToast('الرجاء اختيار السور أو الأجزاء أولاً');
+            return;
+        }
+
+        setIsDownloading(true);
+        setProgress(0);
+        setStatus('جاري التحضير...');
+        abortControllerRef.current = new AbortController();
+
+        try {
+            const itemsToDownload = new Set<string>();
+            if (selectedSurahs.includes('all')) {
+                for (let i = 1; i <= 114; i++) itemsToDownload.add(i.toString());
+            } else {
+                selectedSurahs.forEach(s => itemsToDownload.add(s));
+                selectedJuzs.forEach(j => {
+                    const ayahs = getAyahsForJuz(parseInt(j));
+                    const surahsInJuz = new Set(ayahs.map(a => a.surah));
+                    surahsInJuz.forEach(s => itemsToDownload.add(s.toString()));
+                });
+            }
+
+            const itemsList = Array.from(itemsToDownload).map(Number).sort((a, b) => a - b);
+            let completed = 0;
+            const total = itemsList.length;
+
+            for (const surahNum of itemsList) {
+                if (abortControllerRef.current?.signal.aborted) break;
+                setStatus(`جاري التحميل: سورة ${SURAH_NAMES_AR[surahNum-1]}...`);
+                
+                if (type === 'quran') {
+                    if (mode === 'surah') {
+                        await downloadSurahFile(selectedReader, surahNum);
+                    } else {
+                        const surah = quranData.surahs.find((s: any) => s.number === surahNum);
+                        if (surah) {
+                            for (let i = 1; i <= surah.ayahs.length; i++) {
+                                if (abortControllerRef.current?.signal.aborted) break;
+                                await downloadAyah(selectedReader, surahNum, i);
+                            }
+                        }
+                    }
+                } else {
+                    await downloadSpecificTafsir(selectedTafsir, surahNum);
+                }
+
+                completed++;
+                setProgress((completed / total) * 100);
+            }
+
+            if (!abortControllerRef.current?.signal.aborted) {
+                setStatus('تم التحميل بنجاح');
+                showToast('تم التحميل بنجاح');
+            } else {
+                setStatus('تم إيقاف التحميل');
+            }
+        } catch (e) {
+            setStatus('حدث خطأ أثناء التحميل');
+            showToast('خطأ في التحميل');
+        } finally {
+            setIsDownloading(false);
+            abortControllerRef.current = null;
+        }
+    };
+
+    const toggleSelection = (id: string, type: 'surah' | 'juz') => {
+        if (type === 'surah') {
+            if (id === 'all') {
+                setSelectedSurahs(prev => prev.includes('all') ? [] : ['all']);
+                setSelectedJuzs([]);
+            } else {
+                setSelectedSurahs(prev => {
+                    const filtered = prev.filter(s => s !== 'all');
+                    return filtered.includes(id) ? filtered.filter(s => s !== id) : [...filtered, id];
+                });
+            }
+        } else {
+            setSelectedJuzs(prev => {
+                const filteredSurahs = selectedSurahs.filter(s => s !== 'all');
+                if (filteredSurahs.length !== selectedSurahs.length) setSelectedSurahs(filteredSurahs);
+                return prev.includes(id) ? prev.filter(j => j !== id) : [...prev, id];
+            });
+        }
+    };
+
     const iconColor = currentTheme.accent || '#000000';
 
     const applyTheme = (themeId: string) => {
@@ -119,19 +336,19 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
         const themeColors = { 
             'top-toolbar': { bg: theme.barBg, border: theme.barBorder }, 
             'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder }, 
-            'surah': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font }, 
-            'juz': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font }, 
-            'page': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font }, 
-            'audio': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
-            'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
-            'btn-home': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
-            'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
-            'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
-            'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
-            'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
-            'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }, 
-            'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
-            'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
+            'surah': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder, font: theme.font }, 
+            'juz': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder, font: theme.font }, 
+            'page': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder, font: theme.font }, 
+            'audio': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }, 
+            'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }, 
+            'btn-home': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }, 
+            'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }, 
+            'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }, 
+            'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }, 
+            'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }, 
+            'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }, 
+            'btn-search': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
+            'btn-share': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }
         };
 
         localStorage.setItem('toolbar_colors_v2' + modeSuffix, JSON.stringify(themeColors));
@@ -170,160 +387,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                     borderRight: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`
                 }}
             >
-                {!isAddModalOpen ? (
-                    /* Main Menu Content */
-                    <div className="p-4 flex flex-col gap-4 overflow-y-auto flex-grow custom-scrollbar">
-                        {/* خيارات القراءة */}
-                        <MenuSection title="خيارات القراءة" iconColor={iconColor} titleColor="#2563eb">
-                            <MenuItem icon={<BookText size={18} />} label="المصحف" onClick={() => handleAction(() => { setReadingMode('mushaf'); })} iconColor={iconColor} isActive={readingMode === 'mushaf'} />
-                            <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} isActive={readingMode === 'tafseer'} />
-                            <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} isActive={readingMode === 'meanings'} />
-                            <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} isActive={readingMode === 'translation'} />
-                        </MenuSection>
-
-                        {/* الإعدادات والبحث */}
-                        <MenuSection title="الإعدادات والبحث" iconColor={iconColor} titleColor="#16a34a">
-                            <MenuItem icon={<Search size={18} />} label="البحث" onClick={() => handleAction(() => openModal('search-modal'))} iconColor={iconColor} />
-                            <MenuItem icon={<Settings size={18} />} label="الإعدادات" onClick={() => handleAction(() => openModal('settings-modal'))} iconColor={iconColor} />
-                            <MenuItem icon={<Bookmark size={18} />} label="العلامات المرجعية" onClick={() => handleAction(() => openModal('bookmarks-modal'))} iconColor={iconColor} />
-                            <div className="flex flex-col">
-                                <button 
-                                    onClick={() => setIsThemesOpen(!isThemesOpen)} 
-                                    className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full"
-                                >
-                                    <div style={{ color: iconColor }}><Palette size={18} /></div>
-                                    <span className="text-sm font-bold flex-1" style={{ color: isThemesOpen ? iconColor : '#000000' }}>المظهر</span>
-                                    <ChevronDown size={16} className={`transition-transform duration-200 ${isThemesOpen ? 'rotate-180' : ''}`} style={{ color: iconColor }} />
-                                </button>
-                                
-                                {isThemesOpen && (
-                                    <div className="flex flex-col gap-3 p-3 bg-gray-50/80 rounded-xl mt-1 mb-2 animate-fadeIn">
-                                        <div className="border-b border-gray-200 pb-3 mb-1 space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <label className="text-xs font-bold opacity-80" style={{ color: '#000000' }}>قفل لون التحديد</label>
-                                                <div className="relative inline-block w-8 align-middle select-none">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        id="menu-lock-highlight" 
-                                                        checked={settings?.lockHighlightColor || false} 
-                                                        onChange={(e) => updateSetting('lockHighlightColor', e.target.checked)} 
-                                                        className="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer"
-                                                    />
-                                                    <label htmlFor="menu-lock-highlight" className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${settings?.lockHighlightColor ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="flex items-center justify-between">
-                                                <label className="text-xs font-bold opacity-80" style={{ color: '#000000' }}>إخفاء الأشرطة</label>
-                                                <div className="relative inline-block w-8 align-middle select-none">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        id="menu-hide-toolbars" 
-                                                        checked={isTransparentMode} 
-                                                        onChange={(e) => {
-                                                            setIsTransparentMode(e.target.checked);
-                                                            const modeSuffix = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
-                                                            localStorage.setItem('transparent_mode' + modeSuffix, String(e.target.checked));
-                                                            window.dispatchEvent(new Event('settings-change'));
-                                                            showToast(e.target.checked ? 'تم تفعيل إخفاء الأشرطة' : 'تم تعطيل إخفاء الأشرطة');
-                                                        }} 
-                                                        className="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer"
-                                                    />
-                                                    <label htmlFor="menu-hide-toolbars" className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${isTransparentMode ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-3 gap-y-4 gap-x-2">
-                                            {Object.entries(THEMES).map(([id, theme]: [string, any]) => (
-                                                <button
-                                                    key={id}
-                                                    onClick={() => {
-                                                        applyTheme(id);
-                                                        setIsFloatingMenuOpen(false);
-                                                    }}
-                                                    className="flex flex-col items-center gap-1.5 group"
-                                                >
-                                                    <div 
-                                                        className={`w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id ? 'scale-110 border-gray-400 shadow-md' : 'border-transparent hover:scale-105'}`}
-                                                        style={{ backgroundColor: id === 'deep_black' ? '#000000' : (theme.accent || theme.barText || '#000000') }}
-                                                    >
-                                                        {localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id && (
-                                                            <div className={`w-2 h-2 rounded-full shadow-sm ${id === 'deep_black' ? 'bg-emerald-500' : 'bg-white'}`}></div>
-                                                        )}
-                                                    </div>
-                                                    <span className="text-[10px] font-bold opacity-80 truncate w-full text-center leading-tight" style={{ color: '#000000' }}>{theme.name}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </MenuSection>
-
-                        {/* اختصارات أخرى */}
-                        <MenuSection title="اختصارات أخرى" iconColor={iconColor} titleColor="#d97706">
-                            {ALL_SHORTCUTS.filter(s => selectedShortcuts.includes(s.id)).map(shortcut => (
-                                <React.Fragment key={shortcut.id}>
-                                    <MenuItem 
-                                        icon={shortcut.icon} 
-                                        label={shortcut.label} 
-                                        onClick={() => {
-                                            if (shortcut.id === 'quran-download-parent') {
-                                                setIsDownloadSubMenuOpen(!isDownloadSubMenuOpen);
-                                            } else {
-                                                handleAction(() => {
-                                                    if (shortcut.id === 'tafseer-download') {
-                                                        openModal('tafsir-download-modal');
-                                                    } else if (shortcut.id === 'audio') {
-                                                        openModal('reciter-modal');
-                                                    } else if (shortcut.id === 'interface-customization') {
-                                                        openModal('toolbar-color-picker-modal');
-                                                    } else if (shortcut.id === 'font-type') {
-                                                        openModal('font-modal');
-                                                    } else if (shortcut.id === 'notification-settings') {
-                                                        openModal('notification-settings-modal');
-                                                    } else {
-                                                        onNavigate(shortcut.id);
-                                                    }
-                                                });
-                                            }
-                                        }} 
-                                        iconColor={iconColor} 
-                                        showChevron={shortcut.id === 'quran-download-parent'}
-                                        isExpanded={shortcut.id === 'quran-download-parent' && isDownloadSubMenuOpen}
-                                        isActive={page === shortcut.id}
-                                    />
-                                    {shortcut.id === 'quran-download-parent' && isDownloadSubMenuOpen && (
-                                        <div className="flex flex-col gap-1 p-2 bg-gray-50/80 rounded-xl mt-1 mb-2 animate-fadeIn">
-                                            <MenuItem 
-                                                icon={<Download size={16} />} 
-                                                label="تحميل المصحف" 
-                                                onClick={() => handleAction(() => openModal('quran-download-modal'))} 
-                                                iconColor={iconColor} 
-                                                isSubItem
-                                            />
-                                            <MenuItem 
-                                                icon={<Headphones size={16} />} 
-                                                label="تحميل الاستماع" 
-                                                onClick={() => handleAction(() => openModal('quran-download-modal', { readersList: RECITERS, mode: 'surah' }))} 
-                                                iconColor={iconColor} 
-                                                isSubItem
-                                            />
-                                            <MenuItem 
-                                                icon={<Brain size={16} />} 
-                                                label="تحميل التحفيظ" 
-                                                onClick={() => handleAction(() => openModal('quran-download-modal', { readersList: MEMORIZATION_READERS, mode: 'ayah' }))} 
-                                                iconColor={iconColor} 
-                                                isSubItem
-                                            />
-                                        </div>
-                                    )}
-                                </React.Fragment>
-                            ))}
-                        </MenuSection>
-                    </div>
-                ) : (
+                {isAddModalOpen ? (
                     /* Customization Content (Replacing Main Menu) */
                     <div className="flex flex-col h-full overflow-hidden">
                         <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
@@ -384,8 +448,838 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             </button>
                         </div>
                     </div>
+                ) : currentView === 'themes' ? (
+                    /* Themes View */
+                    <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
+                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                            <div className="flex items-center gap-2">
+                                <Palette size={20} style={{ color: iconColor }} />
+                                <h3 className="font-bold text-sm" style={{ color: '#000000' }}>المظهر</h3>
+                            </div>
+                        </div>
+
+                        <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
+                            <div className="space-y-6">
+                                {/* Toggles Section */}
+                                <div className="space-y-3 bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold opacity-80" style={{ color: '#000000' }}>قفل لون التحديد</label>
+                                        <div className="relative inline-block w-8 align-middle select-none">
+                                            <input 
+                                                type="checkbox" 
+                                                id="menu-lock-highlight" 
+                                                checked={settings?.lockHighlightColor || false} 
+                                                onChange={(e) => updateSetting('lockHighlightColor', e.target.checked)} 
+                                                className="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer"
+                                            />
+                                            <label htmlFor="menu-lock-highlight" className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${settings?.lockHighlightColor ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold opacity-80" style={{ color: '#000000' }}>إخفاء الأشرطة</label>
+                                        <div className="relative inline-block w-8 align-middle select-none">
+                                            <input 
+                                                type="checkbox" 
+                                                id="menu-hide-toolbars" 
+                                                checked={isTransparentMode} 
+                                                onChange={(e) => {
+                                                    setIsTransparentMode(e.target.checked);
+                                                    const modeSuffix = readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
+                                                    localStorage.setItem('transparent_mode' + modeSuffix, String(e.target.checked));
+                                                    window.dispatchEvent(new Event('settings-change'));
+                                                    showToast(e.target.checked ? 'تم تفعيل إخفاء الأشرطة' : 'تم تعطيل إخفاء الأشرطة');
+                                                }} 
+                                                className="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer"
+                                            />
+                                            <label htmlFor="menu-hide-toolbars" className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${isTransparentMode ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Themes Grid */}
+                                <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+                                    {Object.entries(THEMES).map(([id, theme]: [string, any]) => (
+                                        <React.Fragment key={id}>
+                                            <button
+                                                onClick={() => {
+                                                    applyTheme(id);
+                                                    setIsFloatingMenuOpen(false);
+                                                }}
+                                                className="flex flex-col items-center gap-1.5 group"
+                                            >
+                                                <div 
+                                                    className={`w-[22px] h-[22px] rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id ? 'scale-110 border-gray-400 shadow-md' : 'border-transparent hover:scale-105'}`}
+                                                    style={{ backgroundColor: id === 'deep_black' ? '#000000' : (theme.accent || theme.barText || '#000000') }}
+                                                >
+                                                    {localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id && (
+                                                        <div className={`w-1.5 h-1.5 rounded-full shadow-sm ${id === 'deep_black' ? 'bg-emerald-500' : 'bg-white'}`}></div>
+                                                    )}
+                                                </div>
+                                                <span className="text-[7px] font-bold opacity-80 truncate w-full text-center leading-tight" style={{ color: '#000000' }}>{theme.name}</span>
+                                            </button>
+                                            {id === 'lime' && (
+                                                <div className="col-span-4 h-px bg-gray-200/60 my-1"></div>
+                                            )}
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-3 border-t bg-gray-50/80">
+                            <button 
+                                onClick={() => setCurrentView('main')}
+                                className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
+                            >
+                                <ChevronDown className="rotate-90 w-4 h-4" />
+                                رجوع
+                            </button>
+                        </div>
+                    </div>
+                ) : currentView === 'download_quran_menu' ? (
+                    <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
+                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                            <div className="flex items-center gap-2">
+                                <Download size={20} style={{ color: iconColor }} />
+                                <h3 className="font-bold text-sm" style={{ color: '#000000' }}>تحميل القرآن</h3>
+                            </div>
+                        </div>
+                        <div className="flex-grow overflow-y-auto p-4 custom-scrollbar flex flex-col gap-2">
+                            <MenuItem 
+                                icon={<Download size={18} />} 
+                                label="تحميل المصحف" 
+                                onClick={() => setCurrentView('download_quran')} 
+                                iconColor={iconColor} 
+                            />
+                            <MenuItem 
+                                icon={<Headphones size={18} />} 
+                                label="تحميل الاستماع" 
+                                onClick={() => setCurrentView('download_listening')} 
+                                iconColor={iconColor} 
+                            />
+                            <MenuItem 
+                                icon={<Brain size={18} />} 
+                                label="تحميل التحفيظ" 
+                                onClick={() => setCurrentView('download_memorization')} 
+                                iconColor={iconColor} 
+                            />
+                        </div>
+                        <div className="p-3 border-t bg-gray-50/80">
+                            <button onClick={() => setCurrentView('main')} className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                <ChevronDown className="rotate-90 w-4 h-4" />
+                                رجوع
+                            </button>
+                        </div>
+                    </div>
+                ) : currentView === 'audio' ? (
+                    <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
+                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                            <div className="flex items-center gap-2">
+                                <Headphones size={20} style={{ color: iconColor }} />
+                                <h3 className="font-bold text-sm" style={{ color: '#000000' }}>الصوتيات</h3>
+                            </div>
+                        </div>
+                        <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
+                            <div className="grid grid-cols-1 gap-2">
+                                {READERS.map(r => (
+                                    <button 
+                                        key={r.id}
+                                        onClick={() => {
+                                            updateSetting('reader', r.id);
+                                            setCurrentView('main');
+                                            setIsFloatingMenuOpen(false);
+                                            showToast(`تم اختيار القارئ: ${r.name}`);
+                                        }}
+                                        className={`flex items-center justify-between p-3 rounded-xl border transition-all ${settings.reader === r.id ? 'bg-emerald-50 border-emerald-500' : 'bg-white border-gray-100 hover:bg-gray-50'}`}
+                                    >
+                                        <span className={`text-sm font-bold ${settings.reader === r.id ? 'text-emerald-700' : 'text-gray-700'}`}>{r.name}</span>
+                                        {settings.reader === r.id && <Check size={16} className="text-emerald-500" />}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="p-3 border-t bg-gray-50/80">
+                            <button onClick={() => setCurrentView('main')} className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                <ChevronDown className="rotate-90 w-4 h-4" />
+                                رجوع
+                            </button>
+                        </div>
+                    </div>
+                ) : currentView === 'font' ? (
+                    <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
+                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                            <div className="flex items-center gap-2">
+                                <Type size={20} style={{ color: iconColor }} />
+                                <h3 className="font-bold text-sm" style={{ color: '#000000' }}>نوع الخط</h3>
+                            </div>
+                        </div>
+                        <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
+                            <div className="grid grid-cols-1 gap-2">
+                                {FONTS.map(f => (
+                                    <button 
+                                        key={f.id}
+                                        onClick={() => {
+                                            updateSetting('fontFamily', f.id);
+                                            setCurrentView('main');
+                                            setIsFloatingMenuOpen(false);
+                                            showToast(`تم تغيير الخط إلى: ${f.name}`);
+                                        }}
+                                        className={`flex flex-col p-3 rounded-xl border transition-all ${settings.fontFamily === f.id ? 'bg-emerald-50 border-emerald-500' : 'bg-white border-gray-100 hover:bg-gray-50'}`}
+                                    >
+                                        <div className="flex items-center justify-between w-full mb-1">
+                                            <span className={`text-sm font-bold ${settings.fontFamily === f.id ? 'text-emerald-700' : 'text-gray-700'}`}>{f.name}</span>
+                                            {settings.fontFamily === f.id && <Check size={16} className="text-emerald-500" />}
+                                        </div>
+                                        <span className="text-lg text-center opacity-70" style={{ fontFamily: f.id }}>﴿بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ﴾</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="p-3 border-t bg-gray-50/80">
+                            <button onClick={() => setCurrentView('main')} className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                <ChevronDown className="rotate-90 w-4 h-4" />
+                                رجوع
+                            </button>
+                        </div>
+                    </div>
+                ) : currentView === 'notifications' ? (
+                    <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
+                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                            <div className="flex items-center gap-2">
+                                <Bell size={20} style={{ color: iconColor }} />
+                                <h3 className="font-bold text-sm" style={{ color: '#000000' }}>الإشعارات</h3>
+                            </div>
+                        </div>
+                        <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
+                            <NotificationSettingsContent showToast={showToast} modeSuffix={isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`} />
+                        </div>
+                        <div className="p-3 border-t bg-gray-50/80">
+                            <button onClick={() => setCurrentView('main')} className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                <ChevronDown className="rotate-90 w-4 h-4" />
+                                رجوع
+                            </button>
+                        </div>
+                    </div>
+                ) : currentView === 'download_tafseer' ? (
+                    <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
+                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                            <div className="flex items-center gap-2">
+                                <Download size={20} style={{ color: iconColor }} />
+                                <h3 className="font-bold text-sm" style={{ color: '#000000' }}>تحميل التفسير</h3>
+                            </div>
+                        </div>
+                        <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
+                            <div className="space-y-6">
+                                {/* Tafsir Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 block">اختر التفسير</label>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {TAFSEERS.map(t => (
+                                            <button 
+                                                key={t.id}
+                                                onClick={() => setSelectedTafsir(t.id)}
+                                                className={`p-3 text-xs font-bold rounded-xl border transition-all text-right flex justify-between items-center ${selectedTafsir === t.id ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-gray-100 text-gray-600 hover:bg-gray-50'}`}
+                                            >
+                                                <span>{t.name}</span>
+                                                {selectedTafsir === t.id && <Check size={14} />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Surah Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 block">اختر السور</label>
+                                    <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto p-1 custom-scrollbar">
+                                        <button 
+                                            onClick={() => toggleSelection('all', 'surah')}
+                                            className={`p-2 text-[10px] font-bold rounded-lg border transition-all ${selectedSurahs.includes('all') ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-gray-100 text-gray-600'}`}
+                                        >
+                                            الكل
+                                        </button>
+                                        {SURAH_NAMES_AR.map((name, i) => (
+                                            <button 
+                                                key={i}
+                                                onClick={() => toggleSelection((i + 1).toString(), 'surah')}
+                                                className={`p-2 text-[10px] font-bold rounded-lg border transition-all ${selectedSurahs.includes((i + 1).toString()) ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-gray-100 text-gray-600'}`}
+                                            >
+                                                {name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Juz Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 block">اختر الأجزاء</label>
+                                    <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto p-1 custom-scrollbar">
+                                        {Array.from({ length: 30 }, (_, i) => i + 1).map(j => (
+                                            <button 
+                                                key={j}
+                                                onClick={() => toggleSelection(j.toString(), 'juz')}
+                                                className={`p-2 text-[10px] font-bold rounded-lg border transition-all ${selectedJuzs.includes(j.toString()) ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-gray-100 text-gray-600'}`}
+                                            >
+                                                ج {j}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-3 border-t bg-gray-50/80 space-y-2">
+                            {isDownloading && (
+                                <div className="space-y-1">
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-500">
+                                        <span>{status}</span>
+                                        <span>{Math.round(progress)}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                        <div className="bg-emerald-500 h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => startDownload('tafseer')}
+                                    className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${isDownloading ? 'bg-red-500 text-white' : 'text-white shadow-md active:scale-95'}`}
+                                    style={!isDownloading ? { backgroundColor: iconColor } : {}}
+                                >
+                                    {isDownloading ? <X size={16} /> : <Download size={16} />}
+                                    {isDownloading ? 'إيقاف' : 'بدء التحميل'}
+                                </button>
+                                <button onClick={() => setCurrentView('main')} className="px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm active:scale-95 transition-all">
+                                    رجوع
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : currentView === 'interface' ? (
+                    <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
+                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                            <div className="flex items-center gap-2">
+                                <Palette size={20} style={{ color: iconColor }} />
+                                <h3 className="font-bold text-sm" style={{ color: '#000000' }}>تخصيص الواجهة</h3>
+                            </div>
+                        </div>
+                        <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
+                            <ToolbarColorPickerContent 
+                                currentTheme={currentTheme} 
+                                isLandscape={isLandscape} 
+                                readingMode={readingMode} 
+                                isWirdMode={isWirdMode} 
+                                isMemorizationMode={isMemorizationMode} 
+                                showToast={showToast}
+                            />
+                        </div>
+                        <div className="p-3 border-t bg-gray-50/80">
+                            <button onClick={() => setCurrentView('main')} className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                <ChevronDown className="rotate-90 w-4 h-4" />
+                                رجوع
+                            </button>
+                        </div>
+                    </div>
+                ) : currentView === 'download_quran' || currentView === 'download_listening' || currentView === 'download_memorization' ? (
+                    <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
+                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                            <div className="flex items-center gap-2">
+                                <Download size={20} style={{ color: iconColor }} />
+                                <h3 className="font-bold text-sm" style={{ color: '#000000' }}>
+                                    {currentView === 'download_quran' ? 'تحميل المصحف' : currentView === 'download_listening' ? 'تحميل الاستماع' : 'تحميل التحفيظ'}
+                                </h3>
+                            </div>
+                        </div>
+                        <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
+                            <div className="space-y-6">
+                                {/* Reciter Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 block">اختر القارئ</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {(currentView === 'download_memorization' ? MEMORIZATION_READERS : RECITERS).map(r => (
+                                            <button 
+                                                key={r.id}
+                                                onClick={() => setSelectedReader(r.id)}
+                                                className={`p-2 text-[10px] font-bold rounded-lg border transition-all ${selectedReader === r.id ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-gray-100 text-gray-600 hover:bg-gray-50'}`}
+                                            >
+                                                {r.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Surah Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 block">اختر السور</label>
+                                    <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto p-1 custom-scrollbar">
+                                        <button 
+                                            onClick={() => toggleSelection('all', 'surah')}
+                                            className={`p-2 text-[10px] font-bold rounded-lg border transition-all ${selectedSurahs.includes('all') ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-gray-100 text-gray-600'}`}
+                                        >
+                                            الكل
+                                        </button>
+                                        {SURAH_NAMES_AR.map((name, i) => (
+                                            <button 
+                                                key={i}
+                                                onClick={() => toggleSelection((i + 1).toString(), 'surah')}
+                                                className={`p-2 text-[10px] font-bold rounded-lg border transition-all ${selectedSurahs.includes((i + 1).toString()) ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-gray-100 text-gray-600'}`}
+                                            >
+                                                {name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Juz Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 block">اختر الأجزاء</label>
+                                    <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto p-1 custom-scrollbar">
+                                        {Array.from({ length: 30 }, (_, i) => i + 1).map(j => (
+                                            <button 
+                                                key={j}
+                                                onClick={() => toggleSelection(j.toString(), 'juz')}
+                                                className={`p-2 text-[10px] font-bold rounded-lg border transition-all ${selectedJuzs.includes(j.toString()) ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-gray-100 text-gray-600'}`}
+                                            >
+                                                ج {j}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-3 border-t bg-gray-50/80 space-y-2">
+                            {isDownloading && (
+                                <div className="space-y-1">
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-500">
+                                        <span>{status}</span>
+                                        <span>{Math.round(progress)}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                        <div className="bg-emerald-500 h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => startDownload('quran', currentView === 'download_listening' ? 'surah' : 'ayah')}
+                                    className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${isDownloading ? 'bg-red-500 text-white' : 'text-white shadow-md active:scale-95'}`}
+                                    style={!isDownloading ? { backgroundColor: iconColor } : {}}
+                                >
+                                    {isDownloading ? <X size={16} /> : <Download size={16} />}
+                                    {isDownloading ? 'إيقاف' : 'بدء التحميل'}
+                                </button>
+                                <button onClick={() => setCurrentView('download_quran_menu')} className="px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm active:scale-95 transition-all">
+                                    رجوع
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : currentView === 'download_tafseer' ? (
+                    <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
+                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                            <div className="flex items-center gap-2">
+                                <Download size={20} style={{ color: iconColor }} />
+                                <h3 className="font-bold text-sm" style={{ color: '#000000' }}>تحميل التفسير</h3>
+                            </div>
+                        </div>
+                        <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
+                            <div className="space-y-6">
+                                {/* Tafsir Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 block">اختر التفسير</label>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {TAFSEERS.map(t => (
+                                            <button 
+                                                key={t.id}
+                                                onClick={() => setSelectedTafsir(t.id)}
+                                                className={`p-3 text-xs font-bold rounded-xl border transition-all text-right flex justify-between items-center ${selectedTafsir === t.id ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-gray-100 text-gray-600 hover:bg-gray-50'}`}
+                                            >
+                                                <span>{t.name}</span>
+                                                {selectedTafsir === t.id && <Check size={14} />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Surah Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 block">اختر السور</label>
+                                    <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto p-1 custom-scrollbar">
+                                        <button 
+                                            onClick={() => toggleSelection('all', 'surah')}
+                                            className={`p-2 text-[10px] font-bold rounded-lg border transition-all ${selectedSurahs.includes('all') ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-gray-100 text-gray-600'}`}
+                                        >
+                                            الكل
+                                        </button>
+                                        {SURAH_NAMES_AR.map((name, i) => (
+                                            <button 
+                                                key={i}
+                                                onClick={() => toggleSelection((i + 1).toString(), 'surah')}
+                                                className={`p-2 text-[10px] font-bold rounded-lg border transition-all ${selectedSurahs.includes((i + 1).toString()) ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-gray-100 text-gray-600'}`}
+                                            >
+                                                {name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Juz Selection */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-500 block">اختر الأجزاء</label>
+                                    <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto p-1 custom-scrollbar">
+                                        {Array.from({ length: 30 }, (_, i) => i + 1).map(j => (
+                                            <button 
+                                                key={j}
+                                                onClick={() => toggleSelection(j.toString(), 'juz')}
+                                                className={`p-2 text-[10px] font-bold rounded-lg border transition-all ${selectedJuzs.includes(j.toString()) ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-white border-gray-100 text-gray-600'}`}
+                                            >
+                                                ج {j}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-3 border-t bg-gray-50/80 space-y-2">
+                            {isDownloading && (
+                                <div className="space-y-1">
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-500">
+                                        <span>{status}</span>
+                                        <span>{Math.round(progress)}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                        <div className="bg-emerald-500 h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => startDownload('tafseer')}
+                                    className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${isDownloading ? 'bg-red-500 text-white' : 'text-white shadow-md active:scale-95'}`}
+                                    style={!isDownloading ? { backgroundColor: iconColor } : {}}
+                                >
+                                    {isDownloading ? <X size={16} /> : <Download size={16} />}
+                                    {isDownloading ? 'إيقاف' : 'بدء التحميل'}
+                                </button>
+                                <button onClick={() => setCurrentView('main')} className="px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm active:scale-95 transition-all">
+                                    رجوع
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : currentView === 'bookmarks' ? (
+                    <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
+                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                            <div className="flex items-center gap-2">
+                                <Bookmark size={20} style={{ color: iconColor }} />
+                                <h3 className="font-bold text-sm" style={{ color: '#000000' }}>العلامات المرجعية</h3>
+                            </div>
+                        </div>
+                        <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
+                            {bookmarks.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
+                                    <Bookmark size={40} className="opacity-20" />
+                                    <span className="text-xs font-bold">لا توجد علامات مرجعية</span>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {bookmarks.map((b: any) => (
+                                        <div 
+                                            key={b.id}
+                                            className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between group hover:bg-emerald-50 hover:border-emerald-200 transition-all cursor-pointer"
+                                            onClick={() => {
+                                                if (jumpToAyah) {
+                                                    jumpToAyah(b.s, b.a, true);
+                                                    setIsFloatingMenuOpen(false);
+                                                }
+                                            }}
+                                        >
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="font-bold text-sm text-gray-800">سورة {SURAH_NAMES_AR[b.s - 1]}</span>
+                                                <span className="text-[10px] text-gray-500">آية {b.a} • {b.date}</span>
+                                            </div>
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (deleteBookmark) deleteBookmark(b.id);
+                                                }}
+                                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-3 border-t bg-gray-50/80">
+                            <button onClick={() => setCurrentView('main')} className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                <ChevronDown className="rotate-90 w-4 h-4" />
+                                رجوع
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    /* Main Menu Content */
+                    <div className="p-4 flex flex-col gap-4 overflow-y-auto flex-grow custom-scrollbar">
+                        {/* خيارات القراءة */}
+                        <MenuSection title="خيارات القراءة" iconColor={iconColor} titleColor="#2563eb">
+                            <MenuItem icon={<BookText size={18} />} label="المصحف" onClick={() => handleAction(() => { setReadingMode('mushaf'); })} iconColor={iconColor} isActive={readingMode === 'mushaf'} />
+                            <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} isActive={readingMode === 'tafseer'} />
+                            <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} isActive={readingMode === 'meanings'} />
+                            <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} isActive={readingMode === 'translation'} />
+                        </MenuSection>
+
+                        {/* الإعدادات والبحث */}
+                        <MenuSection title="الإعدادات والبحث" iconColor={iconColor} titleColor="#16a34a">
+                            <MenuItem icon={<Palette size={18} />} label="المظهر" onClick={() => setCurrentView('themes')} iconColor={iconColor} />
+                            <MenuItem icon={<Search size={18} />} label="البحث" onClick={() => handleAction(() => openModal('search-modal'))} iconColor={iconColor} />
+                            <MenuItem icon={<Settings size={18} />} label="الإعدادات" onClick={() => handleAction(() => openModal('settings-modal'))} iconColor={iconColor} />
+                            <MenuItem icon={<Bookmark size={18} />} label="العلامات المرجعية" onClick={() => setCurrentView('bookmarks')} iconColor={iconColor} />
+                        </MenuSection>
+
+                        {/* اختصارات أخرى */}
+                        <MenuSection title="اختصارات أخرى" iconColor={iconColor} titleColor="#d97706">
+                            {ALL_SHORTCUTS.filter(s => selectedShortcuts.includes(s.id)).map(shortcut => (
+                                <React.Fragment key={shortcut.id}>
+                                    <MenuItem 
+                                        icon={shortcut.icon} 
+                                        label={shortcut.label} 
+                                        onClick={() => {
+                                            if (shortcut.id === 'quran-download-parent') {
+                                                setCurrentView('download_quran_menu');
+                                            } else if (shortcut.id === 'tafseer-download') {
+                                                setCurrentView('download_tafseer');
+                                            } else if (shortcut.id === 'audio') {
+                                                setCurrentView('audio');
+                                            } else if (shortcut.id === 'interface-customization') {
+                                                setCurrentView('interface');
+                                            } else if (shortcut.id === 'font-type') {
+                                                setCurrentView('font');
+                                            } else if (shortcut.id === 'notification-settings') {
+                                                setCurrentView('notifications');
+                                            } else {
+                                                handleAction(() => onNavigate(shortcut.id));
+                                            }
+                                        }} 
+                                        iconColor={iconColor} 
+                                        showChevron={false}
+                                        isActive={page === shortcut.id}
+                                    />
+                                </React.Fragment>
+                            ))}
+                        </MenuSection>
+                    </div>
                 )}
             </div>
+        </div>
+    );
+};
+
+const NotificationSettingsContent: React.FC<{ showToast: (msg: string) => void, modeSuffix: string }> = ({ showToast, modeSuffix }) => {
+    const [settings, setSettings] = useState(() => {
+        const saved = localStorage.getItem('notification_settings' + modeSuffix);
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error('Error parsing notification settings', e);
+            }
+        }
+        return {
+            quarter: true,
+            sajda: true,
+            themes: true,
+            downloads: true,
+            bookmarks: true,
+            juz: true,
+            general: true
+        };
+    });
+
+    const toggleSetting = (key: string) => {
+        const newSettings = { ...settings, [key]: !settings[key] };
+        setSettings(newSettings);
+        localStorage.setItem('notification_settings' + modeSuffix, JSON.stringify(newSettings));
+        window.dispatchEvent(new Event('notification-settings-change'));
+        
+        const labels: Record<string, string> = {
+            quarter: 'تنبيهات الأحزاب والأرباع',
+            sajda: 'تنبيهات السجدات',
+            themes: 'تنبيهات تغيير الثيمات',
+            downloads: 'تنبيهات التحميل',
+            bookmarks: 'تنبيهات الإشارات المرجعية',
+            juz: 'تنبيهات بداية الأجزاء',
+            general: 'التنبيهات العامة'
+        };
+        
+        showToast(`${newSettings[key] ? 'تم تفعيل' : 'تم تعطيل'} ${labels[key]}`);
+    };
+
+    return (
+        <div className="space-y-2">
+            {[
+                { id: 'quarter', label: 'الأحزاب والأرباع', desc: 'تنبيه عند الوصول لبداية حزب أو ربع جديد' },
+                { id: 'juz', label: 'بداية الأجزاء', desc: 'تنبيه عند الانتقال لجزء جديد' },
+                { id: 'sajda', label: 'مواضع السجدات', desc: 'تنبيه عند الوصول لآية بها سجدة تلاوة' },
+                { id: 'themes', label: 'تغيير الثيمات', desc: 'تنبيه عند تطبيق لون أو ثيم جديد' },
+                { id: 'downloads', label: 'التحميلات', desc: 'تنبيهات حالة تحميل السور أو التفاسير' },
+                { id: 'bookmarks', label: 'الإشارات المرجعية', desc: 'تنبيه عند حفظ أو حذف إشارة مرجعية' },
+                { id: 'general', label: 'تنبيهات عامة', desc: 'تنبيهات الحفظ، الاختبارات، والعمليات الأخرى' }
+            ].map((item) => (
+                <div 
+                    key={item.id}
+                    onClick={() => toggleSetting(item.id)}
+                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer ${
+                        settings[item.id] 
+                        ? 'bg-emerald-50 border-emerald-500 shadow-sm' 
+                        : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60'
+                    }`}
+                >
+                    <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-sm">{item.label}</span>
+                        <span className="text-[10px] opacity-60">{item.desc}</span>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                        settings[item.id] ? 'bg-emerald-500 text-white' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}>
+                        {settings[item.id] && <Check className="w-3 h-3" />}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+const PRESET_COLORS = [
+    '#f59e0b', '#f97316', '#ef4444', '#000000', '#4b5563', '#9ca3af', '#f3f4f6',
+    '#6366f1', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6', '#10b981', '#22c55e', '#84cc16',
+    'transparent', '#44403c', '#78716c', '#f43f5e', '#ec4899', '#d946ef', '#a855f7', '#8b5cf6'
+];
+
+const ToolbarColorPickerContent: React.FC<{ 
+    currentTheme: any, 
+    isLandscape: boolean, 
+    readingMode: string, 
+    isWirdMode: boolean, 
+    isMemorizationMode: boolean,
+    showToast: (msg: string) => void
+}> = ({ currentTheme, isLandscape, readingMode, isWirdMode, isMemorizationMode, showToast }) => {
+    const modeSuffix = isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
+    
+    const [toolbarColors, setToolbarColors] = useState<any>(() => {
+        const saved = localStorage.getItem('toolbar_colors_v2' + modeSuffix);
+        if (saved) return JSON.parse(saved);
+        return {};
+    });
+
+    const [activePicker, setActivePicker] = useState<{ sectionId: string, type: 'bg' | 'text' | 'border' } | null>(null);
+
+    const updateColor = (key: string, type: 'bg' | 'text' | 'border', color: string) => {
+        const newColors = {
+            ...toolbarColors,
+            [key]: {
+                ...(toolbarColors[key] || {}),
+                [type]: color
+            }
+        };
+        setToolbarColors(newColors);
+        localStorage.setItem('toolbar_colors_v2' + modeSuffix, JSON.stringify(newColors));
+        window.dispatchEvent(new Event('theme-change'));
+    };
+
+    const resetColors = () => {
+        localStorage.removeItem('toolbar_colors_v2' + modeSuffix);
+        setToolbarColors({});
+        window.dispatchEvent(new Event('theme-change'));
+        showToast('تم استعادة الألوان الافتراضية');
+    };
+
+    const sections = [
+        { id: 'top-toolbar', label: 'الشريط العلوي' },
+        { id: 'bottom-toolbar', label: 'الشريط السفلي' },
+        { id: 'surah', label: 'زر السورة' },
+        { id: 'juz', label: 'زر الجزء' },
+        { id: 'page', label: 'زر الصفحة' },
+        { id: 'audio', label: 'أزرار الصوت' },
+        { id: 'btn-menu', label: 'زر القائمة' },
+    ];
+
+    return (
+        <div className="space-y-4">
+            <button 
+                onClick={resetColors}
+                className="w-full py-2 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors"
+            >
+                استعادة الألوان الافتراضية
+            </button>
+
+            {activePicker && (
+                <div className="p-4 bg-white rounded-2xl border-2 border-gray-100 shadow-sm space-y-3 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-700">
+                            اختر لون {activePicker.type === 'bg' ? 'الخلفية' : activePicker.type === 'text' ? 'النص' : 'الحدود'}
+                        </span>
+                        <button onClick={() => setActivePicker(null)} className="p-1 hover:bg-gray-100 rounded-full">
+                            <X size={14} className="text-gray-400" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1.5">
+                        {PRESET_COLORS.map((color, i) => {
+                            const currentValue = toolbarColors[activePicker.sectionId]?.[activePicker.type] || 
+                                (activePicker.type === 'bg' ? currentTheme.barBg : activePicker.type === 'text' ? currentTheme.barText : currentTheme.barBorder);
+                            const isSelected = currentValue === color;
+                            
+                            return (
+                                <button
+                                    key={i}
+                                    onClick={() => updateColor(activePicker.sectionId, activePicker.type, color)}
+                                    className={`w-full aspect-square rounded-lg border-2 transition-all flex items-center justify-center relative overflow-hidden ${isSelected ? 'border-emerald-500 scale-110 z-10 shadow-md' : 'border-transparent hover:scale-105'}`}
+                                    style={{ 
+                                        backgroundColor: color === 'transparent' ? 'white' : color,
+                                        backgroundImage: color === 'transparent' ? 'repeating-conic-gradient(#e5e7eb 0% 25%, #ffffff 0% 50%)' : 'none',
+                                        backgroundSize: color === 'transparent' ? '8px 8px' : 'auto'
+                                    }}
+                                >
+                                    {isSelected && <Check size={12} className={color === '#ffffff' || color === 'transparent' ? 'text-emerald-600' : 'text-white'} />}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {sections.map(section => (
+                <div key={section.id} className="p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-3">
+                    <h4 className="text-xs font-bold text-gray-700">{section.label}</h4>
+                    <div className="flex gap-4">
+                        {[
+                            { type: 'bg' as const, label: 'الخلفية', defaultValue: currentTheme.barBg || '#ffffff' },
+                            { type: 'text' as const, label: 'النص', defaultValue: currentTheme.barText || '#000000' },
+                            { type: 'border' as const, label: 'الحدود', defaultValue: currentTheme.barBorder || '#e5e7eb' }
+                        ].map(field => {
+                            const value = toolbarColors[section.id]?.[field.type] || field.defaultValue;
+                            const isActive = activePicker?.sectionId === section.id && activePicker?.type === field.type;
+                            
+                            return (
+                                <div key={field.type} className="flex-1 space-y-1">
+                                    <span className="text-[10px] text-gray-500 block text-center">{field.label}</span>
+                                    <button 
+                                        onClick={() => setActivePicker({ sectionId: section.id, type: field.type })}
+                                        className={`w-full h-8 rounded-lg border-2 transition-all relative overflow-hidden ${isActive ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-white shadow-sm hover:border-gray-200'}`}
+                                        style={{ 
+                                            backgroundColor: value === 'transparent' ? 'white' : value,
+                                            backgroundImage: value === 'transparent' ? 'repeating-conic-gradient(#e5e7eb 0% 25%, #ffffff 0% 50%)' : 'none',
+                                            backgroundSize: value === 'transparent' ? '8px 8px' : 'auto'
+                                        }}
+                                    >
+                                        {isActive && <div className="absolute inset-0 flex items-center justify-center bg-black/5"><Check size={12} className={value === '#ffffff' || value === 'transparent' ? 'text-emerald-600' : 'text-white'} /></div>}
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            ))}
         </div>
     );
 };

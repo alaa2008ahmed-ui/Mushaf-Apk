@@ -72,6 +72,10 @@
     z-index: 100;
 }
 
+.quran-reader-container.no-border::before {
+    display: none;
+}
+
 .quran-reader-container ::-webkit-scrollbar { display: none; }
 
 .quran-reader-container.dark { background-color: #000; color: #fff; }

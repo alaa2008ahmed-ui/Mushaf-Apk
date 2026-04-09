@@ -7,6 +7,11 @@ interface VerseSectionProps {
     setIsCustomizationOpen: (isOpen: boolean) => void;
     theme: any;
     themeKey: string;
+    verseSettings: {
+        fontFamily: string;
+        bgColor: string;
+        textColor: string;
+    };
 }
 
 const VerseSection: React.FC<VerseSectionProps> = ({
@@ -15,7 +20,8 @@ const VerseSection: React.FC<VerseSectionProps> = ({
     setVerseFontSize,
     setIsCustomizationOpen,
     theme,
-    themeKey
+    themeKey,
+    verseSettings
 }) => {
     const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
     const isLongPressRef = useRef(false);
@@ -87,7 +93,7 @@ const VerseSection: React.FC<VerseSectionProps> = ({
 
     return (
         <div 
-            className="text-center pt-12 select-none cursor-pointer active:scale-95 transition-transform touch-manipulation"
+            className="text-center pt-12 select-none cursor-pointer active:scale-95 transition-all touch-manipulation mx-4 p-4 rounded-3xl"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
             onTouchMove={handleTouchMove}
@@ -95,12 +101,17 @@ const VerseSection: React.FC<VerseSectionProps> = ({
             onMouseUp={cancelPress}
             onMouseLeave={cancelPress}
             onContextMenu={handleContextMenu}
-            style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+            style={{ 
+                userSelect: 'none', 
+                WebkitUserSelect: 'none',
+                backgroundColor: verseSettings.bgColor,
+                fontFamily: verseSettings.fontFamily
+            }}
         >
-            <p className="font-bold leading-tight mb-1 pointer-events-none transition-all duration-75" style={{ color: theme.textColor === '#000000' ? theme.palette[0] : theme.textColor, fontSize: `${verseFontSize}rem` }}>
+            <p className="font-bold leading-tight mb-1 pointer-events-none transition-all duration-75" style={{ color: verseSettings.textColor === theme.textColor && theme.textColor === '#000000' ? theme.palette[0] : verseSettings.textColor, fontSize: `${verseFontSize}rem` }}>
                 {currentVerse.text}
             </p>
-            <p className="text-[12px] font-bold text-left pl-8 pointer-events-none transition-all duration-75" style={{ color: theme.textColor === '#000000' ? theme.palette[1] : theme.textColor, fontSize: `${Math.max(0.75, verseFontSize * 0.6)}rem` }}>
+            <p className="text-[12px] font-bold text-left pl-8 pointer-events-none transition-all duration-75 opacity-70" style={{ color: verseSettings.textColor === theme.textColor && theme.textColor === '#000000' ? theme.palette[1] : verseSettings.textColor, fontSize: `${Math.max(0.75, verseFontSize * 0.6)}rem` }}>
                 {`(${currentVerse.surah}: ${currentVerse.number})`}
             </p>
         </div>

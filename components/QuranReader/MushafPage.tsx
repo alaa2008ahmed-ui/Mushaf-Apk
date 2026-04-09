@@ -167,6 +167,23 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                     
                     const id = `ayah-${ayah.sNum}-${ayah.numberInSurah}`;
 
+                    // Determine if this ayah should be hidden
+                    let shouldHide = hideVerses && highlightedAyahId !== id;
+                    
+                    // If in memorization review mode, only hide if it's within the review range
+                    if (shouldHide && memorizationSettings?.isReviewMode) {
+                        const s = ayah.sNum;
+                        const a = ayah.numberInSurah;
+                        const { fromSurah, fromAyah, toSurah, toAyah } = memorizationSettings;
+                        
+                        const isBefore = s < fromSurah || (s === fromSurah && a < fromAyah);
+                        const isAfter = s > toSurah || (s === toSurah && a > toAyah);
+                        
+                        if (isBefore || isAfter) {
+                            shouldHide = false;
+                        }
+                    }
+
                     const headerBg = currentTheme?.headerBg || '#22c55e';
                     const headerBorder = currentTheme?.accent || '#14532d';
                     const headerText = currentTheme?.headerText || '#ffffff';
@@ -198,11 +215,11 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                     {ayah.sNum !== 1 && ayah.sNum !== 9 && (
                                         <div className="bismillah" style={headerStyle}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
                                     )} 
-                                </> 
+                                 </> 
                             )}
                             <span 
                                 id={id} 
-                                className={`ayah-text-block ${highlightedAyahId === id ? 'highlighted' : ''} ${isSajdah ? 'ayah-sajdah' : ''} ${hideVerses && highlightedAyahId !== id ? 'hide-text' : ''}`} 
+                                className={`ayah-text-block ${highlightedAyahId === id ? 'highlighted' : ''} ${isSajdah ? 'ayah-sajdah' : ''} ${shouldHide ? 'hide-text' : ''}`} 
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (!isLongPressTriggered.current) {

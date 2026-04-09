@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, BookOpen, Bookmark, Palette, Share2, Copy } from 'lucide-react';
+import { Play, BookOpen, Bookmark, Palette, Share2, Copy, Languages } from 'lucide-react';
 
 interface AyahOptionsMenuProps {
     x: number;
@@ -7,6 +7,7 @@ interface AyahOptionsMenuProps {
     onClose: () => void;
     onPlay: () => void;
     onTafseer: () => void;
+    onTranslation?: () => void;
     onBookmark: () => void;
     onCustomize: () => void;
     onShare?: () => void;
@@ -15,7 +16,7 @@ interface AyahOptionsMenuProps {
 }
 
 const AyahOptionsMenu: React.FC<AyahOptionsMenuProps> = ({
-    x, y, onClose, onPlay, onTafseer, onBookmark, onCustomize, onShare, onCopy, currentTheme
+    x, y, onClose, onPlay, onTafseer, onTranslation, onBookmark, onCustomize, onShare, onCopy, currentTheme
 }) => {
     const iconColor = currentTheme.accent || '#000000';
 
@@ -28,6 +29,7 @@ const AyahOptionsMenu: React.FC<AyahOptionsMenuProps> = ({
                 <div className="p-4 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
                     <MenuItem icon={<Play size={18} />} label="استماع" onClick={onPlay} iconColor={iconColor} />
                     <MenuItem icon={<BookOpen size={18} />} label="تفسير" onClick={onTafseer} iconColor={iconColor} />
+                    {onTranslation && <MenuItem icon={<Languages size={18} />} label="ترجمة" onClick={onTranslation} iconColor={iconColor} />}
                     <MenuItem icon={<Bookmark size={18} />} label="حفظ كعلامة" onClick={onBookmark} iconColor={iconColor} />
                     {onShare && <MenuItem icon={<Share2 size={18} />} label="مشاركة" onClick={onShare} iconColor={iconColor} />}
                     {onCopy && <MenuItem icon={<Copy size={18} />} label="نسخ" onClick={onCopy} iconColor={iconColor} />}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { toArabic } from './constants';
+import { Menu } from 'lucide-react';
 
 interface QuranHeaderProps {
     isPageInputActive: boolean;
@@ -26,6 +27,7 @@ interface QuranHeaderProps {
     isWirdMode?: boolean;
     isMemorizationMode?: boolean;
     memorizationSettings?: any;
+    setIsFloatingMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
@@ -52,17 +54,27 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
     setReadingMode,
     isWirdMode = false,
     isMemorizationMode = false,
-    memorizationSettings
+    memorizationSettings,
+    setIsFloatingMenuOpen
 }) => {
     const [isModeMenuOpen, setIsModeMenuOpen] = React.useState(false);
 
     return (
         <header id="header" className={`header-default flex-none z-50 flex items-center px-4 justify-between border shadow-xl w-full gap-2`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
             <button 
+                id="btn-menu-header" 
+                onClick={() => setIsFloatingMenuOpen(p => !p)}
+                className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 flex items-center justify-center flex-shrink-0 aspect-square" 
+                style={getToolbarStyle('btn-menu', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBorder || currentTheme.btnBg)}
+                title="القائمة"
+            >
+                <Menu size={20} />
+            </button>
+            <button 
                 id="surah-name-header" 
                 onClick={() => openModal('surah-modal')}
                 className="top-bar-text-button flex items-center justify-center leading-none !pt-0" 
-                style={getToolbarStyle('surah', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
+                style={getToolbarStyle('surah', currentTheme.barBg, currentTheme.barText, currentTheme.btnBorder || currentTheme.barBorder)}
             >
                 <span className="flex items-center justify-center leading-none">
                     {isMemorizationMode && memorizationSettings ? (
@@ -72,7 +84,6 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                     )}
                 </span>
             </button>
-            <div id="juz-number-header" className="top-bar-text-button !rounded-lg !min-w-[36px] !w-[36px] !h-[36px] !pt-0 !pb-[3px] !px-0 cursor-default flex-shrink-0 !font-black !text-lg flex items-center justify-center leading-none" style={{ cursor: 'default', ...getToolbarStyle('juz', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder) }}>{toArabic(juz)}</div>
             {isPageInputActive ? (
                 <input
                     ref={pageInputRef}
@@ -83,7 +94,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                     onBlur={handlePageInputBlur}
                     onKeyDown={handlePageInputKeyDown}
                     className="top-bar-text-button !rounded-lg !min-w-[46px] !w-[46px] !h-[36px] !pt-0 !pb-[3px] !px-0 text-center flex-shrink-0 !font-black !text-lg flex items-center justify-center leading-none"
-                    style={getToolbarStyle('page', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
+                    style={getToolbarStyle('page', currentTheme.barBg, currentTheme.barText, currentTheme.btnBorder || currentTheme.barBorder)}
                     placeholder={`${toArabic(page)}`}
                 />
             ) : (
@@ -91,7 +102,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                     id="header-page" 
                     onClick={handlePageButtonClick}
                     className="top-bar-text-button !rounded-lg !min-w-[46px] !w-[46px] !h-[36px] !pt-0 !pb-[3px] !px-0 flex-shrink-0 !font-black !text-lg flex items-center justify-center leading-none" 
-                    style={getToolbarStyle('page', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}
+                    style={getToolbarStyle('page', currentTheme.barBg, currentTheme.barText, currentTheme.btnBorder || currentTheme.barBorder)}
                 >
                     {toArabic(page)}
                 </button>
@@ -104,7 +115,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                     onPointerUp={handlePlayButtonPointerUp}
                     onPointerLeave={handlePlayButtonPointerLeave}
                     className="top-bar-text-button !rounded-full !w-10 !h-10 !p-0 flex items-center justify-center flex-shrink-0 aspect-square" 
-                    style={{...getToolbarStyle('audio', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder), touchAction: 'none'}}
+                    style={{...getToolbarStyle('audio', currentTheme.barBg, currentTheme.barText, currentTheme.btnBorder || currentTheme.barBorder), touchAction: 'none'}}
                 >
                     {renderPlayButtonIcon()}
                 </button>

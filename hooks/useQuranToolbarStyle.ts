@@ -10,7 +10,8 @@ export const useQuranToolbarStyle = (toolbarColors: any, currentTheme: any, isTr
             bg = currentTheme.barBg || "#ffffff";
         }
         if (!border || border.includes('rgba') || border === 'transparent') {
-            border = currentTheme.barBorder?.split(' ')[2] || "#e5e7eb";
+            const themeBorder = currentTheme.barBorder || "#e5e7eb";
+            border = themeBorder.includes(' ') ? themeBorder.split(' ')[2] : themeBorder;
         }
 
         let finalBg = bg;

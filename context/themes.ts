@@ -144,14 +144,14 @@ export const presetThemes: { [key: string]: Theme } = {
         barBg: "#E2E8F0",
         barBorder: "1px solid #CBD5E1"
     },
-    modern_blue: {
-        name: "أزرق عصري",
-        bgColor: "#FFFFFF",
-        textColor: "#1E293B",
+    sunset_glow: {
+        name: "وهج الغروب",
+        bgColor: "#FFF7ED",
+        textColor: "#9A3412",
         font: "'Cairo', sans-serif",
-        palette: ["#3B82F6", "#6366F1", "#2563EB"],
-        barBg: "#F8FAFC",
-        barBorder: "1px solid #E2E8F0"
+        palette: ["#F97316", "#FB923C", "#EA580C"],
+        barBg: "#FFEDD5",
+        barBorder: "1px solid #FED7AA"
     },
     electric_violet: {
         name: "بنفسجي كهربائي",

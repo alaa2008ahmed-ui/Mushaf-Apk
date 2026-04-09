@@ -13,6 +13,7 @@ interface VerticalReadingViewProps {
     onSettingsChange?: (newSettings: any) => void;
     modeSuffix?: string;
     hideVerses?: boolean;
+    memorizationSettings?: any;
 }
 
 // Global cache to ensure instant loading after first fetch
@@ -30,7 +31,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     onVisibleAyahChange,
     onSettingsChange,
     modeSuffix = '_v',
-    hideVerses = false
+    hideVerses = false,
+    memorizationSettings
 }) => {
     const [tafseerData, setTafseerData] = useState<any[]>(cachedTafseerData || []);
     const [meaningsData, setMeaningsData] = useState<any[]>(cachedMeaningsData || []);
@@ -257,6 +259,23 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
         const isHighlighted = currentAyah.s === item.surahNumber && currentAyah.a === item.ayahNumber;
         
+        // Determine if this ayah should be hidden
+        let shouldHide = hideVerses && !isHighlighted;
+        
+        // If in memorization review mode, only hide if it's within the review range
+        if (shouldHide && memorizationSettings?.isReviewMode) {
+            const s = item.surahNumber;
+            const a = item.ayahNumber;
+            const { fromSurah, fromAyah, toSurah, toAyah } = memorizationSettings;
+            
+            const isBefore = s < fromSurah || (s === fromSurah && a < fromAyah);
+            const isAfter = s > toSurah || (s === toSurah && a > toAyah);
+            
+            if (isBefore || isAfter) {
+                shouldHide = false;
+            }
+        }
+
         return (
             <div className="px-4 py-2">
                 <div 
@@ -278,8 +297,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                              letterSpacing: 0,
                              fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"',
                              textRendering: 'optimizeLegibility',
-                             filter: hideVerses && !isHighlighted ? 'blur(8px)' : 'none',
-                             opacity: hideVerses && !isHighlighted ? 0.3 : 1,
+                             filter: shouldHide ? 'blur(8px)' : 'none',
+                             opacity: shouldHide ? 0.3 : 1,
                              cursor: hideVerses ? 'pointer' : 'default'
                          }}>
                         {item.text}
@@ -305,7 +324,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 </div>
             </div>
         );
-    }, [currentAyah, currentTheme, settings, readingMode, onAyahClick, meaningsData, tafseerData, translationData]);
+    }, [currentAyah, currentTheme, settings, readingMode, onAyahClick, meaningsData, tafseerData, translationData, hideVerses, memorizationSettings, localFontSize]);
 
     if (isLoading) {
         return (

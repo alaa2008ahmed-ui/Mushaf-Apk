@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { registerBackInterceptor } from '../../hooks/useBackButton';
+import { X, Palette, Check, Type, ChevronLeft } from 'lucide-react';
 
 interface ToolbarColorPickerModalProps {
     onClose: () => void;
@@ -11,13 +12,14 @@ interface ToolbarColorPickerModalProps {
     modeSuffix: string;
 }
 
-// FIX: Add `onOpenModal` to props destructuring to make it available in the component.
 const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClose, onOpenModal, showToast, currentTheme, toolbarColors, isLandscape, modeSuffix }) => {
     const [isClosing, setIsClosing] = useState(false);
 
     const handleClose = () => {
-        onClose();
+        setIsClosing(true);
+        setTimeout(onClose, 300);
     };
+
     const [headerSync, setHeaderSync] = useState(false);
     const [footerSync, setFooterSync] = useState(false);
     const [editingType, setEditingType] = useState<string | null>(null);
@@ -47,7 +49,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
         '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
         '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
         '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
-        '#f43f5e', '#78716c', '#57534e'
+        '#f43f5e', '#78716c', '#57534e', 'transparent'
     ];
 
     const getStyleForType = useCallback((type: string) => {
@@ -56,19 +58,19 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
         let defaults = { bg: '#fff', text: '#000', border: '#ccc', font: 'inherit' };
         
         const headerButtons = ['surah', 'juz', 'page', 'audio'];
-        const footerButtons = ['btn-menu', 'btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-search'];
+        const footerButtons = ['btn-menu', 'btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-search', 'btn-share'];
 
         if (type === 'top-toolbar' || type === 'bottom-toolbar') {
             defaults = { bg: currentTheme.barBg, text: currentTheme.barText, border: currentTheme.barBorder, font: currentTheme.font };
         } else if (headerButtons.includes(type)) {
-            defaults = { bg: currentTheme.barBg, text: currentTheme.barText, border: currentTheme.barBorder, font: currentTheme.font };
+            defaults = { bg: currentTheme.barBg, text: currentTheme.barText, border: currentTheme.btnBorder || currentTheme.barBorder, font: currentTheme.font };
         } else if (footerButtons.includes(type)) {
-            defaults = { bg: currentTheme.btnBg, text: currentTheme.btnText, border: currentTheme.btnBg, font: currentTheme.font };
+            defaults = { bg: currentTheme.btnBg, text: currentTheme.btnText, border: currentTheme.btnBorder || currentTheme.btnBg, font: currentTheme.font };
         }
 
         return {
             bg: config?.bg || defaults.bg,
-            text: defaults.text,
+            text: config?.text || defaults.text,
             border: config?.border || defaults.border,
             font: config?.font || defaults.font
         };
@@ -94,7 +96,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
         colors[editingType] = newConfig;
         
         const headerButtons = ['surah', 'juz', 'page', 'audio'];
-        const footerButtons = ['btn-settings', 'btn-home', 'btn-bookmark', 'btn-bookmarks-list', 'btn-themes', 'btn-autoscroll', 'btn-menu', 'btn-search'];
+        const footerButtons = ['btn-settings', 'btn-home', 'btn-bookmark', 'btn-bookmarks-list', 'btn-themes', 'btn-autoscroll', 'btn-menu', 'btn-search', 'btn-share'];
         
         if (headerButtons.includes(editingType) && headerSync) {
             headerButtons.forEach(b => colors[b] = { ...newConfig });
@@ -118,184 +120,255 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
     };
 
     const getName = (type: string) => {
-        const map: Record<string, string> = { 'top-toolbar': 'الشريط العلوى', 'bottom-toolbar': 'الشريط السفلى', 'surah': 'زر السورة', 'juz': 'زر الجزء', 'page': 'زر الصفحة', 'audio': 'زر الصوت', 'btn-settings': 'زر الإعدادات', 'btn-home': 'زر الرئيسية', 'btn-bookmark': 'زر الحفظ', 'btn-bookmarks-list': 'زر القائمة', 'btn-themes': 'زر الثيمات', 'btn-autoscroll': 'زر التمرير', 'btn-menu': 'زر القائمة الجانبية', 'btn-search': 'زر البحث', 'all': 'الكل' };
+        const map: Record<string, string> = { 'top-toolbar': 'الشريط العلوى', 'bottom-toolbar': 'الشريط السفلى', 'surah': 'زر السورة', 'juz': 'زر الجزء', 'page': 'زر الصفحة', 'audio': 'زر الصوت', 'btn-settings': 'زر الإعدادات', 'btn-home': 'زر الرئيسية', 'btn-bookmark': 'زر الحفظ', 'btn-bookmarks-list': 'زر القائمة', 'btn-themes': 'زر الثيمات', 'btn-autoscroll': 'زر التمرير', 'btn-menu': 'زر القائمة الجانبية', 'btn-search': 'زر البحث', 'btn-share': 'زر المشاركة', 'all': 'الكل' };
         return map[type] || type;
     };
 
     const renderCheckerboard = (color: string) => {
+        if (color === 'transparent' || color === 'rgba(0, 0, 0, 0)') {
+            return {
+                backgroundColor: '#ffffff',
+                backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%)',
+                backgroundSize: '8px 8px'
+            };
+        }
         return { backgroundColor: color };
     };
 
     if (editingType) {
         return (
-            <div className="fixed inset-0 z-[220] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={() => setEditingType(null)}>
-                <div className={`bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full ${isLandscape ? 'max-w-2xl' : 'max-w-sm'} overflow-hidden animate-modal-enter flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
-                    <div className="p-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center flex-none">
-                        <h3 className="font-bold text-lg">تخصيص: {getName(editingType)}</h3>
-                        <button onClick={() => setEditingType(null)} className="text-white hover:bg-white/20 rounded-full p-1">✕</button>
+            <div className="fixed inset-0 z-[220] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" onClick={() => setEditingType(null)}>
+                <div className={`modal-skinned w-full ${isLandscape ? 'max-w-2xl' : 'max-w-sm'} rounded-3xl shadow-2xl overflow-hidden animate-modal-enter flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
+                    <div className="theme-header-bg p-4 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <Palette className="w-5 h-5" />
+                            <h3 className="font-bold text-lg">تخصيص: {getName(editingType)}</h3>
+                        </div>
+                        <button onClick={() => setEditingType(null)} className="hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-1 transition-colors">
+                            <X className="w-5 h-5" />
+                        </button>
                     </div>
-                    <div className={`p-5 overflow-y-auto flex-1 ${isLandscape ? 'grid grid-cols-2 gap-6 items-start' : 'space-y-4'}`}>
+                    
+                    <div className={`p-5 overflow-y-auto flex-1 ${isLandscape ? 'grid grid-cols-2 gap-6 items-start' : 'space-y-6'}`}>
                         {!editingType.includes('toolbar') && (
-                            <div id="modal-font-section" className={isLandscape ? 'col-span-1' : ''}>
-                                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 block">نوع الخط</label>
-                                <div className="custom-select-wrapper">
-                                    <select value={editConfig.font} onChange={e => setEditConfig({...editConfig, font: e.target.value})} className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:text-white">
-                                        <option value="">افتراضي</option>
-                                        <option value="var(--font-amiri-quran)">حفص</option>
-                                        <option value="var(--font-amiri)">نسخ</option>
-                                        <option value="var(--font-scheherazade)">مجود</option>
-                                        <option value="var(--font-lateef)">تراثي</option>
-                                        <option value="var(--font-harmattan)">ورش</option>
-                                        <option value="var(--font-aref)">رقعة</option>
-                                        <option value="var(--font-gulzar)">نستعليق</option>
-                                        <option value="var(--font-kufi)">كوفي</option>
-                                        <option value="var(--font-kufam)">كوفي حديث</option>
-                                        <option value="var(--font-noto)">نسخ حديث</option>
-                                        <option value="var(--font-cairo)">القاهرة</option>
-                                        <option value="var(--font-messiri)">المسيري</option>
-                                        <option value="var(--font-rakkas)">رقاص</option>
-                                        <option value="var(--font-lalezar)">لالزار</option>
-                                        <option value="var(--font-katibeh)">قطيبة</option>
-                                        <option value="var(--font-tajawal)">تجوّل</option>
-                                        <option value="var(--font-changa)">شنقة</option>
-                                        <option value="var(--font-mirza)">ميرزا</option>
-                                        <option value="var(--font-qalam)">قلم</option>
-                                        <option value="var(--font-thuluth)">ثلوث</option>
-                                        <option value="var(--font-digital)">رقمي</option>
-                                    </select>
+                            <div className={isLandscape ? 'col-span-1' : ''}>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Type className="w-4 h-4 opacity-70" />
+                                    <label className="text-sm font-bold opacity-80">نوع الخط</label>
                                 </div>
+                                <select 
+                                    value={editConfig.font} 
+                                    onChange={e => setEditConfig({...editConfig, font: e.target.value})} 
+                                    className="w-full p-3 rounded-xl themed-card-bg border border-gray-200 dark:border-gray-700 font-bold text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                >
+                                    <option value="">افتراضي</option>
+                                    <option value="var(--font-amiri-quran)">حفص</option>
+                                    <option value="var(--font-amiri)">نسخ</option>
+                                    <option value="var(--font-scheherazade)">مجود</option>
+                                    <option value="var(--font-lateef)">تراثي</option>
+                                    <option value="var(--font-harmattan)">ورش</option>
+                                    <option value="var(--font-aref)">رقعة</option>
+                                    <option value="var(--font-gulzar)">نستعليق</option>
+                                    <option value="var(--font-kufi)">كوفي</option>
+                                    <option value="var(--font-kufam)">كوفي حديث</option>
+                                    <option value="var(--font-noto)">نسخ حديث</option>
+                                    <option value="var(--font-cairo)">القاهرة</option>
+                                    <option value="var(--font-messiri)">المسيري</option>
+                                    <option value="var(--font-rakkas)">رقاص</option>
+                                    <option value="var(--font-lalezar)">لالزار</option>
+                                    <option value="var(--font-katibeh)">قطيبة</option>
+                                    <option value="var(--font-tajawal)">تجوّل</option>
+                                    <option value="var(--font-changa)">شنقة</option>
+                                    <option value="var(--font-mirza)">ميرزا</option>
+                                    <option value="var(--font-qalam)">قلم</option>
+                                    <option value="var(--font-thuluth)">ثلوث</option>
+                                    <option value="var(--font-digital)">رقمي</option>
+                                </select>
                             </div>
                         )}
-                        <div className={`grid gap-3 ${isLandscape && editingType.includes('toolbar') ? 'col-span-2 grid-cols-3' : 'grid-cols-1'}`}>
-                            <div className="flex flex-col">
-                                <label className="text-xs font-bold text-gray-500 mb-1">خلفية</label>
-                                <div 
-                                    className={`h-10 w-full rounded-lg border shadow-sm cursor-pointer ${activeColorField === 'bg' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+
+                        <div className={`grid gap-4 ${isLandscape && editingType.includes('toolbar') ? 'col-span-2 grid-cols-3' : 'grid-cols-1'}`}>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold opacity-60 px-1">لون الخلفية</label>
+                                <button 
+                                    className={`h-12 w-full rounded-xl border-2 transition-all flex items-center justify-center ${activeColorField === 'bg' ? 'border-emerald-500 scale-[1.02] shadow-lg' : 'border-gray-200 dark:border-gray-700'}`}
                                     style={renderCheckerboard(editConfig.bg)}
                                     onClick={() => setActiveColorField(activeColorField === 'bg' ? null : 'bg')}
-                                ></div>
+                                >
+                                    {activeColorField === 'bg' && <Check className="w-6 h-6 text-emerald-500 drop-shadow-md" />}
+                                </button>
                             </div>
+
                             {!editingType.includes('toolbar') && (
-                                <div className="flex flex-col">
-                                    <label className="text-xs font-bold text-gray-500 mb-1">نص/أيقونة</label>
-                                    <div 
-                                        className={`h-10 w-full rounded-lg border shadow-sm cursor-pointer ${activeColorField === 'text' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold opacity-60 px-1">لون النص/الأيقونة</label>
+                                    <button 
+                                        className={`h-12 w-full rounded-xl border-2 transition-all flex items-center justify-center ${activeColorField === 'text' ? 'border-emerald-500 scale-[1.02] shadow-lg' : 'border-gray-200 dark:border-gray-700'}`}
                                         style={renderCheckerboard(editConfig.text)}
                                         onClick={() => setActiveColorField(activeColorField === 'text' ? null : 'text')}
-                                    ></div>
+                                    >
+                                        {activeColorField === 'text' && <Check className="w-6 h-6 text-emerald-500 drop-shadow-md" />}
+                                    </button>
                                 </div>
                             )}
-                            <div className="flex flex-col">
-                                <label className="text-xs font-bold text-gray-500 mb-1">حدود</label>
-                                <div 
-                                    className={`h-10 w-full rounded-lg border shadow-sm cursor-pointer ${activeColorField === 'border' ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-300'}`}
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold opacity-60 px-1">لون الحدود</label>
+                                <button 
+                                    className={`h-12 w-full rounded-xl border-2 transition-all flex items-center justify-center ${activeColorField === 'border' ? 'border-emerald-500 scale-[1.02] shadow-lg' : 'border-gray-200 dark:border-gray-700'}`}
                                     style={renderCheckerboard(editConfig.border)}
                                     onClick={() => setActiveColorField(activeColorField === 'border' ? null : 'border')}
-                                ></div>
+                                >
+                                    {activeColorField === 'border' && <Check className="w-6 h-6 text-emerald-500 drop-shadow-md" />}
+                                </button>
                             </div>
                             
                             {activeColorField && (
-                                <div className="col-span-full bg-gray-50 dark:bg-gray-800/80 p-3 rounded-xl border border-gray-200 dark:border-gray-700 mt-2 animate-fadeIn">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                                <div className="col-span-full themed-card-bg p-4 rounded-2xl border border-gray-200 dark:border-gray-700 mt-2 animate-fadeIn shadow-inner">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-sm font-bold opacity-80">
                                             اختر لون {activeColorField === 'bg' ? 'الخلفية' : activeColorField === 'text' ? 'النص/الأيقونة' : 'الحدود'}
                                         </span>
-                                        <button onClick={() => setActiveColorField(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                                            <i className="fa-solid fa-times"></i>
-                                        </button>
                                     </div>
-                                    <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
+                                    <div className="grid grid-cols-6 sm:grid-cols-8 gap-3">
                                         {PREDEFINED_COLORS.map(c => (
                                             <button
                                                 key={c}
                                                 onClick={() => setEditConfig({...editConfig, [activeColorField]: c})}
-                                                className={`h-8 rounded-md border shadow-sm transition-transform hover:scale-110 ${editConfig[activeColorField] === c ? 'ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-gray-800' : 'border-gray-200 dark:border-gray-600'}`}
+                                                className={`h-10 rounded-lg border-2 transition-all hover:scale-110 active:scale-90 flex items-center justify-center ${editConfig[activeColorField] === c ? 'border-emerald-500 shadow-md z-10' : 'border-transparent'}`}
                                                 style={renderCheckerboard(c)}
-                                                title={c}
-                                            />
+                                            >
+                                                {editConfig[activeColorField] === c && <Check className="w-4 h-4 text-emerald-500" />}
+                                            </button>
                                         ))}
                                     </div>
                                 </div>
                             )}
                         </div>
-                        <button onClick={saveElementChanges} className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 ${isLandscape ? 'col-span-2' : 'w-full'}`}>تطبيق التغييرات</button>
+                    </div>
+
+                    <div className="p-4 themed-card-bg border-t border-gray-200 dark:border-gray-700">
+                        <button 
+                            onClick={saveElementChanges} 
+                            className="w-full theme-accent-btn font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            <Check className="w-5 h-5" />
+                            تطبيق التغييرات
+                        </button>
                     </div>
                 </div>
             </div>
         );
     }
     
-    const allButtons = ['surah', 'juz', 'page', 'audio', 'btn-menu', 'btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-search'];
-
     return (
-        <div className={`fixed inset-0 bg-transparent z-[200] flex items-center justify-center p-4 animate-fadeIn`} onClick={handleClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-5xl' : 'max-w-md'} rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
-                <div className={`flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900 ${isLandscape ? 'grid grid-cols-2 gap-4' : 'space-y-4'}`}>
-                    <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700 shadow-sm h-fit">
-                        <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 text-center border-b pb-2 border-gray-300 dark:border-gray-600">الأشرطة الرئيسية</h4>
-                        <div className="grid grid-cols-2 gap-3">
-                            <button data-type="top-toolbar" onClick={() => openEditModal('top-toolbar')} className="color-option-btn group shadow-sm h-12 relative overflow-hidden flex items-center justify-between p-0">
-                                <span className="relative z-10 font-bold text-xs px-3" style={{ color: getStyleForType('top-toolbar').text }}>الشريط العلوى</span>
-                                <div className="color-preview-dot mr-3 z-10 relative" style={renderCheckerboard(getStyleForType('top-toolbar').bg)}></div>
-                                <div className="absolute top-0 left-0 w-full h-full border-b-4 transition" style={{backgroundColor: getStyleForType('top-toolbar').bg, borderColor: getStyleForType('top-toolbar').border}}></div>
+        <div className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-fadeIn`} onClick={handleClose}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-5xl' : 'max-w-md'} rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
+                <div className="theme-header-bg p-4 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <Palette className="w-5 h-5" />
+                        <h3 className="font-bold text-lg">تخصيص الواجهة</h3>
+                    </div>
+                    <button onClick={handleClose} className="hover:bg-black/10 dark:hover:bg-white/10 rounded-full p-1 transition-colors">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div className={`flex-1 overflow-y-auto p-4 space-y-6 ${isLandscape ? 'grid grid-cols-2 gap-6 space-y-0' : ''}`}>
+                    {/* Main Toolbars Section */}
+                    <div className="space-y-3">
+                        <h4 className="text-sm font-bold opacity-60 px-2 flex items-center gap-2">
+                            <div className="w-1 h-4 bg-emerald-500 rounded-full"></div>
+                            الأشرطة الرئيسية
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4">
+                            <button onClick={() => openEditModal('top-toolbar')} className="themed-card-bg p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500 opacity-50"></div>
+                                <div className="flex flex-col items-center gap-2">
+                                    <span className="font-bold text-sm">الشريط العلوى</span>
+                                    <div className="h-6 w-12 rounded border border-gray-300 dark:border-gray-600" style={renderCheckerboard(getStyleForType('top-toolbar').bg)}></div>
+                                </div>
                             </button>
-                            <button data-type="bottom-toolbar" onClick={() => openEditModal('bottom-toolbar')} className="color-option-btn group shadow-sm h-12 relative overflow-hidden flex items-center justify-between p-0">
-                                <span className="relative z-10 font-bold text-xs px-3" style={{ color: getStyleForType('bottom-toolbar').text }}>الشريط السفلى</span>
-                                <div className="color-preview-dot mr-3 z-10 relative" style={renderCheckerboard(getStyleForType('bottom-toolbar').bg)}></div>
-                                <div className="absolute bottom-0 left-0 w-full h-full border-t-4 transition" style={{backgroundColor: getStyleForType('bottom-toolbar').bg, borderColor: getStyleForType('bottom-toolbar').border}}></div>
+                            <button onClick={() => openEditModal('bottom-toolbar')} className="themed-card-bg p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+                                <div className="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 opacity-50"></div>
+                                <div className="flex flex-col items-center gap-2">
+                                    <span className="font-bold text-sm">الشريط السفلى</span>
+                                    <div className="h-6 w-12 rounded border border-gray-300 dark:border-gray-600" style={renderCheckerboard(getStyleForType('bottom-toolbar').bg)}></div>
+                                </div>
                             </button>
                         </div>
                     </div>
-                    <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700 shadow-sm relative h-fit">
-                        <div className="flex justify-between items-center mb-3 border-b pb-2 border-gray-300 dark:border-gray-600">
-                            <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 w-full text-center">أزرار الشريط العلوى</h4>
-                            <div className="flex items-center gap-3 absolute left-3 top-3">
-                                <div className="flex items-center">
-                                    <label className="text-[10px] ml-1 font-bold text-indigo-500">توحيد</label>
-                                    <input type="checkbox" checked={headerSync} onChange={e => setHeaderSync(e.target.checked)} className="sync-toggle w-3 h-3"/>
-                                </div>
+
+                    {/* Header Buttons Section */}
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center px-2">
+                            <h4 className="text-sm font-bold opacity-60 flex items-center gap-2">
+                                <div className="w-1 h-4 bg-emerald-500 rounded-full"></div>
+                                أزرار الشريط العلوى
+                            </h4>
+                            <div className="flex items-center gap-2 bg-emerald-500/10 px-2 py-1 rounded-lg">
+                                <label className="text-[10px] font-bold text-emerald-600">توحيد</label>
+                                <input type="checkbox" checked={headerSync} onChange={e => setHeaderSync(e.target.checked)} className="w-3 h-3 accent-emerald-500"/>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             {['surah', 'juz', 'page', 'audio'].map(type => {
                                 const style = getStyleForType(type);
                                 return (
-                                    <button key={type} data-type={type} onClick={() => openEditModal(type)} className="color-option-btn" style={{backgroundColor: style.bg, borderColor: style.border}}>
-                                        <span className="text-xs font-bold" style={{color: style.text}}>{getName(type)}</span>
-                                        <div className="color-preview-dot" style={renderCheckerboard(style.bg)}></div>
+                                    <button key={type} onClick={() => openEditModal(type)} className="themed-card-bg p-3 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-between hover:border-emerald-500 transition-colors">
+                                        <span className="text-xs font-bold">{getName(type)}</span>
+                                        <div className="w-6 h-6 rounded-full border border-gray-300" style={renderCheckerboard(style.bg)}></div>
                                     </button>
                                 );
                             })}
                         </div>
                     </div>
-                    <div className={`bg-gray-100 dark:bg-gray-800/50 rounded-xl p-3 border border-gray-200 dark:border-gray-700 shadow-sm relative h-fit ${isLandscape ? 'col-span-1' : ''}`}>
-                        <div className="flex justify-between items-center mb-3 border-b pb-2 border-gray-300 dark:border-gray-600">
-                            <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 w-full text-center">أزرار الشريط السفلى</h4>
-                            <div className="flex items-center gap-3 absolute left-3 top-3">
-                                <div className="flex items-center">
-                                    <label className="text-[10px] ml-1 font-bold text-indigo-500">توحيد</label>
-                                    <input type="checkbox" checked={footerSync} onChange={e => setFooterSync(e.target.checked)} className="sync-toggle w-3 h-3"/>
-                                </div>
+
+                    {/* Footer Buttons Section */}
+                    <div className={`space-y-3 ${isLandscape ? 'col-span-2' : ''}`}>
+                        <div className="flex justify-between items-center px-2">
+                            <h4 className="text-sm font-bold opacity-60 flex items-center gap-2">
+                                <div className="w-1 h-4 bg-emerald-500 rounded-full"></div>
+                                أزرار الشريط السفلى
+                            </h4>
+                            <div className="flex items-center gap-2 bg-emerald-500/10 px-2 py-1 rounded-lg">
+                                <label className="text-[10px] font-bold text-emerald-600">توحيد</label>
+                                <input type="checkbox" checked={footerSync} onChange={e => setFooterSync(e.target.checked)} className="w-3 h-3 accent-emerald-500"/>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                             {['btn-menu', 'btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-search'].map(type => {
+                        <div className={`grid gap-3 ${isLandscape ? 'grid-cols-4' : 'grid-cols-2'}`}>
+                             {['btn-menu', 'btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-search', 'btn-share'].map(type => {
                                 const style = getStyleForType(type);
                                 return (
-                                    <button key={type} data-type={type} onClick={() => openEditModal(type)} className="color-option-btn" style={{backgroundColor: style.bg, borderColor: style.border}}>
-                                        <span className="text-xs font-bold" style={{color: style.text}}>{getName(type)}</span>
-                                        <div className="color-preview-dot" style={renderCheckerboard(style.bg)}></div>
+                                    <button key={type} onClick={() => openEditModal(type)} className="themed-card-bg p-3 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-between hover:border-emerald-500 transition-colors">
+                                        <span className="text-xs font-bold">{getName(type)}</span>
+                                        <div className="w-6 h-6 rounded-full border border-gray-300" style={renderCheckerboard(style.bg)}></div>
                                     </button>
                                 );
                             })}
                         </div>
                     </div>
-                    <div className={`${isLandscape ? 'col-span-1 flex items-center justify-center' : 'mt-2'}`}>
-                         <button onClick={() => openEditModal('all')} className="w-full py-2 bg-indigo-100 dark:bg-indigo-900/30 border-2 border-dashed border-indigo-400 rounded-lg text-indigo-700 dark:text-indigo-300 font-bold hover:bg-indigo-200 transition text-sm">تطبيق لون موحد لجميع الأزرار</button>
+
+                    {/* Unified Color Button */}
+                    <div className={`${isLandscape ? 'col-span-2' : ''} pt-2`}>
+                         <button 
+                            onClick={() => openEditModal('all')} 
+                            className="w-full py-4 bg-emerald-500/10 border-2 border-dashed border-emerald-500/30 rounded-2xl text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2 text-sm"
+                        >
+                            <Palette className="w-4 h-4" />
+                            تطبيق لون موحد لجميع الأزرار
+                        </button>
                     </div>
                 </div>
-                <div className="p-3 bg-gray-100 dark:bg-gray-900 border-t dark:border-gray-700 flex justify-center items-center flex-none">
-                    <button onClick={handleClose} className="bg-gray-800 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-gray-700 text-xs">الرجوع للإعدادات</button>
+
+                <div className="p-4 themed-card-bg border-t border-gray-200 dark:border-gray-700 flex justify-center">
+                    <button 
+                        onClick={handleClose} 
+                        className="w-full py-3 bg-gray-800 dark:bg-gray-700 text-white rounded-xl font-bold shadow-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-all flex items-center justify-center gap-2 text-sm"
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                        الرجوع للإعدادات
+                    </button>
                 </div>
             </div>
         </div>
