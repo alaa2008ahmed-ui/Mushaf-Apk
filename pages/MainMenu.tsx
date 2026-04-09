@@ -22,6 +22,7 @@ const ALL_POSSIBLE_ITEMS = [
     { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'daily-wird', label: "📅 الورد اليومي", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'memorization', label: "🧠 التحفيظ", className: "col-span-2 h-10", colorIndex: 0 },
+    { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "col-span-2 h-12", colorIndex: 1 },
     { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
     { id: 'sabah-masaa', label: "☀️ الأذكار", className: "h-10", colorIndex: 1 },
     { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-10", colorIndex: 1 },
@@ -32,7 +33,6 @@ const ALL_POSSIBLE_ITEMS = [
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
     { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
-    { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "h-10", colorIndex: 1 },
     { id: 'more', label: "✨ المزيد", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
 ];
 

@@ -659,7 +659,6 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                 onClick={() => setCurrentView('main')}
                                 className="w-full py-2 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all"
                             >
-                                <ChevronDown className="rotate-90 w-3.5 h-3.5" />
                                 رجوع
                             </button>
                         </div>
@@ -693,8 +692,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             />
                         </div>
                         <div className="p-3 border-t bg-gray-50/80">
-                            <button onClick={() => setCurrentView('main')} className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <ChevronDown className="rotate-90 w-4 h-4" />
+                            <button onClick={() => setCurrentView('main')} className="w-full py-2.5 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all">
                                 رجوع
                             </button>
                         </div>
@@ -727,8 +725,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             </div>
                         </div>
                         <div className="p-3 border-t bg-gray-50/80">
-                            <button onClick={() => setCurrentView('main')} className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <ChevronDown className="rotate-90 w-4 h-4" />
+                            <button onClick={() => setCurrentView('main')} className="w-full py-2.5 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all">
                                 رجوع
                             </button>
                         </div>
@@ -764,8 +761,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             </div>
                         </div>
                         <div className="p-3 border-t bg-gray-50/80">
-                            <button onClick={() => setCurrentView('main')} className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <ChevronDown className="rotate-90 w-4 h-4" />
+                            <button onClick={() => setCurrentView('main')} className="w-full py-2.5 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all">
                                 رجوع
                             </button>
                         </div>
@@ -782,8 +778,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             <NotificationSettingsContent showToast={showToast} modeSuffix={isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`} />
                         </div>
                         <div className="p-3 border-t bg-gray-50/80">
-                            <button onClick={() => setCurrentView('main')} className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <ChevronDown className="rotate-90 w-4 h-4" />
+                            <button onClick={() => setCurrentView('main')} className="w-full py-2.5 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all">
                                 رجوع
                             </button>
                         </div>
@@ -869,13 +864,13 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             <div className="flex gap-2">
                                 <button 
                                     onClick={() => startDownload('tafseer')}
-                                    className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${isDownloading ? 'bg-red-500 text-white' : 'text-white shadow-md active:scale-95'}`}
+                                    className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${isDownloading ? 'bg-red-500 text-white' : 'text-white shadow-md active:scale-95'}`}
                                     style={!isDownloading ? { backgroundColor: iconColor } : {}}
                                 >
                                     {isDownloading ? <X size={16} /> : <Download size={16} />}
-                                    {isDownloading ? 'إيقاف' : 'بدء التحميل'}
+                                    {isDownloading ? 'إيقاف' : 'تحميل'}
                                 </button>
-                                <button onClick={() => setCurrentView('main')} className="px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm active:scale-95 transition-all">
+                                <button onClick={() => setCurrentView('main')} className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs active:scale-95 transition-all">
                                     رجوع
                                 </button>
                             </div>
@@ -900,8 +895,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             />
                         </div>
                         <div className="p-3 border-t bg-gray-50/80">
-                            <button onClick={() => setCurrentView('main')} className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <ChevronDown className="rotate-90 w-4 h-4" />
+                            <button onClick={() => setCurrentView('main')} className="w-full py-2.5 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all">
                                 رجوع
                             </button>
                         </div>
@@ -988,13 +982,13 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             <div className="flex gap-2">
                                 <button 
                                     onClick={() => startDownload('quran', currentView === 'download_listening' ? 'surah' : 'ayah')}
-                                    className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${isDownloading ? 'bg-red-500 text-white' : 'text-white shadow-md active:scale-95'}`}
+                                    className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${isDownloading ? 'bg-red-500 text-white' : 'text-white shadow-md active:scale-95'}`}
                                     style={!isDownloading ? { backgroundColor: iconColor } : {}}
                                 >
                                     {isDownloading ? <X size={16} /> : <Download size={16} />}
-                                    {isDownloading ? 'إيقاف' : 'بدء التحميل'}
+                                    {isDownloading ? 'إيقاف' : 'تحميل'}
                                 </button>
-                                <button onClick={() => setCurrentView('download_quran_menu')} className="px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm active:scale-95 transition-all">
+                                <button onClick={() => setCurrentView('download_quran_menu')} className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs active:scale-95 transition-all">
                                     رجوع
                                 </button>
                             </div>
@@ -1081,13 +1075,13 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             <div className="flex gap-2">
                                 <button 
                                     onClick={() => startDownload('tafseer')}
-                                    className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${isDownloading ? 'bg-red-500 text-white' : 'text-white shadow-md active:scale-95'}`}
+                                    className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${isDownloading ? 'bg-red-500 text-white' : 'text-white shadow-md active:scale-95'}`}
                                     style={!isDownloading ? { backgroundColor: iconColor } : {}}
                                 >
                                     {isDownloading ? <X size={16} /> : <Download size={16} />}
-                                    {isDownloading ? 'إيقاف' : 'بدء التحميل'}
+                                    {isDownloading ? 'إيقاف' : 'تحميل'}
                                 </button>
-                                <button onClick={() => setCurrentView('main')} className="px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm active:scale-95 transition-all">
+                                <button onClick={() => setCurrentView('main')} className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs active:scale-95 transition-all">
                                     رجوع
                                 </button>
                             </div>
@@ -1139,8 +1133,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             )}
                         </div>
                         <div className="p-3 border-t bg-gray-50/80">
-                            <button onClick={() => setCurrentView('main')} className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <ChevronDown className="rotate-90 w-4 h-4" />
+                            <button onClick={() => setCurrentView('main')} className="w-full py-2.5 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all">
                                 رجوع
                             </button>
                         </div>
@@ -1432,9 +1425,6 @@ const MenuItem: React.FC<{ icon: React.ReactNode, label: string, onClick: () => 
     <button onClick={onClick} className={`flex items-center gap-3 py-2.5 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full ${isSubItem ? 'px-2 py-1.5 border-0' : ''}`}>
         <div style={{ color: iconColor }}>{icon}</div>
         <span className={`${isSubItem ? 'text-[11px]' : 'text-[12px]'} font-bold flex-1`} style={{ color: isActive ? iconColor : '#000000' }}>{label}</span>
-        {showChevron && (
-            <ChevronDown size={14} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} style={{ color: iconColor }} />
-        )}
     </button>
 );
 

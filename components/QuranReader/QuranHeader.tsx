@@ -77,10 +77,10 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
             <button 
                 id="surah-name-header" 
                 onClick={() => openModal('surah-modal')}
-                className="top-bar-text-button flex items-center justify-center leading-none !pt-0 flex-1 min-w-0 mx-0.5" 
+                className="top-bar-text-button flex items-center justify-center leading-none !pt-0 flex-1 min-w-0 mx-0.5 !px-1" 
                 style={getToolbarStyle('surah', currentTheme.barBg, currentTheme.barText, currentTheme.btnBorder || currentTheme.barBorder)}
             >
-                <span className="flex items-center justify-center leading-none whitespace-nowrap overflow-hidden px-1 w-full" style={{ fontSize: 'clamp(9px, 2.8vw, 14px)' }}>
+                <span className="flex items-center justify-center leading-none whitespace-nowrap overflow-hidden w-full font-bold" style={{ fontSize: 'clamp(12px, 4.2vw, 20px)' }}>
                     {isMemorizationMode && memorizationSettings ? (
                         <>{toArabic(currentAyah.s)} - سورة {surahName} - الآيات {toArabic(memorizationSettings.fromAyah)} - {toArabic(memorizationSettings.toAyah)} - جزء {toArabic(juz)}</>
                     ) : (

@@ -340,18 +340,18 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
             </div>
 
             {/* Table */}
-            <main className="flex-1 overflow-y-auto p-4 pb-24">
+            <main className="flex-1 overflow-y-auto p-2 pb-24">
                 <div className="max-w-4xl mx-auto overflow-x-auto rounded-xl border shadow-sm" style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--card-bg)' }}>
-                    <table className="w-full text-center text-sm" dir="rtl">
+                    <table className="w-full text-center text-[11px] xs:text-xs" dir="rtl">
                         <thead style={{ backgroundColor: primaryColor, color: isBlackAndWhite ? '#000' : '#fff' }}>
                             <tr>
-                                <th className="p-2 border-b border-l border-white/20">اليوم</th>
-                                <th className="p-2 border-b border-l border-white/20">م/هـ</th>
-                                <th className="p-2 border-b border-l border-white/20">الفجر</th>
-                                <th className="p-2 border-b border-l border-white/20">الظهر</th>
-                                <th className="p-2 border-b border-l border-white/20">العصر</th>
-                                <th className="p-2 border-b border-l border-white/20">المغرب</th>
-                                <th className="p-2 border-b border-white/20">العشاء</th>
+                                <th className="px-1 py-2 border-b border-l border-white/20">اليوم</th>
+                                <th className="px-1 py-2 border-b border-l border-white/20">م/هـ</th>
+                                <th className="px-1 py-2 border-b border-l border-white/20">الفجر</th>
+                                <th className="px-1 py-2 border-b border-l border-white/20">الظهر</th>
+                                <th className="px-1 py-2 border-b border-l border-white/20">العصر</th>
+                                <th className="px-1 py-2 border-b border-l border-white/20">المغرب</th>
+                                <th className="px-1 py-2 border-b border-white/20">العشاء</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -365,17 +365,17 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                                         className={`border-b last:border-0 transition-colors ${isToday ? 'bg-primary/10 font-bold' : 'hover:bg-black/5 dark:hover:bg-white/5'}`} 
                                         style={{ borderColor: 'var(--card-border)', color: textColor }}
                                     >
-                                        <td className="p-2 border-l" style={{ borderColor: 'var(--card-border)' }}>{day.dayName}</td>
-                                        <td className="p-2 border-l font-mono text-xs" style={{ borderColor: 'var(--card-border)' }} dir="ltr">
+                                        <td className="px-1 py-2 border-l" style={{ borderColor: 'var(--card-border)' }}>{day.dayName}</td>
+                                        <td className="px-1 py-2 border-l font-mono text-[9px] xs:text-[10px]" style={{ borderColor: 'var(--card-border)' }} dir="ltr">
                                             <span style={{ color: isToday ? primaryColor : primaryColor }}>{day.hijriDay}</span>
-                                            <span className="mx-1 opacity-50">/</span>
+                                            <span className="mx-0.5 opacity-50">/</span>
                                             <span className="opacity-70">{day.gregorianDay}</span>
                                         </td>
-                                        <td className="p-2 border-l font-mono" style={{ borderColor: 'var(--card-border)' }}>{formatTime12_clean(applyOffset(day.timings.Fajr, getOffset('Fajr')))}</td>
-                                        <td className="p-2 border-l font-mono" style={{ borderColor: 'var(--card-border)' }}>{formatTime12_clean(applyOffset(day.timings.Dhuhr, getOffset('Dhuhr')))}</td>
-                                        <td className="p-2 border-l font-mono" style={{ borderColor: 'var(--card-border)' }}>{formatTime12_clean(applyOffset(day.timings.Asr, getOffset('Asr')))}</td>
-                                        <td className="p-2 border-l font-mono" style={{ borderColor: 'var(--card-border)' }}>{formatTime12_clean(applyOffset(day.timings.Maghrib, getOffset('Maghrib')))}</td>
-                                        <td className="p-2 font-mono">{formatTime12_clean(applyOffset(day.timings.Isha, getOffset('Isha')))}</td>
+                                        <td className="px-1 py-2 border-l font-mono" style={{ borderColor: 'var(--card-border)' }}>{formatTime12_clean(applyOffset(day.timings.Fajr, getOffset('Fajr')))}</td>
+                                        <td className="px-1 py-2 border-l font-mono" style={{ borderColor: 'var(--card-border)' }}>{formatTime12_clean(applyOffset(day.timings.Dhuhr, getOffset('Dhuhr')))}</td>
+                                        <td className="px-1 py-2 border-l font-mono" style={{ borderColor: 'var(--card-border)' }}>{formatTime12_clean(applyOffset(day.timings.Asr, getOffset('Asr')))}</td>
+                                        <td className="px-1 py-2 border-l font-mono" style={{ borderColor: 'var(--card-border)' }}>{formatTime12_clean(applyOffset(day.timings.Maghrib, getOffset('Maghrib')))}</td>
+                                        <td className="px-1 py-2 font-mono">{formatTime12_clean(applyOffset(day.timings.Isha, getOffset('Isha')))}</td>
                                     </tr>
                                 );
                             })}
