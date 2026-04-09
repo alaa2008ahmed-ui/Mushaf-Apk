@@ -118,6 +118,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const [selectedFont, setSelectedFont] = useState(FONTS[0].id);
     const [customText, setCustomText] = useState('');
     const [isSharing, setIsSharing] = useState(false);
+    const [isCopying, setIsCopying] = useState(false);
     const [explanationData, setExplanationData] = useState<any>(null);
     const [appSettings, setAppSettings] = useState<any>(null);
     const previewRef = useRef<HTMLDivElement>(null);
@@ -327,14 +328,14 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     captureElement.style.zIndex = '-9999';
 
                     const canvas = await html2canvas(captureElement, {
-                        scale: 3,
+                        scale: 4,
                         backgroundColor: null,
                         useCORS: true,
                         allowTaint: true,
                         logging: false,
                         imageTimeout: 0
                     });
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
                     
                     captureElement.style.cssText = originalStyle;
 
@@ -406,7 +407,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         captureElement.style.zIndex = '-9999';
 
                         const canvas = await html2canvas(captureElement, {
-                            scale: 3,
+                            scale: 4,
                             backgroundColor: '#ffffff',
                             useCORS: true,
                             allowTaint: true,
@@ -484,7 +485,31 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     'ar.minshawi': 'Minshawy_Murattal_128kbps',
                     'ar.minshawimujawwad': 'Minshawy_Mujawwad_64kbps',
                     'ar.husary': 'Husary_128kbps',
-                    'ar.mahermuaiqly': 'MaherAlMuaiqly128kbps'
+                    'ar.mahermuaiqly': 'MaherAlMuaiqly128kbps',
+                    // RECITERS mappings (mp3quran.net to everyayah.com)
+                    'https://server11.mp3quran.net/shatri': 'Abu_Bakr_Ash-Shaatree_128kbps',
+                    'https://server10.mp3quran.net/ajm': 'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net',
+                    'https://server6.mp3quran.net/akdr': 'Ibrahim_Akhdar_32kbps',
+                    'https://server6.mp3quran.net/kurdi': 'Raad_Al_Kurdi_128kbps',
+                    'https://server7.mp3quran.net/s_gmd': 'Ghamadi_40kbps',
+                    'https://server7.mp3quran.net/shur': 'Saood_ash-Shuraym_128kbps',
+                    'https://server6.mp3quran.net/shl': 'Sahl_Yassin_128kbps',
+                    'https://server8.mp3quran.net/bu_khtr': 'Salaah_AbdulRahman_Bukhatir_128kbps',
+                    'https://server8.mp3quran.net/basit': 'Abdul_Basit_Murattal_192kbps',
+                    'https://server11.mp3quran.net/sds': 'Abdurrahmaan_As-Sudais_192kbps',
+                    'https://server12.mp3quran.net/kyat': 'Abdullah_Khayat_128kbps',
+                    'https://server8.mp3quran.net/mtrod': 'Abdullah_Matroud_128kbps',
+                    'https://server9.mp3quran.net/hthfi': 'Hudhaify_128kbps',
+                    'https://server8.mp3quran.net/frs_a': 'Fares_Abbad_64kbps',
+                    'https://server12.mp3quran.net/maher': 'MaherAlMuaiqly128kbps',
+                    'https://server10.mp3quran.net/minsh': 'Minshawy_Murattal_128kbps',
+                    'https://server12.mp3quran.net/tblawi': 'Mohammad_al_Tablaway_128kbps',
+                    'https://server13.mp3quran.net/husr': 'Husary_128kbps',
+                    'https://server8.mp3quran.net/bna': 'Mahmoud_Ali_Al_Banna_32kbps',
+                    'https://server8.mp3quran.net/afs': 'Alafasy_128kbps',
+                    'https://server8.mp3quran.net/mustafa': 'Mustafa_Ismail_48kbps',
+                    'https://server6.mp3quran.net/qtm': 'Nasser_Alqatami_128kbps',
+                    'https://server11.mp3quran.net/yasser': 'Yasser_Ad-Dussary_128kbps'
                 };
                 const audioReader = readerMap[reader] || reader;
                 
@@ -625,6 +650,23 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         }
     };
 
+    const handleCopy = async () => {
+        if (isCopying) return;
+        setIsCopying(true);
+        const shareText = `${surahInfo}\nايات من القران الكريم . بواسطة : مصحف احمد وليلى`;
+        const fullText = `${combinedText}\n\n${combinedExplanation ? combinedExplanation + '\n\n' : ''}${shareText}`;
+        
+        try {
+            await navigator.clipboard.writeText(fullText);
+            alert("تم نسخ النص بنجاح");
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+            alert("فشل نسخ النص");
+        } finally {
+            setIsCopying(false);
+        }
+    };
+
     const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
     const pageAyahs: any[] = [];
     let pageSurahInfo = "";
@@ -722,8 +764,8 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     position: 'absolute',
                     left: '-9999px',
                     top: '-9999px',
-                    width: '1080px',
-                    minHeight: '1080px',
+                    width: '1280px',
+                    minHeight: '720px',
                     borderRadius: '40px',
                     overflow: 'hidden',
                     display: 'flex',
@@ -742,13 +784,13 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 {selectedBg.id !== 'bg_white' && (
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.2)' }}></div>
                 )}
-                <FrameOverlay frame={selectedFrame} scale={3.375} />
+                <FrameOverlay frame={selectedFrame} scale={4} />
                 <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyItems: 'center', width: '100%' }}>
                     {readingMode === 'mushaf' && (
                         <p 
                             style={{ 
                                 fontFamily: 'var(--font-amiri-quran), var(--font-hafs), serif', 
-                                fontSize: `${fontSize * 1.2 * 3.375}px`, 
+                                fontSize: `${fontSize * 1.2 * 4}px`, 
                                 color: selectedBg.accent, 
                                 marginBottom: '50px',
                                 textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 6px 12px rgba(0,0,0,0.5)',
@@ -765,7 +807,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         style={{ 
                             lineHeight: '1.8',
                             fontFamily: selectedFont,
-                            fontSize: `${fontSize * 1.15 * 3.375}px`, 
+                            fontSize: `${fontSize * 1.15 * 4}px`, 
                             color: textColor,
                             textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 6px 12px rgba(0,0,0,0.5)',
                             margin: 0,
@@ -788,7 +830,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     {combinedExplanation && (
                         <p style={{
                             fontFamily: 'var(--font-cairo), sans-serif',
-                            fontSize: `${fontSize * 0.8 * 3.375}px`,
+                            fontSize: `${fontSize * 0.8 * 4}px`,
                             color: textColor,
                             opacity: 0.9,
                             marginTop: '40px',
@@ -801,18 +843,18 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         </p>
                     )}
                     <div style={{ marginTop: '40px', paddingTop: '40px', borderTop: '3px solid rgba(255, 255, 255, 0.3)', width: '100%', paddingLeft: '15px', paddingRight: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-                        <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 3px 6px rgba(0,0,0,0.5)', fontSize: '40px', fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
+                        <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 3px 6px rgba(0,0,0,0.5)', fontSize: `${fontSize * 2}px`, fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
                             {surahInfo}
                         </p>
                         <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '10px' }}>
                             <span 
-                                style={{ fontFamily: 'var(--font-lateef), serif', color: selectedBg.accent, textShadow: '0 3px 9px rgba(0,0,0,0.8)', fontSize: '48px', fontWeight: 700, textAlign: 'right' }} 
+                                style={{ fontFamily: 'var(--font-lateef), serif', color: selectedBg.accent, textShadow: '0 3px 9px rgba(0,0,0,0.8)', fontSize: `${fontSize * 2.4}px`, fontWeight: 700, textAlign: 'right' }} 
                                 dir="rtl"
                             >
                                 مصحف احمد وليلى
                             </span>
                             <span 
-                                style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 3px 6px rgba(0,0,0,0.5)', fontSize: '34px', fontWeight: 500, maxWidth: '50%', textAlign: 'left', lineHeight: 1.2, opacity: 0.9 }} 
+                                style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 3px 6px rgba(0,0,0,0.5)', fontSize: `${fontSize * 1.7}px`, fontWeight: 500, maxWidth: '50%', textAlign: 'left', lineHeight: 1.2, opacity: 0.9 }} 
                             >
                                 {customText}
                             </span>
@@ -1278,6 +1320,20 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             className="flex-1 py-4 rounded-xl text-xs font-bold text-gray-700 bg-gray-200 flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
                         >
                             رجوع
+                        </button>
+                        <button
+                            onClick={handleCopy}
+                            disabled={isCopying}
+                            className="flex-1 py-4 rounded-xl text-xs font-bold text-gray-700 bg-white border border-gray-300 flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70"
+                        >
+                            {isCopying ? (
+                                <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                                <>
+                                    <i className="fa-regular fa-copy"></i>
+                                    نسخ
+                                </>
+                            )}
                         </button>
                         <button
                             onClick={handleShare}
