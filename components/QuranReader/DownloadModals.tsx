@@ -82,9 +82,10 @@ const checkAllQuranDownloaded = async (readerId: string, quranData: any) => {
         const downloadedFiles = JSON.parse(localStorage.getItem('downloaded_audio_files') || '[]');
         if (downloadedFiles.length === 0) return false;
         
+        const sanitizedId = getSanitizedReaderId(readerId);
         for (const surah of quranData.surahs) {
             for (let i = 1; i <= surah.ayahs.length; i++) {
-                const fileName = `${readerId}_${surah.number}_${i}.mp3`;
+                const fileName = `${sanitizedId}_${surah.number}_${i}.mp3`;
                 const exists = downloadedFiles.some((file: any) => file.fileName === fileName);
                 if (!exists) return false;
             }
@@ -191,7 +192,7 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
         }
         try {
             const downloadedFiles = JSON.parse(localStorage.getItem('downloaded_audio_files') || '[]');
-            const downloadedSet = new Set(downloadedFiles.map((f: any) => f.fileName));
+            const downloadedSet = new Set(downloadedFiles.filter((f: any) => (f.size || 0) > 1000).map((f: any) => f.fileName));
             const sanitizedId = getSanitizedReaderId(selectedReader);
 
             const dSurahs: string[] = [];
@@ -452,6 +453,7 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
     };
 
     const downloadAyah = async (readerId: string, surah: number, ayah: number) => {
+        if (!readerId) return;
         const surahStr = String(surah).padStart(3, '0');
         const ayahStr = String(ayah).padStart(3, '0');
         const url = `https://everyayah.com/data/${readerId}/${surahStr}${ayahStr}.mp3`;
@@ -459,32 +461,36 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
         const fileName = `${sanitizedId}_${surah}_${ayah}.mp3`;
         
         try {
-            const cache = await caches.open('quran-audio-cache');
-            const match = await cache.match(url);
-            if (match) {
-                storeAudioOffline(fileName, await match.blob());
-                return;
-            }
+            if ('caches' in window) {
+                const cache = await caches.open('quran-audio-cache');
+                const match = await cache.match(url);
+                if (match) {
+                    const blob = await match.blob();
+                    storeAudioOffline(fileName, blob);
+                    return;
+                }
 
-            const response = await fetch(url, { signal: abortControllerRef.current?.signal });
-            if (!response.ok) throw new Error(`فشل التحميل: ${response.status} ${response.statusText}`);
-            
-            const blob = await response.blob();
-            if (blob.size < 1000) throw new Error('الملف المحمل غير صالح أو صغير جداً');
-            
-            await cache.put(url, new Response(blob, {
-                headers: { 'Content-Type': 'audio/mpeg' }
-            }));
-            storeAudioOffline(fileName, blob);
-            
+                const response = await fetch(url, { signal: abortControllerRef.current?.signal });
+                if (!response.ok) throw new Error(`فشل التحميل: ${response.status} ${response.statusText}`);
+                
+                const blob = await response.blob();
+                if (blob.size < 1000) return;
+                
+                await cache.put(url, new Response(blob, {
+                    headers: { 'Content-Type': 'audio/mpeg' }
+                }));
+                storeAudioOffline(fileName, blob);
+            }
         } catch (e) {
-            console.error('Download Ayah Error:', e);
-            if ((e as Error).name === 'AbortError') throw e;
-            throw e;
+            if ((e as Error).name !== 'AbortError') {
+                console.error('Download Ayah Error:', e);
+                throw e;
+            }
         }
     };
 
     const downloadSurahFile = async (readerId: string, surah: number) => {
+        if (!readerId) return;
         const surahStr = String(surah).padStart(3, '0');
         let url = '';
         if (readerId.startsWith('http')) {
@@ -497,28 +503,31 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
         const fileName = `${sanitizedId}_${surahStr}.mp3`;
         
         try {
-            const cache = await caches.open('quran-audio-cache');
-            const match = await cache.match(url);
-            if (match) {
-                storeAudioOffline(fileName, await match.blob());
-                return;
+            if ('caches' in window) {
+                const cache = await caches.open('quran-audio-cache');
+                const match = await cache.match(url);
+                if (match) {
+                    const blob = await match.blob();
+                    storeAudioOffline(fileName, blob);
+                    return;
+                }
+
+                const response = await fetch(url, { signal: abortControllerRef.current?.signal });
+                if (!response.ok) throw new Error(`فشل التحميل: ${response.status} ${response.statusText}`);
+                
+                const blob = await response.blob();
+                if (blob.size < 1000) return;
+
+                await cache.put(url, new Response(blob, {
+                    headers: { 'Content-Type': 'audio/mpeg' }
+                }));
+                storeAudioOffline(fileName, blob);
             }
-
-            const response = await fetch(url, { signal: abortControllerRef.current?.signal });
-            if (!response.ok) throw new Error(`فشل التحميل: ${response.status} ${response.statusText}`);
-            
-            const blob = await response.blob();
-            if (blob.size < 1000) throw new Error('الملف المحمل غير صالح أو صغير جداً');
-
-            await cache.put(url, new Response(blob, {
-                headers: { 'Content-Type': 'audio/mpeg' }
-            }));
-            storeAudioOffline(fileName, blob);
-            
         } catch (e) {
-            console.error('Download Surah Error:', e);
-            if ((e as Error).name === 'AbortError') throw e;
-            throw e;
+            if ((e as Error).name !== 'AbortError') {
+                console.error('Download Surah Error:', e);
+                throw e;
+            }
         }
     };
 

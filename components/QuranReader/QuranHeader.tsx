@@ -64,7 +64,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
     const [isModeMenuOpen, setIsModeMenuOpen] = React.useState(false);
 
     return (
-        <header id="header" className={`header-default flex-none z-50 flex items-center px-6 justify-between border shadow-xl w-full gap-2 ${isAnyMenuOpen ? 'pointer-events-none opacity-50' : ''}`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
+        <header id="header" className={`header-default flex-none z-50 flex items-center justify-between border shadow-xl w-full gap-2 ${isAnyMenuOpen ? 'pointer-events-none opacity-50' : ''}`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
             <button 
                 id="btn-menu-header" 
                 onClick={() => setIsFloatingMenuOpen(p => !p)}

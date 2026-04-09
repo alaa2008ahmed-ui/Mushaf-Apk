@@ -70,7 +70,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     const [tempShortcuts, setTempShortcuts] = useState<string[]>([]);
     
     // Selection State for Downloads
-    const [selectedReader, setSelectedReader] = useState(settings.reader || READERS[0].id);
+    const [selectedReader, setSelectedReader] = useState('');
     const [selectedTafsir, setSelectedTafsir] = useState(settings.tafseer || TAFSEERS[0].id);
     const [selectedSurahs, setSelectedSurahs] = useState<string[]>([]);
     const [selectedJuzs, setSelectedJuzs] = useState<string[]>([]);
@@ -83,6 +83,36 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
 
     type MenuView = 'main' | 'themes' | 'download_quran_menu' | 'download_tafseer' | 'audio' | 'interface' | 'font' | 'notifications' | 'download_quran' | 'download_listening' | 'download_memorization' | 'bookmarks';
     const [currentView, setCurrentView] = useState<MenuView>('main');
+
+    // Initialize selectedReader based on view
+    useEffect(() => {
+        if (!selectedReader) {
+            if (currentView === 'download_quran') {
+                setSelectedReader(READERS[0].id);
+            } else if (currentView === 'download_memorization') {
+                setSelectedReader(MEMORIZATION_READERS[0].id);
+            } else if (currentView === 'download_listening') {
+                setSelectedReader(RECITERS[0].id);
+            }
+        }
+    }, [currentView, selectedReader]);
+
+    // Sync selectedReader when view changes to ensure it's valid for the current list
+    useEffect(() => {
+        if (currentView === 'download_quran') {
+            if (selectedReader && !READERS.some(r => r.id === selectedReader)) {
+                setSelectedReader(READERS[0].id);
+            }
+        } else if (currentView === 'download_memorization') {
+            if (selectedReader && !MEMORIZATION_READERS.some(r => r.id === selectedReader)) {
+                setSelectedReader(MEMORIZATION_READERS[0].id);
+            }
+        } else if (currentView === 'download_listening') {
+            if (selectedReader && !RECITERS.some(r => r.id === selectedReader)) {
+                setSelectedReader(RECITERS[0].id);
+            }
+        }
+    }, [currentView, selectedReader]);
 
     useEffect(() => {
         if (isFloatingMenuOpen) {
@@ -152,6 +182,12 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     };
 
     const downloadAyah = async (readerId: string, surah: number, ayah: number) => {
+        if (!readerId) return;
+        if (readerId.startsWith('http')) {
+            // Cannot download individual ayahs from full URL servers
+            return;
+        }
+
         const surahStr = String(surah).padStart(3, '0');
         const ayahStr = String(ayah).padStart(3, '0');
         const url = `https://everyayah.com/data/${readerId}/${surahStr}${ayahStr}.mp3`;
@@ -159,41 +195,75 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
         const fileName = `${sanitizedId}_${surah}_${ayah}.mp3`;
         
         try {
-            const cache = await caches.open('quran-audio-cache');
-            const match = await cache.match(url);
-            if (match) {
-                storeAudioOffline(fileName, await match.blob());
-                return;
+            if ('caches' in window) {
+                const cache = await caches.open('quran-audio-cache');
+                const match = await cache.match(url);
+                if (match) {
+                    const blob = await match.blob();
+                    storeAudioOffline(fileName, blob);
+                    return;
+                }
+
+                const response = await fetch(url, { signal: abortControllerRef.current?.signal });
+                if (!response.ok) throw new Error(`فشل التحميل: ${response.status}`);
+                
+                const blob = await response.blob();
+                // Check if it's a valid mp3 (not an error page)
+                if (blob.size < 1000) return;
+
+                await cache.put(url, new Response(blob, {
+                    headers: { 'Content-Type': 'audio/mpeg' }
+                }));
+                storeAudioOffline(fileName, blob);
             }
-            const response = await fetch(url, { signal: abortControllerRef.current?.signal });
-            if (!response.ok) throw new Error(`فشل التحميل: ${response.status}`);
-            const blob = await response.blob();
-            await cache.put(url, new Response(blob, { headers: { 'Content-Type': 'audio/mpeg' } }));
-            storeAudioOffline(fileName, blob);
-        } catch (e) { if ((e as Error).name !== 'AbortError') throw e; }
+        } catch (e) { 
+            if ((e as Error).name !== 'AbortError') {
+                console.error('Download Ayah Error:', e);
+                throw e;
+            }
+        }
     };
 
     const downloadSurahFile = async (readerId: string, surah: number) => {
+        if (!readerId) return;
         const surahStr = String(surah).padStart(3, '0');
-        let url = readerId.startsWith('http') 
-            ? `${readerId.endsWith('/') ? readerId.slice(0, -1) : readerId}/${surahStr}.mp3`
-            : `https://everyayah.com/data/${readerId}/${surahStr}.mp3`;
+        let url = '';
+        if (readerId.startsWith('http')) {
+            const baseUrl = readerId.endsWith('/') ? readerId.slice(0, -1) : readerId;
+            url = `${baseUrl}/${surahStr}.mp3`;
+        } else {
+            url = `https://everyayah.com/data/${readerId}/${surahStr}.mp3`;
+        }
         const sanitizedId = getSanitizedReaderId(readerId);
         const fileName = `${sanitizedId}_${surahStr}.mp3`;
         
         try {
-            const cache = await caches.open('quran-audio-cache');
-            const match = await cache.match(url);
-            if (match) {
-                storeAudioOffline(fileName, await match.blob());
-                return;
+            if ('caches' in window) {
+                const cache = await caches.open('quran-audio-cache');
+                const match = await cache.match(url);
+                if (match) {
+                    const blob = await match.blob();
+                    storeAudioOffline(fileName, blob);
+                    return;
+                }
+
+                const response = await fetch(url, { signal: abortControllerRef.current?.signal });
+                if (!response.ok) throw new Error(`فشل التحميل: ${response.status}`);
+                
+                const blob = await response.blob();
+                if (blob.size < 1000) return;
+
+                await cache.put(url, new Response(blob, {
+                    headers: { 'Content-Type': 'audio/mpeg' }
+                }));
+                storeAudioOffline(fileName, blob);
             }
-            const response = await fetch(url, { signal: abortControllerRef.current?.signal });
-            if (!response.ok) throw new Error(`فشل التحميل: ${response.status}`);
-            const blob = await response.blob();
-            await cache.put(url, new Response(blob, { headers: { 'Content-Type': 'audio/mpeg' } }));
-            storeAudioOffline(fileName, blob);
-        } catch (e) { if ((e as Error).name !== 'AbortError') throw e; }
+        } catch (e) { 
+            if ((e as Error).name !== 'AbortError') {
+                console.error('Download Surah Error:', e);
+                throw e;
+            }
+        }
     };
 
     const downloadSpecificTafsir = async (tafsirId: string, surahNumber: number) => {
@@ -228,6 +298,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
         if (isDownloading) {
             abortControllerRef.current?.abort();
             setIsDownloading(false);
+            setStatus('تم إيقاف التحميل');
             return;
         }
 
@@ -242,54 +313,103 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
         abortControllerRef.current = new AbortController();
 
         try {
-            const itemsToDownload = new Set<string>();
-            if (selectedSurahs.includes('all')) {
-                for (let i = 1; i <= 114; i++) itemsToDownload.add(i.toString());
-            } else {
-                selectedSurahs.forEach(s => itemsToDownload.add(s));
-                selectedJuzs.forEach(j => {
-                    const ayahs = getAyahsForJuz(parseInt(j));
-                    const surahsInJuz = new Set(ayahs.map(a => a.surah));
-                    surahsInJuz.forEach(s => itemsToDownload.add(s.toString()));
-                });
-            }
-
-            const itemsList = Array.from(itemsToDownload).map(Number).sort((a, b) => a - b);
-            let completed = 0;
-            const total = itemsList.length;
-
-            for (const surahNum of itemsList) {
-                if (abortControllerRef.current?.signal.aborted) break;
-                setStatus(`جاري التحميل: سورة ${SURAH_NAMES_AR[surahNum-1]}...`);
+            if (type === 'quran') {
+                const itemsToDownload: { s: number, a: number }[] = [];
                 
-                if (type === 'quran') {
-                    if (mode === 'surah') {
-                        await downloadSurahFile(selectedReader, surahNum);
-                    } else {
-                        const surah = quranData.surahs.find((s: any) => s.number === surahNum);
-                        if (surah) {
-                            for (let i = 1; i <= surah.ayahs.length; i++) {
-                                if (abortControllerRef.current?.signal.aborted) break;
-                                await downloadAyah(selectedReader, surahNum, i);
+                if (selectedSurahs.includes('all')) {
+                    for (let s = 1; s <= 114; s++) {
+                        const surahData = quranData.surahs.find((sd: any) => sd.number === s);
+                        if (surahData) {
+                            if (mode === 'surah') {
+                                itemsToDownload.push({ s, a: 0 });
+                            } else {
+                                for (let a = 1; a <= surahData.ayahs.length; a++) {
+                                    itemsToDownload.push({ s, a });
+                                }
                             }
                         }
                     }
                 } else {
-                    await downloadSpecificTafsir(selectedTafsir, surahNum);
+                    // Add selected surahs
+                    for (const sStr of selectedSurahs) {
+                        const s = parseInt(sStr);
+                        const surahData = quranData.surahs.find((sd: any) => sd.number === s);
+                        if (surahData) {
+                            if (mode === 'surah') {
+                                itemsToDownload.push({ s, a: 0 });
+                            } else {
+                                for (let a = 1; a <= surahData.ayahs.length; a++) {
+                                    itemsToDownload.push({ s, a });
+                                }
+                            }
+                        }
+                    }
+                    // Add selected juzs
+                    for (const jStr of selectedJuzs) {
+                        const juzAyahs = getAyahsForJuz(parseInt(jStr));
+                        if (mode === 'surah') {
+                            const surahsInJuz = Array.from(new Set(juzAyahs.map(a => a.surah)));
+                            for (const s of surahsInJuz) {
+                                if (!itemsToDownload.some(item => item.s === s && item.a === 0)) {
+                                    itemsToDownload.push({ s, a: 0 });
+                                }
+                            }
+                        } else {
+                            for (const item of juzAyahs) {
+                                if (!itemsToDownload.some(existing => existing.s === item.surah && existing.a === item.ayah)) {
+                                    itemsToDownload.push({ s: item.surah, a: item.ayah });
+                                }
+                            }
+                        }
+                    }
                 }
 
-                completed++;
-                setProgress((completed / total) * 100);
+                const total = itemsToDownload.length;
+                for (let i = 0; i < total; i++) {
+                    if (abortControllerRef.current?.signal.aborted) break;
+                    const item = itemsToDownload[i];
+                    
+                    if (item.a === 0) {
+                        setStatus(`جاري تحميل سورة ${SURAH_NAMES_AR[item.s - 1]}...`);
+                        await downloadSurahFile(selectedReader, item.s);
+                    } else {
+                        setStatus(`جاري تحميل سورة ${SURAH_NAMES_AR[item.s - 1]} آية ${item.a}...`);
+                        await downloadAyah(selectedReader, item.s, item.a);
+                    }
+                    
+                    setProgress(((i + 1) / total) * 100);
+                }
+            } else {
+                // Tafseer download
+                const surahsToDownload = new Set<number>();
+                if (selectedSurahs.includes('all')) {
+                    for (let s = 1; s <= 114; s++) surahsToDownload.add(s);
+                } else {
+                    selectedSurahs.forEach(s => surahsToDownload.add(parseInt(s)));
+                    selectedJuzs.forEach(j => {
+                        const juzAyahs = getAyahsForJuz(parseInt(j));
+                        juzAyahs.forEach(a => surahsToDownload.add(a.surah));
+                    });
+                }
+
+                const itemsList = Array.from(surahsToDownload).sort((a, b) => a - b);
+                const total = itemsList.length;
+                for (let i = 0; i < total; i++) {
+                    if (abortControllerRef.current?.signal.aborted) break;
+                    const s = itemsList[i];
+                    setStatus(`جاري تحميل تفسير سورة ${SURAH_NAMES_AR[s - 1]}...`);
+                    await downloadSpecificTafsir(selectedTafsir, s);
+                    setProgress(((i + 1) / total) * 100);
+                }
             }
 
             if (!abortControllerRef.current?.signal.aborted) {
                 setStatus('تم التحميل بنجاح');
                 showToast('تم التحميل بنجاح');
-            } else {
-                setStatus('تم إيقاف التحميل');
             }
-        } catch (e) {
-            setStatus('حدث خطأ أثناء التحميل');
+        } catch (e: any) {
+            console.error('Download Error:', e);
+            setStatus(`خطأ: ${e.message || 'حدث خطأ أثناء التحميل'}`);
             showToast('خطأ في التحميل');
         } finally {
             setIsDownloading(false);
@@ -379,19 +499,19 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
             />
             <div 
                 ref={floatingMenuRef}
-                className={`fixed top-[calc(3.5rem+var(--logical-safe-top))] bottom-[calc(3.5rem+var(--logical-safe-bottom))] right-4 z-[1000] flex items-start gap-4 pointer-events-none`}
+                className={`fixed top-[calc(3.5rem+var(--logical-safe-top))] bottom-[calc(3.5rem+var(--logical-safe-bottom))] right-0 z-[1000] flex items-start gap-4 pointer-events-none`}
                 dir="rtl"
             >
             {/* The Main Menu Container */}
             <div 
                 id="floating-menu" 
-                className={`w-[200px] max-w-[85vw] bg-white rounded-2xl shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
+                className={`w-[190px] max-w-[85vw] bg-white rounded-l-2xl shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
                 style={{ 
                     fontFamily: currentTheme.font,
                     borderTop: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
                     borderBottom: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
                     borderLeft: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
-                    borderRight: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`
+                    borderRight: `0px solid transparent`
                 }}
             >
                 {isAddModalOpen ? (
@@ -458,34 +578,34 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                 ) : currentView === 'themes' ? (
                     /* Themes View */
                     <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
-                        <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
+                        <div className="p-2.5 border-b flex items-center justify-between bg-gray-50/50">
                             <div className="flex items-center gap-2">
-                                <Palette size={20} style={{ color: iconColor }} />
-                                <h3 className="font-bold text-sm" style={{ color: '#000000' }}>المظهر</h3>
+                                <Palette size={18} style={{ color: iconColor }} />
+                                <h3 className="font-bold text-xs" style={{ color: '#000000' }}>المظهر</h3>
                             </div>
                         </div>
 
-                        <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
-                            <div className="space-y-6">
+                        <div className="flex-grow overflow-y-auto p-2.5 custom-scrollbar">
+                            <div className="space-y-3">
                                 {/* Toggles Section */}
-                                <div className="space-y-3 bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+                                <div className="space-y-2 bg-gray-50/80 p-2 rounded-xl border border-gray-100">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-xs font-bold opacity-80" style={{ color: '#000000' }}>قفل لون التحديد</label>
-                                        <div className="relative inline-block w-8 align-middle select-none">
+                                        <label className="text-[10px] font-bold opacity-80" style={{ color: '#000000' }}>قفل لون التحديد</label>
+                                        <div className="relative inline-block w-7 align-middle select-none">
                                             <input 
                                                 type="checkbox" 
                                                 id="menu-lock-highlight" 
                                                 checked={settings?.lockHighlightColor || false} 
                                                 onChange={(e) => updateSetting('lockHighlightColor', e.target.checked)} 
-                                                className="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer"
+                                                className="toggle-checkbox absolute block w-3.5 h-3.5 rounded-full bg-white border-2 appearance-none cursor-pointer"
                                             />
-                                            <label htmlFor="menu-lock-highlight" className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${settings?.lockHighlightColor ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                            <label htmlFor="menu-lock-highlight" className={`toggle-label block overflow-hidden h-3.5 rounded-full cursor-pointer ${settings?.lockHighlightColor ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
                                         </div>
                                     </div>
                                     
                                     <div className="flex items-center justify-between">
-                                        <label className="text-xs font-bold opacity-80" style={{ color: '#000000' }}>إخفاء الأشرطة</label>
-                                        <div className="relative inline-block w-8 align-middle select-none">
+                                        <label className="text-[10px] font-bold opacity-80" style={{ color: '#000000' }}>إخفاء الأشرطة</label>
+                                        <div className="relative inline-block w-7 align-middle select-none">
                                             <input 
                                                 type="checkbox" 
                                                 id="menu-hide-toolbars" 
@@ -497,15 +617,15 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                                     window.dispatchEvent(new Event('settings-change'));
                                                     showToast(e.target.checked ? 'تم تفعيل إخفاء الأشرطة' : 'تم تعطيل إخفاء الأشرطة');
                                                 }} 
-                                                className="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-2 appearance-none cursor-pointer"
+                                                className="toggle-checkbox absolute block w-3.5 h-3.5 rounded-full bg-white border-2 appearance-none cursor-pointer"
                                             />
-                                            <label htmlFor="menu-hide-toolbars" className={`toggle-label block overflow-hidden h-4 rounded-full cursor-pointer ${isTransparentMode ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                            <label htmlFor="menu-hide-toolbars" className={`toggle-label block overflow-hidden h-3.5 rounded-full cursor-pointer ${isTransparentMode ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Themes Grid */}
-                                <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+                                <div className="grid grid-cols-4 gap-y-2.5 gap-x-1.5">
                                     {Object.entries(THEMES).map(([id, theme]: [string, any]) => (
                                         <React.Fragment key={id}>
                                             <button
@@ -513,20 +633,20 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                                     applyTheme(id);
                                                     setIsFloatingMenuOpen(false);
                                                 }}
-                                                className="flex flex-col items-center gap-1.5 group"
+                                                className="flex flex-col items-center gap-1 group"
                                             >
                                                 <div 
-                                                    className={`w-[22px] h-[22px] rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id ? 'scale-110 border-gray-400 shadow-md' : 'border-transparent hover:scale-105'}`}
+                                                    className={`w-[18px] h-[18px] rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id ? 'scale-110 border-gray-400 shadow-md' : 'border-transparent hover:scale-105'}`}
                                                     style={{ backgroundColor: id === 'deep_black' ? '#000000' : (theme.accent || theme.barText || '#000000') }}
                                                 >
                                                     {localStorage.getItem('current_theme_id' + (isMemorizationMode ? `_memorization_${isLandscape ? 'h' : 'v'}` : isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : readingMode === 'mushaf' ? (isLandscape ? '_h' : '_v') : `_${readingMode}_${isLandscape ? 'h' : 'v'}`)) === id && (
-                                                        <div className={`w-1.5 h-1.5 rounded-full shadow-sm ${id === 'deep_black' ? 'bg-emerald-500' : 'bg-white'}`}></div>
+                                                        <div className={`w-1 h-1 rounded-full shadow-sm ${id === 'deep_black' ? 'bg-emerald-500' : 'bg-white'}`}></div>
                                                     )}
                                                 </div>
-                                                <span className="text-[7px] font-bold opacity-80 truncate w-full text-center leading-tight" style={{ color: '#000000' }}>{theme.name}</span>
+                                                <span className="text-[6px] font-bold opacity-80 truncate w-full text-center leading-tight" style={{ color: '#000000' }}>{theme.name}</span>
                                             </button>
                                             {id === 'lime' && (
-                                                <div className="col-span-4 h-px bg-gray-200/60 my-1"></div>
+                                                <div className="col-span-4 h-px bg-gray-200/60 my-0.5"></div>
                                             )}
                                         </React.Fragment>
                                     ))}
@@ -534,12 +654,12 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             </div>
                         </div>
 
-                        <div className="p-3 border-t bg-gray-50/80">
+                        <div className="p-2 border-t bg-gray-50/80">
                             <button 
                                 onClick={() => setCurrentView('main')}
-                                className="w-full py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
+                                className="w-full py-2 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all"
                             >
-                                <ChevronDown className="rotate-90 w-4 h-4" />
+                                <ChevronDown className="rotate-90 w-3.5 h-3.5" />
                                 رجوع
                             </button>
                         </div>
@@ -802,7 +922,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-500 block">اختر القارئ</label>
                                     <div className="grid grid-cols-2 gap-2">
-                                        {(currentView === 'download_memorization' ? MEMORIZATION_READERS : RECITERS).map(r => (
+                                        {(currentView === 'download_memorization' ? MEMORIZATION_READERS : (currentView === 'download_quran' ? READERS : RECITERS)).map(r => (
                                             <button 
                                                 key={r.id}
                                                 onClick={() => setSelectedReader(r.id)}
@@ -1027,21 +1147,21 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                     </div>
                 ) : (
                     /* Main Menu Content */
-                    <div className="p-4 flex flex-col gap-4 overflow-y-auto flex-grow custom-scrollbar">
+                    <div className="p-2 flex flex-col gap-2 overflow-y-auto flex-grow custom-scrollbar">
                         {/* خيارات القراءة */}
                         <MenuSection title="خيارات القراءة" iconColor={iconColor} titleColor="#2563eb">
-                            <MenuItem icon={<BookText size={18} />} label="المصحف" onClick={() => handleAction(() => { setReadingMode('mushaf'); })} iconColor={iconColor} isActive={readingMode === 'mushaf'} />
-                            <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} isActive={readingMode === 'tafseer'} />
-                            <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} isActive={readingMode === 'meanings'} />
-                            <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} isActive={readingMode === 'translation'} />
+                            <MenuItem icon={<BookText size={16} />} label="المصحف" onClick={() => handleAction(() => { setReadingMode('mushaf'); })} iconColor={iconColor} isActive={readingMode === 'mushaf'} />
+                            <MenuItem icon={<Book size={16} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} isActive={readingMode === 'tafseer'} />
+                            <MenuItem icon={<FileText size={16} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} isActive={readingMode === 'meanings'} />
+                            <MenuItem icon={<Languages size={16} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} isActive={readingMode === 'translation'} />
                         </MenuSection>
 
                         {/* الإعدادات والبحث */}
                         <MenuSection title="الإعدادات والبحث" iconColor={iconColor} titleColor="#16a34a">
-                            <MenuItem icon={<Palette size={18} />} label="المظهر" onClick={() => setCurrentView('themes')} iconColor={iconColor} />
-                            <MenuItem icon={<Search size={18} />} label="البحث" onClick={() => handleAction(() => openModal('search-modal'))} iconColor={iconColor} />
-                            <MenuItem icon={<Settings size={18} />} label="الإعدادات" onClick={() => handleAction(() => openModal('settings-modal'))} iconColor={iconColor} />
-                            <MenuItem icon={<Bookmark size={18} />} label="العلامات المرجعية" onClick={() => setCurrentView('bookmarks')} iconColor={iconColor} />
+                            <MenuItem icon={<Palette size={16} />} label="المظهر" onClick={() => setCurrentView('themes')} iconColor={iconColor} />
+                            <MenuItem icon={<Search size={16} />} label="البحث" onClick={() => handleAction(() => openModal('search-modal'))} iconColor={iconColor} />
+                            <MenuItem icon={<Settings size={16} />} label="الإعدادات" onClick={() => handleAction(() => openModal('settings-modal'))} iconColor={iconColor} />
+                            <MenuItem icon={<Bookmark size={16} />} label="العلامات المرجعية" onClick={() => setCurrentView('bookmarks')} iconColor={iconColor} />
                         </MenuSection>
 
                         {/* اختصارات أخرى */}
@@ -1049,7 +1169,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             {ALL_SHORTCUTS.filter(s => selectedShortcuts.includes(s.id)).map(shortcut => (
                                 <React.Fragment key={shortcut.id}>
                                     <MenuItem 
-                                        icon={shortcut.icon} 
+                                        icon={React.cloneElement(shortcut.icon as React.ReactElement, { size: 16 })} 
                                         label={shortcut.label} 
                                         onClick={() => {
                                             if (shortcut.id === 'quran-download-parent') {
@@ -1299,21 +1419,21 @@ const ToolbarColorPickerContent: React.FC<{
 
 const MenuSection: React.FC<{ title: string, children: React.ReactNode, iconColor: string, titleColor?: string }> = ({ title, children, iconColor, titleColor = '#000000' }) => (
     <div className="flex flex-col">
-        <div className="bg-blue-50/50 py-1 px-3 rounded-md mb-1 text-right">
-            <span className="text-xs font-bold" style={{ color: titleColor }}>{title}</span>
+        <div className="bg-blue-50/50 py-0.5 px-2 rounded-md mb-0.5 text-right">
+            <span className="text-[10px] font-bold" style={{ color: titleColor }}>{title}</span>
         </div>
-        <div className="flex flex-col px-2">
+        <div className="flex flex-col px-1">
             {children}
         </div>
     </div>
 );
 
 const MenuItem: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void, iconColor: string, showChevron?: boolean, isExpanded?: boolean, isSubItem?: boolean, isActive?: boolean }> = ({ icon, label, onClick, iconColor, showChevron, isExpanded, isSubItem, isActive }) => (
-    <button onClick={onClick} className={`flex items-center gap-3 py-2 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full ${isSubItem ? 'px-2 py-1.5 border-0' : ''}`}>
+    <button onClick={onClick} className={`flex items-center gap-2 py-1.5 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors text-right w-full ${isSubItem ? 'px-1.5 py-1 border-0' : ''}`}>
         <div style={{ color: iconColor }}>{icon}</div>
-        <span className={`${isSubItem ? 'text-xs' : 'text-sm'} font-bold flex-1`} style={{ color: isActive ? iconColor : '#000000' }}>{label}</span>
+        <span className={`${isSubItem ? 'text-[10px]' : 'text-[11px]'} font-bold flex-1`} style={{ color: isActive ? iconColor : '#000000' }}>{label}</span>
         {showChevron && (
-            <ChevronDown size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} style={{ color: iconColor }} />
+            <ChevronDown size={14} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} style={{ color: iconColor }} />
         )}
     </button>
 );

@@ -428,15 +428,15 @@
 #header {
     height: calc(3.5rem + var(--logical-safe-top) + 4px);
     padding-top: calc(var(--logical-safe-top) + 4px) !important;
-    padding-left: var(--logical-safe-left) !important;
-    padding-right: var(--logical-safe-right) !important;
+    padding-left: calc(var(--logical-safe-left) + 25px) !important;
+    padding-right: calc(var(--logical-safe-right) + 25px) !important;
     transition: transform 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
 }
 #bottom-bar {
     height: calc(3.5rem + var(--logical-safe-bottom) + 4px);
     padding-bottom: calc(var(--logical-safe-bottom) + 4px) !important;
-    padding-left: var(--logical-safe-left) !important;
-    padding-right: var(--logical-safe-right) !important;
+    padding-left: calc(var(--logical-safe-left) + 25px) !important;
+    padding-right: calc(var(--logical-safe-right) + 25px) !important;
     transition: transform 0.3s ease, opacity 0.3s ease, margin-bottom 0.3s ease;
 }
 #mushaf-content {
@@ -620,8 +620,8 @@
 .quran-reader-container.landscape-mode #header {
     height: calc(40px + var(--logical-safe-top));
     padding-top: var(--logical-safe-top) !important;
-    padding-left: calc(10px + var(--logical-safe-left)) !important;
-    padding-right: calc(10px + var(--logical-safe-right)) !important;
+    padding-left: calc(25px + var(--logical-safe-left)) !important;
+    padding-right: calc(25px + var(--logical-safe-right)) !important;
     font-size: 0.85rem;
     transition: transform 0.3s ease, opacity 0.3s ease;
     position: absolute;
@@ -638,8 +638,8 @@
 .quran-reader-container.landscape-mode #bottom-bar {
     height: calc(50px + var(--logical-safe-bottom));
     padding-bottom: var(--logical-safe-bottom) !important;
-    padding-left: calc(10px + var(--logical-safe-left)) !important;
-    padding-right: calc(10px + var(--logical-safe-right)) !important;
+    padding-left: calc(25px + var(--logical-safe-left)) !important;
+    padding-right: calc(25px + var(--logical-safe-right)) !important;
     transition: transform 0.3s ease, opacity 0.3s ease;
     position: absolute;
     bottom: 0;
