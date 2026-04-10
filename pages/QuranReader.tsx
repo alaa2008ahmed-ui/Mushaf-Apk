@@ -1649,10 +1649,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             autoScrollStateRef.current = newState;
             setAutoScrollState(newState);
             
-            if (initialLandscape) {
+            if (isLandscapeRef.current) {
                 setIsLandscapeUIHidden(!newPausedState);
             }
-        } else if (initialLandscape) {
+        } else if (isLandscapeRef.current) {
             setIsLandscapeUIHidden(prev => !prev);
         }
     }, [handleAyahClick]);
@@ -1669,7 +1669,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 const newState = { ...autoScrollStateRef.current, isPaused: true };
                 autoScrollStateRef.current = newState;
                 setAutoScrollState(newState);
-            if (initialLandscape) {
+            if (isLandscapeRef.current) {
                 setIsLandscapeUIHidden(false);
             }
             }
@@ -2833,6 +2833,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
     const handleScreenTap = () => {
       setIsFloatingMenuOpen(false);
+      // Use actual orientation for UI toggling, not just initialLandscape
+      const currentLandscape = isLandscapeRef.current;
+      
       if (autoScrollStateRef.current.isActive) {
         const newPausedState = !autoScrollStateRef.current.isPaused;
         autoScrollPausedRef.current = newPausedState;
@@ -2840,10 +2843,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         autoScrollStateRef.current = newState;
         setAutoScrollState(newState);
         
-        if (initialLandscape) {
+        if (currentLandscape) {
             setIsLandscapeUIHidden(!newPausedState);
         }
-      } else if (initialLandscape) {
+      } else if (currentLandscape) {
           setIsLandscapeUIHidden(prev => !prev);
       }
     };
@@ -3027,7 +3030,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     }, [visiblePages]);
 
     return (
-        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${settings.showPageBorder === false ? 'no-border' : ''} ${(isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused) || (isHideToolbarsEnabled && isUserScrolling) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ 
+        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape && initialLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${settings.showPageBorder === false ? 'no-border' : ''} ${(isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused) || (isHideToolbarsEnabled && isUserScrolling) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ 
             backgroundColor: settings.bgColor, 
             color: settings.textColor, 
             fontFamily: settings.fontFamily, 
