@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
-import { toArabic, SURAH_INFO, SURAH_NAMES_AR, getAyahCountText } from './constants';
+import { toArabic, SURAH_INFO, SURAH_NAMES_AR, getAyahCountText, SAJDAH_LOCATIONS } from './constants';
 
 interface VerticalReadingViewProps {
     quranData: any;
@@ -12,6 +12,7 @@ interface VerticalReadingViewProps {
     onVisibleAyahChange?: (s: number, a: number) => void;
     showMarkerNotification?: (type: 'quarter' | 'sajda' | 'surah', text: string) => void;
     showJuzNotification?: (text: string) => void;
+    handleSajdahVisible?: (surahName: string, sNum: number, ayahNum: number) => void;
     onSettingsChange?: (newSettings: any) => void;
     modeSuffix?: string;
     hideVerses?: boolean;
@@ -33,6 +34,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     onVisibleAyahChange,
     showMarkerNotification,
     showJuzNotification,
+    handleSajdahVisible,
     onSettingsChange,
     modeSuffix = '_v',
     hideVerses = false,
@@ -52,12 +54,22 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     const lastScrolledAyahRef = useRef<{s: number, a: number} | null>(null);
     const lastNotifiedJuz = useRef<number | null>(null);
     const lastNotifiedQuarter = useRef<number | null>(null);
+    const lastNotifiedSajda = useRef<string | null>(null);
 
     // Pinch-to-zoom refs
     const initialPinchDistanceRef = useRef<number | null>(null);
     const initialPinchFontSizeRef = useRef<number | null>(null);
 
     const [localFontSize, setLocalFontSize] = useState(settings.fontSize);
+
+    const [scrollParent, setScrollParent] = useState<HTMLElement | undefined>(undefined);
+
+    useEffect(() => {
+        const parent = document.getElementById('mushaf-content');
+        if (parent) {
+            setScrollParent(parent);
+        }
+    }, []);
 
     useEffect(() => {
         setLocalFontSize(settings.fontSize);
@@ -159,6 +171,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
             // Add Ayahs
             surah.ayahs.forEach((ayah: any) => {
+                const isSajdah = SAJDAH_LOCATIONS.some(sl => sl.s === surah.number && sl.a === ayah.numberInSurah);
                 items.push({
                     type: 'ayah',
                     surahNumber: surah.number,
@@ -166,7 +179,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     text: ayah.text,
                     juz: ayah.juz,
                     hizbQuarter: ayah.hizbQuarter,
-                    sajda: ayah.sajda,
+                    sajda: isSajdah,
                     id: `${surah.number}-${ayah.numberInSurah}`
                 });
             });
@@ -345,20 +358,23 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
     return (
         <div 
-            className="h-full w-full overflow-hidden" 
+            className="w-full" 
             style={{ direction: 'rtl', backgroundColor: currentTheme.bg }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
         >
-            <Virtuoso
-                ref={virtuosoRef}
-                data={flattenedItems}
-                initialTopMostItemIndex={initialIndex}
-                overscan={200} // Pre-render items for smoother experience
-                className="h-full scrollbar-hide"
-                itemContent={renderItem}
-                rangeChanged={(range) => {
+            {scrollParent && (
+                <Virtuoso
+                    ref={virtuosoRef}
+                    useWindowScroll={false}
+                    customScrollParent={scrollParent}
+                    data={flattenedItems}
+                    initialTopMostItemIndex={initialIndex}
+                    overscan={200} // Pre-render items for smoother experience
+                    className="scrollbar-hide"
+                    itemContent={renderItem}
+                    rangeChanged={(range) => {
                     const item = flattenedItems[range.startIndex];
                     if (item && item.type === 'ayah') {
                         // Detect Juz change
@@ -383,11 +399,21 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
                         // Detect Sajdah
                         if (item.sajda) {
-                            const surahName = SURAH_NAMES_AR[item.surahNumber - 1];
-                            const displaySurah = (surahName.includes('سورة') || surahName.includes('سُورَة')) 
-                                ? surahName 
-                                : `سورة ${surahName}`;
-                            showMarkerNotification?.('sajda', `سجدة تلاوة: ${displaySurah} - آية ${toArabic(item.ayahNumber)}`);
+                            const sajdaId = `${item.surahNumber}-${item.ayahNumber}`;
+                            if (lastNotifiedSajda.current !== sajdaId) {
+                                const surahName = SURAH_NAMES_AR[item.surahNumber - 1];
+                                if (handleSajdahVisible) {
+                                    handleSajdahVisible(surahName, item.surahNumber, item.ayahNumber);
+                                } else {
+                                    const displaySurah = (surahName.includes('سورة') || surahName.includes('سُورَة')) 
+                                        ? surahName 
+                                        : `سورة ${surahName}`;
+                                    showMarkerNotification?.('sajda', `سجدة تلاوة: ${displaySurah} - آية ${toArabic(item.ayahNumber)}`);
+                                }
+                                lastNotifiedSajda.current = sajdaId;
+                            }
+                        } else {
+                            lastNotifiedSajda.current = null;
                         }
 
                         lastScrolledAyahRef.current = { s: item.surahNumber, a: item.ayahNumber };
@@ -395,6 +421,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     }
                 }}
             />
+            )}
         </div>
     );
 });

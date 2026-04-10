@@ -14,7 +14,7 @@ const MarkerNotification: FC<{isVisible: boolean, type: string, text: string, cu
 
     return (
         <div 
-            className={`marker-notification modal-skinned ${isVisible ? 'show' : ''}`}
+            className={`marker-notification modal-skinned toast-element ${isVisible ? 'show' : ''}`}
             style={{ fontFamily: currentTheme?.font }}
         >
             <div className="marker-icon theme-header-bg"><i className={`fa-solid ${getIcon()}`}></i></div>

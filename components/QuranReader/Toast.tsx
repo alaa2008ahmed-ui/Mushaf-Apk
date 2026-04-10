@@ -33,7 +33,7 @@ const Toast: React.FC<ToastProps> = ({ message, show, onClose, currentTheme }) =
     return (
         <div 
             id="message-toast" 
-            className={`${isVisible ? 'show' : ''} modal-skinned`}
+            className={`${isVisible ? 'show' : ''} modal-skinned toast-element`}
             style={{ fontFamily: currentTheme?.font }}
         >
             <div className="p-2 rounded-full theme-header-bg">

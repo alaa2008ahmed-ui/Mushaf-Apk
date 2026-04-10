@@ -206,9 +206,7 @@
 }
 
 .page-content {
-    text-align: justify;
-    text-align-last: center;
-    text-justify: auto;
+    text-align: center;
     line-height: 2.5;
     font-size: 1.7rem;
     letter-spacing: 0; 
@@ -590,15 +588,10 @@
 }
 
 /* Fix modals in landscape mode */
-.quran-reader-container.landscape-mode .modal-skinned {
+.quran-reader-container.landscape-mode .modal-skinned:not(.toast-element) {
     max-height: 95% !important;
     width: 95% !important;
     max-width: 800px !important;
-}
-
-.quran-reader-container.landscape-mode .modal-skinned > div:nth-child(2) {
-    flex: 1 !important;
-    min-height: 0 !important;
 }
 
 .quran-reader-container.landscape-mode {

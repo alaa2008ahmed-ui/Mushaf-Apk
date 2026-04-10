@@ -2098,8 +2098,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 });
             }
     
-            if (autoScrollState.isActive) return;
-    
             const now = Date.now();
             if (now - lastScrollUpdateTime.current < 100) return;
             lastScrollUpdateTime.current = now;
@@ -3066,6 +3064,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         } : undefined}
                         showMarkerNotification={showMarkerNotification}
                         showJuzNotification={showJuzNotification}
+                        handleSajdahVisible={handleSajdahVisible}
                         onSettingsChange={setSettings}
                         modeSuffix={modeSuffix}
                         hideVerses={isHideMode}
