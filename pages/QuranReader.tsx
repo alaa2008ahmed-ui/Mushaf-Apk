@@ -172,6 +172,9 @@ const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentThem
 
 const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any }> = ({ page, onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
+    const isLandscapeRef = useRef(initialLandscape);
+    useEffect(() => { isLandscapeRef.current = isLandscape; }, [isLandscape]);
+
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [savedSession, setSavedSession] = useState<any>(null);
     const [localIsMemorizationMode, setLocalIsMemorizationMode] = useState(isMemorizationMode);
@@ -282,6 +285,25 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             }
         }
     }, [isWirdMode]);
+
+    const [settings, setSettings] = useState(() => {
+        const mode = initialLandscape ? '_h' : '_v';
+        const saved = localStorage.getItem('quran_settings' + mode);
+        const defaultTheme = THEMES['night_sky'];
+        return saved ? JSON.parse(saved) : {
+            fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
+            highlightTextColor: defaultTheme.highlightText || defaultTheme.accent,
+            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'night_sky', scrollMinutes: 20, tafseer: 'ar.jalalayn',
+            hideUIOnAutoScroll: false,
+            lockHighlightColor: false
+        };
+    });
+
+    const [currentTheme, setCurrentTheme] = useState(() => {
+        const mode = initialLandscape ? '_h' : '_v';
+        const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
+        return THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
+    });
 
     const [currentAyah, setCurrentAyah] = useState<{ s: number; a: number }>({ s: 1, a: 1 });
     const surahName = SURAH_NAMES_AR[currentAyah.s - 1] || '';
@@ -491,8 +513,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
         window.dispatchEvent(new Event('settings-change'));
     };
-    const isLandscapeRef = useRef(false);
-    useEffect(() => { isLandscapeRef.current = isLandscape; }, [isLandscape]);
 
     // Load settings based on orientation and mode
     useEffect(() => {
@@ -785,25 +805,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                           tafseerSelectionInfo.isOpen ||
                           isAutoScrollSettingsOpen ||
                           sajdahCardInfo.show;
-
-    const [settings, setSettings] = useState(() => {
-        const mode = initialLandscape ? '_h' : '_v';
-        const saved = localStorage.getItem('quran_settings' + mode);
-        const defaultTheme = THEMES['night_sky'];
-        return saved ? JSON.parse(saved) : {
-            fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
-            highlightTextColor: defaultTheme.highlightText || defaultTheme.accent,
-            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'night_sky', scrollMinutes: 20, tafseer: 'ar.jalalayn',
-            hideUIOnAutoScroll: false,
-            lockHighlightColor: false
-        };
-    });
-
-    const [currentTheme, setCurrentTheme] = useState(() => {
-        const mode = initialLandscape ? '_h' : '_v';
-        const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
-        return THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
-    });
 
     // Keep screen awake logic
     useEffect(() => {
