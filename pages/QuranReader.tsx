@@ -172,9 +172,6 @@ const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentThem
 
 const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any }> = ({ page, onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
-    const isLandscapeRef = useRef(initialLandscape);
-    useEffect(() => { isLandscapeRef.current = isLandscape; }, [isLandscape]);
-
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [savedSession, setSavedSession] = useState<any>(null);
     const [localIsMemorizationMode, setLocalIsMemorizationMode] = useState(isMemorizationMode);
@@ -248,6 +245,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const [loadingStatus, setLoadingStatus] = useState('');
     const [loadingProgress, setLoadingProgress] = useState(100);
 
+    const [visiblePages, setVisiblePages] = useState<number[]>([1, 2, 3]);
     const [wirdEndPage, setWirdEndPage] = useState<number | null>(null);
     const [showWirdCompleteModal, setShowWirdCompleteModal] = useState(false);
     const [hasShownWirdComplete, setHasShownWirdComplete] = useState(false);
@@ -286,30 +284,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
     }, [isWirdMode]);
 
-    const [settings, setSettings] = useState(() => {
-        const mode = initialLandscape ? '_h' : '_v';
-        const saved = localStorage.getItem('quran_settings' + mode);
-        const defaultTheme = THEMES['night_sky'];
-        return saved ? JSON.parse(saved) : {
-            fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
-            highlightTextColor: defaultTheme.highlightText || defaultTheme.accent,
-            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'night_sky', scrollMinutes: 20, tafseer: 'ar.jalalayn',
-            hideUIOnAutoScroll: false,
-            lockHighlightColor: false
-        };
-    });
-
-    const [currentTheme, setCurrentTheme] = useState(() => {
-        const mode = initialLandscape ? '_h' : '_v';
-        const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
-        return THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
-    });
-
     const [currentAyah, setCurrentAyah] = useState<{ s: number; a: number }>({ s: 1, a: 1 });
-    const surahName = SURAH_NAMES_AR[currentAyah.s - 1] || '';
-    const juz = JUZ_MAP.slice().reverse().find(j => (currentAyah.s > j.s) || (currentAyah.s === j.s && currentAyah.a >= j.a))?.j || 1;
-    const currentPageNumber = quranData?.surahs[currentAyah.s - 1]?.ayahs.find((ay:any) => ay.numberInSurah === currentAyah.a)?.page || 1;
-    const tafseerName = TAFSEERS.find(t => t.id === settings.tafseer)?.name || 'التفسير';
 
     const recordedAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -513,6 +488,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
         window.dispatchEvent(new Event('settings-change'));
     };
+    const isLandscapeRef = useRef(false);
+    useEffect(() => { isLandscapeRef.current = isLandscape; }, [isLandscape]);
 
     // Load settings based on orientation and mode
     useEffect(() => {
@@ -805,6 +782,25 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                           tafseerSelectionInfo.isOpen ||
                           isAutoScrollSettingsOpen ||
                           sajdahCardInfo.show;
+
+    const [settings, setSettings] = useState(() => {
+        const mode = initialLandscape ? '_h' : '_v';
+        const saved = localStorage.getItem('quran_settings' + mode);
+        const defaultTheme = THEMES['night_sky'];
+        return saved ? JSON.parse(saved) : {
+            fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
+            highlightTextColor: defaultTheme.highlightText || defaultTheme.accent,
+            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'night_sky', scrollMinutes: 20, tafseer: 'ar.jalalayn',
+            hideUIOnAutoScroll: false,
+            lockHighlightColor: false
+        };
+    });
+
+    const [currentTheme, setCurrentTheme] = useState(() => {
+        const mode = initialLandscape ? '_h' : '_v';
+        const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
+        return THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
+    });
 
     // Keep screen awake logic
     useEffect(() => {
@@ -1208,45 +1204,30 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             const page = quranData?.surahs[s - 1]?.ayahs.find((ay: any) => ay.numberInSurah === a)?.page;
             if (page) {
                 const pageNum = Number(page);
-                
-                // 1. Scroll to the page index
                 mushafVirtuosoRef.current.scrollToIndex({
                     index: pageNum - 1,
                     align: 'start',
                     behavior: instant ? 'auto' : 'smooth'
                 });
                 
-                // 2. Center the Ayah within the page
-                // If instant, we use a very short timeout to allow the page to mount if it's not already there
-                const scrollTimeout = instant ? 10 : 300;
-                
+                // After scrolling to page, wait for it to render then scroll to ayah element
                 setTimeout(() => {
                     const el = document.getElementById(`ayah-${s}-${a}`);
                     const container = document.getElementById('mushaf-content');
                     if (el && container) {
-                        // Find the actual scroller element (Virtuoso's internal scroller)
-                        const scroller = container.querySelector('[data-virtuoso-scroller="true"]') || container;
-                        const scrollerRect = scroller.getBoundingClientRect();
+                        const containerRect = container.getBoundingClientRect();
                         const elRect = el.getBoundingClientRect();
-                        
-                        // Calculate target scroll to center the Ayah vertically in the viewport
-                        const targetScrollTop = scroller.scrollTop + (elRect.top - scrollerRect.top) - (scrollerRect.height / 2) + (elRect.height / 2);
-                        
-                        scroller.scrollTo({ 
-                            top: targetScrollTop, 
-                            behavior: instant ? 'auto' : 'smooth' 
-                        });
+                        const targetScrollTop = container.scrollTop + (elRect.top - containerRect.top) - (containerRect.height / 2) + (elRect.height / 2);
+                        container.scrollTo({ top: targetScrollTop, behavior: instant ? 'auto' : 'smooth' });
                     }
-                    
-                    // Only reset jumping state after the final scroll is initiated
-                    isJumpingRef.current = false;
-                }, scrollTimeout);
+                }, 300);
+                isJumpingRef.current = false;
                 return;
             }
         }
 
         const container = document.getElementById('mushaf-content');
-        if (!document.getElementById('pages-container') && readingMode !== 'mushaf') {
+        if (!document.getElementById('pages-container') || !container) {
             isJumpingRef.current = false;
             return;
         }
@@ -2154,10 +2135,16 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         lastNotifiedJuz.current = null;
         lastNotifiedQuarter.current = null;
         
-        handleAyahClick(s, a);
-        if (!isPageInputActiveRef.current) {
-            setActiveModals([]);
-        }
+        const p = Number(ayah.page);
+        const targetPage = p;
+        
+        flushSync(() => {
+            setVisiblePages([...new Set([targetPage, targetPage + 1, targetPage + 2, targetPage - 1, targetPage - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b));
+            handleAyahClick(s, a);
+            if (!isPageInputActiveRef.current) {
+                setActiveModals([]);
+            }
+        });
 
         scrollToAyah(s, a, instant, 50, isPageJump);
     }, [quranData, handleAyahClick, stopAudio, scrollToAyah]);
@@ -2246,10 +2233,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 jumpToAyah(params.surah, params.ayah, true);
                 return;
             } else if (action === 'next_page') {
-                jumpToPage(Math.min(604, currentPageNumber + 1));
+                jumpToPage(Math.min(604, Math.min(...visiblePages) + 1));
                 return;
             } else if (action === 'prev_page') {
-                jumpToPage(Math.max(1, currentPageNumber - 1));
+                jumpToPage(Math.max(1, Math.min(...visiblePages) - 1));
                 return;
             } else if (action === 'play_audio') {
                 handlePlayButtonPointerDown();
@@ -2325,7 +2312,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             handlePlayButtonPointerDown();
             handlePlayButtonPointerUp();
         }
-    }, [onNavigate, onBack, openModal, jumpToAyah, jumpToPage, currentPageNumber, handlePlayButtonPointerDown, handlePlayButtonPointerUp]);
+    }, [onNavigate, onBack, openModal, jumpToAyah, jumpToPage, visiblePages, handlePlayButtonPointerDown, handlePlayButtonPointerUp]);
 
     // Handle global voice commands
     useEffect(() => {
@@ -2350,9 +2337,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             } else if (action === 'go_to_ayah' && params?.surah && params?.ayah) {
                 jumpToAyah(params.surah, params.ayah, true);
             } else if (action === 'next_page') {
-                jumpToPage(Math.min(604, currentPageNumber + 1));
+                jumpToPage(Math.min(604, Math.min(...visiblePages) + 1));
             } else if (action === 'prev_page') {
-                jumpToPage(Math.max(1, currentPageNumber - 1));
+                jumpToPage(Math.max(1, Math.min(...visiblePages) - 1));
             } else if (action === 'play_audio' || action === 'stop_audio') {
                 handlePlayButtonPointerDown();
                 handlePlayButtonPointerUp();
@@ -2459,7 +2446,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
         window.addEventListener('voice-command', handleGlobalVoiceCommand);
         return () => window.removeEventListener('voice-command', handleGlobalVoiceCommand);
-    }, [currentPageNumber, jumpToPage, handlePlayButtonPointerDown, handlePlayButtonPointerUp, openModal, handleVoiceCommand, activeModals]);
+    }, [visiblePages, jumpToPage, handlePlayButtonPointerDown, handlePlayButtonPointerUp, openModal, handleVoiceCommand, activeModals]);
 
     const saveBookmark = () => { 
         const current = currentAyahRef.current;
@@ -2852,6 +2839,11 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     if (isLoading) { return <div id="loader" className="fixed inset-0 bg-[#1f2937] text-white z-[9999] flex flex-col items-center justify-center"><div className="text-2xl font-bold mb-4">جاري تحميل المصحف...</div><div className="w-64 h-2 bg-gray-700 rounded-full overflow-hidden"><div id="progress-bar" className="h-full bg-green-500 transition-all duration-300" style={{width: `${loadingProgress}%`}}></div></div><div id="loader-status" className="mt-2 text-sm text-gray-400">{loadingStatus}</div></div> }
     
+    const surahName = SURAH_NAMES_AR[currentAyah.s - 1] || '';
+    const juz = JUZ_MAP.slice().reverse().find(j => (currentAyah.s > j.s) || (currentAyah.s === j.s && currentAyah.a >= j.a))?.j || 1;
+    const currentPageNumber = quranData?.surahs[currentAyah.s - 1]?.ayahs.find((ay:any) => ay.numberInSurah === currentAyah.a)?.page || 1;
+    const tafseerName = TAFSEERS.find(t => t.id === settings.tafseer)?.name || 'التفسير';
+
     const renderPlayButtonIcon = () => {
         const iconColor = currentTheme.barText || '#000000';
         if (isAudioLoading) return <i className="fa-solid fa-spinner fa-spin text-xl" style={{ color: iconColor }}></i>;
@@ -2878,6 +2870,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         setCurrentAyah({ s, a });
         setHighlightedAyahId(`${s}-${a}`);
     }, []);
+
+    const sortedVisiblePages = useMemo(() => {
+        return [...new Set(visiblePages)].sort((a: number, b: number) => a - b);
+    }, [visiblePages]);
 
     return (
         <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${settings.showPageBorder === false ? 'no-border' : ''} ${(isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused) || (isHideToolbarsEnabled && isUserScrolling) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ 
