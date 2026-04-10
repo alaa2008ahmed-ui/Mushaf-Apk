@@ -487,15 +487,14 @@
     color: #1f2937;
     border-radius: 0.75rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    padding: 0.4rem 0.6rem;
+    padding: 0.5rem 0.75rem;
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.5rem;
     font-family: var(--font-ui);
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: bold;
     pointer-events: none;
-    max-width: 250px;
 }
 
 .marker-notification.show {
@@ -529,10 +528,10 @@
     transform: translateX(-50%) translateY(-50px);
     background-color: #000000;
     color: white;
-    padding: 4px 10px;
-    border-radius: 12px;
+    padding: 6px 16px;
+    border-radius: 20px;
     font-weight: bold;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     z-index: 90;
     opacity: 0;
     pointer-events: none;
@@ -619,11 +618,11 @@
     margin-top: 0 !important;
 }
 .quran-reader-container.landscape-mode #header {
-    height: calc(50px + var(--logical-safe-top));
+    height: calc(40px + var(--logical-safe-top));
     padding-top: var(--logical-safe-top) !important;
     padding-left: calc(4px + var(--logical-safe-left)) !important;
     padding-right: calc(4px + var(--logical-safe-right)) !important;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     transition: transform 0.3s ease, opacity 0.3s ease;
     position: absolute;
     top: 0;
@@ -637,7 +636,7 @@
     -webkit-backdrop-filter: none;
 }
 .quran-reader-container.landscape-mode #bottom-bar {
-    height: calc(60px + var(--logical-safe-bottom));
+    height: calc(50px + var(--logical-safe-bottom));
     padding-bottom: var(--logical-safe-bottom) !important;
     padding-left: calc(4px + var(--logical-safe-left)) !important;
     padding-right: calc(4px + var(--logical-safe-right)) !important;
@@ -654,16 +653,14 @@
     -webkit-backdrop-filter: none;
 }
 .quran-reader-container.landscape-mode .top-bar-text-button {
-    padding: 4px 10px;
-    font-size: 0.95rem;
-    height: 40px;
+    padding: 2px 6px;
+    font-size: 0.85rem;
 }
 .quran-reader-container.landscape-mode .bottom-bar-button {
-    padding: 6px 12px;
-    height: 44px;
+    padding: 4px;
 }
 .quran-reader-container.landscape-mode .bottom-bar-button i {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
     margin-bottom: 0;
 }
 .quran-reader-container.landscape-mode.landscape-ui-hidden #header,
@@ -694,17 +691,17 @@
     right: -400px; 
     z-index: 1000;
     transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    max-width: 280px; 
+    max-width: 90%; 
     font-family: var(--font-ui);
     background-color: white;
     color: #1f2937;
     border: 2px solid #e5e7eb;
     border-radius: 0.75rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    padding: 0.6rem 0.8rem;
+    padding: 1rem 1rem;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.75rem;
 }
 .dark #message-toast {
     background-color: #1f2937;

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, FC } from 'react';
-import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { flushSync } from 'react-dom';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import { Capacitor } from '@capacitor/core';
@@ -972,7 +971,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
     ];
     const mushafContentRef = useRef<HTMLDivElement>(null);
-    const mushafVirtuosoRef = useRef<VirtuosoHandle>(null);
     const settingsRef = useRef(settings);
     useEffect(() => { settingsRef.current = settings; }, [settings]);
     const floatingMenuRef = useRef<HTMLDivElement>(null);
@@ -1200,32 +1198,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
 
     const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false, retries: number = 50, isPageJump: boolean = false) => {
-        if (readingMode === 'mushaf' && mushafVirtuosoRef.current) {
-            const page = quranData?.surahs[s - 1]?.ayahs.find((ay: any) => ay.numberInSurah === a)?.page;
-            if (page) {
-                const pageNum = Number(page);
-                mushafVirtuosoRef.current.scrollToIndex({
-                    index: pageNum - 1,
-                    align: 'start',
-                    behavior: instant ? 'auto' : 'smooth'
-                });
-                
-                // After scrolling to page, wait for it to render then scroll to ayah element
-                setTimeout(() => {
-                    const el = document.getElementById(`ayah-${s}-${a}`);
-                    const container = document.getElementById('mushaf-content');
-                    if (el && container) {
-                        const containerRect = container.getBoundingClientRect();
-                        const elRect = el.getBoundingClientRect();
-                        const targetScrollTop = container.scrollTop + (elRect.top - containerRect.top) - (containerRect.height / 2) + (elRect.height / 2);
-                        container.scrollTo({ top: targetScrollTop, behavior: instant ? 'auto' : 'smooth' });
-                    }
-                }, 300);
-                isJumpingRef.current = false;
-                return;
-            }
-        }
-
         const container = document.getElementById('mushaf-content');
         if (!document.getElementById('pages-container') || !container) {
             isJumpingRef.current = false;
@@ -2096,6 +2068,115 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     setIsUserScrolling(false);
                 }, 500);
             }
+
+            const { scrollTop, scrollHeight, clientHeight } = contentEl;
+
+            if (scrollTop < 500) {
+                setVisiblePages(prev => {
+                    if (prev.length === 0) return prev;
+                    const firstPage = Math.min(...prev);
+                    if (firstPage > 1) {
+                        const newPage = firstPage - 1;
+                        if (!prev.includes(newPage)) {
+                            return [newPage, ...prev].sort((a, b) => a - b);
+                        }
+                    }
+                    return prev;
+                });
+            }
+            if (scrollHeight - scrollTop <= clientHeight + 800) {
+                setVisiblePages(prev => {
+                    if (prev.length === 0) return prev;
+                    const lastPage = Math.max(...prev);
+                    if (lastPage < 604) {
+                        const newPage = lastPage + 1;
+                        if (!prev.includes(newPage)) {
+                            return [...prev, newPage].sort((a, b) => a - b);
+                        }
+                    }
+                    return prev;
+                });
+            }
+    
+            if (autoScrollState.isActive) return;
+    
+            const now = Date.now();
+            if (now - lastScrollUpdateTime.current < 100) return;
+            lastScrollUpdateTime.current = now;
+    
+            const x = window.innerWidth / 2;
+            const y = window.innerHeight / 2;
+            
+            const el = document.elementFromPoint(x, y);
+            if (!el) return;
+            
+            const ayahBlock = el.closest('.ayah-text-block');
+            if (ayahBlock && ayahBlock.id) {
+                const parts = ayahBlock.id.split('-');
+                if (parts.length === 3) {
+                    const s = parseInt(parts[1], 10);
+                    const a = parseInt(parts[2], 10);
+    
+                    if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
+                        const prevAyah = currentAyahRef.current;
+                        setCurrentAyah({ s, a });
+                        localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
+
+                        // Detect Surah change
+                        /* 
+                        if (s !== prevAyah.s) {
+                            const surahName = SURAH_NAMES_AR[s - 1];
+                            showMarkerNotification('surah', `بداية سورة ${surahName}`);
+                        }
+                        */
+
+                        const juzAttr = (ayahBlock as HTMLElement).dataset.juz;
+                        const quarterAttr = (ayahBlock as HTMLElement).dataset.hizbQuarter;
+                        
+                        // Detect Juz change
+                        if (juzAttr) {
+                            const newJuz = parseInt(juzAttr, 10);
+                            if (lastNotifiedJuz.current !== null && newJuz !== lastNotifiedJuz.current) {
+                                if (notificationSettings.juz !== false) {
+                                    if (juzTimeoutRef.current) clearTimeout(juzTimeoutRef.current);
+                                    setJuzNotification({ show: true, text: `بداية الجزء ${toArabic(newJuz)}` });
+                                    juzTimeoutRef.current = setTimeout(() => {
+                                        setJuzNotification(prev => ({ ...prev, show: false }));
+                                        juzTimeoutRef.current = null;
+                                    }, 4000);
+                                }
+                            }
+                            lastNotifiedJuz.current = newJuz;
+                        }
+
+                        // Detect Quarter change
+                        if (quarterAttr) {
+                            const newQuarter = parseInt(quarterAttr, 10);
+                            if (lastNotifiedQuarter.current !== null && newQuarter !== lastNotifiedQuarter.current) {
+                                let label = '';
+                                const qInHizb = ((newQuarter - 1) % 4) + 1;
+                                const hizbNum = Math.ceil(newQuarter / 4);
+                                if (qInHizb === 1) label = `بداية الحزب ${toArabic(hizbNum)}`;
+                                else if (qInHizb === 2) label = `ربع الحزب ${toArabic(hizbNum)}`;
+                                else if (qInHizb === 3) label = `نصف الحزب ${toArabic(hizbNum)}`;
+                                else if (qInHizb === 4) label = `ثلاثة أرباع الحزب ${toArabic(hizbNum)}`;
+                                
+                                showMarkerNotification('quarter', label);
+                            }
+                            lastNotifiedQuarter.current = newQuarter;
+                        }
+
+                        if (ayahBlock.getAttribute('data-sajdah') === 'true') {
+                            const surahName = (ayahBlock as HTMLElement).dataset.surah || '';
+                            const sNum = parseInt((ayahBlock as HTMLElement).dataset.snum || '0', 10);
+                            const ayahNum = parseInt((ayahBlock as HTMLElement).dataset.ayah || '0', 10);
+                            if(surahName && sNum && ayahNum){
+                                handleSajdahVisible(surahName, sNum, ayahNum);
+                            }
+                        }
+                    }
+                }
+            }
         };
     
         contentEl.addEventListener('scroll', handleScroll, { passive: true });
@@ -2103,7 +2184,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         return () => {
             contentEl.removeEventListener('scroll', handleScroll);
         };
-    }, [modeSuffix]);
+    }, [visiblePages, autoScrollState.isActive, handleSajdahVisible, modeSuffix]);
 
     const pagesMap = useMemo(() => {
         if (!quranData) return new Map<number, any[]>();
@@ -2946,87 +3027,29 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
                 {readingMode === 'mushaf' ? (
-                    <Virtuoso
-                        ref={mushafVirtuosoRef}
-                        data={Array.from({ length: 604 }, (_, i) => i + 1)}
-                        initialTopMostItemIndex={Number(currentPageNumber) - 1}
-                        itemContent={(index, pageNum) => {
-                            const displaySettings = ayahContextMenu.isOpen ? { ...settings, ...ayahContextMenu.tempSettings } : settings;
-                            return (
-                                <MushafPage 
-                                    key={pageNum} 
-                                    pageNum={pageNum} 
-                                    pageData={getPageData(pageNum)} 
-                                    highlightedAyahId={highlightedAyahId} 
-                                    onAyahClick={handleAyahTextClick} 
-                                    onVerseClick={handleVerseClick} 
-                                    onVerseLongPress={handleVerseLongPress} 
-                                    onAyahLongPress={handleAyahLongPress} 
-                                    onInteractionStart={handleInteractionStart} 
-                                    onInteractionEnd={handleInteractionEnd} 
-                                    settings={displaySettings} 
-                                    currentTheme={currentTheme}
-                                    hideVerses={isHideMode}
-                                    memorizationSettings={localMemorizationSettings}
-                                />
-                            );
-                        }}
-                        className="h-full w-full"
-                        overscan={2}
-                        rangeChanged={(range) => {
-                            const centerIndex = Math.floor((range.startIndex + range.endIndex) / 2);
-                            const pageNum = centerIndex + 1;
-                            if (pageNum !== Number(currentPageNumber)) {
-                                const pageAyahs = pagesMap.get(pageNum);
-                                if (pageAyahs && pageAyahs.length > 0) {
-                                    const firstAyah = pageAyahs[0];
-                                    const s = firstAyah.sNum;
-                                    const a = firstAyah.numberInSurah;
-                                    
-                                    setCurrentAyah({ s, a });
-                                    localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
-
-                                    // Detect Juz change
-                                    if (firstAyah.juz) {
-                                        const newJuz = parseInt(firstAyah.juz, 10);
-                                        if (lastNotifiedJuz.current !== null && newJuz !== lastNotifiedJuz.current) {
-                                            if (notificationSettings.juz !== false) {
-                                                if (juzTimeoutRef.current) clearTimeout(juzTimeoutRef.current);
-                                                setJuzNotification({ show: true, text: `بداية الجزء ${toArabic(newJuz)}` });
-                                                juzTimeoutRef.current = setTimeout(() => {
-                                                    setJuzNotification(prev => ({ ...prev, show: false }));
-                                                    juzTimeoutRef.current = null;
-                                                }, 4000);
-                                            }
-                                        }
-                                        lastNotifiedJuz.current = newJuz;
-                                    }
-
-                                    // Detect Quarter change
-                                    if (firstAyah.hizbQuarter) {
-                                        const newQuarter = parseInt(firstAyah.hizbQuarter, 10);
-                                        if (lastNotifiedQuarter.current !== null && newQuarter !== lastNotifiedQuarter.current) {
-                                            let label = '';
-                                            const qInHizb = ((newQuarter - 1) % 4) + 1;
-                                            const hizbNum = Math.ceil(newQuarter / 4);
-                                            if (qInHizb === 1) label = `بداية الحزب ${toArabic(hizbNum)}`;
-                                            else if (qInHizb === 2) label = `ربع الحزب ${toArabic(hizbNum)}`;
-                                            else if (qInHizb === 3) label = `نصف الحزب ${toArabic(hizbNum)}`;
-                                            else if (qInHizb === 4) label = `ثلاثة أرباع الحزب ${toArabic(hizbNum)}`;
-                                            
-                                            showMarkerNotification('quarter', label);
-                                        }
-                                        lastNotifiedQuarter.current = newQuarter;
-                                    }
-
-                                    if (firstAyah.sajdah === true) {
-                                        const surahName = SURAH_NAMES_AR[s - 1];
-                                        handleSajdahVisible(surahName, s, a);
-                                    }
-                                }
-                            }
-                        }}
-                    />
+                    <div id="pages-container" className="full-mushaf-container">
+                    {sortedVisiblePages.map(pageNum => {
+                        const displaySettings = ayahContextMenu.isOpen ? { ...settings, ...ayahContextMenu.tempSettings } : settings;
+                        return (
+                            <MushafPage 
+                                key={pageNum} 
+                                pageNum={pageNum} 
+                                pageData={getPageData(pageNum)} 
+                                highlightedAyahId={highlightedAyahId} 
+                                onAyahClick={handleAyahTextClick} 
+                                onVerseClick={handleVerseClick} 
+                                onVerseLongPress={handleVerseLongPress} 
+                                onAyahLongPress={handleAyahLongPress} 
+                                onInteractionStart={handleInteractionStart} 
+                                onInteractionEnd={handleInteractionEnd} 
+                                settings={displaySettings} 
+                                currentTheme={currentTheme}
+                                hideVerses={isHideMode}
+                                memorizationSettings={localMemorizationSettings}
+                            />
+                        );
+                    })}
+                    </div>
                 ) : (
                     <VerticalReadingView 
                         quranData={quranJsonData}
