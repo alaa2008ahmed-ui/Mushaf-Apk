@@ -11,7 +11,7 @@ const JuzNotification: FC<{isVisible: boolean, text: string, currentTheme: any}>
                 backgroundColor: currentTheme.bg || '#ffffff',
                 color: currentTheme.text || '#000000',
                 borderColor: currentTheme.accent || '#10b981',
-                fontFamily: 'var(--font-cairo), sans-serif'
+                fontFamily: currentTheme.font || 'var(--font-amiri)'
             }}
         >
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-inner" style={{ backgroundColor: currentTheme.accent || '#10b981' }}>

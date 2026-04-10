@@ -4,18 +4,33 @@ import { toArabic } from './constants';
 const SajdahCardModal: FC<{
     info: { show: boolean, surah: string, ayah: number, juz: number, page: number },
     onClose: () => void,
-    isLandscape?: boolean
-}> = ({ info, onClose, isLandscape }) => {
+    isLandscape?: boolean,
+    currentTheme?: any
+}> = ({ info, onClose, isLandscape, currentTheme }) => {
     if (!info.show) return null;
+
+    const accentColor = currentTheme?.accent || '#38bdf8';
+    const btnBg = currentTheme?.btnBg || accentColor;
+    const btnText = currentTheme?.btnText || '#ffffff';
+    const btnBorder = currentTheme?.btnBorder || 'transparent';
 
     return (
         <div className="fixed inset-0 z-[2000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl shadow-2xl flex flex-col max-h-[90vh] border border-white/10`} onClick={e => e.stopPropagation()}>
+            <div 
+                className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl shadow-2xl flex flex-col max-h-[90vh] border border-white/10`} 
+                onClick={e => e.stopPropagation()}
+                style={{ fontFamily: currentTheme?.font }}
+            >
                 <div className="p-5 overflow-y-auto text-right leading-relaxed space-y-4 text-sm flex-1 custom-scrollbar">
                     <div>
                         <p><b>1. تعريف سجود التلاوة</b></p>
                         <p className="mt-1">هو سجود يؤديه القارئ أو المستمع عند قراءة آية من آيات السجود في القرآن الكريم، تعظيماً لله تعالى وإظهاراً للعبودية. وقد ثبت في صحيح مسلم عن أبي هريرة رضي الله عنه قال: قال رسول الله ﷺ:</p>
-                        <blockquote className="mt-2 p-2 border-r-4 border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-sm italic themed-card-bg">"إذَا قَرَأَ ابنُ آدَمَ السَّجْدَةَ فَسَجَدَ، اعْتَزَلَ الشَّيْطَانُ يَبْكِي، يقولُ: يا وَيْلَهُ، أُمِرَ ابنُ آدَمَ بالسُّجُودِ فَسَجَدَ فَلَهُ الجَنَّةُ، وأُمِرْتُ بالسُّجُودِ فأبَيْتُ فَلِيَ النَّارُ".</blockquote>
+                        <blockquote 
+                            className="mt-2 p-2 border-r-4 text-sm italic themed-card-bg"
+                            style={{ borderColor: accentColor }}
+                        >
+                            "إذَا قَرَأَ ابنُ آدَمَ السَّجْدَةَ فَسَجَدَ، اعْتَزَلَ الشَّيْطَانُ يَبْكِي، يقولُ: يا وَيْلَهُ، أُمِرَ ابنُ آدَمَ بالسُّجُودِ فَسَجَدَ فَلَهُ الجَنَّةُ، وأُمِرْتُ بالسُّجُودِ فأبَيْتُ فَلِيَ النَّارُ".
+                        </blockquote>
                     </div>
 
                     <div>
@@ -59,8 +74,18 @@ const SajdahCardModal: FC<{
                                     <li><b>السجود:</b> سجدة واحدة كسجدة الصلاة.</li>
                                     <li>
                                         <b>الدعاء:</b> يُشرع فيها ما يقال في سجود الصلاة "سبحان ربي الأعلى"، ويُستحب الدعاء المأثور:
-                                        <blockquote className="mt-2 p-2 border-r-2 border-emerald-500 text-sm italic themed-card-bg">"سَجَدَ وَجْهِي لِلَّذِي خَلَقَهُ، وَشَقَّ سَمْعَهُ وَبَصَرَهُ، بِحَوْلِهِ وَقُوَّتِهِ".</blockquote>
-                                        <blockquote className="mt-2 p-2 border-r-2 border-emerald-500 text-sm italic themed-card-bg">"اللَّهُمَّ اكْتُبْ لِي بِهَا عِنْدَكَ أَجْرًا، وَضَعْ عَنِّي بِهَا وِزْرًا، وَاجْعَلْهَا لِي عِنْدَكَ ذُخْرًا، وَتَقَبَّلْهَا مِنِّي كَمَا تَقَبَّلْتَهَا مِنْ عَبْدِكَ دَاوُدَ".</blockquote>
+                                        <blockquote 
+                                            className="mt-2 p-2 border-r-2 text-sm italic themed-card-bg"
+                                            style={{ borderColor: accentColor }}
+                                        >
+                                            "سَجَدَ وَجْهِي لِلَّذِي خَلَقَهُ، وَشَقَّ سَمْعَهُ وَبَصَرَهُ، بِحَوْلِهِ وَقُوَّتِهِ".
+                                        </blockquote>
+                                        <blockquote 
+                                            className="mt-2 p-2 border-r-2 text-sm italic themed-card-bg"
+                                            style={{ borderColor: accentColor }}
+                                        >
+                                            "اللَّهُمَّ اكْتُبْ لِي بِهَا عِنْدَكَ أَجْرًا، وَضَعْ عَنِّي بِهَا وِزْرًا، وَاجْعَلْهَا لِي عِنْدَكَ ذُخْرًا، وَتَقَبَّلْهَا مِنِّي كَمَا تَقَبَّلْتَهَا مِنْ عَبْدِكَ دَاوُدَ".
+                                        </blockquote>
                                     </li>
                                 </ul>
                             </div>
@@ -79,7 +104,12 @@ const SajdahCardModal: FC<{
                 <div className="p-4 border-t themed-card-bg rounded-b-2xl">
                     <button 
                         onClick={onClose} 
-                        className="w-full bg-[#38bdf8] hover:bg-[#0ea5e9] text-white py-3 rounded-xl font-bold transition-all active:scale-95 shadow-md"
+                        className="w-full py-3 rounded-xl font-bold transition-all active:scale-95 shadow-md"
+                        style={{ 
+                            backgroundColor: btnBg, 
+                            color: btnText,
+                            border: `1px solid ${btnBorder}`
+                        }}
                     >
                         إغلاق
                     </button>

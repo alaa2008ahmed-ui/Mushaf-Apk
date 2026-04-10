@@ -705,9 +705,10 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         const surahName = SURAH_NAMES_AR[surahNum - 1];
         const surahInfo = SURAH_INFO[surahNum];
 
-        const headerBg = '#ffffff';
-        const headerBorder = '#16a34a'; // Green
-        const headerText = '#16a34a';
+        const isDarkGroup = currentTheme?.id === 'deep_black' || currentTheme?.id?.startsWith('i_');
+        const headerBg = isDarkGroup ? 'transparent' : '#ffffff';
+        const headerBorder = isDarkGroup ? '#ffffff' : (currentTheme?.accent || '#16a34a');
+        const headerText = isDarkGroup ? '#ffffff' : (currentTheme?.accent || '#16a34a');
 
         return (
             <div style={{
@@ -718,7 +719,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                backgroundColor: '#ffffff',
+                backgroundColor: isDarkGroup ? 'transparent' : '#ffffff',
             }}>
                 <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} viewBox="0 0 600 80" preserveAspectRatio="none">
                     {/* Outer Green Box with Double Border */}

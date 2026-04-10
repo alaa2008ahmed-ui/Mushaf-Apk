@@ -131,14 +131,17 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
     // If theme is blue-ish, use purple/orange. If green, use blue/red.
     const getContrastingColors = () => {
         const themeId = currentTheme?.id || 'night_sky';
+        const bracketColor = currentTheme?.verseBracket || currentTheme?.sajdah || '#9333ea';
+        const numColor = currentTheme?.accent || currentTheme?.sajdah || '#9333ea';
+        
         switch(themeId) {
             case 'night_sky': return { num: '#9333ea', bracket: '#9333ea' }; // Purple for both
             case 'green': return { num: '#dc2626', bracket: '#dc2626' }; // Red for both
             case 'red': return { num: '#2563eb', bracket: '#2563eb' }; // Blue for both
             case 'deep_black': return { num: '#f59e0b', bracket: '#f59e0b' }; // Orange for both
             default: return { 
-                num: currentTheme?.sajdah || '#9333ea', 
-                bracket: currentTheme?.sajdah || '#9333ea' 
+                num: numColor, 
+                bracket: bracketColor 
             };
         }
     };
@@ -273,9 +276,9 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                         e.stopPropagation();
                                     }}
                                 >
-                                    <span className="verse-bracket" style={{ color: currentTheme?.accent || '#d97706' }}>﴿</span>
+                                    <span className="verse-bracket" style={{ color: currentTheme?.verseBracket || currentTheme?.accent || '#d97706' }}>﴿</span>
                                     <span className="verse-num-inner" style={{ color: currentTheme?.accent || '#1d4ed8' }}>{toArabic(ayah.numberInSurah)}</span>
-                                    <span className="verse-bracket" style={{ color: currentTheme?.accent || '#d97706' }}>﴾</span>
+                                    <span className="verse-bracket" style={{ color: currentTheme?.verseBracket || currentTheme?.accent || '#d97706' }}>﴾</span>
                                 </span>
                             </span>
                         </React.Fragment>

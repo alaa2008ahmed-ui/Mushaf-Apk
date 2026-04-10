@@ -728,7 +728,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     }, [bookmarkSuffix]);
 
     const [sajdahInfo, setSajdahInfo] = useState<{ show: boolean; surah?: string; ayah?: number }>({ show: false });
-    const [sajdahCardInfo, setSajdahCardInfo] = useState({ show: false, surah: '', ayah: 0, juz: 0, page: 0, wasAutoscrolling: false, wasPlaying: false });
+    const [sajdahCardInfo, setSajdahCardInfo] = useState({ show: false, surah: '', ayah: 0, juz: 0, page: 0, wasAutoscrolling: false, wasPlaying: false, openedFromMenu: false });
+    const [floatingMenuInitialView, setFloatingMenuInitialView] = useState('main');
 
     const [autoScrollState, setAutoScrollState] = useState({ isActive: false, isPaused: false, elapsedTime: 0 });
     const [showSajdahCard, setShowSajdahCard] = useState(() => {
@@ -1126,6 +1127,16 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }, 3500);
     }, [notificationSettings]);
 
+    const showJuzNotification = useCallback((text: string) => {
+        if (notificationSettings.juz === false) return;
+        if (juzTimeoutRef.current) clearTimeout(juzTimeoutRef.current);
+        setJuzNotification({ show: true, text });
+        juzTimeoutRef.current = setTimeout(() => {
+            setJuzNotification(prev => ({ ...prev, show: false }));
+            juzTimeoutRef.current = null;
+        }, 4000);
+    }, [notificationSettings.juz]);
+
     const handleSajdahVisible = useCallback((surahName: string, sNum: number, ayahNum: number) => {
         if (sajdahCardInfoRef.current.show) return;
 
@@ -1165,12 +1176,25 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
     }, [quranData, showMarkerNotification, stopAudio, showSajdahCard]);
 
+    const toggleFloatingMenu = useCallback(() => {
+        setIsFloatingMenuOpen(prev => {
+            if (!prev) setFloatingMenuInitialView('main');
+            return !prev;
+        });
+    }, []);
+
     const handleCloseSajdahCard = () => {
+        const wasFromMenu = sajdahCardInfo.openedFromMenu;
         if (sajdahCardInfo.wasAutoscrolling) {
             autoScrollPausedRef.current = false;
             setAutoScrollState(p => ({...p, isPaused: false }));
         }
-        setSajdahCardInfo({ show: false, surah: '', ayah: 0, juz: 0, page: 0, wasAutoscrolling: false, wasPlaying: false });
+        setSajdahCardInfo({ show: false, surah: '', ayah: 0, juz: 0, page: 0, wasAutoscrolling: false, wasPlaying: false, openedFromMenu: false });
+        
+        if (wasFromMenu) {
+            setFloatingMenuInitialView('sajdah_list');
+            setIsFloatingMenuOpen(true);
+        }
     };
 
     const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false, retries: number = 50, isPageJump: boolean = false) => {
@@ -1533,12 +1557,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 juz: 0, 
                 page: 0, 
                 wasAutoscrolling: wasScrolling, 
-                wasPlaying: false 
+                wasPlaying: false,
+                openedFromMenu: isFloatingMenuOpen
             });
         } else {
             setActiveModals(p => [...p.filter(m => m !== modalName), modalName]); 
         }
-    }, [stopAudio]);
+    }, [stopAudio, isFloatingMenuOpen]);
     
     const handleAyahClick = useCallback((s, a) => {
         setHighlightedAyahId(`ayah-${s}-${a}`);
@@ -2098,10 +2123,12 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
 
                         // Detect Surah change
+                        /* 
                         if (s !== prevAyah.s) {
                             const surahName = SURAH_NAMES_AR[s - 1];
                             showMarkerNotification('surah', `بداية سورة ${surahName}`);
                         }
+                        */
 
                         const juzAttr = (ayahBlock as HTMLElement).dataset.juz;
                         const quarterAttr = (ayahBlock as HTMLElement).dataset.hizbQuarter;
@@ -2966,7 +2993,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 isMemorizationMode={localIsMemorizationMode}
                 memorizationSettings={localMemorizationSettings}
                 handleMushafTypeSelect={handleMushafTypeSelect}
-                setIsFloatingMenuOpen={setIsFloatingMenuOpen}
+                setIsFloatingMenuOpen={toggleFloatingMenu}
                 isFloatingMenuOpen={isFloatingMenuOpen}
                 isAnyMenuOpen={isAnyMenuOpen}
             />
@@ -2995,6 +3022,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 bookmarks={bookmarks}
                 deleteBookmark={deleteBookmark}
                 jumpToAyah={jumpToAyah}
+                initialView={floatingMenuInitialView}
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
@@ -3030,13 +3058,14 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         currentTheme={currentTheme}
                         currentAyah={currentAyah}
                         onAyahClick={handleVerticalAyahClick}
-                        onVisibleAyahChange={(s, a) => {
+                        onVisibleAyahChange={readingMode === 'vertical' ? (s, a) => {
                             if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
                                 setCurrentAyah({ s, a });
-                                currentAyahRef.current = { s, a };
                                 localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
                             }
-                        }}
+                        } : undefined}
+                        showMarkerNotification={showMarkerNotification}
+                        showJuzNotification={showJuzNotification}
                         onSettingsChange={setSettings}
                         modeSuffix={modeSuffix}
                         hideVerses={isHideMode}
@@ -3044,7 +3073,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     />
                 )}
             </div>
-            <MarkerNotification isVisible={markerNotification.show} type={markerNotification.type} text={markerNotification.text} />
+            <MarkerNotification isVisible={markerNotification.show} type={markerNotification.type} text={markerNotification.text} currentTheme={currentTheme} />
             
             <AyahContextMenu 
                 isOpen={ayahContextMenu.isOpen && ayahContextMenu.isCustomizing && !initialLandscape}
@@ -3282,7 +3311,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 onSelect={handleMushafTypeSelect}
                 currentType={'uthmani'}
             />
-            <SajdahCardModal info={sajdahCardInfo} onClose={handleCloseSajdahCard} isLandscape={isLandscape} />
+            <SajdahCardModal info={sajdahCardInfo} onClose={handleCloseSajdahCard} isLandscape={isLandscape} currentTheme={currentTheme} />
             <ResumeSessionModal 
                 isOpen={showResumeModal} 
                 onClose={() => setShowResumeModal(false)} 
@@ -3292,7 +3321,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 savedSession={savedSession} 
             />
             <JuzNotification isVisible={juzNotification.show} text={juzNotification.text} currentTheme={currentTheme} />
-            <Toast message={toast.message} show={toast.show} onClose={handleToastClose} />
+            <Toast message={toast.message} show={toast.show} onClose={handleToastClose} currentTheme={currentTheme} />
             <TutorialOverlay tutorialId="quran-reader-tutorial" steps={quranTutorialSteps} />
             
             {/* Memorization Review Controls */}

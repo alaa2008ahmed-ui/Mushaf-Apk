@@ -27,6 +27,7 @@ interface FloatingMenuProps {
     bookmarks?: any[];
     deleteBookmark?: (id: number) => void;
     jumpToAyah?: (s: number, a: number, closeMenu?: boolean) => void;
+    initialView?: string;
 }
 
 const ALL_SHORTCUTS = [
@@ -65,6 +66,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     bookmarks = [],
     deleteBookmark,
     jumpToAyah,
+    initialView = 'main',
 }) => {
     const [selectedShortcuts, setSelectedShortcuts] = useState<string[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -117,10 +119,10 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
 
     useEffect(() => {
         if (isFloatingMenuOpen) {
-            setCurrentView('main');
+            setCurrentView(initialView as MenuView);
             setIsAddModalOpen(false);
         }
-    }, [isFloatingMenuOpen]);
+    }, [isFloatingMenuOpen, initialView]);
 
     useEffect(() => {
         const saved = localStorage.getItem('quran_menu_shortcuts');

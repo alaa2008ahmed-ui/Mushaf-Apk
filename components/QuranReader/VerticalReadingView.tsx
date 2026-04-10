@@ -10,6 +10,8 @@ interface VerticalReadingViewProps {
     currentAyah: { s: number; a: number };
     onAyahClick: (s: number, a: number) => void;
     onVisibleAyahChange?: (s: number, a: number) => void;
+    showMarkerNotification?: (type: 'quarter' | 'sajda' | 'surah', text: string) => void;
+    showJuzNotification?: (text: string) => void;
     onSettingsChange?: (newSettings: any) => void;
     modeSuffix?: string;
     hideVerses?: boolean;
@@ -29,6 +31,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     currentAyah,
     onAyahClick,
     onVisibleAyahChange,
+    showMarkerNotification,
+    showJuzNotification,
     onSettingsChange,
     modeSuffix = '_v',
     hideVerses = false,
@@ -46,6 +50,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const isInternalClickRef = useRef(false);
     const lastScrolledAyahRef = useRef<{s: number, a: number} | null>(null);
+    const lastNotifiedJuz = useRef<number | null>(null);
+    const lastNotifiedQuarter = useRef<number | null>(null);
 
     // Pinch-to-zoom refs
     const initialPinchDistanceRef = useRef<number | null>(null);
@@ -158,6 +164,9 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     surahNumber: surah.number,
                     ayahNumber: ayah.numberInSurah,
                     text: ayah.text,
+                    juz: ayah.juz,
+                    hizbQuarter: ayah.hizbQuarter,
+                    sajda: ayah.sajda,
                     id: `${surah.number}-${ayah.numberInSurah}`
                 });
             });
@@ -351,17 +360,38 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 itemContent={renderItem}
                 rangeChanged={(range) => {
                     const item = flattenedItems[range.startIndex];
-                    if (item) {
-                        if (item.type === 'ayah') {
-                            lastScrolledAyahRef.current = { s: item.surahNumber, a: item.ayahNumber };
-                            onVisibleAyahChange?.(item.surahNumber, item.ayahNumber);
-                        } else if (item.type === 'header' && range.startIndex + 1 < flattenedItems.length) {
-                            const nextItem = flattenedItems[range.startIndex + 1];
-                            if (nextItem.type === 'ayah') {
-                                lastScrolledAyahRef.current = { s: nextItem.surahNumber, a: nextItem.ayahNumber };
-                                onVisibleAyahChange?.(nextItem.surahNumber, nextItem.ayahNumber);
-                            }
+                    if (item && item.type === 'ayah') {
+                        // Detect Juz change
+                        if (item.juz && lastNotifiedJuz.current !== null && item.juz !== lastNotifiedJuz.current) {
+                            showJuzNotification?.(`بداية الجزء ${toArabic(item.juz)}`);
                         }
+                        lastNotifiedJuz.current = item.juz;
+
+                        // Detect Quarter change
+                        if (item.hizbQuarter && lastNotifiedQuarter.current !== null && item.hizbQuarter !== lastNotifiedQuarter.current) {
+                            let label = '';
+                            const qInHizb = ((item.hizbQuarter - 1) % 4) + 1;
+                            const hizbNum = Math.ceil(item.hizbQuarter / 4);
+                            if (qInHizb === 1) label = `بداية الحزب ${toArabic(hizbNum)}`;
+                            else if (qInHizb === 2) label = `ربع الحزب ${toArabic(hizbNum)}`;
+                            else if (qInHizb === 3) label = `نصف الحزب ${toArabic(hizbNum)}`;
+                            else if (qInHizb === 4) label = `ثلاثة أرباع الحزب ${toArabic(hizbNum)}`;
+                            
+                            if (label) showMarkerNotification?.('quarter', label);
+                        }
+                        lastNotifiedQuarter.current = item.hizbQuarter;
+
+                        // Detect Sajdah
+                        if (item.sajda) {
+                            const surahName = SURAH_NAMES_AR[item.surahNumber - 1];
+                            const displaySurah = (surahName.includes('سورة') || surahName.includes('سُورَة')) 
+                                ? surahName 
+                                : `سورة ${surahName}`;
+                            showMarkerNotification?.('sajda', `سجدة تلاوة: ${displaySurah} - آية ${toArabic(item.ayahNumber)}`);
+                        }
+
+                        lastScrolledAyahRef.current = { s: item.surahNumber, a: item.ayahNumber };
+                        onVisibleAyahChange?.(item.surahNumber, item.ayahNumber);
                     }
                 }}
             />
