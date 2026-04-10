@@ -225,7 +225,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const [isLandscapeUIHidden, setIsLandscapeUIHidden] = useState(() => {
         if (!initialLandscape) return false;
-        return localStorage.getItem('is_landscape_ui_hidden' + modeSuffix) === 'true';
+        // Always hidden by default when entering horizontal mode
+        return true;
     });
     const isLandscapeUIHiddenRef = useRef(isLandscapeUIHidden);
     useEffect(() => { 
@@ -527,8 +528,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         if (showSajdahCard !== targetSajdah) setShowSajdahCard(targetSajdah);
 
         if (mode.endsWith('_h')) {
-            const targetLandscapeUI = localStorage.getItem('is_landscape_ui_hidden' + mode) === 'true';
-            if (isLandscapeUIHidden !== targetLandscapeUI) setIsLandscapeUIHidden(targetLandscapeUI);
+            // Always hide when entering/switching to landscape mode
+            if (isLandscapeUIHidden !== true) setIsLandscapeUIHidden(true);
         } else {
             if (isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
         }
@@ -1951,8 +1952,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             if (showSajdahCard !== targetSajdah) setShowSajdahCard(targetSajdah);
 
             if (mode.endsWith('_h')) {
-                const targetLandscapeUI = localStorage.getItem('is_landscape_ui_hidden' + mode) === 'true';
-                if (isLandscapeUIHidden !== targetLandscapeUI) setIsLandscapeUIHidden(targetLandscapeUI);
+                // Always hide when entering/switching to landscape mode
+                if (isLandscapeUIHidden !== true) setIsLandscapeUIHidden(true);
             } else {
                 if (isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
             }
@@ -2023,8 +2024,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             if (showSajdahCard !== targetSajdah) setShowSajdahCard(targetSajdah);
 
             if (mode.endsWith('_h')) {
-                const targetLandscapeUI = localStorage.getItem('is_landscape_ui_hidden' + mode) === 'true';
-                if (isLandscapeUIHidden !== targetLandscapeUI) setIsLandscapeUIHidden(targetLandscapeUI);
+                // Always hide when entering/switching to landscape mode
+                if (isLandscapeUIHidden !== true) setIsLandscapeUIHidden(true);
             } else {
                 if (isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
             }
@@ -2291,7 +2292,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         });
 
         scrollToAyah(s, a, instant, 50, isPageJump);
-    }, [quranData, handleAyahClick, stopAudio, scrollToAyah]);
+        if (initialLandscape) {
+            setIsLandscapeUIHidden(true);
+        }
+    }, [quranData, handleAyahClick, stopAudio, scrollToAyah, initialLandscape]);
 
     const jumpToPage = useCallback((pageNum: number, instant: boolean = true) => {
         if (!quranData || isNaN(pageNum) || pageNum < 1 || pageNum > 604) return;
@@ -2762,6 +2766,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         const initialState = { isActive: true, isPaused: false, elapsedTime: 0 };
         autoScrollStateRef.current = initialState;
         setAutoScrollState(initialState);
+        if (initialLandscape) {
+            setIsLandscapeUIHidden(true);
+        }
         
         // Delay to let layout stabilize after UI might hide
         setTimeout(() => {
