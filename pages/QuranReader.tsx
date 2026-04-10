@@ -442,7 +442,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const [activeModals, setActiveModals] = useState<string[]>([]);
     const [initialSearchQuery, setInitialSearchQuery] = useState<string | undefined>(undefined);
     const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
-    const [ayahContextMenu, setAyahContextMenu] = useState<{isOpen: boolean, isCustomizing: boolean, x: number, y: number, s: number, a: number, tempSettings: any}>({isOpen: false, isCustomizing: false, x: 0, y: 0, s: 0, a: 0, tempSettings: DEFAULT_SETTINGS});
+    const [ayahContextMenu, setAyahContextMenu] = useState<{isOpen: boolean, isCustomizing: boolean, x: number, y: number, s: number, a: number, tempSettings: any, originalSettings: any}>({isOpen: false, isCustomizing: false, x: 0, y: 0, s: 0, a: 0, tempSettings: DEFAULT_SETTINGS, originalSettings: DEFAULT_SETTINGS});
     const [ayahContextColorField, setAyahContextColorField] = useState<'textColor' | 'bgColor' | 'highlightTextColor' | null>(null);
 
     const PREDEFINED_COLORS = [
@@ -1694,7 +1694,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const handleAyahLongPress = useCallback((s: number, a: number, x: number, y: number) => {
         if (isLandscapeRef.current) return;
-        setAyahContextMenu({ isOpen: true, isCustomizing: false, x, y, s, a, tempSettings: { ...settingsRef.current } });
+        setAyahContextMenu({ 
+            isOpen: true, 
+            isCustomizing: true, 
+            x, y, s, a, 
+            tempSettings: { ...settingsRef.current },
+            originalSettings: { ...settingsRef.current }
+        });
     }, []);
 
     const handleTafseerSelect = useCallback((tafseerId: string) => {
@@ -2082,8 +2088,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         const t = currentTheme;
         
         // Set Theme CSS Variables
-        root.style.setProperty('--qr-bg', t.bg);
-        root.style.setProperty('--qr-text', t.text);
+        root.style.setProperty('--qr-bg', settings.bgColor || t.bg);
+        root.style.setProperty('--qr-text', settings.textColor || t.text);
+        root.style.setProperty('--qr-fontFamily', settings.fontFamily || t.font);
         root.style.setProperty('--qr-bar-bg', t.barBg);
         root.style.setProperty('--qr-bar-text', t.barText);
         root.style.setProperty('--qr-bar-border', t.barBorder);
@@ -2107,10 +2114,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         root.style.setProperty('--search-result-text', t.cardText);
         
         const darkBgs = ['#000000', '#2c241b', '#101010', '#0f172a', '#2e1065', '#064e3b', '#1e293b', '#4c1d95', '#1e1b4b', '#451a03'];
-        const isDark = t.bg && darkBgs.includes(t.bg.toLowerCase());
+        const isDark = (settings.bgColor || t.bg) && darkBgs.includes((settings.bgColor || t.bg).toLowerCase());
         if (isDark) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
-    }, [currentTheme, settings.highlightTextColor]);
+    }, [currentTheme, settings.highlightTextColor, settings.textColor, settings.bgColor, settings.fontFamily]);
 
     const isBookmarksModalOpen = activeModals.includes('bookmarks-modal');
     useEffect(() => {
@@ -3129,28 +3136,30 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     })}
                     </div>
                 ) : (
-                    <VerticalReadingView 
-                        quranData={quranJsonData}
-                        readingMode={readingMode as any}
-                        settings={settings}
-                        currentTheme={currentTheme}
-                        currentAyah={currentAyah}
-                        isLandscape={isLandscape}
-                        onAyahClick={handleVerticalAyahClick}
-                        onVisibleAyahChange={(s, a) => {
-                            if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
-                                setCurrentAyah({ s, a });
-                                localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
-                            }
-                        }}
-                        showMarkerNotification={showMarkerNotification}
-                        showJuzNotification={showJuzNotification}
-                        handleSajdahVisible={handleSajdahVisible}
-                        onSettingsChange={setSettings}
-                        modeSuffix={modeSuffix}
-                        hideVerses={isHideMode}
-                        memorizationSettings={localMemorizationSettings}
-                    />
+                    <div className="min-h-full w-full">
+                        <VerticalReadingView 
+                            quranData={quranJsonData}
+                            readingMode={readingMode as any}
+                            settings={settings}
+                            currentTheme={currentTheme}
+                            currentAyah={currentAyah}
+                            isLandscape={isLandscape}
+                            onAyahClick={handleVerticalAyahClick}
+                            onVisibleAyahChange={(s, a) => {
+                                if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
+                                    setCurrentAyah({ s, a });
+                                    localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
+                                }
+                            }}
+                            showMarkerNotification={showMarkerNotification}
+                            showJuzNotification={showJuzNotification}
+                            handleSajdahVisible={handleSajdahVisible}
+                            onSettingsChange={setSettings}
+                            modeSuffix={modeSuffix}
+                            hideVerses={isHideMode}
+                            memorizationSettings={localMemorizationSettings}
+                        />
+                    </div>
                 )}
             </div>
             <MarkerNotification isVisible={markerNotification.show} type={markerNotification.type} text={markerNotification.text} currentTheme={currentTheme} />
@@ -3161,6 +3170,12 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 ayahContextColorField={ayahContextColorField}
                 setAyahContextColorField={setAyahContextColorField}
                 setAyahContextMenu={setAyahContextMenu}
+                onTempSettingsChange={(newSettings) => {
+                    setSettings(prev => ({ ...prev, ...newSettings }));
+                }}
+                onCancel={() => {
+                    setSettings(ayahContextMenu.originalSettings);
+                }}
                 renderCheckerboard={renderCheckerboard}
                 PREDEFINED_COLORS={PREDEFINED_COLORS}
                 openModal={openModal}

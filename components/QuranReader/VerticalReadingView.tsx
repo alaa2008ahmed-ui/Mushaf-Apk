@@ -420,7 +420,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
     return (
         <div 
-            className="w-full" 
+            className="w-full min-h-full" 
             style={{ direction: 'rtl', backgroundColor: currentTheme.bg }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}

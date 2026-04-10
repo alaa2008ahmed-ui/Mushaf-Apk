@@ -131,8 +131,8 @@
     border-color: #374151; 
 }
 
-.quran-reader-container .mushaf-page { background-color: #fff; color: #000; }
-.quran-reader-container.dark .mushaf-page { background-color: #000; color: #fff; }
+.quran-reader-container .mushaf-page { background-color: var(--qr-bg, #fff); color: var(--qr-text, #000); }
+.quran-reader-container.dark .mushaf-page { background-color: var(--qr-bg, #000); color: var(--qr-text, #fff); }
 
 .modal-skinned {
     transition: all 0.3s ease;

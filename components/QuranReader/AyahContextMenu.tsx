@@ -8,6 +8,8 @@ interface AyahContextMenuProps {
     ayahContextColorField: 'textColor' | 'bgColor' | 'highlightTextColor' | null;
     setAyahContextColorField: (field: 'textColor' | 'bgColor' | 'highlightTextColor' | null) => void;
     setAyahContextMenu: React.Dispatch<React.SetStateAction<any>>;
+    onTempSettingsChange?: (newSettings: any) => void;
+    onCancel?: () => void;
     renderCheckerboard: (color: string) => React.CSSProperties;
     PREDEFINED_COLORS: string[];
     openModal: (modalId: string) => void;
@@ -22,6 +24,8 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
     ayahContextColorField,
     setAyahContextColorField,
     setAyahContextMenu,
+    onTempSettingsChange,
+    onCancel,
     renderCheckerboard,
     PREDEFINED_COLORS,
     openModal,
@@ -34,7 +38,10 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
     const iconColor = currentTheme.accent || '#000000';
 
     return (
-        <div className="fixed inset-0 z-[1100] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={() => setAyahContextMenu((p: any) => ({...p, isOpen: false}))}>
+        <div className="fixed inset-0 z-[1100] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={() => {
+            if (onCancel) onCancel();
+            setAyahContextMenu((p: any) => ({...p, isOpen: false}));
+        }}>
             <div 
                 className="w-full max-w-[320px] bg-white rounded-2xl shadow-2xl transition-all duration-300 flex flex-col pointer-events-auto overflow-hidden animate-modal-enter" 
                 style={{ 
@@ -49,7 +56,10 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
                         <Palette size={18} style={{ color: iconColor }} />
                         <span className="font-bold text-sm text-gray-800">تخصيص المظهر</span>
                     </div>
-                    <button onClick={() => setAyahContextMenu((p: any) => ({...p, isOpen: false}))} className="p-1 hover:bg-gray-200 rounded-full transition-colors">
+                    <button onClick={() => {
+                        if (onCancel) onCancel();
+                        setAyahContextMenu((p: any) => ({...p, isOpen: false}));
+                    }} className="p-1 hover:bg-gray-200 rounded-full transition-colors">
                         <X size={18} className="text-gray-500" />
                     </button>
                 </div>
@@ -95,10 +105,16 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
                                     {PREDEFINED_COLORS.map(c => (
                                         <button
                                             key={c}
-                                            onClick={() => setAyahContextMenu((prev: any) => ({
-                                                ...prev,
-                                                tempSettings: { ...prev.tempSettings, [ayahContextColorField!]: c }
-                                            }))}
+                                            onClick={() => {
+                                                const newTempSettings = { ...tempSettings, [ayahContextColorField!]: c };
+                                                setAyahContextMenu((prev: any) => ({
+                                                    ...prev,
+                                                    tempSettings: newTempSettings
+                                                }));
+                                                if (onTempSettingsChange) {
+                                                    onTempSettingsChange(newTempSettings);
+                                                }
+                                            }}
                                             className={`h-7 rounded-lg border transition-all hover:scale-110 relative ${tempSettings[ayahContextColorField!] === c ? 'ring-2 ring-emerald-500 ring-offset-1' : 'border-gray-200'}`}
                                             style={renderCheckerboard(c)}
                                         >
@@ -145,7 +161,10 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
                 {/* Footer */}
                 <div className="p-4 border-t bg-gray-50/80 flex gap-3">
                     <button 
-                        onClick={() => setAyahContextMenu((p: any) => ({...p, isOpen: false}))}
+                        onClick={() => {
+                            if (onCancel) onCancel();
+                            setAyahContextMenu((p: any) => ({...p, isOpen: false}));
+                        }}
                         className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm active:scale-95 transition-all"
                     >
                         إلغاء

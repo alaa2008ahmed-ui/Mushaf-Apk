@@ -112,8 +112,8 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
     
     const pageStyle = {
         fontSize: settings ? `${settings.fontSize}rem` : '1.7rem',
-        fontFamily: settings?.fontFamily || 'var(--font-amiri-quran)',
-        color: settings?.theme === 'dark' ? '#fff' : (settings?.textColor || '#000'),
+        fontFamily: 'var(--qr-fontFamily)',
+        color: 'var(--qr-text)',
         letterSpacing: 0,
         fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"',
         textRendering: 'optimizeLegibility'
