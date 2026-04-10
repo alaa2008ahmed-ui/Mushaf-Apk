@@ -2169,7 +2169,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             lastScrollUpdateTime.current = now;
     
             const x = window.innerWidth / 2;
-            const y = window.innerHeight / 2;
+            const y = window.innerHeight / 4;
             
             const el = document.elementFromPoint(x, y);
             if (!el) return;
@@ -3131,12 +3131,12 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         currentTheme={currentTheme}
                         currentAyah={currentAyah}
                         onAyahClick={handleVerticalAyahClick}
-                        onVisibleAyahChange={readingMode === 'vertical' ? (s, a) => {
+                        onVisibleAyahChange={(s, a) => {
                             if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
                                 setCurrentAyah({ s, a });
                                 localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
                             }
-                        } : undefined}
+                        }}
                         showMarkerNotification={showMarkerNotification}
                         showJuzNotification={showJuzNotification}
                         handleSajdahVisible={handleSajdahVisible}

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, HelpCircle, Repeat, Play, User, ArrowLeftRight, CheckSquare, Minus, Plus, BookOpen, Calendar, List, Trophy, Trash2, RotateCcw, Download } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-import InteractiveBackground from '../components/InteractiveBackground';
 import { quranData as quranJsonData } from '../utils/quranData';
 const quranData = { data: quranJsonData };
 import { SURAH_NAMES_AR, MEMORIZATION_READERS } from '../components/QuranReader/constants';
@@ -263,7 +262,6 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     return (
         <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, color: 'var(--text-color)' }}>
             <div className="relative z-10 flex flex-col h-full">
-                <InteractiveBackground />
                 <header className="app-top-bar shrink-0 relative z-10" style={{ backgroundColor: 'var(--qr-bar-bg)', borderBottom: '1px solid var(--qr-bar-border)' }}>
                     <div className="app-top-bar__inner flex items-center justify-center px-4">
                         <h1 className="app-top-bar__title text-xl font-kufi flex items-center justify-center gap-2" style={{ color: 'var(--qr-bar-text)' }}>

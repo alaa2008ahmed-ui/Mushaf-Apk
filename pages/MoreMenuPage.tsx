@@ -12,7 +12,7 @@ const ALL_MENU_ITEMS = [
     { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'daily-wird', label: "📅 الورد اليومي", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'memorization', label: "🧠 التحفيظ", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "col-span-2 h-12", colorIndex: 1 },
+    { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "col-span-2 h-12", colorIndex: 0 },
     { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
     { id: 'sabah-masaa', label: "☀️ الأذكار", className: "h-10", colorIndex: 1 },
     { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-10", colorIndex: 1 },
@@ -91,7 +91,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                             label={item.label}
                                             onClick={() => onNavigate(item.id)}
                                             className="w-full h-full"
-                                            color={themeKey === 'olive_grove' ? (['quran', 'listen', 'prayer-times', 'daily-wird', 'memorization'].includes(item.id) ? '#4D7C0F' : '#65A30D') : (theme.palette[item.colorIndex] || theme.palette[0])}
+                                            color={themeKey === 'olive_grove' ? (['quran', 'listen', 'prayer-times', 'daily-wird', 'memorization', 'voice-control'].includes(item.id) ? '#4D7C0F' : '#65A30D') : (theme.palette[item.colorIndex] || theme.palette[0])}
                                             border={theme.btnBorder}
                                             isGlass={theme.isGlass}
                                             btnText={theme.btnText}

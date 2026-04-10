@@ -159,7 +159,19 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     // Flatten the Quran data into a single list of items (headers and ayahs)
     const flattenedItems = useMemo(() => {
         const items: any[] = [];
+        let lastPage = -1;
+
         quranData.surahs.forEach((surah: any) => {
+            // Check if page changed before adding surah header
+            // This happens if the first ayah of the new surah is on a new page
+            if (lastPage !== -1 && surah.ayahs.length > 0 && surah.ayahs[0].page !== lastPage) {
+                items.push({
+                    type: 'page-marker',
+                    pageNumber: lastPage
+                });
+                lastPage = surah.ayahs[0].page;
+            }
+
             // Add Surah Header
             items.push({
                 type: 'header',
@@ -171,6 +183,15 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
             // Add Ayahs
             surah.ayahs.forEach((ayah: any) => {
+                // Check if page changed within the surah
+                if (lastPage !== -1 && ayah.page !== lastPage) {
+                    items.push({
+                        type: 'page-marker',
+                        pageNumber: lastPage
+                    });
+                }
+                lastPage = ayah.page;
+
                 const isSajdah = SAJDAH_LOCATIONS.some(sl => sl.s === surah.number && sl.a === ayah.numberInSurah);
                 items.push({
                     type: 'ayah',
@@ -180,10 +201,20 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     juz: ayah.juz,
                     hizbQuarter: ayah.hizbQuarter,
                     sajda: isSajdah,
+                    page: ayah.page,
                     id: `${surah.number}-${ayah.numberInSurah}`
                 });
             });
         });
+
+        // Add last page marker
+        if (lastPage !== -1) {
+            items.push({
+                type: 'page-marker',
+                pageNumber: lastPage
+            });
+        }
+
         return items;
     }, [quranData]);
 
@@ -238,6 +269,35 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     };
 
     const renderItem = useCallback((index: number, item: any) => {
+        if (item.type === 'page-marker') {
+            const getContrastingColors = () => {
+                const themeId = currentTheme?.id || 'night_sky';
+                const bracketColor = currentTheme?.verseBracket || currentTheme?.accent || '#9333ea';
+                const numColor = currentTheme?.accent || currentTheme?.sajdah || '#9333ea';
+                
+                switch(themeId) {
+                    case 'night_sky': return { num: '#9333ea', bracket: '#9333ea' };
+                    case 'green': return { num: '#dc2626', bracket: '#dc2626' };
+                    case 'red': return { num: '#2563eb', bracket: '#2563eb' };
+                    case 'deep_black': return { num: '#f59e0b', bracket: '#f59e0b' };
+                    default: return { num: numColor, bracket: bracketColor };
+                }
+            };
+
+            const { num: pageNumColor, bracket: bracketColor } = getContrastingColors();
+
+            return (
+                <div className="page-footer flex flex-col items-center py-10" style={{ color: currentTheme.text }}>
+                    <div className="flex items-center justify-center">
+                        <span className="page-number-bracket" style={{ color: bracketColor }}>﴿</span>
+                        <span className="page-number-text" style={{ color: pageNumColor }}>{toArabic(item.pageNumber)}</span>
+                        <span className="page-number-bracket" style={{ color: bracketColor }}>﴾</span>
+                    </div>
+                    <div style={{ width: '60%', height: '2.5px', backgroundColor: bracketColor, marginTop: '12px', opacity: 0.8, borderRadius: '2px' }}></div>
+                </div>
+            );
+        }
+
         if (item.type === 'header') {
             const headerBg = currentTheme?.headerBg || '#2ecc71';
             const headerBorder = currentTheme?.accent || '#1a5d38';
