@@ -601,14 +601,25 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         let lastTouchX = 0;
         let lastTouchY = 0;
         let isScrolling = false;
+        let lastTouchTime = 0;
+        let velocityX = 0;
+        let velocityY = 0;
+        let momentumFrame: number | null = null;
+        let activeScrollable: HTMLElement | null = null;
 
         const handleTouchStart = (e: TouchEvent) => {
             if (e.touches.length !== 1) return;
+            if (momentumFrame) cancelAnimationFrame(momentumFrame);
+            
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
             lastTouchX = touchStartX;
             lastTouchY = touchStartY;
+            lastTouchTime = e.timeStamp;
             isScrolling = false;
+            velocityX = 0;
+            velocityY = 0;
+            activeScrollable = null;
         };
 
         const handleTouchMove = (e: TouchEvent) => {
@@ -616,21 +627,28 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             
             const currentX = e.touches[0].clientX;
             const currentY = e.touches[0].clientY;
+            const currentTime = e.timeStamp;
             
             if (!isScrolling) {
-                if (Math.abs(currentX - touchStartX) > 20 || Math.abs(currentY - touchStartY) > 20) {
+                if (Math.abs(currentX - touchStartX) > 10 || Math.abs(currentY - touchStartY) > 10) {
                     isScrolling = true;
-                    // Don't update lastTouch yet so the initial delta is applied
                 } else {
-                    return; // Wait until threshold is met
+                    return;
                 }
             }
 
             const deltaX = currentX - lastTouchX;
             const deltaY = currentY - lastTouchY;
+            const deltaTime = currentTime - lastTouchTime;
+            
+            if (deltaTime > 0) {
+                velocityX = deltaX / deltaTime;
+                velocityY = deltaY / deltaTime;
+            }
             
             lastTouchX = currentX;
             lastTouchY = currentY;
+            lastTouchTime = currentTime;
 
             if (isScrolling) {
                 let target = e.target as HTMLElement;
@@ -657,16 +675,52 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     }
                     scrollable.scrollTop += deltaX;
                     scrollable.scrollLeft += deltaY;
+                    activeScrollable = scrollable;
                 }
+            }
+        };
+
+        const handleTouchEnd = (e: TouchEvent) => {
+            if (!isScrolling || !activeScrollable) return;
+            
+            const timeSinceLastMove = e.timeStamp - lastTouchTime;
+            if (timeSinceLastMove > 50) {
+                velocityX = 0;
+                velocityY = 0;
+            }
+            
+            let vx = velocityX;
+            let vy = velocityY;
+            const friction = 0.95;
+            
+            const applyMomentum = () => {
+                if (Math.abs(vx) < 0.1 && Math.abs(vy) < 0.1) return;
+                
+                if (activeScrollable) {
+                    activeScrollable.scrollTop += vx * 16;
+                    activeScrollable.scrollLeft += vy * 16;
+                }
+                
+                vx *= friction;
+                vy *= friction;
+                
+                momentumFrame = requestAnimationFrame(applyMomentum);
+            };
+            
+            if (Math.abs(vx) > 0.1 || Math.abs(vy) > 0.1) {
+                momentumFrame = requestAnimationFrame(applyMomentum);
             }
         };
 
         document.addEventListener('touchstart', handleTouchStart, { passive: false });
         document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd, { passive: false });
 
         return () => {
+            if (momentumFrame) cancelAnimationFrame(momentumFrame);
             document.removeEventListener('touchstart', handleTouchStart);
             document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('touchend', handleTouchEnd);
         };
     }, [isLandscape]);
 
@@ -1206,20 +1260,31 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         
         const el = document.getElementById(`ayah-${s}-${a}`);
         if (el) {
-            const scrollElToCenter = (element: HTMLElement) => {
-                const containerRect = container.getBoundingClientRect();
-                const elRect = element.getBoundingClientRect();
+            const scrollElToTop = (element: HTMLElement) => {
+                const pageEl = element.closest('.mushaf-page');
+                const targetEl = (isPageJump && pageEl) ? (pageEl as HTMLElement) : element;
                 
-                let targetScrollTop = container.scrollTop + (elRect.top - containerRect.top) - (containerRect.height / 2) + (elRect.height / 2);
+                // Calculate offsetTop relative to the container to avoid getBoundingClientRect issues with CSS transforms
+                let offsetTop = 0;
+                let currentEl: HTMLElement | null = targetEl;
+                while (currentEl && currentEl !== container) {
+                    offsetTop += currentEl.offsetTop;
+                    currentEl = currentEl.offsetParent as HTMLElement;
+                }
+                
+                // Add a small padding so the ayah isn't exactly at the top edge, unless it's a page jump
+                if (!isPageJump) {
+                    offsetTop = Math.max(0, offsetTop - 20);
+                }
                 
                 if (instant) {
-                    container.scrollTop = targetScrollTop;
+                    container.scrollTop = offsetTop;
                 } else {
-                    container.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+                    container.scrollTo({ top: offsetTop, behavior: 'smooth' });
                 }
             };
 
-            scrollElToCenter(el);
+            scrollElToTop(el);
             
             if (instant) {
                 // Call it a few more times to combat layout shift from images/fonts loading
@@ -1227,7 +1292,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 const interval = setInterval(() => {
                     const currentEl = document.getElementById(`ayah-${s}-${a}`);
                     if (currentEl) {
-                        scrollElToCenter(currentEl);
+                        scrollElToTop(currentEl);
                     }
                     count++;
                     if (count > 5) clearInterval(interval);
