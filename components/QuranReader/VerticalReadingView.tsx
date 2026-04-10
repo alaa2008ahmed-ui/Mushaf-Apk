@@ -17,6 +17,7 @@ interface VerticalReadingViewProps {
     modeSuffix?: string;
     hideVerses?: boolean;
     memorizationSettings?: any;
+    isLandscape?: boolean;
 }
 
 // Global cache to ensure instant loading after first fetch
@@ -38,7 +39,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     onSettingsChange,
     modeSuffix = '_v',
     hideVerses = false,
-    memorizationSettings
+    memorizationSettings,
+    isLandscape = false
 }) => {
     const [tafseerData, setTafseerData] = useState<any[]>(cachedTafseerData || []);
     const [meaningsData, setMeaningsData] = useState<any[]>(cachedMeaningsData || []);
@@ -359,9 +361,9 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
         }
 
         return (
-            <div className="px-4 py-2">
+            <div className={`px-4 py-2 ${isLandscape ? 'flex justify-center' : ''}`}>
                 <div 
-                    className={`ayah-item p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2' : ''}`}
+                    className={`ayah-item p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2' : ''} ${isLandscape ? 'max-w-3xl w-full' : ''}`}
                     style={{ 
                         backgroundColor: isHighlighted ? `${currentTheme.accent}20` : 'transparent',
                         borderColor: isHighlighted ? currentTheme.accent : 'transparent'

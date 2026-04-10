@@ -2187,11 +2187,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
                         const prevAyah = currentAyahRef.current;
                         
-                        // Prevent automatic selection in non-mushaf modes
-                        if (readingModeRef.current === 'mushaf') {
-                            setCurrentAyah({ s, a });
-                            localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
-                        }
+                        setCurrentAyah({ s, a });
+                        localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
 
                         // Detect Surah change
                         /* 
@@ -2726,10 +2723,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     }
 
                     // Prevent automatic selection in non-mushaf modes
-                    if (readingModeRef.current === 'mushaf') {
-                        setCurrentAyah({ s, a });
-                        currentAyahRef.current = { s, a };
-                    }
+                    setCurrentAyah({ s, a });
+                    currentAyahRef.current = { s, a };
                     if (ayahBlock.getAttribute('data-sajdah') === 'true') {
                         const surahName = (ayahBlock as HTMLElement).dataset.surah || '';
                         const sNum = parseInt((ayahBlock as HTMLElement).dataset.snum || '0', 10);
@@ -3140,13 +3135,12 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         settings={settings}
                         currentTheme={currentTheme}
                         currentAyah={currentAyah}
+                        isLandscape={isLandscape}
                         onAyahClick={handleVerticalAyahClick}
                         onVisibleAyahChange={(s, a) => {
                             if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
-                                if (readingModeRef.current === 'mushaf') {
-                                    setCurrentAyah({ s, a });
-                                    localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
-                                }
+                                setCurrentAyah({ s, a });
+                                localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
                             }
                         }}
                         showMarkerNotification={showMarkerNotification}
