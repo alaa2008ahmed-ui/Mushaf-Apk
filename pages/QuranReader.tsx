@@ -1028,6 +1028,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const mushafContentRef = useRef<HTMLDivElement>(null);
     const settingsRef = useRef(settings);
     useEffect(() => { settingsRef.current = settings; }, [settings]);
+    
+    const readingModeRef = useRef(readingMode);
+    useEffect(() => { readingModeRef.current = readingMode; }, [readingMode]);
     const floatingMenuRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const scrollIntervalRef = useRef<number | null>(null);
@@ -2183,8 +2186,12 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     
                     if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
                         const prevAyah = currentAyahRef.current;
-                        setCurrentAyah({ s, a });
-                        localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
+                        
+                        // Prevent automatic selection in non-mushaf modes
+                        if (readingModeRef.current === 'mushaf') {
+                            setCurrentAyah({ s, a });
+                            localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
+                        }
 
                         // Detect Surah change
                         /* 
@@ -2718,8 +2725,11 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         }
                     }
 
-                    setCurrentAyah({ s, a });
-                    currentAyahRef.current = { s, a };
+                    // Prevent automatic selection in non-mushaf modes
+                    if (readingModeRef.current === 'mushaf') {
+                        setCurrentAyah({ s, a });
+                        currentAyahRef.current = { s, a };
+                    }
                     if (ayahBlock.getAttribute('data-sajdah') === 'true') {
                         const surahName = (ayahBlock as HTMLElement).dataset.surah || '';
                         const sNum = parseInt((ayahBlock as HTMLElement).dataset.snum || '0', 10);
@@ -3133,8 +3143,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         onAyahClick={handleVerticalAyahClick}
                         onVisibleAyahChange={(s, a) => {
                             if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
-                                setCurrentAyah({ s, a });
-                                localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
+                                if (readingModeRef.current === 'mushaf') {
+                                    setCurrentAyah({ s, a });
+                                    localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
+                                }
                             }
                         }}
                         showMarkerNotification={showMarkerNotification}

@@ -8,9 +8,11 @@ interface BottomBarProps {
     showHome?: boolean;
     showThemes?: boolean;
     homeLabel?: string;
+    leftButton?: React.ReactNode;
+    rightButton?: React.ReactNode;
 }
 
-function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = true, homeLabel = "الرئيسية" }: BottomBarProps) {
+function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = true, homeLabel = "الرئيسية", leftButton, rightButton }: BottomBarProps) {
     const { theme, themeKey } = useTheme();
 
     const isSingleButton = !showHome || !showThemes;
@@ -30,6 +32,9 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
                         <span className="hidden sm:inline">{homeLabel}</span>
                     </button>
                 )}
+                
+                {leftButton && <div className="mx-1">{leftButton}</div>}
+                
                 {showThemes && (
                     <button 
                         id="themes-btn"
@@ -47,6 +52,8 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
                         <span>الثيمات</span>
                     </button>
                 )}
+                
+                {rightButton && <div className="mx-1">{rightButton}</div>}
             </div>
         </nav>
     );

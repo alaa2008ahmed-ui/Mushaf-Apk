@@ -310,8 +310,13 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         </div>
       </div>
 
-      <BottomBar onHomeClick={() => {}} onThemesClick={onOpenThemes} showHome={false} showThemes={true} />
-      <WhatsAppButton />
+      <BottomBar 
+        onHomeClick={() => {}} 
+        onThemesClick={onOpenThemes} 
+        showHome={false} 
+        showThemes={true} 
+        leftButton={<WhatsAppButton />}
+      />
       
       <PasscodeModal 
         isOpen={isPasscodeOpen}
