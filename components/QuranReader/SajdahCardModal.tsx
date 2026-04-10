@@ -9,9 +9,9 @@ const SajdahCardModal: FC<{
     if (!info.show) return null;
 
     return (
-        <div className="fixed inset-0 z-[250] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl shadow-2xl flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
-                <div className="p-5 overflow-y-auto text-right leading-relaxed space-y-4 text-sm flex-1">
+        <div className="fixed inset-0 z-[2000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl shadow-2xl flex flex-col max-h-[90vh] border border-white/10`} onClick={e => e.stopPropagation()}>
+                <div className="p-5 overflow-y-auto text-right leading-relaxed space-y-4 text-sm flex-1 custom-scrollbar">
                     <div>
                         <p><b>1. تعريف سجود التلاوة</b></p>
                         <p className="mt-1">هو سجود يؤديه القارئ أو المستمع عند قراءة آية من آيات السجود في القرآن الكريم، تعظيماً لله تعالى وإظهاراً للعبودية. وقد ثبت في صحيح مسلم عن أبي هريرة رضي الله عنه قال: قال رسول الله ﷺ:</p>
@@ -76,8 +76,11 @@ const SajdahCardModal: FC<{
                         </ul>
                     </div>
                 </div>
-                <div className="p-3 border-t themed-card-bg rounded-b-2xl">
-                    <button onClick={onClose} className="w-full theme-accent-btn py-2.5 rounded-xl font-bold transition">
+                <div className="p-4 border-t themed-card-bg rounded-b-2xl">
+                    <button 
+                        onClick={onClose} 
+                        className="w-full bg-[#38bdf8] hover:bg-[#0ea5e9] text-white py-3 rounded-xl font-bold transition-all active:scale-95 shadow-md"
+                    >
                         إغلاق
                     </button>
                 </div>

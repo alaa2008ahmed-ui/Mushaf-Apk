@@ -184,11 +184,12 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                         }
                     }
 
+                    const isDarkGroup = currentTheme?.id === 'deep_black' || currentTheme?.id?.startsWith('i_');
                     const headerBg = currentTheme?.headerBg || '#22c55e';
-                    const headerBorder = currentTheme?.accent || '#14532d';
+                    const headerBorder = isDarkGroup ? '#ffffff' : (currentTheme?.accent || '#14532d');
                     const headerText = currentTheme?.headerText || '#ffffff';
                     const cartoucheBg = currentTheme?.bg || '#dcfce7';
-                    const cartoucheText = currentTheme?.accent || '#14532d';
+                    const cartoucheText = isDarkGroup ? '#ffffff' : (currentTheme?.accent || '#14532d');
 
                     return (
                         <React.Fragment key={id}>
@@ -234,7 +235,7 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                 onContextMenu={(e) => e.preventDefault()}
                                 data-sajdah={isSajdah} 
                                 data-snum={ayah.sNum}
-                                data-surah={ayah.sName.replace('سورة','').trim()} 
+                                data-surah={ayah.sName.trim()} 
                                 data-ayah={ayah.numberInSurah}
                                 data-juz={ayah.juz}
                                 data-hizb-quarter={ayah.hizbQuarter}

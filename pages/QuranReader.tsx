@@ -1129,7 +1129,11 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const handleSajdahVisible = useCallback((surahName: string, sNum: number, ayahNum: number) => {
         if (sajdahCardInfoRef.current.show) return;
 
-        showMarkerNotification('sajda', `سجدة تلاوة: سورة ${surahName} - آية ${toArabic(ayahNum)}`);
+        const displaySurah = (surahName.includes('سورة') || surahName.includes('سُورَة')) 
+            ? surahName 
+            : `سورة ${surahName}`;
+
+        showMarkerNotification('sajda', `سجدة تلاوة: ${displaySurah} - آية ${toArabic(ayahNum)}`);
 
         if (showSajdahCard) {
             if (!quranData) return;
@@ -1521,6 +1525,16 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
         if (modalName === 'tafseer-selection-modal') {
             setTafseerSelectionInfo(p => ({ ...p, isOpen: true, wasAutoscrolling: wasScrolling }));
+        } else if (modalName === 'sajdah-card') {
+            setSajdahCardInfo({ 
+                show: true, 
+                surah: '', 
+                ayah: 0, 
+                juz: 0, 
+                page: 0, 
+                wasAutoscrolling: wasScrolling, 
+                wasPlaying: false 
+            });
         } else {
             setActiveModals(p => [...p.filter(m => m !== modalName), modalName]); 
         }
