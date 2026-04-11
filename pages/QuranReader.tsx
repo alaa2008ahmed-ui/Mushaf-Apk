@@ -178,27 +178,6 @@ const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentThem
 
 const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any }> = ({ page, onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
-    const isLandscapeRef = useRef(isLandscape);
-    
-    // Auto-detect orientation
-    useEffect(() => {
-        const handleResize = () => {
-            // Detect landscape only if width > height AND height is small (typical of mobile landscape)
-            // This ensures that on desktop/preview windows that are wide but tall, 
-            // we still treat it as "portrait" to show all menu options.
-            const isL = window.innerWidth > window.innerHeight && window.innerHeight < 550;
-            if (isL !== isLandscapeRef.current) {
-                setIsLandscape(isL);
-                isLandscapeRef.current = isL;
-            }
-        };
-        
-        window.addEventListener('resize', handleResize);
-        handleResize(); // Initial check
-        
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [savedSession, setSavedSession] = useState<any>(null);
     const [localIsMemorizationMode, setLocalIsMemorizationMode] = useState(isMemorizationMode);
@@ -209,6 +188,21 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const [showReviewTest, setShowReviewTest] = useState(false);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
+    
+    // Auto-detect orientation
+    useEffect(() => {
+        const handleResize = () => {
+            const isL = window.innerWidth > window.innerHeight;
+            if (isL !== isLandscapeRef.current) {
+                setIsLandscape(isL);
+            }
+        };
+        
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Initial check
+        
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const [readingMode, setReadingMode] = useState<ReadingMode>(() => {
         if (isWirdMode || isMemorizationMode) return 'mushaf';
@@ -502,6 +496,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
         window.dispatchEvent(new Event('settings-change'));
     };
+    const isLandscapeRef = useRef(false);
+    useEffect(() => { isLandscapeRef.current = isLandscape; }, [isLandscape]);
 
     // Load settings based on orientation and mode
     useEffect(() => {
