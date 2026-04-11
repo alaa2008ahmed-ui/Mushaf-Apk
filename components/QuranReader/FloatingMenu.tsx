@@ -1228,13 +1228,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                         {/* الإعدادات والبحث */}
                         <MenuSection title="الإعدادات والبحث" iconColor={iconColor} titleColor="#16a34a" currentTheme={currentTheme}>
                             <MenuItem icon={<Palette size={18} />} label="المظهر" onClick={() => setCurrentView('themes')} iconColor={iconColor} currentTheme={currentTheme} />
-                            <MenuItem icon={<Search size={18} />} label="البحث" onClick={() => handleAction(() => { 
-                                // Only switch to mushaf mode if we are in portrait
-                                if (window.innerHeight > window.innerWidth) {
-                                    setReadingMode('mushaf');
-                                }
-                                openModal('search-modal'); 
-                            })} iconColor={iconColor} currentTheme={currentTheme} />
+                            {!isLandscape && <MenuItem icon={<Search size={18} />} label="البحث" onClick={() => handleAction(() => openModal('search-modal'))} iconColor={iconColor} currentTheme={currentTheme} />}
                             <MenuItem icon={<Settings size={18} />} label="الإعدادات" onClick={() => handleAction(() => openModal('settings-modal'))} iconColor={iconColor} currentTheme={currentTheme} />
                             <MenuItem icon={<Bookmark size={18} />} label="العلامات المرجعية" onClick={() => setCurrentView('bookmarks')} iconColor={iconColor} currentTheme={currentTheme} />
                         </MenuSection>

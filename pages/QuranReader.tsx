@@ -97,7 +97,7 @@ const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, onTranslation,
 const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentTheme, onMarkCompleted }: any) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[300] bg-transparent flex items-center justify-center p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-[1100] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 animate-fadeIn">
             <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl flex flex-col animate-modal-enter p-8 text-center" 
                  style={{ 
                      fontFamily: currentTheme?.font
@@ -145,7 +145,7 @@ const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentThe
 const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentTheme, savedSession }: any) => {
     if (!isOpen || !savedSession) return null;
     return (
-        <div className="fixed inset-0 z-[400] bg-transparent flex items-center justify-center p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-[1100] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 animate-fadeIn">
             <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center animate-modal-enter"
                  style={{ fontFamily: currentTheme?.font }}>
                 <div className="w-16 h-16 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
