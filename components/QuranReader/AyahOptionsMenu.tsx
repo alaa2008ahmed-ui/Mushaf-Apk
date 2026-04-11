@@ -21,7 +21,7 @@ const AyahOptionsMenu: React.FC<AyahOptionsMenuProps> = ({
     const iconColor = currentTheme.accent || '#000000';
 
     return (
-        <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 backdrop-blur-[2px] animate-fadeIn" onClick={onClose}>
+        <div className="fixed inset-0 z-[1100] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
             <div 
                 className="w-full max-w-[280px] bg-white rounded-2xl shadow-2xl transition-all duration-300 flex flex-col pointer-events-auto overflow-hidden animate-modal-enter" 
                 style={{ 

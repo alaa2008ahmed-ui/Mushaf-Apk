@@ -9,7 +9,7 @@ const MushafSelectionModal: FC<{
 }> = ({ isOpen, onClose, onSelect, currentType, isLandscape }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
+        <div className="fixed inset-0 z-[300] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-2xl' : 'max-w-sm sm:max-w-2xl'} rounded-2xl shadow-2xl flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
                 <div className={`p-4 flex-1 grid ${isLandscape ? 'grid-cols-1 gap-4' : 'grid-cols-1 gap-4'}`}>
                     <button onClick={() => onSelect('uthmani')} 
