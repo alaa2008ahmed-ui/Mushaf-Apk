@@ -1216,9 +1216,13 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                         {/* خيارات القراءة */}
                         <MenuSection title="خيارات القراءة" iconColor={iconColor} titleColor="#2563eb" currentTheme={currentTheme}>
                             <MenuItem icon={<BookText size={18} />} label="المصحف" onClick={() => handleAction(() => { setReadingMode('mushaf'); })} iconColor={iconColor} isActive={readingMode === 'mushaf'} currentTheme={currentTheme} />
-                            <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} isActive={readingMode === 'tafseer'} currentTheme={currentTheme} />
-                            <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} isActive={readingMode === 'meanings'} currentTheme={currentTheme} />
-                            <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} isActive={readingMode === 'translation'} currentTheme={currentTheme} />
+                            {!isLandscape && (
+                                <>
+                                    <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} isActive={readingMode === 'tafseer'} currentTheme={currentTheme} />
+                                    <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} isActive={readingMode === 'meanings'} currentTheme={currentTheme} />
+                                    <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} isActive={readingMode === 'translation'} currentTheme={currentTheme} />
+                                </>
+                            )}
                         </MenuSection>
 
                         {/* الإعدادات والبحث */}
