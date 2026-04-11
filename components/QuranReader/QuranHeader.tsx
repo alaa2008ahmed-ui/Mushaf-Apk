@@ -124,7 +124,7 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                     {renderPlayButtonIcon()}
                 </button>
                 {reciterToast.show && (
-                    <div className="absolute top-full left-0 mt-2 px-3 py-1 text-xs rounded-lg shadow-lg whitespace-nowrap z-[100] animate-fadeIn font-bold pointer-events-none modal-skinned toast-element">
+                    <div className="absolute top-full left-0 mt-2 px-3 py-1 text-xs rounded-lg shadow-lg whitespace-nowrap z-[1500] animate-fadeIn font-bold pointer-events-none modal-skinned toast-element">
                         {reciterToast.name}
                     </div>
                 )}

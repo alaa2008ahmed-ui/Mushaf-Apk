@@ -30,7 +30,7 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
     const iconColor = currentTheme.accent || '#000000';
 
     return (
-        <div className="fixed inset-0 z-[1100] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={() => {
+        <div className="fixed inset-0 z-[1100] bg-black/40 flex items-center justify-center p-4 backdrop-blur-[2px] animate-fadeIn" onClick={() => {
             setAyahContextMenu((p: any) => ({...p, isOpen: false}));
         }}>
             <div 

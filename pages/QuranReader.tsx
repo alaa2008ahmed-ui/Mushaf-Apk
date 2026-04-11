@@ -66,8 +66,8 @@ const parseArabicNumber = (text: string): number | null => {
 const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, onTranslation, currentTheme, isLandscape }: any) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[200] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
-            <div className="modal-skinned w-full max-w-sm rounded-2xl shadow-2xl flex flex-col animate-modal-enter" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[1100] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
+            <div className="modal-skinned w-full max-w-[280px] rounded-2xl shadow-2xl flex flex-col animate-modal-enter" onClick={e => e.stopPropagation()}>
                 <div className="p-5 flex flex-col gap-4">
                     {!isLandscape && (
                         <>
@@ -97,7 +97,7 @@ const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, onTranslation,
 const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentTheme, onMarkCompleted }: any) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[300] bg-transparent flex items-center justify-center p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 animate-fadeIn">
             <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl flex flex-col animate-modal-enter p-8 text-center" 
                  style={{ 
                      fontFamily: currentTheme?.font
@@ -145,7 +145,7 @@ const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentThe
 const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentTheme, savedSession }: any) => {
     if (!isOpen || !savedSession) return null;
     return (
-        <div className="fixed inset-0 z-[400] bg-transparent flex items-center justify-center p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 animate-fadeIn">
             <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center animate-modal-enter"
                  style={{ fontFamily: currentTheme?.font }}>
                 <div className="w-16 h-16 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1714,6 +1714,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const handleAyahLongPress = useCallback((s: number, a: number, x: number, y: number) => {
         if (isLandscapeRef.current) return;
+        setAyahContextColorField(null); // Reset color field to hide colors by default
         setAyahContextMenu({ 
             isOpen: true, 
             isCustomizing: true, 

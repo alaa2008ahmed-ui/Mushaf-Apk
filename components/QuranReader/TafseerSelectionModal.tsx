@@ -10,7 +10,7 @@ const TafseerSelectionModal: FC<{
 }> = ({ isOpen, onClose, onSelect, currentTafseerId, isLandscape }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[300] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
+        <div className="fixed inset-0 z-[1200] bg-black/40 flex items-center justify-center p-4 backdrop-blur-[2px] animate-fadeIn" onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-sm sm:max-w-2xl'} rounded-2xl shadow-2xl flex flex-col max-h-[80vh]`} onClick={e => e.stopPropagation()}>
                 <div className={`p-2 overflow-y-auto flex-1 grid ${isLandscape ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3' : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2'}`}>
                     {TAFSEERS.map(t => (
