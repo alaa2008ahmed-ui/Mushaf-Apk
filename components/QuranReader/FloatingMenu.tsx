@@ -1231,19 +1231,15 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                         {/* خيارات القراءة */}
                         <MenuSection title="خيارات القراءة" iconColor={iconColor} titleColor="#2563eb" currentTheme={currentTheme}>
                             <MenuItem icon={<BookText size={18} />} label="المصحف" onClick={() => handleAction(() => { setReadingMode('mushaf'); })} iconColor={iconColor} isActive={readingMode === 'mushaf'} currentTheme={currentTheme} />
-                            {!isLandscape && (
-                                <>
-                                    <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} isActive={readingMode === 'tafseer'} currentTheme={currentTheme} />
-                                    <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} isActive={readingMode === 'meanings'} currentTheme={currentTheme} />
-                                    <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} isActive={readingMode === 'translation'} currentTheme={currentTheme} />
-                                </>
-                            )}
+                            <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} isActive={readingMode === 'tafseer'} currentTheme={currentTheme} />
+                            <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} isActive={readingMode === 'meanings'} currentTheme={currentTheme} />
+                            <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} isActive={readingMode === 'translation'} currentTheme={currentTheme} />
                         </MenuSection>
 
                         {/* الإعدادات والبحث */}
                         <MenuSection title="الإعدادات والبحث" iconColor={iconColor} titleColor="#16a34a" currentTheme={currentTheme}>
                             <MenuItem icon={<Palette size={18} />} label="المظهر" onClick={() => setCurrentView('themes')} iconColor={iconColor} currentTheme={currentTheme} />
-                            {!isLandscape && <MenuItem icon={<Search size={18} />} label="البحث" onClick={() => handleAction(() => openModal('search-modal'))} iconColor={iconColor} currentTheme={currentTheme} />}
+                            <MenuItem icon={<Search size={18} />} label="البحث" onClick={() => handleAction(() => openModal('search-modal'))} iconColor={iconColor} currentTheme={currentTheme} />
                             <MenuItem icon={<Settings size={18} />} label="الإعدادات" onClick={() => handleAction(() => openModal('settings-modal'))} iconColor={iconColor} currentTheme={currentTheme} />
                             <MenuItem icon={<Bookmark size={18} />} label="العلامات المرجعية" onClick={() => setCurrentView('bookmarks')} iconColor={iconColor} currentTheme={currentTheme} />
                         </MenuSection>

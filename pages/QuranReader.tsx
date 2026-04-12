@@ -186,6 +186,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     // Auto-detect orientation based on layout dimensions for browser and device compatibility
     useEffect(() => {
         const handleResize = () => {
+            if (initialLandscape) return; // Ignore physical orientation if forced to landscape
             const width = window.innerWidth;
             const height = window.innerHeight;
             // Robust detection using dimensions rather than physical sensors
@@ -508,6 +509,32 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
     const isLandscapeRef = useRef(initialLandscape);
     useEffect(() => { isLandscapeRef.current = isLandscape; }, [isLandscape]);
+
+    useEffect(() => {
+        const lockOrientation = async () => {
+            try {
+                if (initialLandscape) {
+                    await ScreenOrientation.lock({ orientation: 'landscape' });
+                } else {
+                    await ScreenOrientation.unlock();
+                }
+            } catch (e) {
+                console.log('Screen orientation lock failed or not supported in this environment', e);
+            }
+        };
+        lockOrientation();
+        
+        return () => {
+            const unlockOrientation = async () => {
+                try {
+                    await ScreenOrientation.unlock();
+                } catch (e) {
+                    console.log('Screen orientation unlock failed', e);
+                }
+            };
+            unlockOrientation();
+        };
+    }, [initialLandscape]);
 
     // Load settings based on orientation and mode
     useEffect(() => {
@@ -837,9 +864,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     useEffect(() => {
         if (isLandscape) {
-            if (readingMode === 'tafseer' || readingMode === 'meanings' || readingMode === 'translation') {
-                setReadingMode('mushaf');
-            }
             if (tafseerInfo.isOpen) setTafseerInfo(p => ({ ...p, isOpen: false }));
             if (quranMeaningsInfo.isOpen) setQuranMeaningsInfo(p => ({ ...p, isOpen: false }));
             if (quranTranslationInfo.isOpen) setQuranTranslationInfo(p => ({ ...p, isOpen: false }));
