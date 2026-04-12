@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { READERS, TAFSEERS, THEMES, DEFAULT_SETTINGS, toArabic } from './constants';
 import TutorialOverlay, { TutorialStep } from '../Tutorial/TutorialOverlay';
-import { ZoomIn, Palette, Mic, Type, Repeat, Book, MousePointer2, Settings2, Download } from 'lucide-react';
+import { ZoomIn, Palette, Mic, Type, Repeat, Book, MousePointer2, Settings2, Download, ChevronDown, ChevronUp } from 'lucide-react';
+
+import SurahHeader from './SurahHeader';
 
 interface SettingsModalProps {
     onClose: () => void;
@@ -47,6 +49,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         const saved = localStorage.getItem('hide_toolbars_enabled' + modeSuffix);
         return saved !== null ? saved === 'true' : false;
     });
+
+    const [isDesignDropdownOpen, setIsDesignDropdownOpen] = useState(false);
+    const designDropdownRef = useRef<HTMLDivElement>(null);
+    const activeDesignItemRef = useRef<HTMLButtonElement>(null);
+
+    useEffect(() => {
+        if (isDesignDropdownOpen && activeDesignItemRef.current) {
+            setTimeout(() => {
+                activeDesignItemRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 50);
+        }
+    }, [isDesignDropdownOpen]);
 
     const [activeColorField, setActiveColorField] = useState<'textColor' | 'bgColor' | 'highlightTextColor' | null>(null);
 
@@ -306,6 +320,77 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                 <span>{getTafseerName(settings.tafseer)}</span>
                                 <i className="fa-solid fa-chevron-left opacity-50"></i>
                             </button>
+                        </div>
+                    </div>
+
+                    <div id="surah-header-design-section" className="border-b border-gray-200 dark:border-gray-700 py-3">
+                        <label className="text-sm font-bold block opacity-80 mb-2 text-right">تصميم رأس السورة</label>
+                        
+                        <div className="relative">
+                            <button 
+                                onClick={() => setIsDesignDropdownOpen(!isDesignDropdownOpen)}
+                                className="w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 themed-card-bg p-1 flex items-center justify-center relative hover:border-emerald-500 transition-all min-h-[60px]"
+                            >
+                                <div className="pointer-events-none w-full">
+                                    <SurahHeader 
+                                        surahNumber={1}
+                                        surahName="الفاتحة"
+                                        surahType="مكية"
+                                        ayahCount={7}
+                                        currentTheme={THEMES[settings.theme]}
+                                        design={settings.surahHeaderDesign || 1}
+                                        compact={true}
+                                    />
+                                </div>
+                                <div className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/80 dark:bg-black/80 rounded-full p-1 shadow-sm">
+                                    {isDesignDropdownOpen ? <ChevronUp className="w-4 h-4 opacity-70" /> : <ChevronDown className="w-4 h-4 opacity-70" />}
+                                </div>
+                            </button>
+
+                            {isDesignDropdownOpen && (
+                                <div className="absolute z-[200] top-full left-0 right-0 mt-2 themed-card-bg border-2 border-emerald-500 rounded-xl shadow-2xl overflow-hidden animate-fadeIn">
+                                    <div 
+                                        ref={designDropdownRef}
+                                        className="max-h-80 overflow-y-auto p-2 space-y-2 scrollbar-hide scroll-smooth"
+                                    >
+                                        {[1, 2, 3, 4, 7, 9, 10, 11, 14, 15, 16, 19, 20].map((design, index) => (
+                                            <button
+                                                key={design}
+                                                ref={(settings.surahHeaderDesign || 1) === design ? activeDesignItemRef : null}
+                                                onClick={() => {
+                                                    updateSetting('surahHeaderDesign', design);
+                                                    setIsDesignDropdownOpen(false);
+                                                }}
+                                                className={`relative w-full rounded-lg border-2 transition-all overflow-hidden ${
+                                                    (settings.surahHeaderDesign || 1) === design 
+                                                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' 
+                                                    : 'border-gray-100 dark:border-gray-800 hover:border-emerald-300'
+                                                }`}
+                                            >
+                                                <div className="pointer-events-none w-full">
+                                                    <SurahHeader 
+                                                        surahNumber={1}
+                                                        surahName="الفاتحة"
+                                                        surahType="مكية"
+                                                        ayahCount={7}
+                                                        currentTheme={THEMES[settings.theme]}
+                                                        design={design}
+                                                        compact={true}
+                                                    />
+                                                </div>
+                                                <div className="text-center pb-1 text-[10px] font-bold opacity-40">
+                                                    تصميم {index + 1}
+                                                </div>
+                                                {(settings.surahHeaderDesign || 1) === design && (
+                                                    <div className="absolute top-1 left-1 bg-emerald-500 text-white rounded-full p-0.5 shadow-md">
+                                                        <i className="fa-solid fa-check text-[8px]"></i>
+                                                    </div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 

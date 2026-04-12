@@ -485,10 +485,11 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                     {activeTab === 'setup' && (
                         <div className="space-y-3 pt-2">
                             <button 
+                                id="btn-start-memorization"
                                 onClick={handleStart}
-                                className="w-full py-4 rounded-2xl font-bold text-lg shadow-xl transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-3"
+                                className="w-full py-4 rounded-2xl font-bold text-lg shadow-[0_10px_30px_-5px_rgba(16,185,129,0.5)] transition-all active:scale-95 bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center gap-3 border-b-4 border-emerald-700 ring-4 ring-emerald-500/20"
                             >
-                                <Play size={20} />
+                                <Play size={20} fill="currentColor" />
                                 ابدأ جلسة التحفيظ
                             </button>
 

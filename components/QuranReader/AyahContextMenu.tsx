@@ -27,10 +27,8 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
 }) => {
     if (!isOpen) return null;
 
-    const iconColor = currentTheme.accent || '#000000';
-
     return (
-        <div className="fixed inset-0 z-[1100] bg-black/40 flex items-center justify-center p-4 backdrop-blur-[2px] animate-fadeIn" onClick={() => {
+        <div className="fixed inset-0 z-[1100] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={() => {
             setAyahContextMenu((p: any) => ({...p, isOpen: false}));
         }}>
             <div 
@@ -41,23 +39,15 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
                 }}
                 onClick={e => e.stopPropagation()}
             >
-                {/* Header */}
-                <div className="p-4 border-b flex items-center justify-between bg-gray-50/50">
-                    <div className="flex items-center gap-2">
-                        <Palette size={18} style={{ color: iconColor }} />
-                        <span className="font-bold text-sm text-gray-800">تخصيص المظهر</span>
-                    </div>
-                    <button onClick={() => {
-                        setAyahContextMenu((p: any) => ({...p, isOpen: false}));
-                    }} className="p-1 hover:bg-gray-200 rounded-full transition-colors">
-                        <X size={18} className="text-gray-500" />
-                    </button>
-                </div>
-
                 <div className="p-4 overflow-y-auto max-h-[70vh] custom-scrollbar space-y-5">
                     {/* Colors Section */}
                     <div className="space-y-3">
-                        <div className="bg-blue-50/50 py-1.5 px-3 rounded-md text-right">
+                        <div className="bg-blue-50/50 py-1.5 px-3 rounded-md flex items-center justify-between">
+                            <button onClick={() => {
+                                setAyahContextMenu((p: any) => ({...p, isOpen: false}));
+                            }} className="p-1 hover:bg-gray-200 rounded-full transition-colors">
+                                <X size={18} className="text-gray-500" />
+                            </button>
                             <span className="text-xs font-bold text-gray-700">الألوان</span>
                         </div>
                         

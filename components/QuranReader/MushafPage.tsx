@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { SAJDAH_LOCATIONS, toArabic, SURAH_INFO, getAyahCountText } from './constants';
+import SurahHeader from './SurahHeader';
 
 interface MushafPageProps {
     pageNum: number;
@@ -11,6 +12,7 @@ interface MushafPageProps {
     onAyahLongPress?: (surah: number, ayah: number, x: number, y: number) => void;
     onInteractionStart?: () => void;
     onInteractionEnd?: () => void;
+    onSurahHeaderLongPress?: () => void;
     settings?: {
         fontSize: number;
         fontFamily: string;
@@ -45,7 +47,7 @@ export const renderTajweedTextHtml = (text: string) => {
     return fixQuranText(text);
 };
 
-const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, settings, currentTheme, hideVerses, memorizationSettings }) => {
+const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, onSurahHeaderLongPress, settings, currentTheme, hideVerses, memorizationSettings }) => {
     const pageRef = useRef<HTMLDivElement | null>(null);
     const longPressTimer = useRef<number | null>(null);
     const isLongPressTriggered = useRef(false);
@@ -198,24 +200,15 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                         <React.Fragment key={id}>
                             {showHeader && ( 
                                 <> 
-                                    <div className="surah-header-container">
-                                        <svg className="surah-header-bg" viewBox="0 0 600 80" preserveAspectRatio="none">
-                                            {/* Outer Green Box with Single Border */}
-                                            <rect x="2" y="2" width="596" height="76" fill={headerBg} stroke={headerBorder} strokeWidth="1.5" />
-                                            
-                                            {/* Center Cartouche Background (Light) - Shrunken Width */}
-                                            <path d="M 180 10 L 420 10 Q 440 10 445 25 L 450 40 L 445 55 Q 440 70 420 70 L 180 70 Q 160 70 155 55 L 150 40 L 155 25 Q 160 10 180 10 Z" fill={cartoucheBg} stroke={headerBorder} strokeWidth="1.5" />
-                                            
-                                            {/* Inner decorative line for cartouche - Shrunken Width */}
-                                            <path d="M 185 15 L 415 15 Q 430 15 434 25 L 438 40 L 434 55 Q 430 65 415 65 L 185 65 Q 170 65 166 55 L 162 40 L 166 25 Q 170 15 185 15 Z" fill="none" stroke={headerBorder} strokeWidth="1" opacity="0.3" />
-                                        </svg>
-                                        
-                                        <div className="surah-header-content" style={{ color: headerText }}>
-                                            <div className="surah-header-right-text" style={{ color: cartoucheText }}>{SURAH_INFO[ayah.sNum]?.type}</div>
-                                            <div className="surah-header-center-text" style={{ color: cartoucheText }}>{ayah.sName.replace('سورة', '').trim()}</div>
-                                            <div className="surah-header-left-text" style={{ color: cartoucheText }}>{getAyahCountText(SURAH_INFO[ayah.sNum]?.ayahs || 0)}</div>
-                                        </div>
-                                    </div> 
+                                    <SurahHeader 
+                                        surahNumber={ayah.sNum}
+                                        surahName={ayah.sName.replace('سورة', '').trim()}
+                                        surahType={SURAH_INFO[ayah.sNum]?.type}
+                                        ayahCount={SURAH_INFO[ayah.sNum]?.ayahs || 0}
+                                        currentTheme={currentTheme}
+                                        design={settings?.surahHeaderDesign || 1}
+                                        onLongPress={onSurahHeaderLongPress}
+                                    />
                                     {ayah.sNum !== 1 && ayah.sNum !== 9 && (
                                         <div className="bismillah" style={headerStyle}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
                                     )} 

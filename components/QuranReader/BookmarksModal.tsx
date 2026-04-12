@@ -10,38 +10,61 @@ interface BookmarksModalProps {
     isLandscape?: boolean;
 }
 
+const getHijriDate = (timestamp: number) => {
+    try {
+        const date = new Date(timestamp);
+        return new Intl.DateTimeFormat('ar-SA-islamic', {
+            day: 'numeric', month: 'long', year: 'numeric', calendar: 'islamic-umalqura'
+        }).format(date);
+    } catch (e) {
+        return '';
+    }
+};
+
 const BookmarksModal: React.FC<BookmarksModalProps> = ({ bookmarks, quranData, onSelect, onDelete, onClose, isLandscape }) => {
     return (
         <div className="fixed inset-0 z-[100] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-2xl'} rounded-2xl flex flex-col max-h-[90vh] shadow-2xl`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full max-w-[280px] rounded-2xl flex flex-col max-h-[80vh] shadow-2xl animate-modal-enter`} onClick={e => e.stopPropagation()}>
                 <div className="overflow-y-auto p-4 flex-1 flex flex-col gap-3">
                     {bookmarks.length === 0 ? (
                         <div className="col-span-full text-center p-4 font-bold">لا توجد إشارات مرجعية محفوظة</div>
                     ) : (
-                        bookmarks.map(b => {
+                        bookmarks.map((b, index) => {
                             const surahName = quranData?.surahs[b.s - 1]?.name.replace('سورة','').trim() || '';
+                            const hijriDate = getHijriDate(b.id);
                             return (
-                                <div key={b.id} className={`w-full flex flex-col justify-between p-3 rounded-lg border transition themed-card-bg`}>
-                                    <div className="flex-grow cursor-pointer" onClick={() => { onSelect(b.s, b.a, !!b.isLandscape); onClose(); }}>
-                                        <div className="font-bold text-lg" style={{ fontFamily: 'var(--font-amiri)' }}>
-                                            {surahName} - آية {toArabic(b.a)}
+                                <div key={b.id} className={`w-full p-3 rounded-xl border transition themed-card-bg relative group`}>
+                                    <button 
+                                        onClick={() => onDelete(b.id)} 
+                                        className="absolute top-2 left-2 text-red-500 hover:text-red-700 p-1.5 transition-colors"
+                                        title="حذف"
+                                    >
+                                        <i className="fa-solid fa-trash-alt text-sm"></i>
+                                    </button>
+                                    
+                                    <div className="cursor-pointer pr-1" onClick={() => { onSelect(b.s, b.a, !!b.isLandscape); onClose(); }}>
+                                        <div className="font-bold text-base flex items-center gap-1 mb-1" style={{ fontFamily: 'var(--font-amiri)' }}>
+                                            <span className="text-xs opacity-40 font-sans">{toArabic(index + 1)} -</span>
+                                            <span className="truncate max-w-[180px]">{surahName} - آية {toArabic(b.a)}</span>
                                         </div>
-                                        <div className="flex justify-between items-center mt-1">
-                                            <div className="text-xs font-bold opacity-70">{b.date} | {b.time}</div>
+                                        
+                                        <div className="flex flex-col gap-0.5 text-[10px] font-bold opacity-60">
+                                            <div className="flex items-center gap-1">
+                                                <i className="fa-regular fa-calendar text-[8px]"></i>
+                                                {b.date} | {b.time}
+                                            </div>
+                                            {hijriDate && (
+                                                <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                                                    <i className="fa-solid fa-moon text-[8px]"></i>
+                                                    {hijriDate}
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                    <div className="flex justify-end mt-2">
-                                        <button onClick={() => onDelete(b.id)} className="text-red-500 hover:text-red-700 p-1 text-lg">
-                                            <i className="fa-solid fa-trash-alt"></i>
-                                        </button>
                                     </div>
                                 </div>
                             );
                         })
                     )}
-                </div>
-                <div className="p-3 border-t themed-card-bg rounded-b-2xl">
-                    <button onClick={onClose} className="w-full py-2 rounded-xl font-bold theme-btn-bg">إغلاق</button>
                 </div>
             </div>
         </div>

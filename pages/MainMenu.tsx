@@ -150,7 +150,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
       id: 'more-page',
       text: 'صفحة المزيد: اكتشف جميع أقسام التطبيق الإضافية والمميزات الجديدة في مكان واحد.',
       position: { bottom: '150px', right: '50%' },
-      selector: '[data-id="nav-button-more"]',
+      selector: '[data-item-id="more"]',
       arrow: 'down',
       icon: <LayoutGrid className="w-8 h-8 text-white" />
     },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download, Type, Shield, Bell, Check, Loader2, ChevronLeft } from 'lucide-react';
-import { THEMES, DEFAULT_SETTINGS, READERS, MEMORIZATION_READERS, RECITERS, FONTS, TAFSEERS, JUZ_MAP, SURAH_NAMES_AR, SAJDAH_LOCATIONS } from './constants';
+import { THEMES, DEFAULT_SETTINGS, READERS, MEMORIZATION_READERS, RECITERS, FONTS, TAFSEERS, JUZ_MAP, SURAH_NAMES_AR, SAJDAH_LOCATIONS, toArabic } from './constants';
 import { quranData } from '../../utils/quranData';
 
 interface FloatingMenuProps {
@@ -1165,43 +1165,58 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                     </div>
                 ) : currentView === 'sajdah_list' ? (
                     <div className="flex flex-col h-full overflow-hidden animate-fadeIn">
-                        <div className="p-4 border-b flex items-center justify-center" style={{ backgroundColor: `${currentTheme.accent}15`, borderBottomColor: `${currentTheme.text}20` }}>
+                        <div className="p-2 border-b flex items-center justify-center" style={{ backgroundColor: `${currentTheme.accent}15`, borderBottomColor: `${currentTheme.text}20` }}>
                             <button 
                                 onClick={() => handleAction(() => openModal('sajdah-card'))}
-                                className="p-2.5 rounded-xl transition-all flex items-center gap-2 w-full justify-center shadow-sm active:scale-95"
+                                className="p-1.5 rounded-lg transition-all flex items-center gap-2 w-full justify-center shadow-sm active:scale-95"
                                 style={{ backgroundColor: `${currentTheme.accent}20`, color: currentTheme.accent, border: `1px solid ${currentTheme.accent}40` }}
                             >
-                                <Info size={20} />
-                                <span className="text-sm font-bold">معلومات</span>
+                                <span className="text-[10px] font-bold">معلومات السجدة</span>
                             </button>
                         </div>
-                        <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
-                            <div className="space-y-2">
-                                {SAJDAH_LOCATIONS.map((loc, idx) => (
-                                    <div 
-                                        key={idx}
-                                        className="p-3 rounded-xl border flex items-center justify-between group transition-all cursor-pointer"
-                                        style={{ 
-                                            backgroundColor: `${currentTheme.text}05`, 
-                                            borderColor: `${currentTheme.text}10`,
-                                            color: currentTheme.text
-                                        }}
-                                        onClick={() => {
-                                            if (jumpToAyah) {
-                                                jumpToAyah(loc.s, loc.a, true);
-                                                setIsFloatingMenuOpen(false);
-                                            }
-                                        }}
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            <span className="font-bold text-sm">سورة {SURAH_NAMES_AR[loc.s - 1]}</span>
-                                            <span className="text-[10px] opacity-60">آية {loc.a}</span>
+                        <div className="flex-grow overflow-y-auto p-2.5 custom-scrollbar">
+                            <div className="space-y-1.5">
+                                {SAJDAH_LOCATIONS.map((loc, idx) => {
+                                    const juzNum = (() => {
+                                        for (let i = JUZ_MAP.length - 1; i >= 0; i--) {
+                                            const juz = JUZ_MAP[i];
+                                            if (loc.s > juz.s || (loc.s === juz.s && loc.a >= juz.a)) return juz.j;
+                                        }
+                                        return 1;
+                                    })();
+                                    return (
+                                        <div 
+                                            key={idx}
+                                            className="p-2 rounded-lg border flex flex-col items-center gap-0.5 transition-all cursor-pointer hover:shadow-sm active:scale-[0.98]"
+                                            style={{ 
+                                                backgroundColor: `${currentTheme.text}05`, 
+                                                borderColor: `${currentTheme.text}10`,
+                                                color: currentTheme.text
+                                            }}
+                                            onClick={() => {
+                                                if (jumpToAyah) {
+                                                    jumpToAyah(loc.s, loc.a, true);
+                                                    setIsFloatingMenuOpen(false);
+                                                }
+                                            }}
+                                        >
+                                            <div className="font-bold text-[11px] text-center" style={{ fontFamily: 'inherit' }}>
+                                                {toArabic(idx + 1)} - سورة {SURAH_NAMES_AR[loc.s - 1]}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-[9px] opacity-70 font-bold">
+                                                <span className="flex items-center gap-1">
+                                                    <i className="fa-regular fa-file-lines text-[8px]"></i>
+                                                    آية {toArabic(loc.a)}
+                                                </span>
+                                                <span className="w-px h-2.5 bg-current opacity-20"></span>
+                                                <span className="flex items-center gap-1">
+                                                    <i className="fa-solid fa-book-open text-[8px]"></i>
+                                                    الجزء {toArabic(juzNum)}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `${currentTheme.accent}20`, color: currentTheme.accent }}>
-                                            <ChevronLeft size={18} />
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                         <div className="p-3 border-t" style={{ backgroundColor: `${currentTheme.accent}10`, borderTopColor: `${currentTheme.text}20` }}>

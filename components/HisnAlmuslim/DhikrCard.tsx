@@ -20,7 +20,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({ dhikr, currentCount, isFinished, 
 
     return (
         <div 
-            className={`themed-card p-5 rounded-2xl border relative overflow-hidden group transition-all duration-300 ${isFinished ? 'opacity-60' : 'cursor-pointer'}`} 
+            className={`themed-card p-5 pb-0 rounded-2xl border relative overflow-hidden group transition-all duration-300 ${isFinished ? 'opacity-60' : 'cursor-pointer'}`} 
             onClick={onDecrement}
         >
             <div className="flex justify-between items-start mb-2">
@@ -37,14 +37,13 @@ const DhikrCard: React.FC<DhikrCardProps> = ({ dhikr, currentCount, isFinished, 
             </p>
             
             {dhikr.source && <p className="text-xs mt-2 text-center themed-text-muted opacity-80 font-cairo">{dhikr.source}</p>}
-            <div className="flex justify-center mt-3">
-                <button onClick={(e) => { e.stopPropagation(); onZoom(); }} className="p-2 rounded-full hover:bg-card-bg-hover transition-colors">
+            <div className="flex justify-center">
+                <button onClick={(e) => { e.stopPropagation(); onZoom(); }} className="p-1 rounded-full hover:bg-card-bg-hover transition-colors">
                     <i className="fa-solid fa-magnifying-glass-plus text-lg"></i>
                 </button>
             </div>
             
             {!isFinished && <div className="absolute inset-0 opacity-0 group-active:opacity-100 transition pointer-events-none" style={{backgroundColor: theme.palette[0]+'15'}}></div>}
-            {!isFinished && <p className="text-xs text-center themed-text-muted mt-4 opacity-0 group-hover:opacity-100 transition-opacity">اضغط للتسبيح</p>}
         </div>
     );
 };

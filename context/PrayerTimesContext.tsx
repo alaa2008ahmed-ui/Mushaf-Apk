@@ -660,9 +660,9 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                                 });
                             }
 
-                            // Surah Al-Kahf reminder on Thursday night (1 hour after Maghrib)
+                            // Surah Al-Kahf reminder on Thursday at 9:00 PM
                             if (date.getDay() === 4) {
-                                const kahfDate = new Date(maghribDate.getTime() + 60 * 60000);
+                                const kahfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 21, 0, 0);
                                 if (kahfDate > new Date()) {
                                     notificationsToSchedule.push({
                                         id: 2000 + day,

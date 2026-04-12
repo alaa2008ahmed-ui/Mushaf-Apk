@@ -293,5 +293,6 @@ export const DEFAULT_SETTINGS = {
     tafseer: 'ar.jalalayn',
     lockHighlightColor: false,
     ayahRepeatCount: 1,
-    showPageBorder: true
+    showPageBorder: true,
+    surahHeaderDesign: 1
 };

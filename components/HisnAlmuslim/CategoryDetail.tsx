@@ -13,7 +13,7 @@ const CategoryDetail: React.FC<CategoryDetailProps> = ({ selectedCategory, onZoo
     return (
         <div className="space-y-4 fade-in">
             {items.map((item: any, index: number) => (
-                <div key={index} className="themed-card p-5 rounded-2xl border relative overflow-hidden group mb-4 transition-all duration-300">
+                <div key={index} className="themed-card p-5 pb-2 rounded-2xl border relative overflow-hidden group mb-4 transition-all duration-300">
                     <div className="flex justify-between items-center mb-3">
                         <span className={`text-xs px-2 py-1 rounded-full font-bold`} style={{ 
                             backgroundColor: item.type === 'ayah' ? '#dbeafe' : item.type === 'hadith' ? '#fef3c7' : '#dcfce7',

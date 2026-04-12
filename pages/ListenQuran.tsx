@@ -283,16 +283,6 @@ function ListenQuran({ onBack, onOpenThemes }) {
                         <span>{surahNumber} - {surahName}</span>
                         <i className="fa-solid fa-chevron-down opacity-50"></i>
                     </button>
-                    <button 
-                        onClick={() => setShowDownloadModal(true)} 
-                        className="w-full p-3 text-center rounded-xl border font-bold themed-card flex justify-between items-center"
-                    >
-                        <div className="flex items-center gap-2">
-                            <i className="fa-solid fa-download" style={{ color: theme.palette[0] }}></i>
-                            <span>تحميل المصحف</span>
-                        </div>
-                        <i className="fa-solid fa-chevron-left opacity-50"></i>
-                    </button>
                 </div>
 
 
@@ -328,21 +318,36 @@ function ListenQuran({ onBack, onOpenThemes }) {
 
                 </div>
 
-                <div className="pt-6 pb-2 flex-shrink-0">
-                     <div className="themed-card rounded-xl p-3 flex items-center justify-between">
-                        <label htmlFor="continuous-play-toggle" className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textColor }}>
-                            <i className="fa-solid fa-repeat" style={{ color: theme.palette[0] }}></i>
-                            <span>تشغيل متواصل</span>
-                        </label>
-                        <button
-                            id="continuous-play-toggle"
-                            onClick={() => setIsContinuousPlay(prev => !prev)}
-                            className={`relative w-12 h-7 rounded-full transition-colors`}
-                            style={{ backgroundColor: isContinuousPlay ? theme.palette[0] : theme.cardBorder }}
-                            aria-checked={isContinuousPlay}
-                            role="switch"
+                <div className="pt-6 pb-2 flex-shrink-0 space-y-3">
+                    <div className="themed-card rounded-2xl p-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <label htmlFor="continuous-play-toggle" className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textColor }}>
+                                <i className="fa-solid fa-repeat" style={{ color: theme.palette[0] }}></i>
+                                <span>تشغيل متواصل</span>
+                            </label>
+                            <button
+                                id="continuous-play-toggle"
+                                onClick={() => setIsContinuousPlay(prev => !prev)}
+                                className={`relative w-12 h-7 rounded-full transition-colors`}
+                                style={{ backgroundColor: isContinuousPlay ? theme.palette[0] : theme.cardBorder }}
+                                aria-checked={isContinuousPlay}
+                                role="switch"
+                            >
+                                <span className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ease-in-out ${isContinuousPlay ? 'left-6' : 'left-1'}`}></span>
+                            </button>
+                        </div>
+
+                        <div className="h-px w-full bg-gray-200 dark:bg-gray-700 opacity-30"></div>
+
+                        <button 
+                            onClick={() => setShowDownloadModal(true)} 
+                            className="w-full flex justify-between items-center group"
                         >
-                            <span className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ease-in-out ${isContinuousPlay ? 'left-6' : 'left-1'}`}></span>
+                            <div className="flex items-center gap-2">
+                                <i className="fa-solid fa-download" style={{ color: theme.palette[0] }}></i>
+                                <span className="font-bold text-sm">تحميل المصحف</span>
+                            </div>
+                            <i className="fa-solid fa-chevron-left opacity-30 group-hover:opacity-100 transition-opacity"></i>
                         </button>
                     </div>
                     <p className="text-xs text-center mt-2" style={{ color: theme.textColor, opacity: 0.6 }}>ملاحظة: لا تعمل هذه الصفحة إلا إذا كنت متصلاً بالإنترنت، ويفضل الواي فاي.</p>

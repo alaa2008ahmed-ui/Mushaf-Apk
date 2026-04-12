@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { toArabic, SURAH_INFO, SURAH_NAMES_AR, getAyahCountText, SAJDAH_LOCATIONS } from './constants';
+import SurahHeader from './SurahHeader';
 
 interface VerticalReadingViewProps {
     quranData: any;
@@ -18,6 +19,7 @@ interface VerticalReadingViewProps {
     hideVerses?: boolean;
     memorizationSettings?: any;
     isLandscape?: boolean;
+    onSurahHeaderLongPress?: () => void;
 }
 
 // Global cache to ensure instant loading after first fetch
@@ -40,7 +42,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     modeSuffix = '_v',
     hideVerses = false,
     memorizationSettings,
-    isLandscape = false
+    isLandscape = false,
+    onSurahHeaderLongPress
 }) => {
     const [tafseerData, setTafseerData] = useState<any[]>(cachedTafseerData || []);
     const [meaningsData, setMeaningsData] = useState<any[]>(cachedMeaningsData || []);
@@ -301,43 +304,16 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
         }
 
         if (item.type === 'header') {
-            const headerBg = currentTheme?.headerBg || '#2ecc71';
-            const headerBorder = currentTheme?.accent || '#1a5d38';
-            const headerText = currentTheme?.headerText || '#ffffff';
-            const cartoucheBg = currentTheme?.bg || '#e8f8f1';
-            const cartoucheText = currentTheme?.accent || '#1a5d38';
-
             return (
-                <div className="px-4 py-6">
-                    <div className="surah-header-visual relative h-14 w-full flex items-center justify-between px-2 sm:px-6 rounded-md border-[3px] overflow-hidden"
-                         style={{ 
-                             background: headerBg,
-                             borderColor: headerBorder,
-                             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
-                         }}>
-                        <div className="font-bold text-sm sm:text-lg z-10 drop-shadow-md whitespace-nowrap" style={{ color: headerText }}>
-                            {getAyahCountText(item.ayahCount)}
-                        </div>
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="relative h-10 px-6 sm:px-12 flex items-center justify-center border-2 shadow-inner max-w-[50%] sm:max-w-none"
-                                 style={{ 
-                                     borderRadius: '50px / 50px', 
-                                     minWidth: '140px',
-                                     backgroundColor: cartoucheBg,
-                                     borderColor: headerBorder
-                                 }}>
-                                <h2 className="text-base sm:text-xl font-bold whitespace-nowrap mb-0" style={{ color: cartoucheText, transform: 'translateY(-4px)' }}>
-                                    سُورَةُ {item.surahName}
-                                </h2>
-                                <div className="absolute left-0 top-0 bottom-0 w-4 border-r-2 rounded-l-full opacity-30" style={{ borderColor: headerBorder }}></div>
-                                <div className="absolute right-0 top-0 bottom-0 w-4 border-l-2 rounded-r-full opacity-30" style={{ borderColor: headerBorder }}></div>
-                            </div>
-                        </div>
-                        <div className="font-bold text-sm sm:text-lg z-10 drop-shadow-md whitespace-nowrap" style={{ color: headerText }}>
-                            {item.surahType}
-                        </div>
-                    </div>
-                </div>
+                <SurahHeader 
+                    surahNumber={item.surahNumber}
+                    surahName={item.surahName}
+                    surahType={item.surahType}
+                    ayahCount={item.ayahCount}
+                    currentTheme={currentTheme}
+                    design={settings.surahHeaderDesign || 1}
+                    onLongPress={onSurahHeaderLongPress}
+                />
             );
         }
 
