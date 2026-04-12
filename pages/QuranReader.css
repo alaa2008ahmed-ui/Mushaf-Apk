@@ -73,8 +73,9 @@
     z-index: 100;
 }
 
-.quran-reader-container.no-border::before {
-    display: none;
+.quran-reader-container.no-border::before,
+.quran-reader-container.landscape-mode::before {
+    display: none !important;
 }
 
 .quran-reader-container ::-webkit-scrollbar { display: none; }

@@ -1376,9 +1376,11 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     currentEl = currentEl.offsetParent as HTMLElement;
                 }
                 
-                // Add a small padding so the ayah isn't exactly at the top edge, unless it's a page jump
+                // Center the ayah in the viewport, unless it's a page jump
                 if (!isPageJump) {
-                    offsetTop = Math.max(0, offsetTop - 20);
+                    const containerHeight = container.clientHeight;
+                    const elHeight = targetEl.clientHeight;
+                    offsetTop = Math.max(0, offsetTop - (containerHeight / 2) + (elHeight / 2));
                 }
                 
                 if (instant) {
