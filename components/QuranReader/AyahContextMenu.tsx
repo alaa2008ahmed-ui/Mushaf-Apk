@@ -12,6 +12,7 @@ interface AyahContextMenuProps {
     renderCheckerboard: (color: string) => React.CSSProperties;
     PREDEFINED_COLORS: string[];
     currentTheme: any;
+    isLandscape?: boolean;
 }
 
 const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
@@ -23,23 +24,24 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
     onTempSettingsChange,
     renderCheckerboard,
     PREDEFINED_COLORS,
-    currentTheme
+    currentTheme,
+    isLandscape
 }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[1200] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={() => {
+        <div className={`fixed inset-0 z-[1200] bg-transparent flex items-center justify-center ${isLandscape ? 'p-2' : 'p-4'} animate-fadeIn`} onClick={() => {
             setAyahContextMenu((p: any) => ({...p, isOpen: false}));
         }}>
             <div 
-                className="ayah-context-menu w-full max-w-[320px] bg-white rounded-2xl shadow-2xl transition-all duration-300 flex flex-col pointer-events-auto overflow-hidden animate-modal-enter" 
+                className={`ayah-context-menu w-full ${isLandscape ? 'max-w-[280px] max-h-[90vh]' : 'max-w-[320px] max-h-[70vh]'} bg-white rounded-2xl shadow-2xl transition-all duration-300 flex flex-col pointer-events-auto overflow-hidden animate-modal-enter`} 
                 style={{ 
                     fontFamily: currentTheme.font,
                     border: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`
                 }}
                 onClick={e => e.stopPropagation()}
             >
-                <div className="p-4 overflow-y-auto max-h-[70vh] custom-scrollbar space-y-5">
+                <div className="p-4 overflow-y-auto flex-1 custom-scrollbar space-y-5">
                     {/* Colors Section */}
                     <div className="space-y-3">
                         <div className="bg-blue-50/50 py-1.5 px-3 rounded-md flex items-center justify-between">

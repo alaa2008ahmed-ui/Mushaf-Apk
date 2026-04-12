@@ -36,7 +36,7 @@ const SurahDesignPickerModal: React.FC<SurahDesignPickerModalProps> = ({
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className={`fixed inset-0 z-[1200] flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'}`}>
+                <div className={`fixed inset-0 z-[1200] flex items-center justify-center ${isLandscape ? 'p-2' : 'p-4'}`}>
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -48,7 +48,7 @@ const SurahDesignPickerModal: React.FC<SurahDesignPickerModalProps> = ({
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className={`relative w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-2xl max-h-[80vh] rounded-2xl'} overflow-hidden shadow-2xl flex flex-col`}
+                        className={`relative w-full ${isLandscape ? 'max-w-2xl max-h-[90vh] rounded-2xl' : 'max-w-2xl max-h-[80vh] rounded-2xl'} overflow-hidden shadow-2xl flex flex-col`}
                         style={{ backgroundColor: currentTheme.bg, border: `1px solid ${currentTheme.barBorder}` }}
                     >
                         <div 
