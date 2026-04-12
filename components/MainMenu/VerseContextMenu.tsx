@@ -13,6 +13,7 @@ interface VerseContextMenuProps {
     currentTheme: any;
     renderCheckerboard: (color: string) => React.CSSProperties;
     PREDEFINED_COLORS: string[];
+    isLandscape?: boolean;
 }
 
 const VerseContextMenu: React.FC<VerseContextMenuProps> = ({
@@ -22,7 +23,8 @@ const VerseContextMenu: React.FC<VerseContextMenuProps> = ({
     onSave,
     currentTheme,
     renderCheckerboard,
-    PREDEFINED_COLORS
+    PREDEFINED_COLORS,
+    isLandscape
 }) => {
     const [tempSettings, setTempSettings] = useState(settings);
     const [activeColorField, setActiveColorField] = useState<'bgColor' | 'textColor' | null>(null);
@@ -42,13 +44,13 @@ const VerseContextMenu: React.FC<VerseContextMenuProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-[300] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
+        <div className={`fixed inset-0 z-[1200] bg-black/40 backdrop-blur-sm flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} onClick={onClose}>
             <div 
-                className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl flex flex-col max-h-[85vh] animate-modal-enter overflow-hidden" 
+                className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none' : 'max-w-sm rounded-3xl max-h-[85vh]'} shadow-2xl flex flex-col animate-modal-enter overflow-hidden`} 
                 style={{ backgroundColor: currentTheme?.modalBg || '#ffffff', color: currentTheme?.modalText || '#000000', fontFamily: currentTheme?.font }}
                 onClick={e => e.stopPropagation()}
             >
-                <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                <div className={`p-6 overflow-y-auto flex-1 space-y-6 ${isLandscape ? 'max-w-sm mx-auto w-full' : ''}`}>
                     <h3 className="text-xl font-bold text-center mb-2">تخصيص مظهر الآية</h3>
                     
                     {/* Colors Section */}

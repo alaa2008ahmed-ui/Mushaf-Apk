@@ -10,8 +10,8 @@ const FontSelectModal: FC<{
 }> = ({ isOpen, onClose, onSelect, currentFontId, isLandscape }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[1200] bg-transparent flex justify-center items-center p-4 animate-fadeIn" onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md sm:max-w-2xl'} rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
+        <div className={`fixed inset-0 z-[1200] bg-transparent flex justify-center items-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} onClick={onClose}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md sm:max-w-2xl rounded-2xl max-h-[90vh]'} shadow-2xl flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()}>
                 <div className={`p-3 overflow-y-auto flex-1 grid ${isLandscape ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2'}`}>
                     {FONTS.map(f => (
                         <button 

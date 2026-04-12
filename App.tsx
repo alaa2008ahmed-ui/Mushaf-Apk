@@ -211,6 +211,16 @@ function AppContent({
     setShowExitConfirm
   });
 
+  const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const handleConfirmExit = () => {
     CapacitorApp.exitApp();
   };
@@ -234,6 +244,7 @@ function AppContent({
       {isThemeSelectorOpen && (
         <ThemeSelector 
           onClose={closeThemeSelector} 
+          isLandscape={isLandscape}
         />
       )}
 
@@ -242,6 +253,7 @@ function AppContent({
               isOpen={showExitConfirm}
               onConfirm={handleConfirmExit}
               onClose={() => setShowExitConfirm(false)}
+              isLandscape={isLandscape}
           />
       )}
       

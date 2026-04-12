@@ -11,9 +11,10 @@ interface MenuCustomizationModalProps {
     allItems: MenuItem[];
     visibleIds: string[];
     onSave: (selectedIds: string[]) => void;
+    isLandscape?: boolean;
 }
 
-const MenuCustomizationModal: React.FC<MenuCustomizationModalProps> = ({ isOpen, onClose, allItems, visibleIds, onSave }) => {
+const MenuCustomizationModal: React.FC<MenuCustomizationModalProps> = ({ isOpen, onClose, allItems, visibleIds, onSave, isLandscape }) => {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
     useEffect(() => {
@@ -38,8 +39,8 @@ const MenuCustomizationModal: React.FC<MenuCustomizationModalProps> = ({ isOpen,
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4 fade-in">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[80vh]">
+        <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm ${isLandscape ? 'p-0' : 'p-4'} fade-in`}>
+            <div className={`bg-white dark:bg-gray-800 ${isLandscape ? 'max-w-4xl h-full rounded-none' : 'max-w-md rounded-2xl max-h-[80vh]'} shadow-2xl w-full overflow-hidden flex flex-col`}>
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">تخصيص القائمة الرئيسية</h3>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">

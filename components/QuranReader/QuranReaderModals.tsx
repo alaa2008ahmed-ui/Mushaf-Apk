@@ -81,6 +81,7 @@ export const QuranReaderModals = ({
                     quranData={quranData}
                     currentTheme={currentTheme}
                     readingMode={readingMode}
+                    isLandscape={isLandscapeRef.current}
                 />
             )}
 
@@ -95,6 +96,7 @@ export const QuranReaderModals = ({
                         closeModal('bookmarks');
                     }}
                     currentTheme={currentTheme}
+                    isLandscape={isLandscapeRef.current}
                 />
             )}
 
@@ -195,6 +197,7 @@ export const QuranReaderModals = ({
                     ayahNumber={tafseerInfo.a}
                     isLoading={isTafseerLoading}
                     currentTheme={currentTheme}
+                    isLandscape={isLandscapeRef.current}
                 />
             )}
 
@@ -207,6 +210,7 @@ export const QuranReaderModals = ({
                     onSelect={handleTafseerSelect}
                     currentTafseer={settings.tafseer}
                     currentTheme={currentTheme}
+                    isLandscape={isLandscapeRef.current}
                 />
             )}
 
@@ -231,6 +235,7 @@ export const QuranReaderModals = ({
                         setAyahContextMenu((prev: any) => ({ ...prev, isCustomizing: true }));
                     }}
                     currentTheme={currentTheme}
+                    isLandscape={isLandscapeRef.current}
                 />
             )}
 
@@ -239,6 +244,7 @@ export const QuranReaderModals = ({
                     sajdahInfo={sajdahCardInfo.info}
                     onClose={handleCloseSajdahCard}
                     currentTheme={currentTheme}
+                    isLandscape={isLandscapeRef.current}
                 />
             )}
         </>

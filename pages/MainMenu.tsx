@@ -109,6 +109,16 @@ function MainMenu({ onNavigate, onOpenThemes }) {
       return { backgroundColor: color };
   };
 
+  const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const handleSaveVerseSettings = (newSettings: any) => {
       setVerseSettings(newSettings);
       localStorage.setItem('mainMenuVerseSettings', JSON.stringify(newSettings));
@@ -322,6 +332,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         isOpen={isPasscodeOpen}
         onClose={() => setIsPasscodeOpen(false)}
         onSuccess={() => setIsCustomizationOpen(true)}
+        isLandscape={isLandscape}
       />
 
       <MenuCustomizationModal 
@@ -330,6 +341,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         allItems={ALL_POSSIBLE_ITEMS}
         visibleIds={visibleItems}
         onSave={handleSaveCustomization}
+        isLandscape={isLandscape}
       />
 
       <VerseContextMenu 
@@ -340,6 +352,7 @@ function MainMenu({ onNavigate, onOpenThemes }) {
         currentTheme={theme}
         renderCheckerboard={renderCheckerboard}
         PREDEFINED_COLORS={PREDEFINED_COLORS}
+        isLandscape={isLandscape}
       />
 
       <TutorialOverlay 

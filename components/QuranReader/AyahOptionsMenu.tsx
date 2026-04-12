@@ -13,24 +13,25 @@ interface AyahOptionsMenuProps {
     onShare?: () => void;
     onCopy?: () => void;
     currentTheme: any;
+    isLandscape?: boolean;
 }
 
 const AyahOptionsMenu: React.FC<AyahOptionsMenuProps> = ({
-    x, y, onClose, onPlay, onTafseer, onTranslation, onBookmark, onCustomize, onShare, onCopy, currentTheme
+    x, y, onClose, onPlay, onTafseer, onTranslation, onBookmark, onCustomize, onShare, onCopy, currentTheme, isLandscape
 }) => {
     const iconColor = currentTheme.accent || '#000000';
 
     return (
-        <div className="fixed inset-0 z-[1200] bg-black/30 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
+        <div className={`fixed inset-0 z-[1200] bg-black/30 flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} backdrop-blur-sm animate-fadeIn`} onClick={onClose}>
             <div 
-                className="w-full max-w-[280px] bg-white rounded-2xl shadow-2xl transition-all duration-300 flex flex-col pointer-events-auto overflow-hidden animate-modal-enter" 
+                className={`w-full ${isLandscape ? 'max-w-4xl h-full rounded-none' : 'max-w-[280px] rounded-2xl'} bg-white shadow-2xl transition-all duration-300 flex flex-col pointer-events-auto overflow-hidden animate-modal-enter`} 
                 style={{ 
                     fontFamily: currentTheme.font,
                     border: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`
                 }}
                 onClick={e => e.stopPropagation()}
             >
-                <div className="p-4 flex flex-col gap-1 overflow-y-auto custom-scrollbar">
+                <div className={`p-4 flex flex-col gap-1 overflow-y-auto custom-scrollbar ${isLandscape ? 'flex-1' : ''}`}>
                     <div className="bg-blue-50/50 py-1.5 px-3 rounded-md mb-2 text-right">
                         <span className="text-xs font-bold text-gray-700">خيارات الآية</span>
                     </div>

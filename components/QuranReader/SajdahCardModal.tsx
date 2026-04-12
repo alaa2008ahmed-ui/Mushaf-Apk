@@ -15,9 +15,9 @@ const SajdahCardModal: FC<{
     const btnBorder = currentTheme?.btnBorder || 'transparent';
 
     return (
-        <div className="fixed inset-0 z-[2000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
+        <div className={`fixed inset-0 z-[2000] bg-black/70 backdrop-blur-sm flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} onClick={onClose}>
             <div 
-                className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl shadow-2xl flex flex-col max-h-[90vh] border border-white/10`} 
+                className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md rounded-2xl max-h-[90vh]'} shadow-2xl flex flex-col border border-white/10`} 
                 onClick={e => e.stopPropagation()}
                 style={{ fontFamily: currentTheme?.font }}
             >

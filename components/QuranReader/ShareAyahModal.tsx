@@ -721,7 +721,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     };
 
     return (
-        <div className="fixed z-[1200] bg-black/40 backdrop-blur-sm flex items-center justify-center overflow-hidden" style={{ top: `${toolbarHeights.top}px`, bottom: `${toolbarHeights.bottom}px`, left: 0, right: 0 }} dir="rtl" onClick={onClose}>
+        <div className="fixed z-[1200] bg-black/40 backdrop-blur-sm flex items-center justify-center overflow-hidden" style={{ top: 0, bottom: 0, left: 0, right: 0 }} dir="rtl" onClick={onClose}>
             {/* Hidden capture element for High Quality Image Share */}
             <div 
                 id="hidden-image-capture"
