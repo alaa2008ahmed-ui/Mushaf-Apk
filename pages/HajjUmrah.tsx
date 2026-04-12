@@ -113,11 +113,21 @@ function HajjUmrah({ onBack }) {
 
             {zoomedDuaa && (
                 <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center p-4" onClick={closeZoomModal}>
-                    <div className="themed-card p-6 rounded-2xl w-full max-w-2xl text-center relative" onClick={e => e.stopPropagation()}>
-                        <p className="text-4xl md:text-5xl leading-relaxed font-amiri" dangerouslySetInnerHTML={{ __html: zoomedDuaa.text }}></p>
-                        <button onClick={closeZoomModal} className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                            <i className="fa-solid fa-times text-2xl"></i>
+                    <div className="themed-card p-8 rounded-3xl w-full max-w-2xl text-center relative flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                        <button 
+                            onClick={closeZoomModal} 
+                            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 transition-colors z-10"
+                        >
+                            <i className="fa-solid fa-xmark text-xl"></i>
                         </button>
+
+                        <div className="overflow-y-auto hide-scrollbar flex-1 py-4">
+                            <p className="text-3xl md:text-4xl leading-relaxed font-amiri" dangerouslySetInnerHTML={{ __html: zoomedDuaa.text }}></p>
+                        </div>
+
+                        <div className="mt-6 shrink-0">
+                            <button onClick={closeZoomModal} className="w-full py-3 rounded-xl font-bold bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:opacity-90 transition-opacity">إغلاق</button>
+                        </div>
                     </div>
                 </div>
             )}

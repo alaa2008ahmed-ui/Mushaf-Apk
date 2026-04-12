@@ -88,10 +88,18 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         if (settings.customBg) {
             if (settings.customBg.isVideo && videoBg) {
                 videoBg.style.display = 'block';
+                videoBg.muted = true; // Ensure muted for autoplay
                 if (videoBg.src !== settings.customBg.url) {
                     videoBg.src = settings.customBg.url;
                 }
-                videoBg.play().catch(e => console.warn("Video autoplay failed:", e));
+                const playPromise = videoBg.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(e => {
+                        if (e.name !== 'AbortError') {
+                            console.warn("Video autoplay failed:", e);
+                        }
+                    });
+                }
                 document.body.style.backgroundImage = 'none';
                 document.body.style.backgroundColor = 'black'; // Fallback
             } else {

@@ -237,6 +237,26 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const hasJumpedRef = useRef(false);
 
+    const handleHomeClick = useCallback(async (targetPage?: string) => {
+        if (isLandscape) {
+            setIsLandscape(false);
+            try {
+                if (Capacitor.isNativePlatform()) {
+                    await ScreenOrientation.lock({ orientation: 'portrait' });
+                    // Give a small delay for orientation to settle
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            } catch (e) {
+                console.error('Failed to lock orientation to portrait', e);
+            }
+        }
+        if (targetPage === 'home') {
+            onNavigate('home');
+        } else {
+            onBack();
+        }
+    }, [isLandscape, onBack, onNavigate]);
+
     const [isLandscapeUIHidden, setIsLandscapeUIHidden] = useState(() => {
         // Default to false (visible) to ensure UI is seen in browser preview
         // Only hide if explicitly saved as hidden in localStorage for this mode
@@ -716,12 +736,30 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 }
 
                 if (scrollable) {
-                    if (e.cancelable) {
-                        e.preventDefault();
+                    const isSimulatedLandscape = isLandscape && window.innerHeight > window.innerWidth;
+                    
+                    if (isSimulatedLandscape) {
+                        if (e.cancelable) {
+                            e.preventDefault();
+                        }
+                        // In 90deg rotation: 
+                        // Physical RIGHT (deltaX > 0) is content DOWN -> scrollTop decreases to follow finger
+                        // Physical DOWN (deltaY > 0) is content LEFT -> scrollLeft increases to follow finger
+                        scrollable.scrollTop -= deltaX;
+                        scrollable.scrollLeft += deltaY;
+                        activeScrollable = scrollable;
+                    } else if (isLandscape) {
+                        // Native landscape: normal mapping
+                        // We could let browser handle it, but if we are here, we might want to override.
+                        // Actually, for native landscape, it's better to NOT preventDefault and let browser handle it.
+                        // But let's keep it consistent if we want custom momentum.
+                        if (e.cancelable) {
+                            e.preventDefault();
+                        }
+                        scrollable.scrollTop -= deltaY;
+                        scrollable.scrollLeft -= deltaX;
+                        activeScrollable = scrollable;
                     }
-                    scrollable.scrollTop += deltaX;
-                    scrollable.scrollLeft += deltaY;
-                    activeScrollable = scrollable;
                 }
             }
         };
@@ -738,13 +776,19 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             let vx = velocityX;
             let vy = velocityY;
             const friction = 0.95;
+            const isSimulatedLandscape = isLandscape && window.innerHeight > window.innerWidth;
             
             const applyMomentum = () => {
                 if (Math.abs(vx) < 0.1 && Math.abs(vy) < 0.1) return;
                 
                 if (activeScrollable) {
-                    activeScrollable.scrollTop += vx * 16;
-                    activeScrollable.scrollLeft += vy * 16;
+                    if (isSimulatedLandscape) {
+                        activeScrollable.scrollTop -= vx * 16;
+                        activeScrollable.scrollLeft += vy * 16;
+                    } else {
+                        activeScrollable.scrollTop -= vy * 16;
+                        activeScrollable.scrollLeft -= vx * 16;
+                    }
                 }
                 
                 vx *= friction;
@@ -1553,7 +1597,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                                 // Auto-return to memorization page
                                 setTimeout(() => {
                                     if (!isMountedRef.current) return;
-                                    if (onBack) onBack();
+                                    if (onBack) handleHomeClick();
                                     else if (onNavigate) onNavigate('memorization');
                                 }, 1500);
                             }
@@ -2464,7 +2508,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 openModal('themes-modal');
                 return;
             } else if (action === 'go_home') {
-                onBack();
+                handleHomeClick();
                 return;
             } else if (action === 'go_athkar') {
                 onNavigate('athkar');
@@ -3254,7 +3298,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 handleAutoScrollButtonPointerUp={handleAutoScrollButtonPointerUp}
                 handleAutoScrollButtonPointerLeave={handleAutoScrollButtonPointerLeave}
                 autoScrollState={autoScrollState}
-                onBack={onBack}
+                onBack={handleHomeClick}
             />
             {isAutoScrollSettingsOpen && (
             <AutoScrollSettingsModal
@@ -3287,8 +3331,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             <WirdCompletionModal 
                 isOpen={showWirdCompleteModal} 
                 onClose={() => setShowWirdCompleteModal(false)} 
-                onGoToWird={onBack} 
-                onGoHome={() => onNavigate('home')}
+                onGoToWird={handleHomeClick} 
+                onGoHome={() => handleHomeClick('home')}
                 onMarkCompleted={handleMarkWirdCompleted}
                 currentTheme={currentTheme} 
             />

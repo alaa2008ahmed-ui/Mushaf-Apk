@@ -17,10 +17,16 @@ const VideoSplash: React.FC<VideoSplashProps> = ({ onEnded }) => {
         setIsReady(true);
       }
       
-      videoRef.current.play().catch(error => {
-        console.error("Video play failed:", error);
-        onEnded();
-      });
+      videoRef.current.muted = true;
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          if (error.name !== 'AbortError') {
+            console.error("Video play failed:", error);
+            onEnded();
+          }
+        });
+      }
     }
   }, [onEnded]);
 
@@ -49,6 +55,8 @@ const VideoSplash: React.FC<VideoSplashProps> = ({ onEnded }) => {
         onLoadedData={() => setIsReady(true)}
         onCanPlay={() => setIsReady(true)}
         onEnded={handleEnded}
+        onStalled={onEnded}
+        onError={onEnded}
         style={{ 
           WebkitMaskImage: '-webkit-radial-gradient(white, black)',
           backgroundColor: 'black'

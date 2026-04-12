@@ -58,6 +58,7 @@
     overflow: hidden;
     position: relative;
     background-color: var(--bg-color, #f3f4f6);
+    overscroll-behavior: none;
 }
 
 .quran-reader-container::before {

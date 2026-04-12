@@ -40,6 +40,7 @@
     "@fontsource/tajawal": "^5.2.7",
     "@fortawesome/fontawesome-free": "^7.2.0",
     "@google/genai": "^1.45.0",
+    "@kazishariar/hisnul-muslim-data": "^1.0.2",
     "adhan": "^4.4.3",
     "capacitor-voice-recorder": "^7.0.6",
     "clsx": "^2.1.1",

@@ -62,6 +62,15 @@ export const ARQibla = ({ qiblaDirection, heading, isAligned, theme }: any) => {
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
+                    videoRef.current.muted = true;
+                    const playPromise = videoRef.current.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(err => {
+                            if (err.name !== 'AbortError') {
+                                console.error('Video play failed:', err);
+                            }
+                        });
+                    }
                 }
             } catch (err) {
                 setError('تعذر الوصول إلى الكاميرا. يرجى منح الصلاحية.');

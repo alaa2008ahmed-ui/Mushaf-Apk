@@ -226,10 +226,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     // Find the index of the current ayah in the flattened list
     const initialIndex = useMemo(() => {
         const targetId = `${currentAyah.s}-${currentAyah.a}`;
-        let index = flattenedItems.findIndex(item => item.type === 'ayah' && item.id === targetId);
-        if (index !== -1 && currentAyah.a === 1 && index > 0 && flattenedItems[index - 1].type === 'header') {
-            index = index - 1;
-        }
+        const index = flattenedItems.findIndex(item => item.type === 'ayah' && item.id === targetId);
         return index !== -1 ? index : 0;
     }, [flattenedItems, currentAyah]);
 
@@ -244,17 +241,12 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 return;
             }
             const targetId = `${currentAyah.s}-${currentAyah.a}`;
-            let index = flattenedItems.findIndex(item => item.type === 'ayah' && item.id === targetId);
+            const index = flattenedItems.findIndex(item => item.type === 'ayah' && item.id === targetId);
             
             if (index !== -1) {
-                // If it's the first ayah, scroll to the header instead so the user sees the Surah title
-                if (currentAyah.a === 1 && index > 0 && flattenedItems[index - 1].type === 'header') {
-                    index = index - 1;
-                }
-                
                 virtuosoRef.current.scrollToIndex({
-                    index,
-                    align: 'start', // Align to start for better visibility of the surah/ayah
+                    index: index,
+                    align: 'center', // Align to center for better visibility of the surah/ayah
                     behavior: 'auto' // Instant jump, no smooth scrolling
                 });
             }
@@ -408,7 +400,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     useWindowScroll={false}
                     customScrollParent={scrollParent}
                     data={flattenedItems}
-                    initialTopMostItemIndex={initialIndex}
+                    initialTopMostItemIndex={{ index: initialIndex, align: 'center' }}
                     overscan={200} // Pre-render items for smoother experience
                     className="scrollbar-hide"
                     itemContent={renderItem}
