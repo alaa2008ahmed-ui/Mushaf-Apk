@@ -88,47 +88,67 @@ const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, onTranslation,
     );
 };
 
-const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentTheme, onMarkCompleted }: any) => {
+    const getDayRange = (day: number, settings: any) => {
+        const TOTAL_PAGES = 604;
+        const startPage = settings.startPage || 1;
+        const pagesLeft = TOTAL_PAGES - startPage + 1;
+        const offset = startPage - 1;
+
+        if (settings.mode === 'days') {
+            const totalDays = settings.value;
+            const start = Math.floor(((day - 1) * pagesLeft) / totalDays) + 1 + offset;
+            const end = Math.floor((day * pagesLeft) / totalDays) + offset;
+            return { start, end: Math.max(start - 1, end) };
+        } else {
+            const pagesPerDay = settings.value;
+            const start = (day - 1) * pagesPerDay + 1 + offset;
+            const end = Math.min(day * pagesPerDay + offset, TOTAL_PAGES);
+            return { start: Math.min(start, TOTAL_PAGES + 1), end };
+        }
+    };
+
+const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentTheme, onMarkCompleted, onMarkAndContinue }: any) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 z-[1100] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4 animate-fadeIn">
-            <div className="modal-skinned w-full max-w-sm rounded-3xl shadow-2xl flex flex-col animate-modal-enter p-8 text-center" 
+            <div className="modal-skinned w-full max-w-[320px] rounded-3xl shadow-2xl flex flex-col animate-modal-enter p-6 text-center" 
                  style={{ 
                      fontFamily: currentTheme?.font
                  }}>
-                <div className="w-24 h-24 bg-green-500/20 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8">
-                    <i className="fa-solid fa-check-double text-5xl"></i>
+                <div className="w-16 h-16 bg-green-500/20 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i className="fa-solid fa-check-double text-3xl"></i>
                 </div>
-                <h2 className="text-3xl font-bold mb-6 font-kufi">تقبل الله طاعتك!</h2>
-                <p className="opacity-80 mb-10 text-xl leading-relaxed">لقد وصلت إلى نهاية وردك اليومي المحدد. يمكنك التوقف عن القراءة الآن أو الاستمرار كما تحب.</p>
-                <div className="flex flex-col gap-4">
+                <h2 className="text-xl font-bold mb-3 font-kufi">تقبل الله طاعتك!</h2>
+                <p className="opacity-80 mb-6 text-sm leading-relaxed">لقد وصلت إلى نهاية وردك اليومي المحدد. يمكنك التوقف عن القراءة الآن أو الاستمرار كما تحب.</p>
+                <div className="flex flex-col gap-3">
                     <button 
-                        onClick={onMarkCompleted}
-                        className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-xl transition-transform hover:scale-105 shadow-lg flex items-center justify-center gap-3"
+                        onClick={() => onMarkCompleted()}
+                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2"
                     >
                         <i className="fa-solid fa-check-circle"></i>
-                        تمت القراءة (حفظ الورد)
+                        حفظ الورد
+                    </button>
+                    <button 
+                        onClick={() => onMarkAndContinue()}
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2"
+                    >
+                        <i className="fa-solid fa-forward-step"></i>
+                        حفظ الورد واستمرار القراءة
                     </button>
                     <button 
                         onClick={onGoToWird}
-                        className="w-full py-5 bg-green-600 hover:bg-green-500 text-white rounded-2xl font-bold text-xl transition-transform hover:scale-105 shadow-lg flex items-center justify-center gap-3"
+                        className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-sm transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2"
                     >
                         <i className="fa-solid fa-calendar-check"></i>
                         العودة لصفحة الورد
                     </button>
                     <button 
                         onClick={onGoHome}
-                        className="w-full py-5 bg-gray-500/10 hover:bg-gray-500/20 rounded-2xl font-bold text-xl transition-transform hover:scale-105 flex items-center justify-center gap-3"
+                        className="w-full py-3 bg-gray-500/10 hover:bg-gray-500/20 rounded-xl font-bold text-sm transition-transform hover:scale-105 flex items-center justify-center gap-2"
                         style={{ color: 'var(--modal-text)' }}
                     >
                         <i className="fa-solid fa-house"></i>
-                        الرئيسية
-                    </button>
-                    <button 
-                        onClick={onClose}
-                        className="w-full py-4 opacity-70 hover:opacity-100 font-bold text-lg"
-                    >
-                        إغلاق والاستمرار في القراءة
+                        الصفحة الرئيسية
                     </button>
                 </div>
             </div>
@@ -297,24 +317,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     const parsed = JSON.parse(saved);
                     const activeProfile = parsed.profiles?.find((p: any) => p.id === parsed.activeId);
                     if (activeProfile && activeProfile.isActive) {
-                        const getDayRange = (day: number, settings: any) => {
-                            const TOTAL_PAGES = 604;
-                            const startPage = settings.startPage || 1;
-                            const pagesLeft = TOTAL_PAGES - startPage + 1;
-                            const offset = startPage - 1;
-
-                            if (settings.mode === 'days') {
-                                const totalDays = settings.value;
-                                const start = Math.floor(((day - 1) * pagesLeft) / totalDays) + 1 + offset;
-                                const end = Math.floor((day * pagesLeft) / totalDays) + offset;
-                                return { start, end: Math.max(start - 1, end) };
-                            } else {
-                                const pagesPerDay = settings.value;
-                                const start = (day - 1) * pagesPerDay + 1 + offset;
-                                const end = Math.min(day * pagesPerDay + offset, TOTAL_PAGES);
-                                return { start: Math.min(start, TOTAL_PAGES + 1), end };
-                            }
-                        };
                         const { end } = getDayRange(activeProfile.currentDay, activeProfile);
                         setWirdEndPage(end);
                     }
@@ -2151,7 +2153,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         };
     }, [modeSuffix, showToast]);
 
-    const handleMarkWirdCompleted = useCallback(() => {
+    const handleMarkWirdCompleted = useCallback((shouldContinue = false) => {
         const saved = localStorage.getItem('dailyWirdSettings_v2');
         if (saved) {
             try {
@@ -2165,16 +2167,27 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     
                     const newCompleted = [...activeProfile.completedDays, activeProfile.currentDay];
                     const totalDays = getTotalDaysCount(activeProfile);
+                    const newCurrentDay = activeProfile.currentDay < totalDays ? activeProfile.currentDay + 1 : activeProfile.currentDay;
+                    
                     const newProfile = {
                         ...activeProfile,
                         completedDays: newCompleted,
-                        currentDay: activeProfile.currentDay < totalDays ? activeProfile.currentDay + 1 : activeProfile.currentDay,
+                        currentDay: newCurrentDay,
                     };
                     
                     const newProfiles = parsed.profiles.map((p: any) => p.id === activeProfile.id ? newProfile : p);
                     localStorage.setItem('dailyWirdSettings_v2', JSON.stringify({ ...parsed, profiles: newProfiles }));
-                    showToast('تم حفظ الورد اليومي بنجاح');
-                    setShowWirdCompleteModal(false);
+                    
+                    if (shouldContinue) {
+                        const { end } = getDayRange(newProfile.currentDay, newProfile);
+                        setWirdEndPage(end);
+                        setHasShownWirdComplete(false);
+                        setShowWirdCompleteModal(false);
+                        showToast('تم حفظ الورد والاستمرار في القراءة');
+                    } else {
+                        showToast('تم حفظ الورد اليومي بنجاح');
+                        setShowWirdCompleteModal(false);
+                    }
                 }
             } catch (e) {
                 console.error('Error saving wird progress:', e);
@@ -3335,7 +3348,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 onClose={() => setShowWirdCompleteModal(false)} 
                 onGoToWird={handleHomeClick} 
                 onGoHome={() => handleHomeClick('home')}
-                onMarkCompleted={handleMarkWirdCompleted}
+                onMarkCompleted={() => handleMarkWirdCompleted(false)}
+                onMarkAndContinue={() => handleMarkWirdCompleted(true)}
                 currentTheme={currentTheme} 
             />
             <SurahDesignPickerModal
