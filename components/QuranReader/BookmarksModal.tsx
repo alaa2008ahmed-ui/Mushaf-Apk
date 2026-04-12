@@ -23,7 +23,7 @@ const getHijriDate = (timestamp: number) => {
 
 const BookmarksModal: React.FC<BookmarksModalProps> = ({ bookmarks, quranData, onSelect, onDelete, onClose, isLandscape }) => {
     return (
-        <div className="fixed inset-0 z-[100] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
+        <div className="fixed inset-0 z-[1200] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
             <div className={`modal-skinned w-full max-w-[280px] rounded-2xl flex flex-col max-h-[80vh] shadow-2xl animate-modal-enter`} onClick={e => e.stopPropagation()}>
                 <div className="overflow-y-auto p-4 flex-1 flex flex-col gap-3">
                     {bookmarks.length === 0 ? (

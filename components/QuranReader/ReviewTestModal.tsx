@@ -112,7 +112,7 @@ const ReviewTestModal: React.FC<ReviewTestModalProps> = ({
     const prevAyah = currentStep > 0 ? testAyahs[currentStep - 1] : null;
 
     return (
-        <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
+        <div className="fixed inset-0 z-[1200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
             <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-modal-enter" style={{ backgroundColor: currentTheme.bg, color: currentTheme.text }}>
                 {/* Header */}
                 <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>

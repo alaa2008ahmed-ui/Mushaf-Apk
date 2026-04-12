@@ -137,7 +137,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
 
     if (editingType) {
         return (
-            <div className="fixed inset-0 z-[220] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" onClick={() => setEditingType(null)}>
+            <div className="fixed inset-0 z-[1200] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" onClick={() => setEditingType(null)}>
                 <div className={`modal-skinned w-full ${isLandscape ? 'max-w-2xl' : 'max-w-md'} rounded-3xl shadow-2xl overflow-hidden animate-modal-enter flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
                     <div className="theme-header-bg p-4 flex justify-between items-center">
                         <div className="flex items-center gap-2">
@@ -257,7 +257,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
     }
     
     return (
-        <div className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-fadeIn`} onClick={handleClose}>
+        <div className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[1200] flex items-center justify-center p-4 animate-fadeIn`} onClick={handleClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-5xl' : 'max-w-md'} rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-modal-enter`} onClick={e => e.stopPropagation()}>
                 <div className="theme-header-bg p-4 flex justify-between items-center">
                     <div className="flex items-center gap-2">

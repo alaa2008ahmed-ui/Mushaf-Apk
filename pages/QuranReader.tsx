@@ -67,7 +67,7 @@ const parseArabicNumber = (text: string): number | null => {
 const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, onTranslation, currentTheme, isLandscape }: any) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 z-[1100] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
+        <div className="fixed inset-0 z-[1200] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={onClose}>
             <div className="modal-skinned w-full max-w-[280px] rounded-2xl shadow-2xl flex flex-col animate-modal-enter" onClick={e => e.stopPropagation()}>
                 <div className="p-5 flex flex-col gap-4">
                     <button onClick={onTafseer} style={{ borderTop: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderBottom: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderLeft: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderRight: `2px solid ${currentTheme?.accent || '#4f46e5'}`, color: currentTheme?.accent || '#4f46e5', backgroundColor: 'transparent' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
@@ -745,10 +745,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             e.preventDefault();
                         }
                         // In 90deg rotation: 
-                        // Physical RIGHT (deltaX > 0) is content DOWN -> scrollTop decreases to follow finger
-                        // Physical DOWN (deltaY > 0) is content LEFT -> scrollLeft increases to follow finger
-                        scrollable.scrollTop -= deltaX;
-                        scrollable.scrollLeft += deltaY;
+                        // Physical UP/DOWN (deltaY) should scroll the list (scrollTop)
+                        // Physical LEFT/RIGHT (deltaX) should scroll horizontally (scrollLeft)
+                        scrollable.scrollTop -= deltaY;
+                        scrollable.scrollLeft += deltaX;
                         activeScrollable = scrollable;
                     } else if (isLandscape) {
                         // Native landscape: normal mapping
@@ -785,8 +785,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 
                 if (activeScrollable) {
                     if (isSimulatedLandscape) {
-                        activeScrollable.scrollTop -= vx * 16;
-                        activeScrollable.scrollLeft += vy * 16;
+                        activeScrollable.scrollTop -= vy * 16;
+                        activeScrollable.scrollLeft += vx * 16;
                     } else {
                         activeScrollable.scrollTop -= vy * 16;
                         activeScrollable.scrollLeft -= vx * 16;
@@ -908,15 +908,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const [isSurahDesignPickerOpen, setIsSurahDesignPickerOpen] = useState(false);
 
-    useEffect(() => {
-        if (isLandscape) {
-            if (tafseerInfo.isOpen) setTafseerInfo(p => ({ ...p, isOpen: false }));
-            if (quranMeaningsInfo.isOpen) setQuranMeaningsInfo(p => ({ ...p, isOpen: false }));
-            if (quranTranslationInfo.isOpen) setQuranTranslationInfo(p => ({ ...p, isOpen: false }));
-            if (ayahActionMenu.isOpen) setAyahActionMenu(p => ({ ...p, isOpen: false }));
-        }
-    }, [isLandscape, readingMode, tafseerInfo.isOpen, quranMeaningsInfo.isOpen, quranTranslationInfo.isOpen, ayahActionMenu.isOpen]);
-    
     const [isPageInputActive, setIsPageInputActive] = useState(false);
     const [pageInput, setPageInput] = useState('');
     const isPageInputActiveRef = useRef(false);

@@ -98,7 +98,7 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
     };
 
     return (
-        <div className="fixed inset-0 z-[190] bg-black/60 flex justify-center items-center px-4 animate-fadeIn" onClick={onClose}>
+        <div className="fixed inset-0 z-[1200] bg-black/60 flex justify-center items-center px-4 animate-fadeIn" onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl' : 'max-w-md'} rounded-2xl flex flex-col max-h-[85vh] shadow-2xl`} onClick={e => e.stopPropagation()}>
                 <div className="p-4 rounded-t-2xl flex justify-between items-center shadow-md" style={{ backgroundColor: activeTheme.headerBg, color: activeTheme.headerText }}>
                     <h3 className="font-bold text-lg">اختر الثيم</h3>

@@ -203,7 +203,8 @@
     padding-top: 0 !important;
 }
 
-.mushaf-page.first-page .page-content .surah-header-container:first-child {
+.mushaf-page.first-page .page-content .surah-header-container-wrapper:first-child {
+    padding-top: 0 !important;
     margin-top: 0 !important;
 }
 
@@ -550,16 +551,16 @@
     touch-action: manipulation;
 }
 .quran-reader-container.landscape-mode #mushaf-content {
-    /* Keep padding constant so text doesn't jump when toggling UI */
-    padding-top: calc(40px + var(--logical-safe-top)) !important;
-    padding-bottom: calc(50px + var(--logical-safe-bottom)) !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
     padding-left: var(--logical-safe-left) !important;
     padding-right: var(--logical-safe-right) !important;
 }
 .quran-reader-container.landscape-mode .mushaf-page:first-child {
     padding-top: 0 !important;
 }
-.quran-reader-container.landscape-mode .mushaf-page:first-child .page-content .surah-header-container:first-child {
+.quran-reader-container.landscape-mode .mushaf-page:first-child .page-content .surah-header-container-wrapper:first-child {
+    padding-top: 0 !important;
     margin-top: 0 !important;
 }
 .quran-reader-container.landscape-mode #header {

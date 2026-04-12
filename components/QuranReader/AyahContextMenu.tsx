@@ -28,7 +28,7 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[1100] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={() => {
+        <div className="fixed inset-0 z-[1200] bg-transparent flex items-center justify-center p-4 animate-fadeIn" onClick={() => {
             setAyahContextMenu((p: any) => ({...p, isOpen: false}));
         }}>
             <div 

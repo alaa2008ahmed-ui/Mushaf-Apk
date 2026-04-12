@@ -555,19 +555,19 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
             />
             <div 
                 ref={floatingMenuRef}
-                className={`fixed top-[calc(3.5rem+var(--logical-safe-top))] bottom-[calc(3.5rem+var(--logical-safe-bottom))] right-0 z-[1000] flex items-start gap-4 pointer-events-none`}
+                className={`fixed ${isLandscape ? 'top-0 bottom-0' : 'top-[calc(3.5rem+var(--logical-safe-top))] bottom-[calc(3.5rem+var(--logical-safe-bottom))]'} right-0 z-[1000] flex items-start gap-4 pointer-events-none`}
                 dir="rtl"
             >
             {/* The Main Menu Container */}
             <div 
                 id="floating-menu" 
-                className={`w-[190px] max-w-[85vw] rounded-l-2xl shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
+                className={`w-[190px] max-w-[85vw] ${isLandscape ? 'rounded-none' : 'rounded-l-2xl'} shadow-2xl transition-all duration-300 origin-top-right flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? 'opacity-100 visible scale-100 translate-y-0' : 'opacity-0 invisible scale-95 -translate-y-4'}`} 
                 style={{ 
                     fontFamily: currentTheme.font || 'var(--font-amiri)',
                     backgroundColor: currentTheme.bg || '#ffffff',
                     color: currentTheme.text || '#000000',
-                    borderTop: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
-                    borderBottom: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+                    borderTop: isLandscape ? '0px none' : `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
+                    borderBottom: isLandscape ? '0px none' : `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
                     borderLeft: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`,
                     borderRight: `0px solid transparent`
                 }}
