@@ -597,8 +597,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         if (showSajdahCard !== targetSajdah) setShowSajdahCard(targetSajdah);
 
         if (mode.endsWith('_h')) {
-            // No longer forcing UI to hide on entry to landscape mode
-            // This ensures UI elements are visible in browser preview
+            if (isHideToolbarsEnabledRef.current) {
+                setIsLandscapeUIHidden(true);
+            }
         } else {
             if (!isHideToolbarsEnabledRef.current && isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
         }
@@ -2055,7 +2056,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             if (showSajdahCard !== targetSajdah) setShowSajdahCard(targetSajdah);
 
             if (mode.endsWith('_h')) {
-                // No longer forcing UI to hide on entry to landscape mode
+                if (isHideToolbarsEnabledRef.current) {
+                    setIsLandscapeUIHidden(true);
+                }
             } else {
                 if (!isHideToolbarsEnabledRef.current && isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
             }
@@ -2133,7 +2136,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             if (showSajdahCard !== targetSajdah) setShowSajdahCard(targetSajdah);
 
             if (mode.endsWith('_h')) {
-                // No longer forcing UI to hide on entry to landscape mode
+                if (isHideToolbarsEnabledRef.current) {
+                    setIsLandscapeUIHidden(true);
+                }
             } else {
                 if (!isHideToolbarsEnabledRef.current && isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
             }
@@ -2873,6 +2878,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         const initialState = { isActive: true, isPaused: false, elapsedTime: 0 };
         autoScrollStateRef.current = initialState;
         setAutoScrollState(initialState);
+
+        if (isHideToolbarsEnabledRef.current) {
+            setIsLandscapeUIHidden(true);
+        }
         
         // Delay to let layout stabilize
         setTimeout(() => {
