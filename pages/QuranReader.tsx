@@ -68,7 +68,7 @@ const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, onTranslation,
     if (!isOpen) return null;
     return (
         <div className={`fixed inset-0 z-[1200] bg-transparent flex items-center justify-center ${isLandscape ? 'p-2' : 'p-4'} animate-fadeIn`} onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-[50%] max-h-[90vh] rounded-xl' : 'max-w-[280px] rounded-2xl'} shadow-2xl flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-[300px] max-h-[90vh] rounded-xl' : 'max-w-[280px] rounded-2xl'} shadow-2xl flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()}>
                 <div className={`flex flex-col ${isLandscape ? 'p-2.5 gap-2' : 'p-5 gap-4'}`}>
                     <button onClick={onTafseer} style={{ borderTop: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderBottom: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderLeft: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderRight: `2px solid ${currentTheme?.accent || '#4f46e5'}`, color: currentTheme?.accent || '#4f46e5', backgroundColor: 'transparent' }} className={`w-full ${isLandscape ? 'py-1.5 px-2 text-sm' : 'py-3 px-4 text-lg'} rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2`}>
                         <i className="fa-solid fa-book-open"></i>
@@ -597,9 +597,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         if (showSajdahCard !== targetSajdah) setShowSajdahCard(targetSajdah);
 
         if (mode.endsWith('_h')) {
-            if (isHideToolbarsEnabledRef.current) {
-                setIsLandscapeUIHidden(true);
-            }
+            setIsLandscapeUIHidden(true);
         } else {
             if (!isHideToolbarsEnabledRef.current && isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
         }
@@ -890,6 +888,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const [isAutoScrollSettingsOpen, setIsAutoScrollSettingsOpen] = useState(false);
     const autoScrollButtonTimerRef = useRef<number | null>(null);
     const autoScrollFrameRef = useRef<number | null>(null);
+    const landscapeAutoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
     const lastScrollTimeRef = useRef<number>(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isAudioLoading, setIsAudioLoading] = useState(false);
@@ -1743,8 +1742,16 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         handleAyahClick(s, a);
         setIsFloatingMenuOpen(false);
         
-        if (isHideToolbarsEnabledRef.current) {
-            setIsLandscapeUIHidden(prev => !prev);
+        if (isLandscapeRef.current) {
+            setIsLandscapeUIHidden(false);
+            if (landscapeAutoHideTimerRef.current) clearTimeout(landscapeAutoHideTimerRef.current);
+            landscapeAutoHideTimerRef.current = setTimeout(() => {
+                setIsLandscapeUIHidden(true);
+            }, 5000);
+        } else {
+            if (isHideToolbarsEnabledRef.current) {
+                setIsLandscapeUIHidden(prev => !prev);
+            }
         }
 
         if (autoScrollStateRef.current.isActive) {
@@ -2056,9 +2063,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             if (showSajdahCard !== targetSajdah) setShowSajdahCard(targetSajdah);
 
             if (mode.endsWith('_h')) {
-                if (isHideToolbarsEnabledRef.current) {
-                    setIsLandscapeUIHidden(true);
-                }
+                setIsLandscapeUIHidden(true);
             } else {
                 if (!isHideToolbarsEnabledRef.current && isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
             }
@@ -2136,9 +2141,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             if (showSajdahCard !== targetSajdah) setShowSajdahCard(targetSajdah);
 
             if (mode.endsWith('_h')) {
-                if (isHideToolbarsEnabledRef.current) {
-                    setIsLandscapeUIHidden(true);
-                }
+                setIsLandscapeUIHidden(true);
             } else {
                 if (!isHideToolbarsEnabledRef.current && isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
             }
@@ -2947,8 +2950,14 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const handleScreenTap = () => {
       setIsFloatingMenuOpen(false);
       
-      if (isHideToolbarsEnabledRef.current) {
-          setIsLandscapeUIHidden(prev => !prev);
+      if (isLandscapeRef.current) {
+          if (!isLandscapeUIHidden) {
+              setIsLandscapeUIHidden(true);
+          }
+      } else {
+          if (isHideToolbarsEnabledRef.current) {
+              setIsLandscapeUIHidden(prev => !prev);
+          }
       }
 
       if (autoScrollStateRef.current.isActive) {
