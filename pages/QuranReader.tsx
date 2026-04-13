@@ -600,7 +600,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             // No longer forcing UI to hide on entry to landscape mode
             // This ensures UI elements are visible in browser preview
         } else {
-            if (isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
+            if (!isHideToolbarsEnabledRef.current && isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
         }
 
         const posKey = `last_pos${mode}`;
@@ -1742,18 +1742,16 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         handleAyahClick(s, a);
         setIsFloatingMenuOpen(false);
         
+        if (isHideToolbarsEnabledRef.current || isLandscapeRef.current) {
+            setIsLandscapeUIHidden(prev => !prev);
+        }
+
         if (autoScrollStateRef.current.isActive) {
             const newPausedState = !autoScrollStateRef.current.isPaused;
             autoScrollPausedRef.current = newPausedState;
             const newState = { ...autoScrollStateRef.current, isPaused: newPausedState };
             autoScrollStateRef.current = newState;
             setAutoScrollState(newState);
-            
-            if (isLandscapeRef.current || isHideToolbarsEnabledRef.current) {
-                setIsLandscapeUIHidden(!newPausedState);
-            }
-        } else if (isLandscapeRef.current || isHideToolbarsEnabledRef.current) {
-            setIsLandscapeUIHidden(prev => !prev);
         }
     }, [handleAyahClick]);
 
@@ -2244,12 +2242,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     
         const handleScroll = () => {
             if (isJumpingRef.current) return;
-            
-            if (isHideToolbarsEnabledRef.current && !autoScrollStateRef.current.isActive) {
-                if (!isLandscapeUIHiddenRef.current) {
-                    setIsLandscapeUIHidden(true);
-                }
-            }
 
             const { scrollTop, scrollHeight, clientHeight } = contentEl;
 
@@ -2409,7 +2401,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         });
 
         scrollToAyah(s, a, instant, 50, isPageJump);
-        if (initialLandscape) {
+        if (initialLandscape || isHideToolbarsEnabledRef.current) {
             setIsLandscapeUIHidden(true);
         }
     }, [quranData, handleAyahClick, stopAudio, scrollToAyah, initialLandscape]);
@@ -2884,7 +2876,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         const initialState = { isActive: true, isPaused: false, elapsedTime: 0 };
         autoScrollStateRef.current = initialState;
         setAutoScrollState(initialState);
-        if (initialLandscape || isHideToolbarsEnabledRef.current) {
+        if (initialLandscape) {
             setIsLandscapeUIHidden(true);
         }
         
@@ -2954,18 +2946,16 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
       // Use actual orientation for UI toggling, not just initialLandscape
       const currentLandscape = isLandscapeRef.current;
       
+      if (isHideToolbarsEnabledRef.current || currentLandscape) {
+          setIsLandscapeUIHidden(prev => !prev);
+      }
+
       if (autoScrollStateRef.current.isActive) {
         const newPausedState = !autoScrollStateRef.current.isPaused;
         autoScrollPausedRef.current = newPausedState;
         const newState = { ...autoScrollStateRef.current, isPaused: newPausedState };
         autoScrollStateRef.current = newState;
         setAutoScrollState(newState);
-        
-        if (currentLandscape) {
-            setIsLandscapeUIHidden(!newPausedState);
-        }
-      } else if (currentLandscape) {
-          setIsLandscapeUIHidden(prev => !prev);
       }
     };
 
@@ -3148,7 +3138,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     }, [visiblePages]);
 
     return (
-        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape && initialLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${settings.showPageBorder === false ? 'no-border' : ''} ${((isHideToolbarsEnabled && isLandscapeUIHidden) || (isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused)) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ 
+        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape && initialLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${settings.showPageBorder === false ? 'no-border' : ''} ${(isHideToolbarsEnabled && isLandscapeUIHidden) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ 
             backgroundColor: settings.bgColor, 
             color: settings.textColor, 
             fontFamily: settings.fontFamily, 
