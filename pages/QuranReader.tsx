@@ -68,17 +68,17 @@ const AyahActionMenu = ({ isOpen, onClose, onTafseer, onMeanings, onTranslation,
     if (!isOpen) return null;
     return (
         <div className={`fixed inset-0 z-[1200] bg-transparent flex items-center justify-center ${isLandscape ? 'p-2' : 'p-4'} animate-fadeIn`} onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-sm max-h-[90vh] rounded-2xl' : 'max-w-[280px] rounded-2xl'} shadow-2xl flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()}>
-                <div className="p-5 flex flex-col gap-4">
-                    <button onClick={onTafseer} style={{ borderTop: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderBottom: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderLeft: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderRight: `2px solid ${currentTheme?.accent || '#4f46e5'}`, color: currentTheme?.accent || '#4f46e5', backgroundColor: 'transparent' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-[50%] max-h-[90vh] rounded-xl' : 'max-w-[280px] rounded-2xl'} shadow-2xl flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()}>
+                <div className={`flex flex-col ${isLandscape ? 'p-2.5 gap-2' : 'p-5 gap-4'}`}>
+                    <button onClick={onTafseer} style={{ borderTop: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderBottom: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderLeft: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderRight: `2px solid ${currentTheme?.accent || '#4f46e5'}`, color: currentTheme?.accent || '#4f46e5', backgroundColor: 'transparent' }} className={`w-full ${isLandscape ? 'py-1.5 px-2 text-sm' : 'py-3 px-4 text-lg'} rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2`}>
                         <i className="fa-solid fa-book-open"></i>
                         التفسير
                     </button>
-                    <button onClick={onMeanings} style={{ borderTop: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, borderBottom: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, borderLeft: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, borderRight: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, color: currentTheme?.highlightText || currentTheme?.accent || '#0d9488', backgroundColor: 'transparent' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
+                    <button onClick={onMeanings} style={{ borderTop: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, borderBottom: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, borderLeft: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, borderRight: `2px solid ${currentTheme?.highlightText || currentTheme?.accent || '#0d9488'}`, color: currentTheme?.highlightText || currentTheme?.accent || '#0d9488', backgroundColor: 'transparent' }} className={`w-full ${isLandscape ? 'py-1.5 px-2 text-sm' : 'py-3 px-4 text-lg'} rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2`}>
                         <i className="fa-solid fa-language"></i>
                         معاني القرآن
                     </button>
-                    <button onClick={onTranslation} style={{ borderTop: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderBottom: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderLeft: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderRight: `2px solid ${currentTheme?.accent || '#4f46e5'}`, color: currentTheme?.accent || '#4f46e5', backgroundColor: 'transparent' }} className="w-full py-3 px-4 rounded-xl font-bold text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
+                    <button onClick={onTranslation} style={{ borderTop: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderBottom: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderLeft: `2px solid ${currentTheme?.accent || '#4f46e5'}`, borderRight: `2px solid ${currentTheme?.accent || '#4f46e5'}`, color: currentTheme?.accent || '#4f46e5', backgroundColor: 'transparent' }} className={`w-full ${isLandscape ? 'py-1.5 px-2 text-sm' : 'py-3 px-4 text-lg'} rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2`}>
                         <i className="fa-solid fa-language"></i>
                         الترجمة
                     </button>
@@ -583,7 +583,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         });
         
         const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
-        if (isTransparentMode !== transSetting) setIsTransparentMode(transSetting);
+        setIsTransparentMode(transSetting);
 
         const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + mode);
         const parsedBookmarks = savedBookmarks ? JSON.parse(savedBookmarks) : [];
@@ -1742,7 +1742,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         handleAyahClick(s, a);
         setIsFloatingMenuOpen(false);
         
-        if (isHideToolbarsEnabledRef.current || isLandscapeRef.current) {
+        if (isHideToolbarsEnabledRef.current) {
             setIsLandscapeUIHidden(prev => !prev);
         }
 
@@ -2109,10 +2109,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             setQuranData(quranJsonData);
             
             const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
-            if (isTransparentMode !== transSetting) setIsTransparentMode(transSetting);
+            setIsTransparentMode(transSetting);
 
             const hideToolbarsSetting = localStorage.getItem('hide_toolbars_enabled' + mode) === 'true';
-            if (isHideToolbarsEnabled !== hideToolbarsSetting) {
+            if (isHideToolbarsEnabledRef.current !== hideToolbarsSetting) {
                 setIsHideToolbarsEnabled(hideToolbarsSetting);
                 if (hideToolbarsSetting) {
                     setIsLandscapeUIHidden(true);
@@ -2401,10 +2401,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         });
 
         scrollToAyah(s, a, instant, 50, isPageJump);
-        if (initialLandscape || isHideToolbarsEnabledRef.current) {
+        if (isHideToolbarsEnabledRef.current) {
             setIsLandscapeUIHidden(true);
         }
-    }, [quranData, handleAyahClick, stopAudio, scrollToAyah, initialLandscape]);
+    }, [quranData, handleAyahClick, stopAudio, scrollToAyah]);
 
     const jumpToPage = useCallback((pageNum: number, instant: boolean = true) => {
         if (!quranData || isNaN(pageNum) || pageNum < 1 || pageNum > 604) return;
@@ -2649,9 +2649,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     const newState = { ...autoScrollStateRef.current, isPaused: true };
                     autoScrollStateRef.current = newState;
                     setAutoScrollState(newState);
-                    if (initialLandscape) {
-                        setIsLandscapeUIHidden(false);
-                    }
                 }
             } else if (action === 'stop_auto_scroll') {
                 if (autoScrollStateRef.current.isActive) {
@@ -2872,15 +2869,12 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         timerIntervalRef.current = null;
         autoScrollPausedRef.current = false;
         
-        // Update state immediately so UI can react (hide bars)
+        // Update state immediately
         const initialState = { isActive: true, isPaused: false, elapsedTime: 0 };
         autoScrollStateRef.current = initialState;
         setAutoScrollState(initialState);
-        if (initialLandscape) {
-            setIsLandscapeUIHidden(true);
-        }
         
-        // Delay to let layout stabilize after UI might hide
+        // Delay to let layout stabilize
         setTimeout(() => {
             if (!mushafContentRef.current) return;
             
@@ -2943,10 +2937,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
     const handleScreenTap = () => {
       setIsFloatingMenuOpen(false);
-      // Use actual orientation for UI toggling, not just initialLandscape
-      const currentLandscape = isLandscapeRef.current;
       
-      if (isHideToolbarsEnabledRef.current || currentLandscape) {
+      if (isHideToolbarsEnabledRef.current) {
           setIsLandscapeUIHidden(prev => !prev);
       }
 
