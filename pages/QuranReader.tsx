@@ -113,39 +113,46 @@ const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentThe
         <div className={`fixed inset-0 z-[1100] bg-black/40 backdrop-blur-[2px] flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none' : 'max-w-[320px] rounded-3xl'} shadow-2xl flex flex-col animate-modal-enter p-6 text-center`} 
                  style={{ 
-                     fontFamily: currentTheme?.font
+                     fontFamily: currentTheme?.font,
+                     backgroundColor: currentTheme?.modalBg,
+                     color: currentTheme?.modalText,
+                     borderColor: currentTheme?.barBorder
                  }}>
-                <div className="w-16 h-16 bg-green-500/20 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                     style={{ backgroundColor: `${currentTheme?.accent}20`, color: currentTheme?.accent }}>
                     <i className="fa-solid fa-check-double text-3xl"></i>
                 </div>
-                <h2 className="text-xl font-bold mb-3 font-kufi">تقبل الله طاعتك!</h2>
+                <h2 className="text-xl font-bold mb-3 font-kufi" style={{ color: currentTheme?.accent }}>تقبل الله طاعتك!</h2>
                 <p className="opacity-80 mb-6 text-sm leading-relaxed">لقد وصلت إلى نهاية وردك اليومي المحدد. يمكنك التوقف عن القراءة الآن أو الاستمرار كما تحب.</p>
                 <div className="flex flex-col gap-3">
                     <button 
                         onClick={() => onMarkCompleted()}
-                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded-xl font-bold text-sm transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2"
+                        style={{ backgroundColor: currentTheme?.accent, color: currentTheme?.accentText }}
                     >
                         <i className="fa-solid fa-check-circle"></i>
                         حفظ الورد
                     </button>
                     <button 
                         onClick={() => onMarkAndContinue()}
-                        className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded-xl font-bold text-sm transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2"
+                        style={{ backgroundColor: currentTheme?.btnBg, color: currentTheme?.btnText, border: `1px solid ${currentTheme?.barBorder}` }}
                     >
                         <i className="fa-solid fa-forward-step"></i>
                         حفظ الورد واستمرار القراءة
                     </button>
                     <button 
                         onClick={onGoToWird}
-                        className="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-sm transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded-xl font-bold text-sm transition-transform hover:scale-105 shadow-md flex items-center justify-center gap-2"
+                        style={{ backgroundColor: currentTheme?.headerBg, color: currentTheme?.headerText }}
                     >
                         <i className="fa-solid fa-calendar-check"></i>
                         العودة لصفحة الورد
                     </button>
                     <button 
                         onClick={onGoHome}
-                        className="w-full py-3 bg-gray-500/10 hover:bg-gray-500/20 rounded-xl font-bold text-sm transition-transform hover:scale-105 flex items-center justify-center gap-2"
-                        style={{ color: 'var(--modal-text)' }}
+                        className="w-full py-3 rounded-xl font-bold text-sm transition-transform hover:scale-105 flex items-center justify-center gap-2"
+                        style={{ backgroundColor: `${currentTheme?.barBg}80`, color: currentTheme?.barText, border: `1px solid ${currentTheme?.barBorder}` }}
                     >
                         <i className="fa-solid fa-house"></i>
                         الصفحة الرئيسية
@@ -244,11 +251,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const baseModeSuffix = localIsMemorizationMode 
             ? `_memorization_${isLandscape ? 'h' : 'v'}` 
-            : isWirdMode 
-                ? `_wird_${isLandscape ? 'h' : 'v'}` 
-                : readingMode === 'mushaf' 
-                    ? (isLandscape ? '_h' : '_v') 
-                    : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
+            : readingMode === 'mushaf' 
+                ? (isLandscape ? '_h' : '_v') 
+                : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
 
     const modeSuffix = baseModeSuffix;
     const bookmarkSuffix = baseModeSuffix;
@@ -295,9 +300,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
     }, [isLandscapeUIHidden, modeSuffix]);
 
-    const [isUserScrolling, setIsUserScrolling] = useState(false);
-    const isUserScrollingRef = useRef(isUserScrolling);
-    useEffect(() => { isUserScrollingRef.current = isUserScrolling; }, [isUserScrolling]);
     const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const markerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -1747,10 +1749,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             autoScrollStateRef.current = newState;
             setAutoScrollState(newState);
             
-            if (isLandscapeRef.current) {
+            if (isLandscapeRef.current || isHideToolbarsEnabledRef.current) {
                 setIsLandscapeUIHidden(!newPausedState);
             }
-        } else if (isLandscapeRef.current) {
+        } else if (isLandscapeRef.current || isHideToolbarsEnabledRef.current) {
             setIsLandscapeUIHidden(prev => !prev);
         }
     }, [handleAyahClick]);
@@ -2057,7 +2059,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             if (mode.endsWith('_h')) {
                 // No longer forcing UI to hide on entry to landscape mode
             } else {
-                if (isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
+                if (!isHideToolbarsEnabledRef.current && isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
             }
         };
         const handleSettingsChange = () => {
@@ -2112,7 +2114,14 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             if (isTransparentMode !== transSetting) setIsTransparentMode(transSetting);
 
             const hideToolbarsSetting = localStorage.getItem('hide_toolbars_enabled' + mode) === 'true';
-            if (isHideToolbarsEnabled !== hideToolbarsSetting) setIsHideToolbarsEnabled(hideToolbarsSetting);
+            if (isHideToolbarsEnabled !== hideToolbarsSetting) {
+                setIsHideToolbarsEnabled(hideToolbarsSetting);
+                if (hideToolbarsSetting) {
+                    setIsLandscapeUIHidden(true);
+                } else {
+                    setIsLandscapeUIHidden(false);
+                }
+            }
 
             const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + bookmarkSuffix);
             const parsedBookmarks = savedBookmarks ? JSON.parse(savedBookmarks) : [];
@@ -2128,7 +2137,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             if (mode.endsWith('_h')) {
                 // No longer forcing UI to hide on entry to landscape mode
             } else {
-                if (isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
+                if (!isHideToolbarsEnabledRef.current && isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
             }
         };
 
@@ -2237,15 +2246,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             if (isJumpingRef.current) return;
             
             if (isHideToolbarsEnabledRef.current && !autoScrollStateRef.current.isActive) {
-                if (!isUserScrollingRef.current) {
-                    setIsUserScrolling(true);
+                if (!isLandscapeUIHiddenRef.current) {
+                    setIsLandscapeUIHidden(true);
                 }
-                if (scrollTimeoutRef.current) {
-                    clearTimeout(scrollTimeoutRef.current);
-                }
-                scrollTimeoutRef.current = setTimeout(() => {
-                    setIsUserScrolling(false);
-                }, 500);
             }
 
             const { scrollTop, scrollHeight, clientHeight } = contentEl;
@@ -2881,7 +2884,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         const initialState = { isActive: true, isPaused: false, elapsedTime: 0 };
         autoScrollStateRef.current = initialState;
         setAutoScrollState(initialState);
-        if (initialLandscape) {
+        if (initialLandscape || isHideToolbarsEnabledRef.current) {
             setIsLandscapeUIHidden(true);
         }
         
@@ -3145,7 +3148,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     }, [visiblePages]);
 
     return (
-        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape && initialLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${settings.showPageBorder === false ? 'no-border' : ''} ${(isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused) || (isHideToolbarsEnabled && isUserScrolling) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ 
+        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape && initialLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${settings.showPageBorder === false ? 'no-border' : ''} ${((isHideToolbarsEnabled && isLandscapeUIHidden) || (isHideToolbarsEnabled && autoScrollState.isActive && !autoScrollState.isPaused)) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ 
             backgroundColor: settings.bgColor, 
             color: settings.textColor, 
             fontFamily: settings.fontFamily, 

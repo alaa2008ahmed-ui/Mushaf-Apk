@@ -68,7 +68,9 @@ const SurahDesignPickerModal: React.FC<SurahDesignPickerModalProps> = ({
                                     }`}
                                     style={{ 
                                         ringColor: currentTheme.accent,
-                                        backgroundColor: currentTheme.id === 'deep_black' ? '#111' : 'rgba(0,0,0,0.05)'
+                                        backgroundColor: currentTheme.cardBg,
+                                        borderColor: currentTheme.barBorder,
+                                        borderWidth: '1px'
                                     }}
                                 >
                                     <div className="pointer-events-none w-full">

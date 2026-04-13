@@ -39,6 +39,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [calcMethod, setCalcMethod] = useState<'remaining' | 'total'>('remaining');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const settings = allSettings.find(s => s.id === activeId) || null;
 
@@ -311,6 +312,11 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             type="text"
             inputMode="numeric"
             value={tempValue}
+            onFocus={() => {
+              setIsInputFocused(true);
+              setTempValue('');
+            }}
+            onBlur={() => setIsInputFocused(false)}
             onChange={(e) => {
               const val = toEnglishDigits(e.target.value);
               if (val === '' || /^\d*$/.test(val)) {
@@ -354,7 +360,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             className="flex-1 py-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors"
           >
             <Play size={24} />
-            {settings ? 'حفظ التعديلات' : 'ابدأ الختمة'}
+            {settings ? 'حفظ' : 'ابدأ الختمة'}
           </button>
           {(settings || allSettings.length > 0) && (
             <button 
@@ -661,14 +667,14 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 overflow-hidden p-4 flex flex-col items-center justify-center">
-        <div className="w-full max-w-md">
+      <main className={`flex-1 min-h-0 overflow-y-auto p-4 flex flex-col items-center ${isInputFocused ? 'justify-start' : 'justify-center'}`}>
+        <div className="w-full max-w-md pb-10">
           {!showSettings && renderProfileSelector()}
           {showSettings || !settings ? renderSettings() : renderProgress()}
         </div>
       </main>
 
-      <BottomBar onHomeClick={() => onNavigate('more-menu')} onThemesClick={() => {}} showThemes={false} />
+      {!isInputFocused && <BottomBar onHomeClick={() => onNavigate('more-menu')} onThemesClick={() => {}} showThemes={false} />}
 
       {renderDeleteConfirmModal()}
 

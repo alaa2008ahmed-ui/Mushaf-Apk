@@ -208,7 +208,7 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                                 placeholder="بحث في السور..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full p-2 pr-10 rounded-xl bg-white border border-gray-300 text-black placeholder:text-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                                className="w-full p-2 pr-10 rounded-xl theme-card-bg border theme-card-border theme-card-text placeholder:opacity-50 text-sm focus:outline-none focus:ring-2 theme-accent-ring transition-all"
                             />
                             <i className="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-sm opacity-70"></i>
                         </div>
@@ -217,8 +217,8 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
 
                 <div className="flex flex-1 overflow-hidden themed-card-bg">
                     {/* Juz Column */}
-                    <div className="flex-1 flex flex-col border-l border-gray-200 dark:border-gray-700">
-                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b border-gray-200 dark:border-gray-700">الجزء</div>
+                    <div className="flex-1 flex flex-col border-l theme-card-border">
+                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b theme-card-border">الجزء</div>
                         <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {Array.from({ length: 30 }, (_, i) => i + 1).map(j => (
                                 <button
@@ -234,8 +234,8 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                     </div>
 
                     {/* Surah Column */}
-                    <div className="flex-1 flex flex-col border-l border-gray-200 dark:border-gray-700">
-                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b border-gray-200 dark:border-gray-700">السورة</div>
+                    <div className="flex-1 flex flex-col border-l theme-card-border">
+                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b theme-card-border">السورة</div>
                         <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {filteredSurahs.map((s: any) => (
                                 <button
@@ -255,8 +255,8 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                     </div>
 
                     {/* Ayah Column */}
-                    <div className="flex-1 flex flex-col border-l border-gray-200 dark:border-gray-700">
-                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b border-gray-200 dark:border-gray-700">الآية</div>
+                    <div className="flex-1 flex flex-col border-l theme-card-border">
+                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b theme-card-border">الآية</div>
                         <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {Array.from({ length: ayahsCount }, (_, i) => i + 1).map(a => (
                                 <button
@@ -273,7 +273,7 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
 
                     {/* Hizb Quarter Column */}
                     <div className="flex-1 flex flex-col">
-                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b border-gray-200 dark:border-gray-700">الحزب</div>
+                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b theme-card-border">الحزب</div>
                         <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {Array.from({ length: 240 }, (_, i) => i + 1).map(hq => (
                                 <button
@@ -298,7 +298,7 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                     </button>
                     <button 
                         onClick={onClose}
-                        className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-8 py-2 rounded-full font-bold shadow-lg transform active:scale-95 transition"
+                        className="theme-btn-bg theme-btn-text px-8 py-2 rounded-full font-bold shadow-lg transform active:scale-95 transition border theme-card-border"
                     >
                         إغلاق
                     </button>
