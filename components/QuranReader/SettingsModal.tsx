@@ -7,7 +7,7 @@ import SurahHeader from './SurahHeader';
 
 interface SettingsModalProps {
     onClose: () => void;
-    onOpenModal: (modalName: string) => void;
+    onOpenModal: (modalName: string, params?: any) => void;
     showToast: (msg: string) => void;
     isLandscape: boolean;
     readingMode: string;
@@ -16,6 +16,7 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, showToast, isLandscape, readingMode, modeSuffix }) => {
     const [isClosing, setIsClosing] = useState(false);
+    const [showNotifOptions, setShowNotifOptions] = useState(false);
 
     const handleClose = () => {
         onClose();
@@ -438,10 +439,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                             </div>
                         </div>
                         <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
-                            <button onClick={() => onOpenModal('notification-settings-modal')} className="w-full flex items-center justify-between py-1">
+                            <button onClick={() => setShowNotifOptions(!showNotifOptions)} className="w-full flex items-center justify-between py-1">
                                 <label className="text-sm font-bold opacity-80 cursor-pointer">الإشعارات</label>
-                                <i className="fa-solid fa-bell text-emerald-500"></i>
+                                <i className={`fa-solid ${showNotifOptions ? 'fa-chevron-down' : 'fa-bell'} text-emerald-500`}></i>
                             </button>
+                            {showNotifOptions && (
+                                <div className="mt-2 space-y-2 animate-fadeIn">
+                                    <button 
+                                        onClick={() => onOpenModal('notification-settings-modal', { tab: 'app' })}
+                                        className="w-full flex items-center justify-between p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs font-bold"
+                                    >
+                                        <span>إشعارات التطبيق</span>
+                                        <i className="fa-solid fa-app-window"></i>
+                                    </button>
+                                    <button 
+                                        onClick={() => onOpenModal('notification-settings-modal', { tab: 'phone' })}
+                                        className="w-full flex items-center justify-between p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs font-bold"
+                                    >
+                                        <span>إشعارات الهاتف</span>
+                                        <i className="fa-solid fa-mobile-screen"></i>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 

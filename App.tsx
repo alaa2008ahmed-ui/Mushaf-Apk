@@ -16,6 +16,10 @@ import { motion } from 'motion/react';
 import { useTheme } from './context/ThemeContext';
 import { normalizeArabic } from './utils/voiceParser';
 import { usePrayerTimes } from './context/PrayerTimesContext';
+import { setupNotifications } from './utils/notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
+
 // --- Main App Component ---
 function App() {
   const { theme, applyPresetTheme } = useTheme();
@@ -65,7 +69,28 @@ function App() {
     } else {
       alert(`التنقل إلى قسم "${pageId}" قيد الإنشاء.`);
     }
-  }, []);
+  }, [history]);
+
+  useEffect(() => {
+    setupNotifications();
+
+    let listener: any = null;
+    if (Capacitor.isNativePlatform()) {
+      listener = LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
+        const page = notificationAction.notification.extra?.page;
+        const params = notificationAction.notification.extra?.params;
+        if (page) {
+          handleNavigate(page, params);
+        }
+      });
+    }
+
+    return () => {
+      if (listener) {
+        listener.then((l: any) => l.remove());
+      }
+    };
+  }, [handleNavigate]);
 
   const performUiClick = useCallback((label: string) => {
     const normalizedLabel = normalizeArabic(label);

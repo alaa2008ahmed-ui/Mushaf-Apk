@@ -239,15 +239,27 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const [readingMode, setReadingMode] = useState<ReadingMode>(() => {
         if (isWirdMode || isMemorizationMode) return 'mushaf';
-        const saved = localStorage.getItem('last_reading_mode');
+        const mode = initialLandscape ? '_h' : '_v';
+        const saved = localStorage.getItem('last_reading_mode' + mode);
         return (saved as ReadingMode) || 'mushaf';
     });
     
     useEffect(() => {
         if (!isWirdMode && !isMemorizationMode) {
-            localStorage.setItem('last_reading_mode', readingMode);
+            const mode = isLandscape ? '_h' : '_v';
+            localStorage.setItem('last_reading_mode' + mode, readingMode);
         }
-    }, [readingMode, isWirdMode, isMemorizationMode]);
+    }, [readingMode, isWirdMode, isMemorizationMode, isLandscape]);
+
+    // Independent reading mode for landscape/vertical
+    useEffect(() => {
+        if (isWirdMode || isMemorizationMode) return;
+        const mode = isLandscape ? '_h' : '_v';
+        const saved = localStorage.getItem('last_reading_mode' + mode);
+        if (saved && saved !== readingMode) {
+            setReadingMode(saved as ReadingMode);
+        }
+    }, [isLandscape, isWirdMode, isMemorizationMode]);
 
     const baseModeSuffix = localIsMemorizationMode 
             ? `_memorization_${isLandscape ? 'h' : 'v'}` 
@@ -283,6 +295,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     }, [isLandscape, onBack, onNavigate]);
 
     const [isLandscapeUIHidden, setIsLandscapeUIHidden] = useState(() => {
+        if (initialLandscape) return true;
         // Default to false (visible) to ensure UI is seen in browser preview
         // Only hide if explicitly saved as hidden in localStorage for this mode
         try {
@@ -1743,11 +1756,11 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         setIsFloatingMenuOpen(false);
         
         if (isLandscapeRef.current) {
-            setIsLandscapeUIHidden(false);
-            if (landscapeAutoHideTimerRef.current) clearTimeout(landscapeAutoHideTimerRef.current);
-            landscapeAutoHideTimerRef.current = setTimeout(() => {
-                setIsLandscapeUIHidden(true);
-            }, 5000);
+            setIsLandscapeUIHidden(prev => !prev);
+            if (landscapeAutoHideTimerRef.current) {
+                clearTimeout(landscapeAutoHideTimerRef.current);
+                landscapeAutoHideTimerRef.current = null;
+            }
         } else {
             if (isHideToolbarsEnabledRef.current) {
                 setIsLandscapeUIHidden(prev => !prev);
@@ -1775,10 +1788,16 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 const newState = { ...autoScrollStateRef.current, isPaused: true };
                 autoScrollStateRef.current = newState;
                 setAutoScrollState(newState);
+            }
+            
             if (isLandscapeRef.current) {
-                setIsLandscapeUIHidden(false);
+                setIsLandscapeUIHidden(prev => !prev);
+                if (landscapeAutoHideTimerRef.current) {
+                    clearTimeout(landscapeAutoHideTimerRef.current);
+                    landscapeAutoHideTimerRef.current = null;
+                }
             }
-            }
+            
             setAyahActionMenu({ isOpen: true, s, a, surahName: surah.name, wasAutoscrolling });
         }
     }, [quranData, handleAyahClick]);
@@ -2122,10 +2141,12 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             const hideToolbarsSetting = localStorage.getItem('hide_toolbars_enabled' + mode) === 'true';
             if (isHideToolbarsEnabledRef.current !== hideToolbarsSetting) {
                 setIsHideToolbarsEnabled(hideToolbarsSetting);
-                if (hideToolbarsSetting) {
-                    setIsLandscapeUIHidden(true);
-                } else {
-                    setIsLandscapeUIHidden(false);
+                if (!isLandscapeRef.current) {
+                    if (hideToolbarsSetting) {
+                        setIsLandscapeUIHidden(true);
+                    } else {
+                        setIsLandscapeUIHidden(false);
+                    }
                 }
             }
 
@@ -2409,7 +2430,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         });
 
         scrollToAyah(s, a, instant, 50, isPageJump);
-        if (isHideToolbarsEnabledRef.current) {
+        if (isHideToolbarsEnabledRef.current || isLandscapeRef.current) {
             setIsLandscapeUIHidden(true);
         }
     }, [quranData, handleAyahClick, stopAudio, scrollToAyah]);
@@ -2545,7 +2566,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             const newState = { ...autoScrollStateRef.current, isPaused: true };
                             autoScrollStateRef.current = newState;
                             setAutoScrollState(newState);
-                            if (initialLandscape) {
+                            if (isLandscapeRef.current) {
                                 setIsLandscapeUIHidden(false);
                             }
                         }
@@ -2639,7 +2660,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             const newState = { ...autoScrollStateRef.current, isPaused: true };
                             autoScrollStateRef.current = newState;
                             setAutoScrollState(newState);
-                            if (initialLandscape) {
+                            if (isLandscapeRef.current) {
                                 setIsLandscapeUIHidden(false);
                             }
                         }
@@ -2882,7 +2903,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         autoScrollStateRef.current = initialState;
         setAutoScrollState(initialState);
 
-        if (isHideToolbarsEnabledRef.current) {
+        if (isHideToolbarsEnabledRef.current || isLandscapeRef.current) {
             setIsLandscapeUIHidden(true);
         }
         
@@ -3148,7 +3169,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     }, [visiblePages]);
 
     return (
-        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape && initialLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!initialLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${settings.showPageBorder === false ? 'no-border' : ''} ${(isHideToolbarsEnabled && isLandscapeUIHidden) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ 
+        <div className={`quran-reader-container ${isPageInputActive ? 'force-ui-visible' : ''} ${isLandscape ? 'landscape-mode' : ''} ${isLandscapeUIHidden ? 'landscape-ui-hidden' : ''} ${!isLandscape ? 'vertical-page' : ''} ${isTransparentMode ? 'is-transparent-mode' : ''} ${settings.showPageBorder === false ? 'no-border' : ''} ${(isHideToolbarsEnabled && isLandscapeUIHidden) ? 'hide-toolbars-autoscroll' : ''}`} id="app-container" style={{ 
             backgroundColor: settings.bgColor, 
             color: settings.textColor, 
             fontFamily: settings.fontFamily, 
@@ -3322,8 +3343,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 isLandscape={isLandscape}
             />
         )}
-        {activeModals.includes('surah-modal') && <SurahJuzModal type="surah" quranData={quranData} onSelect={(s, a) => { closeModal('surah-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('surah-modal')} isLandscape={initialLandscape} currentSelection={currentAyah.s} currentAyah={currentAyah} />}
-            {activeModals.includes('juz-modal') && <SurahJuzModal type="juz" quranData={quranData} onSelect={(s, a) => { closeModal('juz-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('juz-modal')} isLandscape={initialLandscape} currentSelection={juz} currentAyah={currentAyah} />}
+        {activeModals.includes('surah-modal') && <SurahJuzModal type="surah" quranData={quranData} onSelect={(s, a) => { closeModal('surah-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('surah-modal')} isLandscape={isLandscape} currentSelection={currentAyah.s} currentAyah={currentAyah} />}
+            {activeModals.includes('juz-modal') && <SurahJuzModal type="juz" quranData={quranData} onSelect={(s, a) => { closeModal('juz-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('juz-modal')} isLandscape={isLandscape} currentSelection={juz} currentAyah={currentAyah} />}
             {activeModals.includes('bookmarks-modal') && (
                 <BookmarksModal 
                     bookmarks={bookmarks} 
@@ -3365,7 +3386,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} readingMode={readingMode} settings={settings} showToast={showToast} />}
             {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={modeSuffix} />}
             {activeModals.includes('settings-modal') && <SettingsModal onClose={() => closeModal('settings-modal')} onOpenModal={openModal} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={modeSuffix} />}
-            {activeModals.includes('notification-settings-modal') && <NotificationSettingsModal onClose={() => closeModal('notification-settings-modal')} showToast={showToast} isLandscape={isLandscape} modeSuffix={modeSuffix} />}
+            {activeModals.includes('notification-settings-modal') && <NotificationSettingsModal onClose={() => closeModal('notification-settings-modal')} showToast={showToast} isLandscape={isLandscape} modeSuffix={modeSuffix} initialTab={modalParams?.tab} />}
             {activeModals.includes('font-modal') && <FontSelectModal isOpen={true} onClose={() => closeModal('font-modal')} isLandscape={isLandscape} currentFontId={settings.fontFamily} onSelect={(id) => {
                 const newSettings = { ...settings, fontFamily: id };
                 setSettings(newSettings);

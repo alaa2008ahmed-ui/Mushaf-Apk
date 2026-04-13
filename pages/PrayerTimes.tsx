@@ -9,6 +9,7 @@ import PrayerCard from '../components/PrayerTimes/PrayerCard';
 import PrayerTimesHeader from '../components/PrayerTimes/PrayerTimesHeader';
 import PrayerTimesDateSearch from '../components/PrayerTimes/PrayerTimesDateSearch';
 import NextPrayerCard from '../components/PrayerTimes/NextPrayerCard';
+import NotificationSettingsModal from '../components/QuranReader/NotificationSettingsModal';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { MapPin, Search, Clock, Bell, Calendar, Palette } from 'lucide-react';
 import {
@@ -33,12 +34,15 @@ function PrayerTimes({ onBack, onNavigate }) {
     const topBarTextColor = theme.topBarText || (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
     const [currentEditingKey, setCurrentEditingKey] = useState(null);
     const [tempOffset, setTempOffset] = useState(0);
     const [tempIqama, setTempIqama] = useState(0);
     const [searchInput, setSearchInput] = useState("");
     const searchIconRef = useRef(null);
     const [toastMessage, setToastMessage] = useState('');
+    
+    const isAudioMuted = config.audioMutedUntil && Date.now() < config.audioMutedUntil;
     
     const supportsDST = checkSupportsDST(config.location.combinedCode, config.location.fullCountry);
     const isSummerTimeActive = config.isSummerTime && supportsDST;
@@ -160,6 +164,10 @@ function PrayerTimes({ onBack, onNavigate }) {
     };
 
     const togglePrayerSound = (key) => {
+        if (isAudioMuted) {
+            showToast("التنبيهات الصوتية متوقفة حالياً. قم بتفعيلها أولاً.");
+            return;
+        }
         updateConfig({
             mutedPrayers: {...config.mutedPrayers, [key]: !config.mutedPrayers[key] }
         });
@@ -224,6 +232,7 @@ function PrayerTimes({ onBack, onNavigate }) {
         <div className="h-screen w-screen flex flex-col" style={{ backgroundColor: 'transparent', color: theme.textColor }}>
             <PrayerTimesHeader 
                 handleRefreshLocation={handleRefreshLocation}
+                onOpenNotifications={() => setIsNotifModalOpen(true)}
                 cityGov={config.location.cityGov}
                 fullCountry={config.location.fullCountry}
                 combinedCode={config.location.combinedCode}
@@ -242,6 +251,24 @@ function PrayerTimes({ onBack, onNavigate }) {
                         secondaryColor={secondaryColor}
                         onNavigateToMonthly={() => onNavigate('monthly-prayer-times')}
                     />
+                    
+                    {isAudioMuted && (
+                        <div className="bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                                <Bell className="w-5 h-5" />
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold">التنبيهات الصوتية متوقفة</span>
+                                    <span className="text-xs opacity-80">حتى {new Date(config.audioMutedUntil!).toLocaleDateString('ar-SA')}</span>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => updateConfig({ audioMutedUntil: undefined })}
+                                className="text-xs bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-300 px-3 py-1.5 rounded-lg font-bold"
+                            >
+                                تفعيل
+                            </button>
+                        </div>
+                    )}
                     
                     {(() => {
                         const maghribOffset = (config.prayerOffsets.Maghrib || 0) + (isSummerTimeActive ? 60 : 0);
@@ -281,7 +308,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                              const totalOffset = (config.prayerOffsets[key] || 0) + (isSummerTimeActive ? 60 : 0);
                              const displayTimeStr = applyOffset(times[key], totalOffset);
                              const iqamaTime = applyOffset(displayTimeStr, config.iqamaOffsets[key]);
-                             const isMuted = config.mutedPrayers[key];
+                             const isMuted = config.mutedPrayers[key] || isAudioMuted;
                              
                             return (
                                 <PrayerCard
@@ -337,6 +364,16 @@ function PrayerTimes({ onBack, onNavigate }) {
                 saveUserConfig={saveUserConfig}
                 isSummerTime={isSummerTimeActive}
             />
+
+            {isNotifModalOpen && (
+                <NotificationSettingsModal 
+                    onClose={() => setIsNotifModalOpen(false)}
+                    showToast={showToast}
+                    isLandscape={false}
+                    modeSuffix="_prayer_times"
+                    initialTab="phone"
+                />
+            )}
 
             {toastMessage && (
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-[100]">

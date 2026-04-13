@@ -29,6 +29,7 @@ interface PrayerConfig {
         midnight: boolean;
         lastThird: boolean;
     };
+    audioMutedUntil?: number;
 }
 
 interface PrayerTimesContextType {
@@ -474,7 +475,10 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                                     let soundPath = "/assets/audio/takbeer1.mp3"; // Default to Takbeer 1
                                     let playSound = true;
                                     
-                                    if (toneConfig && toneConfig.data) {
+                                    if (config.audioMutedUntil && Date.now() < config.audioMutedUntil) {
+                                        playSound = false;
+                                        soundPath = '';
+                                    } else if (toneConfig && toneConfig.data) {
                                         if (toneConfig.data === 'none') {
                                             playSound = false;
                                             soundPath = '';
@@ -658,27 +662,6 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                                     androidAllowWhileIdle: true,
                                     androidWakeUpScreen: true
                                 });
-                            }
-
-                            // Surah Al-Kahf reminder on Thursday at 9:00 PM
-                            if (date.getDay() === 4) {
-                                const kahfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 21, 0, 0);
-                                if (kahfDate > new Date()) {
-                                    notificationsToSchedule.push({
-                                        id: 2000 + day,
-                                        title: 'تذكير بسورة الكهف',
-                                        text: 'قال رسول الله ﷺ: "من قرأ سورة الكهف في يوم الجمعة أضاء له من النور ما بين الجمعتين"',
-                                        trigger: { at: kahfDate },
-                                        foreground: true,
-                                        priority: 1,
-                                        androidChannelId: 'night_times_channel',
-                                        androidChannelName: 'تنبيهات أوقات الليل',
-                                        androidChannelDescription: 'إشعارات لأوقات أول الليل، منتصف الليل، والثلث الأخير',
-                                        androidChannelImportance: 4,
-                                        androidAllowWhileIdle: true,
-                                        androidWakeUpScreen: true
-                                    });
-                                }
                             }
                         }
 
