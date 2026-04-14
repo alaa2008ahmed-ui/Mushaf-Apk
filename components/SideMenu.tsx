@@ -134,10 +134,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
                     </>
                 )}
             </AnimatePresence>
-
-            {isOpen && currentPage !== 'quran' && (
-                <TutorialOverlay tutorialId="side-menu-tutorial" steps={sideMenuTutorialSteps} />
-            )}
         </>
     );
 };

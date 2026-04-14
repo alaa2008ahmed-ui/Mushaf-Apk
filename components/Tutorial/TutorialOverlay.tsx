@@ -150,7 +150,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[20000] select-none overflow-hidden"
+          className="fixed inset-0 z-[9999] select-none overflow-hidden"
           onClick={handleClose}
         >
           {/* Background Overlay - Only when no specific target is highlighted */}
@@ -158,7 +158,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="absolute inset-0 bg-black/85" 
+              className="absolute inset-0 bg-black/60" 
             />
           )}
 
@@ -169,9 +169,9 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
               animate={{ 
                 opacity: 1,
                 boxShadow: [
-                  '0 0 0 9999px rgba(0,0,0,0.85), 0 0 0 2px rgba(255,255,255,0.2), 0 0 20px rgba(255,255,255,0.4)',
-                  '0 0 0 9999px rgba(0,0,0,0.85), 0 0 0 4px rgba(255,255,255,0.3), 0 0 40px rgba(255,255,255,0.6)',
-                  '0 0 0 9999px rgba(0,0,0,0.85), 0 0 0 2px rgba(255,255,255,0.2), 0 0 20px rgba(255,255,255,0.4)'
+                  '0 0 0 9999px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.4), 0 0 20px rgba(255,255,255,0.5)',
+                  '0 0 0 9999px rgba(0,0,0,0.5), 0 0 0 4px rgba(255,255,255,0.6), 0 0 40px rgba(255,255,255,0.8)',
+                  '0 0 0 9999px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.4), 0 0 20px rgba(255,255,255,0.5)'
                 ]
               }}
               transition={{
@@ -181,18 +181,18 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
                   ease: "easeInOut"
                 }
               }}
-              className="fixed border-2 border-emerald-400 rounded-xl pointer-events-none z-[20001] shadow-[0_0_20px_rgba(52,211,153,0.5)]"
+              className="fixed border-[3px] border-white rounded-2xl pointer-events-none z-[10000]"
               style={{
-                top: targetRect.top - 4,
-                left: targetRect.left - 4,
-                width: targetRect.width + 8,
-                height: targetRect.height + 8,
+                top: targetRect.top - 6,
+                left: targetRect.left - 6,
+                width: targetRect.width + 12,
+                height: targetRect.height + 12,
               }}
             />
           )}
 
           {/* Tooltip Container */}
-          <div className="fixed inset-0 pointer-events-none z-[20002]">
+          <div className="fixed inset-0 pointer-events-none z-[10001]">
             <div className="absolute w-full max-w-[320px]" style={tooltipStyle}>
               <motion.div
                 key={currentStep}
@@ -237,13 +237,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
                   {step.text}
                 </p>
                 
-                <div className="flex items-center justify-center gap-3">
-                  <button 
-                    className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full text-base font-bold active:scale-95 transition-transform"
-                    onClick={handleClose}
-                  >
-                    تخطي
-                  </button>
+                <div className="flex items-center justify-center gap-2">
                   <button 
                     className="px-8 py-3 bg-white text-black rounded-full text-base font-bold flex items-center gap-2 active:scale-95 transition-transform shadow-lg"
                     onClick={handleNext}
@@ -258,7 +252,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
           </div>
 
           {/* Bottom Indicators & Instructions */}
-          <div className="fixed bottom-10 left-0 right-0 flex flex-col items-center gap-6 pointer-events-none z-[20002]">
+          <div className="fixed bottom-10 left-0 right-0 flex flex-col items-center gap-6 pointer-events-none z-[10002]">
             {/* Step Indicator */}
             <div className="flex gap-2.5">
               {steps.map((_, idx) => (

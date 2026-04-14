@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { motion } from 'motion/react';
-import { CheckCircle, BookOpen, RotateCcw, Play, Settings, X, User, Plus, Trash2, ChevronDown, Edit2 } from 'lucide-react';
+import { CheckCircle, BookOpen, RotateCcw, Play, Settings, X, User, Plus, Trash2, ChevronDown, Edit2, Home } from 'lucide-react';
 import BottomBar from '../components/BottomBar';
 import ResetConfirmModal from '../components/DailyWird/ResetConfirmModal';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
@@ -52,8 +52,43 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     const saved = localStorage.getItem('dailyWirdSettings_v2');
     if (saved) {
       const parsed = JSON.parse(saved);
-      setAllSettings(parsed.profiles || []);
-      setActiveId(parsed.activeId || (parsed.profiles?.length > 0 ? parsed.profiles[0].id : null));
+      const profiles = parsed.profiles || [];
+      const activeProfileId = parsed.activeId || (profiles.length > 0 ? profiles[0].id : null);
+      
+      setAllSettings(profiles);
+      setActiveId(activeProfileId);
+
+      // Check if the active profile is completed and redirect to settings if so
+      if (activeProfileId) {
+        const activeProfile = profiles.find((p: WirdSettings) => p.id === activeProfileId);
+        if (activeProfile) {
+          const totalDays = activeProfile.mode === 'days' ? activeProfile.value : Math.ceil(TOTAL_PAGES / activeProfile.value);
+          if (activeProfile.completedDays.length >= totalDays) {
+            // Use a timeout to ensure state is settled before triggering reset/settings
+            setTimeout(() => {
+              // We need to find the profile again from the latest state or just use the one we found
+              const resetProfile: WirdSettings = {
+                ...activeProfile,
+                currentDay: 1,
+                completedDays: [],
+                startPage: 1,
+                isActive: true
+              };
+              const newProfiles = profiles.map((p: WirdSettings) => p.id === activeProfile.id ? resetProfile : p);
+              
+              setAllSettings(newProfiles);
+              setActiveId(activeProfile.id);
+              localStorage.setItem('dailyWirdSettings_v2', JSON.stringify({ profiles: newProfiles, activeId: activeProfile.id }));
+              
+              setTempMode(activeProfile.mode);
+              setTempValue(activeProfile.value.toString());
+              setTempName(activeProfile.name);
+              setCalcMethod('remaining');
+              setShowSettings(true);
+            }, 0);
+          }
+        }
+      }
     } else {
       // Migrate from old single settings if exists
       const oldSaved = localStorage.getItem('dailyWirdSettings');
@@ -199,6 +234,26 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       setShowSettings(true);
     }
     setShowResetConfirm(false);
+  };
+
+  const handleStartNewWird = () => {
+    if (settings) {
+      const resetProfile: WirdSettings = {
+        ...settings,
+        currentDay: 1,
+        completedDays: [],
+        startPage: 1,
+        isActive: true
+      };
+      const newProfiles = allSettings.map(p => p.id === settings.id ? resetProfile : p);
+      saveAllSettings(newProfiles, settings.id);
+      
+      setTempMode(settings.mode);
+      setTempValue(settings.value.toString());
+      setTempName(settings.name);
+      setCalcMethod('remaining');
+      setShowSettings(true);
+    }
   };
 
   const dailyWirdTutorialSteps: TutorialStep[] = [
@@ -475,16 +530,40 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
                 تمت القراءة
               </button>
             ) : (
-              <div 
-                className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-sm border shadow-sm"
-                style={{ 
-                  backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : `${secondaryColor}20`, 
-                  color: isBlackAndWhite ? '#FFFFFF' : secondaryColor,
-                  borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : `${secondaryColor}30`
-                }}
-              >
-                <CheckCircle size={20} />
-                أنجزت ورد اليوم، بارك الله فيك!
+              <div className="flex flex-col gap-2">
+                <div 
+                  className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-sm border shadow-sm"
+                  style={{ 
+                    backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : `${secondaryColor}20`, 
+                    color: isBlackAndWhite ? '#FFFFFF' : secondaryColor,
+                    borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : `${secondaryColor}30`
+                  }}
+                >
+                  <CheckCircle size={20} />
+                  انجزت الورد كاملا
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleStartNewWird}
+                    className="flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md"
+                    style={{ backgroundColor: primaryColor, color: btnTextColor, border: theme.btnBorder || 'none' }}
+                  >
+                    <Plus size={20} />
+                    بداية ورد جديد
+                  </button>
+                  <button 
+                    onClick={() => onNavigate('home')}
+                    className="flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm"
+                    style={{ 
+                      backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : `${secondaryColor}10`, 
+                      color: isBlackAndWhite ? '#FFFFFF' : secondaryColor,
+                      borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : `${secondaryColor}30`
+                    }}
+                  >
+                    <Home size={20} />
+                    الرئيسية
+                  </button>
+                </div>
               </div>
             )}
           </div>

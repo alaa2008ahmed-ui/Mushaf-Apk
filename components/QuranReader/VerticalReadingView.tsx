@@ -20,6 +20,9 @@ interface VerticalReadingViewProps {
     memorizationSettings?: any;
     isLandscape?: boolean;
     onSurahHeaderLongPress?: () => void;
+    isPlaying?: boolean;
+    isRecording?: boolean;
+    revealedAyah?: {s: number, a: number} | null;
 }
 
 // Global cache to ensure instant loading after first fetch
@@ -43,7 +46,10 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     hideVerses = false,
     memorizationSettings,
     isLandscape = false,
-    onSurahHeaderLongPress
+    onSurahHeaderLongPress,
+    isPlaying = false,
+    isRecording = false,
+    revealedAyah = null
 }) => {
     const [tafseerData, setTafseerData] = useState<any[]>(cachedTafseerData || []);
     const [meaningsData, setMeaningsData] = useState<any[]>(cachedMeaningsData || []);
@@ -314,8 +320,33 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
         // Determine if this ayah should be hidden
         let shouldHide = hideVerses && !isHighlighted;
         
-        // If in memorization review mode, only hide if it's within the review range
-        if (shouldHide && memorizationSettings?.isReviewMode) {
+        // If in memorization review mode, apply specific hiding rules
+        if (memorizationSettings?.isReviewMode) {
+            const s = item.surahNumber;
+            const a = item.ayahNumber;
+            const { fromSurah, fromAyah, toSurah, toAyah } = memorizationSettings;
+            
+            const isBefore = s < fromSurah || (s === fromSurah && a < fromAyah);
+            const isAfter = s > toSurah || (s === toSurah && a > toAyah);
+            const isInRange = !isBefore && !isAfter;
+            
+            const isRevealed = revealedAyah && revealedAyah.s === s && revealedAyah.a === a;
+            
+            if (isInRange) {
+                if (isRevealed) {
+                    shouldHide = false; // Show if temporarily revealed
+                } else if (isRecording) {
+                    shouldHide = true; // Hide all during recording
+                } else if (isPlaying && isHighlighted) {
+                    shouldHide = false; // Show only the playing verse
+                } else {
+                    shouldHide = true; // Hide otherwise
+                }
+            } else {
+                shouldHide = false; // Don't hide verses outside the review range
+            }
+        } else if (shouldHide && memorizationSettings) {
+            // Normal memorization mode logic (hide only within range)
             const s = item.surahNumber;
             const a = item.ayahNumber;
             const { fromSurah, fromAyah, toSurah, toAyah } = memorizationSettings;
@@ -341,17 +372,19 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                         onAyahClick(item.surahNumber, item.ayahNumber);
                     }}
                 >
-                    <div className="ayah-text mb-4 text-right leading-relaxed transition-all duration-500" 
+                    <div className="ayah-text mb-4 text-right leading-relaxed transition-all duration-300" 
                          style={{ 
                              fontSize: `${localFontSize}rem`, 
                              fontFamily: settings.fontFamily,
-                             color: currentTheme.accent,
+                             color: shouldHide ? 'transparent' : currentTheme.accent,
+                             backgroundColor: shouldHide ? `${currentTheme.accent}20` : 'transparent',
+                             borderRadius: shouldHide ? '8px' : '0',
                              letterSpacing: 0,
                              fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"',
                              textRendering: 'optimizeLegibility',
-                             filter: shouldHide ? 'blur(8px)' : 'none',
-                             opacity: shouldHide ? 0.3 : 1,
-                             cursor: hideVerses ? 'pointer' : 'default'
+                             opacity: shouldHide ? 0.6 : 1,
+                             cursor: hideVerses ? 'pointer' : 'default',
+                             userSelect: shouldHide ? 'none' : 'auto'
                          }}>
                         {item.text}
                         <span className="inline-flex items-center justify-center w-8 h-8 mr-2 rounded-full border border-current text-sm font-bold"

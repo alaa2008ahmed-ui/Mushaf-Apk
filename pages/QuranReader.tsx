@@ -197,13 +197,14 @@ const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentThem
     );
 };
 
-const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any, navParams?: any, isSideMenuOpen?: boolean }> = ({ page, onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings, navParams, isSideMenuOpen = false }) => {
+const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any, navParams?: any }> = ({ page, onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings, navParams }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [savedSession, setSavedSession] = useState<any>(null);
     const [localIsMemorizationMode, setLocalIsMemorizationMode] = useState(isMemorizationMode);
     const [localMemorizationSettings, setLocalMemorizationSettings] = useState(memorizationSettings);
     const [isHideMode, setIsHideMode] = useState(memorizationSettings?.isReviewMode || false);
+    const [revealedAyah, setRevealedAyah] = useState<{s: number, a: number} | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [recordedAudio, setRecordedAudio] = useState<string | null>(null);
     const [showReviewTest, setShowReviewTest] = useState(false);
@@ -352,11 +353,73 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const recordedAudioRef = useRef<HTMLAudioElement | null>(null);
 
+    const speechRecognitionRef = useRef<any>(null);
+    const recognizedTextRef = useRef<string>('');
+
     const startRecording = async () => {
         stopAudio(); // Stop reciter audio
         if (recordedAudioRef.current) {
             recordedAudioRef.current.pause();
             recordedAudioRef.current = null;
+        }
+        
+        recognizedTextRef.current = '';
+
+        if (localMemorizationSettings?.isReviewMode) {
+            try {
+                if (Capacitor.isNativePlatform()) {
+                    const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
+                    const checkPerm = await SpeechRecognition.checkPermissions();
+                    if (checkPerm.speechRecognition !== 'granted') {
+                        await SpeechRecognition.requestPermissions();
+                    }
+                    await SpeechRecognition.start({
+                        language: "ar-SA",
+                        maxResults: 1,
+                        partialResults: true,
+                        popup: false
+                    });
+                    
+                    // Native plugin doesn't return results via await start(), it uses listeners
+                    // We need to add a listener if not already added
+                    SpeechRecognition.addListener('partialResults', (data: any) => {
+                        if (data.matches && data.matches.length > 0) {
+                            recognizedTextRef.current = data.matches[0];
+                        }
+                    });
+                } else {
+                    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                    if (SpeechRecognitionAPI) {
+                        const recognition = new SpeechRecognitionAPI();
+                        recognition.lang = 'ar-SA';
+                        recognition.continuous = true;
+                        recognition.interimResults = true;
+                        
+                        recognition.onresult = (event: any) => {
+                            let interimTranscript = '';
+                            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                                if (event.results[i].isFinal) {
+                                    recognizedTextRef.current += event.results[i][0].transcript;
+                                } else {
+                                    interimTranscript += event.results[i][0].transcript;
+                                }
+                            }
+                            if (interimTranscript) {
+                                recognizedTextRef.current = interimTranscript;
+                            }
+                        };
+                        
+                        speechRecognitionRef.current = recognition;
+                        recognition.start();
+                    }
+                }
+                setIsRecording(true);
+                showToast('بدأ الاستماع...');
+                return;
+            } catch (err) {
+                console.error("Error starting speech recognition", err);
+                // Fallback to normal recording if speech recognition fails
+            }
         }
 
         try {
@@ -407,6 +470,66 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
 
     const stopRecording = async () => {
+        if (localMemorizationSettings?.isReviewMode && isRecording) {
+            try {
+                if (Capacitor.isNativePlatform()) {
+                    const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
+                    await SpeechRecognition.stop();
+                    SpeechRecognition.removeAllListeners();
+                } else if (speechRecognitionRef.current) {
+                    speechRecognitionRef.current.stop();
+                }
+                setIsRecording(false);
+                
+                // Match text
+                setTimeout(() => {
+                    const spokenText = normalizeArabic(recognizedTextRef.current);
+                    const currentAyahData = quranData?.surahs[currentAyah.s - 1]?.ayahs[currentAyah.a - 1];
+                    
+                    if (currentAyahData) {
+                        const originalText = normalizeArabic(currentAyahData.text);
+                        
+                        // Simple matching logic: check if the spoken text contains a significant part of the original text
+                        // Or if they are very similar
+                        const spokenWords = spokenText.split(' ').filter(w => w.length > 0);
+                        const originalWords = originalText.split(' ').filter(w => w.length > 0);
+                        
+                        let matchCount = 0;
+                        for (const word of originalWords) {
+                            if (spokenWords.includes(word)) {
+                                matchCount++;
+                            }
+                        }
+                        
+                        const matchPercentage = originalWords.length > 0 ? matchCount / originalWords.length : 0;
+                        
+                        if (matchPercentage > 0.6 || spokenText.includes(originalText) || originalText.includes(spokenText)) {
+                            showToast('أحسنت القراءة');
+                            
+                            // Temporarily show the verse
+                            setRevealedAyah({ s: currentAyah.s, a: currentAyah.a });
+                            
+                            setTimeout(() => {
+                                setRevealedAyah(null);
+                                const nextA = currentAyah.a + 1;
+                                const currentSurah = quranData.surahs[currentAyah.s - 1];
+                                if (nextA <= currentSurah.ayahs.length) {
+                                    jumpToAyah(currentAyah.s, nextA, true);
+                                } else if (currentAyah.s < 114) {
+                                    jumpToAyah(currentAyah.s + 1, 1, true);
+                                }
+                            }, 2000); // Wait 2 seconds before moving to next
+                        } else {
+                            showToast('أخطأت القراءة، أعد المحاولة');
+                        }
+                    }
+                }, 500);
+                return;
+            } catch (err) {
+                console.error("Error stopping speech recognition", err);
+            }
+        }
+
         if (Capacitor.isNativePlatform() && isRecording) {
             try {
                 const result = await VoiceRecorder.stopRecording();
@@ -2479,7 +2602,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 jumpToAyah(startS, startA, true);
                 setTimeout(() => {
                     if (isMountedRef.current) {
-                        playAudio(startS, startA);
+                        if (!localMemorizationSettings.isReviewMode) {
+                            playAudio(startS, startA);
+                        }
                     }
                 }, 500);
             }, 100);
@@ -3290,6 +3415,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             hideVerses={isHideMode}
                             memorizationSettings={localMemorizationSettings}
                             onSurahHeaderLongPress={() => setIsSurahDesignPickerOpen(true)}
+                            isPlaying={isPlaying}
+                            isRecording={isRecording}
+                            revealedAyah={revealedAyah}
                         />
                     </div>
                 )}
@@ -3545,9 +3673,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             />
             <JuzNotification isVisible={juzNotification.show} text={juzNotification.text} currentTheme={currentTheme} />
             <Toast message={toast.message} show={toast.show} onClose={handleToastClose} currentTheme={currentTheme} />
-            {!isSideMenuOpen && (
-                <TutorialOverlay tutorialId="quran-reader-tutorial" steps={quranTutorialSteps} />
-            )}
+            <TutorialOverlay tutorialId="quran-reader-tutorial" steps={quranTutorialSteps} />
             
             {/* Memorization Review Controls */}
             {localIsMemorizationMode && localMemorizationSettings?.isReviewMode && (

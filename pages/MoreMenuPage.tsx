@@ -23,7 +23,6 @@ const ALL_MENU_ITEMS = [
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
     { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
-    { id: 'phone-notifications', label: "📱 إشعارات الهاتف", className: "col-span-2 h-10", colorIndex: 0 },
 ];
 
 interface MoreMenuPageProps {

@@ -276,7 +276,6 @@ function AppContent({
         onNavigate={handleNavigate} 
         onOpenThemes={toggleThemeSelector}
         onOpenSideMenu={() => setIsSideMenuOpen(true)}
-        isSideMenuOpen={isSideMenuOpen}
         navParams={navParams}
       />
 

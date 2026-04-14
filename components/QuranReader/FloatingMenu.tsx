@@ -589,7 +589,6 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
 
     return (
         <>
-            <TutorialOverlay tutorialId="floating-menu-tutorial" steps={floatingMenuTutorialSteps} />
             {/* Backdrop to block interaction with background and close menu on click */}
             <div 
                 className={`fixed inset-0 z-[999] transition-opacity duration-300 ${isFloatingMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
