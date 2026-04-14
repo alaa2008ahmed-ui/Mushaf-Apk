@@ -197,7 +197,7 @@ const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentThem
     );
 };
 
-const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any, navParams?: any }> = ({ page, onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings, navParams }) => {
+const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any, navParams?: any, isSideMenuOpen?: boolean }> = ({ page, onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings, navParams, isSideMenuOpen = false }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [savedSession, setSavedSession] = useState<any>(null);
@@ -3545,7 +3545,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             />
             <JuzNotification isVisible={juzNotification.show} text={juzNotification.text} currentTheme={currentTheme} />
             <Toast message={toast.message} show={toast.show} onClose={handleToastClose} currentTheme={currentTheme} />
-            <TutorialOverlay tutorialId="quran-reader-tutorial" steps={quranTutorialSteps} />
+            {!isSideMenuOpen && (
+                <TutorialOverlay tutorialId="quran-reader-tutorial" steps={quranTutorialSteps} />
+            )}
             
             {/* Memorization Review Controls */}
             {localIsMemorizationMode && localMemorizationSettings?.isReviewMode && (
