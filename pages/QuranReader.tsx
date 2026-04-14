@@ -204,6 +204,12 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const [localIsMemorizationMode, setLocalIsMemorizationMode] = useState(isMemorizationMode);
     const [localMemorizationSettings, setLocalMemorizationSettings] = useState(memorizationSettings);
     const [isHideMode, setIsHideMode] = useState(memorizationSettings?.isReviewMode || false);
+    
+    useEffect(() => {
+        if (localMemorizationSettings?.isReviewMode) {
+            setIsHideMode(true);
+        }
+    }, [localMemorizationSettings?.isReviewMode]);
     const [revealedAyah, setRevealedAyah] = useState<{s: number, a: number} | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [recordedAudio, setRecordedAudio] = useState<string | null>(null);
@@ -277,6 +283,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const modeSuffix = baseModeSuffix;
     const bookmarkSuffix = baseModeSuffix;
+    const posSuffix = isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : baseModeSuffix;
 
     const [quranData, setQuranData] = useState(quranJsonData);
 
@@ -355,6 +362,51 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const speechRecognitionRef = useRef<any>(null);
     const recognizedTextRef = useRef<string>('');
+    const isSpeechRecognitionActiveRef = useRef(false);
+
+    const checkRecognizedText = (isFinalCheck = false) => {
+        const spokenText = normalizeArabic(recognizedTextRef.current);
+        const currentAyahData = quranData?.surahs[currentAyah.s - 1]?.ayahs[currentAyah.a - 1];
+        
+        if (currentAyahData) {
+            const originalText = normalizeArabic(currentAyahData.text);
+            
+            const spokenWords = spokenText.split(' ').filter(w => w.length > 0);
+            const originalWords = originalText.split(' ').filter(w => w.length > 0);
+            
+            let matchCount = 0;
+            for (const word of originalWords) {
+                if (spokenWords.includes(word)) {
+                    matchCount++;
+                }
+            }
+            
+            const matchPercentage = originalWords.length > 0 ? matchCount / originalWords.length : 0;
+            
+            if (matchPercentage > 0.6 || spokenText.includes(originalText) || originalText.includes(spokenText)) {
+                // It's correct!
+                showToast('أحسنت');
+                setRevealedAyah({ s: currentAyah.s, a: currentAyah.a });
+                
+                // Stop recording
+                stopRecording(true);
+                
+                setTimeout(() => {
+                    setRevealedAyah(null);
+                    const nextA = currentAyah.a + 1;
+                    const currentSurah = quranData.surahs[currentAyah.s - 1];
+                    if (nextA <= currentSurah.ayahs.length) {
+                        jumpToAyah(currentAyah.s, nextA, true);
+                    } else if (currentAyah.s < 114) {
+                        jumpToAyah(currentAyah.s + 1, 1, true);
+                    }
+                }, 2000);
+            } else if (isFinalCheck) {
+                // If it's the final check (user pressed stop) and it's wrong
+                showToast('أخطأت أعد المحاولة');
+            }
+        }
+    };
 
     const startRecording = async () => {
         stopAudio(); // Stop reciter audio
@@ -364,6 +416,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
         
         recognizedTextRef.current = '';
+        isSpeechRecognitionActiveRef.current = false;
 
         if (localMemorizationSettings?.isReviewMode) {
             try {
@@ -380,13 +433,14 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         popup: false
                     });
                     
-                    // Native plugin doesn't return results via await start(), it uses listeners
-                    // We need to add a listener if not already added
+                    SpeechRecognition.removeAllListeners(); // Clear previous listeners
                     SpeechRecognition.addListener('partialResults', (data: any) => {
                         if (data.matches && data.matches.length > 0) {
                             recognizedTextRef.current = data.matches[0];
+                            checkRecognizedText(false);
                         }
                     });
+                    isSpeechRecognitionActiveRef.current = true;
                 } else {
                     const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
                     if (SpeechRecognitionAPI) {
@@ -407,10 +461,14 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             if (interimTranscript) {
                                 recognizedTextRef.current = interimTranscript;
                             }
+                            checkRecognizedText(false);
                         };
                         
                         speechRecognitionRef.current = recognition;
                         recognition.start();
+                        isSpeechRecognitionActiveRef.current = true;
+                    } else {
+                        throw new Error("Speech Recognition not supported");
                     }
                 }
                 setIsRecording(true);
@@ -418,6 +476,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 return;
             } catch (err) {
                 console.error("Error starting speech recognition", err);
+                isSpeechRecognitionActiveRef.current = false;
                 // Fallback to normal recording if speech recognition fails
             }
         }
@@ -469,8 +528,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
     };
 
-    const stopRecording = async () => {
-        if (localMemorizationSettings?.isReviewMode && isRecording) {
+    const stopRecording = async (isAutoMatched: boolean | any = false) => {
+        setIsRecording(false);
+        if (localMemorizationSettings?.isReviewMode && isSpeechRecognitionActiveRef.current) {
             try {
                 if (Capacitor.isNativePlatform()) {
                     const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
@@ -479,71 +539,32 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 } else if (speechRecognitionRef.current) {
                     speechRecognitionRef.current.stop();
                 }
-                setIsRecording(false);
                 
-                // Match text
-                setTimeout(() => {
-                    const spokenText = normalizeArabic(recognizedTextRef.current);
-                    const currentAyahData = quranData?.surahs[currentAyah.s - 1]?.ayahs[currentAyah.a - 1];
-                    
-                    if (currentAyahData) {
-                        const originalText = normalizeArabic(currentAyahData.text);
-                        
-                        // Simple matching logic: check if the spoken text contains a significant part of the original text
-                        // Or if they are very similar
-                        const spokenWords = spokenText.split(' ').filter(w => w.length > 0);
-                        const originalWords = originalText.split(' ').filter(w => w.length > 0);
-                        
-                        let matchCount = 0;
-                        for (const word of originalWords) {
-                            if (spokenWords.includes(word)) {
-                                matchCount++;
-                            }
-                        }
-                        
-                        const matchPercentage = originalWords.length > 0 ? matchCount / originalWords.length : 0;
-                        
-                        if (matchPercentage > 0.6 || spokenText.includes(originalText) || originalText.includes(spokenText)) {
-                            showToast('أحسنت القراءة');
-                            
-                            // Temporarily show the verse
-                            setRevealedAyah({ s: currentAyah.s, a: currentAyah.a });
-                            
-                            setTimeout(() => {
-                                setRevealedAyah(null);
-                                const nextA = currentAyah.a + 1;
-                                const currentSurah = quranData.surahs[currentAyah.s - 1];
-                                if (nextA <= currentSurah.ayahs.length) {
-                                    jumpToAyah(currentAyah.s, nextA, true);
-                                } else if (currentAyah.s < 114) {
-                                    jumpToAyah(currentAyah.s + 1, 1, true);
-                                }
-                            }, 2000); // Wait 2 seconds before moving to next
-                        } else {
-                            showToast('أخطأت القراءة، أعد المحاولة');
-                        }
-                    }
-                }, 500);
+                isSpeechRecognitionActiveRef.current = false;
+
+                if (isAutoMatched !== true) {
+                    // Manual stop, check if it's correct
+                    checkRecognizedText(true);
+                }
                 return;
             } catch (err) {
                 console.error("Error stopping speech recognition", err);
             }
         }
 
-        if (Capacitor.isNativePlatform() && isRecording) {
+        if (Capacitor.isNativePlatform()) {
             try {
                 const result = await VoiceRecorder.stopRecording();
                 if (result.value && result.value.recordDataBase64) {
                     const audioUrl = `data:${result.value.mimeType};base64,${result.value.recordDataBase64}`;
                     setRecordedAudio(audioUrl);
-                    setIsRecording(false);
                     showToast('تم إيقاف التسجيل');
                 }
             } catch (err) {
                 console.error("Error stopping recording", err);
                 showToast('فشل إيقاف التسجيل');
             }
-        } else if (mediaRecorderRef.current && isRecording) {
+        } else if (mediaRecorderRef.current) {
             mediaRecorderRef.current.stop();
             mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
             showToast('تم إيقاف التسجيل');
@@ -746,7 +767,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             if (!isHideToolbarsEnabledRef.current && isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
         }
 
-        const posKey = `last_pos${mode}`;
+        const posKey = `last_pos${posSuffix}`;
         const lastPos = JSON.parse(localStorage.getItem(posKey) || '{}');
         
         // Only stop activities if the reading mode actually changed, not just orientation
@@ -808,7 +829,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 'btn-share': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }
             });
         }
-    }, [modeSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode]);
+    }, [modeSuffix, posSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode]);
     
     useEffect(() => {
         if (!isLandscape) return;

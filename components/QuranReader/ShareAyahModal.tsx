@@ -814,12 +814,15 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             {surahInfo}
                         </p>
                         <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '10px' }}>
-                            <span 
-                                style={{ fontFamily: 'var(--font-lateef), serif', color: selectedBg.accent, textShadow: '0 3px 9px rgba(0,0,0,0.8)', fontSize: `${fontSize * 2.4}px`, fontWeight: 700, textAlign: 'right' }} 
+                            <a 
+                                href="https://play.google.com/store/apps/details?id=com.mushaf.ahmedandlayla"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ fontFamily: 'var(--font-lateef), serif', color: selectedBg.accent, textShadow: '0 3px 9px rgba(0,0,0,0.8)', fontSize: `${fontSize * 2.4}px`, fontWeight: 700, textAlign: 'right', textDecoration: 'none' }} 
                                 dir="rtl"
                             >
                                 مصحف احمد وليلى
-                            </span>
+                            </a>
                             <span 
                                 style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 3px 6px rgba(0,0,0,0.5)', fontSize: `${fontSize * 1.7}px`, fontWeight: 500, maxWidth: '50%', textAlign: 'left', lineHeight: 1.2, opacity: 0.9 }} 
                             >
@@ -838,11 +841,15 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     position: 'absolute',
                     left: '-9999px',
                     top: '-9999px',
-                    width: '1080px', // Fixed width for high-quality capture
+                    width: '1440px', // Increased width to prevent excessive height
+                    minHeight: '1920px', // Ensure minimum height
+                    height: 'auto', // Allow height to grow based on content
                     backgroundColor: '#ffffff',
-                    padding: '60px 50px',
+                    padding: '80px 60px',
                     color: '#000000',
-                    direction: 'rtl'
+                    direction: 'rtl',
+                    display: 'flex',
+                    flexDirection: 'column'
                 }}
             >
                 <style>{`
@@ -852,6 +859,9 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     #hidden-mushaf-capture .ayah-text-block {
                         font-size: 42px !important;
                         line-height: 2.2 !important;
+                    }
+                    #hidden-mushaf-capture .mushaf-page {
+                        flex: 1;
                     }
                 `}</style>
                 {renderShareHeader()}
@@ -864,7 +874,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     settings={appSettings || { fontSize: 2.5, fontFamily: 'var(--font-amiri-quran)', textColor: '#000000' }}
                 />
                     <div style={{ 
-                        marginTop: '30px', 
+                        marginTop: 'auto', 
                         paddingTop: '20px', 
                         borderTop: '3px solid #3b82f6', 
                         display: 'flex', 
@@ -873,7 +883,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         gap: '8px'
                     }}>
                         <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontFamily: 'var(--font-lateef), serif', fontSize: '24px', color: '#3b82f6', fontWeight: 'bold' }}>مصحف احمد وليلى</span>
+                            <a href="https://play.google.com/store/apps/details?id=com.mushaf.ahmedandlayla" target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-lateef), serif', fontSize: '24px', color: '#3b82f6', fontWeight: 'bold', textDecoration: 'none' }}>مصحف احمد وليلى</a>
                             <span style={{ fontSize: '16px', opacity: 0.7, fontWeight: 'bold' }}>صفحة {toArabic(pageNum)}</span>
                         </div>
                         {pageAyahs.length > 0 && pageAyahs[0].sNum === pageAyahs[pageAyahs.length - 1].sNum && (
@@ -893,16 +903,20 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         position: 'absolute',
                         left: '-9999px',
                         top: '-9999px',
-                        width: '1080px', // Same as Mushaf
+                        width: '1440px', // Increased width to prevent excessive height
+                        minHeight: '1920px', // Ensure minimum height
+                        height: 'auto', // Allow height to grow based on content
                         backgroundColor: '#ffffff',
-                        padding: '60px 50px', // Same as Mushaf
+                        padding: '80px 60px', // Same as Mushaf
                         color: '#000000',
-                        direction: 'rtl'
+                        direction: 'rtl',
+                        display: 'flex',
+                        flexDirection: 'column'
                     }}
                 >
                     {renderShareHeader()}
                     
-                    <div style={{ padding: '15px 8px 5px' }}>
+                    <div style={{ padding: '15px 8px 5px', flex: 1 }}>
                         {pageAyahs.map((ay, idx) => {
                             const ayahText = getAyahText(ay.sNum, ay.numberInSurah);
                             const explanation = getExplanationText(ay.sNum, ay.numberInSurah);
@@ -958,7 +972,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     </div>
                     
                     <div style={{ 
-                        marginTop: '30px', 
+                        marginTop: 'auto', 
                         paddingTop: '20px', 
                         borderTop: '3px solid #3b82f6', 
                         display: 'flex', 
@@ -967,7 +981,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         gap: '8px'
                     }}>
                         <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontFamily: 'var(--font-lateef), serif', fontSize: '24px', color: '#3b82f6', fontWeight: 'bold' }}>مصحف احمد وليلى</span>
+                            <a href="https://play.google.com/store/apps/details?id=com.mushaf.ahmedandlayla" target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-lateef), serif', fontSize: '24px', color: '#3b82f6', fontWeight: 'bold', textDecoration: 'none' }}>مصحف احمد وليلى</a>
                             <span style={{ fontSize: '16px', opacity: 0.7, fontWeight: 'bold' }}>صفحة {toArabic(pageNum)}</span>
                         </div>
                         {pageAyahs.length > 0 && pageAyahs[0].sNum === pageAyahs[pageAyahs.length - 1].sNum && (
@@ -1148,12 +1162,15 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                             {surahInfo}
                                         </p>
                                         <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2px' }}>
-                                            <span 
-                                                style={{ fontFamily: 'var(--font-lateef), serif', color: selectedBg.accent, textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '14px', fontWeight: 700, textAlign: 'right' }} 
+                                            <a 
+                                                href="https://play.google.com/store/apps/details?id=com.mushaf.ahmedandlayla"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{ fontFamily: 'var(--font-lateef), serif', color: selectedBg.accent, textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '14px', fontWeight: 700, textAlign: 'right', textDecoration: 'none' }} 
                                                 dir="rtl"
                                             >
                                                 مصحف احمد وليلى
-                                            </span>
+                                            </a>
                                             <span 
                                                 style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '10px', fontWeight: 500, maxWidth: '50%', textAlign: 'left', lineHeight: 1.2, opacity: 0.9 }} 
                                             >
