@@ -371,8 +371,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const isSpeechRecognitionActiveRef = useRef(false);
 
     const checkRecognizedText = (isFinalCheck = false) => {
+        const ayah = currentAyahRef.current;
         const spokenText = normalizeArabic(recognizedTextRef.current);
-        const currentAyahData = quranData?.surahs[currentAyah.s - 1]?.ayahs[currentAyah.a - 1];
+        const currentAyahData = quranData?.surahs[ayah.s - 1]?.ayahs[ayah.a - 1];
         
         if (currentAyahData) {
             const originalText = normalizeArabic(currentAyahData.text);
@@ -393,10 +394,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             if (matchPercentage > 0.6 || spokenText.includes(originalText) || originalText.includes(spokenText)) {
                 // It's correct!
                 showToast('أحسنت');
-                const ayahKey = `${currentAyah.s}-${currentAyah.a}`;
-                if (!revealedAyahs.includes(ayahKey)) {
-                    setRevealedAyahs(prev => [...prev, ayahKey]);
-                }
+                const ayahKey = `${ayah.s}-${ayah.a}`;
+                setRevealedAyahs(prev => prev.includes(ayahKey) ? prev : [...prev, ayahKey]);
                 
                 // Clear recognized text for the next ayah
                 recognizedTextRef.current = '';
@@ -404,7 +403,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 // Check if we reached the end of the memorization range
                 if (localMemorizationSettings) {
                     const { toSurah, toAyah } = localMemorizationSettings;
-                    if (currentAyah.s === toSurah && currentAyah.a === toAyah) {
+                    if (ayah.s === toSurah && ayah.a === toAyah) {
                         showToast('تم الانتهاء من المراجعة بنجاح');
                         stopRecording(true);
                         return;
@@ -412,19 +411,19 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 }
 
                 // Move to next ayah
-                const nextA = currentAyah.a + 1;
-                const currentSurah = quranData.surahs[currentAyah.s - 1];
+                const nextA = ayah.a + 1;
+                const currentSurah = quranData.surahs[ayah.s - 1];
                 if (nextA <= currentSurah.ayahs.length) {
-                    jumpToAyah(currentAyah.s, nextA, true);
-                } else if (currentAyah.s < 114) {
-                    jumpToAyah(currentAyah.s + 1, 1, true);
+                    jumpToAyah(ayah.s, nextA, true);
+                } else if (ayah.s < 114) {
+                    jumpToAyah(ayah.s + 1, 1, true);
                 }
             } else if (isFinalCheck) {
                 // If it's the final check (user pressed stop or error detected) and it's wrong
                 showToast('أخطأت أعد المحاولة');
                 
                 // Flash the ayah as a hint
-                const ayahKey = `${currentAyah.s}-${currentAyah.a}`;
+                const ayahKey = `${ayah.s}-${ayah.a}`;
                 setTempRevealedAyah(ayahKey);
                 setTimeout(() => {
                     setTempRevealedAyah(null);
