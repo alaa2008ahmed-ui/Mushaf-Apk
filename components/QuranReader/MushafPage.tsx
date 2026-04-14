@@ -25,7 +25,8 @@ interface MushafPageProps {
     memorizationSettings?: any;
     isPlaying?: boolean;
     isRecording?: boolean;
-    revealedAyah?: {s: number, a: number} | null;
+    revealedAyahs?: string[];
+    tempRevealedAyah?: string | null;
 }
 
 export const fixQuranText = (text: string) => {
@@ -51,7 +52,7 @@ export const renderTajweedTextHtml = (text: string) => {
     return fixQuranText(text);
 };
 
-const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, onSurahHeaderLongPress, settings, currentTheme, hideVerses, memorizationSettings, isPlaying, isRecording, revealedAyah }) => {
+const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, onSurahHeaderLongPress, settings, currentTheme, hideVerses, memorizationSettings, isPlaying, isRecording, revealedAyahs = [], tempRevealedAyah }) => {
     const pageRef = useRef<HTMLDivElement | null>(null);
     const longPressTimer = useRef<number | null>(null);
     const isLongPressTriggered = useRef(false);
@@ -190,13 +191,14 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                         const isInRange = !isBefore && !isAfter;
                         
                         const isHighlighted = highlightedAyahId === id;
-                        const isRevealed = revealedAyah && revealedAyah.s === s && revealedAyah.a === a;
+                        const ayahKey = `${s}-${a}`;
+                        const isRevealed = revealedAyahs.includes(ayahKey) || tempRevealedAyah === ayahKey;
 
                         if (isInRange) {
                             if (isRevealed) {
-                                shouldHide = false; // Show if temporarily revealed
+                                shouldHide = false; // Show if revealed or hint
                             } else if (isRecording) {
-                                shouldHide = true; // Hide all during recording
+                                shouldHide = true; // Hide others during recording
                             } else if (isPlaying && isHighlighted) {
                                 shouldHide = false; // Show only the playing verse
                             } else {

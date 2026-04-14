@@ -208,13 +208,16 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     useEffect(() => {
         if (localMemorizationSettings?.isReviewMode) {
             setIsHideMode(true);
-            setRevealedAyah(null);
+            setRevealedAyahs([]);
+            setTempRevealedAyah(null);
         } else {
             setIsHideMode(false);
-            setRevealedAyah(null);
+            setRevealedAyahs([]);
+            setTempRevealedAyah(null);
         }
     }, [localMemorizationSettings?.isReviewMode]);
-    const [revealedAyah, setRevealedAyah] = useState<{s: number, a: number} | null>(null);
+    const [revealedAyahs, setRevealedAyahs] = useState<string[]>([]);
+    const [tempRevealedAyah, setTempRevealedAyah] = useState<string | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [recordedAudio, setRecordedAudio] = useState<string | null>(null);
     const [showReviewTest, setShowReviewTest] = useState(false);
@@ -386,30 +389,53 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             
             const matchPercentage = originalWords.length > 0 ? matchCount / originalWords.length : 0;
             
+            // If it's correct (or mostly correct)
             if (matchPercentage > 0.6 || spokenText.includes(originalText) || originalText.includes(spokenText)) {
                 // It's correct!
                 showToast('أحسنت');
-                setRevealedAyah({ s: currentAyah.s, a: currentAyah.a });
+                const ayahKey = `${currentAyah.s}-${currentAyah.a}`;
+                if (!revealedAyahs.includes(ayahKey)) {
+                    setRevealedAyahs(prev => [...prev, ayahKey]);
+                }
                 
-                // Stop recording
-                stopRecording(true);
+                // Clear recognized text for the next ayah
+                recognizedTextRef.current = '';
                 
-                setTimeout(() => {
-                    setRevealedAyah(null);
-                    const nextA = currentAyah.a + 1;
-                    const currentSurah = quranData.surahs[currentAyah.s - 1];
-                    if (nextA <= currentSurah.ayahs.length) {
-                        jumpToAyah(currentAyah.s, nextA, true);
-                    } else if (currentAyah.s < 114) {
-                        jumpToAyah(currentAyah.s + 1, 1, true);
+                // Check if we reached the end of the memorization range
+                if (localMemorizationSettings) {
+                    const { toSurah, toAyah } = localMemorizationSettings;
+                    if (currentAyah.s === toSurah && currentAyah.a === toAyah) {
+                        showToast('تم الانتهاء من المراجعة بنجاح');
+                        stopRecording(true);
+                        return;
                     }
-                }, 2000);
+                }
+
+                // Move to next ayah
+                const nextA = currentAyah.a + 1;
+                const currentSurah = quranData.surahs[currentAyah.s - 1];
+                if (nextA <= currentSurah.ayahs.length) {
+                    jumpToAyah(currentAyah.s, nextA, true);
+                } else if (currentAyah.s < 114) {
+                    jumpToAyah(currentAyah.s + 1, 1, true);
+                }
             } else if (isFinalCheck) {
-                // If it's the final check (user pressed stop) and it's wrong
+                // If it's the final check (user pressed stop or error detected) and it's wrong
                 showToast('أخطأت أعد المحاولة');
+                
+                // Flash the ayah as a hint
+                const ayahKey = `${currentAyah.s}-${currentAyah.a}`;
+                setTempRevealedAyah(ayahKey);
+                setTimeout(() => {
+                    setTempRevealedAyah(null);
+                }, 800); // Show for 0.8 seconds
+
                 if (recognizedTextRef.current) {
                     console.log("Recognized text was:", recognizedTextRef.current);
                 }
+                
+                // Reset recognized text to let them try again
+                recognizedTextRef.current = '';
             }
         }
     };
@@ -473,11 +499,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         isSpeechRecognitionActiveRef.current = false;
                     };
 
-                    recognition.onresult = (event: any) => {
+                        recognition.onresult = (event: any) => {
                             let interimTranscript = '';
+                            let isFinal = false;
                             for (let i = event.resultIndex; i < event.results.length; ++i) {
                                 if (event.results[i].isFinal) {
-                                    recognizedTextRef.current += event.results[i][0].transcript;
+                                    recognizedTextRef.current = event.results[i][0].transcript;
+                                    isFinal = true;
                                 } else {
                                     interimTranscript += event.results[i][0].transcript;
                                 }
@@ -485,7 +513,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             if (interimTranscript) {
                                 recognizedTextRef.current = interimTranscript;
                             }
-                            checkRecognizedText(false);
+                            checkRecognizedText(isFinal);
                         };
                         
                         speechRecognitionRef.current = recognition;
@@ -3434,7 +3462,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                                 memorizationSettings={localMemorizationSettings}
                                 isPlaying={isPlaying}
                                 isRecording={isRecording}
-                                revealedAyah={revealedAyah}
+                                revealedAyahs={revealedAyahs}
+                                tempRevealedAyah={tempRevealedAyah}
                                 onSurahHeaderLongPress={() => setIsSurahDesignPickerOpen(true)}
                             />
                         );
@@ -3466,7 +3495,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             onSurahHeaderLongPress={() => setIsSurahDesignPickerOpen(true)}
                             isPlaying={isPlaying}
                             isRecording={isRecording}
-                            revealedAyah={revealedAyah}
+                            revealedAyahs={revealedAyahs}
+                            tempRevealedAyah={tempRevealedAyah}
                         />
                     </div>
                 )}

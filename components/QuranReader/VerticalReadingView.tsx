@@ -22,7 +22,8 @@ interface VerticalReadingViewProps {
     onSurahHeaderLongPress?: () => void;
     isPlaying?: boolean;
     isRecording?: boolean;
-    revealedAyah?: {s: number, a: number} | null;
+    revealedAyahs?: string[];
+    tempRevealedAyah?: string | null;
 }
 
 // Global cache to ensure instant loading after first fetch
@@ -49,7 +50,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     onSurahHeaderLongPress,
     isPlaying = false,
     isRecording = false,
-    revealedAyah = null
+    revealedAyahs = [],
+    tempRevealedAyah = null
 }) => {
     const [tafseerData, setTafseerData] = useState<any[]>(cachedTafseerData || []);
     const [meaningsData, setMeaningsData] = useState<any[]>(cachedMeaningsData || []);
@@ -330,13 +332,14 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
             const isAfter = s > toSurah || (s === toSurah && a > toAyah);
             const isInRange = !isBefore && !isAfter;
             
-            const isRevealed = revealedAyah && revealedAyah.s === s && revealedAyah.a === a;
+            const ayahKey = `${s}-${a}`;
+            const isRevealed = revealedAyahs.includes(ayahKey) || tempRevealedAyah === ayahKey;
             
             if (isInRange) {
                 if (isRevealed) {
-                    shouldHide = false; // Show if temporarily revealed
+                    shouldHide = false; // Show if revealed or hint
                 } else if (isRecording) {
-                    shouldHide = true; // Hide all during recording
+                    shouldHide = true; // Hide others during recording
                 } else if (isPlaying && isHighlighted) {
                     shouldHide = false; // Show only the playing verse
                 } else {
