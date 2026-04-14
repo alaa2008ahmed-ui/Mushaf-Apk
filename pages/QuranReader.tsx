@@ -208,6 +208,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     useEffect(() => {
         if (localMemorizationSettings?.isReviewMode) {
             setIsHideMode(true);
+            setRevealedAyah(null);
+        } else {
+            setIsHideMode(false);
+            setRevealedAyah(null);
         }
     }, [localMemorizationSettings?.isReviewMode]);
     const [revealedAyah, setRevealedAyah] = useState<{s: number, a: number} | null>(null);
@@ -275,15 +279,14 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
     }, [isLandscape, isWirdMode, isMemorizationMode]);
 
-    const baseModeSuffix = localIsMemorizationMode 
+    const sharedSuffix = isLandscape ? '_h' : '_v';
+    const modeSuffix = sharedSuffix;
+    const bookmarkSuffix = sharedSuffix;
+    const posSuffix = isWirdMode 
+        ? `_wird_${isLandscape ? 'h' : 'v'}` 
+        : localIsMemorizationMode 
             ? `_memorization_${isLandscape ? 'h' : 'v'}` 
-            : readingMode === 'mushaf' 
-                ? (isLandscape ? '_h' : '_v') 
-                : `_${readingMode}_${isLandscape ? 'h' : 'v'}`;
-
-    const modeSuffix = baseModeSuffix;
-    const bookmarkSuffix = baseModeSuffix;
-    const posSuffix = isWirdMode ? `_wird_${isLandscape ? 'h' : 'v'}` : baseModeSuffix;
+            : sharedSuffix;
 
     const [quranData, setQuranData] = useState(quranJsonData);
 
@@ -404,6 +407,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             } else if (isFinalCheck) {
                 // If it's the final check (user pressed stop) and it's wrong
                 showToast('أخطأت أعد المحاولة');
+                if (recognizedTextRef.current) {
+                    console.log("Recognized text was:", recognizedTextRef.current);
+                }
             }
         }
     };
@@ -426,12 +432,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     if (checkPerm.speechRecognition !== 'granted') {
                         await SpeechRecognition.requestPermissions();
                     }
-                    await SpeechRecognition.start({
-                        language: "ar-SA",
-                        maxResults: 1,
-                        partialResults: true,
-                        popup: false
-                    });
                     
                     SpeechRecognition.removeAllListeners(); // Clear previous listeners
                     SpeechRecognition.addListener('partialResults', (data: any) => {
@@ -440,6 +440,18 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             checkRecognizedText(false);
                         }
                     });
+                    
+                    SpeechRecognition.addListener('listeningState', (data: any) => {
+                        console.log("Listening state changed:", data.status);
+                    });
+                    
+                    await SpeechRecognition.start({
+                        language: "ar-SA",
+                        maxResults: 1,
+                        partialResults: true,
+                        popup: false
+                    });
+                    
                     isSpeechRecognitionActiveRef.current = true;
                 } else {
                     const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -449,7 +461,19 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         recognition.continuous = true;
                         recognition.interimResults = true;
                         
-                        recognition.onresult = (event: any) => {
+                        recognition.onstart = () => {
+                        console.log("Speech recognition started");
+                        showToast('جاري الاستماع...');
+                    };
+
+                    recognition.onerror = (event: any) => {
+                        console.error("Speech recognition error", event.error);
+                        showToast(`خطأ في التعرف على الصوت: ${event.error}`);
+                        setIsRecording(false);
+                        isSpeechRecognitionActiveRef.current = false;
+                    };
+
+                    recognition.onresult = (event: any) => {
                             let interimTranscript = '';
                             for (let i = event.resultIndex; i < event.results.length; ++i) {
                                 if (event.results[i].isFinal) {
@@ -528,7 +552,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
     };
 
-    const stopRecording = async (isAutoMatched: boolean | any = false) => {
+    const stopRecording = async (isAutoMatched: any = false) => {
+        const autoMatched = isAutoMatched === true;
         setIsRecording(false);
         if (localMemorizationSettings?.isReviewMode && isSpeechRecognitionActiveRef.current) {
             try {
@@ -542,7 +567,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 
                 isSpeechRecognitionActiveRef.current = false;
 
-                if (isAutoMatched !== true) {
+                if (!autoMatched) {
                     // Manual stop, check if it's correct
                     checkRecognizedText(true);
                 }
@@ -1895,9 +1920,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const handleAyahClick = useCallback((s, a) => {
         setHighlightedAyahId(`ayah-${s}-${a}`);
         setCurrentAyah({ s, a });
-        const key = `last_pos${modeSuffix}`;
+        const key = `last_pos${posSuffix}`;
         localStorage.setItem(key, JSON.stringify({ s, a }));
-    }, [modeSuffix]);
+    }, [posSuffix]);
 
     const handleAyahTextClick = useCallback((s: number, a: number) => {
         handleAyahClick(s, a);
@@ -2469,7 +2494,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         const prevAyah = currentAyahRef.current;
                         
                         setCurrentAyah({ s, a });
-                        localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
+                        localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a }));
 
                         // Detect Surah change
                         /* 
@@ -2634,13 +2659,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 jumpToPage(initialPage, true);
             }, 100);
         } else {
-            const key = modeSuffix;
+            const key = posSuffix;
             const lastPos = JSON.parse(localStorage.getItem(`last_pos${key}`) || '{}');
             setTimeout(() => {
                 jumpToAyah(lastPos.s || 1, lastPos.a || 1, true);
             }, 100);
         }
-    }, [jumpToAyah, jumpToPage, modeSuffix, initialSurah, initialAyah, initialPage, localIsMemorizationMode, localMemorizationSettings, playAudio]);
+    }, [jumpToAyah, jumpToPage, posSuffix, initialSurah, initialAyah, initialPage, localIsMemorizationMode, localMemorizationSettings, playAudio]);
 
     const handleVoiceCommand = useCallback((text: string) => {
         console.log('QuranReader - Voice Command:', text);
@@ -3407,6 +3432,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                                 currentTheme={currentTheme}
                                 hideVerses={isHideMode}
                                 memorizationSettings={localMemorizationSettings}
+                                isPlaying={isPlaying}
+                                isRecording={isRecording}
+                                revealedAyah={revealedAyah}
                                 onSurahHeaderLongPress={() => setIsSurahDesignPickerOpen(true)}
                             />
                         );
@@ -3425,7 +3453,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             onVisibleAyahChange={(s, a) => {
                                 if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
                                     setCurrentAyah({ s, a });
-                                    localStorage.setItem(`last_pos${modeSuffix}`, JSON.stringify({ s, a }));
+                                    localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a }));
                                 }
                             }}
                             showMarkerNotification={showMarkerNotification}

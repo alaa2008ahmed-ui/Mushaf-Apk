@@ -23,6 +23,9 @@ interface MushafPageProps {
     currentTheme?: any;
     hideVerses?: boolean;
     memorizationSettings?: any;
+    isPlaying?: boolean;
+    isRecording?: boolean;
+    revealedAyah?: {s: number, a: number} | null;
 }
 
 export const fixQuranText = (text: string) => {
@@ -48,7 +51,7 @@ export const renderTajweedTextHtml = (text: string) => {
     return fixQuranText(text);
 };
 
-const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, onSurahHeaderLongPress, settings, currentTheme, hideVerses, memorizationSettings }) => {
+const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, highlightedAyahId, onAyahClick, onVerseClick, onVerseLongPress, onAyahLongPress, onInteractionStart, onInteractionEnd, onSurahHeaderLongPress, settings, currentTheme, hideVerses, memorizationSettings, isPlaying, isRecording, revealedAyah }) => {
     const pageRef = useRef<HTMLDivElement | null>(null);
     const longPressTimer = useRef<number | null>(null);
     const isLongPressTriggered = useRef(false);
@@ -177,7 +180,33 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                     let shouldHide = hideVerses && highlightedAyahId !== id;
                     
                     // If in memorization review mode, only hide if it's within the review range
-                    if (shouldHide && memorizationSettings?.isReviewMode) {
+                    if (memorizationSettings?.isReviewMode) {
+                        const s = ayah.sNum;
+                        const a = ayah.numberInSurah;
+                        const { fromSurah, fromAyah, toSurah, toAyah } = memorizationSettings;
+                        
+                        const isBefore = s < fromSurah || (s === fromSurah && a < fromAyah);
+                        const isAfter = s > toSurah || (s === toSurah && a > toAyah);
+                        const isInRange = !isBefore && !isAfter;
+                        
+                        const isHighlighted = highlightedAyahId === id;
+                        const isRevealed = revealedAyah && revealedAyah.s === s && revealedAyah.a === a;
+
+                        if (isInRange) {
+                            if (isRevealed) {
+                                shouldHide = false; // Show if temporarily revealed
+                            } else if (isRecording) {
+                                shouldHide = true; // Hide all during recording
+                            } else if (isPlaying && isHighlighted) {
+                                shouldHide = false; // Show only the playing verse
+                            } else {
+                                shouldHide = true; // Hide otherwise
+                            }
+                        } else {
+                            shouldHide = false; // Don't hide verses outside the review range
+                        }
+                    } else if (shouldHide && memorizationSettings) {
+                        // Normal memorization mode logic (hide only within range)
                         const s = ayah.sNum;
                         const a = ayah.numberInSurah;
                         const { fromSurah, fromAyah, toSurah, toAyah } = memorizationSettings;
