@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Monitor, Smartphone, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download, Type, Shield, Bell, Check, Loader2, ChevronLeft } from 'lucide-react';
+import { Monitor, Smartphone, AppWindow, VolumeX, ChevronDown, List, Search, Brain, Calendar, BookOpen, Book, FileText, Headphones, Languages, Clock, Sun, Compass, Mic, Bookmark, BookText, Settings, Palette, Plus, Save, X, Heart, Calculator, Info, HelpCircle, Download, Type, Shield, Bell, Check, Loader2, ChevronLeft, Grid } from 'lucide-react';
 import { THEMES, DEFAULT_SETTINGS, READERS, MEMORIZATION_READERS, RECITERS, FONTS, TAFSEERS, JUZ_MAP, SURAH_NAMES_AR, SAJDAH_LOCATIONS, toArabic } from './constants';
 import { quranData } from '../../utils/quranData';
+import { usePrayerTimes } from '../../context/PrayerTimesContext';
+import { setupNotifications } from '../../utils/notifications';
+import TutorialOverlay, { TutorialStep } from '../Tutorial/TutorialOverlay';
 
 interface FloatingMenuProps {
     page: string;
@@ -27,6 +30,7 @@ interface FloatingMenuProps {
     bookmarks?: any[];
     deleteBookmark?: (id: number) => void;
     jumpToAyah?: (s: number, a: number, closeMenu?: boolean) => void;
+    handleMushafTypeSelect: (type: string) => void;
     initialView?: string;
 }
 
@@ -86,6 +90,44 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
 
     type MenuView = 'main' | 'themes' | 'download_quran_menu' | 'download_tafseer' | 'audio' | 'interface' | 'font' | 'notifications' | 'download_quran' | 'download_listening' | 'download_memorization' | 'bookmarks' | 'sajdah_list' | 'sajdah_info';
     const [currentView, setCurrentView] = useState<MenuView>('main');
+
+    const floatingMenuTutorialSteps: TutorialStep[] = [
+        {
+            id: 'floating-menu-modes',
+            title: 'أنماط القراءة',
+            text: 'يمكنك التبديل بين المصحف، التفسير، معاني الكلمات، والترجمة من هنا.',
+            selector: '[data-id="menu-item-mushaf"]',
+            icon: <BookOpen className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'floating-menu-themes',
+            title: 'المظهر والألوان',
+            text: 'اضغط هنا لتغيير ثيم التطبيق بالكامل. اختر من بين مجموعة متنوعة من الألوان التي تريح عينيك وتناسب ذوقك.',
+            selector: '[data-id="menu-item-themes"]',
+            icon: <Palette className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'floating-menu-search',
+            title: 'البحث السريع',
+            text: 'ابحث عن أي سورة أو آية أو كلمة في القرآن الكريم بسهولة.',
+            selector: '[data-id="menu-item-search"]',
+            icon: <Search className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'floating-menu-settings',
+            title: 'الإعدادات العامة',
+            text: 'من هنا يمكنك الوصول إلى جميع إعدادات التطبيق، مثل حجم الخط، نوع الخط، والقارئ المفضل.',
+            selector: '[data-id="menu-item-settings"]',
+            icon: <Settings className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'floating-menu-shortcuts',
+            title: 'الاختصارات السريعة',
+            text: 'هنا تجد أزرار الوصول السريع لأهم ميزات التطبيق. يمكنك تخصيص هذه الأزرار وإضافة ما تحتاجه عبر زر (+) الموجود في الأسفل.',
+            selector: '#floating-menu-shortcuts',
+            icon: <Grid className="w-8 h-8 text-white" />
+        }
+    ];
 
     // Initialize selectedReader based on view
     useEffect(() => {
@@ -547,6 +589,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
 
     return (
         <>
+            <TutorialOverlay tutorialId="floating-menu-tutorial" steps={floatingMenuTutorialSteps} />
             {/* Backdrop to block interaction with background and close menu on click */}
             <div 
                 className={`fixed inset-0 z-[999] transition-opacity duration-300 ${isFloatingMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
@@ -1230,18 +1273,18 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                     <div className="p-2 flex flex-col justify-between overflow-y-auto flex-grow custom-scrollbar min-h-0">
                         {/* خيارات القراءة */}
                         <MenuSection title="خيارات القراءة" iconColor={iconColor} titleColor="#2563eb" currentTheme={currentTheme}>
-                            <MenuItem icon={<BookText size={18} />} label="المصحف" onClick={() => handleAction(() => { setReadingMode('mushaf'); })} iconColor={iconColor} isActive={readingMode === 'mushaf'} currentTheme={currentTheme} />
-                            <MenuItem icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} isActive={readingMode === 'tafseer'} currentTheme={currentTheme} />
-                            <MenuItem icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} isActive={readingMode === 'meanings'} currentTheme={currentTheme} />
-                            <MenuItem icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} isActive={readingMode === 'translation'} currentTheme={currentTheme} />
+                            <MenuItem data-id="menu-item-mushaf" icon={<BookText size={18} />} label="المصحف" onClick={() => handleAction(() => { setReadingMode('mushaf'); })} iconColor={iconColor} isActive={readingMode === 'mushaf'} currentTheme={currentTheme} />
+                            <MenuItem data-id="menu-item-tafseer" icon={<Book size={18} />} label="التفسير" onClick={() => handleAction(() => setReadingMode('tafseer'))} iconColor={iconColor} isActive={readingMode === 'tafseer'} currentTheme={currentTheme} />
+                            <MenuItem data-id="menu-item-meanings" icon={<FileText size={18} />} label="المعاني" onClick={() => handleAction(() => setReadingMode('meanings'))} iconColor={iconColor} isActive={readingMode === 'meanings'} currentTheme={currentTheme} />
+                            <MenuItem data-id="menu-item-translation" icon={<Languages size={18} />} label="الترجمة" onClick={() => handleAction(() => setReadingMode('translation'))} iconColor={iconColor} isActive={readingMode === 'translation'} currentTheme={currentTheme} />
                         </MenuSection>
 
                         {/* الإعدادات والبحث */}
                         <MenuSection title="الإعدادات والبحث" iconColor={iconColor} titleColor="#16a34a" currentTheme={currentTheme}>
-                            <MenuItem icon={<Palette size={18} />} label="المظهر" onClick={() => setCurrentView('themes')} iconColor={iconColor} currentTheme={currentTheme} />
-                            <MenuItem icon={<Search size={18} />} label="البحث" onClick={() => handleAction(() => openModal('search-modal'))} iconColor={iconColor} currentTheme={currentTheme} />
-                            <MenuItem icon={<Settings size={18} />} label="الإعدادات" onClick={() => handleAction(() => openModal('settings-modal'))} iconColor={iconColor} currentTheme={currentTheme} />
-                            <MenuItem icon={<Bookmark size={18} />} label="العلامات المرجعية" onClick={() => setCurrentView('bookmarks')} iconColor={iconColor} currentTheme={currentTheme} />
+                            <MenuItem data-id="menu-item-themes" icon={<Palette size={18} />} label="المظهر" onClick={() => setCurrentView('themes')} iconColor={iconColor} currentTheme={currentTheme} />
+                            <MenuItem data-id="menu-item-search" icon={<Search size={18} />} label="البحث" onClick={() => handleAction(() => openModal('search-modal'))} iconColor={iconColor} currentTheme={currentTheme} />
+                            <MenuItem data-id="menu-item-settings" icon={<Settings size={18} />} label="الإعدادات" onClick={() => handleAction(() => openModal('settings-modal'))} iconColor={iconColor} currentTheme={currentTheme} />
+                            <MenuItem data-id="menu-item-bookmarks" icon={<Bookmark size={18} />} label="العلامات المرجعية" onClick={() => setCurrentView('bookmarks')} iconColor={iconColor} currentTheme={currentTheme} />
                         </MenuSection>
 
                         {/* اختصارات أخرى */}
@@ -1249,7 +1292,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             {ALL_SHORTCUTS.filter(s => selectedShortcuts.includes(s.id)).map(shortcut => (
                                 <React.Fragment key={shortcut.id}>
                                     <MenuItem 
-                                        icon={React.cloneElement(shortcut.icon as React.ReactElement, { size: 18 })} 
+                                        icon={React.cloneElement(shortcut.icon as React.ReactElement<any>, { size: 18 })} 
                                         label={shortcut.label} 
                                         onClick={() => {
                                             if (shortcut.id === 'quran-download-parent') {
@@ -1287,7 +1330,10 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
 };
 
 const NotificationSettingsContent: React.FC<{ showToast: (msg: string) => void, modeSuffix: string, currentTheme: any }> = ({ showToast, modeSuffix, currentTheme }) => {
-    const [settings, setSettings] = useState(() => {
+    const { config, updateConfig } = usePrayerTimes();
+    const [activeTab, setActiveTab] = useState<'app' | 'phone'>('app');
+    
+    const [appSettings, setAppSettings] = useState(() => {
         const saved = localStorage.getItem('notification_settings' + modeSuffix);
         if (saved) {
             try {
@@ -1307,9 +1353,28 @@ const NotificationSettingsContent: React.FC<{ showToast: (msg: string) => void, 
         };
     });
 
-    const toggleSetting = (key: string) => {
-        const newSettings = { ...settings, [key]: !settings[key] };
-        setSettings(newSettings);
+    const [phoneSettings, setPhoneSettings] = useState(() => {
+        const saved = localStorage.getItem('phone_notifications_settings');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error('Error parsing phone notification settings', e);
+            }
+        }
+        return {
+            sabah: true,
+            masaa: true,
+            dua: true,
+            tasbeehMorning: true,
+            tasbeehEvening: true,
+            kahf: true,
+        };
+    });
+
+    const toggleAppSetting = (key: string) => {
+        const newSettings = { ...appSettings, [key]: !appSettings[key] };
+        setAppSettings(newSettings);
         localStorage.setItem('notification_settings' + modeSuffix, JSON.stringify(newSettings));
         window.dispatchEvent(new Event('notification-settings-change'));
         
@@ -1326,44 +1391,229 @@ const NotificationSettingsContent: React.FC<{ showToast: (msg: string) => void, 
         showToast(`${newSettings[key] ? 'تم تفعيل' : 'تم تعطيل'} ${labels[key]}`);
     };
 
+    const togglePhoneSetting = (key: string) => {
+        const newSettings = { ...phoneSettings, [key]: !phoneSettings[key] };
+        setPhoneSettings(newSettings);
+        localStorage.setItem('phone_notifications_settings', JSON.stringify(newSettings));
+        setupNotifications(newSettings);
+        
+        const labels: Record<string, string> = {
+            sabah: 'أذكار الصباح',
+            masaa: 'أذكار المساء',
+            dua: 'وقت الدعاء',
+            tasbeehMorning: 'التسبيح (صباحاً)',
+            tasbeehEvening: 'التسبيح (مساءً)',
+            kahf: 'سورة الكهف',
+        };
+        
+        showToast(`${newSettings[key] ? 'تم تفعيل' : 'تم تعطيل'} ${labels[key]}`);
+    };
+
+    const toggleNightNotification = (key: 'firstThird' | 'midnight' | 'lastThird') => {
+        const currentNightNotifs = config.nightNotifications || { firstThird: true, midnight: true, lastThird: true };
+        const newNightNotifs = { ...currentNightNotifs, [key]: !currentNightNotifs[key] };
+        updateConfig({ nightNotifications: newNightNotifs });
+        
+        const labels: Record<string, string> = {
+            firstThird: 'أول الليل',
+            midnight: 'منتصف الليل',
+            lastThird: 'الثلث الأخير'
+        };
+        
+        showToast(`${newNightNotifs[key] ? 'تم تفعيل' : 'تم تعطيل'} إشعار ${labels[key]}`);
+    };
+
+    const muteAudioForDuration = (durationDays: number) => {
+        const muteUntil = Date.now() + durationDays * 24 * 60 * 60 * 1000;
+        updateConfig({ audioMutedUntil: muteUntil });
+        showToast(`تم تعطيل التنبيهات الصوتية للصلاة لمدة ${durationDays} يوم`);
+    };
+
+    const unmuteAudio = () => {
+        updateConfig({ audioMutedUntil: undefined });
+        showToast('تم تفعيل التنبيهات الصوتية للصلاة');
+    };
+
+    const isAudioMuted = config.audioMutedUntil && Date.now() < config.audioMutedUntil;
+
     return (
-        <div className="space-y-2" style={{ fontFamily: currentTheme.font }}>
-            {[
-                { id: 'quarter', label: 'الأحزاب والأرباع', desc: 'تنبيه عند الوصول لبداية حزب أو ربع جديد' },
-                { id: 'juz', label: 'بداية الأجزاء', desc: 'تنبيه عند الانتقال لجزء جديد' },
-                { id: 'sajda', label: 'مواضع السجدات', desc: 'تنبيه عند الوصول لآية بها سجدة تلاوة' },
-                { id: 'themes', label: 'تغيير الثيمات', desc: 'تنبيه عند تطبيق لون أو ثيم جديد' },
-                { id: 'downloads', label: 'التحميلات', desc: 'تنبيهات حالة تحميل السور أو التفاسير' },
-                { id: 'bookmarks', label: 'الإشارات المرجعية', desc: 'تنبيه عند حفظ أو حذف إشارة مرجعية' },
-                { id: 'general', label: 'تنبيهات عامة', desc: 'تنبيهات الحفظ، الاختبارات، والعمليات الأخرى' }
-            ].map((item) => (
-                <div 
-                    key={item.id}
-                    onClick={() => toggleSetting(item.id)}
-                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                        settings[item.id] 
-                        ? 'shadow-sm' 
-                        : 'opacity-60'
-                    }`}
-                    style={{
-                        backgroundColor: settings[item.id] ? `${currentTheme.accent}15` : `${currentTheme.text}05`,
-                        borderColor: settings[item.id] ? currentTheme.accent : `${currentTheme.text}10`,
-                        color: currentTheme.text
+        <div className="flex flex-col h-full" style={{ fontFamily: currentTheme.font }}>
+            <div className="flex border-b mb-3" style={{ borderColor: `${currentTheme.text}10` }}>
+                <button 
+                    className={`flex-1 py-2 text-[10px] font-bold flex items-center justify-center gap-1 transition-colors ${activeTab === 'app' ? 'border-b-2' : 'opacity-60'}`}
+                    style={{ 
+                        color: activeTab === 'app' ? currentTheme.accent : currentTheme.text,
+                        borderBottomColor: activeTab === 'app' ? currentTheme.accent : 'transparent'
                     }}
+                    onClick={() => setActiveTab('app')}
                 >
-                    <div className="flex flex-col gap-0.5">
-                        <span className="font-bold text-sm">{item.label}</span>
-                        <span className="text-[10px] opacity-60">{item.desc}</span>
+                    <AppWindow size={14} />
+                    إشعارات التطبيق
+                </button>
+                <button 
+                    className={`flex-1 py-2 text-[10px] font-bold flex items-center justify-center gap-1 transition-colors ${activeTab === 'phone' ? 'border-b-2' : 'opacity-60'}`}
+                    style={{ 
+                        color: activeTab === 'phone' ? currentTheme.accent : currentTheme.text,
+                        borderBottomColor: activeTab === 'phone' ? currentTheme.accent : 'transparent'
+                    }}
+                    onClick={() => setActiveTab('phone')}
+                >
+                    <Smartphone size={14} />
+                    إشعارات الهاتف
+                </button>
+            </div>
+
+            <div className="space-y-3 overflow-y-auto custom-scrollbar pr-1 pb-4">
+                {activeTab === 'app' ? (
+                    <div className="space-y-2">
+                        {[
+                            { id: 'quarter', label: 'الأحزاب والأرباع', desc: 'تنبيه عند الوصول لبداية حزب أو ربع جديد' },
+                            { id: 'juz', label: 'بداية الأجزاء', desc: 'تنبيه عند الانتقال لجزء جديد' },
+                            { id: 'sajda', label: 'مواضع السجدات', desc: 'تنبيه عند الوصول لآية بها سجدة تلاوة' },
+                            { id: 'themes', label: 'تغيير الثيمات', desc: 'تنبيه عند تطبيق لون أو ثيم جديد' },
+                            { id: 'downloads', label: 'التحميلات', desc: 'تنبيهات حالة تحميل السور أو التفاسير' },
+                            { id: 'bookmarks', label: 'الإشارات المرجعية', desc: 'تنبيه عند حفظ أو حذف إشارة مرجعية' },
+                            { id: 'general', label: 'تنبيهات عامة', desc: 'تنبيهات الحفظ، الاختبارات، والعمليات الأخرى' }
+                        ].map((item) => (
+                            <div 
+                                key={item.id}
+                                onClick={() => toggleAppSetting(item.id)}
+                                className={`flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer ${appSettings[item.id] ? 'shadow-sm' : 'opacity-60'}`}
+                                style={{
+                                    backgroundColor: appSettings[item.id] ? `${currentTheme.accent}15` : `${currentTheme.text}05`,
+                                    borderColor: appSettings[item.id] ? currentTheme.accent : `${currentTheme.text}10`,
+                                    color: currentTheme.text
+                                }}
+                            >
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="font-bold text-[11px]">{item.label}</span>
+                                    <span className="text-[9px] opacity-60">{item.desc}</span>
+                                </div>
+                                <div className={`w-4 h-4 rounded-full flex items-center justify-center transition-colors`}
+                                     style={{
+                                         backgroundColor: appSettings[item.id] ? currentTheme.accent : `${currentTheme.text}20`,
+                                         color: appSettings[item.id] ? '#ffffff' : currentTheme.text
+                                     }}>
+                                    {appSettings[item.id] && <Check className="w-2.5 h-2.5" />}
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors`}
-                         style={{
-                             backgroundColor: settings[item.id] ? currentTheme.accent : `${currentTheme.text}20`,
-                             color: settings[item.id] ? currentTheme.accentText : currentTheme.text
-                         }}>
-                        {settings[item.id] && <Check className="w-3 h-3" />}
+                ) : (
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <h4 className="font-bold text-[10px] opacity-80 px-1">أوقات الليل</h4>
+                            {[
+                                { id: 'firstThird', label: 'أول الليل', desc: 'تنبيه بدخول وقت أول الليل' },
+                                { id: 'midnight', label: 'منتصف الليل', desc: 'تنبيه بدخول منتصف الليل الشرعي' },
+                                { id: 'lastThird', label: 'الثلث الأخير', desc: 'تنبيه بدخول الثلث الأخير من الليل' }
+                            ].map((item) => {
+                                const isEnabled = config.nightNotifications?.[item.id as keyof typeof config.nightNotifications] ?? true;
+                                return (
+                                    <div 
+                                        key={item.id}
+                                        onClick={() => toggleNightNotification(item.id as 'firstThird' | 'midnight' | 'lastThird')}
+                                        className={`flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer ${isEnabled ? 'shadow-sm' : 'opacity-60'}`}
+                                        style={{
+                                            backgroundColor: isEnabled ? `${currentTheme.accent}15` : `${currentTheme.text}05`,
+                                            borderColor: isEnabled ? currentTheme.accent : `${currentTheme.text}10`,
+                                            color: currentTheme.text
+                                        }}
+                                    >
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="font-bold text-[11px]">{item.label}</span>
+                                            <span className="text-[9px] opacity-60">{item.desc}</span>
+                                        </div>
+                                        <div className={`w-4 h-4 rounded-full flex items-center justify-center transition-colors`}
+                                             style={{
+                                                 backgroundColor: isEnabled ? currentTheme.accent : `${currentTheme.text}20`,
+                                                 color: isEnabled ? '#ffffff' : currentTheme.text
+                                             }}>
+                                            {isEnabled && <Check className="w-2.5 h-2.5" />}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="space-y-2 pt-2" style={{ borderTop: `1px solid ${currentTheme.text}10` }}>
+                            <h4 className="font-bold text-[10px] opacity-80 px-1">الأذكار والتسبيح</h4>
+                            {[
+                                { id: 'sabah', label: 'أذكار الصباح', desc: 'تنبيه يومي الساعة 7:00 صباحاً' },
+                                { id: 'masaa', label: 'أذكار المساء', desc: 'تنبيه يومي الساعة 4:30 عصراً' },
+                                { id: 'dua', label: 'وقت الدعاء', desc: 'تنبيه يومي الساعة 2:00 ظهراً' },
+                                { id: 'tasbeehMorning', label: 'التسبيح (صباحاً)', desc: 'تنبيه يومي الساعة 10:00 صباحاً' },
+                                { id: 'tasbeehEvening', label: 'التسبيح (مساءً)', desc: 'تنبيه يومي الساعة 8:00 مساءً' },
+                                { id: 'kahf', label: 'سورة الكهف', desc: 'تنبيه أسبوعي يوم الجمعة الساعة 9:00 صباحاً' }
+                            ].map((item) => (
+                                <div 
+                                    key={item.id}
+                                    onClick={() => togglePhoneSetting(item.id)}
+                                    className={`flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer ${phoneSettings[item.id as keyof typeof phoneSettings] ? 'shadow-sm' : 'opacity-60'}`}
+                                    style={{
+                                        backgroundColor: phoneSettings[item.id as keyof typeof phoneSettings] ? `${currentTheme.accent}15` : `${currentTheme.text}05`,
+                                        borderColor: phoneSettings[item.id as keyof typeof phoneSettings] ? currentTheme.accent : `${currentTheme.text}10`,
+                                        color: currentTheme.text
+                                    }}
+                                >
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="font-bold text-[11px]">{item.label}</span>
+                                        <span className="text-[9px] opacity-60">{item.desc}</span>
+                                    </div>
+                                    <div className={`w-4 h-4 rounded-full flex items-center justify-center transition-colors`}
+                                         style={{
+                                             backgroundColor: phoneSettings[item.id as keyof typeof phoneSettings] ? currentTheme.accent : `${currentTheme.text}20`,
+                                             color: phoneSettings[item.id as keyof typeof phoneSettings] ? '#ffffff' : currentTheme.text
+                                         }}>
+                                        {phoneSettings[item.id as keyof typeof phoneSettings] && <Check className="w-2.5 h-2.5" />}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="space-y-2 pt-2" style={{ borderTop: `1px solid ${currentTheme.text}10` }}>
+                            <div className="flex items-center justify-between mb-1 px-1">
+                                <h4 className="font-bold text-[10px] opacity-80 flex items-center gap-1">
+                                    <VolumeX size={12} />
+                                    إيقاف التنبيهات الصوتية
+                                </h4>
+                                {isAudioMuted && (
+                                    <button onClick={unmuteAudio} className="text-[8px] bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded font-bold">
+                                        تفعيل
+                                    </button>
+                                )}
+                            </div>
+                            {isAudioMuted && config.audioMutedUntil && (
+                                <p className="text-[9px] text-red-500 px-1">
+                                    متوقفة حتى: {new Date(config.audioMutedUntil).toLocaleDateString('ar-SA')}
+                                </p>
+                            )}
+                            <div className="grid grid-cols-3 gap-1.5">
+                                {[
+                                    { label: 'اليوم', days: 1 },
+                                    { label: 'يومين', days: 2 },
+                                    { label: '3 أيام', days: 3 },
+                                    { label: 'أسبوع', days: 7 },
+                                    { label: 'شهر', days: 30 }
+                                ].map((opt) => (
+                                    <button
+                                        key={opt.label}
+                                        onClick={() => muteAudioForDuration(opt.days)}
+                                        className="py-1.5 px-1 text-[9px] font-bold rounded-lg border transition-colors"
+                                        style={{
+                                            borderColor: `${currentTheme.text}20`,
+                                            color: currentTheme.text,
+                                            backgroundColor: `${currentTheme.text}05`
+                                        }}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            ))}
+                )}
+            </div>
         </div>
     );
 };
@@ -1513,9 +1763,10 @@ const MenuSection: React.FC<{ title: string, children: React.ReactNode, iconColo
     </div>
 );
 
-const MenuItem: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void, iconColor: string, showChevron?: boolean, isExpanded?: boolean, isSubItem?: boolean, isActive?: boolean, currentTheme?: any }> = ({ icon, label, onClick, iconColor, showChevron, isExpanded, isSubItem, isActive, currentTheme }) => (
+const MenuItem: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void, iconColor: string, showChevron?: boolean, isExpanded?: boolean, isSubItem?: boolean, isActive?: boolean, currentTheme?: any, 'data-id'?: string }> = ({ icon, label, onClick, iconColor, showChevron, isExpanded, isSubItem, isActive, currentTheme, 'data-id': dataId }) => (
     <button 
         onClick={onClick} 
+        data-id={dataId}
         className={`flex items-center gap-3 py-2.5 border-b last:border-0 hover:bg-black/5 transition-colors text-right w-full ${isSubItem ? 'px-2 py-1.5 border-0' : ''}`}
         style={{ borderBottomColor: currentTheme ? `${currentTheme.text}10` : '#f3f4f6' }}
     >

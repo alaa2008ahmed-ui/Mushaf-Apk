@@ -111,23 +111,29 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
     const voiceControlTutorialSteps: TutorialStep[] = [
         {
             id: 'voice-welcome',
-            text: 'التحكم الصوتي: ميزة ثورية تتيح لك التحكم في التطبيق بالكامل عبر أوامرك الصوتية.',
-            position: { top: '20%' },
+            title: 'التحكم الصوتي الذكي (باللغة العربية)',
+            text: 'مرحباً بك في عالم التحكم الصوتي. هذه الميزة تتيح لك التحدث مع التطبيق كما تتحدث مع صديقك. يمكنك طلب أي شيء من التطبيق باللغة العربية الفصحى أو العامية المصرية، وسيفهمك المساعد الذكي وينفذ طلبك فوراً.',
             icon: <Mic className="w-8 h-8 text-white" />
         },
         {
             id: 'voice-toggle',
-            text: 'تفعيل الخدمة: اضغط هنا لتشغيل أو إيقاف خاصية الاستماع للأوامر الصوتية.',
-            position: { top: '30%' },
-            arrow: 'up',
+            title: 'تفعيل الاستماع المستمر',
+            text: 'هذا الزر هو مفتاح التحكم؛ عند تفعيله، سيظل التطبيق في حالة "استماع" دائمة لأوامرك. يمكنك وضعه بجانبك أثناء القراءة وقول "الآية التالية" أو "شغل التفسير" دون الحاجة للمس الهاتف إطلاقاً.',
             selector: '#voice-toggle-btn',
             icon: <Mic className="w-8 h-8 text-white" />
         },
         {
-            id: 'voice-commands',
-            text: 'دليل الأوامر: استعرض قائمة الأوامر المتاحة وكيفية نطقها للوصول السريع لأي قسم.',
-            position: { top: '50%' },
+            id: 'voice-commands-list',
+            title: 'أمثلة للأوامر الصوتية',
+            text: 'هنا تجد دليلاً شاملاً للأوامر: يمكنك قول "افتح سورة الكهف"، "مواقيت الصلاة في القاهرة"، "شغل أذكار الصباح"، أو حتى "غير الثيم للوضع الليلي". استكشف القائمة لتتعرف على قدرات المساعد الصوتي المذهلة.',
+            selector: '#commands-list-container',
             icon: <ChevronRight className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'voice-feedback',
+            title: 'التفاعل البصري والصوتي',
+            text: 'عندما تتحدث، ستظهر لك موجات صوتية ونصوص توضح ما فهمه التطبيق. إذا لم يفهم المساعد أمرك، سيطلب منك الإعادة بلطف. تأكد من وجودك في مكان هادئ للحصول على أفضل النتائج.',
+            icon: <Mic className="w-8 h-8 text-white" />
         }
     ];
 
@@ -233,7 +239,7 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                     </div>
 
                     {/* Instructions Section */}
-                    <div className="themed-card p-6 space-y-6">
+                    <div id="commands-list-container" className="themed-card p-6 space-y-6">
                         <h3 className="font-bold text-lg flex items-center gap-2 border-b pb-2">
                             <ChevronRight className="w-5 h-5 text-primary" />
                             دليل التحكم الصوتي الشامل

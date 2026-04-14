@@ -18,6 +18,7 @@ interface MushafPageProps {
         fontFamily: string;
         textColor: string;
         theme: string;
+        surahHeaderDesign?: number;
     };
     currentTheme?: any;
     hideVerses?: boolean;
@@ -118,7 +119,7 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
         color: 'var(--qr-text)',
         letterSpacing: 0,
         fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"',
-        textRendering: 'optimizeLegibility'
+        textRendering: 'optimizeLegibility' as const
     };
 
     const headerStyle = {

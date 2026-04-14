@@ -163,31 +163,35 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const memorizationTutorialSteps: TutorialStep[] = [
         {
             id: 'memo-welcome',
-            text: 'التحفيظ: ميزة جديدة لمساعدتك على حفظ القرآن الكريم وتثبيته عبر خطط منظمة.',
-            position: { top: '20%' },
+            title: 'رفيقك في رحلة الحفظ والتثبيت',
+            text: 'مرحباً بك في قسم التحفيظ. صُمم هذا القسم ليكون مساعدك الشخصي في حفظ القرآن الكريم وتثبيته. نستخدم هنا تقنيات التكرار الممنهج والاستماع المركز لمساعدتك على الحفظ المتقن بأقل جهد وأعلى كفاءة.',
             icon: <BookOpen className="w-8 h-8 text-white" />
         },
         {
             id: 'reader-select',
-            text: 'اختيار القارئ: اختر القارئ الذي تفضل الاستماع إليه أثناء الحفظ.',
-            position: { top: '30%' },
-            arrow: 'up',
+            title: 'اختيار المعلم (القارئ)',
+            text: 'الحفظ يبدأ بالاستماع الصحيح. اختر من هنا قارئك المفضل الذي ترتاح لصوته وتجده مناسباً لمستوى حفظك. الاستماع المتكرر لنفس القارئ يساعد عقلك على محاكاة النطق الصحيح وتثبيت مخارج الحروف.',
             selector: '#reader-select-container',
             icon: <User className="w-8 h-8 text-white" />
         },
         {
             id: 'ayah-range',
-            text: 'نطاق الآيات: حدد السورة والآيات التي تود حفظها أو مراجعتها بدقة.',
-            position: { top: '40%' },
-            arrow: 'up',
+            title: 'تحديد ورد الحفظ بدقة',
+            text: 'من هنا تحدد "المقطع" الذي تود التركيز عليه اليوم. اختر السورة، ثم حدد آية البداية وآية النهاية. ننصحك دائماً بتقسيم الحفظ إلى مقاطع صغيرة (5-10 آيات) لضمان الإتقان قبل الانتقال لما بعدها.',
             selector: '#ayah-range-container',
             icon: <ArrowLeftRight className="w-8 h-8 text-white" />
         },
         {
+            id: 'repetition-settings',
+            title: 'إعدادات التكرار الذكي',
+            text: 'السر في الحفظ هو التكرار. يمكنك هنا تحديد عدد مرات تكرار كل آية على حدة، وعدد مرات تكرار المقطع كاملاً. كما يمكنك إضافة "فترة صمت" بين الآيات لتعطي نفسك فرصة لترديد الآية غيباً خلف القارئ.',
+            selector: '#repetition-settings-container',
+            icon: <RotateCcw className="w-8 h-8 text-white" />
+        },
+        {
             id: 'start-btn',
-            text: 'بدء الحفظ: اضغط هنا للانتقال لصفحة التحفيظ والبدء في رحلة الحفظ.',
-            position: { bottom: '100px' },
-            arrow: 'down',
+            title: 'الانتقال لواجهة التحفيظ',
+            text: 'عندما تصبح جاهزاً، اضغط هنا للانتقال إلى "وضع التحفيظ" في المصحف. هناك ستجد واجهة خاصة تركز فقط على الآيات المختارة، مع إمكانية إخفاء الآيات لاختبار حفظك وتفعيل التكرار التلقائي.',
             selector: '#btn-start-memorization',
             icon: <Play className="w-8 h-8 text-white" />
         }
@@ -414,7 +418,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                     </div>
 
                     {/* Repetition Settings */}
-                    <div className="space-y-2">
+                    <div id="repetition-settings-container" className="space-y-2">
                         <div className="flex items-center justify-start gap-2 font-bold text-base" style={{ color: 'var(--text-color)' }}>
                             <span>إعدادات التكرار</span>
                             <Repeat size={20} />
@@ -733,7 +737,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                     readersList={MEMORIZATION_READERS}
                 />
             )}
-            {toast.show && <Toast message={toast.message} onClose={() => setToast({ show: false, message: '' })} />}
+            {toast.show && <Toast show={toast.show} message={toast.message} onClose={() => setToast({ show: false, message: '' })} />}
         </div>
     );
 };

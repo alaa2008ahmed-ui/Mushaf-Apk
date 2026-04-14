@@ -288,7 +288,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
     const getOffset = (key: string) => (config.prayerOffsets[key] || 0) + (config.isSummerTime ? 60 : 0);
 
     return (
-        <div className="h-screen w-screen flex flex-col" style={{ backgroundColor: theme.backgroundColor, color: theme.textColor }}>
+        <div className="h-screen w-screen flex flex-col" style={{ backgroundColor: theme.bgColor, color: theme.textColor }}>
             {/* Top Bar */}
             <div className="app-top-bar">
                 <div className="app-top-bar__inner relative flex items-center justify-center">

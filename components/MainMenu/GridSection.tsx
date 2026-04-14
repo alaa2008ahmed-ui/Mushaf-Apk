@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import NavButton from './NavButton';
+import WhatsAppButton from '../WhatsAppButton';
+import VoiceControlToggle from '../VoiceControlToggle';
 
 interface GridSectionProps {
     menuItems: any[];
@@ -98,21 +100,43 @@ const GridSection: React.FC<GridSectionProps> = ({
                         onDragStart={handleDragStart}
                         onDragEnd={(e, info) => handleDragEnd(e, info, item.id)}
                     >
-                        <NavButton 
-                            label={item.label} 
-                            onClick={() => !isEditMode && onNavigate(item.id)} 
-                            className={item.id === 'more' ? "w-[calc(50%-6px)] h-full shadow-[0_0_15px_rgba(16,185,129,0.3)] border-emerald-500/50" : "w-full h-full"}
-                            color={
-                                themeKey === 'olive_grove' ? (
-                                    ['quran', 'listen', 'prayer-times'].includes(item.id) ? '#4D7C0F' : '#65A30D'
-                                ) : (item.customColor || theme.palette[DEFAULT_MENU_ITEMS.find(d => d.id === item.id)?.colorIndex ?? item.colorIndex])
-                            } 
-                            border={item.id === 'more' ? '2px solid #10b981' : theme.btnBorder} 
-                            isEditMode={isEditMode}
-                            onResize={(e) => handleResize(item.id, e)}
-                            isGlass={theme.isGlass}
-                            btnText={theme.btnText}
-                        />
+                        {item.id === 'more' ? (
+                            <div className="flex items-center justify-center gap-2 w-full h-full px-2">
+                                <WhatsAppButton />
+                                <div className="w-36 h-full">
+                                    <NavButton 
+                                        label={item.label} 
+                                        onClick={() => !isEditMode && onNavigate(item.id)} 
+                                        className="w-full h-full shadow-[0_0_15px_rgba(16,185,129,0.3)] border-emerald-500/50"
+                                        color={
+                                            themeKey === 'olive_grove' ? '#65A30D' : (item.customColor || theme.palette[DEFAULT_MENU_ITEMS.find(d => d.id === item.id)?.colorIndex ?? item.colorIndex])
+                                        } 
+                                        border={'2px solid #10b981'} 
+                                        isEditMode={isEditMode}
+                                        onResize={(e) => handleResize(item.id, e)}
+                                        isGlass={theme.isGlass}
+                                        btnText={theme.btnText}
+                                    />
+                                </div>
+                                <VoiceControlToggle />
+                            </div>
+                        ) : (
+                            <NavButton 
+                                label={item.label} 
+                                onClick={() => !isEditMode && onNavigate(item.id)} 
+                                className="w-full h-full"
+                                color={
+                                    themeKey === 'olive_grove' ? (
+                                        ['quran', 'listen', 'prayer-times'].includes(item.id) ? '#4D7C0F' : '#65A30D'
+                                    ) : (item.customColor || theme.palette[DEFAULT_MENU_ITEMS.find(d => d.id === item.id)?.colorIndex ?? item.colorIndex])
+                                } 
+                                border={theme.btnBorder} 
+                                isEditMode={isEditMode}
+                                onResize={(e) => handleResize(item.id, e)}
+                                isGlass={theme.isGlass}
+                                btnText={theme.btnText}
+                            />
+                        )}
                         {item.id === 'quran' && !isEditMode && (
                             <button
                                 onClick={(e) => {

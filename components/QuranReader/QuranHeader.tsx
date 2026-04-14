@@ -27,6 +27,7 @@ interface QuranHeaderProps {
     isWirdMode?: boolean;
     isMemorizationMode?: boolean;
     memorizationSettings?: any;
+    handleMushafTypeSelect: (type: string) => void;
     setIsFloatingMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
     isFloatingMenuOpen: boolean;
     isAnyMenuOpen: boolean;

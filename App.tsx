@@ -11,6 +11,7 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { PrayerTimesProvider } from './context/PrayerTimesContext';
 import { VoiceControlProvider } from './context/VoiceControlContext';
 import { TutorialProvider } from './context/TutorialContext';
+import SideMenu from './components/SideMenu';
 import { Mic, MicOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTheme } from './context/ThemeContext';
@@ -28,13 +29,22 @@ function App() {
   const [navParams, setNavParams] = useState<any>(null);
   const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
 
   const handleNavigate = useCallback((pageId: string, params?: any) => {
+    setIsSideMenuOpen(false);
     const validPages = [
       'home', 'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'qibla', 
-      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'more-menu', 'daily-wird', 'memorization'
+      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'more-menu', 'daily-wird', 'memorization',
+      'phone-notifications'
     ];
+
+    if (pageId === 'phone-notifications') {
+      setNavParams({ openModal: 'notification-settings-modal', tab: 'phone' });
+      setHistory(prev => [...prev, 'quran']);
+      return;
+    }
 
     if (pageId === 'home') {
       // If we are in the Mushaf and it's a practical application from Tajweed,
@@ -196,6 +206,8 @@ function App() {
             navParams={navParams}
             isThemeSelectorOpen={isThemeSelectorOpen}
             showExitConfirm={showExitConfirm}
+            isSideMenuOpen={isSideMenuOpen}
+            setIsSideMenuOpen={setIsSideMenuOpen}
             handleNavigate={handleNavigate}
             navigateBack={navigateBack}
             setIsThemeSelectorOpen={setIsThemeSelectorOpen}
@@ -214,12 +226,15 @@ function AppContent({
   navParams,
   isThemeSelectorOpen, 
   showExitConfirm, 
+  isSideMenuOpen,
+  setIsSideMenuOpen,
   handleNavigate, 
   navigateBack, 
   setIsThemeSelectorOpen, 
   setShowExitConfirm 
 }: any) {
   const { setCurrentPage } = useVoiceControl();
+  const { theme, themeKey, applyPresetTheme } = useTheme();
 
   useEffect(() => {
     setCurrentPage(page);
@@ -260,11 +275,21 @@ function AppContent({
         onBack={navigateBack} 
         onNavigate={handleNavigate} 
         onOpenThemes={toggleThemeSelector}
+        onOpenSideMenu={() => setIsSideMenuOpen(true)}
         navParams={navParams}
       />
 
-      {/* Global Voice Control Toggle */}
-      {page === 'home' && <VoiceControlToggle />}
+      <SideMenu 
+        isOpen={isSideMenuOpen} 
+        onClose={() => setIsSideMenuOpen(false)} 
+        onNavigate={handleNavigate}
+        onOpenThemes={toggleThemeSelector}
+        currentTheme={theme}
+        currentPage={page}
+      />
+
+      {/* Global Voice Control Toggle - Removed from here, moved to MainMenu */}
+      {/* {page === 'home' && <VoiceControlToggle />} */}
 
       {isThemeSelectorOpen && (
         <ThemeSelector 
@@ -289,40 +314,5 @@ function AppContent({
 
 import { useVoiceControl } from './context/VoiceControlContext';
 import { useTutorial } from './context/TutorialContext';
-
-const VoiceControlToggle = () => {
-  const { isEnabled, toggleEnabled, isListening, showVoiceIcon } = useVoiceControl();
-  const { shouldShowTutorial } = useTutorial();
-
-  if (!showVoiceIcon) return null;
-
-  return (
-    <motion.button
-      id="voice-control-btn"
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-      onClick={toggleEnabled}
-      className={`fixed left-4 z-[10005] w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white ${
-        isEnabled 
-          ? (isListening ? 'bg-red-500 animate-pulse' : 'bg-green-500') 
-          : 'bg-gray-400'
-      }`}
-      style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
-      title={isEnabled ? 'تعطيل التحكم الصوتي' : 'تفعيل التحكم الصوتي'}
-    >
-      {isEnabled ? <Mic className="text-white w-5 h-5" /> : <MicOff className="text-white w-5 h-5" />}
-      
-      {isEnabled && isListening && (
-        <motion.div
-          animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="absolute inset-0 rounded-full bg-red-500 -z-10"
-        />
-      )}
-    </motion.button>
-  );
-};
 
 export default App;

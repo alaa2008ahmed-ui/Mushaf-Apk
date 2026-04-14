@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 
 interface VerseSectionProps {
-    currentVerse: { text: string; surah: string; number: number };
+    currentVerse: { text: string; surah: string; number: string | number };
     verseFontSize: number;
     setVerseFontSize: (size: number) => void;
     setIsCustomizationOpen: (isOpen: boolean) => void;
@@ -23,43 +23,21 @@ const VerseSection: React.FC<VerseSectionProps> = ({
     themeKey,
     verseSettings
 }) => {
-    const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
-    const isLongPressRef = useRef(false);
     const initialDistanceRef = useRef<number | null>(null);
     const initialFontSizeRef = useRef<number>(1.25);
 
-    const startPress = (e: React.SyntheticEvent) => {
-        isLongPressRef.current = false;
-        longPressTimerRef.current = setTimeout(() => {
-            isLongPressRef.current = true;
-            setIsCustomizationOpen(true);
-            if (navigator.vibrate) navigator.vibrate(50);
-        }, 600);
-    };
-
-    const cancelPress = () => {
-        if (longPressTimerRef.current) {
-            clearTimeout(longPressTimerRef.current);
-            longPressTimerRef.current = null;
-        }
-    };
-
     const handleTouchStart = (e: React.TouchEvent) => {
         if (e.touches.length === 2) {
-            cancelPress();
             const touch1 = e.touches[0];
             const touch2 = e.touches[1];
             const dist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
             initialDistanceRef.current = dist;
             initialFontSizeRef.current = verseFontSize;
-        } else if (e.touches.length === 1) {
-            startPress(e);
         }
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
         if (e.touches.length === 2 && initialDistanceRef.current !== null) {
-            cancelPress();
             const touch1 = e.touches[0];
             const touch2 = e.touches[1];
             const dist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
@@ -69,8 +47,6 @@ const VerseSection: React.FC<VerseSectionProps> = ({
             
             newSize = Math.max(0.8, Math.min(newSize, 3.0));
             setVerseFontSize(newSize);
-        } else {
-            cancelPress();
         }
     };
 
@@ -81,26 +57,14 @@ const VerseSection: React.FC<VerseSectionProps> = ({
                 initialDistanceRef.current = null;
             }
         }
-        cancelPress();
-    };
-
-    const handleContextMenu = (e: React.MouseEvent) => {
-        e.preventDefault();
-        if (!isLongPressRef.current) {
-            setIsCustomizationOpen(true);
-        }
     };
 
     return (
         <div 
-            className="text-center pt-12 select-none cursor-pointer active:scale-95 transition-all touch-manipulation mx-4 p-4 rounded-3xl"
+            className="text-center pt-12 select-none touch-manipulation mx-4 p-4 rounded-3xl"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
             onTouchMove={handleTouchMove}
-            onMouseDown={startPress}
-            onMouseUp={cancelPress}
-            onMouseLeave={cancelPress}
-            onContextMenu={handleContextMenu}
             style={{ 
                 userSelect: 'none', 
                 WebkitUserSelect: 'none',

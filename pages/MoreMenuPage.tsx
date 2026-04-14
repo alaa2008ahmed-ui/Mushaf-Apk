@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import InteractiveBackground from '../components/InteractiveBackground';
 import NavButton from '../components/MainMenu/NavButton';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
-import { LayoutGrid, Mic } from 'lucide-react';
+import { Grid, Mic } from 'lucide-react';
 
 const ALL_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
@@ -23,6 +23,7 @@ const ALL_MENU_ITEMS = [
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
     { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
+    { id: 'phone-notifications', label: "📱 إشعارات الهاتف", className: "col-span-2 h-10", colorIndex: 0 },
 ];
 
 interface MoreMenuPageProps {
@@ -40,23 +41,29 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
     const moreMenuTutorialSteps: TutorialStep[] = [
         {
             id: 'all-items',
-            text: 'هنا تجد جميع أقسام التطبيق في مكان واحد لسهولة الوصول.',
-            position: { top: '30%' },
-            icon: <LayoutGrid className="w-8 h-8 text-white" />
+            title: 'مركز الخدمات الشامل',
+            text: 'هنا تجد جميع كنوز التطبيق في مكان واحد. من الأذكار اليومية إلى الكتب الإسلامية الهامة مثل حصن المسلم والأربعون النووية. تم ترتيب الأقسام لتصل إلى ما تريد بسرعة وسهولة، مما يجعل هذا القسم مرجعك اليومي لكل ما يخص العبادة.',
+            icon: <Grid className="w-8 h-8 text-white" />
         },
         {
             id: 'new-features',
-            text: 'إضافات جديدة: تم إضافة "الورد اليومي"، "التحفيظ"، و"التحكم الصوتي" في هذا التحديث.',
-            position: { top: '40%' },
-            icon: <LayoutGrid className="w-8 h-8 text-white" />
+            title: 'أدوات العبادة المتقدمة',
+            text: 'لقد أضفنا أدوات ذكية لمساعدتك في رحلتك الإيمانية: "الورد اليومي" لتنظيم ختماتك، "التحفيظ" لضبط حفظك، و"مواقيت الصلاة" الدقيقة. كل قسم مصمم ليوفر لك تجربة غنية ومفيدة.',
+            icon: <Grid className="w-8 h-8 text-white" />
         },
         {
             id: 'voice-control-highlight',
-            text: 'التحكم الصوتي: يمكنك الآن التحكم في التطبيق بالكامل باستخدام صوتك فقط.',
-            position: { bottom: '150px' },
+            title: 'ثورة التحكم الصوتي',
+            text: 'لا تدع هاتفك يشتتك أثناء العبادة؛ فعل ميزة التحكم الصوتي من هنا لتتحكم في كل شيء بصوتك. اطلب من المساعد الصوتي فتح أي قسم أو سورة، وسينفذ طلبك فوراً، مما يتيح لك تجربة استخدام "بدون لمس" بالكامل.',
             selector: '[data-id="nav-button-voice-control"]',
-            arrow: 'down',
             icon: <Mic className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'calculators-highlight',
+            title: 'الحاسبة الشرعية والخدمات',
+            text: 'يتضمن هذا القسم أيضاً أدوات عملية مثل الحاسبة الشرعية لحساب الزكاة والمواريث، واتجاه القبلة، والتقويم الهجري. كل ما يحتاجه المسلم في حياته اليومية متوفر هنا بين يديك.',
+            selector: '[data-id="nav-button-calculators"]',
+            icon: <Grid className="w-8 h-8 text-white" />
         }
     ];
 

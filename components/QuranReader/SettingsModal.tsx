@@ -16,7 +16,6 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, showToast, isLandscape, readingMode, modeSuffix }) => {
     const [isClosing, setIsClosing] = useState(false);
-    const [showNotifOptions, setShowNotifOptions] = useState(false);
 
     const handleClose = () => {
         onClose();
@@ -68,81 +67,71 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
     const settingsTutorialSteps: TutorialStep[] = [
         {
             id: 'font-size',
-            text: 'حجم الخط: تحكم في حجم الخط بما يتناسب مع راحتك أثناء القراءة.',
-            position: { top: '150px' },
-            arrow: 'up',
+            title: 'حجم الخط',
+            text: 'استخدم هذا الشريط لتكبير أو تصغير حجم خط الآيات القرآنية بما يتناسب مع مستوى نظرك وراحتك أثناء القراءة لفترات طويلة.',
             selector: '#font-size-section',
             icon: <ZoomIn className="w-8 h-8 text-white" />
         },
         {
             id: 'colors',
-            text: 'الألوان المخصصة: غير ألوان النص والخلفية والتحديد لتجربة قراءة مريحة لعينيك.',
-            position: { top: '250px' },
-            arrow: 'up',
+            title: 'الألوان المخصصة',
+            text: 'يتيح لك هذا القسم تخصيص ألوان النص، لون الخلفية، ولون تحديد الآيات بشكل دقيق لتوفير تجربة قراءة مريحة لعينيك، خاصة في ظروف الإضاءة المختلفة.',
             selector: '#colors-section',
             icon: <Palette className="w-8 h-8 text-white" />
         },
         {
             id: 'font-family',
-            text: 'نوع الخط: اختر من بين مجموعة متنوعة من الخطوط العربية الأصيلة.',
-            position: { top: '350px' },
-            arrow: 'up',
+            title: 'نوع الخط',
+            text: 'اختر من بين مجموعة متنوعة من الخطوط العربية الأصيلة (مثل خط عثمان طه، خط النسخ، وغيرها) الخط الذي تفضل قراءة القرآن به.',
             selector: '#font-family-section',
             icon: <Type className="w-8 h-8 text-white" />
         },
         {
             id: 'reciter',
-            text: 'القارئ المفضل: اختر قارئك المفضل للاستماع إلى التلاوة العطرة.',
-            position: { top: '420px' },
-            arrow: 'up',
+            title: 'القارئ المفضل',
+            text: 'اختر قارئك المفضل من هذه القائمة للاستماع إلى التلاوة العطرة. سيتم استخدام هذا القارئ كخيار افتراضي عند تشغيل الصوت.',
             selector: '#reciter-section',
             icon: <Mic className="w-8 h-8 text-white" />
         },
         {
             id: 'ayah-repeat',
-            text: 'تكرار الآيات: ميزة مفيدة للحفظ، تتيح لك تكرار الآية الواحدة عدة مرات.',
-            position: { top: '500px' },
-            arrow: 'up',
+            title: 'تكرار الآيات',
+            text: 'هذه الميزة مفيدة جداً للحفظ والمراجعة. حدد عدد مرات تكرار الآية الواحدة أثناء الاستماع لتسهيل عملية الحفظ.',
             selector: '#ayah-repeat-section',
             icon: <Repeat className="w-8 h-8 text-white" />
         },
         {
             id: 'tafseer',
-            text: 'اختيار التفسير: حدد كتاب التفسير الذي تود الرجوع إليه لتدبر المعاني.',
-            position: { top: '580px' },
-            arrow: 'up',
+            title: 'اختيار التفسير',
+            text: 'حدد كتاب التفسير المفضل لديك (مثل التفسير الميسر، ابن كثير، الجلالين) الذي تود الرجوع إليه عند عرض تفسير الآيات.',
             selector: '#tafseer-section',
             icon: <Book className="w-8 h-8 text-white" />
         },
         {
             id: 'scroll-speed',
-            text: 'سرعة التمرير: اضبط سرعة التمرير التلقائي لتناسب سرعة قراءتك.',
-            position: { top: '650px' },
-            arrow: 'up',
+            title: 'سرعة التمرير',
+            text: 'اضبط سرعة التمرير التلقائي للصفحة هنا. اختر السرعة التي تتناسب تماماً مع سرعة قراءتك لتجربة قراءة سلسة دون انقطاع.',
             selector: '#scroll-speed-section',
             icon: <MousePointer2 className="w-8 h-8 text-white" />
         },
         {
             id: 'toggles',
-            text: 'خيارات إضافية: تحكم في إظهار بطاقة السجدة وإخفاء الأشرطة أثناء القراءة.',
-            position: { top: '750px' },
-            arrow: 'up',
+            title: 'خيارات إضافية',
+            text: 'تحكم في إعدادات إضافية مثل إظهار بطاقة السجدة عند المرور بآية سجدة، وإخفاء أشرطة الأدوات العلوية والسفلية تلقائياً أثناء القراءة لتوسيع مساحة العرض.',
             selector: '#toggles-section',
             icon: <Settings2 className="w-8 h-8 text-white" />
         },
         {
             id: 'interface-customization',
-            text: 'تخصيص الواجهة: ميزة جديدة تتيح لك تغيير ألوان شريط الأدوات والأزرار بالكامل.',
-            position: { bottom: '150px' },
-            arrow: 'down',
+            title: 'تخصيص الواجهة',
+            text: 'اضغط هنا لفتح نافذة تخصيص متقدمة تتيح لك تغيير ألوان شريط الأدوات، الأزرار، والخلفيات بالكامل لتصميم واجهة التطبيق بأسلوبك الخاص.',
             selector: '#interface-customization-btn',
             icon: <Palette className="w-8 h-8 text-white" />
         },
         {
             id: 'downloads',
-            text: 'التحميل للاستخدام أوفلاين: حمل المصحف والتفسير ليعمل التطبيق بدون إنترنت.',
-            position: { bottom: '100px' },
-            arrow: 'down',
+            title: 'التحميل للاستخدام أوفلاين',
+            text: 'من هنا يمكنك تحميل ملفات المصحف والتفسير بالكامل إلى جهازك، مما يتيح لك استخدام التطبيق وقراءة القرآن والتفاسير حتى بدون اتصال بالإنترنت.',
             selector: '#downloads-only-section',
             icon: <Download className="w-8 h-8 text-white" />
         }
@@ -379,9 +368,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                                         compact={true}
                                                     />
                                                 </div>
-                                                <div className="text-center pb-1 text-[10px] font-bold opacity-40">
-                                                    تصميم {index + 1}
-                                                </div>
                                                 {(settings.surahHeaderDesign || 1) === design && (
                                                     <div className="absolute top-1 left-1 bg-emerald-500 text-white rounded-full p-0.5 shadow-md">
                                                         <i className="fa-solid fa-check text-[8px]"></i>
@@ -439,28 +425,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                             </div>
                         </div>
                         <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
-                            <button onClick={() => setShowNotifOptions(!showNotifOptions)} className="w-full flex items-center justify-between py-1">
+                            <button onClick={() => onOpenModal('notification-settings-modal')} className="w-full flex items-center justify-between py-1">
                                 <label className="text-sm font-bold opacity-80 cursor-pointer">الإشعارات</label>
-                                <i className={`fa-solid ${showNotifOptions ? 'fa-chevron-down' : 'fa-bell'} text-emerald-500`}></i>
+                                <i className="fa-solid fa-bell text-emerald-500"></i>
                             </button>
-                            {showNotifOptions && (
-                                <div className="mt-2 space-y-2 animate-fadeIn">
-                                    <button 
-                                        onClick={() => onOpenModal('notification-settings-modal', { tab: 'app' })}
-                                        className="w-full flex items-center justify-between p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs font-bold"
-                                    >
-                                        <span>إشعارات التطبيق</span>
-                                        <i className="fa-solid fa-app-window"></i>
-                                    </button>
-                                    <button 
-                                        onClick={() => onOpenModal('notification-settings-modal', { tab: 'phone' })}
-                                        className="w-full flex items-center justify-between p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs font-bold"
-                                    >
-                                        <span>إشعارات الهاتف</span>
-                                        <i className="fa-solid fa-mobile-screen"></i>
-                                    </button>
-                                </div>
-                            )}
                         </div>
                     </div>
 

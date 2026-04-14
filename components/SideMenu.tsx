@@ -1,0 +1,145 @@
+
+import React from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+    Home, BookOpen, Headphones, Clock, Calendar, Brain, 
+    Mic, Settings, Palette, MessageCircle, X, ChevronLeft,
+    Menu, Info, HelpCircle, Star
+} from 'lucide-react';
+import TutorialOverlay, { TutorialStep } from './Tutorial/TutorialOverlay';
+
+interface SideMenuProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onNavigate: (pageId: string) => void;
+    onOpenThemes: () => void;
+    currentTheme: any;
+    currentPage: string;
+}
+
+const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpenThemes, currentTheme, currentPage }) => {
+    const menuItems = [
+        { id: 'home', label: 'الرئيسية', icon: Home, color: '#3b82f6', description: 'العودة إلى الشاشة الرئيسية للتطبيق.' },
+        { id: 'quran', label: 'القرآن الكريم', icon: BookOpen, color: '#10b981', description: 'قراءة القرآن الكريم برواية حفص مع التجويد.' },
+        { id: 'listen', label: 'الاستماع', icon: Headphones, color: '#8b5cf6', description: 'الاستماع إلى تلاوات كبار القراء بمختلف الروايات.' },
+        { id: 'prayer-times', label: 'مواقيت الصلاة', icon: Clock, color: '#f59e0b', description: 'عرض مواقيت الصلاة واتجاه القبلة لموقعك الحالي.' },
+        { id: 'daily-wird', label: 'الورد اليومي', icon: Calendar, color: '#ec4899', description: 'متابعة وردك اليومي من القرآن والأذكار.' },
+        { id: 'memorization', label: 'التحفيظ', icon: Brain, color: '#06b6d4', description: 'أدوات مساعدة لحفظ ومراجعة القرآن الكريم.' },
+        { id: 'voice-control', label: 'التحكم الصوتي', icon: Mic, color: '#ef4444', description: 'التحكم في التطبيق من خلال الأوامر الصوتية.' },
+        { id: 'settings', label: 'الإعدادات', icon: Settings, color: '#6366f1', description: 'تخصيص إعدادات القراءة، الصوت، والتنبيهات.' },
+        { id: 'themes', label: 'الثيمات', icon: Palette, color: '#f43f5e', description: 'تغيير ألوان ومظهر التطبيق بالكامل.' },
+        { id: 'whatsapp', label: 'تواصل معنا', icon: MessageCircle, color: '#22c55e', description: 'تواصل مباشر معنا للاقتراحات أو الدعم الفني.' },
+    ];
+
+    const sideMenuTutorialSteps: TutorialStep[] = [
+        {
+            id: 'side-menu-welcome',
+            title: 'القائمة الجانبية الشاملة',
+            text: 'توفر لك هذه القائمة وصولاً سريعاً لجميع أقسام التطبيق من أي مكان. يمكنك التنقل بين القرآن، الأذكار، والمواقيت بضغطة واحدة.',
+            icon: <Menu className="w-8 h-8 text-white" />
+        },
+        ...menuItems.map(item => ({
+            id: `tutorial-${item.id}`,
+            title: item.label,
+            text: item.description,
+            selector: `[data-id="side-menu-${item.id}"]`,
+            icon: <item.icon size={32} className="text-white" />
+        }))
+    ];
+
+    return (
+        <>
+            <AnimatePresence>
+                {isOpen && (
+                    <>
+                        {/* Backdrop */}
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[10000]"
+                        />
+                        
+                        {/* Menu Content */}
+                        <motion.div 
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="fixed top-0 right-0 h-full w-[280px] z-[10001] shadow-2xl flex flex-col"
+                            style={{ backgroundColor: currentTheme.modalBg || '#ffffff', color: currentTheme.textColor }}
+                        >
+                            {/* Header */}
+                            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: currentTheme.barBorder }}>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: currentTheme.accent }}>
+                                        <BookOpen size={24} color="#fff" />
+                                    </div>
+                                    <div>
+                                        <h2 className="font-bold text-lg leading-tight">مصحف أحمد وليلى</h2>
+                                        <p className="text-xs opacity-60">الإصدار 1.13</p>
+                                    </div>
+                                </div>
+                                <button onClick={onClose} className="p-2 rounded-full hover:bg-black/5 transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            {/* Menu Items */}
+                            <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                                {menuItems.map((item) => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => {
+                                            if (item.id === 'themes') onOpenThemes();
+                                            else if (item.id === 'whatsapp') window.open('https://wa.me/201000000000', '_blank');
+                                            else if (item.id === 'settings') onNavigate('settings'); // Assuming settings is a page or handled
+                                            else onNavigate(item.id);
+                                            onClose();
+                                        }}
+                                        className="side-menu-item w-full flex items-center gap-4 p-3.5 rounded-xl transition-all hover:bg-black/5 active:scale-95 group"
+                                        data-id={`side-menu-${item.id}`}
+                                    >
+                                        <div 
+                                            className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-all"
+                                            style={{ backgroundColor: `${item.color}15`, color: item.color }}
+                                        >
+                                            <item.icon size={22} />
+                                        </div>
+                                        <span className="font-bold text-[15px]">{item.label}</span>
+                                        <ChevronLeft size={16} className="mr-auto opacity-30 group-hover:opacity-100 transition-opacity" />
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Footer */}
+                            <div className="p-6 border-t mt-auto" style={{ borderColor: currentTheme.barBorder }}>
+                                <div className="flex items-center justify-around">
+                                    <button className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                                        <Info size={20} />
+                                        <span className="text-[10px] font-bold">عن التطبيق</span>
+                                    </button>
+                                    <button className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                                        <HelpCircle size={20} />
+                                        <span className="text-[10px] font-bold">المساعدة</span>
+                                    </button>
+                                    <button className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                                        <Star size={20} />
+                                        <span className="text-[10px] font-bold">تقييمنا</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {isOpen && (
+                <TutorialOverlay tutorialId="side-menu-tutorial" steps={sideMenuTutorialSteps} />
+            )}
+        </>
+    );
+};
+
+export default SideMenu;

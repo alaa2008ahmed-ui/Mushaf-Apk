@@ -35,7 +35,7 @@ import FloatingMenu from '../components/QuranReader/FloatingMenu';
 import AyahContextMenu from '../components/QuranReader/AyahContextMenu';
 import ShareAyahModal from '../components/QuranReader/ShareAyahModal';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
-import { MousePointer2, Move, ZoomIn, LayoutGrid, Mic, Bookmark, Home, Share2, BookOpen, Trophy, Play } from 'lucide-react';
+import { MousePointer2, Move, ZoomIn, Grid, Mic, Bookmark, Home, Share2, BookOpen, Trophy, Play, Menu } from 'lucide-react';
 import { quranData as quranJsonData } from '../utils/quranData';
 import ReviewTestModal from '../components/QuranReader/ReviewTestModal';
 import { memorizationService } from '../src/services/memorizationService';
@@ -197,7 +197,7 @@ const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentThem
     );
 };
 
-const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any }> = ({ page, onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings }) => {
+const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any, navParams?: any }> = ({ page, onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings, navParams }) => {
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [savedSession, setSavedSession] = useState<any>(null);
@@ -213,11 +213,18 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     // Auto-detect orientation based on layout dimensions for browser and device compatibility
     useEffect(() => {
         const handleResize = () => {
-            if (initialLandscape) return; // Ignore physical orientation if forced to landscape
+            if (initialLandscape) return;
+            
+            // Ignore resize if keyboard is likely open to prevent orientation flip
+            if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
+                return;
+            }
+
             const width = window.innerWidth;
             const height = window.innerHeight;
-            // Robust detection using dimensions rather than physical sensors
-            const isL = width > height;
+            
+            // Use matchMedia for more reliable orientation detection that ignores keyboard height
+            const isL = window.matchMedia("(orientation: landscape)").matches;
             
             if (isL !== isLandscapeRef.current) {
                 setIsLandscape(isL);
@@ -314,6 +321,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     }, [isLandscapeUIHidden, modeSuffix]);
 
     const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const prevReadingModeRef = useRef(readingMode);
     const markerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStatus, setLoadingStatus] = useState('');
@@ -618,11 +626,15 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         const posKey = `last_pos${mode}`;
         const lastPos = JSON.parse(localStorage.getItem(posKey) || '{}');
         
-        // Stop dynamic activities on orientation or mode change
-        stopAudio();
-        setAutoScrollState({ isActive: false, isPaused: false, elapsedTime: 0 });
-        setActiveModals([]);
-        setIsFloatingMenuOpen(false);
+        // Only stop activities if the reading mode actually changed, not just orientation
+        // This prevents closing modals or stopping audio when keyboard opens or phone rotates
+        if (prevReadingModeRef.current !== readingMode) {
+            stopAudio();
+            setAutoScrollState({ isActive: false, isPaused: false, elapsedTime: 0 });
+            setActiveModals([]);
+            setIsFloatingMenuOpen(false);
+            prevReadingModeRef.current = readingMode;
+        }
 
         if (!hasJumpedRef.current && (initialSurah || initialPage || localIsMemorizationMode || isWirdMode)) {
             // Do not jump to lastPos on initial mount if we have initial params
@@ -1040,95 +1052,77 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const quranTutorialSteps: TutorialStep[] = [
         {
             id: 'surah-name',
-            text: 'اسم السورة: اضغط هنا لتغيير السورة أو الانتقال لجزء محدد بسهولة.',
-            position: { top: '70px', right: '20px' },
-            arrow: 'up',
+            title: 'اسم السورة واختيار الموضع',
+            text: 'يعرض هذا الجزء اسم السورة الحالية. عند الضغط عليه، ستفتح لك قائمة شاملة تحتوي على جميع سور القرآن الكريم، الأجزاء، والأحزاب. يمكنك البحث عن سورة معينة أو الانتقال السريع لموضع محدد بلمسة واحدة.',
             selector: '#surah-name-header',
-            icon: <LayoutGrid className="w-8 h-8 text-white" />
+            icon: <Grid className="w-8 h-8 text-white" />
         },
         {
             id: 'page-nav',
-            text: 'رقم الصفحة: اضغط هنا للانتقال السريع لصفحة معينة عبر إدخال رقمها.',
-            position: { top: '70px', left: '50%', right: 'auto' },
-            arrow: 'up',
+            title: 'رقم الصفحة والانتقال السريع',
+            text: 'يعرض رقم الصفحة الحالية وفقاً لطبعة المدينة المنورة. بالضغط عليه، تظهر نافذة تتيح لك كتابة رقم الصفحة التي ترغب في الذهاب إليها مباشرة، مما يوفر عليك عناء التقليب اليدوي في المصحف.',
             selector: '#header-page',
             icon: <Move className="w-8 h-8 text-white" />
         },
         {
             id: 'mode-switch',
-            text: 'وضع القراءة: اضغط هنا للتبديل بين المصحف، التفسير، المعاني، والترجمة.',
-            position: { top: '70px', left: '70px' },
-            arrow: 'up',
+            title: 'أوضاع القراءة والتدبر',
+            text: 'هذا الزر هو بوابتك لاختيار طريقة عرض المصحف. يمكنك التبديل بين "وضع المصحف" للقراءة التقليدية، أو "وضع التفسير" لعرض معاني الآيات، أو "وضع الترجمة" للغات المختلفة. اختر ما يعينك على الفهم والتدبر.',
             selector: '#btn-mode-switch',
             icon: <BookOpen className="w-8 h-8 text-white" />
         },
         {
             id: 'audio-play',
-            text: 'التشغيل الصوتي: اضغط للتشغيل أو الإيقاف، واضغط مطولاً لتغيير القارئ المفضل.',
-            position: { top: '70px', left: '20px' },
-            arrow: 'up',
+            title: 'التشغيل الصوتي واختيار القراء',
+            text: 'اضغط هنا لبدء الاستماع لتلاوة عطرة للآيات. الضغط المطول على هذا الزر يفتح لك قائمة بأكثر من 100 قارئ من مشاهير القراء، حيث يمكنك اختيار قارئك المفضل وتحديد جودة الصوت.',
             selector: '#btn-play',
             icon: <Mic className="w-8 h-8 text-white" />
         },
         {
             id: 'ayah-text',
-            text: 'تفاعل مع الآية: اضغط مطولاً على نص الآية لتخصيص نوع الخط، لون الخلفية، ولون التحديد بسرعة.',
-            position: { top: '300px' },
-            arrow: 'up',
+            title: 'تفاعل ذكي مع الآيات',
+            text: 'كل آية هي وحدة تفاعلية؛ اضغط مطولاً على نص الآية لتظليلها، تغيير لون خلفيتها، أو نسخها. هذا يساعدك في تمييز الآيات التي تود العودة إليها أو حفظها لاحقاً.',
             selector: '.ayah-text-block',
             icon: <MousePointer2 className="w-8 h-8 text-white" />
         },
         {
             id: 'ayah-number',
-            text: 'التفسير: اضغط على رقم الآية لعرض التفسير، واضغط مطولاً للاختيار من بين تفاسير مختلفة.',
-            position: { top: '350px' },
-            arrow: 'up',
+            title: 'التفسير والمشاركة الفورية',
+            text: 'رقم الآية ليس مجرد رقم! اضغط عليه لعرض التفسير الميسر فوراً. الضغط المطول يفتح خيارات متقدمة مثل مشاركة الآية كصورة جميلة، أو إضافة علامة مرجعية، أو تكرار الآية للحفظ.',
             selector: '.verse-container',
             icon: <MousePointer2 className="w-8 h-8 text-white" />
         },
         {
             id: 'zoom-gesture',
-            text: 'التكبير والتصغير: استخدم إصبعين على الشاشة لتكبير أو تصغير الخط بما يريح عينيك.',
-            position: { top: '60%' },
+            title: 'تحكم مرن في حجم الخط',
+            text: 'لراحتك، يمكنك استخدام إصبعين على الشاشة (Pinch to Zoom) لتكبير الخط أو تصغيره فوراً في وضع القراءة الطولي، مما يضمن لك رؤية واضحة ومريحة مهما كان حجم شاشة هاتفك.',
             icon: <ZoomIn className="w-8 h-8 text-white" />
         },
         {
-            id: 'main-menu',
-            text: 'القائمة الجانبية: اضغط هنا للوصول لخيارات البحث، المظهر، التحميلات، وتخصيص ألوان الأزرار.',
-            position: { bottom: '80px', right: '20px' },
-            arrow: 'down',
-            selector: '#btn-menu',
-            icon: <LayoutGrid className="w-8 h-8 text-white" />
-        },
-        {
             id: 'bookmark-feature',
-            text: 'حفظ العلامة: اضغط لحفظ موضعك الحالي، واضغط مطولاً لإدارة قائمة علاماتك.',
-            position: { bottom: '80px', right: '35%' },
-            arrow: 'down',
+            title: 'حفظ العلامة',
+            text: 'اضغط هنا لحفظ موضع قراءتك الحالي للعودة إليه لاحقاً. يمكنك الضغط مطولاً على الزر لفتح وإدارة قائمة جميع العلامات المرجعية المحفوظة.',
             selector: '#btn-bookmark',
             icon: <Bookmark className="w-8 h-8 text-white" />
         },
         {
             id: 'autoscroll-feature',
-            text: 'التمرير التلقائي: اضغط لبدء أو إيقاف التمرير، واضغط مطولاً لضبط السرعة المفضلة.',
-            position: { bottom: '80px', left: '35%' },
-            arrow: 'down',
+            title: 'التمرير التلقائي',
+            text: 'يتيح لك هذا الزر بدء أو إيقاف التمرير التلقائي للصفحة أثناء القراءة. اضغط مطولاً لضبط سرعة التمرير بما يتناسب مع سرعة قراءتك.',
             selector: '#btn-autoscroll',
             icon: <Move className="w-8 h-8 text-white" />
         },
         {
             id: 'share-ayah-feature',
-            text: 'مشاركة آية: اضغط هنا لمشاركة الآية الحالية كصورة مع إمكانية تخصيص الخلفية والخط والألوان.',
-            position: { bottom: '80px', left: '25%' },
-            arrow: 'down',
+            title: 'مشاركة آية',
+            text: 'اضغط هنا لمشاركة الآية الحالية كصورة مصممة بشكل جميل. يمكنك تخصيص الخلفية، الخط، والألوان قبل المشاركة مع أصدقائك أو على وسائل التواصل الاجتماعي.',
             selector: '#btn-share',
             icon: <Share2 className="w-8 h-8 text-white" />
         },
         {
             id: 'home-nav',
-            text: 'الرئيسية: اضغط هنا للعودة إلى الشاشة الرئيسية للتطبيق في أي وقت.',
-            position: { bottom: '80px', left: '20px' },
-            arrow: 'down',
+            title: 'الرئيسية',
+            text: 'اضغط هنا للعودة السريعة إلى الشاشة الرئيسية للتطبيق في أي وقت ومن أي مكان داخل صفحة القراءة.',
             selector: '#btn-home',
             icon: <Home className="w-8 h-8 text-white" />
         }
@@ -1337,7 +1331,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 juz,
                 page,
                 wasAutoscrolling,
-                wasPlaying
+                wasPlaying,
+                openedFromMenu: false
             });
         }
     }, [quranData, showMarkerNotification, stopAudio, showSajdahCard]);
@@ -1743,6 +1738,15 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             setActiveModals(p => [...p.filter(m => m !== modalName), modalName]); 
         }
     }, [stopAudio, isFloatingMenuOpen]);
+
+    useEffect(() => {
+        if (navParams?.openModal) {
+            const timer = setTimeout(() => {
+                openModal(navParams.openModal, navParams);
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [navParams, openModal]);
     
     const handleAyahClick = useCallback((s, a) => {
         setHighlightedAyahId(`ayah-${s}-${a}`);
@@ -1978,7 +1982,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }, 500);
     };
 
-    const handleAutoScrollButtonPointerUp = (e: React.SyntheticEvent) => {
+    const handleAutoScrollButtonPointerUp = (e: React.PointerEvent | React.TouchEvent) => {
         e.stopPropagation();
         if (e && e.type === 'touchend') {
             e.preventDefault();
@@ -1990,8 +1994,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
     };
 
-    const handleAutoScrollButtonPointerLeave = (e: React.SyntheticEvent) => {
-        e.stopPropagation();
+    const handleAutoScrollButtonPointerLeave = () => {
         if (autoScrollButtonTimerRef.current) {
             clearTimeout(autoScrollButtonTimerRef.current);
             autoScrollButtonTimerRef.current = null;
@@ -2692,7 +2695,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 }
                 setTafseerInfo(p => ({ ...p, isOpen: false }));
                 setTafseerSelectionInfo(p => ({ ...p, isOpen: false }));
-                if (sajdahCardInfo.isOpen) handleCloseSajdahCard();
+                if (sajdahCardInfo.show) handleCloseSajdahCard();
                 setIsFloatingMenuOpen(false);
                 setIsPageInputActive(false);
                 setAyahContextMenu(p => ({ ...p, isOpen: false }));
@@ -2755,7 +2758,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
 
     const bookmarkButtonTimerRef = useRef<number | null>(null);
-    const handleBookmarkButtonPointerDown = (e?: React.SyntheticEvent) => {
+    const handleBookmarkButtonPointerDown = (e: React.PointerEvent | React.TouchEvent) => {
         if (e && e.type === 'touchstart') {
             // Prevent pointer events if touch is handled
             e.preventDefault();
@@ -2767,7 +2770,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }, 500);
     };
 
-    const handleBookmarkButtonPointerUp = (e?: React.SyntheticEvent) => {
+    const handleBookmarkButtonPointerUp = (e: React.PointerEvent | React.TouchEvent) => {
         if (e && e.type === 'touchend') {
             e.preventDefault();
         }
@@ -3554,7 +3557,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                                 className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all active:scale-90 ${isHideMode ? 'bg-emerald-600 text-white' : 'bg-white/90 text-gray-700'}`}
                                 title={isHideMode ? "إظهار الآيات" : "إخفاء الآيات"}
                             >
-                                {isHideMode ? <BookOpen size={24} /> : <LayoutGrid size={24} />}
+                                {isHideMode ? <BookOpen size={24} /> : <Grid size={24} />}
                             </button>
                             <button 
                                 onClick={() => setShowReviewTest(true)}

@@ -17,6 +17,7 @@ interface ShareAyahModalProps {
     readingMode?: 'mushaf' | 'tafseer' | 'meanings' | 'translation';
     settings?: any;
     showToast?: (msg: string) => void;
+    isLandscape?: boolean;
 }
 
 const BACKGROUNDS = [
@@ -218,7 +219,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         if (!explanationData) return '';
         if (readingMode === 'mushaf') return '';
         
-        const activeMode = readingMode;
+        const activeMode: any = readingMode;
 
         if (activeMode === 'tafseer' || activeMode === 'ar.jalalayn') {
             return explanationData.data?.surahs?.[s - 1]?.ayahs?.[a - 1]?.text || explanationData[s - 1]?.ayahs?.[a - 1]?.text || '';
@@ -861,7 +862,6 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     onAyahClick={() => {}}
                     onVerseClick={() => {}}
                     settings={appSettings || { fontSize: 2.5, fontFamily: 'var(--font-amiri-quran)', textColor: '#000000' }}
-                    useTajweed={false}
                 />
                     <div style={{ 
                         marginTop: '30px', 

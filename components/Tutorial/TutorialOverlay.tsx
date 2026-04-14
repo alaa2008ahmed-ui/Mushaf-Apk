@@ -5,9 +5,10 @@ import { MousePointer2, Move, ZoomIn, ChevronRight, ChevronLeft } from 'lucide-r
 
 export interface TutorialStep {
   id: string;
+  title?: string;
   text: string;
   icon?: React.ReactNode;
-  position: { top?: string; bottom?: string; left?: string; right?: string };
+  position?: { top?: string; bottom?: string; left?: string; right?: string };
   arrow?: 'up' | 'down' | 'left' | 'right';
   selector?: string;
 }
@@ -227,9 +228,14 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ tutorialId, steps, on
               )}
               
               <div className="w-full bg-black/80 p-6 rounded-[2rem] backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                <h3 className="text-xl font-bold mb-6 leading-relaxed text-white">
+                {step.title && (
+                  <h3 className="text-xl font-bold mb-3 leading-relaxed text-white">
+                    {step.title}
+                  </h3>
+                )}
+                <p className="text-sm font-medium mb-6 leading-relaxed text-white/90">
                   {step.text}
-                </h3>
+                </p>
                 
                 <div className="flex items-center justify-center gap-2">
                   <button 

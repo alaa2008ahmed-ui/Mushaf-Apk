@@ -21,7 +21,7 @@ function WhatsAppButton() {
 
     return (
         <>
-            <div id="whatsapp-button-container">
+            <div id="whatsapp-button-container" className="relative">
                 <button
                     onClick={toggleMenu}
                     className="rounded-full flex items-center justify-center shadow-xl transition-transform hover:scale-110"

@@ -8,6 +8,7 @@ interface BookmarksModalProps {
     onDelete: (id: number) => void;
     onClose: () => void;
     isLandscape?: boolean;
+    currentTheme?: any;
 }
 
 const getHijriDate = (timestamp: number) => {

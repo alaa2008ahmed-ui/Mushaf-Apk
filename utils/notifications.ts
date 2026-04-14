@@ -42,7 +42,6 @@ export const setupNotifications = async (settings?: any) => {
         id: 1,
         schedule: { on: { hour: 7, minute: 0 }, allowWhileIdle: true, repeats: true },
         extra: { page: 'sabah-masaa' },
-        smallIcon: 'ic_stat_icon_config_sample',
       });
     }
 
