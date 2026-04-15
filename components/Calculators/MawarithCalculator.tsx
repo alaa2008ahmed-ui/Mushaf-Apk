@@ -1,6 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { calculateMawarith, HeirResult, MawarithInput } from '../../utils/mawarithCalculator';
 import { useTheme } from '../../context/ThemeContext';
+import { Info, RefreshCw } from 'lucide-react';
+
+const Tooltip = ({ text }: { text: string }) => (
+    <div className="group relative inline-block ml-1">
+        <Info size={14} className="text-primary opacity-70 cursor-help" />
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-48 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-50 text-center">
+            {text}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+        </div>
+    </div>
+);
 
 const MawarithCalculator: React.FC = () => {
     const { theme } = useTheme();
@@ -33,7 +44,21 @@ const MawarithCalculator: React.FC = () => {
         backgroundColor: theme.isOriginal ? '#fff' : 'rgba(255,255,255,0.05)',
         borderColor: theme.isOriginal ? '#e5e7eb' : 'rgba(255,255,255,0.2)',
         color: theme.textColor,
-        fontFamily: 'Cairo, sans-serif'
+    };
+
+    const clearAll = () => {
+        setEstateValue('');
+        setSpouseType('none'); setWivesCount(1);
+        setHasFather(false); setHasMother(false);
+        setSonsCount(0); setDaughtersCount(0);
+        setGrandsonsCount(0); setGranddaughtersCount(0);
+        setHasPaternalGrandfather(false); setHasMaternalGrandmother(false); setHasPaternalGrandmother(false);
+        setFullBrothersCount(0); setFullSistersCount(0);
+        setPaternalBrothersCount(0); setPaternalSistersCount(0);
+        setMaternalSiblingsCount(0);
+        setFullNephewsCount(0); setPaternalNephewsCount(0);
+        setFullUnclesCount(0); setPaternalUnclesCount(0);
+        setFullCousinsCount(0); setPaternalCousinsCount(0);
     };
 
     const hasSons = sonsCount > 0;
@@ -95,112 +120,145 @@ const MawarithCalculator: React.FC = () => {
 
     const mawarithResults: HeirResult[] = useMemo(() => calculateMawarith(mawarithInput), [mawarithInput]);
 
-    const renderNumberInput = (label: string, value: number, setter: (val: number) => void) => (
+    const renderNumberInput = (label: string, value: number, setter: (val: number) => void, tooltip?: string) => (
         <div className="flex flex-col">
-            <label className="text-xs font-bold mb-1 opacity-80" style={{ color: theme.textColor }}>{label}</label>
-            <input type="text" inputMode="numeric" pattern="[0-9]*" min="0" value={value || ''} placeholder="0" onChange={e => setter(parseInt(e.target.value) || 0)} className="w-full p-2 rounded-lg border focus:ring-2 focus:outline-none text-center" style={inputStyle} />
+            <label className="flex items-center text-xs font-bold mb-1 opacity-80" style={{ color: theme.textColor }}>
+                {label} {tooltip && <Tooltip text={tooltip} />}
+            </label>
+            <input type="text" inputMode="numeric" pattern="[0-9]*" min="0" value={value || ''} placeholder="0" onChange={e => setter(parseInt(e.target.value) || 0)} className="w-full p-2.5 rounded-lg border focus:ring-2 focus:ring-primary focus:outline-none text-center transition-all" style={inputStyle} />
         </div>
     );
 
-    const renderCheckbox = (label: string, checked: boolean, setter: (val: boolean) => void) => (
-        <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg border" style={{ ...inputStyle, borderColor: checked ? 'var(--color-primary)' : inputStyle.borderColor, backgroundColor: checked ? 'rgba(16, 185, 129, 0.1)' : inputStyle.backgroundColor }}>
+    const renderCheckbox = (label: string, checked: boolean, setter: (val: boolean) => void, tooltip?: string) => (
+        <label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all" style={{ ...inputStyle, borderColor: checked ? 'var(--color-primary)' : inputStyle.borderColor, backgroundColor: checked ? 'rgba(16, 185, 129, 0.1)' : inputStyle.backgroundColor }}>
             <input type="checkbox" checked={checked} onChange={e => setter(e.target.checked)} className="w-4 h-4 accent-primary" />
-            <span className="text-sm font-bold" style={{ color: theme.textColor }}>{label}</span>
+            <span className="text-sm font-bold flex items-center" style={{ color: theme.textColor }}>
+                {label} {tooltip && <Tooltip text={tooltip} />}
+            </span>
         </label>
     );
 
     return (
-        <div className="themed-card p-4 rounded-xl space-y-4 animate-fade-in">
-            <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: theme.textColor }}>
+        <div className="space-y-6 animate-fade-in pb-8">
+            {/* Header Actions */}
+            <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: theme.textColor }}>
                     <i className="fa-solid fa-scale-balanced text-primary"></i> توزيع الميراث
                 </h2>
+                <button onClick={clearAll} className="flex items-center gap-1 text-sm text-red-500 hover:bg-red-500/10 px-3 py-1.5 rounded-lg transition-colors">
+                    <RefreshCw size={14} /> تنظيف
+                </button>
             </div>
 
-            <div>
-                <input type="number" placeholder="قيمة التركة الإجمالية" value={estateValue} onChange={e => setEstateValue(e.target.value)} className="w-full p-2 rounded-lg border focus:ring-2 focus:outline-none text-center font-bold" style={inputStyle} />
+            {/* Estate Value */}
+            <div className="themed-card p-4 rounded-xl border-l-4 border-primary">
+                <label className="flex items-center text-sm font-bold mb-2 opacity-80" style={{ color: theme.textColor }}>
+                    قيمة التركة الإجمالية <Tooltip text="المبلغ المتبقي بعد تجهيز الميت وسداد ديونه وتنفيذ وصاياه" />
+                </label>
+                <input type="number" placeholder="أدخل المبلغ" value={estateValue} onChange={e => setEstateValue(e.target.value)} className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-primary focus:outline-none text-center font-bold text-lg transition-all" style={inputStyle} />
             </div>
 
-            <div className="space-y-3">
-                {/* الأصول (الآباء والأمهات والأجداد) */}
-                <div className="grid grid-cols-2 gap-2">
-                    {renderCheckbox('الأب', hasFather, setHasFather)}
-                    {renderCheckbox('الأم', hasMother, setHasMother)}
-                    {showPaternalGrandfather && renderCheckbox('الجد لأب', hasPaternalGrandfather, setHasPaternalGrandfather)}
-                    {showMaternalGrandmother && renderCheckbox('الجدة لأم', hasMaternalGrandmother, setHasMaternalGrandmother)}
-                    {showPaternalGrandmother && renderCheckbox('الجدة لأب', hasPaternalGrandmother, setHasPaternalGrandmother)}
+            {/* Relatives Inputs */}
+            <div className="space-y-4">
+                {/* Parents */}
+                <div className="themed-card p-4 rounded-xl">
+                    <h3 className="font-bold mb-3 text-sm opacity-80" style={{ color: theme.textColor }}>الأصول (الآباء والأجداد)</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                        {renderCheckbox('الأب', hasFather, setHasFather, 'يحجب الأجداد والإخوة')}
+                        {renderCheckbox('الأم', hasMother, setHasMother, 'تحجب الجدات')}
+                        {showPaternalGrandfather && renderCheckbox('الجد لأب', hasPaternalGrandfather, setHasPaternalGrandfather)}
+                        {showMaternalGrandmother && renderCheckbox('الجدة لأم', hasMaternalGrandmother, setHasMaternalGrandmother)}
+                        {showPaternalGrandmother && renderCheckbox('الجدة لأب', hasPaternalGrandmother, setHasPaternalGrandmother)}
+                    </div>
                 </div>
 
-                {/* الزوجين */}
-                <div className="flex flex-wrap gap-2">
-                    <label className="flex items-center gap-1 cursor-pointer p-1.5 px-3 rounded-lg border text-sm" style={{ ...inputStyle, borderColor: spouseType === 'none' ? 'var(--color-primary)' : inputStyle.borderColor }}>
-                        <input type="radio" name="spouse" checked={spouseType === 'none'} onChange={() => setSpouseType('none')} className="w-4 h-4 accent-primary" />
-                        <span style={{ color: theme.textColor }}>لا يوجد زوج/ة</span>
-                    </label>
-                    <label className="flex items-center gap-1 cursor-pointer p-1.5 px-3 rounded-lg border text-sm" style={{ ...inputStyle, borderColor: spouseType === 'husband' ? 'var(--color-primary)' : inputStyle.borderColor }}>
-                        <input type="radio" name="spouse" checked={spouseType === 'husband'} onChange={() => setSpouseType('husband')} className="w-4 h-4 accent-primary" />
-                        <span style={{ color: theme.textColor }}>زوج</span>
-                    </label>
-                    <label className="flex items-center gap-1 cursor-pointer p-1.5 px-3 rounded-lg border text-sm" style={{ ...inputStyle, borderColor: spouseType === 'wife' ? 'var(--color-primary)' : inputStyle.borderColor }}>
-                        <input type="radio" name="spouse" checked={spouseType === 'wife'} onChange={() => setSpouseType('wife')} className="w-4 h-4 accent-primary" />
-                        <span style={{ color: theme.textColor }}>زوجة</span>
-                    </label>
-                    {spouseType === 'wife' && (
-                        <input type="number" min="1" max="4" value={wivesCount} onChange={e => setWivesCount(parseInt(e.target.value) || 1)} className="w-16 p-1 rounded-lg border text-center text-sm" style={inputStyle} />
-                    )}
+                {/* Spouses */}
+                <div className="themed-card p-4 rounded-xl">
+                    <h3 className="font-bold mb-3 text-sm opacity-80" style={{ color: theme.textColor }}>الزوجين</h3>
+                    <div className="flex flex-wrap gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer p-2.5 px-4 rounded-lg border text-sm transition-all" style={{ ...inputStyle, borderColor: spouseType === 'none' ? 'var(--color-primary)' : inputStyle.borderColor, backgroundColor: spouseType === 'none' ? 'rgba(16, 185, 129, 0.1)' : inputStyle.backgroundColor }}>
+                            <input type="radio" name="spouse" checked={spouseType === 'none'} onChange={() => setSpouseType('none')} className="w-4 h-4 accent-primary" />
+                            <span style={{ color: theme.textColor }}>لا يوجد</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer p-2.5 px-4 rounded-lg border text-sm transition-all" style={{ ...inputStyle, borderColor: spouseType === 'husband' ? 'var(--color-primary)' : inputStyle.borderColor, backgroundColor: spouseType === 'husband' ? 'rgba(16, 185, 129, 0.1)' : inputStyle.backgroundColor }}>
+                            <input type="radio" name="spouse" checked={spouseType === 'husband'} onChange={() => setSpouseType('husband')} className="w-4 h-4 accent-primary" />
+                            <span style={{ color: theme.textColor }}>زوج <Tooltip text="يرث النصف إذا لم يكن للمتوفاة فرع وارث، والربع إذا كان لها فرع وارث" /></span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer p-2.5 px-4 rounded-lg border text-sm transition-all" style={{ ...inputStyle, borderColor: spouseType === 'wife' ? 'var(--color-primary)' : inputStyle.borderColor, backgroundColor: spouseType === 'wife' ? 'rgba(16, 185, 129, 0.1)' : inputStyle.backgroundColor }}>
+                            <input type="radio" name="spouse" checked={spouseType === 'wife'} onChange={() => setSpouseType('wife')} className="w-4 h-4 accent-primary" />
+                            <span style={{ color: theme.textColor }}>زوجة <Tooltip text="ترث الربع إذا لم يكن للمتوفى فرع وارث، والثمن إذا كان له فرع وارث. ويشتركن فيه إذا كن أكثر من واحدة." /></span>
+                        </label>
+                        {spouseType === 'wife' && (
+                            <div className="flex items-center gap-2 ml-auto">
+                                <span className="text-sm font-bold" style={{ color: theme.textColor }}>العدد:</span>
+                                <input type="number" min="1" max="4" value={wivesCount} onChange={e => setWivesCount(parseInt(e.target.value) || 1)} className="w-16 p-2 rounded-lg border text-center text-sm" style={inputStyle} />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {/* الفروع (الأبناء والبنات وأبناؤهم) */}
-                <div className="grid grid-cols-2 gap-2">
-                    {renderNumberInput('عدد الأبناء (ذكور)', sonsCount, setSonsCount)}
-                    {renderNumberInput('عدد البنات (إناث)', daughtersCount, setDaughtersCount)}
-                    {showGrandsons && renderNumberInput('أبناء الابن', grandsonsCount, setGrandsonsCount)}
-                    {showGranddaughters && renderNumberInput('بنات الابن', granddaughtersCount, setGranddaughtersCount)}
+                {/* Descendants */}
+                <div className="themed-card p-4 rounded-xl">
+                    <h3 className="font-bold mb-3 text-sm opacity-80" style={{ color: theme.textColor }}>الفروع (الأبناء والبنات)</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                        {renderNumberInput('عدد الأبناء (ذكور)', sonsCount, setSonsCount, 'الابن يحجب الأحفاد والإخوة والأعمام')}
+                        {renderNumberInput('عدد البنات (إناث)', daughtersCount, setDaughtersCount, 'يرثن النصف للواحدة، والثلثين للاثنتين فأكثر، أو بالتعصيب مع الابن')}
+                        {showGrandsons && renderNumberInput('أبناء الابن', grandsonsCount, setGrandsonsCount)}
+                        {showGranddaughters && renderNumberInput('بنات الابن', granddaughtersCount, setGranddaughtersCount)}
+                    </div>
                 </div>
 
-                {/* الإخوة والأخوات */}
+                {/* Siblings */}
                 {(showFullSiblings || showPaternalSiblings || showMaternalSiblings) && (
-                    <div className="grid grid-cols-2 gap-2 border-t pt-2" style={{ borderColor: theme.isOriginal ? '#e5e7eb' : 'rgba(255,255,255,0.1)' }}>
-                        {showFullSiblings && renderNumberInput('إخوة أشقاء', fullBrothersCount, setFullBrothersCount)}
-                        {showFullSiblings && renderNumberInput('أخوات شقيقات', fullSistersCount, setFullSistersCount)}
-                        {showPaternalSiblings && renderNumberInput('إخوة لأب', paternalBrothersCount, setPaternalBrothersCount)}
-                        {showPaternalSiblings && renderNumberInput('أخوات لأب', paternalSistersCount, setPaternalSistersCount)}
-                        {showMaternalSiblings && renderNumberInput('إخوة لأم (ذكور وإناث)', maternalSiblingsCount, setMaternalSiblingsCount)}
+                    <div className="themed-card p-4 rounded-xl">
+                        <h3 className="font-bold mb-3 text-sm opacity-80" style={{ color: theme.textColor }}>الإخوة والأخوات</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                            {showFullSiblings && renderNumberInput('إخوة أشقاء', fullBrothersCount, setFullBrothersCount)}
+                            {showFullSiblings && renderNumberInput('أخوات شقيقات', fullSistersCount, setFullSistersCount)}
+                            {showPaternalSiblings && renderNumberInput('إخوة لأب', paternalBrothersCount, setPaternalBrothersCount)}
+                            {showPaternalSiblings && renderNumberInput('أخوات لأب', paternalSistersCount, setPaternalSistersCount)}
+                            {showMaternalSiblings && renderNumberInput('إخوة لأم (ذكور وإناث)', maternalSiblingsCount, setMaternalSiblingsCount, 'يُحجبون بالفرع الوارث والأصل الوارث الذكر')}
+                        </div>
                     </div>
                 )}
 
-                {/* أبناء الإخوة والأعمام وأبناؤهم */}
+                {/* Uncles & Nephews */}
                 {(showFullNephews || showPaternalNephews || showFullUncles || showPaternalUncles || showFullCousins || showPaternalCousins) && (
-                    <div className="grid grid-cols-2 gap-2 border-t pt-2" style={{ borderColor: theme.isOriginal ? '#e5e7eb' : 'rgba(255,255,255,0.1)' }}>
-                        {showFullNephews && renderNumberInput('أبناء الأخ الشقيق', fullNephewsCount, setFullNephewsCount)}
-                        {showPaternalNephews && renderNumberInput('أبناء الأخ لأب', paternalNephewsCount, setPaternalNephewsCount)}
-                        {showFullUncles && renderNumberInput('أعمام أشقاء', fullUnclesCount, setFullUnclesCount)}
-                        {showPaternalUncles && renderNumberInput('أعمام لأب', paternalUnclesCount, setPaternalUnclesCount)}
-                        {showFullCousins && renderNumberInput('أبناء العم الشقيق', fullCousinsCount, setFullCousinsCount)}
-                        {showPaternalCousins && renderNumberInput('أبناء العم لأب', paternalCousinsCount, setPaternalCousinsCount)}
+                    <div className="themed-card p-4 rounded-xl">
+                        <h3 className="font-bold mb-3 text-sm opacity-80" style={{ color: theme.textColor }}>الأعمام وأبناء الإخوة</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                            {showFullNephews && renderNumberInput('أبناء الأخ الشقيق', fullNephewsCount, setFullNephewsCount)}
+                            {showPaternalNephews && renderNumberInput('أبناء الأخ لأب', paternalNephewsCount, setPaternalNephewsCount)}
+                            {showFullUncles && renderNumberInput('أعمام أشقاء', fullUnclesCount, setFullUnclesCount)}
+                            {showPaternalUncles && renderNumberInput('أعمام لأب', paternalUnclesCount, setPaternalUnclesCount)}
+                            {showFullCousins && renderNumberInput('أبناء العم الشقيق', fullCousinsCount, setFullCousinsCount)}
+                            {showPaternalCousins && renderNumberInput('أبناء العم لأب', paternalCousinsCount, setPaternalCousinsCount)}
+                        </div>
                     </div>
                 )}
             </div>
 
+            {/* Results */}
             {mawarithResults.length > 0 && (
-                <div className="mt-4">
-                    <div className="rounded-lg overflow-hidden border" style={{ borderColor: theme.isOriginal ? '#e5e7eb' : 'rgba(255,255,255,0.1)' }}>
+                <div className="mt-6">
+                    <h3 className="text-lg font-bold mb-3" style={{ color: theme.textColor }}>ملخص التوزيع</h3>
+                    <div className="rounded-xl overflow-hidden border shadow-sm" style={{ borderColor: theme.isOriginal ? '#e5e7eb' : 'rgba(255,255,255,0.1)' }}>
                         <table className="w-full text-right text-sm">
-                            <thead className="bg-primary/10">
+                            <thead className="bg-primary text-white">
                                 <tr>
-                                    <th className="p-2 font-bold" style={{ color: theme.textColor }}>الوارث</th>
-                                    <th className="p-2 font-bold" style={{ color: theme.textColor }}>النسبة</th>
-                                    <th className="p-2 font-bold" style={{ color: theme.textColor }}>المبلغ</th>
+                                    <th className="p-3 font-bold">الوارث</th>
+                                    <th className="p-3 font-bold">النسبة</th>
+                                    <th className="p-3 font-bold">المبلغ</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="bg-white dark:bg-gray-800">
                                 {mawarithResults.map((result, idx) => (
-                                    <tr key={idx} className="border-t" style={{ borderColor: theme.isOriginal ? '#e5e7eb' : 'rgba(255,255,255,0.05)' }}>
-                                        <td className="p-2 font-semibold" style={{ color: theme.textColor }}>
-                                            {result.name} <span className="text-[10px] opacity-60">({result.type})</span>
+                                    <tr key={idx} className="border-t hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors" style={{ borderColor: theme.isOriginal ? '#e5e7eb' : 'rgba(255,255,255,0.05)' }}>
+                                        <td className="p-3 font-semibold" style={{ color: theme.textColor }}>
+                                            {result.name} <span className="text-[10px] opacity-60 block md:inline md:mr-1">({result.type})</span>
                                         </td>
-                                        <td className="p-2 opacity-80" style={{ color: theme.textColor }}>{(result.share * 100).toFixed(1)}%</td>
-                                        <td className="p-2 font-bold text-primary">{result.amount.toFixed(2)}</td>
+                                        <td className="p-3 opacity-80" style={{ color: theme.textColor }}>{(result.share * 100).toFixed(2)}%</td>
+                                        <td className="p-3 font-bold text-primary">{result.amount.toFixed(2)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -209,9 +267,10 @@ const MawarithCalculator: React.FC = () => {
                 </div>
             )}
 
-            <div className="mt-4 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                <p className="text-[10px] leading-relaxed text-center opacity-80" style={{ color: theme.textColor }}>
-                    ⚠️ هذه الحاسبة استرشادية وتدعم الحجب الأساسي. قد لا تشمل بعض المسائل المعقدة (كالمشتركة والأكدرية). يُرجى مراجعة المحاكم الشرعية للاعتماد الرسمي.
+            <div className="mt-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-start gap-2">
+                <Info className="text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" size={16} />
+                <p className="text-xs leading-relaxed opacity-90" style={{ color: theme.textColor }}>
+                    هذه الحاسبة استرشادية وتدعم الحجب الأساسي. قد لا تشمل بعض المسائل المعقدة (كالمشتركة والأكدرية والعول والرد). يُرجى مراجعة المحاكم الشرعية للاعتماد الرسمي.
                 </p>
             </div>
         </div>
