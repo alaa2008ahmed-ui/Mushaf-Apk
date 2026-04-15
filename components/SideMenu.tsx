@@ -20,7 +20,7 @@ interface SideMenuProps {
 const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpenThemes, currentTheme, currentPage }) => {
     const menuItems = [
         { id: 'home', label: 'الرئيسية', icon: Home, color: '#3b82f6', description: 'العودة إلى الشاشة الرئيسية للتطبيق.' },
-        { id: 'quran', label: 'القرآن الكريم', icon: BookOpen, color: '#10b981', description: 'قراءة القرآن الكريم برواية حفص مع التجويد.' },
+        { id: 'quran', label: 'القرآن الكريم', icon: BookOpen, color: '#10b981', description: 'يقوم بعرض النص القرانى والترجمه باللغه الانجليزيه' },
         { id: 'listen', label: 'الاستماع', icon: Headphones, color: '#8b5cf6', description: 'الاستماع إلى تلاوات كبار القراء بمختلف الروايات.' },
         { id: 'prayer-times', label: 'مواقيت الصلاة', icon: Clock, color: '#f59e0b', description: 'عرض مواقيت الصلاة واتجاه القبلة لموقعك الحالي.' },
         { id: 'daily-wird', label: 'الورد اليومي', icon: Calendar, color: '#ec4899', description: 'متابعة وردك اليومي من القرآن والأذكار.' },
@@ -28,9 +28,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
         { id: 'voice-control', label: 'التحكم الصوتي', icon: Mic, color: '#ef4444', description: 'التحكم في التطبيق من خلال الأوامر الصوتية.' },
         { id: 'readers', label: 'القراء', icon: Headphones, color: '#8b5cf6', description: 'اختر قارئك المفضل للاستماع إلى التلاوة العطرة.' },
         { id: 'font-type', label: 'نوع الخط', icon: Type, color: '#10b981', description: 'تغيير نوع وحجم الخط بما يناسب راحتك في القراءة.' },
-        { id: 'notifications', label: 'الإشعارات', icon: Bell, color: '#f59e0b', description: 'ضبط تنبيهات الصلاة، الأذكار، وورد القراءة اليومي.' },
+        { id: 'notifications', label: 'الإشعارات', icon: Bell, color: '#f59e0b', description: 'يمكنك الوصول الا اشعارات التطبيق واشعارات الهاتف والتعديل عليها بما يناسبك' },
         { id: 'sajdah', label: 'آيات السجدة', icon: Compass, color: '#ec4899', description: 'قائمة بجميع مواضع السجدات في القرآن الكريم للوصول السريع.' },
-        { id: 'settings', label: 'الإعدادات', icon: Settings, color: '#6366f1', description: 'تخصيص إعدادات القراءة، الصوت، والتنبيهات.' },
+        { id: 'settings', label: 'الإعدادات', icon: Settings, color: '#6366f1', description: 'التحكم الكامل بالتطبيق من داخل هذا الزر' },
         { id: 'themes', label: 'الثيمات', icon: Palette, color: '#f43f5e', description: 'تغيير ألوان ومظهر التطبيق بالكامل.' },
         { id: 'whatsapp', label: 'تواصل معنا', icon: MessageCircle, color: '#22c55e', description: 'تواصل مباشر معنا للاقتراحات أو الدعم الفني.' },
     ];

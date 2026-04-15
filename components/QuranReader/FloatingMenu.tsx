@@ -209,7 +209,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     {
       id: "floating-menu-translation",
       title: "الترجمة",
-      text: "عرض ترجمة معاني القرآن الكريم للغات المختلفة.",
+      text: "يقوم بعرض النص القرانى والترجمه باللغه الانجليزيه",
       selector: '[data-id="menu-item-translation"]',
       icon: <Languages className="w-8 h-8 text-white" />,
     },
@@ -230,7 +230,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     {
       id: "floating-menu-settings",
       title: "الإعدادات",
-      text: "التحكم في إعدادات الخط، القراء، والتنبيهات.",
+      text: "التحكم الكامل بالتطبيق من داخل هذا الزر",
       selector: '[data-id="menu-item-settings"]',
       icon: <Settings className="w-8 h-8 text-white" />,
     },
@@ -272,7 +272,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     {
       id: "floating-menu-notifications",
       title: "الإشعارات",
-      text: "ضبط تنبيهات الصلاة، الأذكار، وورد القراءة اليومي.",
+      text: "يمكنك الوصول الا اشعارات التطبيق واشعارات الهاتف والتعديل عليها بما يناسبك",
       selector: '[data-id="menu-item-notification-settings"]',
       icon: <Bell className="w-8 h-8 text-white" />,
     },

@@ -94,20 +94,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             icon: <Mic className="w-8 h-8 text-white" />
         },
         {
-            id: 'notifications',
-            title: 'الإشعارات والتنبيهات',
-            text: 'تحكم في كيفية وصول التنبيهات إليك، مثل تنبيهات أذكار الصباح والمساء، ومواقيت الصلاة، والورد اليومي.',
-            selector: '#notifications-section',
-            icon: <Settings2 className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'sajdah-ayahs',
-            title: 'آيات السجدة',
-            text: 'يمكنك تفعيل هذا الخيار لإظهار تنبيه خاص عند المرور بآية سجدة، مما يسهل عليك معرفة مواضع السجود في القرآن.',
-            selector: '#sajdah-section',
-            icon: <Settings2 className="w-8 h-8 text-white" />
-        },
-        {
             id: 'ayah-repeat',
             title: 'تكرار الآيات',
             text: 'هذه الميزة مفيدة جداً للحفظ والمراجعة. حدد عدد مرات تكرار الآية الواحدة أثناء الاستماع لتسهيل عملية الحفظ.',
@@ -133,6 +119,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             title: 'خيارات إضافية',
             text: 'تحكم في إعدادات إضافية مثل إظهار بطاقة السجدة عند المرور بآية سجدة، وإخفاء أشرطة الأدوات العلوية والسفلية تلقائياً أثناء القراءة لتوسيع مساحة العرض.',
             selector: '#toggles-section',
+            icon: <Settings2 className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'sajdah-ayahs',
+            title: 'آيات السجدة',
+            text: 'يمكنك تفعيل هذا الخيار لإظهار تنبيه خاص عند المرور بآية سجدة، مما يسهل عليك معرفة مواضع السجود في القرآن.',
+            selector: '#sajdah-section',
+            icon: <Settings2 className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'notifications',
+            title: 'الإشعارات والتنبيهات',
+            text: 'تحكم في كيفية وصول التنبيهات إليك، مثل تنبيهات أذكار الصباح والمساء، ومواقيت الصلاة.',
+            selector: '#notifications-section',
             icon: <Settings2 className="w-8 h-8 text-white" />
         },
         {
