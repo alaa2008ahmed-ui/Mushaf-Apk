@@ -265,14 +265,14 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     {
       id: "floating-menu-font",
       title: "نوع الخط",
-      text: "تغيير نوع وحجم الخط بما يناسب راحتك في القراءة.",
+      text: "قم بتغيير نوع الخط من بين مجموعه من الخطوط المميزة",
       selector: '[data-id="menu-item-font-type"]',
       icon: <Type className="w-8 h-8 text-white" />,
     },
     {
       id: "floating-menu-notifications",
       title: "الإشعارات",
-      text: "يمكنك الوصول الا اشعارات التطبيق واشعارات الهاتف والتعديل عليها بما يناسبك",
+      text: "يمكنك الوصول الى اشعارات التطبيق واشعارات الهاتف والتعديل عليها بما يناسبك",
       selector: '[data-id="menu-item-notification-settings"]',
       icon: <Bell className="w-8 h-8 text-white" />,
     },

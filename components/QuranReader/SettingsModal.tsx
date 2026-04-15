@@ -117,7 +117,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         {
             id: 'toggles',
             title: 'خيارات إضافية',
-            text: 'تحكم في إعدادات إضافية مثل إظهار بطاقة السجدة عند المرور بآية سجدة، وإخفاء أشرطة الأدوات العلوية والسفلية تلقائياً أثناء القراءة لتوسيع مساحة العرض.',
+            text: 'تحكم في إعدادات إضافية مثل إظهار بطاقة السجدة عند المرور بآية سجدة، وإخفاء أشرطة الأدوات العلوية والسفلية تلقائياً أثناء القراءة لتوسيع مساحة العرض، وتفعيل إضافة إطار خارجي لصفحة القراءة.',
             selector: '#toggles-section',
             icon: <Settings2 className="w-8 h-8 text-white" />
         },
@@ -407,34 +407,36 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         </div>
                     </div>
 
-                    <div id="toggles-section" className="space-y-1">
-                        <div id="sajdah-section" className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-bold opacity-80">إظهار بطاقة السجدة</label>
-                                <div className="relative inline-block w-10 align-middle select-none">
-                                    <input type="checkbox" id="show-sajdah-card" checked={showSajdahCard} onChange={(e) => handleSajdahCardToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                                    <label htmlFor="show-sajdah-card" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${showSajdahCard ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                    <div className="space-y-1">
+                        <div id="toggles-section" className="space-y-1">
+                            <div id="sajdah-section" className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-bold opacity-80">إظهار بطاقة السجدة</label>
+                                    <div className="relative inline-block w-10 align-middle select-none">
+                                        <input type="checkbox" id="show-sajdah-card" checked={showSajdahCard} onChange={(e) => handleSajdahCardToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
+                                        <label htmlFor="show-sajdah-card" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${showSajdahCard ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-bold opacity-80">إخفاء الأشرطة</label>
-                                <div className="relative inline-block w-10 align-middle select-none">
-                                    <input type="checkbox" id="hide-toolbars" checked={isHideToolbarsEnabled} onChange={(e) => handleHideToolbarsToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                                    <label htmlFor="hide-toolbars" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${isHideToolbarsEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                            <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-bold opacity-80">إخفاء الأشرطة</label>
+                                    <div className="relative inline-block w-10 align-middle select-none">
+                                        <input type="checkbox" id="hide-toolbars" checked={isHideToolbarsEnabled} onChange={(e) => handleHideToolbarsToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
+                                        <label htmlFor="hide-toolbars" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${isHideToolbarsEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-bold opacity-80">إظهار الإطار الخارجي</label>
-                                <div className="relative inline-block w-10 align-middle select-none">
-                                    <input type="checkbox" id="show-page-border" checked={settings.showPageBorder !== false} onChange={(e) => {
-                                        updateSetting('showPageBorder', e.target.checked);
-                                        showToast(e.target.checked ? 'تم تفعيل الإطار الخارجي' : 'تم إخفاء الإطار الخارجي');
-                                    }} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                                    <label htmlFor="show-page-border" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${settings.showPageBorder !== false ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                            <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-bold opacity-80">إظهار الإطار الخارجي</label>
+                                    <div className="relative inline-block w-10 align-middle select-none">
+                                        <input type="checkbox" id="show-page-border" checked={settings.showPageBorder !== false} onChange={(e) => {
+                                            updateSetting('showPageBorder', e.target.checked);
+                                            showToast(e.target.checked ? 'تم تفعيل الإطار الخارجي' : 'تم إخفاء الإطار الخارجي');
+                                        }} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
+                                        <label htmlFor="show-page-border" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${settings.showPageBorder !== false ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                    </div>
                                 </div>
                             </div>
                         </div>

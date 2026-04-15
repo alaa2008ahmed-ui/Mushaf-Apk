@@ -1261,6 +1261,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             icon: <Move className="w-8 h-8 text-white" />
         },
         {
+            id: 'audio-play',
+            title: 'التشغيل الصوتي واختيار القراء',
+            text: 'اضغط هنا لبدء الاستماع لتلاوة عطرة للآيات. الضغط المطول على هذا الزر يفتح لك قائمة بمجموعة كبيرة من القراء من مشاهير القراء، حيث يمكنك اختيار قارئك المفضل وتحديد جودة الصوت.',
+            selector: '#btn-play',
+            icon: <Mic className="w-8 h-8 text-white" />
+        },
+        {
             id: 'ayah-text',
             title: 'تفاعل ذكي مع الآيات',
             text: 'عند الضغط على الايه يتم تحديدها بلون مختلف وعند الضغط المطول يمكنك تغيير لون النص القرانى ولون الخلفيه ولون الايه المحدده',
@@ -1270,7 +1277,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         {
             id: 'ayah-number',
             title: 'التفسير والترجمه',
-            text: 'قم بالضغط على رقم الايه لعرض التفسيراو معانى القران او الترجمه وقم بالضغط المطول على الرقم لاختيار من بين التفسيرات المختلفه',
+            text: 'قم بالضغط على رقم الايه لعرض التفسير أو معانى القران او الترجمه وقم بالضغط المطول على الرقم لاختيار من بين التفسيرات المختلفه',
             selector: '.verse-container',
             icon: <MousePointer2 className="w-8 h-8 text-white" />
         },
@@ -1281,11 +1288,11 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             icon: <ZoomIn className="w-8 h-8 text-white" />
         },
         {
-            id: 'audio-play',
-            title: 'التشغيل الصوتي واختيار القراء',
-            text: 'اضغط هنا لبدء الاستماع لتلاوة عطرة للآيات. الضغط المطول على هذا الزر يفتح لك قائمة بمجموعة كبيرة من القراء من مشاهير القراء، حيث يمكنك اختيار قارئك المفضل وتحديد جودة الصوت.',
-            selector: '#btn-play',
-            icon: <Mic className="w-8 h-8 text-white" />
+            id: 'share-ayah-feature',
+            title: 'مشاركة آية',
+            text: 'اضغط هنا لمشاركة الآية الحالية كصورة مصممة بشكل جميل. يمكنك تخصيص الخلفية، الخط، والألوان قبل المشاركة مع أصدقائك أو على وسائل التواصل الاجتماعي.',
+            selector: '#btn-share',
+            icon: <Share2 className="w-8 h-8 text-white" />
         },
         {
             id: 'bookmark-feature',
@@ -1300,13 +1307,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             text: 'يتيح لك هذا الزر بدء أو إيقاف التمرير التلقائي للصفحة أثناء القراءة. اضغط مطولاً لضبط سرعة التمرير بما يتناسب مع سرعة قراءتك.',
             selector: '#btn-autoscroll',
             icon: <Move className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'share-ayah-feature',
-            title: 'مشاركة آية',
-            text: 'اضغط هنا لمشاركة الآية الحالية كصورة مصممة بشكل جميل. يمكنك تخصيص الخلفية، الخط، والألوان قبل المشاركة مع أصدقائك أو على وسائل التواصل الاجتماعي.',
-            selector: '#btn-share',
-            icon: <Share2 className="w-8 h-8 text-white" />
         },
         {
             id: 'home-nav',
