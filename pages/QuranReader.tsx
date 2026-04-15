@@ -284,12 +284,17 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const sharedSuffix = isLandscape ? '_h' : '_v';
     const modeSuffix = sharedSuffix;
-    const bookmarkSuffix = sharedSuffix;
-    const posSuffix = isWirdMode 
-        ? `_wird_${isLandscape ? 'h' : 'v'}` 
-        : localIsMemorizationMode 
-            ? `_memorization_${isLandscape ? 'h' : 'v'}` 
-            : sharedSuffix;
+    
+    // Scoped suffixes for bookmarks and last position to have separate records for each mode
+    const getScopedSuffix = (mode: string) => {
+        if (isWirdMode) return `_wird_${isLandscape ? 'h' : 'v'}`;
+        if (localIsMemorizationMode) return `_memorization_${isLandscape ? 'h' : 'v'}`;
+        if (mode === 'mushaf') return sharedSuffix;
+        return `_${mode}_${sharedSuffix}`;
+    };
+
+    const bookmarkSuffix = getScopedSuffix(readingMode);
+    const posSuffix = getScopedSuffix(readingMode);
 
     const [quranData, setQuranData] = useState(quranJsonData);
 
@@ -802,7 +807,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
         setIsTransparentMode(transSetting);
 
-        const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + mode);
+        const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + bookmarkSuffix);
         const parsedBookmarks = savedBookmarks ? JSON.parse(savedBookmarks) : [];
         setBookmarks(prev => {
             if (JSON.stringify(prev) === JSON.stringify(parsedBookmarks)) return prev;
@@ -2262,7 +2267,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
             if (isTransparentMode !== transSetting) setIsTransparentMode(transSetting);
 
-            const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + mode);
+            const savedBookmarks = localStorage.getItem('quran_bookmarks_list' + bookmarkSuffix);
             const parsedBookmarks = savedBookmarks ? JSON.parse(savedBookmarks) : [];
             setBookmarks(prev => {
                 if (JSON.stringify(prev) === JSON.stringify(parsedBookmarks)) return prev;
@@ -2453,9 +2458,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const isBookmarksModalOpen = activeModals.includes('bookmarks-modal');
     useEffect(() => {
         if (isBookmarksModalOpen) {
-            setBookmarks(JSON.parse(localStorage.getItem('quran_bookmarks_list' + modeSuffix) || '[]'));
+            setBookmarks(JSON.parse(localStorage.getItem('quran_bookmarks_list' + bookmarkSuffix) || '[]'));
         }
-    }, [isBookmarksModalOpen, modeSuffix]);
+    }, [isBookmarksModalOpen, bookmarkSuffix]);
 
     useEffect(() => {
         const contentEl = mushafContentRef.current;
@@ -3523,6 +3528,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 isFloatingMenuOpen={isFloatingMenuOpen}
                 isAnyMenuOpen={isAnyMenuOpen}
                 hideShareButton={readingMode !== 'mushaf'}
+                hideAutoScrollButton={readingMode !== 'mushaf'}
                 openModal={openModal}
                 menuButtonRef={menuButtonRef}
                 handleBookmarkButtonPointerDown={handleBookmarkButtonPointerDown}

@@ -9,6 +9,7 @@ interface QuranFooterProps {
     isFloatingMenuOpen: boolean;
     isAnyMenuOpen: boolean;
     hideShareButton?: boolean;
+    hideAutoScrollButton?: boolean;
     openModal: (modalId: string) => void;
     menuButtonRef: React.RefObject<HTMLButtonElement>;
     handleBookmarkButtonPointerDown: (e: React.PointerEvent | React.TouchEvent) => void;
@@ -28,6 +29,7 @@ const QuranFooter: React.FC<QuranFooterProps> = React.memo(({
     isFloatingMenuOpen,
     isAnyMenuOpen,
     hideShareButton = false,
+    hideAutoScrollButton = false,
     openModal,
     menuButtonRef,
     handleBookmarkButtonPointerDown,
@@ -66,20 +68,22 @@ const QuranFooter: React.FC<QuranFooterProps> = React.memo(({
             >
                 <Bookmark size={24} />
             </button>
-            <button 
-                id="btn-autoscroll" 
-                onPointerDown={handleAutoScrollButtonPointerDown}
-                onPointerUp={handleAutoScrollButtonPointerUp}
-                onPointerLeave={handleAutoScrollButtonPointerLeave}
-                onTouchStart={handleAutoScrollButtonPointerDown}
-                onTouchEnd={handleAutoScrollButtonPointerUp}
-                onTouchCancel={handleAutoScrollButtonPointerLeave}
-                className="bottom-bar-button btn-purple !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1 shadow-sm" 
-                style={{...getToolbarStyle('btn-autoscroll', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBorder || currentTheme.btnBg), touchAction: 'none'}}
-                title="التمرير التلقائي"
-            >
-                {autoScrollState.isActive ? <Pause size={24} /> : <ChevronDown size={24} />}
-            </button>
+            {!hideAutoScrollButton && (
+                <button 
+                    id="btn-autoscroll" 
+                    onPointerDown={handleAutoScrollButtonPointerDown}
+                    onPointerUp={handleAutoScrollButtonPointerUp}
+                    onPointerLeave={handleAutoScrollButtonPointerLeave}
+                    onTouchStart={handleAutoScrollButtonPointerDown}
+                    onTouchEnd={handleAutoScrollButtonPointerUp}
+                    onTouchCancel={handleAutoScrollButtonPointerLeave}
+                    className="bottom-bar-button btn-purple !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1 shadow-sm" 
+                    style={{...getToolbarStyle('btn-autoscroll', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBorder || currentTheme.btnBg), touchAction: 'none'}}
+                    title="التمرير التلقائي"
+                >
+                    {autoScrollState.isActive ? <Pause size={24} /> : <ChevronDown size={24} />}
+                </button>
+            )}
             <button 
                 id="btn-home" 
                 onClick={onBack} 

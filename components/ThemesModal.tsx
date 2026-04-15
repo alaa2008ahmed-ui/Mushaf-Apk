@@ -40,40 +40,48 @@ function ThemeSelector({ onClose, isLandscape }: { onClose: () => void, isLandsc
     return (
         <div 
             ref={wrapperRef} 
-            className={`theme-selector-container fixed ${isLandscape ? 'inset-0 flex items-center justify-center p-0' : 'bottom-[calc(70px+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 w-full max-w-lg p-2'} z-50`}
+            className={`theme-selector-container fixed ${isLandscape ? 'inset-0 flex items-center justify-center p-0' : 'bottom-[calc(85px+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 w-[95%] max-w-md p-0'} z-[100]`}
         >
-            <div className={`themed-card p-3 ${isLandscape ? 'w-full max-w-4xl h-full rounded-none' : 'rounded-2xl'} shadow-2xl !backdrop-blur-none !bg-opacity-100 flex flex-col justify-center`} style={{ backgroundColor: theme.bgColor || '#fff' }}>
-                <div className={isLandscape ? 'max-w-lg mx-auto w-full' : ''}>
-                    <div className="grid grid-cols-3 gap-2 mb-2">
-                        <button onClick={() => fileInputRef.current?.click()} className="p-2 rounded-lg font-bold text-[10px] flex flex-col items-center justify-center gap-1" style={{backgroundColor: theme.palette[0] + '30', color: theme.textColor, border: theme.btnBorder || 'none'}}>
-                            <span>🖼️</span>
+            <div className={`themed-card p-4 ${isLandscape ? 'w-full max-w-4xl h-full rounded-none' : 'rounded-3xl'} shadow-2xl !backdrop-blur-md !bg-opacity-95 flex flex-col justify-center border-2`} style={{ backgroundColor: theme.bgColor || '#fff', borderColor: theme.palette[0] + '40' }}>
+                <div className={isLandscape ? 'max-w-lg mx-auto w-full' : 'w-full'}>
+                    <div className="flex items-center justify-between mb-4 px-1">
+                        <h3 className="font-bold text-sm" style={{ color: theme.textColor }}>تخصيص المظهر</h3>
+                        <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500 transition-all">
+                            <span className="text-lg font-bold leading-none">×</span>
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                        <button onClick={() => fileInputRef.current?.click()} className="p-2.5 rounded-xl font-bold text-[11px] flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm" style={{backgroundColor: theme.palette[0] + '20', color: theme.textColor, border: `1px solid ${theme.palette[0]}40`}}>
+                            <span className="text-lg">🖼️</span>
                             <span>خلفية مخصصة</span>
                         </button>
-                        <button onClick={resetBackground} className="p-2 rounded-lg font-bold text-[10px] flex flex-col items-center justify-center gap-1" style={{backgroundColor: theme.palette[1] + '30', color: theme.textColor, border: theme.btnBorder || 'none'}}>
-                            <span>🔄</span>
+                        <button onClick={resetBackground} className="p-2.5 rounded-xl font-bold text-[11px] flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm" style={{backgroundColor: theme.palette[1] + '20', color: theme.textColor, border: `1px solid ${theme.palette[1]}40`}}>
+                            <span className="text-lg">🔄</span>
                             <span>استعادة</span>
                         </button>
-                        <button onClick={() => applyPresetTheme('default')} className="p-2 rounded-lg font-bold text-[10px] flex flex-col items-center justify-center gap-1" style={{backgroundColor: theme.palette[2] + '30', color: theme.textColor, border: theme.btnBorder || 'none'}}>
-                            <span>🎨</span>
+                        <button onClick={() => applyPresetTheme('default')} className="p-2.5 rounded-xl font-bold text-[11px] flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm" style={{backgroundColor: theme.palette[2] + '20', color: theme.textColor, border: `1px solid ${theme.palette[2]}40`}}>
+                            <span className="text-lg">🎨</span>
                             <span>الافتراضي</span>
                         </button>
                     </div>
 
-                    <div className="h-[1px] w-full my-2" style={{ backgroundColor: 'var(--card-border)' }}></div>
+                    <div className="h-[1px] w-full mb-4 opacity-20" style={{ backgroundColor: theme.textColor }}></div>
 
-                    <div className={`flex flex-wrap gap-2 justify-center ${isLandscape ? 'max-h-[60vh]' : 'max-h-[120px]'} overflow-y-auto hide-scrollbar`}>
+                    <div className={`flex flex-wrap gap-2.5 justify-center ${isLandscape ? 'max-h-[50vh]' : 'max-h-[160px]'} overflow-y-auto hide-scrollbar pb-2`}>
                         {Object.entries(presetThemes).filter(([key]) => key !== 'default').map(([key, themeOption], index) => (
                             <button
                                 key={key}
                                 onClick={() => applyPresetTheme(key)}
-                                className="theme-selector-button w-20 h-12 rounded-lg border-2 text-[9px] font-bold flex items-center justify-center text-center shadow-sm transition-transform active:scale-95"
+                                className="theme-selector-button w-[85px] h-14 rounded-xl border-2 text-[10px] font-bold flex items-center justify-center text-center shadow-sm transition-all active:scale-95 hover:brightness-110"
                                     style={{
-                                        animationDelay: `${index * 0.04}s`,
+                                        animationDelay: `${index * 0.03}s`,
                                         backgroundColor: themeOption.bgColor || '#fff',
                                         backgroundSize: 'cover',
                                         color: themeOption.textColor || '#000',
-                                        borderColor: themeKey === key ? theme.palette[1] : themeOption.palette[0],
+                                        borderColor: themeKey === key ? theme.palette[1] : themeOption.palette[0] + '60',
                                         transform: themeKey === key ? 'scale(1.05)' : 'scale(1)',
+                                        boxShadow: themeKey === key ? `0 0 12px ${theme.palette[1]}40` : 'none'
                                     }}
                             >
                                 {themeOption.name}

@@ -1,5 +1,6 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
+import moment from 'moment-hijri';
 
 export const setupNotifications = async (settings?: any) => {
   if (!Capacitor.isNativePlatform()) {
@@ -31,7 +32,7 @@ export const setupNotifications = async (settings?: any) => {
     })();
 
     // Clear existing notifications to avoid duplicates
-    await LocalNotifications.cancel({ notifications: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }, { id: 6 }] });
+    await LocalNotifications.cancel({ notifications: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }, { id: 6 }, { id: 7 }] });
 
     const notificationsToSchedule = [];
 
@@ -99,6 +100,41 @@ export const setupNotifications = async (settings?: any) => {
         extra: { page: 'quran', params: { surah: 18 } },
         smallIcon: 'ic_stat_name',
       });
+    }
+
+    // Ramadan Preparation Notification (1 day before Ramadan)
+    try {
+      const currentHijriYear = moment().iYear();
+      const currentHijriMonth = moment().iMonth(); // 0-indexed, Ramadan is 8
+      
+      let targetYear = currentHijriYear;
+      // If we are already in Ramadan (or later), the day before Ramadan for this year has passed
+      if (currentHijriMonth >= 8) {
+        targetYear += 1;
+      }
+      
+      let ramadan1 = moment(`${targetYear}/9/1`, 'iYYYY/iM/iD');
+      let dayBeforeRamadan = ramadan1.clone().subtract(1, 'days');
+      dayBeforeRamadan.hour(10).minute(0).second(0).millisecond(0);
+      
+      // If the calculated date is somehow in the past (e.g., today is exactly the day before Ramadan but past 10 AM)
+      if (dayBeforeRamadan.isBefore(moment())) {
+        targetYear += 1;
+        ramadan1 = moment(`${targetYear}/9/1`, 'iYYYY/iM/iD');
+        dayBeforeRamadan = ramadan1.clone().subtract(1, 'days');
+        dayBeforeRamadan.hour(10).minute(0).second(0).millisecond(0);
+      }
+
+      notificationsToSchedule.push({
+        title: 'استعد لرمضان!',
+        body: 'غداً أول أيام شهر رمضان المبارك. قم بتجهيز الورد الشهري الخاص بك الآن.',
+        id: 7,
+        schedule: { at: dayBeforeRamadan.toDate(), allowWhileIdle: true },
+        extra: { page: 'daily-wird' },
+        smallIcon: 'ic_stat_name',
+      });
+    } catch (e) {
+      console.error('Error scheduling Ramadan notification', e);
     }
 
     if (notificationsToSchedule.length > 0) {

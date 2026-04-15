@@ -45,7 +45,7 @@ function WhatsAppButton() {
                 <>
                     {/* Full screen backdrop to block all interactions */}
                     <div 
-                        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9999]" 
+                        className="fixed inset-0 bg-black/60 backdrop-blur-[4px] z-[10000] pointer-events-auto" 
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -54,7 +54,7 @@ function WhatsAppButton() {
                     
                     {/* Menu positioned above the button */}
                     <div 
-                        className="fixed bottom-[80px] left-1/2 -translate-x-1/2 md:left-auto md:right-4 md:translate-x-0 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 w-[260px] z-[10000] font-cairo animate-in slide-in-from-bottom-4 fade-in duration-300"
+                        className="fixed bottom-[100px] left-1/2 -translate-x-1/2 md:left-auto md:right-4 md:translate-x-0 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-gray-100 p-6 w-[280px] z-[10001] font-cairo animate-in zoom-in-95 slide-in-from-bottom-10 fade-in duration-300"
                     >
                         <button 
                             onClick={toggleMenu} 
