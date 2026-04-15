@@ -265,7 +265,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     {
       id: "floating-menu-font",
       title: "نوع الخط",
-      text: "قم بتغيير نوع الخط من بين مجموعه من الخطوط المميزة",
+      text: "تغيير نوع الخط بما يناسب راحتك في القراءة.",
       selector: '[data-id="menu-item-font-type"]',
       icon: <Type className="w-8 h-8 text-white" />,
     },

@@ -27,7 +27,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
         { id: 'memorization', label: 'التحفيظ', icon: Brain, color: '#06b6d4', description: 'أدوات مساعدة لحفظ ومراجعة القرآن الكريم.' },
         { id: 'voice-control', label: 'التحكم الصوتي', icon: Mic, color: '#ef4444', description: 'التحكم في التطبيق من خلال الأوامر الصوتية.' },
         { id: 'readers', label: 'القراء', icon: Headphones, color: '#8b5cf6', description: 'اختر قارئك المفضل للاستماع إلى التلاوة العطرة.' },
-        { id: 'font-type', label: 'نوع الخط', icon: Type, color: '#10b981', description: 'قم بتغيير نوع الخط من بين مجموعه من الخطوط المميزة' },
+        { id: 'font-type', label: 'نوع الخط', icon: Type, color: '#10b981', description: 'تغيير نوع الخط بما يناسب راحتك في القراءة.' },
         { id: 'notifications', label: 'الإشعارات', icon: Bell, color: '#f59e0b', description: 'يمكنك الوصول الى اشعارات التطبيق واشعارات الهاتف والتعديل عليها بما يناسبك' },
         { id: 'sajdah', label: 'آيات السجدة', icon: Compass, color: '#ec4899', description: 'قائمة بجميع مواضع السجدات في القرآن الكريم للوصول السريع.' },
         { id: 'settings', label: 'الإعدادات', icon: Settings, color: '#6366f1', description: 'التحكم الكامل بالتطبيق من داخل هذا الزر' },

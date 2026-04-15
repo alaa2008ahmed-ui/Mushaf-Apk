@@ -310,9 +310,23 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     {
       id: 'wird-progress-actions',
       title: 'إدارة الورد',
-      text: 'بعد الانتهاء من القراءة، لا تنسَ الضغط على "تمت القراءة" لتحديث تقدمك. كما يمكنك تعديل الخطة من هنا في أي وقت.',
+      text: 'بعد الانتهاء من القراءة، لا تنسَ الضغط على "تمت القراءة" لتحديث تقدمك.',
       selector: '#wird-actions-container',
       icon: <Settings className="w-8 h-8 text-white" />
+    },
+    {
+      id: 'wird-edit-highlight',
+      title: 'تعديل الختمة',
+      text: 'إذا شعرت أن الخطة الحالية سريعة جداً أو بطيئة، يمكنك الضغط هنا لتعديل عدد الأيام أو الصفحات في أي وقت.',
+      selector: '#wird-edit-btn',
+      icon: <Settings className="w-8 h-8 text-white" />
+    },
+    {
+      id: 'wird-reset-highlight',
+      title: 'إعادة تعيين الختمة',
+      text: 'في حال أردت البدء من جديد تماماً أو تغيير نقطة البداية، استخدم هذا الزر لتصفير التقدم الحالي وإعادة ضبط الإعدادات.',
+      selector: '#wird-reset-btn',
+      icon: <RotateCcw className="w-8 h-8 text-white" />
     }
   ];
 
@@ -601,6 +615,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
 
         <div className="flex gap-2">
           <button 
+            id="wird-edit-btn"
             onClick={handleEdit}
             className="flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm"
             style={{ 
@@ -613,6 +628,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             تعديل الختمة
           </button>
           <button 
+            id="wird-reset-btn"
             onClick={handleReset}
             className="flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm"
             style={{ 

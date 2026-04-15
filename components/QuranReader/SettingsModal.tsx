@@ -82,7 +82,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         {
             id: 'font-family',
             title: 'نوع الخط',
-            text: 'اختر من بين مجموعة متنوعة من الخطوط العربية الأصيلة (مثل خط عثمان طه، خط النسخ، وغيرها) الخط الذي تفضل قراءة القرآن به.',
+            text: 'اختر من بين مجموعة متنوعة من الخطوط العربية الأصيلة (مثل خط عثمان، خط النسخ، وغيرها) الخط الذي تفضل قراءة القرآن به.',
             selector: '#font-family-section',
             icon: <Type className="w-8 h-8 text-white" />
         },
@@ -119,13 +119,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             title: 'خيارات إضافية',
             text: 'تحكم في إعدادات إضافية مثل إظهار بطاقة السجدة عند المرور بآية سجدة، وإخفاء أشرطة الأدوات العلوية والسفلية تلقائياً أثناء القراءة لتوسيع مساحة العرض، وتفعيل إضافة إطار خارجي لصفحة القراءة.',
             selector: '#toggles-section',
-            icon: <Settings2 className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'sajdah-ayahs',
-            title: 'آيات السجدة',
-            text: 'يمكنك تفعيل هذا الخيار لإظهار تنبيه خاص عند المرور بآية سجدة، مما يسهل عليك معرفة مواضع السجود في القرآن.',
-            selector: '#sajdah-section',
             icon: <Settings2 className="w-8 h-8 text-white" />
         },
         {

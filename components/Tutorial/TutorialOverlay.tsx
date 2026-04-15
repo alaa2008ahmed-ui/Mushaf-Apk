@@ -128,7 +128,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
     const tooltipWidth = Math.min(280, windowWidth * 0.85);
-    const margin = 16;
+    const margin = 40;
 
     let style: React.CSSProperties = {
       position: "fixed",
@@ -162,7 +162,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
       style.left = "50%";
       style.transform = "translate(-50%, -50%)";
 
-      const tooltipHeight = 160;
+      const tooltipHeight = 240;
       const centerRect = {
         left: windowWidth / 2 - tooltipWidth / 2,
         right: windowWidth / 2 + tooltipWidth / 2,
@@ -186,7 +186,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
           style.top = "auto";
           style.bottom = `${windowHeight - targetRect.top + margin}px`;
         } else {
-          style.top = `${targetRect.bottom + margin}px`;
+          style.top = `${targetRect.bottom + margin + 40}px`;
         }
       }
     }
@@ -279,12 +279,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             </div>
           </div>
 
-          {/* Global Instruction */}
-          <div className="fixed bottom-6 left-0 right-0 flex justify-center pointer-events-none z-[10002]">
-            <div className="bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full text-white/80 text-[13px] font-medium border border-white/10">
-              اضغط في أي مكان فارغ للخروج
-            </div>
-          </div>
+          {/* Global Instruction removed as per user request */}
         </motion.div>
       )}
     </AnimatePresence>

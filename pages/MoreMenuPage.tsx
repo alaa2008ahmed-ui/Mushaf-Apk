@@ -111,7 +111,6 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
             </div>
 
             <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
-            <TutorialOverlay tutorialId="more-menu-tutorial" steps={moreMenuTutorialSteps} />
         </div>
     );
 };
