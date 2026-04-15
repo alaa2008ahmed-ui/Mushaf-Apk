@@ -256,33 +256,63 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     }
   };
 
-  const dailyWirdTutorialSteps: TutorialStep[] = [
+  const setupTutorialSteps: TutorialStep[] = [
     {
-      id: 'wird-welcome',
-      title: 'تنظيم الورد اليومي والختمات',
-      text: 'مرحباً بك في قسم الورد اليومي. صُمم هذا القسم ليكون محفزك الأساسي لختم القرآن الكريم. يمكنك هنا إنشاء خطط قراءة مخصصة (ختمة شهرية، أسبوعية، أو حسب عدد الصفحات) لتضمن لنفسك نصيباً ثابتاً من كتاب الله يومياً.',
+      id: 'wird-setup-welcome',
+      title: 'إعداد الختمة الجديدة',
+      text: 'مرحباً بك! هنا يمكنك البدء بتنظيم وردك القرآني. سنقوم بإنشاء خطة مخصصة تناسب وقتك وقدرتك.',
+      icon: <Settings className="w-8 h-8 text-white" />
+    },
+    {
+      id: 'wird-setup-mode',
+      title: 'طريقة الختم',
+      text: 'اختر ما إذا كنت تفضل الختم خلال عدد معين من الأيام، أو قراءة عدد محدد من الصفحات يومياً.',
+      selector: '#wird-mode-container',
       icon: <BookOpen className="w-8 h-8 text-white" />
     },
     {
-      id: 'wird-progress',
-      title: 'متابعة الإنجاز والتحفيز',
-      text: 'هذا المؤشر الدائري يعكس مدى التزامك بخطتك. يظهر لك النسبة المئوية لما أنجزته من الختمة الحالية، وعدد الأيام المتبقية. رؤية تقدمك ينمو يومياً سيعطيك دافعاً قوياً للاستمرار وعدم الانقطاع.',
+      id: 'wird-setup-value',
+      title: 'تحديد المقدار',
+      text: 'أدخل عدد الأيام الإجمالي للختمة، أو عدد الصفحات التي تلتزم بقراءتها كل يوم.',
+      selector: '#wird-value-container',
+      icon: <Edit2 className="w-8 h-8 text-white" />
+    },
+    {
+      id: 'wird-setup-start',
+      title: 'ابدأ رحلتك',
+      text: 'بعد الانتهاء من الإعدادات، اضغط هنا لتبدأ رحلتك المباركة مع القرآن الكريم.',
+      selector: '#wird-start-container',
+      icon: <Play className="w-8 h-8 text-white" />
+    }
+  ];
+
+  const progressTutorialSteps: TutorialStep[] = [
+    {
+      id: 'wird-progress-welcome',
+      title: 'متابعة إنجازك',
+      text: 'رائع! لقد بدأت ختمتك. هنا ستجد كل ما تحتاجه لمتابعة تقدمك اليومي والالتزام بوردك.',
+      icon: <CheckCircle className="w-8 h-8 text-white" />
+    },
+    {
+      id: 'wird-progress-bar',
+      title: 'مؤشر الإنجاز',
+      text: 'هذا الشريط يوضح لك النسبة المئوية لما أنجزته من الختمة حتى الآن. كلما قرأت أكثر، اقتربت من الهدف!',
       selector: '#wird-progress-container',
       icon: <CheckCircle className="w-8 h-8 text-white" />
     },
     {
-      id: 'wird-today',
-      title: 'ورد اليوم والقراءة المباشرة',
-      text: 'هنا يظهر لك "مطلوب اليوم" بدقة (مثلاً: من صفحة 10 إلى 20). بالضغط على هذا القسم، سينقلك التطبيق فوراً إلى المصحف في وضع "الورد" الذي يحدد لك بداية ونهاية قراءتك، مما يسهل عليك التركيز في وردك فقط.',
+      id: 'wird-progress-today',
+      title: 'ورد اليوم',
+      text: 'هنا يظهر لك بالضبط الصفحات المطلوب قراءتها اليوم. اضغط على "افتح المصحف" لتبدأ القراءة مباشرة.',
       selector: '#wird-today-container',
       icon: <BookOpen className="w-8 h-8 text-white" />
     },
     {
-      id: 'wird-actions',
-      title: 'إدارة الختمات المتعددة',
-      text: 'يمكنك هنا "تعديل الخطة" إذا وجدت أنها صعبة أو سهلة، أو "إضافة ختمة جديدة" (مثلاً ختمة للتدبر وأخرى للحفظ). كما يمكنك إضافة ملفات تعريف لأبنائك لمتابعة ورد كل فرد من العائلة بشكل مستقل.',
+      id: 'wird-progress-actions',
+      title: 'إدارة الورد',
+      text: 'بعد الانتهاء من القراءة، لا تنسَ الضغط على "تمت القراءة" لتحديث تقدمك. كما يمكنك تعديل الخطة من هنا في أي وقت.',
       selector: '#wird-actions-container',
-      icon: <Play className="w-8 h-8 text-white" />
+      icon: <Settings className="w-8 h-8 text-white" />
     }
   ];
 
@@ -325,7 +355,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       <h2 className="text-xl font-bold mb-4 text-center">{settings ? 'تعديل الختمة' : 'إعداد ختمة جديدة'}</h2>
       
       <div className="space-y-4">
-        <div>
+        <div id="wird-name-container">
           <label className="block mb-2 font-semibold">اسم المستخدم / الختمة:</label>
           <input 
             type="text"
@@ -337,7 +367,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
           />
         </div>
 
-        <div>
+        <div id="wird-mode-container">
           <label className="block mb-2 font-semibold">طريقة الختمة:</label>
           <div className="flex gap-4">
             <button 
@@ -356,7 +386,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
 
 
-        <div>
+        <div id="wird-value-container">
           <label className="block mb-2 font-semibold">
             {tempMode === 'days' ? 'عدد الأيام للختمة:' : 'عدد الصفحات يومياً:'}
           </label>
@@ -406,7 +436,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
           </div>
         )}
 
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3 mt-6" id="wird-start-container">
           <button 
             onClick={handleStart}
             className="flex-1 py-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors"
@@ -760,7 +790,11 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         onConfirm={confirmReset}
       />
 
-      <TutorialOverlay tutorialId="daily-wird-tutorial" steps={dailyWirdTutorialSteps} />
+      {showSettings || !settings ? (
+        <TutorialOverlay tutorialId="daily-wird-setup-tutorial" steps={setupTutorialSteps} />
+      ) : (
+        <TutorialOverlay tutorialId="daily-wird-progress-tutorial" steps={progressTutorialSteps} />
+      )}
     </div>
   );
 };

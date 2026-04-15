@@ -263,6 +263,27 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         }
     }, []);
 
+    // Calculate page data once for both handleShare and JSX
+    const pageNum = quranData?.surahs?.[currentAyah.s - 1]?.ayahs?.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
+    const pageAyahs: any[] = [];
+    
+    if (quranData) {
+        quranData.surahs.forEach((surah: any, sIdx: number) => {
+            surah.ayahs.forEach((ayah: any) => {
+                if (ayah.page === pageNum) {
+                    pageAyahs.push({ 
+                        ...ayah,
+                        sNum: sIdx + 1, 
+                        numberInSurah: ayah.numberInSurah, 
+                        sName: surah.name, 
+                        juz: ayah.juz, 
+                        hizbQuarter: ayah.hizbQuarter 
+                    });
+                }
+            });
+        });
+    }
+
     const handleShare = async () => {
         if (isSharing) return;
         setIsSharing(true);
@@ -270,25 +291,13 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         let shareText = `${surahInfo}\nايات من القران الكريم . بواسطة : مصحف احمد وليلى`;
         
         if (shareType === 'page') {
-            const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
-            
-            // Find all ayahs in this page
-            const pageAyahs: {s: number, a: number}[] = [];
-            quranData.surahs.forEach((surah: any, sIdx: number) => {
-                surah.ayahs.forEach((ayah: any) => {
-                    if (ayah.page === pageNum) {
-                        pageAyahs.push({ s: sIdx + 1, a: ayah.numberInSurah });
-                    }
-                });
-            });
-            
             let pageSurahInfo = surahInfo;
             if (pageAyahs.length > 0) {
                 const firstPageAyah = pageAyahs[0];
                 const lastPageAyah = pageAyahs[pageAyahs.length - 1];
-                pageSurahInfo = firstPageAyah.s === lastPageAyah.s 
-                    ? `سورة ${getSurahName(firstPageAyah.s)} - آية ${toArabic(firstPageAyah.a)} إلى آية ${toArabic(lastPageAyah.a)}`
-                    : `سورة ${getSurahName(firstPageAyah.s)} آية ${toArabic(firstPageAyah.a)} - سورة ${getSurahName(lastPageAyah.s)} آية ${toArabic(lastPageAyah.a)}`;
+                pageSurahInfo = firstPageAyah.sNum === lastPageAyah.sNum 
+                    ? `سورة ${getSurahName(firstPageAyah.sNum)} - آية ${toArabic(firstPageAyah.numberInSurah)} إلى آية ${toArabic(lastPageAyah.numberInSurah)}`
+                    : `سورة ${getSurahName(firstPageAyah.sNum)} آية ${toArabic(firstPageAyah.numberInSurah)} - سورة ${getSurahName(lastPageAyah.sNum)} آية ${toArabic(lastPageAyah.numberInSurah)}`;
             }
             
             shareText = `صفحة ${toArabic(pageNum)} - ${pageSurahInfo}\nايات من القران الكريم . بواسطة : مصحف احمد وليلى`;
@@ -333,7 +342,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     captureElement.style.zIndex = '-9999';
 
                     const canvas = await html2canvas(captureElement, {
-                        scale: 4,
+                        scale: 5,
                         backgroundColor: null,
                         useCORS: true,
                         allowTaint: true,
@@ -389,16 +398,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             } else if (shareType === 'page') {
                 const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
                 
-                let captureElement: HTMLElement | null = null;
-                if (readingMode === 'mushaf') {
-                    captureElement = hiddenMushafRef.current;
-                } else {
-                    captureElement = hiddenCaptureRef.current;
-                }
-                
-                if (!captureElement) {
-                    captureElement = document.getElementById('mushaf-content');
-                }
+                const captureElement = hiddenMushafRef.current;
                 
                 if (captureElement) {
                     try {
@@ -408,11 +408,12 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         captureElement.style.left = '0';
                         captureElement.style.top = '0';
                         captureElement.style.visibility = 'visible';
-                        captureElement.style.display = 'block';
+                        captureElement.style.display = 'flex';
+                        captureElement.style.flexDirection = 'column';
                         captureElement.style.zIndex = '-9999';
 
                         const canvas = await html2canvas(captureElement, {
-                            scale: 4,
+                            scale: 5,
                             backgroundColor: '#ffffff',
                             useCORS: true,
                             allowTaint: true,
@@ -672,33 +673,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         }
     };
 
-    const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
-    const pageAyahs: any[] = [];
-    let pageSurahInfo = "";
-    
-    // Always calculate pageAyahs for capture
-    quranData.surahs.forEach((surah: any, sIdx: number) => {
-        surah.ayahs.forEach((ayah: any) => {
-            if (ayah.page === pageNum) {
-                pageAyahs.push({ 
-                    ...ayah,
-                    sNum: sIdx + 1, 
-                    numberInSurah: ayah.numberInSurah, 
-                    sName: surah.name, 
-                    juz: ayah.juz, 
-                    hizbQuarter: ayah.hizbQuarter 
-                });
-            }
-        });
-    });
-    
-    if (pageAyahs.length > 0) {
-        const firstPageAyah = pageAyahs[0];
-        const lastPageAyah = pageAyahs[pageAyahs.length - 1];
-        pageSurahInfo = firstPageAyah.sNum === lastPageAyah.sNum 
-            ? `سورة ${getSurahName(firstPageAyah.sNum)} - آية ${toArabic(firstPageAyah.numberInSurah)} إلى آية ${toArabic(lastPageAyah.numberInSurah)}`
-            : `سورة ${getSurahName(firstPageAyah.sNum)} آية ${toArabic(firstPageAyah.numberInSurah)} - سورة ${getSurahName(lastPageAyah.sNum)} آية ${toArabic(lastPageAyah.numberInSurah)}`;
-    }
+    // Removed redundant calculation
 
     const renderShareHeader = () => {
         if (pageAyahs.length === 0) return null;
@@ -833,7 +808,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 </div>
             </div>
 
-            {/* Hidden Mushaf capture element for high-quality page share */}
+            {/* Unified capture element for high-quality page share (Mushaf, Tafseer, Meanings, Translation) */}
             <div 
                 id="hidden-mushaf-capture"
                 ref={hiddenMushafRef}
@@ -841,9 +816,9 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     position: 'absolute',
                     left: '-9999px',
                     top: '-9999px',
-                    width: '1440px', // Increased width to prevent excessive height
-                    minHeight: '1920px', // Ensure minimum height
-                    height: 'auto', // Allow height to grow based on content
+                    width: '1440px', 
+                    minHeight: '1000px',
+                    height: 'auto', 
                     backgroundColor: '#ffffff',
                     padding: '80px 60px',
                     color: '#000000',
@@ -861,62 +836,22 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         line-height: 2.2 !important;
                     }
                     #hidden-mushaf-capture .mushaf-page {
-                        flex: 1;
+                        flex: 0 0 auto !important;
                     }
                 `}</style>
                 {renderShareHeader()}
-                <MushafPage 
-                    pageNum={pageNum}
-                    pageData={pageAyahs}
-                    highlightedAyahId={null}
-                    onAyahClick={() => {}}
-                    onVerseClick={() => {}}
-                    settings={appSettings || { fontSize: 2.5, fontFamily: 'var(--font-amiri-quran)', textColor: '#000000' }}
-                />
-                    <div style={{ 
-                        marginTop: 'auto', 
-                        paddingTop: '20px', 
-                        borderTop: '3px solid #3b82f6', 
-                        display: 'flex', 
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '8px'
-                    }}>
-                        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <a href="https://play.google.com/store/apps/details?id=com.mushaf.ahmedandlayla" target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-lateef), serif', fontSize: '24px', color: '#3b82f6', fontWeight: 'bold', textDecoration: 'none' }}>مصحف احمد وليلى</a>
-                            <span style={{ fontSize: '16px', opacity: 0.7, fontWeight: 'bold' }}>صفحة {toArabic(pageNum)}</span>
-                        </div>
-                        {pageAyahs.length > 0 && pageAyahs[0].sNum === pageAyahs[pageAyahs.length - 1].sNum && (
-                            <p style={{ fontSize: '18px', color: '#666', margin: 0, fontWeight: 'bold' }}>
-                                {getSurahMetadata(pageAyahs[0].sNum)}
-                            </p>
-                        )}
-                    </div>
-            </div>
-
-            {/* Hidden capture element for Tafseer/Meanings page share */}
-            {readingMode !== 'mushaf' && (
-                <div 
-                    id="hidden-page-capture"
-                    ref={hiddenCaptureRef}
-                    style={{
-                        position: 'absolute',
-                        left: '-9999px',
-                        top: '-9999px',
-                        width: '1440px', // Increased width to prevent excessive height
-                        minHeight: '1920px', // Ensure minimum height
-                        height: 'auto', // Allow height to grow based on content
-                        backgroundColor: '#ffffff',
-                        padding: '80px 60px', // Same as Mushaf
-                        color: '#000000',
-                        direction: 'rtl',
-                        display: 'flex',
-                        flexDirection: 'column'
-                    }}
-                >
-                    {renderShareHeader()}
-                    
-                    <div style={{ padding: '15px 8px 5px', flex: 1 }}>
+                
+                {readingMode === 'mushaf' ? (
+                    <MushafPage 
+                        pageNum={pageNum}
+                        pageData={pageAyahs}
+                        highlightedAyahId={null}
+                        onAyahClick={() => {}}
+                        onVerseClick={() => {}}
+                        settings={appSettings || { fontSize: 2.5, fontFamily: 'var(--font-amiri-quran)', textColor: '#000000' }}
+                    />
+                ) : (
+                    <div style={{ padding: '15px 8px 5px', flex: '0 0 auto' }}>
                         {pageAyahs.map((ay, idx) => {
                             const ayahText = getAyahText(ay.sNum, ay.numberInSurah);
                             const explanation = getExplanationText(ay.sNum, ay.numberInSurah);
@@ -959,39 +894,23 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 </div>
                             );
                         })}
-                        
-                        {/* Replicate MushafPage footer */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '30px', paddingBottom: '10px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                <span style={{ color: '#9333ea', fontFamily: 'var(--font-hafs), serif', fontSize: '1.6rem', margin: '0 2px' }}>﴿</span>
-                                <span style={{ color: '#9333ea', fontWeight: 'bold', fontSize: '1.3rem', fontFamily: 'var(--font-default)', margin: '0 2px' }}>{toArabic(pageNum)}</span>
-                                <span style={{ color: '#9333ea', fontFamily: 'var(--font-hafs), serif', fontSize: '1.6rem', margin: '0 2px' }}>﴾</span>
-                            </div>
-                            <div style={{ width: '60%', height: '2.5px', backgroundColor: '#9333ea', marginTop: '12px', opacity: 0.8, borderRadius: '2px' }}></div>
-                        </div>
                     </div>
-                    
-                    <div style={{ 
-                        marginTop: 'auto', 
-                        paddingTop: '20px', 
-                        borderTop: '3px solid #3b82f6', 
-                        display: 'flex', 
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '8px'
-                    }}>
-                        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <a href="https://play.google.com/store/apps/details?id=com.mushaf.ahmedandlayla" target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-lateef), serif', fontSize: '24px', color: '#3b82f6', fontWeight: 'bold', textDecoration: 'none' }}>مصحف احمد وليلى</a>
-                            <span style={{ fontSize: '16px', opacity: 0.7, fontWeight: 'bold' }}>صفحة {toArabic(pageNum)}</span>
-                        </div>
-                        {pageAyahs.length > 0 && pageAyahs[0].sNum === pageAyahs[pageAyahs.length - 1].sNum && (
-                            <p style={{ fontSize: '18px', color: '#666', margin: 0, fontWeight: 'bold' }}>
-                                {getSurahMetadata(pageAyahs[0].sNum)}
-                            </p>
-                        )}
+                )}
+
+                <div style={{ 
+                    marginTop: '40px', 
+                    paddingTop: '20px', 
+                    borderTop: '3px solid #3b82f6', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                }}>
+                    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <a href="https://play.google.com/store/apps/details?id=com.mushaf.ahmedandlayla" target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-lateef), serif', fontSize: '28px', color: '#3b82f6', fontWeight: 'bold', textDecoration: 'none' }}>مصحف احمد وليلى</a>
                     </div>
                 </div>
-            )}
+            </div>
 
             <div className="w-full h-full flex items-center justify-center p-2" onClick={e => e.stopPropagation()}>
                 <div className="modal-skinned rounded-2xl shadow-2xl w-full max-w-lg flex flex-col h-full overflow-hidden" style={{ color: currentTheme.textColor || '#000000' }}>

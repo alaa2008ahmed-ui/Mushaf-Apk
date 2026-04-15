@@ -94,6 +94,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             icon: <Mic className="w-8 h-8 text-white" />
         },
         {
+            id: 'notifications',
+            title: 'الإشعارات والتنبيهات',
+            text: 'تحكم في كيفية وصول التنبيهات إليك، مثل تنبيهات أذكار الصباح والمساء، ومواقيت الصلاة، والورد اليومي.',
+            selector: '#notifications-section',
+            icon: <Settings2 className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'sajdah-ayahs',
+            title: 'آيات السجدة',
+            text: 'يمكنك تفعيل هذا الخيار لإظهار تنبيه خاص عند المرور بآية سجدة، مما يسهل عليك معرفة مواضع السجود في القرآن.',
+            selector: '#sajdah-section',
+            icon: <Settings2 className="w-8 h-8 text-white" />
+        },
+        {
             id: 'ayah-repeat',
             title: 'تكرار الآيات',
             text: 'هذه الميزة مفيدة جداً للحفظ والمراجعة. حدد عدد مرات تكرار الآية الواحدة أثناء الاستماع لتسهيل عملية الحفظ.',
@@ -394,7 +408,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     </div>
 
                     <div id="toggles-section" className="space-y-1">
-                        <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
+                        <div id="sajdah-section" className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
                             <div className="flex items-center justify-between">
                                 <label className="text-sm font-bold opacity-80">إظهار بطاقة السجدة</label>
                                 <div className="relative inline-block w-10 align-middle select-none">
@@ -424,7 +438,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                 </div>
                             </div>
                         </div>
-                        <div className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
+                        <div id="notifications-section" className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
                             <button onClick={() => onOpenModal('notification-settings-modal')} className="w-full flex items-center justify-between py-1">
                                 <label className="text-sm font-bold opacity-80 cursor-pointer">الإشعارات</label>
                                 <i className="fa-solid fa-bell text-emerald-500"></i>

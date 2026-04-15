@@ -1261,13 +1261,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             icon: <Move className="w-8 h-8 text-white" />
         },
         {
-            id: 'mode-switch',
-            title: 'أوضاع القراءة والتدبر',
-            text: 'هذا الزر هو بوابتك لاختيار طريقة عرض المصحف. يمكنك التبديل بين "وضع المصحف" للقراءة التقليدية، أو "وضع التفسير" لعرض معاني الآيات، أو "وضع الترجمة" للغات المختلفة. اختر ما يعينك على الفهم والتدبر.',
-            selector: '#btn-mode-switch',
-            icon: <BookOpen className="w-8 h-8 text-white" />
-        },
-        {
             id: 'audio-play',
             title: 'التشغيل الصوتي واختيار القراء',
             text: 'اضغط هنا لبدء الاستماع لتلاوة عطرة للآيات. الضغط المطول على هذا الزر يفتح لك قائمة بأكثر من 100 قارئ من مشاهير القراء، حيث يمكنك اختيار قارئك المفضل وتحديد جودة الصوت.',
@@ -3529,6 +3522,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 setIsFloatingMenuOpen={setIsFloatingMenuOpen}
                 isFloatingMenuOpen={isFloatingMenuOpen}
                 isAnyMenuOpen={isAnyMenuOpen}
+                hideShareButton={readingMode !== 'mushaf'}
                 openModal={openModal}
                 menuButtonRef={menuButtonRef}
                 handleBookmarkButtonPointerDown={handleBookmarkButtonPointerDown}

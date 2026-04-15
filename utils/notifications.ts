@@ -42,6 +42,7 @@ export const setupNotifications = async (settings?: any) => {
         id: 1,
         schedule: { on: { hour: 7, minute: 0 }, allowWhileIdle: true, repeats: true },
         extra: { page: 'sabah-masaa' },
+        smallIcon: 'ic_stat_name',
       });
     }
 
@@ -52,6 +53,7 @@ export const setupNotifications = async (settings?: any) => {
         id: 2,
         schedule: { on: { hour: 16, minute: 30 }, allowWhileIdle: true, repeats: true },
         extra: { page: 'sabah-masaa' },
+        smallIcon: 'ic_stat_name',
       });
     }
 
@@ -62,6 +64,7 @@ export const setupNotifications = async (settings?: any) => {
         id: 3,
         schedule: { on: { hour: 14, minute: 0 }, allowWhileIdle: true, repeats: true },
         extra: { page: 'adia' },
+        smallIcon: 'ic_stat_name',
       });
     }
 
@@ -72,6 +75,7 @@ export const setupNotifications = async (settings?: any) => {
         id: 4,
         schedule: { on: { hour: 10, minute: 0 }, allowWhileIdle: true, repeats: true },
         extra: { page: 'tasbeeh' },
+        smallIcon: 'ic_stat_name',
       });
     }
 
@@ -82,6 +86,7 @@ export const setupNotifications = async (settings?: any) => {
         id: 5,
         schedule: { on: { hour: 20, minute: 0 }, allowWhileIdle: true, repeats: true },
         extra: { page: 'tasbeeh' },
+        smallIcon: 'ic_stat_name',
       });
     }
 
@@ -92,6 +97,7 @@ export const setupNotifications = async (settings?: any) => {
         id: 6,
         schedule: { on: { weekday: 6, hour: 9, minute: 0 }, allowWhileIdle: true, repeats: true }, // Friday is 6
         extra: { page: 'quran', params: { surah: 18 } },
+        smallIcon: 'ic_stat_name',
       });
     }
 

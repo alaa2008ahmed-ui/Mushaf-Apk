@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
     Home, BookOpen, Headphones, Clock, Calendar, Brain, 
     Mic, Settings, Palette, MessageCircle, X, ChevronLeft,
-    Menu, Info, HelpCircle, Star
+    Menu, Info, HelpCircle, Star, Type, Bell, Compass
 } from 'lucide-react';
 import TutorialOverlay, { TutorialStep } from './Tutorial/TutorialOverlay';
 
@@ -26,6 +26,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
         { id: 'daily-wird', label: 'الورد اليومي', icon: Calendar, color: '#ec4899', description: 'متابعة وردك اليومي من القرآن والأذكار.' },
         { id: 'memorization', label: 'التحفيظ', icon: Brain, color: '#06b6d4', description: 'أدوات مساعدة لحفظ ومراجعة القرآن الكريم.' },
         { id: 'voice-control', label: 'التحكم الصوتي', icon: Mic, color: '#ef4444', description: 'التحكم في التطبيق من خلال الأوامر الصوتية.' },
+        { id: 'readers', label: 'القراء', icon: Headphones, color: '#8b5cf6', description: 'اختر قارئك المفضل للاستماع إلى التلاوة العطرة.' },
+        { id: 'font-type', label: 'نوع الخط', icon: Type, color: '#10b981', description: 'تغيير نوع وحجم الخط بما يناسب راحتك في القراءة.' },
+        { id: 'notifications', label: 'الإشعارات', icon: Bell, color: '#f59e0b', description: 'ضبط تنبيهات الصلاة، الأذكار، وورد القراءة اليومي.' },
+        { id: 'sajdah', label: 'آيات السجدة', icon: Compass, color: '#ec4899', description: 'قائمة بجميع مواضع السجدات في القرآن الكريم للوصول السريع.' },
         { id: 'settings', label: 'الإعدادات', icon: Settings, color: '#6366f1', description: 'تخصيص إعدادات القراءة، الصوت، والتنبيهات.' },
         { id: 'themes', label: 'الثيمات', icon: Palette, color: '#f43f5e', description: 'تغيير ألوان ومظهر التطبيق بالكامل.' },
         { id: 'whatsapp', label: 'تواصل معنا', icon: MessageCircle, color: '#22c55e', description: 'تواصل مباشر معنا للاقتراحات أو الدعم الفني.' },
@@ -44,7 +48,28 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
             text: item.description,
             selector: `[data-id="side-menu-${item.id}"]`,
             icon: <item.icon size={32} className="text-white" />
-        }))
+        })),
+        {
+            id: 'tutorial-about',
+            title: 'عن التطبيق',
+            text: 'تعرف على فريق العمل، الإصدار الحالي، وأهداف هذا المشروع المبارك.',
+            selector: '[data-id="side-menu-about"]',
+            icon: <Info size={32} className="text-white" />
+        },
+        {
+            id: 'tutorial-help',
+            title: 'المساعدة',
+            text: 'هل لديك استفسار؟ هنا تجد إجابات لأكثر الأسئلة شيوعاً ودليل الاستخدام.',
+            selector: '[data-id="side-menu-help"]',
+            icon: <HelpCircle size={32} className="text-white" />
+        },
+        {
+            id: 'tutorial-rate',
+            title: 'تقييمنا',
+            text: 'رأيك يهمنا جداً! تقييمك للتطبيق يساعدنا على الوصول لعدد أكبر من المسلمين وتطوير الخدمات.',
+            selector: '[data-id="side-menu-rate"]',
+            icon: <Star size={32} className="text-white" />
+        }
     ];
 
     return (
@@ -94,7 +119,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
                                         onClick={() => {
                                             if (item.id === 'themes') onOpenThemes();
                                             else if (item.id === 'whatsapp') window.open('https://wa.me/201000000000', '_blank');
-                                            else if (item.id === 'settings') onNavigate('settings'); // Assuming settings is a page or handled
+                                            else if (item.id === 'settings' || item.id === 'readers' || item.id === 'font-type' || item.id === 'notifications' || item.id === 'sajdah') onNavigate('settings');
                                             else onNavigate(item.id);
                                             onClose();
                                         }}
@@ -116,21 +141,22 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
                             {/* Footer */}
                             <div className="p-6 border-t mt-auto" style={{ borderColor: currentTheme.barBorder }}>
                                 <div className="flex items-center justify-around">
-                                    <button className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                                    <button data-id="side-menu-about" className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
                                         <Info size={20} />
                                         <span className="text-[10px] font-bold">عن التطبيق</span>
                                     </button>
-                                    <button className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                                    <button data-id="side-menu-help" className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
                                         <HelpCircle size={20} />
                                         <span className="text-[10px] font-bold">المساعدة</span>
                                     </button>
-                                    <button className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                                    <button data-id="side-menu-rate" className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
                                         <Star size={20} />
                                         <span className="text-[10px] font-bold">تقييمنا</span>
                                     </button>
                                 </div>
                             </div>
                         </motion.div>
+                        <TutorialOverlay tutorialId="side-menu-tutorial" steps={sideMenuTutorialSteps} />
                     </>
                 )}
             </AnimatePresence>
