@@ -135,7 +135,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     {
       id: 'verse',
       title: 'آية اليوم والتدبر',
-      text: 'يعرض هذا القسم آية قرآنية متجددة يومياً للتأمل والتدبر. يمكنك استخدام إصبعين على الآية لتكبير أو تصغير الخط لتناسب راحة عينيك.',
+      text: '',
       selector: '#verse-section',
       icon: <BookOpen className="w-8 h-8 text-white" />
     },
@@ -253,10 +253,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                 <VerseSection 
                     currentVerse={currentVerse}
                     verseFontSize={verseFontSize}
-                    setVerseFontSize={setVerseFontSize}
-                    setIsCustomizationOpen={setIsVerseMenuOpen}
                     theme={theme}
-                    themeKey={themeKey}
                     verseSettings={verseSettings}
                 />
               </div>

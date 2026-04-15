@@ -252,18 +252,15 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="p-4">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-200">
-                      {step.icon || <Info className="text-white" size={20} />}
-                    </div>
-                    <div className="flex-1 min-w-0 text-right">
+                  <div className="text-right mb-3">
+                    {step.title && (
                       <h3 className="font-bold text-[16px] text-gray-900 mb-1 truncate leading-tight">
                         {step.title}
                       </h3>
-                      <p className="text-[14px] text-gray-600 leading-relaxed line-clamp-4">
-                        {step.text}
-                      </p>
-                    </div>
+                    )}
+                    <p className="text-[14px] text-gray-600 leading-relaxed">
+                      {step.text}
+                    </p>
                   </div>
 
                   <div className="flex items-center justify-end mt-4 pt-3 border-t border-gray-50">
