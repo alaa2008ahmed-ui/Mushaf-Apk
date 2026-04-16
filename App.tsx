@@ -266,7 +266,14 @@ function AppContent({
     CapacitorApp.exitApp();
   };
   
-  const toggleThemeSelector = () => setIsThemeSelectorOpen(prev => !prev);
+  const handleOpenThemes = useCallback(() => {
+    if (page === 'quran' || page === 'quran-landscape') {
+      window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_themes' } }));
+    } else {
+      setIsThemeSelectorOpen(true);
+    }
+  }, [page]);
+
   const closeThemeSelector = () => setIsThemeSelectorOpen(false);
 
   return (
@@ -275,7 +282,7 @@ function AppContent({
         page={page} 
         onBack={navigateBack} 
         onNavigate={handleNavigate} 
-        onOpenThemes={toggleThemeSelector}
+        onOpenThemes={handleOpenThemes}
         onOpenSideMenu={() => setIsSideMenuOpen(true)}
         navParams={navParams}
       />
@@ -284,7 +291,7 @@ function AppContent({
         isOpen={isSideMenuOpen} 
         onClose={() => setIsSideMenuOpen(false)} 
         onNavigate={handleNavigate}
-        onOpenThemes={toggleThemeSelector}
+        onOpenThemes={handleOpenThemes}
         currentTheme={theme}
         currentPage={page}
       />
