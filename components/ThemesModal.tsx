@@ -40,17 +40,10 @@ function ThemeSelector({ onClose, isLandscape }: { onClose: () => void, isLandsc
     return (
         <div 
             ref={wrapperRef} 
-            className={`theme-selector-container fixed ${isLandscape ? 'inset-0 flex items-center justify-center p-0' : 'bottom-[calc(85px+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 w-[95%] max-w-md p-0'} z-[100]`}
+            className={`theme-selector-container fixed ${isLandscape ? 'inset-0 flex items-center justify-center p-0' : 'bottom-[calc(85px+env(safe-area-inset-bottom,0px))] inset-x-0 mx-auto w-[95%] max-w-md p-0'} z-[100]`}
         >
             <div className={`themed-card p-4 ${isLandscape ? 'w-full max-w-4xl h-full rounded-none' : 'rounded-3xl'} shadow-2xl !backdrop-blur-md !bg-opacity-95 flex flex-col justify-center border-2`} style={{ backgroundColor: theme.bgColor || '#fff', borderColor: theme.palette[0] + '40' }}>
                 <div className={isLandscape ? 'max-w-lg mx-auto w-full' : 'w-full'}>
-                    <div className="flex items-center justify-between mb-4 px-1">
-                        <h3 className="font-bold text-sm" style={{ color: theme.textColor }}>تخصيص المظهر</h3>
-                        <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500 transition-all">
-                            <span className="text-lg font-bold leading-none">×</span>
-                        </button>
-                    </div>
-
                     <div className="grid grid-cols-3 gap-2 mb-4">
                         <button onClick={() => fileInputRef.current?.click()} className="p-2.5 rounded-xl font-bold text-[11px] flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm" style={{backgroundColor: theme.palette[0] + '20', color: theme.textColor, border: `1px solid ${theme.palette[0]}40`}}>
                             <span className="text-lg">🖼️</span>

@@ -41,6 +41,7 @@ import ReviewTestModal from '../components/QuranReader/ReviewTestModal';
 import { memorizationService } from '../src/services/memorizationService';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { parseVoiceCommand, normalizeArabic } from '../utils/voiceParser';
+import { useTheme } from '../context/ThemeContext';
 
 declare var window: any;
 
@@ -197,8 +198,39 @@ const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentThem
     );
 };
 
-const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any, navParams?: any }> = ({ page, onBack, onNavigate, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings, navParams }) => {
+const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, onOpenThemes?: () => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any, navParams?: any }> = ({ page, onBack, onNavigate, onOpenThemes, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings, navParams }) => {
+    const { setCurrentPage, isGlobalTheme } = useTheme();
+
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
+
+    const [readingMode, setReadingMode] = useState<ReadingMode>(() => {
+        if (isWirdMode || isMemorizationMode) return 'mushaf';
+        const mode = initialLandscape ? '_h' : '_v';
+        const saved = localStorage.getItem('last_reading_mode' + mode);
+        return (saved as ReadingMode) || 'mushaf';
+    });
+    
+    useEffect(() => {
+        if (!isWirdMode && !isMemorizationMode) {
+            const mode = isLandscape ? '_h' : '_v';
+            localStorage.setItem('last_reading_mode' + mode, readingMode);
+        }
+    }, [readingMode, isWirdMode, isMemorizationMode, isLandscape]);
+
+    // Independent reading mode for landscape/vertical
+    useEffect(() => {
+        if (isWirdMode || isMemorizationMode) return;
+        const mode = isLandscape ? '_h' : '_v';
+        const saved = localStorage.getItem('last_reading_mode' + mode);
+        if (saved && saved !== readingMode) {
+            setReadingMode(saved as ReadingMode);
+        }
+    }, [isLandscape, isWirdMode, isMemorizationMode]);
+
+    useEffect(() => {
+        setCurrentPage(`quran_${readingMode}`);
+    }, [setCurrentPage, readingMode]);
+
     const [showResumeModal, setShowResumeModal] = useState(false);
     const [savedSession, setSavedSession] = useState<any>(null);
     const [localIsMemorizationMode, setLocalIsMemorizationMode] = useState(isMemorizationMode);
@@ -258,43 +290,21 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         };
     }, []);
 
-    const [readingMode, setReadingMode] = useState<ReadingMode>(() => {
-        if (isWirdMode || isMemorizationMode) return 'mushaf';
-        const mode = initialLandscape ? '_h' : '_v';
-        const saved = localStorage.getItem('last_reading_mode' + mode);
-        return (saved as ReadingMode) || 'mushaf';
-    });
-    
-    useEffect(() => {
-        if (!isWirdMode && !isMemorizationMode) {
-            const mode = isLandscape ? '_h' : '_v';
-            localStorage.setItem('last_reading_mode' + mode, readingMode);
-        }
-    }, [readingMode, isWirdMode, isMemorizationMode, isLandscape]);
-
-    // Independent reading mode for landscape/vertical
-    useEffect(() => {
-        if (isWirdMode || isMemorizationMode) return;
-        const mode = isLandscape ? '_h' : '_v';
-        const saved = localStorage.getItem('last_reading_mode' + mode);
-        if (saved && saved !== readingMode) {
-            setReadingMode(saved as ReadingMode);
-        }
-    }, [isLandscape, isWirdMode, isMemorizationMode]);
-
     const sharedSuffix = isLandscape ? '_h' : '_v';
     const modeSuffix = sharedSuffix;
     
     // Scoped suffixes for bookmarks and last position to have separate records for each mode
     const getScopedSuffix = (mode: string) => {
-        if (isWirdMode) return `_wird_${isLandscape ? 'h' : 'v'}`;
-        if (localIsMemorizationMode) return `_memorization_${isLandscape ? 'h' : 'v'}`;
-        if (mode === 'mushaf') return sharedSuffix;
-        return `_${mode}_${sharedSuffix}`;
+        const orient = isLandscape ? 'h' : 'v';
+        if (isWirdMode) return `_wird_${orient}`;
+        if (localIsMemorizationMode) return `_memorization_${orient}`;
+        if (mode === 'mushaf') return `_${orient}`;
+        return `_${mode}_${orient}`;
     };
 
     const bookmarkSuffix = getScopedSuffix(readingMode);
     const posSuffix = getScopedSuffix(readingMode);
+    const themeSuffix = isGlobalTheme ? (isLandscape ? '_h' : '_v') : posSuffix;
 
     const [quranData, setQuranData] = useState(quranJsonData);
 
@@ -750,7 +760,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const updateSetting = (key: string, value: any) => {
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
-        localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
+        localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(newSettings));
         window.dispatchEvent(new Event('settings-change'));
     };
     const isLandscapeRef = useRef(initialLandscape);
@@ -784,7 +794,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     // Load settings based on orientation and mode
     useEffect(() => {
-        const mode = modeSuffix;
+        const mode = themeSuffix;
         
         const savedSettings = localStorage.getItem('quran_settings' + mode);
         const baseSettings = savedSettings ? JSON.parse(savedSettings) : {};
@@ -828,13 +838,17 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         const lastPos = JSON.parse(localStorage.getItem(posKey) || '{}');
         
         // Only stop activities if the reading mode actually changed, not just orientation
-        // This prevents closing modals or stopping audio when keyboard opens or phone rotates
         if (prevReadingModeRef.current !== readingMode) {
             stopAudio();
             setAutoScrollState({ isActive: false, isPaused: false, elapsedTime: 0 });
             setActiveModals([]);
             setIsFloatingMenuOpen(false);
             prevReadingModeRef.current = readingMode;
+
+            // Immediately update currentAyah to the last position of the new mode
+            if (lastPos.s && lastPos.a) {
+                setCurrentAyah({ s: lastPos.s, a: lastPos.a });
+            }
         }
 
         if (!hasJumpedRef.current && (initialSurah || initialPage || localIsMemorizationMode || isWirdMode)) {
@@ -847,7 +861,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             
             setTimeout(() => {
                 jumpToAyah(targetS, targetA, true);
-                // isJumpingRef.current will be reset to false inside jumpToAyah after another timeout
             }, 100);
         }
 
@@ -886,7 +899,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 'btn-share': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }
             });
         }
-    }, [modeSuffix, posSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode]);
+    }, [themeSuffix, posSuffix, initialSurah, initialPage, localIsMemorizationMode, isWirdMode, isGlobalTheme]);
     
     useEffect(() => {
         if (!isLandscape) return;
@@ -1131,6 +1144,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const quranMeaningsCache = useRef<any>(null);
     
     const [quranTranslationInfo, setQuranTranslationInfo] = useState({ isOpen: false, s: 0, a: 0, text: '', surahName: '', wasAutoscrolling: false });
+
+    useEffect(() => {
+        if (tafseerInfo.isOpen) setCurrentPage('tafseer');
+        else if (quranMeaningsInfo.isOpen) setCurrentPage('meanings');
+        else if (quranTranslationInfo.isOpen) setCurrentPage('translation');
+        else setCurrentPage(page);
+    }, [tafseerInfo.isOpen, quranMeaningsInfo.isOpen, quranTranslationInfo.isOpen, page, setCurrentPage]);
     const [isQuranTranslationLoading, setIsQuranTranslationLoading] = useState(false);
     const quranTranslationCache = useRef<any>(null);
 
@@ -2204,7 +2224,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     useEffect(() => {
         const handleThemeChange = () => {
-            const mode = modeSuffix;
+            const mode = themeSuffix;
             const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
             const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
             
@@ -2285,7 +2305,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             }
         };
         const handleSettingsChange = () => {
-            const mode = modeSuffix;
+            const mode = themeSuffix;
             const saved = localStorage.getItem('quran_settings' + mode);
             if (saved) {
                 const parsed = JSON.parse(saved);
@@ -2305,33 +2325,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         return parsed;
                     });
                 } catch (e) {}
-            } else {
-                const theme = THEMES['night_sky'];
-                const defaultColors = {
-                    'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
-                    'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder },
-                    'surah': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
-                    'juz': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
-                    'page': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder, font: theme.font },
-                    'audio': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
-                    'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
-                    'btn-home': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
-                    'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
-                    'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
-                    'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
-                    'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
-                    'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
-                    'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
-                    'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
-                };
-                setToolbarColors(prev => {
-                    if (JSON.stringify(prev) === JSON.stringify(defaultColors)) return prev;
-                    return defaultColors;
-                });
             }
-            
-            setQuranData(quranJsonData);
-            
+
             const transSetting = localStorage.getItem('transparent_mode' + mode) === 'true';
             setIsTransparentMode(transSetting);
 
@@ -2357,17 +2352,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             const savedSajdah = localStorage.getItem('show_sajdah_card' + mode);
             const targetSajdah = savedSajdah !== null ? savedSajdah === 'true' : true;
             if (showSajdahCard !== targetSajdah) setShowSajdahCard(targetSajdah);
-
-            if (mode.endsWith('_h')) {
-                setIsLandscapeUIHidden(true);
-            } else {
-                if (!isHideToolbarsEnabledRef.current && isLandscapeUIHidden !== false) setIsLandscapeUIHidden(false);
-            }
         };
-
-        // Initial load for the current modeSuffix
-        handleThemeChange();
-        handleSettingsChange();
 
         window.addEventListener('theme-change', handleThemeChange);
         window.addEventListener('settings-change', handleSettingsChange);
@@ -2375,7 +2360,20 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             window.removeEventListener('theme-change', handleThemeChange);
             window.removeEventListener('settings-change', handleSettingsChange);
         };
-    }, [modeSuffix, showToast]);
+    }, [themeSuffix, bookmarkSuffix]);
+
+    // Initial load for the current themeSuffix
+    useEffect(() => {
+        const mode = themeSuffix;
+        const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
+        const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
+        setCurrentTheme(newTheme);
+        
+        const saved = localStorage.getItem('quran_settings' + mode);
+        if (saved) {
+            setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(saved) });
+        }
+    }, [themeSuffix]);
 
     const handleMarkWirdCompleted = useCallback((shouldContinue = false) => {
         const saved = localStorage.getItem('dailyWirdSettings_v2');
@@ -2467,7 +2465,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         if (!contentEl) return;
     
         const handleScroll = () => {
-            if (isJumpingRef.current) return;
+            if (isJumpingRef.current || readingMode !== 'mushaf') return;
 
             const { scrollTop, scrollHeight, clientHeight } = contentEl;
 
@@ -2583,7 +2581,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         return () => {
             contentEl.removeEventListener('scroll', handleScroll);
         };
-    }, [visiblePages, autoScrollState.isActive, handleSajdahVisible, modeSuffix]);
+    }, [visiblePages, autoScrollState.isActive, handleSajdahVisible, posSuffix, readingMode]);
 
     const pagesMap = useMemo(() => {
         if (!quranData) return new Map<number, any[]>();
@@ -3361,7 +3359,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const handleVerticalAyahClick = useCallback((s: number, a: number) => {
         setCurrentAyah({ s, a });
         setHighlightedAyahId(`${s}-${a}`);
-    }, []);
+        localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a }));
+    }, [posSuffix]);
 
     const sortedVisiblePages = useMemo(() => {
         return [...new Set(visiblePages)].sort((a: number, b: number) => a - b);
@@ -3477,6 +3476,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             isLandscape={isLandscape}
                             onAyahClick={handleVerticalAyahClick}
                             onVisibleAyahChange={(s, a) => {
+                                if (isJumpingRef.current) return;
                                 if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
                                     setCurrentAyah({ s, a });
                                     localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a }));
@@ -3585,7 +3585,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 onSelectDesign={(d) => {
                     const newSettings = { ...settings, surahHeaderDesign: d };
                     setSettings(newSettings);
-                    localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
+                    localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
                 }}
                 currentTheme={currentTheme}
@@ -3593,13 +3593,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             />
             {activeModals.includes('search-modal') && <SearchModal quranData={quranData} onSelect={(s,a) => jumpToAyah(s,a, true)} onClose={() => closeModal('search-modal')} isLandscape={isLandscape} initialQuery={initialSearchQuery} readingMode={readingMode} currentTheme={currentTheme} />}
             {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} readingMode={readingMode} settings={settings} showToast={showToast} />}
-            {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={modeSuffix} />}
-            {activeModals.includes('settings-modal') && <SettingsModal onClose={() => closeModal('settings-modal')} onOpenModal={openModal} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={modeSuffix} />}
-            {activeModals.includes('notification-settings-modal') && <NotificationSettingsModal onClose={() => closeModal('notification-settings-modal')} showToast={showToast} isLandscape={isLandscape} modeSuffix={modeSuffix} initialTab={modalParams?.tab} />}
+            {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={themeSuffix} />}
+            {activeModals.includes('settings-modal') && <SettingsModal onClose={() => closeModal('settings-modal')} onOpenModal={openModal} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={themeSuffix} />}
+            {activeModals.includes('notification-settings-modal') && <NotificationSettingsModal onClose={() => closeModal('notification-settings-modal')} showToast={showToast} isLandscape={isLandscape} modeSuffix={themeSuffix} initialTab={modalParams?.tab} />}
             {activeModals.includes('font-modal') && <FontSelectModal isOpen={true} onClose={() => closeModal('font-modal')} isLandscape={isLandscape} currentFontId={settings.fontFamily} onSelect={(id) => {
                 const newSettings = { ...settings, fontFamily: id };
                 setSettings(newSettings);
-                localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
+                localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(newSettings));
                 window.dispatchEvent(new Event('settings-change'));
                 showToast('تم تغيير الخط بنجاح');
                 closeModal('font-modal');
@@ -3622,7 +3622,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             {activeModals.includes('scroll-speed-modal') && <ScrollSpeedModal isOpen={true} onClose={() => closeModal('scroll-speed-modal')} isLandscape={isLandscape} currentMinutes={settings.scrollMinutes} onSelect={(m) => {
                 const newSettings = { ...settings, scrollMinutes: m };
                 setSettings(newSettings);
-                localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
+                localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(newSettings));
                 window.dispatchEvent(new Event('settings-change'));
                 showToast('تم تغيير سرعة التمرير');
                 closeModal('scroll-speed-modal');
@@ -3633,11 +3633,11 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 }
                 const newSettings = { ...settings, reader: id };
                 setSettings(newSettings);
-                localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
+                localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(newSettings));
                 window.dispatchEvent(new Event('settings-change'));
                 showToast('تم تغيير القارئ بنجاح');
             }} />}
-            {activeModals.includes('toolbar-color-picker-modal') && <ToolbarColorPickerModal onClose={() => closeModal('toolbar-color-picker-modal')} onOpenModal={openModal} showToast={showToast} currentTheme={currentTheme} toolbarColors={toolbarColors} isLandscape={isLandscape} modeSuffix={modeSuffix} />}
+            {activeModals.includes('toolbar-color-picker-modal') && <ToolbarColorPickerModal onClose={() => closeModal('toolbar-color-picker-modal')} onOpenModal={openModal} showToast={showToast} currentTheme={currentTheme} toolbarColors={toolbarColors} isLandscape={isLandscape} modeSuffix={themeSuffix} />}
             {activeModals.includes('quran-download-modal') && (
                 <QuranDownloadModal 
                     onClose={() => closeModal('quran-download-modal')} 
@@ -3654,6 +3654,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 isLoading={isTafseerLoading} 
                 isLandscape={isLandscape}
                 currentTheme={currentTheme}
+                onOpenThemes={onOpenThemes}
                 title={`${tafseerName} - ${tafseerInfo.surahName.replace('سورة','').trim()} - آية ${toArabic(tafseerInfo.a)}`} 
                 text={tafseerInfo.text} 
                 onClose={() => {
@@ -3669,6 +3670,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 isLoading={isQuranMeaningsLoading} 
                 isLandscape={isLandscape}
                 currentTheme={currentTheme}
+                onOpenThemes={onOpenThemes}
                 title={`معاني القرآن - ${quranMeaningsInfo.surahName.replace('سورة','').trim()} - آية ${toArabic(quranMeaningsInfo.a)}`} 
                 text={quranMeaningsInfo.text} 
                 onClose={() => {
@@ -3684,6 +3686,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 isLoading={isQuranTranslationLoading} 
                 isLandscape={isLandscape}
                 currentTheme={currentTheme}
+                onOpenThemes={onOpenThemes}
                 title={`الترجمة الإنجليزية - ${quranTranslationInfo.surahName.replace('سورة','').trim()} - آية ${toArabic(quranTranslationInfo.a)}`} 
                 text={quranTranslationInfo.text} 
                 onClose={() => {

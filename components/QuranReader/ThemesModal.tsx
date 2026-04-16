@@ -1,5 +1,6 @@
 import React from 'react';
 import { THEMES, DEFAULT_SETTINGS } from './constants';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ThemesModalProps {
     onClose: () => void;
@@ -10,6 +11,7 @@ interface ThemesModalProps {
 }
 
 const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandscape, readingMode, modeSuffix }) => {
+    const { isGlobalTheme, setIsGlobalTheme, applyPresetTheme: applyGlobalTheme } = useTheme();
     const currentThemeId = localStorage.getItem('current_theme_id' + modeSuffix) || 'olive';
     const activeTheme = THEMES[currentThemeId as keyof typeof THEMES] || THEMES['olive'];
 
@@ -53,6 +55,9 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
     const applyTheme = (themeId: string) => {
         const theme = THEMES[themeId as keyof typeof THEMES];
         if (!theme) return;
+
+        // Apply to global theme context as well
+        applyGlobalTheme(themeId);
 
         localStorage.getItem('current_theme_id' + modeSuffix);
         localStorage.setItem('current_theme_id' + modeSuffix, themeId);
@@ -106,6 +111,19 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
                 </div>
                 
                 <div className={`px-4 py-4 border-b flex ${isLandscape ? 'flex-row' : 'flex-wrap'} gap-3 justify-center`} style={{ backgroundColor: activeTheme.barBg, borderColor: activeTheme.barBorder }}>
+                    <button 
+                        onClick={() => {
+                            const newValue = !isGlobalTheme;
+                            setIsGlobalTheme(newValue);
+                            showToast(newValue ? 'تم تفعيل الثيم العام' : 'تم تعطيل الثيم العام');
+                        }}
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${isGlobalTheme ? 'shadow-lg' : 'hover:opacity-80'}`}
+                        style={isGlobalTheme ? { backgroundColor: activeTheme.accent, borderColor: activeTheme.accent, color: activeTheme.accentText } : { backgroundColor: activeTheme.cardBg, borderColor: activeTheme.cardBorder, color: activeTheme.cardText }}
+                        title="تفعيل/تعطيل الثيم العام على جميع الصفحات"
+                    >
+                        <i className={`fa-solid ${isGlobalTheme ? 'fa-globe' : 'fa-location-dot'}`}></i>
+                        <span className="whitespace-nowrap">{isGlobalTheme ? 'ثيم عام: مفعل' : 'ثيم عام: معطل'}</span>
+                    </button>
                     <button 
                         onClick={toggleTransparency}
                         className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${isTransparent ? 'shadow-lg' : 'hover:opacity-80'}`}

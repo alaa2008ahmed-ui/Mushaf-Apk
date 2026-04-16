@@ -233,12 +233,13 @@ function AppContent({
   setIsThemeSelectorOpen, 
   setShowExitConfirm 
 }: any) {
-  const { setCurrentPage } = useVoiceControl();
-  const { theme, themeKey, applyPresetTheme } = useTheme();
+  const { setCurrentPage: setVoicePage } = useVoiceControl();
+  const { theme, themeKey, applyPresetTheme, setCurrentPage: setThemePage } = useTheme();
 
   useEffect(() => {
-    setCurrentPage(page);
-  }, [page, setCurrentPage]);
+    setVoicePage(page);
+    setThemePage(page);
+  }, [page, setVoicePage, setThemePage]);
 
   useWakeLock();
 

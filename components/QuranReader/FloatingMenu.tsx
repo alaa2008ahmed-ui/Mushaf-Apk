@@ -53,6 +53,7 @@ import {
 } from "./constants";
 import { quranData } from "../../utils/quranData";
 import { usePrayerTimes } from "../../context/PrayerTimesContext";
+import { useTheme } from "../../context/ThemeContext";
 import { setupNotifications } from "../../utils/notifications";
 import TutorialOverlay, { TutorialStep } from "../Tutorial/TutorialOverlay";
 
@@ -149,6 +150,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
   jumpToAyah,
   initialView = "main",
 }) => {
+  const { isGlobalTheme, setIsGlobalTheme } = useTheme();
   const [selectedShortcuts, setSelectedShortcuts] = useState<string[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [tempShortcuts, setTempShortcuts] = useState<string[]>([]);
@@ -1104,6 +1106,32 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                       </div>
                     </div>
                   </div>
+
+                  <button
+                    onClick={() => {
+                      setIsGlobalTheme(!isGlobalTheme);
+                      showToast(
+                        !isGlobalTheme
+                          ? "تم تفعيل الثيم العام"
+                          : "تم تعطيل الثيم العام",
+                      );
+                    }}
+                    className="w-full py-2.5 rounded-xl font-bold text-[11px] flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm border"
+                    style={{
+                      backgroundColor: isGlobalTheme
+                        ? currentTheme.accent
+                        : `${currentTheme.text}05`,
+                      borderColor: isGlobalTheme
+                        ? currentTheme.accent
+                        : `${currentTheme.text}10`,
+                      color: isGlobalTheme ? "#fff" : currentTheme.text,
+                    }}
+                  >
+                    <Palette size={14} />
+                    <span>
+                      {isGlobalTheme ? "ثيم عام: مفعل" : "ثيم عام: معطل"}
+                    </span>
+                  </button>
 
                   {/* Themes Grid */}
                   <div className="grid grid-cols-4 gap-y-5 gap-x-2">

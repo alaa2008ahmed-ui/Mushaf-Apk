@@ -6,11 +6,12 @@ interface TafseerModalProps {
     title: string;
     text: string;
     onClose: () => void;
+    onOpenThemes?: () => void;
     isLandscape?: boolean;
     currentTheme?: any;
 }
 
-const TafseerModal: React.FC<TafseerModalProps> = ({ isOpen, isLoading, title, text, onClose, isLandscape, currentTheme }) => {
+const TafseerModal: React.FC<TafseerModalProps> = ({ isOpen, isLoading, title, text, onClose, onOpenThemes, isLandscape, currentTheme }) => {
     if (!isOpen) return null;
 
     return (
@@ -22,6 +23,16 @@ const TafseerModal: React.FC<TafseerModalProps> = ({ isOpen, isLoading, title, t
                      fontFamily: currentTheme?.font
                  }}
                  onClick={e => e.stopPropagation()}>
+                <div className="p-4 border-b flex justify-between items-center" style={{ borderColor: currentTheme?.barBorder }}>
+                    <h3 className="font-bold text-sm truncate max-w-[80%]">{title}</h3>
+                    <button 
+                        onClick={onOpenThemes}
+                        className="p-1.5 rounded-lg transition-all hover:bg-black/10"
+                        title="تغيير الثيم"
+                    >
+                        <i className="fa-solid fa-palette"></i>
+                    </button>
+                </div>
                 <div className="p-5 overflow-y-auto text-center flex-1">
                     {isLoading ? (
                         <div>
