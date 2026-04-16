@@ -150,7 +150,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
   jumpToAyah,
   initialView = "main",
 }) => {
-  const { isGlobalTheme, setIsGlobalTheme } = useTheme();
+  const { isGlobalTheme, setIsGlobalTheme, applyPresetTheme: applyGlobalTheme } = useTheme();
   const [selectedShortcuts, setSelectedShortcuts] = useState<string[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [tempShortcuts, setTempShortcuts] = useState<string[]>([]);
@@ -786,7 +786,9 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     const theme = THEMES[themeId as keyof typeof THEMES];
     if (!theme) return;
 
-    const modeSuffix = isMemorizationMode
+    applyGlobalTheme(themeId);
+
+    const posSuffix = isMemorizationMode
       ? `_memorization_${isLandscape ? "h" : "v"}`
       : isWirdMode
         ? `_wird_${isLandscape ? "h" : "v"}`
@@ -795,6 +797,8 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
             ? "_h"
             : "_v"
           : `_${readingMode}_${isLandscape ? "h" : "v"}`;
+
+    const modeSuffix = isGlobalTheme ? (isLandscape ? '_h' : '_v') : posSuffix;
 
     localStorage.setItem("current_theme_id" + modeSuffix, themeId);
 
@@ -1146,7 +1150,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             className="flex flex-col items-center gap-1.5 group"
                           >
                             <div
-                              className={`w-[20px] h-[20px] rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem("current_theme_id" + (isMemorizationMode ? `_memorization_${isLandscape ? "h" : "v"}` : isWirdMode ? `_wird_${isLandscape ? "h" : "v"}` : readingMode === "mushaf" ? (isLandscape ? "_h" : "_v") : `_${readingMode}_${isLandscape ? "h" : "v"}`)) === id ? "scale-110 border-gray-400 shadow-md" : "border-transparent hover:scale-105"}`}
+                              className={`w-[20px] h-[20px] rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem("current_theme_id" + (isGlobalTheme ? (isLandscape ? '_h' : '_v') : (isMemorizationMode ? `_memorization_${isLandscape ? "h" : "v"}` : isWirdMode ? `_wird_${isLandscape ? "h" : "v"}` : readingMode === "mushaf" ? (isLandscape ? "_h" : "_v") : `_${readingMode}_${isLandscape ? "h" : "v"}`))) === id ? "scale-110 border-gray-400 shadow-md" : "border-transparent hover:scale-105"}`}
                               style={{
                                 backgroundColor:
                                   id === "deep_black"
