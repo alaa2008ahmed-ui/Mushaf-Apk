@@ -433,6 +433,19 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 } else if (ayah.s < 114) {
                     jumpToAyah(ayah.s + 1, 1, true);
                 }
+            } else if (spokenWords.length >= Math.max(2, originalWords.length * 0.4)) {
+                // If they spoke enough words but it's wrong, show error and reveal temporarily
+                showToast('أخطأت، حاول مرة أخرى');
+                const ayahKey = `${ayah.s}-${ayah.a}`;
+                setTempRevealedAyah(ayahKey);
+                
+                // Clear the recognized text so they can try again
+                recognizedTextRef.current = '';
+                
+                // Hide the ayah again after 3 seconds
+                setTimeout(() => {
+                    setTempRevealedAyah(null);
+                }, 3000);
             } else if (isFinalCheck) {
                 // If it's the final check (user pressed stop or error detected) and it's wrong
                 showToast('أخطأت أعد المحاولة');
@@ -1965,6 +1978,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const handleAyahClick = useCallback((s, a) => {
         setHighlightedAyahId(`ayah-${s}-${a}`);
         setCurrentAyah({ s, a });
+        currentAyahRef.current = { s, a };
         const key = `last_pos${posSuffix}`;
         localStorage.setItem(key, JSON.stringify({ s, a }));
     }, [posSuffix]);
@@ -3358,7 +3372,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const handleVerticalAyahClick = useCallback((s: number, a: number) => {
         setCurrentAyah({ s, a });
-        setHighlightedAyahId(`${s}-${a}`);
+        setHighlightedAyahId(`ayah-${s}-${a}`);
         localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a }));
     }, [posSuffix]);
 
@@ -3473,6 +3487,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             settings={settings}
                             currentTheme={currentTheme}
                             currentAyah={currentAyah}
+                            highlightedAyahId={highlightedAyahId}
                             isLandscape={isLandscape}
                             onAyahClick={handleVerticalAyahClick}
                             onVisibleAyahChange={(s, a) => {

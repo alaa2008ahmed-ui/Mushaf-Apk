@@ -137,6 +137,33 @@ export const setupNotifications = async (settings?: any) => {
       console.error('Error scheduling Ramadan notification', e);
     }
 
+    // Mawlid al-Nabawi Notification (12 Rabi' al-Awwal)
+    try {
+      const currentHijriYear = moment().iYear();
+      const currentHijriMonth = moment().iMonth(); // 0-indexed, Rabi' al-Awwal is 2
+      const currentHijriDay = moment().iDate();
+
+      let targetYear = currentHijriYear;
+      // If we are already past 12 Rabi' al-Awwal this year, schedule for next year
+      if (currentHijriMonth > 2 || (currentHijriMonth === 2 && currentHijriDay >= 12)) {
+        targetYear += 1;
+      }
+
+      const mawlidDate = moment(`${targetYear}/3/12`, 'iYYYY/iM/iD');
+      mawlidDate.hour(8).minute(0).second(0).millisecond(0);
+
+      notificationsToSchedule.push({
+        title: 'مولد الهدى ﷺ',
+        body: 'وُلِدَ الهُدى فَالكائِناتُ ضِياءُ.. نبارك لكم ذكرى مولد خير الأنام محمد ﷺ.',
+        id: 8,
+        schedule: { at: mawlidDate.toDate(), allowWhileIdle: true },
+        extra: { page: 'home' },
+        smallIcon: 'ic_stat_name',
+      });
+    } catch (e) {
+      console.error('Error scheduling Mawlid notification', e);
+    }
+
     if (notificationsToSchedule.length > 0) {
       await LocalNotifications.schedule({ notifications: notificationsToSchedule });
     }

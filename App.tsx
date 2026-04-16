@@ -12,6 +12,7 @@ import { PrayerTimesProvider } from './context/PrayerTimesContext';
 import { VoiceControlProvider } from './context/VoiceControlContext';
 import { TutorialProvider } from './context/TutorialContext';
 import SideMenu from './components/SideMenu';
+import MawlidNotification from './components/MawlidNotification';
 import { Mic, MicOff } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTheme } from './context/ThemeContext';
@@ -316,6 +317,7 @@ function AppContent({
       )}
       
       <RateUs />
+      <MawlidNotification />
     </div>
   );
 }

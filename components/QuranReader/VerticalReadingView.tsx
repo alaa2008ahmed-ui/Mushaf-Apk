@@ -9,6 +9,7 @@ interface VerticalReadingViewProps {
     settings: any;
     currentTheme: any;
     currentAyah: { s: number; a: number };
+    highlightedAyahId?: string | null;
     onAyahClick: (s: number, a: number) => void;
     onVisibleAyahChange?: (s: number, a: number) => void;
     showMarkerNotification?: (type: 'quarter' | 'sajda' | 'surah', text: string) => void;
@@ -37,6 +38,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     settings,
     currentTheme,
     currentAyah,
+    highlightedAyahId,
     onAyahClick,
     onVisibleAyahChange,
     showMarkerNotification,
@@ -317,7 +319,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
             );
         }
 
-        const isHighlighted = currentAyah.s === item.surahNumber && currentAyah.a === item.ayahNumber;
+        const isHighlighted = highlightedAyahId === `ayah-${item.surahNumber}-${item.ayahNumber}`;
         
         // Determine if this ayah should be hidden
         let shouldHide = hideVerses && !isHighlighted;
@@ -338,8 +340,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
             if (isInRange) {
                 if (isRevealed) {
                     shouldHide = false; // Show if revealed or hint
-                } else if (isRecording) {
-                    shouldHide = true; // Hide others during recording
+                } else if (isRecording && tempRevealedAyah !== ayahKey) {
+                    shouldHide = true; // Hide others during recording, unless it's the temp revealed one
                 } else if (isPlaying && isHighlighted) {
                     shouldHide = false; // Show only the playing verse
                 } else {
@@ -365,6 +367,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
         return (
             <div className={`px-4 py-2 ${isLandscape ? 'flex justify-center' : ''}`}>
                 <div 
+                    id={`ayah-${item.surahNumber}-${item.ayahNumber}`}
                     className={`ayah-item p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2' : ''} ${isLandscape ? 'max-w-3xl w-full' : ''}`}
                     style={{ 
                         backgroundColor: isHighlighted ? `${currentTheme.accent}20` : 'transparent',
@@ -412,7 +415,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 </div>
             </div>
         );
-    }, [currentAyah, currentTheme, settings, readingMode, onAyahClick, meaningsData, tafseerData, translationData, hideVerses, memorizationSettings, localFontSize]);
+    }, [highlightedAyahId, currentTheme, settings, readingMode, onAyahClick, meaningsData, tafseerData, translationData, hideVerses, memorizationSettings, localFontSize]);
 
     if (isLoading) {
         return (

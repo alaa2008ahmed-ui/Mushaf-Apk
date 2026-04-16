@@ -197,8 +197,8 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                         if (isInRange) {
                             if (isRevealed) {
                                 shouldHide = false; // Show if revealed or hint
-                            } else if (isRecording) {
-                                shouldHide = true; // Hide others during recording
+                            } else if (isRecording && tempRevealedAyah !== ayahKey) {
+                                shouldHide = true; // Hide others during recording, unless it's the temp revealed one
                             } else if (isPlaying && isHighlighted) {
                                 shouldHide = false; // Show only the playing verse
                             } else {
