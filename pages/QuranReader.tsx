@@ -1588,7 +1588,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false, retries: number = 50, isPageJump: boolean = false) => {
         const container = document.getElementById('mushaf-content');
         if (!document.getElementById('pages-container') || !container) {
-            isJumpingRef.current = false;
+            setTimeout(() => {
+                isJumpingRef.current = false;
+            }, 600);
             return;
         }
         

@@ -622,13 +622,13 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
             {/* Custom Picker Modal */}
             {activePicker && (
                 <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn" onClick={() => setActivePicker(null)}>
-                    <div className="w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl animate-modal-enter flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', border: `2px solid var(--card-border)` }}>
+                    <div className="w-full max-w-[280px] rounded-[2rem] p-4 shadow-2xl animate-modal-enter flex flex-col max-h-[75vh]" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', border: `1px solid var(--card-border)` }}>
                         <div className="flex-1 overflow-y-auto scrollbar-hide space-y-2 p-2" dir="rtl">
                             {activePicker === 'reader' && MEMORIZATION_READERS.map(r => (
                                 <button
                                     key={r.id}
                                     onClick={() => { setSelectedReader(r.id); setSavedSession(null); setActivePicker(null); }}
-                                    className={`w-full p-4 rounded-2xl text-right font-bold transition-all flex items-center justify-between ${selectedReader === r.id ? 'theme-accent-btn text-white' : 'hover:bg-black/5 opacity-70 hover:opacity-100'}`}
+                                    className={`w-full p-2.5 rounded-xl text-right font-bold transition-all flex items-center justify-between ${selectedReader === r.id ? 'theme-accent-btn text-white' : 'hover:bg-black/5 opacity-70 hover:opacity-100'}`}
                                 >
                                     <span>{r.name}</span>
                                     {selectedReader === r.id && <i className="fa-solid fa-check"></i>}
@@ -656,11 +656,11 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                             setSavedSession(null);
                                             setActivePicker(null);
                                         }}
-                                        className={`w-full p-4 rounded-2xl text-right font-bold transition-all flex items-center justify-between ${current === surahNum ? 'theme-accent-btn text-white' : 'hover:bg-black/5 opacity-70 hover:opacity-100'}`}
+                                        className={`w-full p-2.5 rounded-xl text-right font-bold transition-all flex items-center justify-between ${current === surahNum ? 'theme-accent-btn text-white' : 'hover:bg-black/5 opacity-70 hover:opacity-100'}`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <span className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] opacity-40 border" style={{ borderColor: 'var(--card-border)' }}>{surahNum}</span>
-                                            <span>{name}</span>
+                                            <span className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] opacity-40 border" style={{ borderColor: 'var(--card-border)' }}>{surahNum}</span>
+                                            <span className="text-sm">سورة {name}</span>
                                         </div>
                                         {current === surahNum && <i className="fa-solid fa-check"></i>}
                                     </button>
@@ -681,7 +681,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                                     setSavedSession(null);
                                                     setActivePicker(null);
                                                 }}
-                                                className={`aspect-square flex items-center justify-center rounded-2xl font-bold transition-all text-sm border-2 ${current === ayahNum ? 'theme-accent-btn text-white border-transparent' : 'border-current opacity-30 hover:opacity-100 hover:border-emerald-500'}`}
+                                                className={`aspect-square flex items-center justify-center rounded-xl font-bold transition-all text-sm border-2 ${current === ayahNum ? 'theme-accent-btn text-white border-transparent' : 'border-current opacity-30 hover:opacity-100 hover:border-emerald-500'}`}
                                             >
                                                 {ayahNum}
                                             </button>
@@ -704,7 +704,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                                     else if (activePicker === 'pause') setPauseLength(val);
                                                     setActivePicker(null);
                                                 }}
-                                                className={`py-6 flex items-center justify-center rounded-3xl border-2 font-bold transition-all active:scale-95 text-xl ${isSelected ? 'theme-accent-btn text-white border-transparent' : ''}`}
+                                                className={`py-4 flex items-center justify-center rounded-2xl border-2 font-bold transition-all active:scale-95 text-lg ${isSelected ? 'theme-accent-btn text-white border-transparent' : ''}`}
                                                 style={{ 
                                                     borderColor: isSelected ? 'transparent' : 'var(--card-border)',
                                                     backgroundColor: isSelected ? 'var(--btn-bg)' : 'transparent',
