@@ -45,10 +45,15 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
     });
 
     const activeThemeKey = useMemo(() => {
+        // Exempt Quran page from themes - force default
+        const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' ? 'quran' : currentPage;
+        if (pageKey === 'quran') {
+            return 'default';
+        }
+
         if (settings.isGlobalTheme) {
             return settings.themeKey;
         }
-        const pageKey = currentPage === 'quran' ? 'quran' : currentPage;
         return settings.pageThemes[pageKey] || settings.themeKey || 'default';
     }, [settings, currentPage]);
 

@@ -37,7 +37,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const [showExplanationModal, setShowExplanationModal] = useState(false);
     const [showResumePrompt, setShowResumePrompt] = useState(false);
     const [savedSession, setSavedSession] = useState<any>(null);
-    const [activePicker, setActivePicker] = useState<'range' | 'ayah' | 'pause' | null>(null);
+    const [activePicker, setActivePicker] = useState<'range' | 'ayah' | 'pause' | 'reader' | 'fromSurah' | 'fromAyah' | 'toSurah' | 'toAyah' | null>(null);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
     const [toast, setToast] = useState<{ show: boolean; message: string }>({ show: false, message: '' });
 
@@ -205,33 +205,11 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
         <div className="flex items-center gap-1">
             <div 
                 onClick={() => setActivePicker(label as any)}
-                className="flex items-center gap-2 rounded-lg p-1 shadow-sm border cursor-pointer hover:bg-black/5 transition-colors" 
+                className="flex flex-col items-center justify-center min-w-[80px] h-11 rounded-2xl shadow-sm border cursor-pointer hover:bg-black/5 transition-all active:scale-95" 
                 style={{ backgroundColor: theme.bgColor, borderColor: 'var(--card-border)' }}
             >
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onChange(Math.max(1, value - 1));
-                    }} 
-                    className="w-7 h-7 flex items-center justify-center text-white rounded-md active:scale-90 transition-transform" 
-                    style={{ backgroundColor: theme.btnBg }}
-                >
-                    <Minus size={14} />
-                </button>
-                <div className="flex flex-col items-center min-w-[24px]">
-                    <span className="font-bold text-sm" style={{ color: 'var(--text-color)' }}>{value}</span>
-                    <span className="text-[8px] opacity-50" style={{ color: 'var(--text-color)' }}>مرة</span>
-                </div>
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onChange(value + 1);
-                    }} 
-                    className="w-7 h-7 flex items-center justify-center text-white rounded-md active:scale-90 transition-transform" 
-                    style={{ backgroundColor: theme.btnBg }}
-                >
-                    <Plus size={14} />
-                </button>
+                <span className="font-bold text-lg" style={{ color: 'var(--text-color)' }}>{value}</span>
+                <span className="text-[10px] opacity-60" style={{ color: 'var(--text-color)' }}>مرة</span>
             </div>
         </div>
     );
@@ -276,10 +254,10 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
 
                 <main className="flex-1 overflow-y-auto p-3 space-y-4 hide-scrollbar relative z-10" dir="rtl">
                     {/* Tabs */}
-                    <div className="flex p-1 rounded-xl bg-black/10 border mb-2" style={{ borderColor: 'var(--card-border)' }}>
+                    <div className="flex p-1.5 rounded-2xl bg-black/10 border mb-2" style={{ borderColor: 'var(--card-border)' }}>
                         <button 
                             onClick={() => setActiveTab('setup')}
-                            className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'setup' ? 'bg-white shadow-sm' : 'opacity-70'}`}
+                            className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'setup' ? 'bg-white shadow-sm' : 'opacity-70'}`}
                             style={{ color: activeTab === 'setup' ? theme.palette[0] : 'var(--text-color)' }}
                         >
                             <BookOpen size={16} />
@@ -287,7 +265,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                         </button>
                         <button 
                             onClick={() => setActiveTab('review')}
-                            className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'review' ? 'bg-white shadow-sm' : 'opacity-70'}`}
+                            className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'review' ? 'bg-white shadow-sm' : 'opacity-70'}`}
                             style={{ color: activeTab === 'review' ? theme.palette[0] : 'var(--text-color)' }}
                         >
                             <Calendar size={16} />
@@ -309,19 +287,13 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                             <User size={18} />
                         </div>
                         <div className="relative">
-                            <select 
-                                id="reader-select"
-                                value={selectedReader}
-                                onChange={(e) => { setSelectedReader(e.target.value); setSavedSession(null); }}
-                                className="w-full p-2.5 rounded-xl appearance-none outline-none text-right font-medium text-sm shadow-sm border"
+                            <div 
+                                onClick={() => setActivePicker('reader')}
+                                className="w-full p-4 rounded-2xl cursor-pointer text-right font-medium text-sm shadow-sm border flex items-center justify-between"
                                 style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
                             >
-                                {MEMORIZATION_READERS.map(r => (
-                                    <option key={r.id} value={r.id}>{r.name}</option>
-                                ))}
-                            </select>
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
                                 <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[7px]" style={{ borderTopColor: 'var(--text-color)' }}></div>
+                                <span>{MEMORIZATION_READERS.find(r => r.id === selectedReader)?.name}</span>
                             </div>
                         </div>
                     </div>
@@ -340,38 +312,22 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                 <div className="text-center font-bold mb-1 text-xs" style={{ color: 'var(--text-color)' }}>من</div>
                                 <div className="space-y-1.5">
                                     <div className="relative">
-                                        <select 
-                                            value={fromSurah}
-                                            onChange={(e) => {
-                                                const newSurah = Number(e.target.value);
-                                                setFromSurah(newSurah);
-                                                setFromAyah(1);
-                                                setToSurah(newSurah);
-                                                setToAyah(1);
-                                                setSavedSession(null);
-                                            }}
-                                            className="w-full p-1.5 border rounded-lg appearance-none outline-none text-center font-medium shadow-sm cursor-pointer text-xs"
+                                        <div 
+                                            onClick={() => setActivePicker('fromSurah')}
+                                            className="w-full p-3 border rounded-lg cursor-pointer text-center font-bold shadow-sm text-xs transition-colors hover:bg-black/5"
                                             style={{ backgroundColor: theme.bgColor, color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
                                         >
-                                            {SURAH_NAMES_AR.map((name, i) => (
-                                                <option key={i} value={i + 1}>{name}</option>
-                                            ))}
-                                        </select>
+                                            {SURAH_NAMES_AR[fromSurah - 1]}
+                                        </div>
                                     </div>
                                     <div className="relative">
-                                        <select 
-                                            value={fromAyah}
-                                            onChange={(e) => {
-                                                setFromAyah(Number(e.target.value));
-                                                setSavedSession(null);
-                                            }}
-                                            className="w-full p-1.5 border rounded-lg appearance-none outline-none text-center font-medium shadow-sm cursor-pointer text-xs"
+                                        <div 
+                                            onClick={() => setActivePicker('fromAyah')}
+                                            className="w-full p-3 border rounded-lg cursor-pointer text-center font-bold shadow-sm text-xs transition-colors hover:bg-black/5"
                                             style={{ backgroundColor: theme.bgColor, color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
                                         >
-                                            {Array.from({ length: getAyahsCount(fromSurah) }).map((_, i) => (
-                                                <option key={i} value={i + 1}>الآية {i + 1}</option>
-                                            ))}
-                                        </select>
+                                             آية {fromAyah}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -381,36 +337,22 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                 <div className="text-center font-bold mb-1 text-xs" style={{ color: 'var(--text-color)' }}>إلى</div>
                                 <div className="space-y-1.5">
                                     <div className="relative">
-                                        <select 
-                                            value={toSurah}
-                                            onChange={(e) => {
-                                                const newSurah = Number(e.target.value);
-                                                setToSurah(newSurah);
-                                                setToAyah(getAyahsCount(newSurah));
-                                                setSavedSession(null);
-                                            }}
-                                            className="w-full p-1.5 border rounded-lg appearance-none outline-none text-center font-medium shadow-sm cursor-pointer text-xs"
+                                        <div 
+                                            onClick={() => setActivePicker('toSurah')}
+                                            className="w-full p-3 border rounded-lg cursor-pointer text-center font-bold shadow-sm text-xs transition-colors hover:bg-black/5"
                                             style={{ backgroundColor: theme.bgColor, color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
                                         >
-                                            {SURAH_NAMES_AR.map((name, i) => (
-                                                <option key={i} value={i + 1}>{name}</option>
-                                            ))}
-                                        </select>
+                                            {SURAH_NAMES_AR[toSurah - 1]}
+                                        </div>
                                     </div>
                                     <div className="relative">
-                                        <select 
-                                            value={toAyah}
-                                            onChange={(e) => {
-                                                setToAyah(Number(e.target.value));
-                                                setSavedSession(null);
-                                            }}
-                                            className="w-full p-1.5 border rounded-lg appearance-none outline-none text-center font-medium shadow-sm cursor-pointer text-xs"
+                                        <div 
+                                            onClick={() => setActivePicker('toAyah')}
+                                            className="w-full p-3 border rounded-lg cursor-pointer text-center font-bold shadow-sm text-xs transition-colors hover:bg-black/5"
                                             style={{ backgroundColor: theme.bgColor, color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
                                         >
-                                            {Array.from({ length: getAyahsCount(toSurah) }).map((_, i) => (
-                                                <option key={i} value={i + 1}>الآية {i + 1}</option>
-                                            ))}
-                                        </select>
+                                             آية {toAyah}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -426,19 +368,19 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
 
                         <div className="grid grid-cols-2 gap-2">
                             {/* Range Repeat */}
-                            <div className="flex items-center justify-between p-1.5 px-2 rounded-xl border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+                            <div className="flex items-center justify-between p-1 px-2 rounded-xl border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
                                 <span className="font-bold text-[10px] leading-tight" style={{ color: 'var(--text-color)' }}>تكرار النطاق</span>
                                 <NumberPicker value={rangeRepeat} onChange={(v) => { setRangeRepeat(v); setSavedSession(null); }} label="range" />
                             </div>
 
                             {/* Ayah Repeat */}
-                            <div className="flex items-center justify-between p-1.5 px-2 rounded-xl border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+                            <div className="flex items-center justify-between p-1 px-2 rounded-xl border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
                                 <span className="font-bold text-[10px] leading-tight" style={{ color: 'var(--text-color)' }}>تكرار الآية</span>
                                 <NumberPicker value={ayahRepeat} onChange={(v) => { setAyahRepeat(v); setSavedSession(null); }} label="ayah" />
                             </div>
 
                             {/* Linked Repeat */}
-                            <div className="flex items-center justify-between p-1.5 px-2 rounded-xl border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+                            <div className="flex items-center justify-between p-1 px-2 rounded-xl border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
                                 <div className="flex flex-col items-start">
                                     <span className="font-bold text-[10px] leading-tight" style={{ color: 'var(--text-color)' }}>ربط الآيات</span>
                                     <button 
@@ -458,7 +400,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                             </div>
 
                             {/* Pause Length */}
-                            <div className="flex items-center justify-between p-1.5 px-2 rounded-xl border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+                            <div className="flex items-center justify-between p-1 px-2 rounded-xl border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
                                 <span className="font-bold text-[10px] leading-tight" style={{ color: 'var(--text-color)' }}>السكتة</span>
                                 <NumberPicker value={pauseLength} onChange={(v) => { setPauseLength(v); setSavedSession(null); }} label="pause" />
                             </div>
@@ -677,51 +619,106 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 </div>
             )}
 
-            {/* Number Picker Modal */}
+            {/* Custom Picker Modal */}
             {activePicker && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn" onClick={() => setActivePicker(null)}>
-                    <div className="w-full max-w-xs rounded-3xl p-6 shadow-2xl animate-modal-enter text-center" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', border: `1px solid var(--card-border)` }}>
-                        <h2 className="text-xl font-bold mb-4">اختر عدد المرات</h2>
-                        <div className="grid grid-cols-4 gap-2 max-h-60 overflow-y-auto p-2 hide-scrollbar">
-                            {Array.from({ length: 50 }).map((_, i) => (
-                                <button 
-                                    key={i}
-                                    onClick={() => {
-                                        const val = i + 1;
-                                        if (activePicker === 'range') setRangeRepeat(val);
-                                        else if (activePicker === 'ayah') setAyahRepeat(val);
-                                        else if (activePicker === 'pause') setPauseLength(val);
-                                        setActivePicker(null);
-                                    }}
-                                    className="aspect-square flex items-center justify-center rounded-xl border font-bold hover:bg-black/5 transition-colors"
-                                    style={{ 
-                                        borderColor: 'var(--card-border)',
-                                        backgroundColor: (activePicker === 'range' ? rangeRepeat : activePicker === 'ayah' ? ayahRepeat : pauseLength) === i + 1 ? theme.btnBg : 'transparent',
-                                        color: (activePicker === 'range' ? rangeRepeat : activePicker === 'ayah' ? ayahRepeat : pauseLength) === i + 1 ? '#fff' : 'var(--text-color)'
-                                    }}
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn" onClick={() => setActivePicker(null)}>
+                    <div className="w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl animate-modal-enter flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', border: `2px solid var(--card-border)` }}>
+                        <div className="flex-1 overflow-y-auto scrollbar-hide space-y-2 p-2" dir="rtl">
+                            {activePicker === 'reader' && MEMORIZATION_READERS.map(r => (
+                                <button
+                                    key={r.id}
+                                    onClick={() => { setSelectedReader(r.id); setSavedSession(null); setActivePicker(null); }}
+                                    className={`w-full p-4 rounded-2xl text-right font-bold transition-all flex items-center justify-between ${selectedReader === r.id ? 'theme-accent-btn text-white' : 'hover:bg-black/5 opacity-70 hover:opacity-100'}`}
                                 >
-                                    {i + 1}
+                                    <span>{r.name}</span>
+                                    {selectedReader === r.id && <i className="fa-solid fa-check"></i>}
                                 </button>
                             ))}
+
+                            {(activePicker === 'fromSurah' || activePicker === 'toSurah') && SURAH_NAMES_AR.map((name, i) => {
+                                const surahNum = i + 1;
+                                const current = activePicker === 'fromSurah' ? fromSurah : toSurah;
+                                return (
+                                    <button
+                                        key={i}
+                                        onClick={() => {
+                                            if (activePicker === 'fromSurah') {
+                                                setFromSurah(surahNum);
+                                                setFromAyah(1);
+                                                if (surahNum > toSurah) {
+                                                    setToSurah(surahNum);
+                                                    setToAyah(1);
+                                                }
+                                            } else {
+                                                setToSurah(surahNum);
+                                                setToAyah(getAyahsCount(surahNum));
+                                            }
+                                            setSavedSession(null);
+                                            setActivePicker(null);
+                                        }}
+                                        className={`w-full p-4 rounded-2xl text-right font-bold transition-all flex items-center justify-between ${current === surahNum ? 'theme-accent-btn text-white' : 'hover:bg-black/5 opacity-70 hover:opacity-100'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] opacity-40 border" style={{ borderColor: 'var(--card-border)' }}>{surahNum}</span>
+                                            <span>{name}</span>
+                                        </div>
+                                        {current === surahNum && <i className="fa-solid fa-check"></i>}
+                                    </button>
+                                );
+                            })}
+
+                            {(activePicker === 'fromAyah' || activePicker === 'toAyah') && (
+                                <div className="grid grid-cols-4 gap-2">
+                                    {Array.from({ length: getAyahsCount(activePicker === 'fromAyah' ? fromSurah : toSurah) }).map((_, i) => {
+                                        const ayahNum = i + 1;
+                                        const current = activePicker === 'fromAyah' ? fromAyah : toAyah;
+                                        return (
+                                            <button
+                                                key={i}
+                                                onClick={() => {
+                                                    if (activePicker === 'fromAyah') setFromAyah(ayahNum);
+                                                    else setToAyah(ayahNum);
+                                                    setSavedSession(null);
+                                                    setActivePicker(null);
+                                                }}
+                                                className={`aspect-square flex items-center justify-center rounded-2xl font-bold transition-all text-sm border-2 ${current === ayahNum ? 'theme-accent-btn text-white border-transparent' : 'border-current opacity-30 hover:opacity-100 hover:border-emerald-500'}`}
+                                            >
+                                                {ayahNum}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {(activePicker === 'range' || activePicker === 'ayah' || activePicker === 'pause') && (
+                                <div className="grid grid-cols-2 gap-3">
+                                    {Array.from({ length: 10 }).map((_, i) => {
+                                        const val = i + 1;
+                                        const isSelected = (activePicker === 'range' ? rangeRepeat : activePicker === 'ayah' ? ayahRepeat : pauseLength) === val;
+                                        return (
+                                            <button 
+                                                key={i}
+                                                onClick={() => {
+                                                    if (activePicker === 'range') setRangeRepeat(val);
+                                                    else if (activePicker === 'ayah') setAyahRepeat(val);
+                                                    else if (activePicker === 'pause') setPauseLength(val);
+                                                    setActivePicker(null);
+                                                }}
+                                                className={`py-6 flex items-center justify-center rounded-3xl border-2 font-bold transition-all active:scale-95 text-xl ${isSelected ? 'theme-accent-btn text-white border-transparent' : ''}`}
+                                                style={{ 
+                                                    borderColor: isSelected ? 'transparent' : 'var(--card-border)',
+                                                    backgroundColor: isSelected ? 'var(--btn-bg)' : 'transparent',
+                                                    color: isSelected ? '#fff' : 'var(--text-color)',
+                                                    boxShadow: isSelected ? `0 8px 20px rgba(0,0,0,0.15)` : 'none'
+                                                }}
+                                            >
+                                                {val}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
-                        <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--card-border)' }}>
-                            <p className="text-xs opacity-50 mb-2">أو أدخل الرقم يدوياً</p>
-                            <input 
-                                type="number" 
-                                className="w-full p-3 rounded-xl border text-center font-bold outline-none"
-                                style={{ backgroundColor: theme.bgColor, color: 'var(--text-color)', borderColor: 'var(--card-border)' }}
-                                value={activePicker === 'range' ? rangeRepeat : activePicker === 'ayah' ? ayahRepeat : pauseLength}
-                                onChange={(e) => {
-                                    const val = parseInt(e.target.value) || 1;
-                                    if (activePicker === 'range') setRangeRepeat(val);
-                                    else if (activePicker === 'ayah') setAyahRepeat(val);
-                                    else if (activePicker === 'pause') setPauseLength(val);
-                                }}
-                                onKeyDown={(e) => e.key === 'Enter' && setActivePicker(null)}
-                                autoFocus
-                            />
-                        </div>
-                        <button onClick={() => setActivePicker(null)} className="w-full mt-4 py-3 rounded-xl font-bold text-white" style={{ backgroundColor: theme.btnBg }}>تأكيد</button>
                     </div>
                 </div>
             )}
