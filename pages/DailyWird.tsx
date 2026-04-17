@@ -453,7 +453,13 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         <div className="flex gap-3 mt-6" id="wird-start-container">
           <button 
             onClick={handleStart}
-            className="flex-1 py-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors"
+            className="flex-1 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors border-b-4 ring-2"
+            style={{ 
+              backgroundColor: primaryColor, 
+              color: btnTextColor,
+              borderColor: isBlackAndWhite ? '#E5E5E5' : secondaryColor,
+              '--tw-ring-color': `${primaryColor}40`
+            } as React.CSSProperties}
           >
             <Play size={24} />
             {settings ? 'حفظ' : 'ابدأ الختمة'}

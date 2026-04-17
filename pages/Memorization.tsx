@@ -17,7 +17,11 @@ interface MemorizationProps {
 }
 
 const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
-    const { theme } = useTheme();
+    const { theme, themeKey } = useTheme();
+    const isBlackAndWhite = themeKey === 'deep_black';
+    const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
+    const btnTextColor = isBlackAndWhite ? '#000000' : '#FFFFFF';
+    
     const [selectedReader, setSelectedReader] = useState(MEMORIZATION_READERS[1].id); // Default to Abdul Basit
     
     const [fromSurah, setFromSurah] = useState(1);
@@ -433,7 +437,14 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                             <button 
                                 id="btn-start-memorization"
                                 onClick={handleStart}
-                                className="w-full py-4 rounded-2xl font-bold text-lg shadow-[0_10px_30px_-5px_rgba(16,185,129,0.5)] transition-all active:scale-95 bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center gap-3 border-b-4 border-emerald-700 ring-4 ring-emerald-500/20"
+                                className="w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3 border-b-4 ring-4"
+                                style={{
+                                    backgroundColor: primaryColor,
+                                    borderColor: isBlackAndWhite ? '#E5E5E5' : theme.palette[1] || primaryColor,
+                                    color: btnTextColor,
+                                    boxShadow: `0 10px 30px -5px ${primaryColor}80`,
+                                    '--tw-ring-color': `${primaryColor}33`
+                                } as React.CSSProperties}
                             >
                                 <Play size={20} fill="currentColor" />
                                 ابدأ جلسة التحفيظ

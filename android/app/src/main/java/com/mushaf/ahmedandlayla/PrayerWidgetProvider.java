@@ -135,6 +135,24 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
         views.setOnClickPendingIntent(R.id.widget_root, pendingIntent);
 
         if (prayerJson != null) {
+            // التحقق من حجم الويدجت (إذا كان أكبر من صف واحد 4x1)
+            Bundle options = appWidgetManager.getAppWidgetOptions(appWidgetId);
+            int minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+            int maxHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
+            
+            // الارتفاع الافتراضي لصف واحد يكون أقل من 90dp. إذا كان أكبر، معناه المستخدم كبّر الويدجت.
+            boolean isLarge = minHeight >= 70 || maxHeight >= 100;
+
+            if (isLarge) {
+                views.setViewVisibility(R.id.widget_gregorian_date, View.VISIBLE);
+                views.setViewVisibility(R.id.widget_app_icon_small, View.GONE);
+                views.setViewVisibility(R.id.widget_app_icon_large, View.VISIBLE);
+            } else {
+                views.setViewVisibility(R.id.widget_gregorian_date, View.GONE);
+                views.setViewVisibility(R.id.widget_app_icon_small, View.VISIBLE);
+                views.setViewVisibility(R.id.widget_app_icon_large, View.GONE);
+            }
+
             try {
                 JSONObject data = new JSONObject(prayerJson);
                 JSONObject times = data.getJSONObject("times");
