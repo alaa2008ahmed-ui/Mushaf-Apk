@@ -294,8 +294,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const modeSuffix = sharedSuffix;
     
     // Scoped suffixes for bookmarks and last position to have separate records for each mode
-    const getScopedSuffix = (mode: string) => {
-        const orient = isLandscape ? 'h' : 'v';
+    const getScopedSuffix = (mode: string, landscapeFlag?: boolean) => {
+        const orient = (landscapeFlag !== undefined ? landscapeFlag : isLandscape) ? 'h' : 'v';
         if (isWirdMode) return `_wird_${orient}`;
         if (localIsMemorizationMode) return `_memorization_${orient}`;
         if (mode === 'mushaf') return `_${orient}`;
@@ -304,7 +304,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const bookmarkSuffix = getScopedSuffix(readingMode);
     const posSuffix = getScopedSuffix(readingMode);
-    const themeSuffix = isGlobalTheme ? (isLandscape ? '_h' : '_v') : posSuffix;
+    const themeSuffix = posSuffix; // Always scope settings/themes strictly per mode
+
 
     const [quranData, setQuranData] = useState(quranJsonData);
 
@@ -377,7 +378,24 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
     }, [isWirdMode]);
 
-    const [currentAyah, setCurrentAyah] = useState<{ s: number; a: number }>({ s: 1, a: 1 });
+    const [currentAyah, setCurrentAyah] = useState<{ s: number; a: number }>(() => {
+        if (initialSurah) {
+            return { s: initialSurah, a: initialAyah || 1 };
+        }
+        if (localIsMemorizationMode && localMemorizationSettings) {
+            return { s: localMemorizationSettings.fromSurah, a: localMemorizationSettings.fromAyah };
+        }
+        try {
+            const saved = localStorage.getItem(`last_pos${posSuffix}`);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed && typeof parsed.s === 'number') {
+                    return { s: parsed.s, a: parsed.a || 1 };
+                }
+            }
+        } catch(e) {}
+        return { s: 1, a: 1 };
+    });
 
     const recordedAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -1173,7 +1191,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const [pageInput, setPageInput] = useState('');
     const isPageInputActiveRef = useRef(false);
     useEffect(() => { isPageInputActiveRef.current = isPageInputActive; }, [isPageInputActive]);
-    const isJumpingRef = useRef(false);
+    const isJumpingRef = useRef(true);
     const wasAutoscrollingBeforeModal = useRef(false);
 
     const isAnyMenuOpen = isFloatingMenuOpen || 
@@ -1192,7 +1210,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                           sajdahCardInfo.show;
 
     const [settings, setSettings] = useState(() => {
-        const mode = initialLandscape ? '_h' : '_v';
+        const mode = getScopedSuffix(readingMode, initialLandscape);
         const saved = localStorage.getItem('quran_settings' + mode);
         const defaultTheme = THEMES['night_sky'];
         return saved ? JSON.parse(saved) : {
@@ -1205,7 +1223,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     });
 
     const [currentTheme, setCurrentTheme] = useState(() => {
-        const mode = initialLandscape ? '_h' : '_v';
+        const mode = getScopedSuffix(readingMode, initialLandscape);
         const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
         return THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
     });
@@ -2067,7 +2085,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         
         const newSettings = { ...settings, tafseer: tafseerId };
         setSettings(newSettings);
-        localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
+        localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(newSettings));
         window.dispatchEvent(new Event('settings-change'));
     }, [settings, tafseerSelectionInfo.wasAutoscrolling]);
     
@@ -2915,7 +2933,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 setSettings(prev => {
                     const newSize = Number((Math.min(4.5, prev.fontSize + 0.1)).toFixed(2));
                     const newSettings = { ...prev, fontSize: newSize };
-                    localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
+                    localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
                     return newSettings;
                 });
@@ -2923,7 +2941,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 setSettings(prev => {
                     const newSize = Number((Math.max(0.5, prev.fontSize - 0.1)).toFixed(2));
                     const newSettings = { ...prev, fontSize: newSize };
-                    localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
+                    localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
                     return newSettings;
                 });
@@ -2931,7 +2949,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 setSettings(prev => {
                     const newSize = Math.max(0.5, Math.min(4.5, params.size));
                     const newSettings = { ...prev, fontSize: newSize };
-                    localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(newSettings));
+                    localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
                     return newSettings;
                 });
@@ -3029,7 +3047,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const handleTouchEnd = () => {
         if (initialPinchDistanceRef.current !== null) {
-             localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(settingsRef.current));
+             localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(settingsRef.current));
              window.dispatchEvent(new Event('settings-change'));
         }
         initialPinchDistanceRef.current = null;
@@ -3492,6 +3510,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             highlightedAyahId={highlightedAyahId}
                             isLandscape={isLandscape}
                             onAyahClick={handleVerticalAyahClick}
+                            onAyahLongPress={handleAyahLongPress}
                             onVisibleAyahChange={(s, a) => {
                                 if (isJumpingRef.current) return;
                                 if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
@@ -3526,8 +3545,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 onTempSettingsChange={(newSettings) => {
                     setSettings(prev => {
                         const updated = { ...prev, ...newSettings };
-                        const modeSuffix = isLandscapeRef.current ? '_h' : '_v';
-                        localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(updated));
+                        localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(updated));
                         window.dispatchEvent(new Event('settings-change'));
                         return updated;
                     });
@@ -3563,7 +3581,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 onClose={() => setIsAutoScrollSettingsOpen(false)}
                 onSelectTime={(minutes) => {
                     setSettings(p => ({...p, scrollMinutes: minutes}));
-                    localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify({...settings, scrollMinutes: minutes}));
+                    localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify({...settings, scrollMinutes: minutes}));
                 }}
                 currentMinutes={settings.scrollMinutes}
                 isLandscape={isLandscape}

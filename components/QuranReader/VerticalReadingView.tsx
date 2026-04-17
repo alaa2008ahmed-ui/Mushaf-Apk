@@ -11,6 +11,7 @@ interface VerticalReadingViewProps {
     currentAyah: { s: number; a: number };
     highlightedAyahId?: string | null;
     onAyahClick: (s: number, a: number) => void;
+    onAyahLongPress?: (s: number, a: number, x: number, y: number) => void;
     onVisibleAyahChange?: (s: number, a: number) => void;
     showMarkerNotification?: (type: 'quarter' | 'sajda' | 'surah', text: string) => void;
     showJuzNotification?: (text: string) => void;
@@ -40,6 +41,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     currentAyah,
     highlightedAyahId,
     onAyahClick,
+    onAyahLongPress,
     onVisibleAyahChange,
     showMarkerNotification,
     showJuzNotification,
@@ -75,6 +77,11 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     const initialPinchDistanceRef = useRef<number | null>(null);
     const initialPinchFontSizeRef = useRef<number | null>(null);
 
+    // Long press refs
+    const longPressTimer = useRef<number | null>(null);
+    const isLongPressTriggered = useRef(false);
+    const touchStartPos = useRef<{x: number, y: number} | null>(null);
+
     const [localFontSize, setLocalFontSize] = useState(settings.fontSize);
 
     const [scrollParent, setScrollParent] = useState<HTMLElement | undefined>(undefined);
@@ -89,6 +96,49 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     useEffect(() => {
         setLocalFontSize(settings.fontSize);
     }, [settings.fontSize]);
+
+    const handlePointerDown = (s: number, a: number, e: React.PointerEvent) => {
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
+        
+        isLongPressTriggered.current = false;
+        touchStartPos.current = { x: e.clientX, y: e.clientY };
+
+        if (longPressTimer.current) {
+            window.clearTimeout(longPressTimer.current);
+        }
+
+        longPressTimer.current = window.setTimeout(() => {
+            if (onAyahLongPress) {
+                onAyahLongPress(s, a, e.clientX, e.clientY);
+                isLongPressTriggered.current = true;
+            }
+            longPressTimer.current = null;
+        }, 600);
+    };
+
+    const handlePointerMoveItem = (e: React.PointerEvent) => {
+        if (!touchStartPos.current || !longPressTimer.current) return;
+        if (Math.abs(e.clientX - touchStartPos.current.x) > 15 || Math.abs(e.clientY - touchStartPos.current.y) > 15) {
+            if (longPressTimer.current) {
+                window.clearTimeout(longPressTimer.current);
+                longPressTimer.current = null;
+            }
+        }
+    };
+
+    const handlePointerUpItem = () => {
+        if (longPressTimer.current) {
+            clearTimeout(longPressTimer.current);
+            longPressTimer.current = null;
+        }
+    };
+
+    const handlePointerLeaveItem = () => {
+        if (longPressTimer.current) {
+            clearTimeout(longPressTimer.current);
+            longPressTimer.current = null;
+        }
+    };
 
     const handleTouchStart = (e: React.TouchEvent) => {
         if (e.touches.length === 2) {
@@ -370,10 +420,15 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     id={`ayah-${item.surahNumber}-${item.ayahNumber}`}
                     className={`ayah-item p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2' : ''} ${isLandscape ? 'max-w-3xl w-full' : ''}`}
                     style={{ 
-                        backgroundColor: isHighlighted ? `${currentTheme.accent}20` : 'transparent',
-                        borderColor: isHighlighted ? currentTheme.accent : 'transparent'
+                        backgroundColor: isHighlighted ? `${settings.highlightTextColor || currentTheme.accent}30` : 'transparent',
+                        borderColor: isHighlighted ? (settings.highlightTextColor || currentTheme.accent) : 'transparent'
                     }}
+                    onPointerDown={(e) => handlePointerDown(item.surahNumber, item.ayahNumber, e)}
+                    onPointerMove={handlePointerMoveItem}
+                    onPointerUp={handlePointerUpItem}
+                    onPointerLeave={handlePointerLeaveItem}
                     onClick={() => {
+                        if (isLongPressTriggered.current) return;
                         isInternalClickRef.current = true;
                         onAyahClick(item.surahNumber, item.ayahNumber);
                     }}
@@ -382,8 +437,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                          style={{ 
                              fontSize: `${localFontSize}rem`, 
                              fontFamily: settings.fontFamily,
-                             color: shouldHide ? 'transparent' : currentTheme.accent,
-                             backgroundColor: shouldHide ? `${currentTheme.accent}20` : 'transparent',
+                             color: shouldHide ? 'transparent' : (settings.textColor || currentTheme.accent),
+                             backgroundColor: shouldHide ? `${settings.highlightTextColor || currentTheme.accent}20` : 'transparent',
                              borderRadius: shouldHide ? '8px' : '0',
                              letterSpacing: 0,
                              fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"',
@@ -394,17 +449,17 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                          }}>
                         {item.text}
                         <span className="inline-flex items-center justify-center w-8 h-8 mr-2 rounded-full border border-current text-sm font-bold"
-                              style={{ color: currentTheme.text }}>
+                              style={{ color: settings.textColor || currentTheme.text }}>
                             {toArabic(item.ayahNumber)}
                         </span>
                     </div>
                     
-                    <div className="divider h-px w-full my-4 opacity-20" style={{ backgroundColor: currentTheme.text }}></div>
+                    <div className="divider h-px w-full my-4 opacity-20" style={{ backgroundColor: settings.textColor || currentTheme.text }}></div>
                     
                     <div className="explanation-text text-right opacity-90 leading-relaxed"
                          style={{ 
                              fontSize: `${localFontSize * 0.8}rem`, 
-                             color: currentTheme.text,
+                             color: settings.textColor || currentTheme.text,
                              direction: readingMode === 'translation' ? 'ltr' : 'rtl',
                              textAlign: readingMode === 'translation' ? 'left' : 'right'
                          }}>
@@ -428,7 +483,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     return (
         <div 
             className="w-full min-h-full" 
-            style={{ direction: 'rtl', backgroundColor: currentTheme.bg }}
+            style={{ direction: 'rtl', backgroundColor: settings.bgColor || currentTheme.bg }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
