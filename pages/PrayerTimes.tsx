@@ -28,7 +28,7 @@ function PrayerTimes({ onBack, onNavigate }) {
     const { theme, themeKey } = useTheme();
     const { times, dates, nextPrayer, countdown, config, refreshLocation, manualSearch, updateConfig } = usePrayerTimes();
 
-    const isBlackAndWhite = themeKey === 'black_and_white';
+    const isBlackAndWhite = themeKey === 'deep_black';
     const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
     const secondaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[1];
     const topBarTextColor = theme.topBarText || (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);

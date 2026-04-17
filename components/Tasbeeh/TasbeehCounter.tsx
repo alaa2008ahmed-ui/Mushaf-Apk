@@ -9,9 +9,10 @@ interface TasbeehCounterProps {
     counterColor: string;
     count: number;
     handleIncrement: () => void;
+    isBlackAndWhite?: boolean;
 }
 
-const TasbeehCounter: React.FC<TasbeehCounterProps> = ({ isCountingStopped, target, secondaryTextColor, primaryTextColor, counterColor, count, handleIncrement }) => {
+const TasbeehCounter: React.FC<TasbeehCounterProps> = ({ isCountingStopped, target, secondaryTextColor, primaryTextColor, counterColor, count, handleIncrement, isBlackAndWhite }) => {
     return (
         <div className="flex-grow flex flex-col items-center justify-center w-full max-w-lg space-y-4 py-2">
             <div className="text-center px-6 py-3 rounded-2xl themed-card w-full max-w-xs">
@@ -19,7 +20,7 @@ const TasbeehCounter: React.FC<TasbeehCounterProps> = ({ isCountingStopped, targ
                 <span className="text-3xl font-extrabold font-amiri" style={{color: primaryTextColor}}>{toArabicNumerals(target > 0 ? target : 'مفتوح')}</span>
             </div>
             {/* FIX: Applied the selected background color to the counter button and set text color to white for contrast. */}
-            <button onClick={handleIncrement} className={`tasbeeh-counter w-64 h-64 rounded-full flex flex-col items-center justify-center transition-all duration-200 ease-out cursor-pointer select-none relative z-10`} style={{ backgroundColor: counterColor }}>
+            <button onClick={handleIncrement} className={`tasbeeh-counter w-64 h-64 rounded-full flex flex-col items-center justify-center transition-all duration-200 ease-out cursor-pointer select-none relative z-10 ${isBlackAndWhite ? 'border-2 border-white' : ''}`} style={{ backgroundColor: counterColor }}>
                 <span className="text-9xl font-mono font-black" style={{ fontFamily: 'Amiri', textShadow: '0 4px 8px rgba(0,0,0,0.2)', color: 'white' }}>
                     {toArabicNumerals(count)}
                 </span>

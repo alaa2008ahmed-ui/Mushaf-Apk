@@ -56,7 +56,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
     const pdfTableRef = useRef<HTMLDivElement>(null);
     const todayRowRef = useRef<HTMLTableRowElement>(null);
 
-    const isBlackAndWhite = themeKey === 'black_and_white';
+    const isBlackAndWhite = themeKey === 'deep_black';
     const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
     const secondaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[1];
     const topBarTextColor = theme.topBarText || (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
@@ -321,14 +321,14 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                         <button 
                             onClick={() => setCalendarType('hijri')}
                             className={`px-3 py-0.5 text-[10px] rounded-md transition-all ${calendarType === 'hijri' ? 'bg-white dark:bg-gray-800 shadow-sm' : 'opacity-50'}`}
-                            style={{ color: calendarType === 'hijri' ? primaryColor : undefined }}
+                            style={{ color: calendarType === 'hijri' ? (isBlackAndWhite ? '#8B5CF6' : primaryColor) : (isBlackAndWhite ? '#fff' : undefined) }}
                         >
                             هجري
                         </button>
                         <button 
                             onClick={() => setCalendarType('gregorian')}
                             className={`px-3 py-0.5 text-[10px] rounded-md transition-all ${calendarType === 'gregorian' ? 'bg-white dark:bg-gray-800 shadow-sm' : 'opacity-50'}`}
-                            style={{ color: calendarType === 'gregorian' ? primaryColor : undefined }}
+                            style={{ color: calendarType === 'gregorian' ? (isBlackAndWhite ? '#8B5CF6' : primaryColor) : (isBlackAndWhite ? '#fff' : undefined) }}
                         >
                             ميلادي
                         </button>
@@ -343,7 +343,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
             <main className="flex-1 overflow-y-auto p-2 pb-24">
                 <div className="max-w-4xl mx-auto overflow-x-auto rounded-xl border shadow-sm" style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--card-bg)' }}>
                     <table className="w-full text-center text-[11px] xs:text-xs" dir="rtl">
-                        <thead style={{ backgroundColor: primaryColor, color: isBlackAndWhite ? '#000' : '#fff' }}>
+                        <thead style={{ backgroundColor: isBlackAndWhite ? '#222' : primaryColor, color: '#fff' }}>
                             <tr>
                                 <th className="px-1 py-2 border-b border-l border-white/20">اليوم</th>
                                 <th className="px-1 py-2 border-b border-l border-white/20">م/هـ</th>
@@ -390,7 +390,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                         onClick={handleShare}
                         disabled={isSharing}
                         className="bar-button btn-3d-effect !flex-1 !py-2.5 !px-2 !text-sm !rounded-xl shadow-lg"
-                        style={{ background: primaryColor, color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
+                        style={{ background: primaryColor, color: isBlackAndWhite ? '#000' : 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
                     >
                         <Share size={18} />
                         <span className="hidden xs:inline">{isSharing ? '...' : 'مشاركة'}</span>
@@ -399,7 +399,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                     <button 
                         onClick={onBack} 
                         className="bar-button btn-3d-effect !flex-[2] max-w-[160px] py-2.5 px-4 rounded-xl shadow-lg"
-                        style={{ background: '#8B5CF6', color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
+                        style={{ background: primaryColor, color: isBlackAndWhite ? '#000' : 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
                     >
                         <span className="text-xl">🏠</span>
                         <span className="hidden sm:inline">الرئيسية</span>
@@ -409,7 +409,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                         onClick={handleExportPDF}
                         disabled={isExporting}
                         className="bar-button btn-3d-effect !flex-1 !py-2.5 !px-2 !text-sm !rounded-xl shadow-lg"
-                        style={{ background: primaryColor, color: 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
+                        style={{ background: primaryColor, color: isBlackAndWhite ? '#000' : 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
                     >
                         <Download size={18} />
                         <span className="hidden xs:inline">{isExporting ? '...' : 'PDF'}</span>

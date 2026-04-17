@@ -73,7 +73,7 @@ function hijriToGregorian(hy, hm, hd) {
 function HijriCalendar({ onBack }) {
     const { theme, themeKey } = useTheme();
     
-    const isBlackAndWhite = themeKey === 'black_and_white';
+    const isBlackAndWhite = themeKey === 'deep_black';
     const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
     const secondaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[1];
     

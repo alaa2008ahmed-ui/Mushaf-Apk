@@ -48,21 +48,6 @@ export const presetThemes: { [key: string]: Theme } = {
         barBorder: "1px solid #FFFFFF",
         btnBorder: "1px solid #FFFFFF"
     },
-    black: {
-        name: "اسود",
-        bgColor: "#FFFFFF",
-        textColor: "#000000",
-        font: "'Cairo', sans-serif",
-        palette: ["#000000", "#000000", "#000000"],
-        barBg: "#FFFFFF",
-        barBorder: "1px solid #000000",
-        topBarBg: "#FFFFFF",
-        topBarText: "#000000",
-        btnBg: "#FFFFFF",
-        btnText: "#000000",
-        btnBorder: "1px solid #000000",
-        accent: "#000000"
-    },
     fajr_light: {
         name: "نور الفجر",
         bgColor: "#F0F9FF",

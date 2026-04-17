@@ -20,7 +20,7 @@ const SETTINGS_STORAGE_KEY = 'ahmed_laila_tasbeeh_settings_v1';
 // --- Main Component ---
 function Tasbeeh({ onBack }) {
     const { theme, themeKey } = useTheme();
-    const isBlackAndWhite = themeKey === 'black_and_white';
+    const isBlackAndWhite = themeKey === 'deep_black';
     const primaryTextColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
     const secondaryTextColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[1];
 
@@ -212,6 +212,7 @@ function Tasbeeh({ onBack }) {
                     counterColor={counterColor}
                     count={count}
                     handleIncrement={handleIncrement}
+                    isBlackAndWhite={isBlackAndWhite}
                  />
                 
                 <div className="w-full max-w-lg px-4 mt-auto mb-2">

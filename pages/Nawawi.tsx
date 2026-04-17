@@ -7,7 +7,7 @@ import { registerBackInterceptor } from '../hooks/useBackButton';
 const HadithModal = ({ hadith, onClose }) => {
     const { theme, themeKey } = useTheme();
     const [fontSize, setFontSize] = useState(18);
-    const isBlackAndWhite = themeKey === 'black_and_white';
+    const isBlackAndWhite = themeKey === 'deep_black';
     const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
 
     const increaseFontSize = () => {
@@ -45,7 +45,7 @@ const HadithModal = ({ hadith, onClose }) => {
 const Nawawi = ({ onBack }) => {
     const { theme, themeKey } = useTheme();
     const [selectedHadith, setSelectedHadith] = useState(null);
-    const isBlackAndWhite = themeKey === 'black_and_white';
+    const isBlackAndWhite = themeKey === 'deep_black';
     const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
 
     useEffect(() => {

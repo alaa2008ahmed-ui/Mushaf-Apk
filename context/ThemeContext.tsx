@@ -38,23 +38,33 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
     const [settings, setSettings] = useState<ThemeSettings>(() => {
         try {
             const saved = localStorage.getItem(THEME_SETTINGS_KEY);
-            return saved ? JSON.parse(saved) : { themeKey: 'default', isGlobalTheme: true, pageThemes: {} };
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                return {
+                    themeKey: parsed.themeKey || 'default',
+                    isGlobalTheme: parsed.isGlobalTheme !== undefined ? parsed.isGlobalTheme : true,
+                    pageThemes: parsed.pageThemes || {},
+                    customBg: parsed.customBg
+                };
+            }
+            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {} };
         } catch (e) {
             return { themeKey: 'default', isGlobalTheme: true, pageThemes: {} };
         }
     });
 
     const activeThemeKey = useMemo(() => {
-        // Exempt Quran page from themes - force default
-        const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' ? 'quran' : currentPage;
+        const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || (currentPage && currentPage.startsWith('quran_')) ? 'quran' : currentPage;
+
+        // Exempt Quran reading page from global themes
         if (pageKey === 'quran') {
             return 'default';
         }
 
         if (settings.isGlobalTheme) {
-            return settings.themeKey;
+            return settings.themeKey || 'default';
         }
-        return settings.pageThemes[pageKey] || settings.themeKey || 'default';
+        return (settings.pageThemes && settings.pageThemes[pageKey]) || settings.themeKey || 'default';
     }, [settings, currentPage]);
 
     const theme = useMemo(() => {
@@ -82,12 +92,35 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
             console.warn('Failed to save theme settings:', e);
         }
     };
+
+    useEffect(() => {
+        const syncTheme = () => {
+            try {
+                const saved = localStorage.getItem(THEME_SETTINGS_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    setSettings(s => {
+                        if (JSON.stringify(s) !== JSON.stringify(parsed)) {
+                            return { ...s, ...parsed, pageThemes: parsed.pageThemes || {} };
+                        }
+                        return s;
+                    });
+                }
+            } catch (e) {}
+        };
+        window.addEventListener('themeChanged', syncTheme);
+        window.addEventListener('storage', syncTheme);
+        return () => {
+            window.removeEventListener('themeChanged', syncTheme);
+            window.removeEventListener('storage', syncTheme);
+        };
+    }, []);
     
     const applyPresetTheme = (key: string) => {
         if (settings.isGlobalTheme) {
             saveSettings({ ...settings, themeKey: key });
         } else {
-            const pageKey = currentPage === 'quran' ? 'quran' : currentPage;
+            const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || currentPage.startsWith('quran_') ? 'quran' : currentPage;
             saveSettings({ 
                 ...settings, 
                 pageThemes: { ...settings.pageThemes, [pageKey]: key } 

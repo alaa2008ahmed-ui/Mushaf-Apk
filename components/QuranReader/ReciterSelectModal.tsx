@@ -43,8 +43,8 @@ const ReciterSelectModal: React.FC<ReciterSelectModalProps> = ({ onClose, curren
                             onClick={() => handleSelect(r.id)}
                             className={`w-full text-right p-3 rounded-xl border-2 transition-all font-bold flex flex-col justify-center items-center text-center ${currentReader === r.id ? '' : 'hover:opacity-80'}`}
                             style={{ 
-                                backgroundColor: 'var(--qr-card-bg)', 
-                                color: currentReader === r.id ? 'var(--qr-accent)' : 'var(--qr-card-text)', 
+                                backgroundColor: currentReader === r.id ? 'var(--qr-accent)' : 'var(--qr-card-bg)', 
+                                color: currentReader === r.id ? 'var(--qr-accent-text, #ffffff)' : 'var(--qr-card-text)', 
                                 borderColor: currentReader === r.id ? 'var(--qr-accent)' : 'var(--qr-card-border)' 
                             }}
                         >

@@ -150,7 +150,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
   jumpToAyah,
   initialView = "main",
 }) => {
-  const { isGlobalTheme, setIsGlobalTheme, applyPresetTheme: applyGlobalTheme } = useTheme();
+  const { applyPresetTheme: applyGlobalTheme } = useTheme();
   const [selectedShortcuts, setSelectedShortcuts] = useState<string[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [tempShortcuts, setTempShortcuts] = useState<string[]>([]);
@@ -786,8 +786,6 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     const theme = THEMES[themeId as keyof typeof THEMES];
     if (!theme) return;
 
-    applyGlobalTheme(themeId);
-
     const posSuffix = isMemorizationMode
       ? `_memorization_${isLandscape ? "h" : "v"}`
       : isWirdMode
@@ -798,7 +796,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
             : "_v"
           : `_${readingMode}_${isLandscape ? "h" : "v"}`;
 
-    const modeSuffix = isGlobalTheme ? (isLandscape ? '_h' : '_v') : posSuffix;
+    const modeSuffix = posSuffix;
 
     localStorage.setItem("current_theme_id" + modeSuffix, themeId);
 
@@ -1111,31 +1109,6 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setIsGlobalTheme(!isGlobalTheme);
-                      showToast(
-                        !isGlobalTheme
-                          ? "تم تفعيل الثيم العام"
-                          : "تم تعطيل الثيم العام",
-                      );
-                    }}
-                    className="w-full py-2.5 rounded-xl font-bold text-[11px] flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm border"
-                    style={{
-                      backgroundColor: isGlobalTheme
-                        ? currentTheme.accent
-                        : `${currentTheme.text}05`,
-                      borderColor: isGlobalTheme
-                        ? currentTheme.accent
-                        : `${currentTheme.text}10`,
-                      color: isGlobalTheme ? "#fff" : currentTheme.text,
-                    }}
-                  >
-                    <Palette size={14} />
-                    <span>
-                      {isGlobalTheme ? "ثيم عام: مفعل" : "ثيم عام: معطل"}
-                    </span>
-                  </button>
 
                   {/* Themes Grid */}
                   <div className="grid grid-cols-4 gap-y-5 gap-x-2">
@@ -1150,7 +1123,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             className="flex flex-col items-center gap-1.5 group"
                           >
                             <div
-                              className={`w-[20px] h-[20px] rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem("current_theme_id" + (isGlobalTheme ? (isLandscape ? '_h' : '_v') : (isMemorizationMode ? `_memorization_${isLandscape ? "h" : "v"}` : isWirdMode ? `_wird_${isLandscape ? "h" : "v"}` : readingMode === "mushaf" ? (isLandscape ? "_h" : "_v") : `_${readingMode}_${isLandscape ? "h" : "v"}`))) === id ? "scale-110 border-gray-400 shadow-md" : "border-transparent hover:scale-105"}`}
+                              className={`w-[20px] h-[20px] rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem("current_theme_id" + (isMemorizationMode ? `_memorization_${isLandscape ? "h" : "v"}` : isWirdMode ? `_wird_${isLandscape ? "h" : "v"}` : readingMode === "mushaf" ? (isLandscape ? "_h" : "_v") : `_${readingMode}_${isLandscape ? "h" : "v"}`)) === id ? "scale-110 border-gray-400 shadow-md" : "border-transparent hover:scale-105"}`}
                               style={{
                                 backgroundColor:
                                   id === "deep_black"
