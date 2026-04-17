@@ -151,7 +151,7 @@ const ZakatCalculator: React.FC = () => {
     const renderInput = (label: string, value: string, setter: (v: string) => void, tooltip: string, placeholder = "0") => (
         <div>
             <label className="flex items-center text-sm font-bold mb-1 opacity-80" style={{ color: theme.textColor }}>
-                {label} <Tooltip text={tooltip} />
+                {label} {tooltip ? <Tooltip text={tooltip} /> : null}
             </label>
             <input type="number" placeholder={placeholder} value={value} onChange={e => setter(e.target.value)} className="w-full p-2.5 rounded-lg border focus:ring-2 focus:ring-primary focus:outline-none transition-all" style={inputStyle} />
         </div>

@@ -113,7 +113,7 @@ function AdkarSabahMasaa({ onBack, onNavigate }) {
                 </div>
             </main>
             
-            <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
 
             <ZoomModal zoomedDhikr={zoomedDhikr} onClose={closeZoomModal} />
         </div>

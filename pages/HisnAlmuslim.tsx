@@ -54,7 +54,7 @@ function HisnAlmuslim({ onBack }) {
                 {selectedCategory ? <CategoryDetail selectedCategory={selectedCategory} onZoom={openZoomModal} /> : <CategoryList onSelectCategory={setSelectedCategory} />}
             </main>
 
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
 
             <ZoomModal zoomedItem={zoomedItem} onClose={closeZoomModal} />
         </div>

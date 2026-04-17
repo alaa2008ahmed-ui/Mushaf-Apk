@@ -78,7 +78,7 @@ const QuranDownload: React.FC<{ onBack: () => void, onNavigate?: (pageId: string
                 ))}
             </main>
 
-            <BottomBar onHomeClick={onNavigate ? () => onNavigate('home') : onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
         </div>
     );
 };

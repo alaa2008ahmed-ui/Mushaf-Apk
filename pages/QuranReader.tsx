@@ -2550,6 +2550,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
                         const prevAyah = currentAyahRef.current;
                         
+                        // Prevent backward jumping of active Ayah/Page due to sub-pixel hit-testing during auto-scroll
+                        if (autoScrollStateRef.current.isActive && !autoScrollStateRef.current.isPaused) {
+                            if (s < prevAyah.s || (s === prevAyah.s && a < prevAyah.a)) {
+                                return;
+                            }
+                        }
+                        
                         setCurrentAyah({ s, a });
                         localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a }));
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Share2, Plus, Minus, Type, Image as ImageIcon, FileText, Volume2 } from 'lucide-react';
+import { X, Share2, Plus, Minus, Type, Image as ImageIcon, FileText, Volume2, Palette, LayoutTemplate, Check } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -21,40 +21,37 @@ interface ShareAyahModalProps {
 }
 
 const BACKGROUNDS = [
-    { id: 'bg_white', type: 'solid', value: '#ffffff', border: '#cccccc', accent: '#000000' },
-    { id: 'bg1', type: 'gradient', value: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)', border: '#4a72b8', accent: '#FFD700' },
-    { id: 'bg2', type: 'gradient', value: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', border: '#58ff9d', accent: '#004D40' },
-    { id: 'bg3', type: 'gradient', value: 'linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%)', border: '#ae4dff', accent: '#00FFCC' },
-    { id: 'bg4', type: 'gradient', value: 'linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%)', border: '#ff6b4b', accent: '#FFD700' },
-    { id: 'bg5', type: 'gradient', value: 'linear-gradient(135deg, #2c3e50 0%, #3498db 100%)', border: '#54b8fb', accent: '#FFEB3B' },
-    { id: 'bg6', type: 'gradient', value: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)', border: '#4c7384', accent: '#FFCA28' },
-    { id: 'bg7', type: 'gradient', value: 'linear-gradient(135deg, #f2709c 0%, #ff9472 100%)', border: '#ffb399', accent: '#880E4F' },
-    { id: 'bg8', type: 'gradient', value: 'linear-gradient(135deg, #1D976C 0%, #93F9B9 100%)', border: '#b3fcd0', accent: '#004D40' },
-    { id: 'bg9', type: 'gradient', value: 'linear-gradient(135deg, #000000 0%, #434343 100%)', border: '#666666', accent: '#FFD700' },
-    { id: 'bg10', type: 'gradient', value: 'linear-gradient(135deg, #5C258D 0%, #4389A2 100%)', border: '#6db3c9', accent: '#FFEB3B' },
-    { id: 'bg11', type: 'gradient', value: 'linear-gradient(135deg, #134E5E 0%, #71B280 100%)', border: '#8cd19c', accent: '#FFF' },
-    { id: 'bg12', type: 'gradient', value: 'linear-gradient(135deg, #ff9966 0%, #ff5e62 100%)', border: '#ffb399', accent: '#FFF' },
-    { id: 'bg13', type: 'gradient', value: 'linear-gradient(135deg, #00b09b 0%, #96c93d 100%)', border: '#b8eb5e', accent: '#004D40' },
-    { id: 'bg14', type: 'gradient', value: 'linear-gradient(135deg, #8E0E00 0%, #1F1C18 100%)', border: '#b31200', accent: '#FFD700' },
-    { id: 'bg15', type: 'gradient', value: 'linear-gradient(135deg, #00C9FF 0%, #92FE9D 100%)', border: '#b3ffc2', accent: '#004D40' },
-    { id: 'bg16', type: 'gradient', value: 'linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%)', border: '#ffd266', accent: '#880E4F' },
-    { id: 'bg17', type: 'gradient', value: 'radial-gradient(circle at 50% 50%, #1a2a6c, #b21f1f, #fdbb2d)', border: '#fdbb2d', accent: '#FFF' },
-    { id: 'bg18', type: 'gradient', value: 'linear-gradient(45deg, #d53369 0%, #daae51 100%)', border: '#daae51', accent: '#FFF' },
-    { id: 'bg19', type: 'pattern', value: 'repeating-linear-gradient(45deg, #0f2027, #0f2027 10px, #203a43 10px, #203a43 20px)', border: '#4c7384', accent: '#FFD700' },
-    { id: 'bg20', type: 'pattern', value: 'repeating-radial-gradient(circle at 0 0, transparent 0, #5c258d 10px), repeating-linear-gradient(#4389a2, #4389a2)', border: '#6db3c9', accent: '#FFF' },
-    { id: 'bg21', type: 'pattern', value: 'radial-gradient(circle at 50% 50%, #11998e 2px, transparent 2.5px), radial-gradient(circle at 50% 50%, #38ef7d 2px, transparent 2.5px)', border: '#58ff9d', accent: '#004D40' },
+    { id: 'bg_white', type: 'solid', value: '#ffffff', border: '#e2e8f0', accent: '#0f172a' },
+    { id: 'bg_black', type: 'solid', value: '#0f172a', border: '#334155', accent: '#fbbf24' },
+    { id: 'bg_emerald_gold', type: 'gradient', value: 'linear-gradient(to bottom right, #064e3b, #0f766e)', border: '#34d399', accent: '#fbbf24' },
+    { id: 'bg_midnight_gold', type: 'gradient', value: 'linear-gradient(to bottom, #1e1b4b, #312e81)', border: '#818cf8', accent: '#fbbf24' },
+    { id: 'bg_royal', type: 'gradient', value: 'linear-gradient(135deg, #4c1d95 0%, #7e22ce 100%)', border: '#c084fc', accent: '#fde047' },
+    { id: 'bg_maroon', type: 'gradient', value: 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)', border: '#fca5a5', accent: '#fef08a' },
+    { id: 'bg_ocean', type: 'gradient', value: 'linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%)', border: '#38bdf8', accent: '#f0f9ff' },
+    { id: 'bg_forest', type: 'gradient', value: 'radial-gradient(circle at top right, #14532d, #064e3b)', border: '#6ee7b7', accent: '#fde047' },
+    { id: 'bg_sand', type: 'gradient', value: 'linear-gradient(to right, #fef3c7, #fde68a)', border: '#d97706', accent: '#78350f' },
+    { id: 'bg_sage', type: 'gradient', value: 'linear-gradient(to bottom right, #ecfdf5, #d1fae5)', border: '#059669', accent: '#064e3b' },
+    { id: 'bg_mesh_1', type: 'gradient', value: 'radial-gradient(at 0% 0%, #064e3b 0px, transparent 50%), radial-gradient(at 100% 100%, #1e1b4b 0px, transparent 50%), linear-gradient(to right, #0f766e, #312e81)', border: '#10b981', accent: '#fbbf24' },
+    { id: 'bg_mesh_2', type: 'gradient', value: 'radial-gradient(at 100% 0%, #7c2d12 0px, transparent 50%), radial-gradient(at 0% 100%, #4c1d95 0px, transparent 50%), linear-gradient(to right, #9a3412, #6b21a8)', border: '#fb923c', accent: '#fde047' },
+    { id: 'bg_mesh_3', type: 'gradient', value: 'radial-gradient(at 0% 100%, #831843 0px, transparent 50%), radial-gradient(at 100% 0%, #1e1b4b 0px, transparent 50%), linear-gradient(to right, #be185d, #4c1d95)', border: '#f472b6', accent: '#fbcfe8' },
+    { id: 'bg_pattern_1', type: 'pattern', value: 'repeating-linear-gradient(45deg, #0f172a, #0f172a 10px, #1e293b 10px, #1e293b 20px)', border: '#64748b', accent: '#fbbf24' },
+    { id: 'bg_pattern_2', type: 'pattern', value: 'repeating-radial-gradient(circle at 0 0, transparent 0, #064e3b 15px), repeating-linear-gradient(#022c22, #022c22)', border: '#10b981', accent: '#fef08a' }
 ];
 
 const FRAMES = [
     { id: 'none', name: 'بدون إطار', type: 'none', color: 'transparent' },
     { id: 'f1', name: 'مزدوج ذهبي', type: 'double', color: '#FFD700' },
     { id: 'f2', name: 'مزدوج أبيض', type: 'double', color: '#ffffff' },
+    { id: 'f_ornate_1', name: 'أنيق ذهبي', type: 'elegant', color: '#FFD700' },
+    { id: 'f_ornate_2', name: 'أنيق أبيض', type: 'elegant', color: '#ffffff' },
     { id: 'f3', name: 'زوايا ذهبي', type: 'corner-diamonds', color: '#FFD700' },
     { id: 'f4', name: 'زوايا أبيض', type: 'corner-diamonds', color: '#ffffff' },
     { id: 'f5', name: 'محراب ذهبي', type: 'mihrab', color: '#FFD700' },
     { id: 'f6', name: 'محراب أبيض', type: 'mihrab', color: '#ffffff' },
-    { id: 'f7', name: 'أنيق ذهبي', type: 'elegant', color: '#FFD700' },
-    { id: 'f8', name: 'أنيق أبيض', type: 'elegant', color: '#ffffff' },
+    { id: 'f7', name: 'محراب دبل ذهبي', type: 'mihrab-double', color: '#FFD700' },
+    { id: 'f8', name: 'محراب دبل أبيض', type: 'mihrab-double', color: '#ffffff' },
+    { id: 'f9', name: 'كلاسيكي ذهبي', type: 'classic-islamic', color: '#FFD700' },
+    { id: 'f10', name: 'كلاسيكي أبيض', type: 'classic-islamic', color: '#ffffff' },
 ];
 
 const FrameOverlay = ({ frame, scale = 1 }: { frame: typeof FRAMES[0], scale?: number }) => {
@@ -91,6 +88,26 @@ const FrameOverlay = ({ frame, scale = 1 }: { frame: typeof FRAMES[0], scale?: n
             </div>
         );
     }
+    if (frame.type === 'mihrab-double') {
+        return (
+            <div style={{ position: 'absolute', top: `${padding}px`, left: `${padding}px`, right: `${padding}px`, bottom: `${padding}px`, border: `${2 * scale}px solid ${color}`, borderTopLeftRadius: `${60 * scale}px`, borderTopRightRadius: `${60 * scale}px`, borderBottomLeftRadius: `${8 * scale}px`, borderBottomRightRadius: `${8 * scale}px`, pointerEvents: 'none', zIndex: 5 }}>
+                <div style={{ position: 'absolute', top: `${4 * scale}px`, left: `${4 * scale}px`, right: `${4 * scale}px`, bottom: `${4 * scale}px`, border: `${1 * scale}px dashed ${color}`, borderTopLeftRadius: `${56 * scale}px`, borderTopRightRadius: `${56 * scale}px`, borderBottomLeftRadius: `${4 * scale}px`, borderBottomRightRadius: `${4 * scale}px`, opacity: 0.6 }} />
+            </div>
+        );
+    }
+    if (frame.type === 'classic-islamic') {
+        const cSize = 25 * scale;
+        return (
+            <div style={{ position: 'absolute', top: `${padding}px`, left: `${padding}px`, right: `${padding}px`, bottom: `${padding}px`, pointerEvents: 'none', zIndex: 5, border: `${1 * scale}px solid ${color}`}}>
+                <div style={{ position: 'absolute', top: `${3 * scale}px`, left: `${3 * scale}px`, right: `${3 * scale}px`, bottom: `${3 * scale}px`, border: `${2 * scale}px solid ${color}`, opacity: 0.9 }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: `${cSize}px`, height: `${cSize}px`, borderRight: `${2 * scale}px solid ${color}`, borderBottom: `${2 * scale}px solid ${color}`, backgroundColor: 'transparent', borderBottomRightRadius: '100%', opacity: 0.9 }} />
+                    <div style={{ position: 'absolute', top: 0, right: 0, width: `${cSize}px`, height: `${cSize}px`, borderLeft: `${2 * scale}px solid ${color}`, borderBottom: `${2 * scale}px solid ${color}`, backgroundColor: 'transparent', borderBottomLeftRadius: '100%', opacity: 0.9 }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, width: `${cSize}px`, height: `${cSize}px`, borderRight: `${2 * scale}px solid ${color}`, borderTop: `${2 * scale}px solid ${color}`, backgroundColor: 'transparent', borderTopRightRadius: '100%', opacity: 0.9 }} />
+                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: `${cSize}px`, height: `${cSize}px`, borderLeft: `${2 * scale}px solid ${color}`, borderTop: `${2 * scale}px solid ${color}`, backgroundColor: 'transparent', borderTopLeftRadius: '100%', opacity: 0.9 }} />
+                </div>
+            </div>
+        );
+    }
     return null;
 };
 
@@ -120,6 +137,8 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const [fontSize, setFontSize] = useState(20);
     const [textColor, setTextColor] = useState(TEXT_COLORS[1]);
     const [selectedFont, setSelectedFont] = useState(FONTS[0].id);
+    const [activeDesignTab, setActiveDesignTab] = useState<'bg' | 'frame' | 'text' | 'font' | null>(null);
+    const [rangeSelectorOpen, setRangeSelectorOpen] = useState<'from' | 'to' | null>(null);
     const [customText, setCustomText] = useState('');
     const [isSharing, setIsSharing] = useState(false);
     const [isCopying, setIsCopying] = useState(false);
@@ -716,7 +735,8 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     justifyContent: 'center',
                     padding: '60px',
                     textAlign: 'center',
-                    background: selectedBg.value,
+                    backgroundColor: selectedBg.type === 'solid' ? selectedBg.value : undefined,
+                    backgroundImage: selectedBg.type !== 'solid' ? selectedBg.value : undefined,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     border: `10px solid ${selectedBg.border}`,
@@ -784,22 +804,23 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             {combinedExplanation}
                         </p>
                     )}
-                    <div style={{ marginTop: '40px', paddingTop: '40px', borderTop: '3px solid rgba(255, 255, 255, 0.3)', width: '100%', paddingLeft: '15px', paddingRight: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-                        <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 3px 6px rgba(0,0,0,0.5)', fontSize: `${fontSize * 2}px`, fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
+                    <div style={{ marginTop: '60px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px' }}>
+                        <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 3px 6px rgba(0,0,0,0.5)', fontSize: `${fontSize * 1.8}px`, fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
                             {surahInfo}
                         </p>
-                        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '10px' }}>
+                        <div style={{ width: '70%', borderTop: '3px solid rgba(255, 255, 255, 0.3)' }}></div>
+                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
                             <a 
                                 href="https://play.google.com/store/apps/details?id=com.mushaf.ahmedandlayla"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                style={{ fontFamily: 'var(--font-lateef), serif', color: selectedBg.accent, textShadow: '0 3px 9px rgba(0,0,0,0.8)', fontSize: `${fontSize * 2.4}px`, fontWeight: 700, textAlign: 'right', textDecoration: 'none' }} 
+                                style={{ fontFamily: 'var(--font-lateef), serif', color: selectedBg.accent, textShadow: '0 3px 9px rgba(0,0,0,0.8)', fontSize: `${fontSize * 2.4}px`, fontWeight: 700, textAlign: 'center', textDecoration: 'none' }} 
                                 dir="rtl"
                             >
                                 مصحف احمد وليلى
                             </a>
                             <span 
-                                style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 3px 6px rgba(0,0,0,0.5)', fontSize: `${fontSize * 1.7}px`, fontWeight: 500, maxWidth: '50%', textAlign: 'left', lineHeight: 1.2, opacity: 0.9 }} 
+                                style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 3px 6px rgba(0,0,0,0.5)', fontSize: `${fontSize * 1.7}px`, fontWeight: 500, maxWidth: '80%', textAlign: 'center', lineHeight: 1.2, opacity: 0.9 }} 
                             >
                                 {customText}
                             </span>
@@ -912,71 +933,69 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 </div>
             </div>
 
-            <div className="w-full h-full flex items-center justify-center p-2" onClick={e => e.stopPropagation()}>
-                <div className="modal-skinned rounded-2xl shadow-2xl w-full max-w-lg flex flex-col h-full overflow-hidden" style={{ color: currentTheme.textColor || '#000000' }}>
+            <div className="w-full h-full flex flex-col overflow-hidden shadow-none border-[4px]" style={{ backgroundColor: currentTheme.background || '#ffffff', borderColor: currentTheme.accent || '#3b82f6' }} onClick={e => e.stopPropagation()}>
+                <div className="flex-1 w-full flex flex-col overflow-hidden" style={{ color: currentTheme.textColor || '#000000' }}>
                     
+                    {/* Full Screen Modal Header */}
+                    <div className="p-3 border-b flex items-center justify-center shrink-0" style={{ backgroundColor: currentTheme.background || '#ffffff', borderColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
+                        <h3 className="text-sm font-bold" style={{ color: currentTheme.textColor }}>خيارات المشاركة</h3>
+                    </div>
+
                     {/* Sticky Header Section */}
-                    <div className="p-3 pb-2 border-b border-gray-100 shrink-0 z-10 bg-white rounded-t-2xl">
+                    <div className="p-3 pb-2 border-b shrink-0 z-10" style={{ backgroundColor: currentTheme.background, borderColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
                         {/* Share Type Selector */}
-                        <div className="flex bg-gray-100 rounded-lg p-1">
-                            <button onClick={() => setShareType('text')} className={`flex-1 py-2 text-[12px] font-bold rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'text' ? 'text-white shadow' : 'text-gray-600'}`} style={{ backgroundColor: shareType === 'text' ? (currentTheme.accent || '#3b82f6') : 'transparent' }}>
+                        <div className="flex rounded-lg p-1" style={{ backgroundColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}>
+                            <button onClick={() => setShareType('text')} className={`flex-1 py-2 text-[12px] font-bold rounded-md flex items-center justify-center gap-1 transition-colors border-[2px] ${shareType === 'text' ? 'text-white shadow' : ''}`} style={{ backgroundColor: shareType === 'text' ? (currentTheme.accent || '#3b82f6') : 'transparent', color: shareType === 'text' ? '#fff' : currentTheme.textColor, borderColor: shareType === 'text' ? 'transparent' : (currentTheme.accent || '#3b82f6') }}>
                                 <Type size={14} /> نص
                             </button>
-                            <button onClick={() => setShareType('image')} className={`flex-1 py-2 text-[12px] font-bold rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'image' ? 'text-white shadow' : 'text-gray-600'}`} style={{ backgroundColor: shareType === 'image' ? (currentTheme.accent || '#3b82f6') : 'transparent' }}>
+                            <button onClick={() => setShareType('image')} className={`flex-1 py-2 text-[12px] font-bold rounded-md flex items-center justify-center gap-1 transition-colors border-[2px] ${shareType === 'image' ? 'text-white shadow' : ''}`} style={{ backgroundColor: shareType === 'image' ? (currentTheme.accent || '#3b82f6') : 'transparent', color: shareType === 'image' ? '#fff' : currentTheme.textColor, borderColor: shareType === 'image' ? 'transparent' : (currentTheme.accent || '#3b82f6') }}>
                                 <ImageIcon size={14} /> صورة
                             </button>
-                            <button onClick={() => setShareType('page')} className={`flex-1 py-2 text-[12px] font-bold rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'page' ? 'text-white shadow' : 'text-gray-600'}`} style={{ backgroundColor: shareType === 'page' ? (currentTheme.accent || '#3b82f6') : 'transparent' }}>
+                            <button onClick={() => setShareType('page')} className={`flex-1 py-2 text-[12px] font-bold rounded-md flex items-center justify-center gap-1 transition-colors border-[2px] ${shareType === 'page' ? 'text-white shadow' : ''}`} style={{ backgroundColor: shareType === 'page' ? (currentTheme.accent || '#3b82f6') : 'transparent', color: shareType === 'page' ? '#fff' : currentTheme.textColor, borderColor: shareType === 'page' ? 'transparent' : (currentTheme.accent || '#3b82f6') }}>
                                 <FileText size={14} /> صفحة
                             </button>
-                            <button onClick={() => setShareType('audio')} className={`flex-1 py-2 text-[12px] font-bold rounded-md flex items-center justify-center gap-1 transition-colors ${shareType === 'audio' ? 'text-white shadow' : 'text-gray-600'}`} style={{ backgroundColor: shareType === 'audio' ? (currentTheme.accent || '#3b82f6') : 'transparent' }}>
+                            <button onClick={() => setShareType('audio')} className={`flex-1 py-2 text-[12px] font-bold rounded-md flex items-center justify-center gap-1 transition-colors border-[2px] ${shareType === 'audio' ? 'text-white shadow' : ''}`} style={{ backgroundColor: shareType === 'audio' ? (currentTheme.accent || '#3b82f6') : 'transparent', color: shareType === 'audio' ? '#fff' : currentTheme.textColor, borderColor: shareType === 'audio' ? 'transparent' : (currentTheme.accent || '#3b82f6') }}>
                                 <Volume2 size={14} /> صوت
                             </button>
                         </div>
 
                         {/* Range Selector */}
-                        <div className={`flex justify-between items-center bg-gray-50 p-1.5 rounded-xl gap-3 mt-3 transition-opacity ${shareType === 'page' ? 'opacity-50 pointer-events-none' : ''}`}>
+                        <div className={`flex justify-between items-center p-2 rounded-2xl gap-3 mt-3 transition-all ${shareType === 'page' ? 'opacity-50 pointer-events-none' : ''}`} style={{ backgroundColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}>
                             <div className="flex-1">
-                                <label className="block text-[9px] text-center text-gray-500 mb-0.5">من</label>
-                                <select 
-                                    value={fromAyah} 
-                                    onChange={(e) => setFromAyah(Number(e.target.value))}
-                                    className="w-full p-1 text-[10px] border rounded-lg bg-white text-center outline-none"
+                                <label className="block text-[10px] text-center mb-1 font-bold opacity-50" style={{ color: currentTheme.textColor }}>من</label>
+                                <button 
+                                    onClick={() => setRangeSelectorOpen('from')}
+                                    className="w-full py-2.5 px-3 text-[12px] border-[2px] rounded-xl text-center shadow-sm active:scale-95 transition-all font-bold"
+                                    style={{ backgroundColor: currentTheme.background, borderColor: currentTheme.accent || '#3b82f6', color: currentTheme.textColor }}
                                 >
-                                    {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
-                                        <option key={ay.numberInSurah} value={ay.numberInSurah}>
-                                            {getSurahName(currentAyah.s)} {ay.numberInSurah}
-                                        </option>
-                                    ))}
-                                </select>
+                                    {getSurahName(currentAyah.s)} {toArabic(fromAyah)}
+                                </button>
                             </div>
                             <div className="flex-1">
-                                <label className="block text-[9px] text-center text-gray-500 mb-0.5">إلى</label>
-                                <select 
-                                    value={toAyah} 
-                                    onChange={(e) => setToAyah(Number(e.target.value))}
-                                    className="w-full p-1 text-[10px] border rounded-lg bg-white text-center outline-none"
+                                <label className="block text-[10px] text-center mb-1 font-bold opacity-50" style={{ color: currentTheme.textColor }}>إلى</label>
+                                <button 
+                                    onClick={() => setRangeSelectorOpen('to')}
+                                    className="w-full py-2.5 px-3 text-[12px] border-[2px] rounded-xl text-center shadow-sm active:scale-95 transition-all font-bold"
+                                    style={{ backgroundColor: currentTheme.background, borderColor: currentTheme.accent || '#3b82f6', color: currentTheme.textColor }}
                                 >
-                                    {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => (
-                                        <option key={ay.numberInSurah} value={ay.numberInSurah}>
-                                            {getSurahName(currentAyah.s)} {ay.numberInSurah}
-                                        </option>
-                                    ))}
-                                </select>
+                                    {getSurahName(currentAyah.s)} {toArabic(toAyah)}
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     {/* Scrollable Content */}
-                    <div className="p-3 space-y-4 overflow-y-auto flex-1">
+                    <div className={`p-4 overflow-y-auto flex-1 flex flex-col items-center ${shareType === 'image' ? 'justify-center' : ''}`}>
                         {/* Preview Area (Always rendered, disabled if not image) */}
-                        <div className={`flex justify-center drop-shadow-md transition-opacity ${shareType !== 'image' ? 'opacity-40 pointer-events-none grayscale-[0.5]' : ''}`}>
+                        <div className={`flex justify-center w-full drop-shadow-lg transition-all duration-300 ${shareType === 'page' ? 'opacity-40 pointer-events-none grayscale-[0.5]' : ''}`}>
                             <div 
                                 ref={previewRef}
                                 style={{
                                     position: 'relative',
                                     width: '100%',
-                                    maxWidth: '320px',
-                                    borderRadius: '12px',
+                                    maxWidth: '380px',
+                                    minHeight: '260px',
+                                    borderRadius: '20px',
                                     overflow: 'hidden',
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -984,7 +1003,8 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                     justifyContent: 'center',
                                     padding: '16px',
                                     textAlign: 'center',
-                                    background: selectedBg.value,
+                                    backgroundColor: selectedBg.type === 'solid' ? selectedBg.value : undefined,
+                                    backgroundImage: selectedBg.type !== 'solid' ? selectedBg.value : undefined,
                                     backgroundSize: 'cover',
                                     backgroundPosition: 'center',
                                     border: `3px solid ${selectedBg.border}`
@@ -1003,95 +1023,118 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 )}
 
                                 {shareType === 'audio' && (
-                                    <div className="absolute inset-0 bg-blue-50/95 flex flex-col items-center justify-center z-[30] rounded-xl border-2 border-blue-500 animate-fadeIn">
-                                        <Volume2 size={48} className="text-blue-600 mb-3" />
-                                        <span className="font-bold text-blue-800 text-lg">مشاركة تلاوة صوتية</span>
-                                        <span className="text-sm text-gray-500 mt-2 px-4 text-center">سيتم دمج تلاوة الآيات المختارة في ملف MP3 واحد</span>
+                                    <div className="absolute top-4 left-4 right-4 bg-blue-500/10 backdrop-blur-md border border-blue-200 py-1.5 px-3 rounded-full flex items-center justify-center gap-2 z-[30] animate-fadeIn shadow-sm">
+                                        <Volume2 size={16} className="text-blue-600" />
+                                        <span className="font-bold text-blue-800 text-[10px]">مشاركة تلاوة صوتية</span>
                                     </div>
                                 )}
 
                                 {shareType === 'text' && (
-                                    <div className="absolute inset-0 bg-gray-50/95 flex flex-col items-center justify-center z-[30] rounded-xl border-2 border-gray-400 animate-fadeIn">
-                                        <Type size={48} className="text-gray-600 mb-3" />
-                                        <span className="font-bold text-gray-800 text-lg">مشاركة النص فقط</span>
-                                        <span className="text-sm text-gray-500 mt-2 px-4 text-center">سيتم نسخ نص الآيات مع التفسير المختار للمشاركة</span>
+                                    <div className="absolute top-4 left-4 right-4 bg-gray-500/10 backdrop-blur-md border border-gray-200 py-1.5 px-3 rounded-full flex items-center justify-center gap-2 z-[30] animate-fadeIn shadow-sm">
+                                        <Type size={16} className="text-gray-600" />
+                                        <span className="font-bold text-gray-800 text-[10px]">مشاركة النص فقط</span>
                                     </div>
                                 )}
 
                                 <FrameOverlay frame={selectedFrame} />
-                                <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyItems: 'center', width: '100%' }}>
-                                    {readingMode === 'mushaf' && (
-                                        <p 
-                                            style={{ 
-                                                fontFamily: 'var(--font-amiri-quran), var(--font-hafs), serif', 
-                                                fontSize: `${fontSize * 1.2}px`, 
-                                                color: selectedBg.accent, 
-                                                marginBottom: '16px',
+                                <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', flex: 1 }}>
+                                    {shareType === 'image' ? (
+                                        <div style={{ padding: '10px 0', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                            {readingMode === 'mushaf' && (
+                                                <p 
+                                                    style={{ 
+                                                        fontFamily: 'var(--font-amiri-quran), var(--font-hafs), serif', 
+                                                        fontSize: `${fontSize * 1.2}px`, 
+                                                        color: selectedBg.accent, 
+                                                        marginBottom: '16px',
+                                                        textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)',
+                                                        opacity: 1,
+                                                        marginTop: '8px',
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                >
+                                                    بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+                                                </p>
+                                            )}
+                                            <p 
+                                                className="share-preview-text"
+                                                style={{ 
+                                                    lineHeight: '1.8',
+                                                    fontFamily: selectedFont,
+                                                    fontSize: `${fontSize * 1.15}px`, 
+                                                    color: textColor,
+                                                    textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)',
+                                                    margin: 0,
+                                                    marginTop: '8px',
+                                                    fontWeight: 'bold',
+                                                    whiteSpace: 'normal',
+                                                    letterSpacing: 0,
+                                                    wordBreak: 'keep-all',
+                                                    fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"',
+                                                    textRendering: 'optimizeLegibility'
+                                                }}
+                                            >
+                                                {selectedAyahs.map((ay, idx) => (
+                                                    <React.Fragment key={idx}>
+                                                        <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: renderTajweedTextHtml(getAyahText(ay.s, ay.a, false)) }} />
+                                                        {` ﴿${toArabic(ay.a)}﴾ `}
+                                                    </React.Fragment>
+                                                ))}
+                                            </p>
+                                            {combinedExplanation && (
+                                                <p style={{
+                                                    fontFamily: 'var(--font-cairo), sans-serif',
+                                                    fontSize: `${fontSize * 0.8}px`,
+                                                    color: textColor,
+                                                    opacity: 0.9,
+                                                    marginTop: '12px',
+                                                    textAlign: 'center',
+                                                    lineHeight: '1.6',
+                                                    textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 1px 2px rgba(0,0,0,0.5)',
+                                                    maxWidth: '90%'
+                                                }}>
+                                                    {combinedExplanation}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center py-6 text-center">
+                                            <div style={{ 
+                                                fontFamily: 'var(--font-amiri-quran), serif', 
+                                                fontSize: `${fontSize * 2.2}px`, 
+                                                color: selectedBg.accent,
+                                                fontWeight: 'bold',
                                                 textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)',
-                                                opacity: 1,
-                                                marginTop: '8px',
-                                                fontWeight: 'bold'
-                                            }}
-                                        >
-                                            بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-                                        </p>
+                                                marginBottom: '10px'
+                                            }}>
+                                                سورة {getSurahName(currentAyah.s)}
+                                            </div>
+                                            <div style={{ 
+                                                fontFamily: selectedFont, 
+                                                fontSize: `${fontSize * 1.5}px`, 
+                                                color: textColor,
+                                                fontWeight: '500',
+                                                textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)'
+                                            }}>
+                                                {fromAyah === toAyah ? `الآية ${toArabic(fromAyah)}` : `الآية ${toArabic(fromAyah)} إلى الآية ${toArabic(toAyah)}`}
+                                            </div>
+                                        </div>
                                     )}
-                                    <p 
-                                        className="share-preview-text"
-                                        style={{ 
-                                            lineHeight: '1.8',
-                                            fontFamily: selectedFont,
-                                            fontSize: `${fontSize * 1.15}px`, 
-                                            color: textColor,
-                                            textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)',
-                                            margin: 0,
-                                            marginTop: '8px',
-                                            fontWeight: 'bold',
-                                            whiteSpace: 'normal',
-                                            letterSpacing: 0,
-                                            wordBreak: 'keep-all',
-                                            fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"',
-                                            textRendering: 'optimizeLegibility'
-                                        }}
-                                    >
-                                        {selectedAyahs.map((ay, idx) => (
-                                            <React.Fragment key={idx}>
-                                                <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: renderTajweedTextHtml(getAyahText(ay.s, ay.a, false)) }} />
-                                                {` ﴿${toArabic(ay.a)}﴾ `}
-                                            </React.Fragment>
-                                        ))}
-                                    </p>
-                                    {combinedExplanation && (
-                                        <p style={{
-                                            fontFamily: 'var(--font-cairo), sans-serif',
-                                            fontSize: `${fontSize * 0.8}px`,
-                                            color: textColor,
-                                            opacity: 0.9,
-                                            marginTop: '12px',
-                                            textAlign: 'center',
-                                            lineHeight: '1.6',
-                                            textShadow: selectedBg.id === 'bg_white' ? 'none' : '0 1px 2px rgba(0,0,0,0.5)',
-                                            maxWidth: '90%'
-                                        }}>
-                                            {combinedExplanation}
-                                        </p>
-                                    )}
-                                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.3)', width: '100%', paddingLeft: '4px', paddingRight: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                                        <p style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '12px', fontWeight: 'bold', opacity: 0.9, textAlign: 'center', margin: 0 }}>
-                                            {surahInfo}
-                                        </p>
-                                        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '2px' }}>
+
+                                    <div style={{ marginTop: shareType === 'image' ? '20px' : '10px', width: '100%', paddingLeft: '4px', paddingRight: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                                        <div style={{ width: '60%', borderTop: '2.5px solid rgba(255, 255, 255, 0.4)', margin: '8px 0' }}></div>
+                                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                                             <a 
                                                 href="https://play.google.com/store/apps/details?id=com.mushaf.ahmedandlayla"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                style={{ fontFamily: 'var(--font-lateef), serif', color: selectedBg.accent, textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '14px', fontWeight: 700, textAlign: 'right', textDecoration: 'none' }} 
+                                                style={{ fontFamily: 'var(--font-scheherazade), serif', color: selectedBg.accent, textShadow: '0 1px 4px rgba(0,0,0,0.8)', fontSize: '16px', fontWeight: 800, textAlign: 'center', textDecoration: 'none' }} 
                                                 dir="rtl"
                                             >
                                                 مصحف احمد وليلى
                                             </a>
                                             <span 
-                                                style={{ fontFamily: selectedFont, color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '10px', fontWeight: 500, maxWidth: '50%', textAlign: 'left', lineHeight: 1.2, opacity: 0.9 }} 
+                                                style={{ fontFamily: 'var(--font-scheherazade), serif', color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', fontSize: '13px', fontWeight: 600, maxWidth: '90%', textAlign: 'center', lineHeight: 1.2, opacity: 0.9 }} 
                                             >
                                                 {customText}
                                             </span>
@@ -1100,102 +1143,148 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Image Customization Controls (Always rendered, disabled if not image) */}
-                        <div className={`space-y-2 transition-opacity ${shareType !== 'image' ? 'opacity-40 pointer-events-none' : ''}`}>
-                            {/* Background Selection */}
-                            <div>
-                                <label className="block text-[10px] font-medium text-gray-700 mb-1">الخلفية</label>
-                                <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
-                                    {BACKGROUNDS.map(bg => (
-                                        <button
-                                            key={bg.id}
-                                            onClick={() => setSelectedBg(bg)}
-                                            className={`w-8 h-8 rounded-lg shrink-0 border-2 transition-all ${selectedBg.id === bg.id ? 'scale-110 shadow-sm' : 'border-transparent'}`}
-                                            style={{
-                                                background: bg.value,
-                                                backgroundSize: 'cover',
-                                                backgroundPosition: 'center',
-                                                borderColor: selectedBg.id === bg.id ? (currentTheme.accent || '#3b82f6') : 'transparent'
-                                            }}
-                                        />
-                                    ))}
-                                </div>
+                    {/* Image Customization Controls (Moved to bottom above footer) */}
+                    <div className={`px-4 pb-4 bg-white border-t border-gray-100 transition-opacity ${shareType !== 'image' ? 'hidden' : ''}`}>
+                        <div className="space-y-4 transition-opacity pb-2 mt-4">
+                            {/* Tab Buttons */}
+                            <div className="grid grid-cols-4 gap-2 bg-gray-50 p-1 rounded-xl w-full mx-auto shadow-sm">
+                                <button 
+                                    onClick={() => setActiveDesignTab(activeDesignTab === 'bg' ? null : 'bg')}
+                                    className={`py-2 px-1 text-[10px] sm:text-xs font-bold rounded-lg transition-all flex flex-col items-center gap-1 border-[2px] shadow-sm ${activeDesignTab === 'bg' ? 'bg-white text-blue-600 scale-[1.02]' : 'bg-white text-gray-600'}`}
+                                    style={{ borderColor: currentTheme.accent || '#3b82f6' }}
+                                >
+                                    <ImageIcon size={14} className={activeDesignTab === 'bg' ? 'opacity-100' : 'opacity-70'} />
+                                    <span>الخلفية</span>
+                                </button>
+                                <button 
+                                    onClick={() => setActiveDesignTab(activeDesignTab === 'frame' ? null : 'frame')}
+                                    className={`py-2 px-1 text-[10px] sm:text-xs font-bold rounded-lg transition-all flex flex-col items-center gap-1 border-[2px] shadow-sm ${activeDesignTab === 'frame' ? 'bg-white text-blue-600 scale-[1.02]' : 'bg-white text-gray-600'}`}
+                                    style={{ borderColor: currentTheme.accent || '#3b82f6' }}
+                                >
+                                    <LayoutTemplate size={14} className={activeDesignTab === 'frame' ? 'opacity-100' : 'opacity-70'} />
+                                    <span>الإطار</span>
+                                </button>
+                                <button 
+                                    onClick={() => setActiveDesignTab(activeDesignTab === 'text' ? null : 'text')}
+                                    className={`py-2 px-1 text-[10px] sm:text-xs font-bold rounded-lg transition-all flex flex-col items-center gap-1 border-[2px] shadow-sm ${activeDesignTab === 'text' ? 'bg-white text-blue-600 scale-[1.02]' : 'bg-white text-gray-600'}`}
+                                    style={{ borderColor: currentTheme.accent || '#3b82f6' }}
+                                >
+                                    <Palette size={14} className={activeDesignTab === 'text' ? 'opacity-100' : 'opacity-70'} />
+                                    <span>النص</span>
+                                </button>
+                                <button 
+                                    onClick={() => setActiveDesignTab(activeDesignTab === 'font' ? null : 'font')}
+                                    className={`py-2 px-1 text-[10px] sm:text-xs font-bold rounded-lg transition-all flex flex-col items-center gap-1 border-[2px] shadow-sm ${activeDesignTab === 'font' ? 'bg-white text-blue-600 scale-[1.02]' : 'bg-white text-gray-600'}`}
+                                    style={{ borderColor: currentTheme.accent || '#3b82f6' }}
+                                >
+                                    <Type size={14} className={activeDesignTab === 'font' ? 'opacity-100' : 'opacity-70'} />
+                                    <span>الخط</span>
+                                </button>
                             </div>
 
-                            {/* Frame Selection */}
-                            <div>
-                                <label className="block text-[10px] font-medium text-gray-700 mb-1">الإطار</label>
-                                <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
-                                    {FRAMES.map(frame => (
-                                        <button
-                                            key={frame.id}
-                                            onClick={() => setSelectedFrame(frame)}
-                                            className={`shrink-0 px-2 py-1 rounded-lg border transition-all text-[9px] font-medium flex items-center justify-center min-w-[60px] ${selectedFrame.id === frame.id ? 'bg-blue-50 text-blue-700 shadow-sm' : 'border-gray-200 bg-white text-gray-700'}`}
-                                            style={selectedFrame.id === frame.id ? { borderColor: currentTheme.accent || '#3b82f6', color: currentTheme.accent || '#1d4ed8' } : {}}
-                                        >
-                                            {frame.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                            {/* Active Tab Content */}
+                            <div className="transition-all duration-300 overflow-hidden" style={{ maxHeight: activeDesignTab ? '200px' : '0', opacity: activeDesignTab ? 1 : 0, marginTop: activeDesignTab ? '8px' : '0' }}>
+                                <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                                    {/* Background Selection */}
+                                    {activeDesignTab === 'bg' && (
+                                        <div className="space-y-2 animate-fadeIn">
+                                            <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
+                                                {BACKGROUNDS.map(bg => (
+                                                    <button
+                                                        key={bg.id}
+                                                        onClick={() => setSelectedBg(bg)}
+                                                        className={`w-10 h-10 rounded-xl shrink-0 border-2 transition-all ${selectedBg.id === bg.id ? 'scale-110 shadow-sm' : 'border-transparent'}`}
+                                                        style={{
+                                                            backgroundColor: bg.type === 'solid' ? bg.value : undefined,
+                                                            backgroundImage: bg.type !== 'solid' ? bg.value : undefined,
+                                                            backgroundSize: 'cover',
+                                                            backgroundPosition: 'center',
+                                                            borderColor: selectedBg.id === bg.id ? (currentTheme.accent || '#3b82f6') : 'transparent'
+                                                        }}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
 
-                            {/* Text Controls */}
-                            <div className="grid grid-cols-2 gap-2">
-                                {/* Font Size */}
-                                <div>
-                                    <label className="block text-[10px] font-medium text-gray-700 mb-1">حجم الخط</label>
-                                    <div className="flex items-center justify-between bg-gray-50 p-1 rounded-lg">
-                                        <button 
-                                            onClick={() => setFontSize(prev => Math.max(12, prev - 2))}
-                                            className="p-1 hover:bg-white rounded-md text-gray-600"
-                                        >
-                                            <Minus size={12} />
-                                        </button>
-                                        <span className="font-medium text-[10px] text-gray-700">{fontSize}</span>
-                                        <button 
-                                            onClick={() => setFontSize(prev => Math.min(48, prev + 2))}
-                                            className="p-1 hover:bg-white rounded-md text-gray-600"
-                                        >
-                                            <Plus size={12} />
-                                        </button>
-                                    </div>
-                                </div>
+                                    {/* Frame Selection */}
+                                    {activeDesignTab === 'frame' && (
+                                        <div className="space-y-2 animate-fadeIn">
+                                            <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                                                {FRAMES.map(frame => (
+                                                    <button
+                                                        key={frame.id}
+                                                        onClick={() => setSelectedFrame(frame)}
+                                                        className={`shrink-0 px-3 py-2 rounded-xl border-[2px] transition-all text-xs font-bold flex items-center justify-center min-w-[70px] shadow-sm ${selectedFrame.id === frame.id ? 'bg-blue-50' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                                        style={{ borderColor: currentTheme.accent || '#3b82f6', color: selectedFrame.id === frame.id ? (currentTheme.accent || '#1d4ed8') : 'inherit' }}
+                                                    >
+                                                        {frame.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
 
-                                {/* Text Color */}
-                                <div>
-                                    <label className="block text-[10px] font-medium text-gray-700 mb-1">لون النص</label>
-                                    <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar bg-gray-50 p-1 rounded-lg items-center">
-                                        {TEXT_COLORS.map(color => (
-                                            <button
-                                                key={color}
-                                                onClick={() => setTextColor(color)}
-                                                className={`w-5 h-5 rounded-full shrink-0 border-2 transition-all ${textColor === color ? 'scale-110' : 'border-gray-300'}`}
-                                                style={{ backgroundColor: color, borderColor: textColor === color ? (currentTheme.accent || '#3b82f6') : '#d1d5db' }}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
+                                    {/* Text Controls */}
+                                    {activeDesignTab === 'text' && (
+                                        <div className="grid grid-cols-2 gap-4 animate-fadeIn">
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-gray-700 mb-1">حجم الخط</label>
+                                                <div className="flex items-center justify-between bg-gray-50 p-1.5 rounded-xl border-[2px] shadow-sm" style={{ borderColor: currentTheme.accent || '#3b82f6' }}>
+                                                    <button 
+                                                        onClick={() => setFontSize(prev => Math.max(12, prev - 2))}
+                                                        className="p-1 hover:bg-white hover:shadow rounded-lg text-gray-600 transition-all border border-transparent hover:border-blue-200"
+                                                    >
+                                                        <Minus size={14} />
+                                                    </button>
+                                                    <span className="font-bold text-xs text-gray-700">{fontSize}</span>
+                                                    <button 
+                                                        onClick={() => setFontSize(prev => Math.min(48, prev + 2))}
+                                                        className="p-1 hover:bg-white hover:shadow rounded-lg text-gray-600 transition-all border border-transparent hover:border-blue-200"
+                                                    >
+                                                        <Plus size={14} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-bold text-gray-700 mb-1">لون النص</label>
+                                                <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar bg-gray-50 p-1.5 rounded-xl border border-gray-100 items-center">
+                                                    {TEXT_COLORS.map(color => (
+                                                        <button
+                                                            key={color}
+                                                            onClick={() => setTextColor(color)}
+                                                            className={`w-6 h-6 rounded-full shrink-0 border-2 transition-all shadow-sm ${textColor === color ? 'scale-110' : 'border-gray-200 opacity-80'}`}
+                                                            style={{ backgroundColor: color, borderColor: textColor === color ? (currentTheme.accent || '#3b82f6') : '#e5e7eb' }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
-                            {/* Font Selection */}
-                            <div>
-                                <label className="block text-[10px] font-medium text-gray-700 mb-1">نوع الخط</label>
-                                <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
-                                    {FONTS.map(font => (
-                                        <button
-                                            key={font.id}
-                                            onClick={() => setSelectedFont(font.id)}
-                                            className={`px-2 py-1 rounded-lg shrink-0 border transition-all text-[10px] ${selectedFont === font.id ? 'text-white' : 'bg-gray-50 text-gray-700 border-gray-300'}`}
-                                            style={{ 
-                                                fontFamily: font.id,
-                                                backgroundColor: selectedFont === font.id ? (currentTheme.accent || '#3b82f6') : 'transparent',
-                                                borderColor: selectedFont === font.id ? (currentTheme.accent || '#3b82f6') : '#d1d5db'
-                                            }}
-                                        >
-                                            {font.name}
-                                        </button>
-                                    ))}
+                                    {/* Font Selection */}
+                                    {activeDesignTab === 'font' && (
+                                        <div className="space-y-2 animate-fadeIn">
+                                            <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                                                {FONTS.map(font => (
+                                                    <button
+                                                        key={font.id}
+                                                        onClick={() => setSelectedFont(font.id)}
+                                                        className={`px-3 py-2 rounded-xl shrink-0 border-[2px] transition-all text-xs shadow-sm ${selectedFont === font.id ? 'text-white' : 'bg-white text-gray-800 hover:bg-gray-50'}`}
+                                                        style={{ 
+                                                            fontFamily: font.id,
+                                                            backgroundColor: selectedFont === font.id ? (currentTheme.accent || '#3b82f6') : 'transparent',
+                                                            borderColor: currentTheme.accent || '#3b82f6'
+                                                        }}
+                                                    >
+                                                        {font.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1206,7 +1295,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                     value={customText}
                                     onChange={(e) => setCustomText(e.target.value)}
                                     placeholder="نص إضافي (اختياري)..."
-                                    className="w-full p-1.5 text-[10px] border border-gray-300 rounded-lg bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all"
+                                    className="w-full p-2 text-[11px] font-medium border border-gray-300 rounded-xl bg-gray-50 text-gray-900 focus:ring-2 focus:border-transparent outline-none transition-all shadow-inner"
                                     style={{ focusRingColor: currentTheme.accent || '#3b82f6' } as any}
                                     maxLength={50}
                                     dir="rtl"
@@ -1219,14 +1308,16 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     <div className="p-2 border-t bg-gray-50 flex gap-2">
                         <button
                             onClick={onClose}
-                            className="flex-1 py-4 rounded-xl text-xs font-bold text-gray-700 bg-gray-200 flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
+                            className="flex-1 py-4 rounded-xl text-xs font-bold text-gray-700 bg-gray-200 flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 border-[2px]"
+                            style={{ borderColor: currentTheme.accent || '#3b82f6' }}
                         >
                             رجوع
                         </button>
                         <button
                             onClick={handleCopy}
                             disabled={isCopying}
-                            className="flex-1 py-4 rounded-xl text-xs font-bold text-gray-700 bg-white border border-gray-300 flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70"
+                            className="flex-1 py-4 rounded-xl text-xs font-bold text-gray-700 bg-white border-[2px] flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70"
+                            style={{ borderColor: currentTheme.accent || '#3b82f6' }}
                         >
                             {isCopying ? (
                                 <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
@@ -1240,8 +1331,8 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         <button
                             onClick={handleShare}
                             disabled={isSharing}
-                            className="flex-1 py-4 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70"
-                            style={{ backgroundColor: currentTheme.accent || '#3b82f6' }}
+                            className="flex-1 py-4 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70 border-[2px]"
+                            style={{ backgroundColor: currentTheme.accent || '#3b82f6', borderColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }}
                         >
                             {isSharing ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -1269,10 +1360,68 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             </div>
                             <button 
                                 onClick={() => setShowCopySuccess(false)}
-                                className="w-full py-3 rounded-xl font-bold text-white transition-all active:scale-95 shadow-md"
-                                style={{ backgroundColor: currentTheme.accent || '#16a34a' }}
+                                className="w-full py-3 rounded-xl font-bold text-white transition-all active:scale-95 shadow-md border-[2px]"
+                                style={{ backgroundColor: currentTheme.accent || '#16a34a', borderColor: 'rgba(255,255,255,0.2)' }}
                             >
                                 موافق
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Ayah Range Selection Overlay */}
+            {rangeSelectorOpen && (
+                <div 
+                    className="fixed inset-0 z-[200] flex items-start justify-center pt-24" 
+                    style={{ backgroundColor: 'transparent' }}
+                    onClick={() => setRangeSelectorOpen(null)}
+                >
+                    <div 
+                        className="w-[85%] max-w-[280px] flex flex-col max-h-[60vh] overflow-hidden rounded-[32px] p-2 border-[4px] shadow-2xl" 
+                        style={{ backgroundColor: '#ffffff', borderColor: currentTheme.accent || '#3b82f6' }} 
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5 scrollbar-hide">
+                            {quranData.surahs[currentAyah.s - 1].ayahs.map((ay: any) => {
+                                const val = ay.numberInSurah;
+                                const isSelected = rangeSelectorOpen === 'from' ? fromAyah === val : toAyah === val;
+                                
+                                return (
+                                    <button 
+                                        key={ay.numberInSurah}
+                                        onClick={() => {
+                                            if (rangeSelectorOpen === 'from') setFromAyah(val);
+                                            else setToAyah(val);
+                                            setRangeSelectorOpen(null);
+                                        }}
+                                        className={`w-full py-1.5 px-2 rounded-xl border-[3px] flex flex-col items-center justify-center transition-all active:scale-[0.98] shadow-sm`}
+                                        style={{ 
+                                            backgroundColor: isSelected ? (currentTheme.accent || '#3b82f6') : (currentTheme.id === 'night' ? '#1a1a1b' : '#ffffff'),
+                                            borderColor: currentTheme.accent || '#3b82f6',
+                                            color: isSelected ? '#fff' : (currentTheme.textColor || '#000')
+                                        }}
+                                    >
+                                        <span className="text-base font-bold font-amiri-quran">
+                                            {toArabic(val)}
+                                        </span>
+                                        {isSelected && (
+                                            <div className="mt-0.5">
+                                                <Check size={12} strokeWidth={4} />
+                                            </div>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div className="p-4 pt-2 border-t-0">
+                            <button 
+                                onClick={() => setRangeSelectorOpen(null)}
+                                className="w-full py-4 text-white rounded-[24px] font-bold text-base shadow-lg active:scale-95 transition-all"
+                                style={{ backgroundColor: currentTheme.accent || '#000000' }}
+                            >
+                                تمت
                             </button>
                         </div>
                     </div>

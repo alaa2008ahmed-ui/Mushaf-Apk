@@ -802,7 +802,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
       </main>
 
-      {!isInputFocused && <BottomBar onHomeClick={() => onNavigate('more-menu')} onThemesClick={() => {}} showThemes={false} />}
+      {!isInputFocused && <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />}
 
       {renderDeleteConfirmModal()}
 
