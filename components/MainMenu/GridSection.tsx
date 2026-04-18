@@ -107,11 +107,11 @@ const GridSection: React.FC<GridSectionProps> = ({
                                     <NavButton 
                                         label={item.label} 
                                         onClick={() => !isEditMode && onNavigate(item.id)} 
-                                        className="w-full h-full shadow-[0_0_15px_rgba(16,185,129,0.3)] border-emerald-500/50"
+                                        className="w-full h-full shadow-lg"
                                         color={
                                             themeKey === 'olive_grove' ? '#65A30D' : (item.customColor || theme.palette[DEFAULT_MENU_ITEMS.find(d => d.id === item.id)?.colorIndex ?? item.colorIndex])
                                         } 
-                                        border={'2px solid #10b981'} 
+                                        border={theme.btnBorder || (theme.palette[0] ? `2px solid ${theme.palette[0]}` : undefined)} 
                                         isEditMode={isEditMode}
                                         onResize={(e) => handleResize(item.id, e)}
                                         isGlass={theme.isGlass}

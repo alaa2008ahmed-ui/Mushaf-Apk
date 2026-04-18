@@ -434,14 +434,19 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 recognizedTextRef.current = '';
                 
                 // Check if we reached the end of the memorization range
+                let isEnd = false;
                 if (localMemorizationSettings) {
                     const { toSurah, toAyah } = localMemorizationSettings;
                     if (ayah.s === toSurah && ayah.a === toAyah) {
                         showToast('تم الانتهاء من المراجعة بنجاح');
-                        stopRecording(true);
-                        return;
+                        isEnd = true;
                     }
                 }
+
+                // Stop the recording immediately as requested
+                stopRecording(true);
+                
+                if (isEnd) return;
 
                 // Move to next ayah
                 const nextA = ayah.a + 1;
