@@ -475,7 +475,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                                     let soundPath = "/assets/audio/takbeer1.mp3"; // Default to Takbeer 1
                                     let playSound = true;
                                     
-                                    if (config.audioMutedUntil && Date.now() < config.audioMutedUntil) {
+                                    if (config.audioMutedUntil && prayerDate.getTime() < config.audioMutedUntil) {
                                         playSound = false;
                                         soundPath = '';
                                     } else if (toneConfig && toneConfig.data) {
