@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">personal expenses</string>
+    <string name="title_activity_main">personal expenses</string>
+    <string name="package_name">com.personalexpenses.app</string>
+    <string name="custom_url_scheme">com.personalexpenses.app</string>
+</resources>
