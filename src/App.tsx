@@ -16,6 +16,7 @@ export default function App() {
   const [loginError, setLoginError] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [showFab, setShowFab] = useState(true);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   useEffect(() => {
     // Load saved URL from localStorage
@@ -24,10 +25,23 @@ export default function App() {
       setTargetUrl(savedUrl);
     }
 
+    // Intercept back button for exit confirmation
+    window.history.pushState(null, '', window.location.pathname);
+    const handlePopState = () => {
+      setShowExitConfirm(true);
+      // Push state again to keep the intercept active
+      window.history.pushState(null, '', window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
     const timer = setTimeout(() => {
       setShowFab(false);
     }, 5000);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
   const handleAdminLogin = (e: React.FormEvent) => {
@@ -51,6 +65,13 @@ export default function App() {
     setPassword('');
   };
 
+  const handleExitApp = () => {
+    // Attempt to close or navigate away
+    window.close();
+    // Fallback for browsers that don't allow window.close()
+    window.location.href = "about:blank";
+  };
+
   const closeAdminMenu = () => {
     setShowAdminLogin(false);
     setIsAdminAuthenticated(false);
@@ -70,6 +91,43 @@ export default function App() {
           allow="camera; microphone; geolocation"
         />
       </div>
+
+      {/* Exit Confirmation Modal */}
+      <AnimatePresence>
+        {showExitConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-xs glass-panel p-8 rounded-[2rem] text-center"
+            >
+              <h3 className="text-xl font-semibold text-white mb-2">Exit Application</h3>
+              <p className="text-zinc-400 text-sm mb-8 leading-relaxed">Are you sure you want to exit the app?</p>
+              
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleExitApp}
+                  className="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-4 rounded-2xl transition-all shadow-lg active:scale-95"
+                >
+                  Yes, Exit
+                </button>
+                <button
+                  onClick={() => setShowExitConfirm(false)}
+                  className="w-full py-3 text-zinc-400 hover:text-white text-sm font-medium transition-colors"
+                >
+                  No, Stay
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Floating Admin Button - Only visible for the first 5 seconds */}
       <AnimatePresence>
