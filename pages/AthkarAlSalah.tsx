@@ -77,7 +77,9 @@ function AthkarAlSalah({ onBack, onNavigate }) {
     };
 
     const handleHomeClick = () => {
-        if (currentPrayer) {
+        if (zoomedZikr) {
+            setZoomedZikr(null);
+        } else if (currentPrayer) {
             setCurrentPrayer(null);
         } else if (onNavigate) {
             onNavigate('home');
@@ -271,18 +273,11 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                 )}
             </main>
 
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
 
             {zoomedZikr && (
                 <div className="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center p-4 backdrop-blur-sm" onClick={() => setZoomedZikr(null)}>
                     <div className="bg-modal-bg text-modal-text p-8 rounded-3xl w-full max-w-2xl text-center relative scale-in shadow-2xl border-2 border-modal-border flex flex-col max-h-[90vh]" style={{ fontFamily: theme.font }} onClick={e => e.stopPropagation()}>
-                        <button 
-                            onClick={() => setZoomedZikr(null)} 
-                            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 transition-colors z-10"
-                        >
-                            <i className="fa-solid fa-xmark text-xl"></i>
-                        </button>
-
                         <div className="overflow-y-auto hide-scrollbar flex-1 py-4">
                             {zoomedZikr.title && <h3 className="text-xl font-bold mb-4" style={{ color: theme.palette[1] }}>{zoomedZikr.title}</h3>}
                             <div 

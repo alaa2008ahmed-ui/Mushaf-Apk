@@ -270,10 +270,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     </div>
 
                     <div id="font-family-section" className="border-b border-gray-200 dark:border-gray-700 py-1">
-                        <label className="text-xs font-bold block opacity-80">نوع الخط</label>
-                        <div className="mt-1">
-                            <button onClick={() => onOpenModal('font-modal')} className="w-full p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
-                                <span>{getFontName(settings.fontFamily)}</span>
+                        <label className="text-xs font-bold block opacity-80 mb-1">تخصيص الخط</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            <button onClick={() => updateSetting('isBold', !settings.isBold)} className={`col-span-1 p-2 text-xs h-8 rounded-lg border flex justify-center items-center font-bold transition-all ${settings.isBold ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700' : 'themed-card-bg'}`} title="تفعيل/إلغاء سماكة الخط (Bold)">
+                                <span className={`text-[13px] ${settings.isBold ? 'font-black' : ''}`}>سماكة (B)</span>
+                            </button>
+                            <button onClick={() => onOpenModal('font-modal')} className="col-span-2 p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
+                                <span className="truncate">{getFontName(settings.fontFamily)}</span>
                                 <i className="fa-solid fa-chevron-left opacity-50"></i>
                             </button>
                         </div>

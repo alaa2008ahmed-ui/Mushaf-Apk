@@ -119,6 +119,8 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
     
     const pageStyle = {
         fontSize: settings ? `${settings.fontSize}rem` : '1.7rem',
+        fontWeight: settings?.isBold ? '900' : 'normal',
+        WebkitTextStroke: settings?.isBold ? '0.5px currentColor' : '0px',
         fontFamily: 'var(--qr-fontFamily)',
         color: 'var(--qr-text)',
         letterSpacing: 0,
@@ -129,6 +131,8 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
     const headerStyle = {
         fontSize: settings ? `${settings.fontSize * 0.94}rem` : '1.6rem',
         fontFamily: settings?.fontFamily || 'var(--font-amiri-quran)',
+        fontWeight: settings?.isBold ? '900' : 'normal',
+        WebkitTextStroke: settings?.isBold ? '0.5px currentColor' : '0px',
         color: currentTheme?.accent || '#6d28d9'
     };
 

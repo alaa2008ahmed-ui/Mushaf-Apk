@@ -437,6 +437,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                          style={{ 
                              fontSize: `${localFontSize}rem`, 
                              fontFamily: settings.fontFamily,
+                             fontWeight: settings.isBold ? '900' : 'normal',
+                             WebkitTextStroke: settings.isBold ? '0.5px currentColor' : '0px',
                              color: shouldHide ? 'transparent' : (settings.textColor || currentTheme.accent),
                              backgroundColor: shouldHide ? `${settings.highlightTextColor || currentTheme.accent}20` : 'transparent',
                              borderRadius: shouldHide ? '8px' : '0',

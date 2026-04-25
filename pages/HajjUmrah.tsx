@@ -86,7 +86,9 @@ function HajjUmrah({ onBack }) {
     };
 
     const handleHomeClick = () => {
-        if (screen !== 'home') {
+        if (zoomedDuaa) {
+            setZoomedDuaa(null);
+        } else if (screen !== 'home') {
             setScreen('home');
         } else {
             onBack();
@@ -109,18 +111,11 @@ function HajjUmrah({ onBack }) {
                 {renderScreen()}
             </main>
 
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
 
             {zoomedDuaa && (
                 <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center p-4" onClick={closeZoomModal}>
                     <div className="themed-card p-8 rounded-3xl w-full max-w-2xl text-center relative flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                        <button 
-                            onClick={closeZoomModal} 
-                            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 transition-colors z-10"
-                        >
-                            <i className="fa-solid fa-xmark text-xl"></i>
-                        </button>
-
                         <div className="overflow-y-auto hide-scrollbar flex-1 py-4">
                             <p className="text-3xl md:text-4xl leading-relaxed font-amiri" dangerouslySetInnerHTML={{ __html: zoomedDuaa.text }}></p>
                         </div>

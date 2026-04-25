@@ -87,6 +87,14 @@ function AdkarSabahMasaa({ onBack, onNavigate }) {
         setZoomedDhikr(null);
     };
 
+    const handleHomeClick = () => {
+        if (zoomedDhikr) {
+            setZoomedDhikr(null);
+        } else {
+            onBack();
+        }
+    };
+
     return (
         <div className="h-screen flex flex-col bg-transparent">
             <AdkarHeader title="أذكار الصباح والمساء" subtitle="تابع أذكـارك اليومية مع عداد تفاعلي وواجهة سهلة" />
@@ -113,7 +121,7 @@ function AdkarSabahMasaa({ onBack, onNavigate }) {
                 </div>
             </main>
             
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
 
             <ZoomModal zoomedDhikr={zoomedDhikr} onClose={closeZoomModal} />
         </div>

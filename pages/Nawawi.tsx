@@ -60,6 +60,14 @@ const Nawawi = ({ onBack }) => {
         return unregister;
     }, [selectedHadith]);
 
+    const handleHomeClick = () => {
+        if (selectedHadith) {
+            setSelectedHadith(null);
+        } else {
+            onBack();
+        }
+    };
+
     return (
         <div className="h-screen flex flex-col font-cairo overflow-hidden" style={{ backgroundColor: 'transparent', color: theme.textColor }}>
             <header className="app-top-bar">
@@ -79,7 +87,7 @@ const Nawawi = ({ onBack }) => {
 
             {selectedHadith && <HadithModal hadith={selectedHadith} onClose={() => setSelectedHadith(null)} />}
 
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
         </div>
     );
 };

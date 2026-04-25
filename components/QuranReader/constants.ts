@@ -284,6 +284,7 @@ export const getAyahCountText = (count: number) => {
 export const DEFAULT_SETTINGS = {
     fontSize: 1.7,
     fontFamily: "var(--font-amiri)",
+    isBold: false,
     textColor: "#000000",
     bgColor: "#ffffff",
     highlightTextColor: "#3b82f6",

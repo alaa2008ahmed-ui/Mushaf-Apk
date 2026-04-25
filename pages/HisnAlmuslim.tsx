@@ -36,7 +36,9 @@ function HisnAlmuslim({ onBack }) {
     }, [selectedCategory, zoomedItem]);
 
     const handleHomeClick = () => {
-        if (selectedCategory) {
+        if (zoomedItem) {
+            setZoomedItem(null);
+        } else if (selectedCategory) {
             setSelectedCategory(null);
         } else {
             onBack();
@@ -54,7 +56,7 @@ function HisnAlmuslim({ onBack }) {
                 {selectedCategory ? <CategoryDetail selectedCategory={selectedCategory} onZoom={openZoomModal} /> : <CategoryList onSelectCategory={setSelectedCategory} />}
             </main>
 
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
 
             <ZoomModal zoomedItem={zoomedItem} onClose={closeZoomModal} />
         </div>

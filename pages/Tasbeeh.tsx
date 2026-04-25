@@ -191,6 +191,14 @@ function Tasbeeh({ onBack }) {
         '#8b5cf6', // violet
     ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 8);
 
+    const handleHomeClick = () => {
+        if (Object.values(modals).some(Boolean)) {
+            setModals({ target: false, phrase: false, add: false, delete: false, color: false });
+        } else {
+            onBack();
+        }
+    };
+
     return (
         <div className="h-screen flex flex-col bg-transparent">
             <TasbeehHeader title="السبحة الإلكترونية" subtitle="أضف أذكارك الخاصة وتتبع تسبيحك بدقة" />
@@ -253,7 +261,7 @@ function Tasbeeh({ onBack }) {
                 </div>
             )}
 
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
         </div>
     );
 }

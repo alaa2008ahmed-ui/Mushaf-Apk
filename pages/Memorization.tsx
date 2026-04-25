@@ -245,6 +245,15 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
         });
     };
 
+    const handleHomeClick = () => {
+        if (showHelpModal) setShowHelpModal(false);
+        else if (showExplanationModal) setShowExplanationModal(false);
+        else if (showResumePrompt) setShowResumePrompt(false);
+        else if (activePicker) setActivePicker(null);
+        else if (showDownloadModal) setShowDownloadModal(false);
+        else onBack();
+    };
+
     return (
         <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, color: 'var(--text-color)' }}>
             <div className="relative z-10 flex flex-col h-full">
@@ -563,7 +572,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 {/* Removed fixed Start Button container to keep it in scrollable area or just before bottom bar */}
             </div>
             
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
 
             {/* Help Modal */}
             {showHelpModal && (
