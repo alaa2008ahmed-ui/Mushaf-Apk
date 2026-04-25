@@ -1,4 +1,4 @@
-package com.DelivryNote10.app;
+package com.delivrynote1.app;
 
 import com.getcapacitor.BridgeActivity;
 
