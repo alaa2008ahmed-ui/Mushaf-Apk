@@ -1,43 +1,56 @@
-name: Build Android APK
+name: Build Test Debug APK
+on: [push]
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build-android:
+  build:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout repository
+      - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
+      
+      - name: Use Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 24
+          cache: 'npm'
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
 
       - name: Install dependencies
         run: |
           npm install
+          npm install @capacitor/cli @capacitor/core
 
-      - name: Build web app
-        run: |
-          npm run build
+      - name: Fix Vite Permissions
+        run: chmod +x node_modules/.bin/vite
 
-      - name: Sync Capacitor Android
-        run: |
-          npx cap sync android
+      - name: Build web project
+        run: npm run build
+        
+      - name: Sync with Capacitor
+        run: npx cap sync android
 
-      - name: Build Android APK (Debug)
-        working-directory: android
+      - name: Build Debug APK
         run: |
+          cd android
+          chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK artifact
+      - name: Rename APK File
+        run: |
+          mv android/app/build/outputs/apk/debug/app-debug.apk "android/app/build/outputs/apk/debug/mushaf-test-debug.apk"
+
+      - name: Upload Test APK
         uses: actions/upload-artifact@v4
         with:
-          name: Delivry Note
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Delivry-Note
+          path: "android/app/build/outputs/apk/debug/*.apk"
