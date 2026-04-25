@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Delivry Note</string>
+    <string name="title_activity_main">Delivry Note</string>
+    <string name="package_name">com.DelivryNote10.app</string>
+    <string name="custom_url_scheme">com.DelivryNote10.app</string>
+</resources>
