@@ -19,6 +19,13 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Set up JDK 17 (Required by Capacitor)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
       - name: Install dependencies
         run: |
           npm install
