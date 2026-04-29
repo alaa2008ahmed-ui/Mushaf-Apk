@@ -388,11 +388,48 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
         Bundle options = appWidgetManager.getAppWidgetOptions(appWidgetId);
         int minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
         
-        // If the widget is shrunk below a certain threshold (e.g., 100dp), hide the bottom section
+        // If the widget is shrunk below a certain threshold (e.g., 100dp), adjust font sizes to fit everything
         if (minHeight > 0 && minHeight < 100) {
-            views.setViewVisibility(R.id.widget_bottom_section, View.GONE);
+            views.setViewVisibility(R.id.widget_bottom_section, View.VISIBLE);
+            views.setTextViewTextSize(R.id.widget_midnight, android.util.TypedValue.COMPLEX_UNIT_SP, 9);
+            views.setTextViewTextSize(R.id.widget_last_third, android.util.TypedValue.COMPLEX_UNIT_SP, 9);
+            
+            // Shrink middle section text
+            float nameSize = 12;
+            float timeSize = 13;
+            views.setTextViewTextSize(R.id.name_fajr, android.util.TypedValue.COMPLEX_UNIT_SP, nameSize);
+            views.setTextViewTextSize(R.id.time_fajr, android.util.TypedValue.COMPLEX_UNIT_SP, timeSize);
+            views.setTextViewTextSize(R.id.name_sunrise, android.util.TypedValue.COMPLEX_UNIT_SP, nameSize);
+            views.setTextViewTextSize(R.id.time_sunrise, android.util.TypedValue.COMPLEX_UNIT_SP, timeSize);
+            views.setTextViewTextSize(R.id.name_dhuhr, android.util.TypedValue.COMPLEX_UNIT_SP, nameSize);
+            views.setTextViewTextSize(R.id.time_dhuhr, android.util.TypedValue.COMPLEX_UNIT_SP, timeSize);
+            views.setTextViewTextSize(R.id.name_asr, android.util.TypedValue.COMPLEX_UNIT_SP, nameSize);
+            views.setTextViewTextSize(R.id.time_asr, android.util.TypedValue.COMPLEX_UNIT_SP, timeSize);
+            views.setTextViewTextSize(R.id.name_maghrib, android.util.TypedValue.COMPLEX_UNIT_SP, nameSize);
+            views.setTextViewTextSize(R.id.time_maghrib, android.util.TypedValue.COMPLEX_UNIT_SP, timeSize);
+            views.setTextViewTextSize(R.id.name_isha, android.util.TypedValue.COMPLEX_UNIT_SP, nameSize);
+            views.setTextViewTextSize(R.id.time_isha, android.util.TypedValue.COMPLEX_UNIT_SP, timeSize);
+
+            // Hide gregorian date to save space
+            views.setViewVisibility(R.id.widget_gregorian_date, View.GONE);
         } else {
             views.setViewVisibility(R.id.widget_bottom_section, View.VISIBLE);
+            views.setTextViewTextSize(R.id.widget_midnight, android.util.TypedValue.COMPLEX_UNIT_SP, 12);
+            views.setTextViewTextSize(R.id.widget_last_third, android.util.TypedValue.COMPLEX_UNIT_SP, 12);
+            
+            // Standard sizes for large widget
+            views.setTextViewTextSize(R.id.name_fajr, android.util.TypedValue.COMPLEX_UNIT_SP, 14);
+            views.setTextViewTextSize(R.id.time_fajr, android.util.TypedValue.COMPLEX_UNIT_SP, 16);
+            views.setTextViewTextSize(R.id.name_sunrise, android.util.TypedValue.COMPLEX_UNIT_SP, 14);
+            views.setTextViewTextSize(R.id.time_sunrise, android.util.TypedValue.COMPLEX_UNIT_SP, 16);
+            views.setTextViewTextSize(R.id.name_dhuhr, android.util.TypedValue.COMPLEX_UNIT_SP, 14);
+            views.setTextViewTextSize(R.id.time_dhuhr, android.util.TypedValue.COMPLEX_UNIT_SP, 16);
+            views.setTextViewTextSize(R.id.name_asr, android.util.TypedValue.COMPLEX_UNIT_SP, 14);
+            views.setTextViewTextSize(R.id.time_asr, android.util.TypedValue.COMPLEX_UNIT_SP, 16);
+            views.setTextViewTextSize(R.id.name_maghrib, android.util.TypedValue.COMPLEX_UNIT_SP, 14);
+            views.setTextViewTextSize(R.id.time_maghrib, android.util.TypedValue.COMPLEX_UNIT_SP, 16);
+            views.setTextViewTextSize(R.id.name_isha, android.util.TypedValue.COMPLEX_UNIT_SP, 14);
+            views.setTextViewTextSize(R.id.time_isha, android.util.TypedValue.COMPLEX_UNIT_SP, 16);
         }
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
