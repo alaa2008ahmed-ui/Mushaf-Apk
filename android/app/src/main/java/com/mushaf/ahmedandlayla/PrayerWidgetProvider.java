@@ -139,14 +139,15 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
             Bundle options = appWidgetManager.getAppWidgetOptions(appWidgetId);
             int minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
             
-            // الارتفاع الافتراضي لصف واحد يكون غالباً أقل من 90dp. إذا كان 90 أو أكثر معناه صفين أو أكبر.
-            boolean isLarge = minHeight >= 90;
+            // الارتفاع الافتراضي لصف واحد يكون غالباً أقل من 90dp. إذا كان 100 أو أكثر معناه صفين أو أكبر.
+            boolean isLarge = minHeight >= 100;
 
             if (isLarge) {
                 views.setViewVisibility(R.id.widget_gregorian_date, View.VISIBLE);
                 views.setViewVisibility(R.id.widget_app_icon_small, View.GONE);
                 views.setViewVisibility(R.id.widget_app_icon_large, View.VISIBLE);
             } else {
+                views.setTextViewText(R.id.widget_gregorian_date, "");
                 views.setViewVisibility(R.id.widget_gregorian_date, View.GONE);
                 views.setViewVisibility(R.id.widget_app_icon_small, View.VISIBLE);
                 views.setViewVisibility(R.id.widget_app_icon_large, View.GONE);

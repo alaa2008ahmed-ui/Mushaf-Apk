@@ -97,8 +97,7 @@ const ChecklistScreen = () => {
     ];
 
     return (
-        <motion.section 
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+        <section 
             className="space-y-6"
         >
             <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl p-6 text-center">
@@ -132,7 +131,7 @@ const ChecklistScreen = () => {
                     </div>
                 ))}
             </div>
-        </motion.section>
+        </section>
     );
 };
 
@@ -157,8 +156,7 @@ const CountersScreen = () => {
     const currentCount = activeTab === 'tawaf' ? tawaf : sai;
 
     return (
-        <motion.section 
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+        <section 
             className="space-y-6"
         >
             <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl p-6 text-center">
@@ -211,7 +209,7 @@ const CountersScreen = () => {
                     </motion.div>
                 )}
             </div>
-        </motion.section>
+        </section>
     );
 };
 
@@ -294,9 +292,7 @@ function HajjUmrah({ onBack }) {
             </header>
 
             <main className="w-full max-w-4xl mx-auto px-4 pt-4 flex-grow overflow-y-auto pb-24">
-                <AnimatePresence mode="wait">
-                    {renderScreen()}
-                </AnimatePresence>
+                {renderScreen()}
             </main>
 
             <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
@@ -319,8 +315,7 @@ function HajjUmrah({ onBack }) {
 }
 
 const HomeScreen = ({ setScreen, theme }) => (
-     <motion.section 
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+     <section 
         id="home-screen" className="space-y-4"
     >
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-800 to-emerald-950 p-6 text-white shadow-xl">
@@ -396,12 +391,11 @@ const HomeScreen = ({ setScreen, theme }) => (
                 </div>
             ))}
         </div>
-    </motion.section>
+    </section>
 );
 
 const UmrahScreen = ({ theme }) => (
-     <motion.section 
-        initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+     <section 
         id="umrah-screen" className="space-y-6"
     >
         <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl p-6 text-center">
@@ -470,12 +464,11 @@ const UmrahScreen = ({ theme }) => (
                 );
             })}
         </div>
-    </motion.section>
+    </section>
 );
 
 const HajjScreen = ({ hajjType, setHajjType, theme }) => (
-     <motion.section 
-        initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+     <section 
         id="hajj-screen" className="space-y-6"
     >
         <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl p-6 text-center">
@@ -574,13 +567,12 @@ const HajjScreen = ({ hajjType, setHajjType, theme }) => (
                 </div>
             </div>
         )}
-    </motion.section>
+    </section>
 );
 
 const DuaaScreen = ({ openDuaaId, onToggle, onZoom }) => {
     return (
-        <motion.section 
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+        <section 
             id="duaa-screen" className="space-y-4"
         >
              <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl p-6 text-center mb-6">
@@ -603,7 +595,7 @@ const DuaaScreen = ({ openDuaaId, onToggle, onZoom }) => {
                     />
                 ))}
             </div>
-        </motion.section>
+        </section>
     );
 };
 

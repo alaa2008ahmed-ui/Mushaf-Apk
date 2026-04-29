@@ -289,15 +289,15 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
               {/* Footer/Save Button */}
               {!isEditMode && (
-                  <div className="flex items-center justify-center w-full max-w-sm mx-auto mt-4 mb-4 gap-2">
+                  <div className="flex items-center justify-center w-full max-w-sm mx-auto mt-4 mb-4 gap-2 h-[50px]">
                       {!showVoiceIcon && (
-                          <div className="h-full flex items-center justify-center">
+                          <div className="flex items-center justify-center shrink-0">
                               <WhatsAppButton />
                           </div>
                       )}
-                      <div className="themed-card p-2.5 rounded-2xl text-center flex-1 relative min-h-[50px] flex flex-col justify-center">
+                      <div className="themed-card p-2 rounded-2xl text-center flex-1 relative h-full flex flex-col justify-center overflow-hidden">
                           <FloatingNeonTicker />
-                          <p className="text-[14px] font-bold" style={{ color: themeKey === 'olive_grove' ? '#65A30D' : theme.textColor }}>
+                          <p className="text-[14px] font-bold leading-tight" style={{ color: themeKey === 'olive_grove' ? '#65A30D' : theme.textColor }}>
                               اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
                           </p>
                       </div>
