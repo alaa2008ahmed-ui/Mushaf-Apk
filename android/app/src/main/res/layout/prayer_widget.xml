@@ -26,8 +26,8 @@
 
             <ImageView
                 android:id="@+id/widget_app_icon_small"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
+                android:layout_width="17dp"
+                android:layout_height="17dp"
                 android:src="@mipmap/ic_launcher"
                 android:layout_alignParentStart="true"
                 android:layout_alignParentRight="true"
@@ -182,13 +182,14 @@
         android:layout_weight="25"
         android:orientation="horizontal"
         android:background="@drawable/widget_bottom_bg"
-        android:padding="1dp">
+        android:padding="1dp"
+        android:gravity="center">
 
         <TextView
             android:id="@+id/widget_midnight"
             android:layout_width="0dp"
             android:layout_weight="1"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:text="منتصف الليل : 11:05"
             android:textColor="#FFFFFF"
             android:textSize="12sp"
@@ -199,7 +200,7 @@
             android:id="@+id/widget_last_third"
             android:layout_width="0dp"
             android:layout_weight="1"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:text="الثلث الأخير : 12:48"
             android:textColor="#FFFFFF"
             android:textSize="12sp"
