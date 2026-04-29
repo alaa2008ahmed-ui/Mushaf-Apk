@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import NavButton from './NavButton';
 import WhatsAppButton from '../WhatsAppButton';
 import VoiceControlToggle from '../VoiceControlToggle';
+import { useVoiceControl } from '../../context/VoiceControlContext';
 
 interface GridSectionProps {
     menuItems: any[];
@@ -25,6 +26,16 @@ const GridSection: React.FC<GridSectionProps> = ({
     themeKey,
     DEFAULT_MENU_ITEMS
 }) => {
+    const { showVoiceIcon } = useVoiceControl();
+    const [showNewBadges, setShowNewBadges] = useState(false);
+
+    useEffect(() => {
+        const hasSeen = localStorage.getItem('seenNewBadges_dailywird_voice_memorization');
+        if (!hasSeen) {
+            setShowNewBadges(true);
+            localStorage.setItem('seenNewBadges_dailywird_voice_memorization', 'true');
+        }
+    }, []);
 
     const handleResize = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -102,7 +113,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                     >
                         {item.id === 'more' ? (
                             <div className="flex items-center justify-center gap-2 w-full h-full px-2">
-                                <WhatsAppButton />
+                                {showVoiceIcon && <WhatsAppButton />}
                                 <div className="w-36 h-full">
                                     <NavButton 
                                         label={item.label} 
@@ -116,6 +127,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                                         onResize={(e) => handleResize(item.id, e)}
                                         isGlass={theme.isGlass}
                                         btnText={theme.btnText}
+                                        showNewBadge={showNewBadges && ['daily-wird', 'voice-control'].includes(item.id)}
                                     />
                                 </div>
                                 <VoiceControlToggle />
@@ -135,6 +147,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 onResize={(e) => handleResize(item.id, e)}
                                 isGlass={theme.isGlass}
                                 btnText={theme.btnText}
+                                showNewBadge={showNewBadges && ['daily-wird', 'voice-control'].includes(item.id)}
                             />
                         )}
                         {item.id === 'quran' && !isEditMode && (

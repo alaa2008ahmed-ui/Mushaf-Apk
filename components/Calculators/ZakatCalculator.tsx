@@ -16,7 +16,6 @@ const ZakatCalculator: React.FC = () => {
     const { theme } = useTheme();
     
     // Money
-    const [currency, setCurrency] = useState('SAR');
     const [cashAmount, setCashAmount] = useState('');
     
     // Gold & Silver
@@ -65,6 +64,10 @@ const ZakatCalculator: React.FC = () => {
         setCamelsCount(''); setCowsCount(''); setSheepCount('');
         setRikazValue('');
         setRealEstateIncome('');
+    };
+
+    const formatNumber = (num: number) => {
+        return num.toLocaleString('en-US', { maximumFractionDigits: 2 });
     };
 
     // --- Calculations ---
@@ -160,11 +163,16 @@ const ZakatCalculator: React.FC = () => {
     return (
         <div className="space-y-6 animate-fade-in pb-8">
             {/* Header Actions */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: theme.textColor }}>
                     <i className="fa-solid fa-coins text-primary"></i> تفاصيل الزكاة
+                    {totalZakatValue > 0 && (
+                        <span className="text-lg font-bold text-white mr-2 bg-emerald-600 px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
+                            {formatNumber(totalZakatValue)}
+                        </span>
+                    )}
                 </h2>
-                <button onClick={clearAll} className="flex items-center gap-1 text-sm text-red-500 hover:bg-red-500/10 px-3 py-1.5 rounded-lg transition-colors">
+                <button onClick={clearAll} className="flex items-center gap-1 text-sm text-red-500 hover:bg-red-500/10 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
                     <RefreshCw size={14} /> تنظيف
                 </button>
             </div>
@@ -174,20 +182,7 @@ const ZakatCalculator: React.FC = () => {
                 <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: theme.textColor }}>
                     <i className="fa-solid fa-wallet text-primary"></i> زكاة النقود والمدخرات
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="flex items-center text-sm font-bold mb-1 opacity-80" style={{ color: theme.textColor }}>
-                            العملة <Tooltip text="اختر العملة التي تتعامل بها" />
-                        </label>
-                        <select value={currency} onChange={e => setCurrency(e.target.value)} className="w-full p-2.5 rounded-lg border focus:ring-2 focus:ring-primary focus:outline-none" style={inputStyle}>
-                            <option value="SAR">ريال سعودي (SAR)</option>
-                            <option value="USD">دولار أمريكي (USD)</option>
-                            <option value="EGP">جنيه مصري (EGP)</option>
-                            <option value="EUR">يورو (EUR)</option>
-                            <option value="AED">درهم إماراتي (AED)</option>
-                            <option value="KWD">دينار كويتي (KWD)</option>
-                        </select>
-                    </div>
+                <div>
                     {renderInput('المبلغ النقدي', cashAmount, setCashAmount, 'الأموال النقدية والمدخرات البنكية التي حال عليها الحول')}
                 </div>
             </div>
@@ -248,7 +243,7 @@ const ZakatCalculator: React.FC = () => {
                             <option value="effort">بتكلفة (آلات/مضخات) - 5%</option>
                         </select>
                     </div>
-                    {renderInput(`سعر الكيلو (${currency})`, cropPricePerKg, setCropPricePerKg, 'اختياري: لحساب القيمة النقدية للزكاة')}
+                    {renderInput(`سعر الكيلو`, cropPricePerKg, setCropPricePerKg, 'اختياري: لحساب القيمة النقدية للزكاة')}
                 </div>
                 {cropsZakatKg > 0 && (
                     <div className="mt-3 text-sm text-green-600 dark:text-green-400 font-bold">
@@ -283,23 +278,22 @@ const ZakatCalculator: React.FC = () => {
                 <h3 className="text-lg font-bold opacity-90 mb-2" style={{ color: theme.textColor }}>الملخص النهائي للزكاة النقدية</h3>
                 
                 <div className="flex justify-center items-baseline gap-2 mb-4">
-                    <span className="text-4xl font-black text-primary drop-shadow-sm">
-                        {totalZakatValue > 0 ? totalZakatValue.toFixed(2) : '0.00'}
+                    <span className="text-5xl font-black text-emerald-600 drop-shadow-md">
+                        {totalZakatValue > 0 ? formatNumber(totalZakatValue) : '0'}
                     </span>
-                    <span className="text-lg font-bold opacity-70" style={{ color: theme.textColor }}>{currency}</span>
                 </div>
 
                 {totalZakatValue > 0 && (
                     <div className="text-sm space-y-1 opacity-80 text-right max-w-xs mx-auto" style={{ color: theme.textColor }}>
-                        {monetaryZakat > 0 && <div className="flex justify-between"><span>المال والذهب والتجارة:</span> <span>{monetaryZakat.toFixed(2)}</span></div>}
-                        {cropsZakatValue > 0 && <div className="flex justify-between"><span>الزروع والثمار:</span> <span>{cropsZakatValue.toFixed(2)}</span></div>}
-                        {rikazZakat > 0 && <div className="flex justify-between"><span>الركاز والمعادن:</span> <span>{rikazZakat.toFixed(2)}</span></div>}
+                        {monetaryZakat > 0 && <div className="flex justify-between"><span>المال والذهب والتجارة:</span> <span>{formatNumber(monetaryZakat)}</span></div>}
+                        {cropsZakatValue > 0 && <div className="flex justify-between"><span>الزروع والثمار:</span> <span>{formatNumber(cropsZakatValue)}</span></div>}
+                        {rikazZakat > 0 && <div className="flex justify-between"><span>الركاز والمعادن:</span> <span>{formatNumber(rikazZakat)}</span></div>}
                     </div>
                 )}
                 
                 {totalMonetaryWealth > 0 && activeNisab > 0 && totalMonetaryWealth < activeNisab && (
                     <p className="text-sm text-red-500 mt-3 font-bold">
-                        لم يبلغ المال النصاب (النصاب الحالي: {activeNisab.toFixed(2)} {currency})
+                        لم يبلغ المال النصاب (النصاب الحالي: {formatNumber(activeNisab)})
                     </p>
                 )}
             </div>

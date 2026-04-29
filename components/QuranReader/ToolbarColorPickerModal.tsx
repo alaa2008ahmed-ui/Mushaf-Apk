@@ -57,8 +57,8 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
         
         let defaults = { bg: '#fff', text: '#000', border: '#ccc', font: 'inherit' };
         
-        const headerButtons = ['surah', 'juz', 'page', 'audio'];
-        const footerButtons = ['btn-menu', 'btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-search', 'btn-share'];
+        const headerButtons = ['surah', 'juz', 'page', 'audio', 'btn-menu'];
+        const footerButtons = ['btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-search', 'btn-share'];
 
         if (type === 'top-toolbar' || type === 'bottom-toolbar') {
             defaults = { bg: currentTheme.barBg, text: currentTheme.barText, border: currentTheme.barBorder, font: currentTheme.font };
@@ -95,8 +95,8 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
         
         colors[editingType] = newConfig;
         
-        const headerButtons = ['surah', 'juz', 'page', 'audio'];
-        const footerButtons = ['btn-settings', 'btn-home', 'btn-bookmark', 'btn-bookmarks-list', 'btn-themes', 'btn-autoscroll', 'btn-menu', 'btn-search', 'btn-share'];
+        const headerButtons = ['surah', 'juz', 'page', 'audio', 'btn-menu'];
+        const footerButtons = ['btn-settings', 'btn-home', 'btn-bookmark', 'btn-bookmarks-list', 'btn-themes', 'btn-autoscroll', 'btn-search', 'btn-share'];
         
         if (headerButtons.includes(editingType) && headerSync) {
             headerButtons.forEach(b => colors[b] = { ...newConfig });
@@ -307,7 +307,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                            {['surah', 'juz', 'page', 'audio'].map(type => {
+                            {['surah', 'juz', 'page', 'audio', 'btn-menu'].map(type => {
                                 const style = getStyleForType(type);
                                 return (
                                     <button key={type} onClick={() => openEditModal(type)} className="themed-card-bg p-3 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-between hover:border-emerald-500 transition-colors">
@@ -332,7 +332,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                             </div>
                         </div>
                         <div className={`grid gap-3 ${isLandscape ? 'grid-cols-4' : 'grid-cols-2'}`}>
-                             {['btn-menu', 'btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-search', 'btn-share'].map(type => {
+                             {['btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-search', 'btn-share'].map(type => {
                                 const style = getStyleForType(type);
                                 return (
                                     <button key={type} onClick={() => openEditModal(type)} className="themed-card-bg p-3 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-between hover:border-emerald-500 transition-colors">

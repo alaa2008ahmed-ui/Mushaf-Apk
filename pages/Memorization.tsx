@@ -283,7 +283,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                         >
                             <Calendar size={16} />
                             جدول المراجعة
-                            {memorizedRanges.length > 0 && (
+                            {false && memorizedRanges.length > 0 && (
                                 <span className="w-4 h-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center">
                                     {memorizedRanges.length}
                                 </span>
@@ -482,6 +482,15 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                         </>
                     ) : (
                         <div className="space-y-4 animate-fadeIn">
+                            <div className="flex flex-col items-center justify-center mt-12 opacity-60">
+                                <Calendar size={64} className="mb-4 opacity-30" />
+                                <h2 className="text-xl font-bold">جدول المراجعة</h2>
+                                <p className="mt-2 text-sm text-center font-medium">جاري الإنشاء في التحديث القادم إن شاء الله</p>
+                            </div>
+
+                            {/* Hidden for now: to be completed in the next update */}
+                            {false && (
+                                <>
                             {/* Review Stats */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="p-4 rounded-2xl border text-center" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
@@ -565,6 +574,8 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                     })
                                 )}
                             </div>
+                                </>
+                            )}
                         </div>
                     )}
                 </main>

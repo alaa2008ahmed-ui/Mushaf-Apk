@@ -19,6 +19,7 @@ interface MushafPageProps {
         textColor: string;
         theme: string;
         surahHeaderDesign?: number;
+        isBold?: boolean;
     };
     currentTheme?: any;
     hideVerses?: boolean;

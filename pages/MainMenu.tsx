@@ -15,14 +15,15 @@ import FloatingNeonTicker from '../components/FloatingNeonTicker';
 import VerseContextMenu from '../components/MainMenu/VerseContextMenu';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { Mic, Palette, Grid, BookOpen } from 'lucide-react';
+import { useVoiceControl } from '../context/VoiceControlContext';
 
 const ALL_POSSIBLE_ITEMS = [
-    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
+    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'daily-wird', label: "📅 الورد اليومي", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'memorization', label: "🧠 التحفيظ", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "col-span-2 h-12", colorIndex: 1 },
+    { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "col-span-2 h-10", colorIndex: 1 },
     { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
     { id: 'sabah-masaa', label: "☀️ الأذكار", className: "h-10", colorIndex: 1 },
     { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-10", colorIndex: 1 },
@@ -37,7 +38,7 @@ const ALL_POSSIBLE_ITEMS = [
 ];
 
 const DEFAULT_MENU_ITEMS = [
-    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
+    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
@@ -52,6 +53,7 @@ const DEFAULT_MENU_ITEMS = [
 ];
 
 function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
+  const { showVoiceIcon } = useVoiceControl();
   const [currentVerse] = useState(() => {
     const randomIndex = Math.floor(Math.random() * verses.length);
     return verses[randomIndex];
@@ -165,18 +167,25 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
             const parsed = JSON.parse(savedLayout);
             let changed = false;
             const updated = parsed.map((item: any) => {
-                if (item.id === 'calculators' || item.id === 'calendar') {
-                    if (item.customColor) {
-                        const { customColor, ...rest } = item;
+                let currentItem = { ...item };
+                if (currentItem.id === 'calculators' || currentItem.id === 'calendar') {
+                    if (currentItem.customColor) {
+                        delete currentItem.customColor;
                         changed = true;
-                        return rest;
                     }
                 }
-                if (item.id === 'more' && !item.className.includes('flex justify-center')) {
+                if (currentItem.id === 'more' && !currentItem.className.includes('flex justify-center')) {
                     changed = true;
-                    return { ...item, className: "col-span-2 h-10 flex justify-center" };
+                    currentItem.className = currentItem.className + " flex justify-center";
                 }
-                return item;
+                if (currentItem.className) {
+                    const newClass = currentItem.className.replace(/h-\d+/g, 'h-10');
+                    if (currentItem.className !== newClass) {
+                        changed = true;
+                        currentItem.className = newClass;
+                    }
+                }
+                return currentItem;
             });
             
             if (changed) {
@@ -280,11 +289,18 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
               {/* Footer/Save Button */}
               {!isEditMode && (
-                  <div className="themed-card p-2.5 rounded-2xl text-center w-full max-w-sm mx-auto mt-4 mb-4 relative">
-                      <FloatingNeonTicker />
-                      <p className="text-[14px] font-bold" style={{ color: themeKey === 'olive_grove' ? '#65A30D' : theme.textColor }}>
-                          اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
-                      </p>
+                  <div className="flex items-center justify-center w-full max-w-sm mx-auto mt-4 mb-4 gap-2">
+                      {!showVoiceIcon && (
+                          <div className="h-full flex items-center justify-center">
+                              <WhatsAppButton />
+                          </div>
+                      )}
+                      <div className="themed-card p-2.5 rounded-2xl text-center flex-1 relative min-h-[50px] flex flex-col justify-center">
+                          <FloatingNeonTicker />
+                          <p className="text-[14px] font-bold" style={{ color: themeKey === 'olive_grove' ? '#65A30D' : theme.textColor }}>
+                              اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
+                          </p>
+                      </div>
                   </div>
               )}
           </div>

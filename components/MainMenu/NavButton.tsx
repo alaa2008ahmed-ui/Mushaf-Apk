@@ -10,6 +10,7 @@ interface NavButtonProps {
     onResize?: (e: React.MouseEvent) => void;
     isGlass?: boolean;
     btnText?: string;
+    showNewBadge?: boolean;
 }
 
 const NavButton: React.FC<NavButtonProps> = ({ 
@@ -21,7 +22,8 @@ const NavButton: React.FC<NavButtonProps> = ({
     isEditMode, 
     onResize, 
     isGlass, 
-    btnText 
+    btnText,
+    showNewBadge
 }) => (
     <div className={`h-full ${className} relative group`}>
         <button 
@@ -38,6 +40,11 @@ const NavButton: React.FC<NavButtonProps> = ({
         >
             {label}
         </button>
+        {showNewBadge && (
+            <div className="absolute -top-2 -right-1 bg-red-500 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full z-20 shadow-[0_0_12px_rgba(239,68,68,0.9)] border border-red-300 animate-pulse pointer-events-none">
+                جديد
+            </div>
+        )}
         {isEditMode && (
             <button 
                 onClick={onResize}

@@ -1,12 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import ZakatCalculator from '../components/Calculators/ZakatCalculator';
 import MawarithCalculator from '../components/Calculators/MawarithCalculator';
 import KaffaratCalculator from '../components/Calculators/KaffaratCalculator';
-import { Download, RefreshCw, Calculator } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 interface CalculatorsProps {
     onBack: () => void;
@@ -15,26 +12,6 @@ interface CalculatorsProps {
 const Calculators: React.FC<CalculatorsProps> = ({ onBack }) => {
     const { theme } = useTheme();
     const [activeTab, setActiveTab] = useState<'zakat' | 'mawarith' | 'kaffarat'>('zakat');
-    const contentRef = useRef<HTMLDivElement>(null);
-
-    const handleExportPDF = async () => {
-        if (!contentRef.current) return;
-        try {
-            const canvas = await html2canvas(contentRef.current, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: theme.isOriginal ? '#ffffff' : '#1a1a1a'
-            });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`calculator_${activeTab}.pdf`);
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-        }
-    };
 
     return (
         <div className="h-screen flex flex-col bg-transparent">
@@ -47,9 +24,6 @@ const Calculators: React.FC<CalculatorsProps> = ({ onBack }) => {
                         <p className="text-xs opacity-80 font-cairo">زكاة، مواريث، كفارات</p>
                     </div>
                     <div className="flex-1 flex justify-end">
-                        <button onClick={handleExportPDF} className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors" title="حفظ كـ PDF">
-                            <Download size={20} />
-                        </button>
                     </div>
                 </div>
             </header>
@@ -76,7 +50,7 @@ const Calculators: React.FC<CalculatorsProps> = ({ onBack }) => {
             </div>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto p-4 pb-24 hide-scrollbar font-cairo bg-gray-50/50 dark:bg-black/20" ref={contentRef}>
+            <main className="flex-1 overflow-y-auto p-4 pb-24 hide-scrollbar font-cairo bg-gray-50/50 dark:bg-black/20">
                 <div className="max-w-3xl mx-auto">
                     {activeTab === 'zakat' && <ZakatCalculator />}
                     {activeTab === 'mawarith' && <MawarithCalculator />}

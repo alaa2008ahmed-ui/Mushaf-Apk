@@ -138,10 +138,9 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
             // التحقق من حجم الويدجت (إذا كان أكبر من صف واحد 4x1)
             Bundle options = appWidgetManager.getAppWidgetOptions(appWidgetId);
             int minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
-            int maxHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
             
-            // الارتفاع الافتراضي لصف واحد يكون أقل من 90dp. إذا كان أكبر، معناه المستخدم كبّر الويدجت.
-            boolean isLarge = minHeight >= 70 || maxHeight >= 100;
+            // الارتفاع الافتراضي لصف واحد يكون غالباً أقل من 90dp. إذا كان 90 أو أكثر معناه صفين أو أكبر.
+            boolean isLarge = minHeight >= 90;
 
             if (isLarge) {
                 views.setViewVisibility(R.id.widget_gregorian_date, View.VISIBLE);
@@ -195,6 +194,64 @@ public class PrayerWidgetProvider extends AppWidgetProvider {
                         }
                     }
                 }
+
+                // --- NEW FALLBACK LOGIC ---
+                // إذا انتهت كل الطوابع الزمنية ولم يتم تحديث التطبيق لفترة طويلة (أو targetTimeMillis صار في الماضي)
+                // نستخرج أوقات الصلوات اليومية ونحسب الصلاة القادمة برمجياً لتجنب توقف العداد (أصفار)
+                if (targetTimeMillis <= System.currentTimeMillis()) {
+                    long now = System.currentTimeMillis();
+                    java.util.Calendar cal = java.util.Calendar.getInstance();
+                    int nowHour = cal.get(java.util.Calendar.HOUR_OF_DAY);
+                    int nowMin = cal.get(java.util.Calendar.MINUTE);
+                    int nowTotal = nowHour * 60 + nowMin;
+
+                    String[] ids = {"fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"};
+                    String[] namesAr = {"الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء"};
+                    String[] namesEn = {"Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"};
+                    String[] names = isArabic ? namesAr : namesEn;
+
+                    boolean found = false;
+                    for (int i = 0; i < ids.length; i++) {
+                        try {
+                            String timeStr = times.getString(ids[i]);
+                            String[] parts = timeStr.split(":");
+                            int h = Integer.parseInt(parts[0].trim());
+                            int m = Integer.parseInt(parts[1].trim());
+                            int pTotal = h * 60 + m;
+
+                            if (pTotal > nowTotal) {
+                                cal.set(java.util.Calendar.HOUR_OF_DAY, h);
+                                cal.set(java.util.Calendar.MINUTE, m);
+                                cal.set(java.util.Calendar.SECOND, 0);
+                                cal.set(java.util.Calendar.MILLISECOND, 0);
+                                targetTimeMillis = cal.getTimeInMillis();
+                                nextPrayerId = ids[i];
+                                nextPrayerName = names[i];
+                                found = true;
+                                break;
+                            }
+                        } catch (Exception e) {}
+                    }
+
+                    // إذا مرت جميع الصلوات لليوم الحالي، فالصلاة القادمة هي الفجر غداً
+                    if (!found) {
+                        try {
+                            String timeStr = times.getString("fajr");
+                            String[] parts = timeStr.split(":");
+                            int h = Integer.parseInt(parts[0].trim());
+                            int m = Integer.parseInt(parts[1].trim());
+                            cal.add(java.util.Calendar.DAY_OF_YEAR, 1);
+                            cal.set(java.util.Calendar.HOUR_OF_DAY, h);
+                            cal.set(java.util.Calendar.MINUTE, m);
+                            cal.set(java.util.Calendar.SECOND, 0);
+                            cal.set(java.util.Calendar.MILLISECOND, 0);
+                            targetTimeMillis = cal.getTimeInMillis();
+                            nextPrayerId = "fajr";
+                            nextPrayerName = names[0];
+                        } catch (Exception e) {}
+                    }
+                }
+                // --- END FALLBACK LOGIC ---
 
                 // تحديث التاريخ الهجري ومعلومات الصلاة القادمة
                 views.setTextViewText(R.id.widget_hijri_date, formatNumerals(translate(data.getString("day") + "، " + data.getString("hijri"), isArabic)));
