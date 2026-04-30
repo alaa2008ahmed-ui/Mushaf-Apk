@@ -136,6 +136,18 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
       zIndex: 10001,
     };
 
+    if (step.position) {
+      if (step.position.top) style.top = step.position.top;
+      if (step.position.bottom) style.bottom = step.position.bottom;
+      if (step.position.left) style.left = step.position.left;
+      if (step.position.right) style.right = step.position.right;
+      if (step.position.top || step.position.bottom) {
+        style.transform = step.position.left || step.position.right ? "none" : "translateX(-50%)";
+        if (!step.position.left && !step.position.right) style.left = "50%";
+      }
+      return style;
+    }
+
     if (!targetRect) {
       style.top = "50%";
       style.left = "50%";
@@ -204,7 +216,10 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[99999] select-none overflow-hidden"
-          onClick={handleClose}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClose();
+          }}
         >
           {/* Backdrop with Hole using Clip-Path */}
           <div

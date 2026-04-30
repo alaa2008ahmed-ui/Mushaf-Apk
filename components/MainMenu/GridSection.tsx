@@ -30,10 +30,15 @@ const GridSection: React.FC<GridSectionProps> = ({
     const [showNewBadges, setShowNewBadges] = useState(false);
 
     useEffect(() => {
-        const hasSeen = localStorage.getItem('seenNewBadges_dailywird_voice_memorization');
-        if (!hasSeen) {
+        const opens = parseInt(localStorage.getItem('app_opens_count_new') || '0');
+        if (!sessionStorage.getItem('app_opened_this_session')) {
+            localStorage.setItem('app_opens_count_new', (opens + 1).toString());
+            sessionStorage.setItem('app_opened_this_session', 'true');
+        }
+        
+        const currentOpens = parseInt(localStorage.getItem('app_opens_count_new') || '1');
+        if (currentOpens <= 5) {
             setShowNewBadges(true);
-            localStorage.setItem('seenNewBadges_dailywird_voice_memorization', 'true');
         }
     }, []);
 
@@ -128,7 +133,8 @@ const GridSection: React.FC<GridSectionProps> = ({
                                         onResize={(e) => handleResize(item.id, e)}
                                         isGlass={theme.isGlass}
                                         btnText={theme.btnText}
-                                        showNewBadge={showNewBadges && ['daily-wird', 'voice-control'].includes(item.id)}
+                                        showNewBadge={showNewBadges && ['daily-wird', 'voice-control', 'calculators', 'hajj-umrah'].includes(item.id)}
+                                        badgeText={['calculators', 'hajj-umrah'].includes(item.id) ? 'تحديث' : 'جديد'}
                                     />
                                 </div>
                                 <VoiceControlToggle />
@@ -148,7 +154,8 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 onResize={(e) => handleResize(item.id, e)}
                                 isGlass={theme.isGlass}
                                 btnText={theme.btnText}
-                                showNewBadge={showNewBadges && ['daily-wird', 'voice-control'].includes(item.id)}
+                                showNewBadge={showNewBadges && ['daily-wird', 'voice-control', 'calculators', 'hajj-umrah'].includes(item.id)}
+                                badgeText={['calculators', 'hajj-umrah'].includes(item.id) ? 'تحديث' : 'جديد'}
                             />
                         )}
                         {item.id === 'quran' && !isEditMode && (

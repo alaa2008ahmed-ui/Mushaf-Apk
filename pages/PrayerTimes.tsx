@@ -65,8 +65,8 @@ function PrayerTimes({ onBack, onNavigate }) {
         {
             id: 'next-prayer',
             title: 'عداد الصلاة القادمة',
-            text: 'هذا القسم هو رفيقك لتنظيم وقتك؛ فهو يعرض اسم الصلاة القادمة مع عد تنازلي دقيق بالثواني. كما يظهر لك التاريخ الهجري والميلادي لتبقى على دراية بالتقويم الإسلامي.',
-            selector: '#next-prayer-card',
+            text: 'هذا القسم هو رفيقك لتنظيم وقتك؛ فهو يعرض اسم الصلاة القادمة مع عد تنازلي دقيق بالثواني.',
+            selector: '#next-prayer-countdown-container',
             icon: <Clock className="w-8 h-8 text-white" />
         },
         {
@@ -78,7 +78,7 @@ function PrayerTimes({ onBack, onNavigate }) {
         },
         {
             id: 'prayer-settings',
-            title: 'التحكم الكامل في الأذان والتنبيهات',
+            title: 'التحكم في الأذان والتنبيهات',
             text: 'لكل صلاة إعدادات مستقلة؛ يمكنك تفعيل الأذان الكامل، أو التنبيه فقط، أو كتم الصوت. كما يمكنك الضغط على "تخصيص" لاختيار صوت المؤذن المفضل لديك (مثل الحرم المكي أو المدني) وضبط دقائق التنبيه قبل الصلاة.',
             selector: '#prayer-actions-container',
             icon: <Bell className="w-8 h-8 text-white" />
@@ -94,7 +94,6 @@ function PrayerTimes({ onBack, onNavigate }) {
             id: 'android-widget',
             title: 'تطبيق مصغر لشاشة الهاتف',
             text: 'الآن أصبح بإمكانك وضع تطبيق مصغر (Widget) لمواقيت الصلاة على شاشة هاتفك الرئيسية، لمعرفة مواقيت الصلاة مباشرة ومتابعة ميعاد الصلاة القادمة والعد التنازلي لها دون الحاجة لفتح التطبيق.',
-            selector: '#next-prayer-card',
             icon: <Clock className="w-8 h-8 text-white" />
         }
     ];

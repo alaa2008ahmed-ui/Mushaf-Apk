@@ -11,6 +11,7 @@ interface NavButtonProps {
     isGlass?: boolean;
     btnText?: string;
     showNewBadge?: boolean;
+    badgeText?: string;
     dataId?: string;
 }
 
@@ -25,6 +26,7 @@ const NavButton: React.FC<NavButtonProps> = ({
     isGlass, 
     btnText,
     showNewBadge,
+    badgeText = 'جديد',
     dataId
 }) => (
     <div className={`h-full ${className} relative group`} data-id={dataId}>
@@ -44,7 +46,7 @@ const NavButton: React.FC<NavButtonProps> = ({
         </button>
         {showNewBadge && (
             <div className="absolute -top-2 -right-1 bg-red-500 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full z-20 shadow-[0_0_12px_rgba(239,68,68,0.9)] border border-red-300 animate-pulse pointer-events-none">
-                جديد
+                {badgeText}
             </div>
         )}
         {isEditMode && (

@@ -113,6 +113,7 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
             id: 'voice-welcome',
             title: 'التحكم الصوتي الذكي (باللغة العربية)',
             text: 'مرحباً بك في عالم التحكم الصوتي. هذه الميزة تتيح لك التحدث مع التطبيق كما تتحدث مع صديقك. يمكنك طلب أي شيء من التطبيق باللغة العربية الفصحى أو العامية المصرية، وسيفهمك المساعد الذكي وينفذ طلبك فوراً.',
+            position: { top: '60%' },
             icon: <Mic className="w-8 h-8 text-white" />
         },
         {
@@ -127,6 +128,7 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
             title: 'أمثلة للأوامر الصوتية',
             text: 'هنا تجد دليلاً شاملاً للأوامر: يمكنك قول "افتح سورة الكهف"، "مواقيت الصلاة في القاهرة"، "شغل أذكار الصباح"، أو حتى "غير الثيم للوضع الليلي". استكشف القائمة لتتعرف على قدرات المساعد الصوتي المذهلة.',
             selector: '#commands-list-container',
+            position: { top: '65%' },
             icon: <ChevronRight className="w-8 h-8 text-white" />
         },
         {
