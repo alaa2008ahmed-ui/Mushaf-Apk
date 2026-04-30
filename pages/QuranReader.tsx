@@ -3574,7 +3574,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 setIsFloatingMenuOpen={setIsFloatingMenuOpen}
                 isFloatingMenuOpen={isFloatingMenuOpen}
                 isAnyMenuOpen={isAnyMenuOpen}
-                hideShareButton={readingMode !== 'mushaf'}
+                hideShareButton={readingMode !== 'mushaf' || isLandscape}
                 hideAutoScrollButton={readingMode !== 'mushaf'}
                 openModal={openModal}
                 menuButtonRef={menuButtonRef}

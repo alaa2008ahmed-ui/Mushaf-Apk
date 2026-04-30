@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Mic, MicOff } from 'lucide-react';
 import { useVoiceControl } from '../context/VoiceControlContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface VoiceControlToggleProps {
     className?: string;
@@ -11,8 +12,21 @@ interface VoiceControlToggleProps {
 
 const VoiceControlToggle: React.FC<VoiceControlToggleProps> = ({ className, style }) => {
   const { isEnabled, toggleEnabled, isListening, showVoiceIcon } = useVoiceControl();
+  const { theme, themeKey } = useTheme();
 
   if (!showVoiceIcon) return null;
+
+  // Define colors based on state and theme
+  let bgColor = 'rgb(156, 163, 175)'; // Gray-400 equivalent
+  
+  if (isEnabled) {
+    if (isListening) {
+      bgColor = '#ef4444'; // red-500
+    } else {
+      // Use theme color
+      bgColor = themeKey === 'olive_grove' ? '#65A30D' : (theme.palette[0] || '#22c55e');
+    }
+  }
 
   return (
     <motion.button
@@ -22,12 +36,11 @@ const VoiceControlToggle: React.FC<VoiceControlToggleProps> = ({ className, styl
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       onClick={toggleEnabled}
-      className={`w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white ${
-        isEnabled 
-          ? (isListening ? 'bg-red-500 animate-pulse' : 'bg-green-500') 
-          : 'bg-gray-400'
-      } ${className || ''}`}
-      style={style}
+      className={`w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white ${isEnabled && isListening ? 'animate-pulse' : ''} ${className || ''}`}
+      style={{ 
+        ...style,
+        backgroundColor: bgColor
+      }}
       title={isEnabled ? 'تعطيل التحكم الصوتي' : 'تفعيل التحكم الصوتي'}
     >
       {isEnabled ? <Mic className="text-white w-5 h-5" /> : <MicOff className="text-white w-5 h-5" />}

@@ -11,6 +11,7 @@ interface NavButtonProps {
     isGlass?: boolean;
     btnText?: string;
     showNewBadge?: boolean;
+    dataId?: string;
 }
 
 const NavButton: React.FC<NavButtonProps> = ({ 
@@ -23,9 +24,10 @@ const NavButton: React.FC<NavButtonProps> = ({
     onResize, 
     isGlass, 
     btnText,
-    showNewBadge
+    showNewBadge,
+    dataId
 }) => (
-    <div className={`h-full ${className} relative group`}>
+    <div className={`h-full ${className} relative group`} data-id={dataId}>
         <button 
             onClick={onClick} 
             className={`btn-3d-effect w-full rounded-2xl py-3 px-1 font-bold relative text-sm h-full flex items-center justify-center ${isEditMode ? 'cursor-move animate-pulse' : ''}`}

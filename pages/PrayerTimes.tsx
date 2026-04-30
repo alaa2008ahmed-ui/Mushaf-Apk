@@ -89,6 +89,13 @@ function PrayerTimes({ onBack, onNavigate }) {
             text: 'اضغط هنا لعرض جدول كامل لمواقيت الصلاة طوال الشهر الحالي. هذا يساعدك في التخطيط لعباداتك، ومعرفة مواعيد السحور والإفطار في أيام الصيام.',
             selector: '#monthly-times-btn',
             icon: <Calendar className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'android-widget',
+            title: 'تطبيق مصغر لشاشة الهاتف',
+            text: 'الآن أصبح بإمكانك وضع تطبيق مصغر (Widget) لمواقيت الصلاة على شاشة هاتفك الرئيسية، لمعرفة مواقيت الصلاة مباشرة ومتابعة ميعاد الصلاة القادمة والعد التنازلي لها دون الحاجة لفتح التطبيق.',
+            selector: '#next-prayer-card',
+            icon: <Clock className="w-8 h-8 text-white" />
         }
     ];
     

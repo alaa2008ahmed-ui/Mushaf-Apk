@@ -99,6 +99,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                     <motion.div
                         layout
                         key={item.id}
+                        id={`menu-item-${item.id}`}
                         data-item-id={item.id}
                         className={`${item.className} relative transition-all duration-300 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
                         style={{ 
@@ -156,15 +157,15 @@ const GridSection: React.FC<GridSectionProps> = ({
                                     e.stopPropagation();
                                     onNavigate('quran-landscape');
                                 }}
-                                className="absolute top-1/2 left-2 -translate-y-1/2 text-white rounded-full w-10 h-10 flex items-center justify-center z-10 transition-colors shadow-lg border border-white/20"
+                                className="absolute top-1/2 left-1.5 -translate-y-1/2 text-white rounded-full w-7 h-7 flex items-center justify-center z-10 transition-colors shadow-lg border border-white/20"
                                 style={{ 
-                                    backgroundColor: theme.isGlass ? 'rgba(255, 255, 255, 0.2)' : theme.palette[1],
+                                    backgroundColor: theme.isGlass ? 'rgba(255, 255, 255, 0.2)' : (theme.palette[1] || '#9333ea'),
                                     backdropFilter: theme.isGlass ? 'blur(4px)' : 'none',
                                     WebkitBackdropFilter: theme.isGlass ? 'blur(4px)' : 'none'
                                 }}
                                 title="وضع العرض"
                             >
-                                <i className="fa-solid fa-arrows-rotate text-lg"></i>
+                                <i className="fa-solid fa-arrows-rotate text-sm"></i>
                             </button>
                         )}
                     </motion.div>

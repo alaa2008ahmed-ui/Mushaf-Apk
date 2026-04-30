@@ -271,7 +271,7 @@ function AppContent({
     if (page === 'quran' || page === 'quran-landscape') {
       window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_themes' } }));
     } else {
-      setIsThemeSelectorOpen(true);
+      setIsThemeSelectorOpen(prev => !prev);
     }
   }, [page]);
 
