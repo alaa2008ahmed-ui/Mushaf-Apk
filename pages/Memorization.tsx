@@ -578,6 +578,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                             )}
                         </div>
                     )}
+                    <div className="shrink-0 w-full h-32"></div>
                 </main>
 
                 {/* Removed fixed Start Button container to keep it in scrollable area or just before bottom bar */}

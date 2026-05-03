@@ -34,9 +34,15 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
 
   useEffect(() => {
     if (shouldShowTutorial(tutorialId)) {
-      setIsVisible(true);
+      // Don't show if landscape (w > h)
+      if (window.innerWidth > window.innerHeight) {
+        setIsVisible(false);
+        markTutorialAsSeen(tutorialId);
+      } else {
+        setIsVisible(true);
+      }
     }
-  }, [tutorialId, shouldShowTutorial]);
+  }, [tutorialId, shouldShowTutorial, markTutorialAsSeen]);
 
   useEffect(() => {
     if (isVisible && onStepChange && steps[currentStep]) {

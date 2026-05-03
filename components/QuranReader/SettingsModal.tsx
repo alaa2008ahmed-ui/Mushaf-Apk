@@ -479,7 +479,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     <button onClick={handleClose} className="theme-accent-btn font-bold py-2 px-8 rounded-lg shadow text-sm w-full">حفظ وإغلاق</button>
                 </div>
             </div>
-            <TutorialOverlay tutorialId="settings-tutorial" steps={settingsTutorialSteps} />
+            {!isLandscape && <TutorialOverlay tutorialId="settings-tutorial" steps={settingsTutorialSteps} />}
         </div>
     );
 };

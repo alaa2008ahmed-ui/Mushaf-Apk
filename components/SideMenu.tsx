@@ -4,9 +4,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
     Home, BookOpen, Headphones, Clock, Calendar, Brain, 
     Mic, Settings, Palette, MessageCircle, X, ChevronLeft,
-    Menu, Info, HelpCircle, Star, Type, Bell, Compass
+    Menu, Info, HelpCircle, Star, Type, Bell, Compass, Search
 } from 'lucide-react';
 import TutorialOverlay, { TutorialStep } from './Tutorial/TutorialOverlay';
+import { THEMES } from './QuranReader/constants';
 
 interface SideMenuProps {
     isOpen: boolean;
@@ -17,8 +18,37 @@ interface SideMenuProps {
     currentPage: string;
 }
 
-const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpenThemes, currentTheme, currentPage }) => {
+const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpenThemes, currentTheme: _appTheme, currentPage }) => {
+    const [readerTheme, setReaderTheme] = React.useState(() => {
+        try {
+            const themeId = localStorage.getItem('current_theme_id_v') || 'night_sky';
+            return THEMES[themeId as keyof typeof THEMES] || THEMES.night_sky;
+        } catch (e) {
+            return THEMES.night_sky;
+        }
+    });
+
+    React.useEffect(() => {
+        const handleThemeChange = () => {
+            try {
+                const themeId = localStorage.getItem('current_theme_id_v') || 'night_sky';
+                setReaderTheme(THEMES[themeId as keyof typeof THEMES] || THEMES.night_sky);
+            } catch (e) {}
+        };
+        window.addEventListener('theme-change', handleThemeChange);
+        return () => window.removeEventListener('theme-change', handleThemeChange);
+    }, []);
+
+    const currentTheme = {
+        ...readerTheme,
+        modalBg: readerTheme.modalBg || readerTheme.bg,
+        textColor: readerTheme.text || readerTheme.modalText || '#000000',
+        barBorder: readerTheme.barBorder || '#eeeeee',
+        accent: readerTheme.accent || '#3b82f6'
+    };
+
     const menuItems = [
+        { id: 'search', label: 'البحث المتقدم', icon: Search, color: '#14b8a6', description: 'البحث عن آية، أو دعاء، أو أذكار.' },
         { id: 'home', label: 'الرئيسية', icon: Home, color: '#3b82f6', description: 'العودة إلى الشاشة الرئيسية للتطبيق.' },
         { id: 'quran', label: 'القرآن الكريم', icon: BookOpen, color: '#10b981', description: 'يقوم بعرض النص القرانى والترجمه باللغه الانجليزيه' },
         { id: 'listen', label: 'الاستماع', icon: Headphones, color: '#8b5cf6', description: 'الاستماع إلى تلاوات كبار القراء بمختلف الروايات.' },

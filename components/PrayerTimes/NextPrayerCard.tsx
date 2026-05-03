@@ -42,8 +42,8 @@ const NextPrayerCard: React.FC<NextPrayerCardProps> = ({
     };
 
     return (
-        <div id="next-prayer-card" className="rounded-2xl text-white mb-3 relative overflow-hidden flex flex-col" style={{background: isBlackAndWhite ? `linear-gradient(135deg, #333, #000)` : `linear-gradient(135deg, ${themePalette1}, ${themePalette0})`}}>
-            <div className="px-4 py-2 flex justify-between items-center relative z-10">
+        <div id="next-prayer-card" className="rounded-2xl text-white mb-1 relative overflow-hidden flex flex-col" style={{background: isBlackAndWhite ? `linear-gradient(135deg, #333, #000)` : `linear-gradient(135deg, ${themePalette1}, ${themePalette0})`}}>
+            <div className="px-4 py-5 flex justify-between items-center relative z-10">
                 <div id="next-prayer-countdown-container" className="text-center flex flex-col items-center">
                     <p className="text-[10px] font-bold opacity-90 mb-0.5">المتبقي على صلاة <span className="underline decoration-white/40">{nextPrayer.name}</span></p>
                     <p className="text-xl font-black font-mono tracking-tighter leading-none">{countdown}</p>

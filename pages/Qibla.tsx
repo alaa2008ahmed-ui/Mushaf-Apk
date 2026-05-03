@@ -177,7 +177,7 @@ function Qibla({ onBack, onNavigate }) {
                 </div>
             </header>
 
-            <main className="flex-1 w-full flex flex-col items-center justify-start p-4 gap-4 text-center overflow-y-auto overflow-x-hidden pb-24">
+            <main className="flex-1 w-full flex flex-col items-center justify-start p-4 gap-4 text-center overflow-y-auto overflow-x-hidden pb-2">
                  {error && <p className="themed-card p-3 rounded-lg w-full" style={{backgroundColor: '#ef4444', color: 'white'}}>{error}</p>}
                  {qiblaDirection === null && !error && <p className="themed-text w-full">جاري تحديد اتجاه القبلة...</p>}
                  
@@ -255,7 +255,7 @@ function Qibla({ onBack, onNavigate }) {
                 {activeMode === 'shadow' && config?.location && qiblaDirection !== null && (
                     <ShadowQibla lat={config.location.lat} lng={config.location.lng} qiblaDirection={qiblaDirection} heading={heading} theme={theme} />
                 )}
-
+                <div className="w-full h-24 shrink-0"></div>
             </main>
             
             <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />

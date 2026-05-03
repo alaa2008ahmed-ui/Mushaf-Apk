@@ -20,13 +20,16 @@ interface TasbeehModalsProps {
     handleSetCounterColor: (color: string) => void;
     counterColor: string;
     theme: Theme;
+    dailyStats: {date: string, count: number}[];
+    skin: string;
+    handleSetSkin: (skin: 'modern' | 'classic' | 'beads') => void;
 }
 
 const TasbeehModals: React.FC<TasbeehModalsProps> = ({
     modals, setModals, targetInputRef, target, handleSetTarget,
     newPhraseInputRef, handleAddPhrase, phrases, handleDeletePhrase,
     activePhrase, setActivePhrase, handleReset, colorOptions,
-    handleSetCounterColor, counterColor, theme
+    handleSetCounterColor, counterColor, theme, dailyStats, skin, handleSetSkin
 }) => {
     return (
         <>
@@ -100,6 +103,61 @@ const TasbeehModals: React.FC<TasbeehModalsProps> = ({
                 </div>
                 <div className="pt-4 mt-2 border-t border-modal-border">
                     <button onClick={() => setModals((p: any) => ({...p, color: false}))} className="w-full py-2 rounded-lg bg-gray-500/20 text-modal-text font-bold hover:bg-gray-500/30 transition-colors">
+                        إغلاق
+                    </button>
+                </div>
+            </ModalWrapper>
+
+            {/* Skins Modal */}
+            <ModalWrapper isOpen={modals.skins} onClose={() => setModals((p: any) => ({...p, skins: false}))}>
+                <h3 className="text-xl font-bold text-center border-b pb-2 border-modal-border">اختر شكل السبحة</h3>
+                <div className="flex flex-col gap-3 pt-4">
+                    <button 
+                        onClick={() => handleSetSkin('modern')}
+                        className={`py-3 px-4 rounded-xl font-bold transition-colors ${skin === 'modern' ? 'bg-primary text-white' : 'bg-card-bg-hover text-modal-text'}`}
+                        style={skin === 'modern' ? {backgroundColor: theme.palette[0]} : {}}
+                    >
+                        عداد حديث
+                    </button>
+                    <button 
+                        onClick={() => handleSetSkin('classic')}
+                        className={`py-3 px-4 rounded-xl font-bold transition-colors ${skin === 'classic' ? 'bg-primary text-white' : 'bg-card-bg-hover text-modal-text'}`}
+                        style={skin === 'classic' ? {backgroundColor: theme.palette[0]} : {}}
+                    >
+                        عداد كلاسيكي
+                    </button>
+                    <button 
+                        onClick={() => handleSetSkin('beads')}
+                        className={`py-3 px-4 rounded-xl font-bold transition-colors ${skin === 'beads' ? 'bg-primary text-white' : 'bg-card-bg-hover text-modal-text'}`}
+                        style={skin === 'beads' ? {backgroundColor: theme.palette[0]} : {}}
+                    >
+                        حبات المسبحة
+                    </button>
+                </div>
+                <div className="pt-4 mt-2 border-t border-modal-border">
+                    <button onClick={() => setModals((p: any) => ({...p, skins: false}))} className="w-full py-2 rounded-lg bg-gray-500/20 text-modal-text font-bold hover:bg-gray-500/30 transition-colors">
+                        إغلاق
+                    </button>
+                </div>
+            </ModalWrapper>
+
+            {/* Stats Modal */}
+            <ModalWrapper isOpen={modals.stats} onClose={() => setModals((p: any) => ({...p, stats: false}))}>
+                <h3 className="text-xl font-bold text-center border-b pb-2 border-modal-border">إحصائيات التسبيح</h3>
+                <div className="space-y-3 overflow-y-auto max-h-60 pt-2 pr-2">
+                    {dailyStats && dailyStats.length > 0 ? (
+                        [...dailyStats].reverse().map((stat, i) => (
+                            <div key={i} className="flex justify-between items-center p-3 rounded-lg bg-card-bg-hover border border-modal-border">
+                                <span className="text-sm font-bold opacity-70">{new Date(stat.date).toLocaleDateString('ar-EG')}</span>
+                                <span className="text-lg font-black" style={{color: theme.palette[0]}}>{toArabicNumerals(stat.count)} تسبيحة</span>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-center opacity-60 py-4">ليس لديك إحصائيات بعد.</p>
+                    )}
+                </div>
+                <div className="pt-4 mt-2 border-t border-modal-border">
+                    <button onClick={() => setModals((p: any) => ({...p, stats: false}))} className="w-full py-2 rounded-lg bg-gray-500/20 text-modal-text font-bold hover:bg-gray-500/30 transition-colors">
                         إغلاق
                     </button>
                 </div>

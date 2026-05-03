@@ -239,18 +239,45 @@ function PrayerTimes({ onBack, onNavigate }) {
                 topBarTextColor={topBarTextColor}
             />
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar p-4 pb-24">
+            <main className="flex-1 overflow-y-auto hide-scrollbar p-4 pb-2">
                 <div className="max-w-md mx-auto">
-                    <PrayerTimesDateSearch 
-                        dates={dates}
-                        searchInput={searchInput}
-                        setSearchInput={setSearchInput}
-                        handleManualSearch={handleManualSearch}
-                        searchIconRef={searchIconRef}
-                        primaryColor={primaryColor}
-                        secondaryColor={secondaryColor}
-                        onNavigateToMonthly={() => onNavigate('monthly-prayer-times')}
-                    />
+                    <div className="themed-card bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-[1.25rem] p-3 mb-3 shadow-sm">
+                        <div className="flex gap-2 mb-3">
+                            <button
+                                onClick={() => {
+                                    const lat = config.location?.lat;
+                                    const lng = config.location?.lng;
+                                    let url = 'https://www.google.com/maps/search/?api=1&query=مسجد';
+                                    if (lat && lng) {
+                                        url = `https://www.google.com/maps/search/مسجد/@${lat},${lng},15z`;
+                                    }
+                                    window.open(url, '_blank');
+                                }}
+                                className="themed-card flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5"
+                                style={{ color: primaryColor }}
+                            >
+                                <MapPin size={18} className="shrink-0" />
+                                <span className="truncate whitespace-nowrap">البحث عن المساجد</span>
+                            </button>
+                             <button
+                                onClick={() => onNavigate('monthly-prayer-times')}
+                                className="themed-card flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5"
+                                style={{ color: secondaryColor }}
+                            >
+                                <Calendar size={18} className="shrink-0" />
+                                <span className="truncate whitespace-nowrap">المواقيت الشهرية</span>
+                            </button>
+                        </div>
+
+                        <PrayerTimesDateSearch 
+                            searchInput={searchInput}
+                            setSearchInput={setSearchInput}
+                            handleManualSearch={handleManualSearch}
+                            searchIconRef={searchIconRef}
+                            primaryColor={primaryColor}
+                            secondaryColor={secondaryColor}
+                        />
+                    </div>
                     
                     {isAudioMuted && (
                         <div className="bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4 flex items-center justify-between">
@@ -303,7 +330,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                         );
                     })()}
 
-                    <div id="prayer-list" className="space-y-3 mt-5">
+                    <div id="prayer-list" className="grid grid-cols-2 gap-2 mt-2">
                         {['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((key, idx) => {
                              const totalOffset = (config.prayerOffsets[key] || 0) + (isSummerTimeActive ? 60 : 0);
                              const displayTimeStr = applyOffset(times[key], totalOffset);
@@ -340,6 +367,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                         (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
                     </p>
                 </div>
+                <div className="w-full h-24 shrink-0"></div>
             </main>
 
             <PrayerTimesSettingsModal 

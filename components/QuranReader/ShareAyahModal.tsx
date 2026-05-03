@@ -351,26 +351,40 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 }
             } else if (shareType === 'image' && hiddenImageCaptureRef.current) {
                 try {
+                    setIsSharing(true);
                     const captureElement = hiddenImageCaptureRef.current;
                     const originalStyle = captureElement.style.cssText;
+                    
+                    // Force rendering for capture - using absolute and far off-screen
                     captureElement.style.position = 'absolute';
-                    captureElement.style.left = '0';
-                    captureElement.style.top = '0';
+                    captureElement.style.left = '-9999px';
+                    captureElement.style.top = '-9999px';
                     captureElement.style.visibility = 'visible';
                     captureElement.style.display = 'flex';
-                    captureElement.style.zIndex = '-9999';
+                    captureElement.style.zIndex = '-1000';
+
+                    // Wait for fonts
+                    await document.fonts.ready;
+                    // Smaller delay for faster response
+                    await new Promise(r => setTimeout(r, 100));
 
                     const canvas = await html2canvas(captureElement, {
-                        scale: 5,
+                        scale: 2, // 2x is high quality (2560px width) and safe for mobile
                         backgroundColor: null,
                         useCORS: true,
-                        allowTaint: true,
                         logging: false,
-                        imageTimeout: 0
+                        imageTimeout: 15000,
+                        removeContainer: true
                     });
-                    const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
                     
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                    
+                    // Restore original style immediately
                     captureElement.style.cssText = originalStyle;
+
+                    if (!dataUrl || dataUrl === 'data:,') {
+                        throw new Error('Failed to generate image data');
+                    }
 
                     if (Capacitor.isNativePlatform()) {
                         const fileName = `ayah_share_${Date.now()}.jpg`;
@@ -389,8 +403,10 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         });
                     } else if (navigator.share) {
                         try {
-                            const blob = await (await fetch(dataUrl)).blob();
+                            const response = await fetch(dataUrl);
+                            const blob = await response.blob();
                             const file = new File([blob], 'ayah.jpg', { type: 'image/jpeg' });
+                            
                             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                                 await navigator.share({
                                     title: 'مشاركة آية',
@@ -399,9 +415,27 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 });
                             } else {
                                 await navigator.share({ title: 'مشاركة آية', text: shareText });
+                                // Also provide download fallback since image couldn't be shared directly
+                                const link = document.createElement('a');
+                                link.download = `ayah_${Date.now()}.jpg`;
+                                link.href = dataUrl;
+                                link.click();
                             }
-                        } catch (e) {
-                            await navigator.share({ title: 'مشاركة آية', text: shareText });
+                        } catch (e: any) {
+                            const errorMsg = e?.message || String(e);
+                            if (errorMsg.includes('Share canceled') || errorMsg.includes('canceled') || errorMsg.includes('AbortError')) {
+                                console.log('Image share interaction finished');
+                            } else if (errorMsg.includes('user gesture')) {
+                                console.warn('User gesture lost during capture. Falling back to download.');
+                                const link = document.createElement('a');
+                                link.download = `ayah_${Date.now()}.jpg`;
+                                link.href = dataUrl;
+                                link.click();
+                                showToast?.("تم حفظ الصورة (انتهت صلاحية الإيماءة)");
+                            } else {
+                                console.error('Inner share error:', e);
+                                await navigator.share({ title: 'مشاركة آية', text: shareText }).catch(() => {});
+                            }
                         }
                     } else {
                         // Fallback: download the image
@@ -409,10 +443,16 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         link.download = `ayah_${Date.now()}.jpg`;
                         link.href = dataUrl;
                         link.click();
+                        showToast?.("تم تحميل الصورة");
                     }
-                } catch (e) {
-                    console.error('Error sharing image:', e);
-                    showToast?.("حدث خطأ أثناء إنشاء الصورة");
+                } catch (e: any) {
+                    const errorMsg = e?.message || String(e);
+                    if (errorMsg.includes('Share canceled') || errorMsg.includes('canceled') || errorMsg.includes('AbortError')) {
+                        console.log('Image share interaction cancelled or failed');
+                    } else {
+                        console.error('Error sharing image:', e);
+                        showToast?.("حدث خطأ أثناء إنشاء الصورة. حاول مرة أخرى");
+                    }
                 }
             } else if (shareType === 'page') {
                 const pageNum = quranData.surahs[currentAyah.s - 1].ayahs.find((ay: any) => ay.numberInSurah === currentAyah.a)?.page || 1;
@@ -421,28 +461,40 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 
                 if (captureElement) {
                     try {
-                        // Ensure the capture element is visible for capture
+                        setIsSharing(true);
+                        // Ensure the capture element is visible for capture - using absolute and far off-screen
                         const originalStyle = captureElement.style.cssText;
+                        
                         captureElement.style.position = 'absolute';
-                        captureElement.style.left = '0';
-                        captureElement.style.top = '0';
+                        captureElement.style.left = '-9999px';
+                        captureElement.style.top = '-9999px';
                         captureElement.style.visibility = 'visible';
                         captureElement.style.display = 'flex';
                         captureElement.style.flexDirection = 'column';
-                        captureElement.style.zIndex = '-9999';
+                        captureElement.style.zIndex = '-1000';
+
+                        // Wait for fonts
+                        await document.fonts.ready;
+                        // Smaller delay for faster response
+                        await new Promise(r => setTimeout(r, 100));
 
                         const canvas = await html2canvas(captureElement, {
-                            scale: 5,
+                            scale: 2, // 2x of 1000px = 2000px, very safe and high quality
                             backgroundColor: '#ffffff',
                             useCORS: true,
-                            allowTaint: true,
                             logging: false,
-                            imageTimeout: 0
+                            imageTimeout: 15000,
+                            removeContainer: true
                         });
-                        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+                        
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
 
                         // Restore original style
                         captureElement.style.cssText = originalStyle;
+
+                        if (!dataUrl || dataUrl === 'data:,') {
+                            throw new Error('Failed to generate page image data');
+                        }
 
                         if (Capacitor.isNativePlatform()) {
                             const fileName = `quran_page_${pageNum}_${Date.now()}.jpg`;
@@ -460,40 +512,55 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 dialogTitle: 'مشاركة عبر'
                             });
                         } else if (navigator.share) {
-                            const blob = await (await fetch(dataUrl)).blob();
-                            const file = new File([blob], `page_${pageNum}.jpg`, { type: 'image/jpeg' });
-                            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                                await navigator.share({
-                                    title: 'مشاركة صفحة',
-                                    text: shareText,
-                                    files: [file],
-                                });
-                            } else {
-                                await navigator.share({
-                                    title: 'مشاركة صفحة',
-                                    text: shareText,
-                                });
+                            try {
+                                const response = await fetch(dataUrl);
+                                const blob = await response.blob();
+                                const file = new File([blob], `page_${pageNum}.jpg`, { type: 'image/jpeg' });
+                                
+                                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                    await navigator.share({
+                                        title: 'مشاركة صفحة',
+                                        text: shareText,
+                                        files: [file],
+                                    });
+                                } else {
+                                    await navigator.share({ title: 'مشاركة صفحة', text: shareText }).catch(() => {});
+                                    // Download fallback
+                                    const link = document.createElement('a');
+                                    link.download = `page_${pageNum}.jpg`;
+                                    link.href = dataUrl;
+                                    link.click();
+                                }
+                            } catch (e: any) {
+                                const errorMsg = e?.message || String(e);
+                                if (errorMsg.includes('Share canceled') || errorMsg.includes('canceled') || errorMsg.includes('AbortError')) {
+                                    console.log('Page share interaction finished');
+                                } else if (errorMsg.includes('user gesture')) {
+                                    console.warn('User gesture lost during page capture. Falling back to download.');
+                                    const link = document.createElement('a');
+                                    link.download = `page_${pageNum}.jpg`;
+                                    link.href = dataUrl;
+                                    link.click();
+                                    showToast?.("تم حفظ الصفحة (انتهت صلاحية الإيماءة)");
+                                } else {
+                                    console.error('Inner share error:', e);
+                                    await navigator.share({ title: 'مشاركة صفحة', text: shareText }).catch(() => {});
+                                }
                             }
                         } else {
                             const link = document.createElement('a');
                             link.download = `page_${pageNum}.jpg`;
                             link.href = dataUrl;
                             link.click();
+                            showToast?.("تم تحميل صورة الصفحة");
                         }
-                    } catch (e) {
-                        console.error('Error capturing page:', e);
-                        // Fallback to text share
-                        if (Capacitor.isNativePlatform()) {
-                            await Share.share({
-                                title: 'مشاركة صفحة',
-                                text: shareText,
-                                dialogTitle: 'مشاركة عبر'
-                            });
-                        } else if (navigator.share) {
-                            await navigator.share({
-                                title: 'مشاركة صفحة',
-                                text: shareText,
-                            });
+                    } catch (e: any) {
+                        const errorMsg = e?.message || String(e);
+                        if (errorMsg.includes('Share canceled') || errorMsg.includes('canceled') || errorMsg.includes('AbortError')) {
+                            console.log('Page share interaction cancelled or failed');
+                        } else {
+                            console.error('Error capturing page:', e);
+                            showToast?.("حدث خطأ أثناء إنشاء صورة الصفحة");
                         }
                     }
                 }
@@ -546,49 +613,38 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     ayahsToShare.push({ s: currentAyah.s, a });
                 }
 
-                // Custom file name: SurahName_AyahRange.mp3
-                const fileName = `Quran_${getSurahName(currentAyah.s)}_${start}${start !== end ? '-' + end : ''}.mp3`;
+                // Custom file name: Use safe characters for filename
+                const fileName = `quran_audio_${currentAyah.s}_${start}${start !== end ? '_' + end : ''}.mp3`;
 
                 try {
-                    // Helper to strip ID3v2, ID3v1 tags, and neutralize Xing/Info headers
-                    const cleanAudioBuffer = (buffer: ArrayBuffer) => {
-                        let uint8 = new Uint8Array(buffer);
-                        let startOffset = 0;
-                        let endOffset = uint8.length;
+                        // Helper to strip ID3v2, ID3v1 tags, and neutralize Xing/Info headers
+                        const cleanAudioBuffer = (buffer: ArrayBuffer) => {
+                            let uint8 = new Uint8Array(buffer);
+                            let startOffset = 0;
+                            let endOffset = uint8.length;
 
-                        // Strip ID3v2 (at the beginning)
-                        if (uint8.length > 10 && uint8[0] === 0x49 && uint8[1] === 0x44 && uint8[2] === 0x33) { // "ID3"
-                            const size = (uint8[6] << 21) | (uint8[7] << 14) | (uint8[8] << 7) | uint8[9];
-                            startOffset = size + 10;
-                        }
-
-                        // Strip ID3v1 (at the end - 128 bytes starting with "TAG")
-                        if (uint8.length > 128) {
-                            const tagOffset = uint8.length - 128;
-                            if (uint8[tagOffset] === 0x54 && uint8[tagOffset + 1] === 0x41 && uint8[tagOffset + 2] === 0x47) { // "TAG"
-                                endOffset = tagOffset;
+                            // Strip ID3v2 (at the beginning)
+                            if (uint8.length > 10 && uint8[0] === 0x49 && uint8[1] === 0x44 && uint8[2] === 0x33) { // "ID3"
+                                // The size is encoded as syncsafe integer
+                                const size = (uint8[6] << 21) | (uint8[7] << 14) | (uint8[8] << 7) | uint8[9];
+                                startOffset = size + 10;
                             }
-                        }
 
-                        // Neutralize Xing/Info headers by overwriting them with zeros
-                        // This prevents players from using the first file's duration for the concatenated file
-                        const searchLimit = Math.min(startOffset + 1000, endOffset);
-                        for (let i = startOffset; i < searchLimit - 4; i++) {
-                            if (
-                                (uint8[i] === 0x58 && uint8[i+1] === 0x69 && uint8[i+2] === 0x6E && uint8[i+3] === 0x67) || // Xing
-                                (uint8[i] === 0x49 && uint8[i+1] === 0x6E && uint8[i+2] === 0x66 && uint8[i+3] === 0x6F)    // Info
-                            ) {
-                                uint8[i] = 0;
-                                uint8[i+1] = 0;
-                                uint8[i+2] = 0;
-                                uint8[i+3] = 0;
-                                break;
+                            // Strip ID3v1 (at the end - 128 bytes starting with "TAG")
+                            if (uint8.length > 128) {
+                                const tagOffset = uint8.length - 128;
+                                if (uint8[tagOffset] === 0x54 && uint8[tagOffset + 1] === 0x41 && uint8[tagOffset + 2] === 0x47) { // "TAG"
+                                    endOffset = tagOffset;
+                                }
                             }
-                        }
 
-                        if (startOffset >= endOffset) return buffer;
-                        return buffer.slice(startOffset, endOffset);
-                    };
+                            // Only slice if offsets are valid
+                            if (startOffset > 0 || endOffset < uint8.length) {
+                                if (startOffset >= endOffset) return buffer;
+                                return buffer.slice(startOffset, endOffset);
+                            }
+                            return buffer;
+                        };
 
                     // Fetch ayahs sequentially to prevent memory/network crash
                     const buffers: ArrayBuffer[] = [];
@@ -663,9 +719,14 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             link.click();
                         }
                     }
-                } catch (e) {
-                    console.error('Error sharing audio file:', e);
-                    showToast?.("حدث خطأ أثناء تحميل الملفات الصوتية");
+                } catch (e: any) {
+                    const errorMsg = e?.message || String(e);
+                    if (errorMsg.includes('Share canceled') || errorMsg.includes('canceled')) {
+                        console.log('Share canceled by user');
+                    } else {
+                        console.error('Error sharing audio file:', e);
+                        showToast?.("حدث خطأ أثناء تحميل الملفات الصوتية");
+                    }
                 }
             }
         } catch (error) {
@@ -725,8 +786,8 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     position: 'absolute',
                     left: '-9999px',
                     top: '-9999px',
-                    width: '1280px',
-                    minHeight: '720px',
+                    width: '1000px',
+                    minHeight: '600px',
                     borderRadius: '40px',
                     overflow: 'hidden',
                     display: 'flex',
@@ -837,19 +898,24 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     position: 'absolute',
                     left: '-9999px',
                     top: '-9999px',
-                    width: '1440px', 
-                    minHeight: '1000px',
+                    width: '1000px', 
+                    minHeight: 'auto',
                     height: 'auto', 
                     backgroundColor: '#ffffff',
-                    padding: '80px 60px',
+                    padding: '80px 60px 0px',
                     color: '#000000',
                     direction: 'rtl',
                     display: 'flex',
-                    flexDirection: 'column'
+                    flexDirection: 'column',
+                    // Essential variables for MushafPage
+                    ['--qr-fontFamily' as any]: appSettings?.fontFamily || 'var(--font-amiri-quran)',
+                    ['--qr-text' as any]: '#000000',
+                    ['--font-amiri-quran' as any]: 'var(--font-amiri-quran)',
+                    ['--font-hafs' as any]: 'var(--font-hafs)'
                 }}
             >
                 <style>{`
-                    #hidden-mushaf-capture .surah-header-container {
+                    #hidden-mushaf-capture .mushaf-page .surah-header-container-wrapper {
                         display: none !important;
                     }
                     #hidden-mushaf-capture .ayah-text-block {
@@ -870,6 +936,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         onAyahClick={() => {}}
                         onVerseClick={() => {}}
                         settings={appSettings || { fontSize: 2.5, fontFamily: 'var(--font-amiri-quran)', textColor: '#000000' }}
+                        currentTheme={currentTheme}
                     />
                 ) : (
                     <div style={{ padding: '15px 8px 5px', flex: '0 0 auto' }}>
@@ -921,14 +988,17 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 <div style={{ 
                     marginTop: '40px', 
                     paddingTop: '20px', 
+                    paddingBottom: '30px', // Enough space for font descenders to avoid clipping
                     borderTop: '3px solid #3b82f6', 
                     display: 'flex', 
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: '4px',
+                    letterSpacing: 0,
+                    wordSpacing: 0
                 }}>
-                    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <a href="https://play.google.com/store/apps/details?id=com.mushaf.ahmedandlayla" target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-lateef), serif', fontSize: '28px', color: '#3b82f6', fontWeight: 'bold', textDecoration: 'none' }}>مصحف احمد وليلى</a>
+                    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', letterSpacing: 0, wordSpacing: 0 }}>
+                        <a href="https://play.google.com/store/apps/details?id=com.mushaf.ahmedandlayla" target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-lateef), serif', fontSize: '28px', color: '#3b82f6', fontWeight: 'bold', textDecoration: 'none', letterSpacing: 0, wordSpacing: 0, fontVariantLigatures: 'normal' }}>مصحف احمد وليلى</a>
                     </div>
                 </div>
             </div>
@@ -1405,24 +1475,9 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                         <span className="text-base font-bold font-amiri-quran">
                                             {toArabic(val)}
                                         </span>
-                                        {isSelected && (
-                                            <div className="mt-0.5">
-                                                <Check size={12} strokeWidth={4} />
-                                            </div>
-                                        )}
                                     </button>
                                 );
                             })}
-                        </div>
-
-                        <div className="p-4 pt-2 border-t-0">
-                            <button 
-                                onClick={() => setRangeSelectorOpen(null)}
-                                className="w-full py-4 text-white rounded-[24px] font-bold text-base shadow-lg active:scale-95 transition-all"
-                                style={{ backgroundColor: currentTheme.accent || '#000000' }}
-                            >
-                                تمت
-                            </button>
                         </div>
                     </div>
                 </div>

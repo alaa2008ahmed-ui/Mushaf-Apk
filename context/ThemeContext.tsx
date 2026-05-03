@@ -54,9 +54,9 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
     });
 
     const activeThemeKey = useMemo(() => {
-        const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || (currentPage && currentPage.startsWith('quran_')) ? 'quran' : currentPage;
+        const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || (currentPage && currentPage.startsWith('quran_')) || currentPage === 'search' ? 'quran' : currentPage;
 
-        // Exempt Quran reading page from global themes
+        // Exempt Quran reading context from global themes
         if (pageKey === 'quran') {
             return 'default';
         }

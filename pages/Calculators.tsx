@@ -50,12 +50,13 @@ const Calculators: React.FC<CalculatorsProps> = ({ onBack }) => {
             </div>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto p-4 pb-24 hide-scrollbar font-cairo bg-gray-50/50 dark:bg-black/20">
+            <main className="flex-1 overflow-y-auto p-4 pb-4 hide-scrollbar font-cairo bg-gray-50/50 dark:bg-black/20">
                 <div className="max-w-3xl mx-auto">
                     {activeTab === 'zakat' && <ZakatCalculator />}
                     {activeTab === 'mawarith' && <MawarithCalculator />}
                     {activeTab === 'kaffarat' && <KaffaratCalculator />}
                 </div>
+                <div className="shrink-0 w-full h-32"></div>
             </main>
 
             <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />

@@ -133,7 +133,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                                         onResize={(e) => handleResize(item.id, e)}
                                         isGlass={theme.isGlass}
                                         btnText={theme.btnText}
-                                        showNewBadge={showNewBadges && ['daily-wird', 'voice-control', 'calculators', 'hajj-umrah'].includes(item.id)}
+                                        showNewBadge={showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'calculators', 'hajj-umrah'].includes(item.id)}
                                         badgeText={['calculators', 'hajj-umrah'].includes(item.id) ? 'تحديث' : 'جديد'}
                                     />
                                 </div>
@@ -154,7 +154,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 onResize={(e) => handleResize(item.id, e)}
                                 isGlass={theme.isGlass}
                                 btnText={theme.btnText}
-                                showNewBadge={showNewBadges && ['daily-wird', 'voice-control', 'calculators', 'hajj-umrah'].includes(item.id)}
+                                showNewBadge={showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'calculators', 'hajj-umrah'].includes(item.id)}
                                 badgeText={['calculators', 'hajj-umrah'].includes(item.id) ? 'تحديث' : 'جديد'}
                             />
                         )}

@@ -20,7 +20,7 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
     const themesButtonClass = `bar-button btn-3d-effect ${isSingleButton ? 'w-full max-w-[160px] mx-auto py-2.5 px-4 rounded-xl shadow-lg' : 'max-w-[120px]'}`;
 
     return (
-        <nav className="app-bottom-bar" style={{ border: theme.barBorder || `2px solid ${theme.palette[0]}` }}>
+        <nav className="app-bottom-bar" style={{ borderTop: theme.barBorder || `2px solid ${theme.palette[0]}` }}>
             <div className="app-bottom-bar__inner">
                 {showHome && (
                     <button 

@@ -76,6 +76,7 @@ const QuranDownload: React.FC<{ onBack: () => void, onNavigate?: (pageId: string
                         </div>
                     </div>
                 ))}
+                <div className="shrink-0 w-full h-32"></div>
             </main>
 
             <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />

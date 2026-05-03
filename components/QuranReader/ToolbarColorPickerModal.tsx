@@ -58,7 +58,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
         let defaults = { bg: '#fff', text: '#000', border: '#ccc', font: 'inherit' };
         
         const headerButtons = ['surah', 'juz', 'page', 'audio', 'btn-menu'];
-        const footerButtons = ['btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-search', 'btn-share'];
+        const footerButtons = ['btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-share'];
 
         if (type === 'top-toolbar' || type === 'bottom-toolbar') {
             defaults = { bg: currentTheme.barBg, text: currentTheme.barText, border: currentTheme.barBorder, font: currentTheme.font };
@@ -96,7 +96,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
         colors[editingType] = newConfig;
         
         const headerButtons = ['surah', 'juz', 'page', 'audio', 'btn-menu'];
-        const footerButtons = ['btn-settings', 'btn-home', 'btn-bookmark', 'btn-bookmarks-list', 'btn-themes', 'btn-autoscroll', 'btn-search', 'btn-share'];
+        const footerButtons = ['btn-settings', 'btn-home', 'btn-bookmark', 'btn-bookmarks-list', 'btn-themes', 'btn-autoscroll', 'btn-share'];
         
         if (headerButtons.includes(editingType) && headerSync) {
             headerButtons.forEach(b => colors[b] = { ...newConfig });
@@ -120,7 +120,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
     };
 
     const getName = (type: string) => {
-        const map: Record<string, string> = { 'top-toolbar': 'الشريط العلوى', 'bottom-toolbar': 'الشريط السفلى', 'surah': 'زر السورة', 'juz': 'زر الجزء', 'page': 'زر الصفحة', 'audio': 'زر الصوت', 'btn-settings': 'زر الإعدادات', 'btn-home': 'زر الرئيسية', 'btn-bookmark': 'زر الحفظ', 'btn-bookmarks-list': 'زر القائمة', 'btn-themes': 'زر الثيمات', 'btn-autoscroll': 'زر التمرير', 'btn-menu': 'زر القائمة الجانبية', 'btn-search': 'زر البحث', 'btn-share': 'زر المشاركة', 'all': 'الكل' };
+        const map: Record<string, string> = { 'top-toolbar': 'الشريط العلوى', 'bottom-toolbar': 'الشريط السفلى', 'surah': 'زر السورة', 'juz': 'زر الجزء', 'page': 'زر الصفحة', 'audio': 'زر الصوت', 'btn-settings': 'زر الإعدادات', 'btn-home': 'زر الرئيسية', 'btn-bookmark': 'زر الحفظ', 'btn-bookmarks-list': 'زر القائمة', 'btn-themes': 'زر الثيمات', 'btn-autoscroll': 'زر التمرير', 'btn-menu': 'زر القائمة الجانبية', 'btn-share': 'زر المشاركة', 'all': 'الكل' };
         return map[type] || type;
     };
 
@@ -332,7 +332,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                             </div>
                         </div>
                         <div className={`grid gap-3 ${isLandscape ? 'grid-cols-4' : 'grid-cols-2'}`}>
-                             {['btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-search', 'btn-share'].map(type => {
+                             {['btn-settings', 'btn-home', 'btn-bookmark', 'btn-autoscroll', 'btn-themes', 'btn-bookmarks-list', 'btn-share'].map(type => {
                                 const style = getStyleForType(type);
                                 return (
                                     <button key={type} onClick={() => openEditModal(type)} className="themed-card-bg p-3 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-between hover:border-emerald-500 transition-colors">

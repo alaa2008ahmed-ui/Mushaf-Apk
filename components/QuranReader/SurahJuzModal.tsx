@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { JUZ_MAP, toArabic, SURAH_INFO, HIZB_QUARTERS } from './constants';
 import SurahInfoModal from './SurahInfoModal';
-import { AnimatePresence } from 'framer-motion';
 
 interface SurahJuzModalProps {
     type: 'surah' | 'juz' | 'hizb';
@@ -218,6 +217,90 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
         return `${quarterText} ${toArabic(hizb)}`;
     };
 
+    const listsContent = useMemo(() => {
+        return (
+            <div className="flex flex-1 overflow-hidden themed-card-bg">
+                {/* Juz Column */}
+                <div className="flex-[0.5] flex flex-col border-l theme-card-border">
+                    <div className="p-2 text-center text-xs font-bold opacity-60 border-b theme-card-border">الجزء</div>
+                    <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        {Array.from({ length: 30 }, (_, i) => i + 1).map(j => (
+                            <button
+                                key={j}
+                                ref={el => { juzRefs.current[j] = el; }}
+                                onClick={() => handleJuzClick(j)}
+                                className={`w-full p-2 rounded text-sm font-bold transition ${selectedJuz === j ? 'theme-accent-btn shadow-md' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                            >
+                                {toArabic(j)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Surah Column */}
+                <div className="flex-[2] flex flex-col border-l theme-card-border">
+                    <div className="p-2 text-center text-xs font-bold opacity-60 border-b theme-card-border">السورة</div>
+                    <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        {filteredSurahs.map((s: any) => {
+                            const surahName = s.name.replace('سورة', '').trim();
+                            return (
+                                <button
+                                    key={s.number}
+                                    ref={el => { surahRefs.current[s.number] = el; }}
+                                    onClick={() => handleSurahClick(s.number)}
+                                    onPointerDown={() => handleSurahPointerDown(s.number, surahName)}
+                                    onPointerUp={handleSurahPointerUp}
+                                    onPointerLeave={handleSurahPointerUp}
+                                    className={`w-full p-2 rounded text-sm font-bold text-center flex justify-center items-center gap-2 transition select-none ${selectedSurah === s.number ? 'theme-accent-btn shadow-md' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                                >
+                                    <span className={`text-xs ${selectedSurah === s.number ? 'text-white' : 'opacity-60'}`}>{toArabic(s.number)} -</span>
+                                    <span style={{ fontFamily: 'var(--font-amiri)' }}>{surahName}</span>
+                                </button>
+                            );
+                        })}
+                        {filteredSurahs.length === 0 && (
+                            <div className="text-center py-4 text-xs opacity-50">لا توجد نتائج</div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Ayah Column */}
+                <div className="flex-[0.5] flex flex-col border-l theme-card-border">
+                    <div className="p-2 text-center text-xs font-bold opacity-60 border-b theme-card-border">الآية</div>
+                    <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        {Array.from({ length: ayahsCount }, (_, i) => i + 1).map(a => (
+                            <button
+                                key={a}
+                                ref={el => { ayahRefs.current[a] = el; }}
+                                onClick={() => handleAyahClick(a)}
+                                className={`w-full p-2 rounded text-sm font-bold transition ${selectedAyah === a ? 'theme-accent-btn shadow-md' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                            >
+                                {toArabic(a)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Hizb Quarter Column */}
+                <div className="flex-[1.5] flex flex-col">
+                    <div className="p-2 text-center text-xs font-bold opacity-60 border-b theme-card-border">الحزب</div>
+                    <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        {Array.from({ length: 240 }, (_, i) => i + 1).map(hq => (
+                            <button
+                                key={hq}
+                                ref={el => { hizbRefs.current[hq] = el; }}
+                                onClick={() => handleHizbQuarterClick(hq)}
+                                className={`w-full p-2 rounded text-xs font-bold transition ${selectedHizbQuarter === hq ? 'theme-accent-btn shadow-md' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                            >
+                                {formatHizbQuarter(hq)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }, [selectedJuz, selectedSurah, selectedAyah, selectedHizbQuarter, filteredSurahs, ayahsCount]);
+
     return (
         <div className={`fixed inset-0 z-[1200] bg-black/20 backdrop-blur-[2px] flex justify-center items-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} 
              onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -244,85 +327,7 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                     </div>
                 )}
 
-                <div className="flex flex-1 overflow-hidden themed-card-bg">
-                    {/* Juz Column */}
-                    <div className="flex-[0.5] flex flex-col border-l theme-card-border">
-                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b theme-card-border">الجزء</div>
-                        <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            {Array.from({ length: 30 }, (_, i) => i + 1).map(j => (
-                                <button
-                                    key={j}
-                                    ref={el => { juzRefs.current[j] = el; }}
-                                    onClick={() => handleJuzClick(j)}
-                                    className={`w-full p-2 rounded text-sm font-bold transition ${selectedJuz === j ? 'theme-accent-btn shadow-md' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                >
-                                    {toArabic(j)}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Surah Column */}
-                    <div className="flex-[2] flex flex-col border-l theme-card-border">
-                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b theme-card-border">السورة</div>
-                        <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            {filteredSurahs.map((s: any) => {
-                                const surahName = s.name.replace('سورة', '').trim();
-                                return (
-                                    <button
-                                        key={s.number}
-                                        ref={el => { surahRefs.current[s.number] = el; }}
-                                        onClick={() => handleSurahClick(s.number)}
-                                        onPointerDown={() => handleSurahPointerDown(s.number, surahName)}
-                                        onPointerUp={handleSurahPointerUp}
-                                        onPointerLeave={handleSurahPointerUp}
-                                        className={`w-full p-2 rounded text-sm font-bold text-center flex justify-center items-center gap-2 transition select-none ${selectedSurah === s.number ? 'theme-accent-btn shadow-md' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                    >
-                                        <span className={`text-xs ${selectedSurah === s.number ? 'text-white' : 'opacity-60'}`}>{toArabic(s.number)} -</span>
-                                        <span style={{ fontFamily: 'var(--font-amiri)' }}>{surahName}</span>
-                                    </button>
-                                );
-                            })}
-                            {filteredSurahs.length === 0 && (
-                                <div className="text-center py-4 text-xs opacity-50">لا توجد نتائج</div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Ayah Column */}
-                    <div className="flex-[0.5] flex flex-col border-l theme-card-border">
-                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b theme-card-border">الآية</div>
-                        <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            {Array.from({ length: ayahsCount }, (_, i) => i + 1).map(a => (
-                                <button
-                                    key={a}
-                                    ref={el => { ayahRefs.current[a] = el; }}
-                                    onClick={() => handleAyahClick(a)}
-                                    className={`w-full p-2 rounded text-sm font-bold transition ${selectedAyah === a ? 'theme-accent-btn shadow-md' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                >
-                                    {toArabic(a)}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Hizb Quarter Column */}
-                    <div className="flex-[1.5] flex flex-col">
-                        <div className="p-2 text-center text-xs font-bold opacity-60 border-b theme-card-border">الحزب</div>
-                        <div className="flex-1 overflow-y-auto p-1 space-y-1 min-h-0 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            {Array.from({ length: 240 }, (_, i) => i + 1).map(hq => (
-                                <button
-                                    key={hq}
-                                    ref={el => { hizbRefs.current[hq] = el; }}
-                                    onClick={() => handleHizbQuarterClick(hq)}
-                                    className={`w-full p-2 rounded text-xs font-bold transition ${selectedHizbQuarter === hq ? 'theme-accent-btn shadow-md' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                >
-                                    {formatHizbQuarter(hq)}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+                {listsContent}
 
                 <div className="p-4 theme-header-bg flex justify-center gap-4">
                     <button 
@@ -339,16 +344,15 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                     </button>
                 </div>
             </div>
-
-            <AnimatePresence>
-                {infoSurah && (
-                    <SurahInfoModal 
-                        surahName={infoSurah.name}
-                        surahNumber={infoSurah.number}
-                        onClose={() => setInfoSurah(null)}
-                    />
-                )}
-            </AnimatePresence>
+            
+            {infoSurah && (
+                <SurahInfoModal 
+                    surahName={infoSurah.name}
+                    surahNumber={infoSurah.number}
+                    quranData={quranData}
+                    onClose={() => setInfoSurah(null)}
+                />
+            )}
         </div>
     );
 };

@@ -223,10 +223,10 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
       icon: <Palette className="w-8 h-8 text-white" />,
     },
     {
-      id: "floating-menu-search",
-      title: "البحث",
-      text: "البحث السريع عن السور والآيات والكلمات.",
-      selector: '[data-id="menu-item-search"]',
+      id: "floating-menu-global-search",
+      title: "البحث المتقدم",
+      text: "البحث الشامل في القرآن الكريم والأدعية والأذكار.",
+      selector: '[data-id="menu-item-global-search"]',
       icon: <Search className="w-8 h-8 text-white" />,
     },
     {
@@ -2164,10 +2164,10 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   currentTheme={currentTheme}
                 />
                 <MenuItem
-                  data-id="menu-item-search"
+                  data-id="menu-item-global-search"
                   icon={<Search size={18} />}
-                  label="البحث"
-                  onClick={() => handleAction(() => openModal("search-modal"))}
+                  label="البحث المتقدم"
+                  onClick={() => handleAction(() => onNavigate('search'))}
                   iconColor={iconColor}
                   currentTheme={currentTheme}
                 />
@@ -2240,7 +2240,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
           )}
         </div>
       </div>
-      {isFloatingMenuOpen && (
+      {isFloatingMenuOpen && !isLandscape && (
         <TutorialOverlay
           tutorialId="floating-menu-tutorial"
           steps={floatingMenuTutorialSteps}

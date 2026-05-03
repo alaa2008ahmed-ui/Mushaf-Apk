@@ -31,6 +31,7 @@ const ALL_POSSIBLE_ITEMS = [
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
     { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
+    { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-10", colorIndex: 1 },
     { id: 'more', label: "✨ المزيد", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
 ];
 
@@ -58,14 +59,20 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   const { theme, themeKey } = useTheme();
   const [visibleItems, setVisibleItems] = useState<string[]>(() => {
     const savedVisible = localStorage.getItem('visibleMenuItems');
-    return savedVisible ? JSON.parse(savedVisible) : DEFAULT_MENU_ITEMS.map(i => i.id);
+    if (savedVisible) {
+        try {
+            return JSON.parse(savedVisible);
+        } catch (e) {
+            return DEFAULT_MENU_ITEMS.map(i => i.id);
+        }
+    }
+    return DEFAULT_MENU_ITEMS.map(i => i.id);
   });
   const [menuItems, setMenuItems] = useState(() => {
     const savedLayout = localStorage.getItem('menuLayout');
     if (savedLayout) {
         try {
-            const parsed = JSON.parse(savedLayout);
-            return parsed;
+            return JSON.parse(savedLayout);
         } catch (e) {
             return DEFAULT_MENU_ITEMS;
         }

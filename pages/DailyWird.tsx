@@ -795,11 +795,12 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
       </header>
 
-      <main className={`flex-1 min-h-0 overflow-y-auto p-4 flex flex-col items-center ${isInputFocused ? 'justify-start' : 'justify-center'}`}>
+      <main className={`flex-1 min-h-0 overflow-y-auto p-4 flex flex-col items-center pb-4 ${isInputFocused ? 'justify-start' : 'justify-center'}`}>
         <div className="w-full max-w-md pb-10">
           {!showSettings && renderProfileSelector()}
           {showSettings || !settings ? renderSettings() : renderProgress()}
         </div>
+        <div className="shrink-0 w-full h-32"></div>
       </main>
 
       {!isInputFocused && <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />}

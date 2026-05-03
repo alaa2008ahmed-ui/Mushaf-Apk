@@ -54,7 +54,6 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
 
     const executeSearchOptimized = useCallback((q: string, jobId: number) => {
         const normQ = normalizeArabic(q);
-        // The gap regex allows for any number of diacritics, small letters, and Quranic marks between search characters
         const gap = '[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u0640]*';
         const highlightPattern = normQ.split('').map(c => (
             c === 'ا' ? '[أإآٱا]' : 
@@ -63,6 +62,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
         )).join(gap);
         
         const regex = new RegExp(highlightPattern, 'gi');
+        const isNumberSearch = /^[0-9\u0660-\u0669]+$/.test(q);
+        const searchNum = isNumberSearch ? parseInt(q.replace(/[٠-٩]/g, (d:any) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)])) : -1;
         
         const foundResults: any[] = [];
         let sIdx = 0;
@@ -79,8 +80,17 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                     const rawText = ayah.text;
                     const cleanText = stripTajweedTags(rawText);
                     
-                    // Use regex test on clean text for much more flexible matching
-                    if (regex.test(cleanText)) {
+                    if (isNumberSearch && ayah.numberInSurah === searchNum) {
+                        foundResults.push({ 
+                            text: fixQuranText(cleanText), 
+                            rawText: fixQuranText(rawText),
+                            surah: surah.number, 
+                            surahName: surah.name, 
+                            ayah: ayah.numberInSurah, 
+                            page: ayah.page,
+                            highlightRegex: null // No highlight for pure numbers unless we want to
+                        });
+                    } else if (!isNumberSearch && regex.test(cleanText)) {
                         foundResults.push({ 
                             text: fixQuranText(cleanText), 
                             rawText: fixQuranText(rawText),

@@ -21,6 +21,7 @@ import { usePrayerTimes } from './context/PrayerTimesContext';
 import { setupNotifications } from './utils/notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
+import { clearSearchCache } from './pages/GlobalSearch';
 
 // --- Main App Component ---
 function App() {
@@ -32,13 +33,19 @@ function App() {
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
 
+  useEffect(() => {
+    if (!history.includes('search')) {
+      clearSearchCache();
+    }
+  }, [history]);
+
   const handleNavigate = useCallback((pageId: string, params?: any) => {
     setIsSideMenuOpen(false);
     const validPages = [
       'home', 'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'qibla', 
       'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'more-menu', 'daily-wird', 'memorization',
-      'phone-notifications'
+      'phone-notifications', 'search', 'asmaul-husna'
     ];
 
     if (pageId === 'phone-notifications') {
@@ -155,6 +162,9 @@ function App() {
     else if (action === 'open_hisn_muslim' || (action === 'ui_click' && (params?.label?.includes('حصن') || params?.label?.includes('حسن')))) handleNavigate('hisn-muslim');
     else if (action === 'open_calendar' || (action === 'ui_click' && params?.label?.includes('تقويم'))) handleNavigate('calendar');
     else if (action === 'open_hajj_umrah' || (action === 'ui_click' && params?.label?.includes('حج'))) handleNavigate('hajj-umrah');
+    else if (action === 'open_asmaul_husna' || (action === 'ui_click' && params?.label?.includes('اسماء الله'))) handleNavigate('asmaul-husna');
+    else if (action === 'open_daily_wird' || (action === 'ui_click' && params?.label?.includes('ورد'))) handleNavigate('daily-wird');
+    else if (action === 'open_memorization' || (action === 'ui_click' && params?.label?.includes('تحفيظ'))) handleNavigate('memorization');
     else if (action === 'open_quran' || (action === 'ui_click' && params?.label?.includes('مصحف'))) handleNavigate('quran');
     else if (action === 'open_voice_control' || (action === 'ui_click' && params?.label?.includes('تحكم صوتي'))) handleNavigate('voice-control');
     else if (action === 'open_more' || (action === 'ui_click' && params?.label?.includes('مزيد'))) handleNavigate('more-menu');
@@ -162,7 +172,7 @@ function App() {
       window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
     }
     else if (action === 'open_search' || (action === 'ui_click' && params?.label?.includes('بحث'))) {
-      window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_search', params } }));
+      handleNavigate('search');
     }
     else if (action === 'open_themes' || (action === 'ui_click' && params?.label?.includes('ثيم'))) {
       if (page === 'quran') {

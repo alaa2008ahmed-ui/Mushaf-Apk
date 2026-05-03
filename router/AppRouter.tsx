@@ -19,6 +19,8 @@ import MoreMenuPage from '../pages/MoreMenuPage';
 import MonthlyPrayerTimes from '../pages/MonthlyPrayerTimes';
 import DailyWird from '../pages/DailyWird';
 import Memorization from '../pages/Memorization';
+import GlobalSearch from '../pages/GlobalSearch';
+import AsmaulHusna from '../pages/AsmaulHusna';
 
 interface AppRouterProps {
     page: string;
@@ -71,6 +73,10 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
         return <DailyWird onBack={onBack} onNavigate={onNavigate} />;
       case 'memorization':
         return <Memorization onBack={onBack} onNavigate={onNavigate} />;
+      case 'search':
+        return <GlobalSearch onBack={onBack} onNavigate={onNavigate} />;
+      case 'asmaul-husna':
+        return <AsmaulHusna onBack={onBack} />;
       case 'home':
       default:
         return <MainMenu onNavigate={onNavigate} onOpenThemes={onOpenThemes} onOpenSideMenu={onOpenSideMenu} />;

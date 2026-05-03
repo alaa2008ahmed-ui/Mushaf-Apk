@@ -23,6 +23,7 @@ const ALL_MENU_ITEMS = [
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
     { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
+    { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-10", colorIndex: 1 },
 ];
 
 interface MoreMenuPageProps {
@@ -32,10 +33,18 @@ interface MoreMenuPageProps {
 
 const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
     const { theme, themeKey } = useTheme();
+    const [showNewBadges, setShowNewBadges] = useState(false);
     const [visibleItems, setVisibleItems] = useState<string[]>(() => {
         const savedVisible = localStorage.getItem('visibleMenuItems');
         return savedVisible ? JSON.parse(savedVisible) : ALL_MENU_ITEMS.map(i => i.id);
     });
+
+    useEffect(() => {
+        const currentOpens = parseInt(localStorage.getItem('app_opens_count_new') || '1');
+        if (currentOpens <= 5) {
+            setShowNewBadges(true);
+        }
+    }, []);
 
     return (
         <div>
@@ -73,7 +82,8 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                             isGlass={theme.isGlass}
                                             btnText={theme.btnText}
                                             dataId={`nav-button-${item.id}`}
-                                            showNewBadge={['daily-wird', 'memorization', 'voice-control'].includes(item.id)}
+                                            showNewBadge={showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'calculators', 'hajj-umrah', 'asmaul-husna'].includes(item.id)}
+                                            badgeText={['calculators', 'hajj-umrah'].includes(item.id) ? 'تحديث' : 'جديد'}
                                         />
                                     </div>
                                 );

@@ -22,7 +22,10 @@ const AVAILABLE_ACTIONS = [
     { id: 'open_themes', name: 'الثيمات / ثيمات / السيمات' },
     { id: 'open_voice_control', name: 'التحكم الصوتي / التحكم الصوتى' },
     { id: 'open_adia', name: 'الادعيه / الادعيه' },
-    { id: 'open_hajj_umrah', name: 'الحج والعمرة / الحج والعمرة' },
+    { id: 'open_hajj_umrah', name: 'الحج والعمرة' },
+    { id: 'open_asmaul_husna', name: 'أسماء الله الحسنى' },
+    { id: 'open_daily_wird', name: 'الورد اليومي' },
+    { id: 'open_memorization', name: 'التحفيظ' },
     { id: 'open_more', name: 'المزيد / المزيد' },
     { id: 'open_nawawi', name: 'الاربعون النوويه / الاربعون النوويه' },
     { id: 'go_back', name: 'رجوع' },
@@ -150,7 +153,7 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                 </div>
             </header>
 
-            <main className="w-full flex-1 flex flex-col items-center overflow-hidden p-4 pb-24">
+            <main className="w-full flex-1 flex flex-col items-center overflow-hidden p-4 pb-4">
                 <div className="w-full max-w-lg flex-1 overflow-y-auto hide-scrollbar pb-6 space-y-6">
                     {/* Merged Status & Settings Section */}
                     <div className="themed-card p-4 space-y-4 relative">
@@ -318,6 +321,7 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                             </div>
                         </div>
                     </div>
+                    <div className="shrink-0 w-full h-32"></div>
                 </div>
             </main>
 

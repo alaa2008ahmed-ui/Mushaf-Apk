@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 
 interface TitleSectionProps {
     isEditMode: boolean;
@@ -21,32 +21,9 @@ const TitleSection: React.FC<TitleSectionProps> = ({
     themeKey,
     onOpenSideMenu
 }) => {
-    const titleLongPressTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-    const startTitlePress = () => {
-        titleLongPressTimerRef.current = setTimeout(() => {
-            setIsEditMode(true);
-            if (navigator.vibrate) navigator.vibrate(100);
-        }, 800);
-    };
-
-    const cancelTitlePress = () => {
-        if (titleLongPressTimerRef.current) {
-            clearTimeout(titleLongPressTimerRef.current);
-            titleLongPressTimerRef.current = null;
-        }
-    };
-
     return (
         <div className="relative">
-            <div 
-                className="text-center mt-6 select-none relative"
-                onTouchStart={startTitlePress}
-                onTouchEnd={cancelTitlePress}
-                onMouseDown={startTitlePress}
-                onMouseUp={cancelTitlePress}
-                onMouseLeave={cancelTitlePress}
-            >
+            <div className="text-center mt-6 select-none relative">
                 <h1 id="app-title" className={`text-4xl font-black tracking-tight transition-transform ${isEditMode ? 'scale-110 text-yellow-400' : ''}`} style={{ color: isEditMode ? undefined : theme.textColor }}>
                     مُصْحَفُ أَحْمَدَ وَلَيْلَى
                 </h1>

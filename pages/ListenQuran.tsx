@@ -266,7 +266,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
                 </div>
             </header>
 
-            <main className="w-full max-w-md mx-auto flex-1 flex flex-col p-4 z-10">
+            <main className="w-full max-w-md mx-auto flex-1 flex flex-col p-4 z-10 overflow-y-auto pb-2">
 
                 <div className="space-y-3 flex-shrink-0 py-4">
                     <button 
@@ -352,6 +352,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
                     </div>
                     <p className="text-xs text-center mt-2" style={{ color: theme.textColor, opacity: 0.6 }}>ملاحظة: لا تعمل هذه الصفحة إلا إذا كنت متصلاً بالإنترنت، ويفضل الواي فاي.</p>
                 </div>
+                <div className="w-full h-24 shrink-0"></div>
             </main>
 
             <BottomBar onHomeClick={onBack} onThemesClick={onOpenThemes} showThemes={false} />

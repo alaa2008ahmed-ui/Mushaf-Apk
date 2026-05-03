@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, X, Smartphone, AppWindow, VolumeX } from 'lucide-react';
+import { Bell, Check, X, Smartphone, AppWindow, VolumeX, Clock, Shuffle } from 'lucide-react';
 import { toArabic } from './constants';
 import { usePrayerTimes } from '../../context/PrayerTimesContext';
 import { setupNotifications } from '../../utils/notifications';
+import { useNotificationSettings, PhoneNotificationSettings } from '../../hooks/useNotificationSettings';
 
 interface NotificationSettingsModalProps {
     onClose: () => void;
@@ -14,6 +15,7 @@ interface NotificationSettingsModalProps {
 
 const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ onClose, showToast, isLandscape, modeSuffix, initialTab }) => {
     const { config, updateConfig } = usePrayerTimes();
+    const { phoneSettings, updateSpecificSetting, updateRandomSettings } = useNotificationSettings();
     const [activeTab, setActiveTab] = useState<'app' | 'phone'>(initialTab || 'app');
 
     const [appSettings, setAppSettings] = useState(() => {
@@ -36,25 +38,6 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
         };
     });
 
-    const [phoneSettings, setPhoneSettings] = useState(() => {
-        const saved = localStorage.getItem('phone_notifications_settings');
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch (e) {
-                console.error('Error parsing phone notification settings', e);
-            }
-        }
-        return {
-            sabah: true,
-            masaa: true,
-            dua: true,
-            tasbeehMorning: true,
-            tasbeehEvening: true,
-            kahf: true,
-        };
-    });
-
     const toggleAppSetting = (key: string) => {
         const newSettings = { ...appSettings, [key]: !appSettings[key] };
         setAppSettings(newSettings);
@@ -74,12 +57,18 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
         showToast(`${newSettings[key] ? 'تم تفعيل' : 'تم تعطيل'} ${labels[key]}`);
     };
 
-    const togglePhoneSetting = (key: string) => {
-        const newSettings = { ...phoneSettings, [key]: !phoneSettings[key] };
-        setPhoneSettings(newSettings);
-        localStorage.setItem('phone_notifications_settings', JSON.stringify(newSettings));
-        setupNotifications(newSettings);
+    const togglePhoneSetting = (key: keyof Omit<PhoneNotificationSettings, 'randomAthkar'>) => {
+        const isEnabled = !phoneSettings[key].enabled;
+        const newSettings = {
+            ...phoneSettings,
+            [key]: { ...phoneSettings[key], enabled: isEnabled }
+        };
+        updateSpecificSetting(key, { enabled: isEnabled });
         
+        setTimeout(() => {
+            setupNotifications(newSettings);
+        }, 100);
+
         const labels: Record<string, string> = {
             sabah: 'أذكار الصباح',
             masaa: 'أذكار المساء',
@@ -89,7 +78,35 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
             kahf: 'سورة الكهف',
         };
         
-        showToast(`${newSettings[key] ? 'تم تفعيل' : 'تم تعطيل'} ${labels[key]}`);
+        showToast(`${isEnabled ? 'تم تفعيل' : 'تم تعطيل'} ${labels[key]}`);
+    };
+
+    const handleTimeChange = (key: keyof Omit<PhoneNotificationSettings, 'randomAthkar'>, time: string) => {
+        const newSettings = {
+            ...phoneSettings,
+            [key]: { ...phoneSettings[key], time }
+        };
+        updateSpecificSetting(key, { time });
+        setTimeout(() => {
+            setupNotifications(newSettings);
+        }, 100);
+    };
+
+    const handleRandomSettingChange = (value: Partial<PhoneNotificationSettings['randomAthkar']>) => {
+        const newSettings = {
+            ...phoneSettings,
+            randomAthkar: { ...phoneSettings.randomAthkar, ...value }
+        };
+        updateRandomSettings(value);
+        setTimeout(() => {
+            setupNotifications(newSettings);
+        }, 100);
+    };
+
+    const toggleRandomAthkar = () => {
+        const isEnabled = !phoneSettings.randomAthkar.enabled;
+        handleRandomSettingChange({ enabled: isEnabled });
+        showToast(`${isEnabled ? 'تم تفعيل' : 'تم تعطيل'} الأذكار العشوائية`);
     };
 
     const toggleNightNotification = (key: 'firstThird' | 'midnight' | 'lastThird') => {
@@ -186,7 +203,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                             ))}
                         </div>
                     ) : (
-                        <div className="space-y-4 animate-fadeIn">
+                        <div className="space-y-4 animate-fadeIn pb-8">
                             <p className="text-xs opacity-70 text-center mb-2">
                                 إشعارات تظهر على شاشة الهاتف حتى لو كان التطبيق مغلقاً
                             </p>
@@ -223,39 +240,122 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                 })}
                             </div>
 
-                            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800 text-right" dir="rtl">
                                 <h4 className="font-bold text-sm mb-2 opacity-80">الأذكار والتسبيح</h4>
                                 {[
-                                    { id: 'sabah', label: 'أذكار الصباح', desc: 'تنبيه يومي الساعة 7:00 صباحاً' },
-                                    { id: 'masaa', label: 'أذكار المساء', desc: 'تنبيه يومي الساعة 4:30 عصراً' },
-                                    { id: 'dua', label: 'وقت الدعاء', desc: 'تنبيه يومي الساعة 2:00 ظهراً' },
-                                    { id: 'tasbeehMorning', label: 'التسبيح (صباحاً)', desc: 'تنبيه يومي الساعة 10:00 صباحاً' },
-                                    { id: 'tasbeehEvening', label: 'التسبيح (مساءً)', desc: 'تنبيه يومي الساعة 8:00 مساءً' },
-                                    { id: 'kahf', label: 'سورة الكهف', desc: 'تنبيه أسبوعي يوم الجمعة الساعة 9:00 صباحاً' }
-                                ].map((item) => (
-                                    <div 
-                                        key={item.id}
-                                        onClick={() => togglePhoneSetting(item.id)}
-                                        className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                                            phoneSettings[item.id as keyof typeof phoneSettings] 
-                                            ? 'themed-card-bg border-emerald-500 shadow-sm' 
-                                            : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60'
-                                        }`}
-                                    >
-                                        <div className="flex flex-col gap-0.5">
-                                            <span className="font-bold text-sm">{item.label}</span>
-                                            <span className="text-[10px] opacity-60">{item.desc}</span>
+                                    { id: 'sabah', label: 'أذكار الصباح' },
+                                    { id: 'masaa', label: 'أذكار المساء' },
+                                    { id: 'dua', label: 'وقت الدعاء' },
+                                    { id: 'tasbeehMorning', label: 'التسبيح (صباحاً)' },
+                                    { id: 'tasbeehEvening', label: 'التسبيح (مساءً)' },
+                                    { id: 'kahf', label: 'سورة الكهف' }
+                                ].map((item) => {
+                                    const setting = phoneSettings[item.id as keyof Omit<PhoneNotificationSettings, 'randomAthkar'>];
+                                    return (
+                                        <div 
+                                            key={item.id}
+                                            className={`p-3 rounded-xl border-2 transition-all ${
+                                                setting.enabled 
+                                                ? 'themed-card-bg border-emerald-500 shadow-sm' 
+                                                : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div 
+                                                    className="flex items-center gap-2 cursor-pointer"
+                                                    onClick={() => togglePhoneSetting(item.id as keyof Omit<PhoneNotificationSettings, 'randomAthkar'>)}
+                                                >
+                                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                                                        setting.enabled ? 'bg-emerald-500 text-white' : 'bg-gray-300 dark:bg-gray-600'
+                                                    }`}>
+                                                        {setting.enabled && <Check className="w-3 h-3" />}
+                                                    </div>
+                                                    <span className="font-bold text-sm">{item.label}</span>
+                                                </div>
+                                                
+                                                {setting.enabled && (
+                                                    <div className="flex items-center gap-2 text-xs opacity-80">
+                                                        <Clock className="w-3 h-3" />
+                                                        <input 
+                                                            type="time" 
+                                                            value={setting.time}
+                                                            onChange={(e) => handleTimeChange(item.id as keyof Omit<PhoneNotificationSettings, 'randomAthkar'>, e.target.value)}
+                                                            className="bg-transparent border-none outline-none font-bold text-emerald-600 dark:text-emerald-400"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="text-[10px] opacity-60">
+                                                {item.id === 'kahf' ? 'تنبيه أسبوعي يوم الجمعة' : 'تنبيه يومي في الوقت المحدد'}
+                                            </p>
                                         </div>
-                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
-                                            phoneSettings[item.id as keyof typeof phoneSettings] ? 'bg-emerald-500 text-white' : 'bg-gray-300 dark:bg-gray-600'
-                                        }`}>
-                                            {phoneSettings[item.id as keyof typeof phoneSettings] && <Check className="w-3 h-3" />}
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
-                            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                            <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-800 text-right" dir="rtl">
+                                <div className="flex items-center justify-between mb-1">
+                                    <h4 className="font-bold text-sm opacity-80 flex items-center gap-2">
+                                        <Shuffle className="w-4 h-4" />
+                                        أذكار عشوائية
+                                    </h4>
+                                    <div 
+                                        onClick={toggleRandomAthkar}
+                                        className={`w-10 h-5 rounded-full relative transition-colors cursor-pointer ${phoneSettings.randomAthkar.enabled ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                    >
+                                        <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${phoneSettings.randomAthkar.enabled ? 'right-6' : 'right-1'}`} />
+                                    </div>
+                                </div>
+                                <p className="text-[10px] opacity-60 -mt-2">
+                                    تلقي أذكار وتنبيهات عشوائية خلال اليوم لتذكيرك بذكر الله
+                                </p>
+
+                                {phoneSettings.randomAthkar.enabled && (
+                                    <div className="themed-card-bg p-3 rounded-xl border border-emerald-500/30 space-y-3 animate-fadeIn">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold">عدد المرات يومياً:</span>
+                                            <div className="flex items-center gap-3">
+                                                <button 
+                                                    onClick={() => handleRandomSettingChange({ frequency: Math.max(1, phoneSettings.randomAthkar.frequency - 1) })}
+                                                    className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold"
+                                                >
+                                                    -
+                                                </button>
+                                                <span className="text-sm font-bold text-emerald-600">{toArabic(phoneSettings.randomAthkar.frequency)}</span>
+                                                <button 
+                                                    onClick={() => handleRandomSettingChange({ frequency: Math.min(20, phoneSettings.randomAthkar.frequency + 1) })}
+                                                    className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] opacity-60">وقت البدء:</span>
+                                                <input 
+                                                    type="time" 
+                                                    value={phoneSettings.randomAthkar.startTime}
+                                                    onChange={(e) => handleRandomSettingChange({ startTime: e.target.value })}
+                                                    className="w-full text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-2 rounded-lg font-bold"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] opacity-60">وقت الانتهاء:</span>
+                                                <input 
+                                                    type="time" 
+                                                    value={phoneSettings.randomAthkar.endTime}
+                                                    onChange={(e) => handleRandomSettingChange({ endTime: e.target.value })}
+                                                    className="w-full text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-2 rounded-lg font-bold"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800 text-right" dir="rtl">
                                 <div className="flex items-center justify-between mb-2">
                                     <h4 className="font-bold text-sm opacity-80 flex items-center gap-2">
                                         <VolumeX className="w-4 h-4" />
@@ -299,10 +399,13 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
 
                 <div className="p-4 themed-card-bg border-t border-gray-100 dark:border-gray-800">
                     <button 
-                        onClick={onClose}
+                        onClick={() => {
+                            setupNotifications();
+                            onClose();
+                        }}
                         className="theme-accent-btn w-full font-bold py-3 rounded-xl shadow-lg transition-transform active:scale-95"
                     >
-                        تم
+                        حفظ وإغلاق
                     </button>
                 </div>
             </div>

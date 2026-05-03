@@ -931,7 +931,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
                 'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
                 'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
-                'btn-search': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
                 'btn-share': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }
             });
         }
@@ -1301,7 +1300,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
             'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
             'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
-            'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
             'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
         };
     });
@@ -2312,7 +2310,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
                     'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
                     'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
-                    'btn-search': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder },
                     'btn-share': { bg: theme.btnBg, text: theme.btnText, border: theme.barBorder }
                 };
                 setToolbarColors(prev => {
@@ -2770,9 +2767,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             } else if (action === 'play_audio') {
                 handlePlayButtonPointerDown();
                 handlePlayButtonPointerUp();
-                return;
-            } else if (action === 'open_search') {
-                openModal('search-modal');
                 return;
             } else if (action === 'open_settings') {
                 openModal('settings-modal');
@@ -3801,7 +3795,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             />
             <JuzNotification isVisible={juzNotification.show} text={juzNotification.text} currentTheme={currentTheme} />
             <Toast message={toast.message} show={toast.show} onClose={handleToastClose} currentTheme={currentTheme} />
-            <TutorialOverlay tutorialId="quran-reader-tutorial" steps={quranTutorialSteps} />
+            {!isLandscape && <TutorialOverlay tutorialId="quran-reader-tutorial" steps={quranTutorialSteps} />}
             
             {/* Memorization Review Controls */}
             {localIsMemorizationMode && localMemorizationSettings?.isReviewMode && (

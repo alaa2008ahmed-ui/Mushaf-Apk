@@ -19,16 +19,16 @@ const PrayerTimesHeader: React.FC<PrayerTimesHeaderProps> = ({
 }) => {
     return (
         <header className="app-top-bar">
-            <div className="app-top-bar__inner !py-2 !gap-0.5 relative">
-                <div className="w-full flex items-center justify-center relative min-h-[40px]">
+            <div className="app-top-bar__inner relative">
+                <div className="relative flex items-center justify-center min-h-[40px]">
                     <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi truncate px-12" style={{ color: topBarTextColor }}>{cityGov}</h1>
-                    <div className="absolute right-0 flex items-center gap-2">
-                         <i onClick={onOpenNotifications} className="text-xl cursor-pointer fa-solid fa-bell p-1 px-2" style={{ color: topBarTextColor }}></i>
-                         <i id="location-refresh-btn" onClick={handleRefreshLocation} className="text-xl cursor-pointer active:rotate-180 duration-700 fa-solid fa-location-crosshairs p-1 px-2" style={{ color: topBarTextColor }}></i>
+                    <div className="absolute right-0 flex items-center gap-1">
+                         <i onClick={onOpenNotifications} className="text-xl cursor-pointer fa-solid fa-bell p-2" style={{ color: topBarTextColor }}></i>
+                         <i id="location-refresh-btn" onClick={handleRefreshLocation} className="text-xl cursor-pointer active:rotate-180 duration-700 fa-solid fa-location-crosshairs p-2" style={{ color: topBarTextColor }}></i>
                     </div>
                 </div>
-                 <div className="flex items-center justify-center gap-1.5" dir="rtl">
-                    <p className="text-[10px] font-bold" style={{ color: topBarTextColor }}>{fullCountry}</p>
+                 <div className="app-top-bar__subtitle flex items-center justify-center gap-1.5" dir="rtl" style={{ color: topBarTextColor }}>
+                    <span className="font-bold">{fullCountry}</span>
                     {combinedCode && (
                         <span className="text-[10px] font-black text-white bg-black/20 px-1.5 py-0 rounded border border-white/20" dir="ltr">{combinedCode}</span>
                     )}

@@ -1,14 +1,39 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
-// FIX: The component was trying to import 'STATIC_DUAA', which is not exported from adiaData. The correct export is 'ALL_DUAA'.
-import { ALL_DUAA } from '../data/adiaData';
+import { ALL_DUAA, DUAA_CATEGORIES } from '../data/adiaData';
 import { registerBackInterceptor } from '../hooks/useBackButton';
+import { motion, AnimatePresence } from 'framer-motion';
+import { shareAsImage } from '../utils/shareAsImage';
 
 function Adia({ onBack }) {
     const { theme } = useTheme();
     const [zoomedDuaa, setZoomedDuaa] = useState(null);
+    const [activeCategory, setActiveCategory] = useState('all');
+    const [favorites, setFavorites] = useState<string[]>([]);
+    const [toastMessage, setToastMessage] = useState('');
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [menuOpenDirection, setMenuOpenDirection] = useState<'up' | 'down'>('up');
+    const fabRef = useRef<HTMLButtonElement>(null);
+    const mainRef = useRef<HTMLElement>(null);
+
+    useEffect(() => {
+        if (mainRef.current) {
+            mainRef.current.scrollTo({ top: 0, behavior: 'instant' });
+        }
+    }, [activeCategory]);
+
+    useEffect(() => {
+        try {
+            const savedFavorites = localStorage.getItem('adia_favorites');
+            if (savedFavorites) {
+                setFavorites(JSON.parse(savedFavorites));
+            }
+        } catch (e) {
+            console.error("Failed to load favorites", e);
+        }
+    }, []);
 
     useEffect(() => {
         const interceptor = () => {
@@ -38,34 +63,192 @@ function Adia({ onBack }) {
         }
     };
 
+    const toggleFavorite = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setFavorites(prev => {
+            const newFavs = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
+            try {
+                localStorage.setItem('adia_favorites', JSON.stringify(newFavs));
+            } catch (err) {}
+            return newFavs;
+        });
+    };
+
+    const handleCopy = (text: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(text).then(() => {
+            setToastMessage('تم النسخ إلى الحافظة');
+            setTimeout(() => setToastMessage(''), 2000);
+        });
+    };
+
+    const handleShare = async (duaa: any, e: React.MouseEvent) => {
+        e.stopPropagation();
+        await shareAsImage({
+            text: duaa.text,
+            source: duaa.source,
+            category: categoryForDuaa(duaa.categoryId)?.title,
+            theme,
+            setToastMessage
+        });
+    };
+
+    const handleFabClick = () => {
+        if (!isMenuOpen && fabRef.current) {
+            const rect = fabRef.current.getBoundingClientRect();
+            if (rect.top < window.innerHeight / 2) {
+                setMenuOpenDirection('down');
+            } else {
+                setMenuOpenDirection('up');
+            }
+        }
+        setIsMenuOpen(!isMenuOpen);
+    };
+
+    const filteredDuaa = ALL_DUAA.filter(duaa => {
+        if (activeCategory === 'all') return true;
+        if (activeCategory === 'favorites') return favorites.includes(duaa.id);
+        
+        return duaa.categoryId === activeCategory;
+    });
+
     return (
-        <div className="h-screen flex flex-col bg-transparent">
+        <div className="h-screen flex flex-col bg-transparent relative">
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <h1 className="app-top-bar__title text-2xl font-kufi">أدعية مستجابة</h1>
-                    <p className="app-top-bar__subtitle">مجموعة من الأدعية المختارة من القرآن والسنة</p>
+                    <div className="relative flex items-center justify-center">
+                        <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi flex items-center gap-2 justify-center">
+                            الأدعية
+                        </h1>
+                    </div>
+                    <p className="app-top-bar__subtitle">
+                        باقات من الذكر والمناجاة
+                    </p>
                 </div>
             </header>
 
-            <main className="w-full flex-1 flex flex-col items-center overflow-hidden p-4 pb-24">
-                <div className="w-full max-w-lg flex-1 overflow-y-auto hide-scrollbar pb-6 space-y-3">
-                    {ALL_DUAA.map((duaa) => (
-                        <div key={duaa.id} className="p-4 rounded-xl themed-card transition-all" style={{ fontFamily: theme.font }}>
-                            <p className="text-xl leading-relaxed text-center font-amiri">
-                                {duaa.text}
-                            </p>
-                            <p className="text-xs sm:text-sm mt-2 text-center themed-text-muted opacity-80">
-                                المصدر: {duaa.source}
-                            </p>
-                            <div className="flex justify-center mt-3">
-                                <button onClick={() => openZoomModal(duaa)} className="p-2 rounded-full hover:bg-card-bg-hover transition-colors">
-                                    <i className="fa-solid fa-magnifying-glass-plus text-lg"></i>
-                                </button>
+            <main ref={mainRef} className="w-full flex-1 overflow-y-auto px-4 pt-4 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredDuaa.length > 0 ? (
+                        filteredDuaa.map((duaa) => (
+                            <div 
+                                key={duaa.id} 
+                                className="p-5 rounded-3xl relative transition-all overflow-hidden bg-white group dark:bg-gray-800 shadow-sm border border-black/5 dark:border-white/5" 
+                                style={{ 
+                                    fontFamily: theme.font,
+                                }}
+                            >
+                                <p className="text-xl md:text-2xl leading-relaxed text-center font-amiri text-gray-800 dark:text-gray-100 mb-6">
+                                    {duaa.text}
+                                </p>
+
+                                <div className="mt-auto pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
+                                    <div className="flex justify-center">
+                                        <span className="text-xs sm:text-sm text-center opacity-70 font-bold bg-black/5 dark:bg-white/5 px-4 py-1.5 rounded-full text-gray-700 dark:text-gray-300">
+                                            {categoryForDuaa(duaa.categoryId)?.title || ''} • {duaa.source}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-center">
+                                        <button onClick={(e) => toggleFavorite(duaa.id, e)} className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors">
+                                            <i className={`fa-heart ${favorites.includes(duaa.id) ? 'fa-solid text-red-500' : 'fa-regular text-gray-500 dark:text-gray-400'}`}></i>
+                                        </button>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    openZoomModal(duaa);
+                                                }} 
+                                                className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300"
+                                            >
+                                                <i className="fa-solid fa-magnifying-glass-plus"></i>
+                                            </button>
+                                            <button onClick={(e) => handleCopy(duaa.text, e)} className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                                                <i className="fa-regular fa-copy"></i>
+                                            </button>
+                                            <button onClick={(e) => handleShare(duaa, e)} className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                                                <i className="fa-solid fa-share-nodes"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        ))
+                    ) : (
+                        <div className="col-span-full py-12 text-center text-gray-500 dark:text-gray-400 font-bold">
+                            <i className="fa-solid fa-search text-4xl mb-4 opacity-50"></i>
+                            <p>لا توجد نتائج مطابقة لبحثك.</p>
                         </div>
-                    ))}
+                    )}
+                    <div className="shrink-0 w-full h-32 col-span-full"></div>
                 </div>
             </main>
+
+            {/* Toast Notification */}
+            <AnimatePresence>
+                {toastMessage && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 50, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: 50, x: '-50%' }}
+                        className="fixed bottom-24 left-1/2 z-[200] bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg font-bold text-sm text-center whitespace-nowrap"
+                    >
+                        {toastMessage}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Floating Menu & FAB */}
+            <div className="fixed bottom-20 right-4 z-[90] flex flex-col items-end">
+                <AnimatePresence>
+                    {isMenuOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, y: menuOpenDirection === 'up' ? 20 : -20, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: menuOpenDirection === 'up' ? 20 : -20, scale: 0.9 }}
+                            transition={{ duration: 0.2 }}
+                            className={`absolute right-0 ${menuOpenDirection === 'up' ? 'bottom-full mb-4 origin-bottom-right' : 'top-full mt-4 origin-top-right'} bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-black/10 dark:border-white/10 p-2 flex flex-col gap-1 overflow-hidden w-48 text-gray-800 dark:text-gray-200 z-0`}
+                        >
+                            <button 
+                                onClick={() => { setActiveCategory('all'); setIsMenuOpen(false); }}
+                                className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${activeCategory === 'all' ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                                style={activeCategory === 'all' ? { color: theme.palette[0] } : {}}
+                            >
+                                الكل
+                            </button>
+                            <button 
+                                onClick={() => { setActiveCategory('favorites'); setIsMenuOpen(false); }}
+                                className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-between ${activeCategory === 'favorites' ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                                style={activeCategory === 'favorites' ? { color: theme.palette[0] } : {}}
+                            >
+                                المفضلة
+                                <i className="fa-solid fa-heart text-xs opacity-70"></i>
+                            </button>
+                            <div className="h-px bg-black/10 dark:bg-white/10 my-1" />
+                            {DUAA_CATEGORIES.map(category => (
+                                <button 
+                                    key={category.id}
+                                    onClick={() => { setActiveCategory(category.id); setIsMenuOpen(false); }}
+                                    className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-between ${activeCategory === category.id ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                                    style={activeCategory === category.id ? { color: theme.palette[0] } : {}}
+                                >
+                                    {category.title}
+                                    <i className={`fa-solid ${category.icon} text-xs opacity-70`}></i>
+                                </button>
+                            ))}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <button 
+                    ref={fabRef}
+                    onClick={handleFabClick}
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer relative z-10"
+                    style={{ backgroundColor: theme.palette[0] }}
+                >
+                    <i className={`fa-solid ${isMenuOpen ? 'fa-times' : 'fa-list-ul'} text-xl`}></i>
+                </button>
+            </div>
 
             <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
 
@@ -73,11 +256,13 @@ function Adia({ onBack }) {
                 <div className="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center p-4 backdrop-blur-sm" onClick={closeZoomModal}>
                     <div className="bg-modal-bg text-modal-text p-8 rounded-3xl w-full max-w-2xl text-center relative scale-in shadow-2xl border-2 border-modal-border flex flex-col max-h-[90vh]" style={{ fontFamily: theme.font }} onClick={e => e.stopPropagation()}>
                         <div className="overflow-y-auto hide-scrollbar flex-1 py-4">
-                            <p className="text-3xl md:text-4xl leading-relaxed">
+                            <div 
+                                className="text-3xl md:text-4xl leading-relaxed font-amiri"
+                            >
                                 {zoomedDuaa.text}
-                            </p>
-                            <p className="text-lg mt-6 font-bold" style={{ color: theme.palette[1] }}>
-                                المصدر: {zoomedDuaa.source}
+                            </div>
+                            <p className="text-lg mt-6 font-bold" style={{ color: theme.palette[0] }}>
+                                من {categoryForDuaa(zoomedDuaa.categoryId)?.title || ''}
                             </p>
                         </div>
 
@@ -89,6 +274,10 @@ function Adia({ onBack }) {
             )}
         </div>
     );
+}
+
+function categoryForDuaa(categoryId: string) {
+    return DUAA_CATEGORIES.find(c => c.id === categoryId);
 }
 
 export default Adia;

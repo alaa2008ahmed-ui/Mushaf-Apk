@@ -290,28 +290,26 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
     return (
         <div className="h-screen w-screen flex flex-col" style={{ backgroundColor: theme.bgColor, color: theme.textColor }}>
             {/* Top Bar */}
-            <div className="app-top-bar">
-                <div className="app-top-bar__inner relative flex items-center justify-center">
-                    <div className="text-center">
-                        <h1 className="app-top-bar__title text-xl" style={{ color: topBarTextColor }}>
-                            مواقيت الشهر
-                        </h1>
-                        <p className="app-top-bar__subtitle" style={{ color: topBarTextColor }}>
-                            {config.location.cityGov}
-                        </p>
-                    </div>
+            <header className="app-top-bar">
+                <div className="app-top-bar__inner relative">
+                    <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi" style={{ color: topBarTextColor }}>
+                        مواقيت الشهر
+                    </h1>
+                    <p className="app-top-bar__subtitle font-bold" style={{ color: topBarTextColor }}>
+                        {config.location.cityGov}
+                    </p>
                 </div>
-            </div>
+            </header>
 
             {/* Month Navigation */}
-            <div className="flex items-center justify-between px-4 py-3 themed-bg-alt border-b" style={{ borderColor: 'var(--card-border)' }}>
+            <div className="flex items-center justify-between px-4 py-1.5 themed-bg-alt border-b" style={{ borderColor: 'var(--card-border)' }}>
                 <button onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                     <ChevronRight size={24} color={primaryColor} />
                 </button>
-                <div className="flex flex-col items-center gap-1">
+                <div className="flex flex-col items-center gap-0.5">
                     <button 
                         onClick={() => setIsPickerOpen(true)}
-                        className="text-lg font-bold flex items-center gap-2 px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" 
+                        className="text-lg font-bold flex items-center gap-2 px-3 py-0.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" 
                         style={{ color: primaryColor }}
                     >
                         {monthNameDisplay}
@@ -340,18 +338,18 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
             </div>
 
             {/* Table */}
-            <main className="flex-1 overflow-y-auto p-2 pb-24">
-                <div className="max-w-4xl mx-auto overflow-x-auto rounded-xl border shadow-sm" style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--card-bg)' }}>
-                    <table className="w-full text-center text-[11px] xs:text-xs" dir="rtl">
-                        <thead style={{ backgroundColor: isBlackAndWhite ? '#222' : primaryColor, color: '#fff' }}>
-                            <tr>
-                                <th className="px-1 py-2 border-b border-l border-white/20">اليوم</th>
-                                <th className="px-1 py-2 border-b border-l border-white/20">م/هـ</th>
-                                <th className="px-1 py-2 border-b border-l border-white/20">الفجر</th>
-                                <th className="px-1 py-2 border-b border-l border-white/20">الظهر</th>
-                                <th className="px-1 py-2 border-b border-l border-white/20">العصر</th>
-                                <th className="px-1 py-2 border-b border-l border-white/20">المغرب</th>
-                                <th className="px-1 py-2 border-b border-white/20">العشاء</th>
+            <main className="flex-1 flex flex-col overflow-hidden p-2 pb-4">
+                <div className="max-w-4xl w-full mx-auto overflow-auto rounded-xl border shadow-sm" style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--card-bg)' }}>
+                    <table className="w-full text-center text-[11px] xs:text-xs border-collapse" dir="rtl">
+                        <thead className="z-20" style={{ color: '#fff' }}>
+                            <tr className="divide-x divide-white/20 divide-x-reverse">
+                                <th className="sticky top-0 px-1 py-2 border-b border-white/20 z-10" style={{ backgroundColor: isBlackAndWhite ? '#222' : primaryColor }}>اليوم</th>
+                                <th className="sticky top-0 px-1 py-2 border-b border-white/20 z-10" style={{ backgroundColor: isBlackAndWhite ? '#222' : primaryColor }}>م/هـ</th>
+                                <th className="sticky top-0 px-1 py-2 border-b border-white/20 z-10" style={{ backgroundColor: isBlackAndWhite ? '#222' : primaryColor }}>الفجر</th>
+                                <th className="sticky top-0 px-1 py-2 border-b border-white/20 z-10" style={{ backgroundColor: isBlackAndWhite ? '#222' : primaryColor }}>الظهر</th>
+                                <th className="sticky top-0 px-1 py-2 border-b border-white/20 z-10" style={{ backgroundColor: isBlackAndWhite ? '#222' : primaryColor }}>العصر</th>
+                                <th className="sticky top-0 px-1 py-2 border-b border-white/20 z-10" style={{ backgroundColor: isBlackAndWhite ? '#222' : primaryColor }}>المغرب</th>
+                                <th className="sticky top-0 px-1 py-2 border-b border-white/20 z-10" style={{ backgroundColor: isBlackAndWhite ? '#222' : primaryColor }}>العشاء</th>
                             </tr>
                         </thead>
                         <tbody>
