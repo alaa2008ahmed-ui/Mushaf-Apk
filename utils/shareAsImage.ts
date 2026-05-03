@@ -1,6 +1,7 @@
 import html2canvas from 'html2canvas';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 interface ShareOptions {
     text: string;
@@ -41,7 +42,7 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
         const primaryColor = theme?.palette?.[0] || '#4CAF50';
         const secondaryColor = theme?.palette?.[1] || '#2E7D32';
 
-        // Add background and patterns
+        // Create content
         container.innerHTML = `
             <div id="share-card" style="
                 background: linear-gradient(135deg, ${primaryColor}, ${secondaryColor});
@@ -58,7 +59,6 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                 font-family: ${theme?.font || '"Amiri", serif'};
             ">
                 <!-- Decorative Islamic Pattern Overlay -->
-                <!-- We use a semi-transparent overlay instead of external image if possible for better reliability -->
                 <div style="
                     position: absolute;
                     inset: 0;
@@ -80,7 +80,6 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                     z-index: 1;
                     letter-spacing: 0;
                     word-spacing: 0;
-                    font-variant-ligatures: normal;
                 ">
                     <div style="
                         font-size: 34px;
@@ -88,8 +87,6 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                         margin-bottom: 30px;
                         font-family: inherit;
                         text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                        letter-spacing: 0;
-                        word-spacing: 0;
                     ">
                         ${text.replace(/\n/g, '<br/>')}
                     </div>
@@ -122,40 +119,48 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                     font-size: 20px;
                     font-weight: bold;
                     opacity: 0.9;
-                    font-family: ${theme?.font || '"Amiri", serif'};
-                    letter-spacing: 0;
-                    word-spacing: 0;
-                    font-variant-ligatures: normal;
+                    font-family: inherit;
                 ">
                     مصحف أحمد وليلى
                 </div>
-            </div>
-        `;
+            </div>`;
 
         document.body.appendChild(container);
 
-        // Wait a tiny bit for the DOM to settle
-        await new Promise(r => setTimeout(r, 200));
+        // Wait for fonts and styles to settle
+        await new Promise(r => setTimeout(r, 500));
 
         const canvas = await html2canvas(container, {
-            scale: 2,
+            scale: 3, // High quality scale
             backgroundColor: null,
             useCORS: true,
             logging: false,
-            imageTimeout: 5000, // Shorter timeout for images
+            imageTimeout: 15000, 
+            removeContainer: true
         });
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
 
+        if (!dataUrl || dataUrl === 'data:,') {
+            throw new Error('Failed to generate image data');
+        }
+
         // Share logic
         if (Capacitor.isNativePlatform()) {
+            const fileName = `mus-share_${Date.now()}.jpg`;
+            const base64Data = dataUrl.split(',')[1];
+            
+            const savedFile = await Filesystem.writeFile({
+                path: fileName,
+                data: base64Data,
+                directory: Directory.Cache
+            });
+
             await Share.share({
                 title: 'مشاركة',
-                text: 'شارك من تطبيق مصحف احمد وليلى 🕌',
-                url: dataUrl, 
+                url: savedFile.uri, 
                 dialogTitle: 'مشاركة عبر'
             });
-            if (setToastMessage) setToastMessage('');
         } else if (navigator.share) {
             try {
                 const response = await fetch(dataUrl);
@@ -165,66 +170,47 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({
                         files: [file],
-                        title: 'مشاركة',
-                        text: 'شارك من تطبيق مصحف احمد وليلى 🕌'
+                        title: 'مشاركة'
                     });
                 } else {
-                    await downloadFile(dataUrl, text, setToastMessage);
+                    await downloadFile(dataUrl, setToastMessage);
                 }
             } catch (e) {
                 console.error('Navigator share failed', e);
-                await downloadFile(dataUrl, text, setToastMessage);
+                await downloadFile(dataUrl, setToastMessage);
             }
         } else {
-            await downloadFile(dataUrl, text, setToastMessage);
+            await downloadFile(dataUrl, setToastMessage);
         }
+
+        if (setToastMessage) setToastMessage('');
 
     } catch (err) {
         console.error('Share Error:', err);
         if (setToastMessage) {
-            setToastMessage('حدث خطأ في المشاركة، جاري المحاولة بطريقة أخرى...');
-            setTimeout(() => {
-                showFallbackShare(text, setToastMessage);
-            }, 1500);
+            setToastMessage('فشلت المشاركة كصورة');
         }
     } finally {
         if (document.getElementById(containerId)) {
             document.body.removeChild(container);
         }
-        // Ensure toast is cleared after some time if it wasn't cleared by share logic
         setTimeout(() => {
             if (setToastMessage) setToastMessage('');
         }, 3000);
     }
 };
 
-const downloadFile = async (dataUrl: string, text: string, setToastMessage?: (msg: string) => void) => {
+const downloadFile = async (dataUrl: string, setToastMessage?: (msg: string) => void) => {
     try {
         const link = document.createElement('a');
-        link.download = `dhikr_${Date.now()}.jpg`;
+        link.download = `mushaf_share_${Date.now()}.jpg`;
         link.href = dataUrl;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        if (setToastMessage) setToastMessage('تم تحميل الصورة');
+        if (setToastMessage) setToastMessage('تم تحميل الصورة للمشاركة');
     } catch (e) {
         console.error('Download failed', e);
+        if (setToastMessage) setToastMessage('فشل تحميل الصورة');
     }
-    setTimeout(() => {
-        if (setToastMessage) setToastMessage('');
-        showFallbackShare(text, setToastMessage);
-    }, 2000);
-};
-
-const showFallbackShare = async (text: string, setToastMessage?: (msg: string) => void) => {
-    try {
-        const plainText = text.replace(/<[^>]*>?/gm, '');
-        if (navigator.share) {
-            await navigator.share({
-                title: 'مشاركة',
-                text: plainText + '\n\nشارك من تطبيق مصحف احمد وليلى 🕌'
-            });
-        }
-    } catch (e) {}
-    if (setToastMessage) setToastMessage('');
 };
