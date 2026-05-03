@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
+import ThemePageLock from '../components/ThemePageLock';
 import { ALL_DUAA, DUAA_CATEGORIES } from '../data/adiaData';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -116,7 +117,8 @@ function Adia({ onBack }) {
         <div className="h-screen flex flex-col bg-transparent relative">
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-center">
+                    <div className="relative flex items-center justify-center gap-2">
+                        <ThemePageLock />
                         <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi flex items-center gap-2 justify-center">
                             الأدعية
                         </h1>

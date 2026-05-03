@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NAWAWI_DATA } from '../data/nawawiData';
 import BottomBar from '../components/BottomBar';
+import ThemePageLock from '../components/ThemePageLock';
 import { useTheme } from '../context/ThemeContext';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,13 +33,13 @@ const HadithModal = ({ hadith, onClose, favorites, toggleFavorite, handleCopy, h
             <div className="rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col scale-in" style={{ backgroundColor: 'var(--modal-bg)', color: 'var(--modal-text)', fontFamily: theme.font }} onClick={(e) => e.stopPropagation()}>
                 <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--card-border)' }}>
                     <div className="w-10"></div>
-                    <h3 className="text-xl font-bold font-kufi text-center flex-1" style={{ color: 'var(--modal-text)' }}>{cleanTitle(hadith.title)}</h3>
+                    <h3 className="text-xl font-bold text-center flex-1" style={{ color: 'var(--modal-text)', fontFamily: theme.font }}>{cleanTitle(hadith.title)}</h3>
                     <button onClick={onClose} className="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i className="fa-solid fa-times text-xl"></i>
                     </button>
                 </div>
                 
-                <div className="p-8 overflow-y-auto leading-loose text-center font-amiri flex-1" style={{ fontSize: `${fontSize}px`, color: 'var(--modal-text)' }}>
+                <div className="p-8 overflow-y-auto leading-loose text-center flex-1" style={{ fontSize: `${fontSize}px`, color: 'var(--modal-text)', fontFamily: theme.font }}>
                     <p className="whitespace-pre-line">{hadith.hadith}</p>
                 </div>
 
@@ -153,11 +154,14 @@ const Nawawi = ({ onBack }) => {
     };
 
     return (
-        <div className="h-screen flex flex-col font-cairo overflow-hidden" style={{ backgroundColor: 'transparent', color: theme.textColor }}>
+        <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: 'transparent', color: theme.textColor, fontFamily: theme.font }}>
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <h1 className="app-top-bar__title text-2xl font-kufi">الأربعون النووية</h1>
-                    <p className="app-top-bar__subtitle">متن الأربعين حديثًا في مباني الإسلام وقواعد الأحكام</p>
+                    <h1 className="app-top-bar__title text-2xl flex items-center justify-center gap-2" style={{ fontFamily: theme.font }}>
+                        <ThemePageLock />
+                        الأربعون النووية
+                    </h1>
+                    <p className="app-top-bar__subtitle" style={{ fontFamily: theme.font }}>متن الأربعين حديثًا في مباني الإسلام وقواعد الأحكام</p>
                 </div>
             </header>
 
@@ -202,12 +206,12 @@ const Nawawi = ({ onBack }) => {
                                             color: color
                                         }}
                                     >
-                                        <span className="text-2xl font-bold font-kufi">
+                                        <span className="text-2xl font-bold" style={{ fontFamily: theme.font }}>
                                             {toArabicDigits(hadith.id)}
                                         </span>
                                     </div>
                                     
-                                    <h2 className="font-bold text-sm leading-tight text-gray-800 dark:text-gray-100 line-clamp-3 font-kufi">
+                                    <h2 className="font-bold text-sm leading-tight text-gray-800 dark:text-gray-100 line-clamp-3" style={{ fontFamily: theme.font }}>
                                         {cleanTitle(hadith.title)}
                                     </h2>
 

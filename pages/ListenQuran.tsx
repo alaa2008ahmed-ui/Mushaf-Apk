@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import BottomBar from '../components/BottomBar';
+import ThemePageLock from '../components/ThemePageLock';
 import { useTheme } from '../context/ThemeContext';
 import { RECITERS } from '../components/QuranReader/constants';
 import { SURAH_LIST } from '../data/listenQuranData';
@@ -261,7 +262,10 @@ function ListenQuran({ onBack, onOpenThemes }) {
         <div className="h-screen flex flex-col font-cairo overflow-hidden" style={{ backgroundColor: 'transparent', color: theme.textColor }}>
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <h1 className="app-top-bar__title text-2xl font-kufi">الاستماع للقرآن</h1>
+                    <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2">
+                        <ThemePageLock />
+                        الاستماع للقرآن
+                    </h1>
                     <p className="app-top-bar__subtitle">تلاوات عطرة من أشهر القراء</p>
                 </div>
             </header>

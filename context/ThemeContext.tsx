@@ -6,6 +6,7 @@ interface ThemeSettings {
     themeKey: string;
     isGlobalTheme: boolean;
     pageThemes: Record<string, string>;
+    lockedPages?: string[];
     customBg?: {
         url: string;
         isVideo: boolean;
@@ -16,6 +17,10 @@ interface ThemeContextType {
     theme: Theme;
     themeKey: string;
     isGlobalTheme: boolean;
+    isPageLocked: boolean;
+    isQuranPage: boolean;
+    currentPage: string;
+    togglePageLock: () => void;
     applyPresetTheme: (themeKey: string) => void;
     setCustomBackground: (dataUrl: string, isVideo: boolean) => void;
     resetBackground: () => void;
@@ -25,7 +30,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const THEME_SETTINGS_KEY = 'theme_settings_v2';
+const THEME_SETTINGS_KEY = 'theme_settings_v3';
 
 function hexToRgb(hex: string | null) {
     if (!hex) return null;
@@ -44,12 +49,13 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
                     themeKey: parsed.themeKey || 'default',
                     isGlobalTheme: parsed.isGlobalTheme !== undefined ? parsed.isGlobalTheme : true,
                     pageThemes: parsed.pageThemes || {},
+                    lockedPages: parsed.lockedPages || [],
                     customBg: parsed.customBg
                 };
             }
-            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {} };
+            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {}, lockedPages: [] };
         } catch (e) {
-            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {} };
+            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {}, lockedPages: [] };
         }
     });
 
@@ -61,10 +67,14 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
             return 'default';
         }
 
-        if (settings.isGlobalTheme) {
+        // Home page ALWAYS follows the global theme key
+        if (pageKey === 'home') {
             return settings.themeKey || 'default';
         }
-        return (settings.pageThemes && settings.pageThemes[pageKey]) || settings.themeKey || 'default';
+
+        // Use page-specific theme if it exists (locked or previously locked), 
+        // fallback to global theme
+        return settings.pageThemes[pageKey] || settings.themeKey || 'default';
     }, [settings, currentPage]);
 
     const theme = useMemo(() => {
@@ -87,6 +97,7 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         setSettings(newSettings);
         try {
             localStorage.setItem(THEME_SETTINGS_KEY, JSON.stringify(newSettings));
+            // Force a refresh of the context globally
             window.dispatchEvent(new Event('themeChanged'));
         } catch (e) {
             console.warn('Failed to save theme settings:', e);
@@ -101,7 +112,7 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
                     const parsed = JSON.parse(saved);
                     setSettings(s => {
                         if (JSON.stringify(s) !== JSON.stringify(parsed)) {
-                            return { ...s, ...parsed, pageThemes: parsed.pageThemes || {} };
+                            return { ...s, ...parsed };
                         }
                         return s;
                     });
@@ -117,15 +128,35 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
     }, []);
     
     const applyPresetTheme = (key: string) => {
-        if (settings.isGlobalTheme) {
-            saveSettings({ ...settings, themeKey: key });
-        } else {
-            const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || currentPage.startsWith('quran_') ? 'quran' : currentPage;
-            saveSettings({ 
-                ...settings, 
-                pageThemes: { ...settings.pageThemes, [pageKey]: key } 
+        const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || (currentPage && currentPage.startsWith('quran_')) || currentPage === 'search' ? 'quran' : currentPage;
+        const isLocked = settings.lockedPages?.includes(pageKey);
+
+        let nextSettings = { ...settings };
+
+        if (pageKey === 'home' || !isLocked) {
+            // Changing theme for all UNLOCKED pages
+            nextSettings.themeKey = key;
+            
+            // Sync all unlocked pages that have specific theme entries
+            const nextPageThemes = { ...settings.pageThemes };
+            Object.keys(nextPageThemes).forEach(pk => {
+                if (!settings.lockedPages?.includes(pk)) {
+                    nextPageThemes[pk] = key;
+                }
             });
+            
+            // Ensure the current page is updated if not home
+            if (pageKey !== 'home') {
+                nextPageThemes[pageKey] = key;
+            }
+            
+            nextSettings.pageThemes = nextPageThemes;
+        } else {
+            // Updating only the current LOCKED page
+            nextSettings.pageThemes = { ...settings.pageThemes, [pageKey]: key };
         }
+        
+        saveSettings(nextSettings);
     };
 
     const setIsGlobalTheme = (isGlobal: boolean) => {
@@ -144,6 +175,9 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
     useEffect(() => {
         const root = document.documentElement;
         const videoBg = document.getElementById('video-background') as HTMLVideoElement;
+
+        // Apply visual updates immediately
+        document.body.style.transition = 'background-color 0.5s ease-in-out, color 0.5s ease-in-out';
 
         if (settings.customBg) {
             if (settings.customBg.isVideo && videoBg) {
@@ -184,7 +218,15 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
 
         document.body.style.color = theme.textColor;
         document.body.style.fontFamily = theme.font;
+        root.style.setProperty('--theme-font', theme.font);
         
+        const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || currentPage.startsWith('quran_') ? 'quran' : currentPage;
+        if (pageKey === 'quran') {
+            document.body.classList.add('quran-context');
+        } else {
+            document.body.classList.remove('quran-context');
+        }
+
         root.style.setProperty('--color-primary', theme.palette[0]);
         root.style.setProperty('--color-secondary', theme.palette[1]);
         
@@ -218,18 +260,60 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         root.style.setProperty('--badge-finished-bg', isDark ? 'rgba(74, 222, 128, 0.15)' : 'rgba(34, 197, 94, 0.1)');
         root.style.setProperty('--badge-finished-text', isDark ? '#4ade80' : '#16a34a');
 
-    }, [settings, theme]);
+    }, [settings.customBg, theme, currentPage]);
+
+    const isPageLocked = useMemo(() => {
+        const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || (currentPage && currentPage.startsWith('quran_')) || currentPage === 'search' ? 'quran' : currentPage;
+        if (pageKey === 'home') return false; // Home cannot be locked
+        return settings.lockedPages?.includes(pageKey) || false;
+    }, [settings.lockedPages, currentPage]);
+
+    const togglePageLock = () => {
+        const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || (currentPage && currentPage.startsWith('quran_')) || currentPage === 'search' ? 'quran' : currentPage;
+        if (pageKey === 'quran' || pageKey === 'home') return;
+
+        setSettings(prev => {
+            const locked = prev.lockedPages || [];
+            const isLocked = locked.includes(pageKey);
+            let nextLocked: string[];
+            let nextThemes = { ...prev.pageThemes };
+
+            if (isLocked) {
+                // UNLOCKING: Page stays on its current theme
+                // It will resolve to settings.themeKey only when the global theme changes
+                nextLocked = locked.filter(k => k !== pageKey);
+                // We keep nextThemes[pageKey] as is to avoid immediate jump
+            } else {
+                // LOCKING: Page records its current theme as its locked state
+                nextLocked = [...locked, pageKey];
+                nextThemes[pageKey] = activeThemeKey;
+            }
+
+            const next = { ...prev, lockedPages: nextLocked, pageThemes: nextThemes };
+            localStorage.setItem(THEME_SETTINGS_KEY, JSON.stringify(next));
+            return next;
+        });
+    };
+
+    const isQuranPage = useMemo(() => {
+        const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || (currentPage && currentPage.startsWith('quran_')) || currentPage === 'search' ? 'quran' : currentPage;
+        return pageKey === 'quran';
+    }, [currentPage]);
 
     const contextValue = useMemo(() => ({
         theme,
         themeKey: activeThemeKey,
         isGlobalTheme: settings.isGlobalTheme,
+        isPageLocked,
+        isQuranPage,
+        currentPage,
+        togglePageLock,
         applyPresetTheme,
         setCustomBackground,
         resetBackground,
         setIsGlobalTheme,
         setCurrentPage
-    }), [theme, settings, activeThemeKey]);
+    }), [theme, settings, activeThemeKey, isPageLocked, currentPage]);
 
     return (
         <ThemeContext.Provider value={contextValue}>

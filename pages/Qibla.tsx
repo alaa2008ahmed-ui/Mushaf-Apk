@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
+import ThemePageLock from '../components/ThemePageLock';
 import { usePrayerTimes } from '../context/PrayerTimesContext';
 import { VisualQibla, ARQibla, SunMoonQibla, ShadowQibla } from '../components/QiblaModes';
 
@@ -143,6 +144,7 @@ function Qibla({ onBack, onNavigate }) {
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
                     <div className="flex items-center justify-center gap-2">
+                        <ThemePageLock />
                         <i onClick={handleRefreshLocation} className={`text-xl cursor-pointer ${isRefreshing ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-location-crosshairs active:rotate-180 duration-700'}`} style={{ color: theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0] }}></i>
                         <h1 className="app-top-bar__title text-2xl font-kufi">اتجاه القبلة</h1>
                     </div>
@@ -167,7 +169,9 @@ function Qibla({ onBack, onNavigate }) {
                             style={{
                                 backgroundColor: activeMode === mode.id ? (theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]) : 'var(--card-bg)',
                                 color: activeMode === mode.id ? (theme.name === 'أبيض وأسود' ? '#000000' : '#ffffff') : 'var(--text-color)',
-                                border: `1px solid ${theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]}30`
+                                borderWidth: '1px',
+                                borderStyle: 'solid',
+                                borderColor: `${theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]}30`
                             }}
                         >
                             <i className={`fa-solid ${mode.icon}`}></i>

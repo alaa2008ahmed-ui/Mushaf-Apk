@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
+import ThemePageLock from '../components/ThemePageLock';
 import { gregorianMonths, hijriMonths, islamicEvents, IslamicEvent } from '../data/calendarData';
 import { ChevronRight, ChevronLeft, Calendar as CalendarIcon, Info, RefreshCw, ZoomIn, Copy, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -810,7 +811,10 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
         <div className="h-screen flex flex-col bg-transparent font-sans overflow-hidden">
             <header className="app-top-bar shrink-0">
                 <div className="app-top-bar__inner">
-                    <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi">التقويم</h1>
+                    <div className="flex items-center justify-center gap-2">
+                        <ThemePageLock />
+                        <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi">التقويم</h1>
+                    </div>
                     <p className="app-top-bar__subtitle shrink-0">الميلادي والهجري في مكان واحد</p>
                 </div>
             </header>

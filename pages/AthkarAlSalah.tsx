@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
+import ThemePageLock from '../components/ThemePageLock';
 import { baseAthkar, specialZikr, prayerOptions, fajrDhikr, fajrMaghribDhikr } from '../data/athkarAlSalahData';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'motion/react';
@@ -187,8 +188,6 @@ function AthkarAlSalah({ onBack, onNavigate }) {
             setIsFavoritesView(false);
         } else if (currentPrayer) {
             setCurrentPrayer(null);
-        } else if (onNavigate) {
-            onNavigate('home');
         } else {
             onBack();
         }
@@ -206,7 +205,8 @@ function AthkarAlSalah({ onBack, onNavigate }) {
         <div className="h-screen flex flex-col overflow-hidden bg-transparent">
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-center">
+                    <div className="relative flex items-center justify-center gap-2">
+                        <ThemePageLock />
                         <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi flex items-center gap-2 justify-center">
                             {currentPrayer ? currentPrayer.title : (isFavoritesView ? "الأذكار المفضلة" : "أذكار الصلوات")}
                         </h1>

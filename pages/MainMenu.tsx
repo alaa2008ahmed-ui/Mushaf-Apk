@@ -283,7 +283,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                     isEditMode={isEditMode}
                     onNavigate={(id) => {
                         if (id === 'more') onNavigate('more-menu');
-                        else onNavigate(id);
+                        else onNavigate(id, { from: 'home' });
                     }}
                     theme={theme}
                     themeKey={themeKey}

@@ -138,3 +138,24 @@ input[type=number] {
   direction: rtl;
   unicode-bidi: isolate;
 }
+
+/* Theme font overrides for all pages EXCEPT Quran reader */
+body:not(.quran-context) .font-cairo, 
+body:not(.quran-context) .font-amiri, 
+body:not(.quran-context) .font-kufi,
+body:not(.quran-context) .font-kufi-bold,
+body:not(.quran-context) .font-tajawal,
+body:not(.quran-context) .font-scheherazade,
+body:not(.quran-context) .font-amiri-quran,
+body:not(.quran-context) .font-noto,
+body:not(.quran-context) .font-messiri,
+body:not(.quran-context) .font-quran,
+body:not(.quran-context) .font-aref,
+body:not(.quran-context) .font-lateef,
+body:not(.quran-context) .font-hafs,
+body:not(.quran-context) .font-reem,
+body:not(.quran-context) .font-kufam,
+body:not(.quran-context) .font-mirza,
+body:not(.quran-context) .font-gulzar {
+    font-family: var(--theme-font) !important;
+}

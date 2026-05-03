@@ -3,6 +3,7 @@ import { useTheme } from '../context/ThemeContext';
 import { motion } from 'motion/react';
 import { CheckCircle, BookOpen, RotateCcw, Play, Settings, X, User, Plus, Trash2, ChevronDown, Edit2, Home } from 'lucide-react';
 import BottomBar from '../components/BottomBar';
+import ThemePageLock from '../components/ThemePageLock';
 import ResetConfirmModal from '../components/DailyWird/ResetConfirmModal';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 
@@ -28,6 +29,18 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
   const secondaryColor = isBlackAndWhite ? '#FFFFFF' : (theme.palette[1] || theme.palette[0]);
   const btnTextColor = isBlackAndWhite ? '#000000' : '#FFFFFF';
+
+  const btnBorderParts = React.useMemo(() => {
+    if (!theme.btnBorder || theme.btnBorder === 'none') {
+      return { borderWidth: 0, borderStyle: 'none' as const, borderColor: 'transparent' };
+    }
+    const parts = theme.btnBorder.split(' ');
+    return {
+      borderWidth: parts[0] || '1px',
+      borderStyle: (parts[1] || 'solid') as any,
+      borderColor: parts[2] || primaryColor
+    };
+  }, [theme.btnBorder, primaryColor]);
 
   const [allSettings, setAllSettings] = useState<WirdSettings[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -563,7 +576,13 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
                   }
                 }}
                 className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md"
-                style={{ backgroundColor: primaryColor, color: btnTextColor, border: theme.btnBorder || 'none' }}
+                style={{ 
+                  backgroundColor: primaryColor, 
+                  color: btnTextColor, 
+                  borderWidth: btnBorderParts.borderWidth,
+                  borderStyle: btnBorderParts.borderStyle,
+                  borderColor: btnBorderParts.borderColor
+                }}
               >
                 <BookOpen size={20} />
                 {canContinue ? `تكملة الورد (صفحة ${settings.lastPage})` : 'افتح المصحف للقراءة'}
@@ -574,7 +593,13 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
               <button 
                 onClick={markDayCompleted}
                 className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md"
-                style={{ backgroundColor: secondaryColor, color: btnTextColor, border: theme.btnBorder || 'none' }}
+                style={{ 
+                  backgroundColor: secondaryColor, 
+                  color: btnTextColor, 
+                  borderWidth: btnBorderParts.borderWidth,
+                  borderStyle: btnBorderParts.borderStyle,
+                  borderColor: btnBorderParts.borderColor
+                }}
               >
                 <CheckCircle size={20} />
                 تمت القراءة
@@ -596,7 +621,13 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
                   <button 
                     onClick={handleStartNewWird}
                     className="flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md"
-                    style={{ backgroundColor: primaryColor, color: btnTextColor, border: theme.btnBorder || 'none' }}
+                    style={{ 
+                      backgroundColor: primaryColor, 
+                      color: btnTextColor, 
+                      borderWidth: btnBorderParts.borderWidth,
+                      borderStyle: btnBorderParts.borderStyle,
+                      borderColor: btnBorderParts.borderColor
+                    }}
                   >
                     <Plus size={20} />
                     بداية ورد جديد
@@ -787,6 +818,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         <div className="app-top-bar__inner flex items-center justify-center px-4">
           <div className="text-center">
             <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2">
+              <ThemePageLock />
               <span className="text-green-500 dark:text-green-400">📅</span>
               الورد اليومي
             </h1>

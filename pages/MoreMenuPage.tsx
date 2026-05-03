@@ -27,7 +27,7 @@ const ALL_MENU_ITEMS = [
 ];
 
 interface MoreMenuPageProps {
-    onNavigate: (pageId: string) => void;
+    onNavigate: (pageId: string, params?: any) => void;
     onBack: () => void;
 }
 
@@ -75,7 +75,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                     >
                                         <NavButton
                                             label={item.label}
-                                            onClick={() => onNavigate(item.id)}
+                                            onClick={() => onNavigate(item.id, { from: 'more-menu' })}
                                             className="w-full h-full"
                                             color={themeKey === 'olive_grove' ? (['quran', 'listen', 'prayer-times', 'daily-wird', 'memorization', 'voice-control'].includes(item.id) ? '#4D7C0F' : '#65A30D') : (theme.palette[item.colorIndex] || theme.palette[0])}
                                             border={theme.btnBorder}

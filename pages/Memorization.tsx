@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, HelpCircle, Repeat, Play, User, ArrowLeftRight, CheckSquare, Minus, Plus, BookOpen, Calendar, List, Trophy, Trash2, RotateCcw, Download } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import ThemePageLock from '../components/ThemePageLock';
 import { quranData as quranJsonData } from '../utils/quranData';
 const quranData = { data: quranJsonData };
 import { SURAH_NAMES_AR, MEMORIZATION_READERS } from '../components/QuranReader/constants';
@@ -260,6 +261,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                 <header className="app-top-bar shrink-0 relative z-10" style={{ backgroundColor: 'var(--qr-bar-bg)', borderBottom: '1px solid var(--qr-bar-border)' }}>
                     <div className="app-top-bar__inner flex items-center justify-center px-4">
                         <h1 className="app-top-bar__title text-xl font-kufi flex items-center justify-center gap-2" style={{ color: 'var(--qr-bar-text)' }}>
+                            <ThemePageLock />
                             التحفيظ
                         </h1>
                     </div>
@@ -589,7 +591,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
             {/* Help Modal */}
             {showHelpModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn" onClick={() => setShowHelpModal(false)}>
-                    <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-modal-enter text-right" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', border: `1px solid var(--card-border)` }}>
+                    <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-modal-enter text-right" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--card-border)' }}>
                         <h2 className="text-xl font-bold mb-4 border-b pb-2" style={{ borderColor: 'var(--card-border)' }}>دليل التحفيظ</h2>
                         <div className="space-y-4 text-sm leading-relaxed">
                             <p>• <span className="font-bold">تكرار الآية:</span> عدد مرات تكرار كل آية على حدة قبل الانتقال للتالية.</p>
@@ -605,7 +607,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
             {/* Explanation Modal */}
             {showExplanationModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn" onClick={() => setShowExplanationModal(false)}>
-                    <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-modal-enter text-right" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', border: `1px solid var(--card-border)` }}>
+                    <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-modal-enter text-right" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--card-border)' }}>
                         <h2 className="text-xl font-bold mb-4 border-b pb-2" style={{ borderColor: 'var(--card-border)' }}>التكرار المترابط</h2>
                         <p className="text-sm leading-relaxed mb-6">
                             هذه الميزة تساعدك على ربط الآيات ببعضها. عند تفعيلها، سيقوم التطبيق بتشغيل الآية السابقة مرة واحدة قبل البدء بتكرار الآية الحالية، مما يرسخ تسلسل الآيات في ذاكرتك.
@@ -618,7 +620,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
             {/* Resume Session Modal */}
             {showResumePrompt && savedSession && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-                    <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-modal-enter text-center" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', border: `1px solid var(--card-border)` }}>
+                    <div className="w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-modal-enter text-center" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--card-border)' }}>
                         <div className="w-16 h-16 bg-emerald-500/20 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Play size={32} />
                         </div>
@@ -654,7 +656,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
             {/* Custom Picker Modal */}
             {activePicker && (
                 <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn" onClick={() => setActivePicker(null)}>
-                    <div className="w-full max-w-[280px] rounded-[2rem] p-4 shadow-2xl animate-modal-enter flex flex-col max-h-[75vh]" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', border: `1px solid var(--card-border)` }}>
+                    <div className="w-full max-w-[280px] rounded-[2rem] p-4 shadow-2xl animate-modal-enter flex flex-col max-h-[75vh]" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--card-border)' }}>
                         <div className="flex-1 overflow-y-auto scrollbar-hide space-y-2 p-2" dir="rtl">
                             {activePicker === 'reader' && MEMORIZATION_READERS.map(r => (
                                 <button

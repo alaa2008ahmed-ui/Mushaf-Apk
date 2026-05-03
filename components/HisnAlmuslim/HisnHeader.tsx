@@ -1,4 +1,5 @@
 import React from 'react';
+import ThemePageLock from '../ThemePageLock';
 
 interface HisnHeaderProps {
     title: string;
@@ -11,6 +12,7 @@ const HisnHeader: React.FC<HisnHeaderProps> = ({ title, subtitle }) => {
             <div className="app-top-bar__inner">
                 <div className="relative flex items-center justify-center">
                     <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi flex items-center gap-2 justify-center">
+                        <ThemePageLock />
                         {title}
                     </h1>
                 </div>

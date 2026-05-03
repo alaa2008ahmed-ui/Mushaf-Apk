@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
+import ThemePageLock from '../components/ThemePageLock';
 import ZakatCalculator from '../components/Calculators/ZakatCalculator';
 import MawarithCalculator from '../components/Calculators/MawarithCalculator';
 import KaffaratCalculator from '../components/Calculators/KaffaratCalculator';
@@ -17,13 +18,11 @@ const Calculators: React.FC<CalculatorsProps> = ({ onBack }) => {
         <div className="h-screen flex flex-col bg-transparent">
             {/* Header */}
             <header className="app-top-bar shadow-sm z-10">
-                <div className="app-top-bar__inner flex justify-between items-center px-4">
-                    <div className="flex-1"></div>
-                    <div className="flex-2 text-center">
+                <div className="app-top-bar__inner flex justify-center items-center px-4 gap-2">
+                    <ThemePageLock />
+                    <div className="text-center">
                         <h1 className="text-2xl font-kufi font-bold text-primary">الحاسبة الشاملة</h1>
                         <p className="text-xs opacity-80 font-cairo">زكاة، مواريث، كفارات</p>
-                    </div>
-                    <div className="flex-1 flex justify-end">
                     </div>
                 </div>
             </header>

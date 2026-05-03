@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import ThemePageLock from '../components/ThemePageLock';
 import { usePrayerTimes } from '../context/PrayerTimesContext';
 import { Coordinates, CalculationMethod, PrayerTimes as AdhanPrayerTimes } from 'adhan';
 import moment from 'moment-hijri';
@@ -60,6 +61,18 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
     const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
     const secondaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[1];
     const topBarTextColor = theme.topBarText || (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
+
+    const btnBorderParts = useMemo(() => {
+        if (!theme.btnBorder || theme.btnBorder === 'none') {
+            return { borderWidth: 0, borderStyle: 'none' as const, borderColor: 'transparent' };
+        }
+        const parts = theme.btnBorder.split(' ');
+        return {
+            borderWidth: parts[0] || '1px',
+            borderStyle: (parts[1] || 'solid') as any,
+            borderColor: parts[2] || primaryColor
+        };
+    }, [theme.btnBorder, primaryColor]);
 
     useEffect(() => {
         const interceptor = () => {
@@ -292,9 +305,12 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
             {/* Top Bar */}
             <header className="app-top-bar">
                 <div className="app-top-bar__inner relative">
-                    <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi" style={{ color: topBarTextColor }}>
-                        مواقيت الشهر
-                    </h1>
+                    <div className="flex items-center justify-center gap-2">
+                        <ThemePageLock />
+                        <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi" style={{ color: topBarTextColor }}>
+                            مواقيت الشهر
+                        </h1>
+                    </div>
                     <p className="app-top-bar__subtitle font-bold" style={{ color: topBarTextColor }}>
                         {config.location.cityGov}
                     </p>
@@ -382,38 +398,47 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                 </div>
             </main>
 
-            <nav className="app-bottom-bar">
-                <div className="app-bottom-bar__inner !justify-between gap-3">
+            <BottomBar 
+                onHomeClick={onBack} 
+                onThemesClick={() => {}} 
+                showThemes={false} 
+                leftButton={
                     <button 
                         onClick={handleShare}
                         disabled={isSharing}
-                        className="bar-button btn-3d-effect !flex-1 !py-2.5 !px-2 !text-sm !rounded-xl shadow-lg"
-                        style={{ background: primaryColor, color: isBlackAndWhite ? '#000' : 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
+                        className="bar-button btn-3d-effect min-w-[44px] h-[44px] flex items-center justify-center gap-2 px-3 rounded-xl shadow-md transition-all active:scale-95"
+                        style={{ 
+                            background: primaryColor, 
+                            color: isBlackAndWhite ? '#000' : 'white', 
+                            fontFamily: theme.font,
+                            borderWidth: btnBorderParts.borderWidth,
+                            borderStyle: btnBorderParts.borderStyle,
+                            borderColor: btnBorderParts.borderColor
+                        }}
                     >
                         <Share size={18} />
                         <span className="hidden xs:inline">{isSharing ? '...' : 'مشاركة'}</span>
                     </button>
-
-                    <button 
-                        onClick={onBack} 
-                        className="bar-button btn-3d-effect !flex-[2] max-w-[160px] py-2.5 px-4 rounded-xl shadow-lg"
-                        style={{ background: primaryColor, color: isBlackAndWhite ? '#000' : 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
-                    >
-                        <span className="text-xl">🏠</span>
-                        <span className="hidden sm:inline">الرئيسية</span>
-                    </button>
-
+                }
+                rightButton={
                     <button 
                         onClick={handleExportPDF}
                         disabled={isExporting}
-                        className="bar-button btn-3d-effect !flex-1 !py-2.5 !px-2 !text-sm !rounded-xl shadow-lg"
-                        style={{ background: primaryColor, color: isBlackAndWhite ? '#000' : 'white', fontFamily: theme.font, border: theme.btnBorder || 'none' }}
+                        className="bar-button btn-3d-effect min-w-[44px] h-[44px] flex items-center justify-center gap-2 px-3 rounded-xl shadow-md transition-all active:scale-95"
+                        style={{ 
+                            background: primaryColor, 
+                            color: isBlackAndWhite ? '#000' : 'white', 
+                            fontFamily: theme.font,
+                            borderWidth: btnBorderParts.borderWidth,
+                            borderStyle: btnBorderParts.borderStyle,
+                            borderColor: btnBorderParts.borderColor
+                        }}
                     >
                         <Download size={18} />
                         <span className="hidden xs:inline">{isExporting ? '...' : 'PDF'}</span>
                     </button>
-                </div>
-            </nav>
+                }
+            />
 
             {/* Hidden Table for PDF Export */}
             <div style={{ position: 'fixed', top: '-10000px', left: '-10000px', zIndex: -1000 }}>
@@ -426,27 +451,27 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center', fontSize: '14px' }}>
                     <thead>
                         <tr style={{ backgroundColor: primaryColor, color: '#fff' }}>
-                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>اليوم</th>
-                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>التاريخ الهجري</th>
-                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>التاريخ الميلادي</th>
-                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>الفجر</th>
-                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>الظهر</th>
-                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>العصر</th>
-                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>المغرب</th>
-                            <th style={{ padding: '10px', border: '1px solid #ddd' }}>العشاء</th>
+                            <th style={{ padding: '10px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd' }}>اليوم</th>
+                            <th style={{ padding: '10px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd' }}>التاريخ الهجري</th>
+                            <th style={{ padding: '10px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd' }}>التاريخ الميلادي</th>
+                            <th style={{ padding: '10px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd' }}>الفجر</th>
+                            <th style={{ padding: '10px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd' }}>الظهر</th>
+                            <th style={{ padding: '10px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd' }}>العصر</th>
+                            <th style={{ padding: '10px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd' }}>المغرب</th>
+                            <th style={{ padding: '10px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd' }}>العشاء</th>
                         </tr>
                     </thead>
                     <tbody>
                         {monthData.map((day, idx) => (
                             <tr key={idx}>
-                                <td style={{ padding: '8px', border: '1px solid #ddd' }}>{day.dayName}</td>
-                                <td style={{ padding: '8px', border: '1px solid #ddd', direction: 'ltr' }}>{day.hijriDateStr}</td>
-                                <td style={{ padding: '8px', border: '1px solid #ddd', direction: 'ltr' }}>{day.gregorianDateStr}</td>
-                                <td style={{ padding: '8px', border: '1px solid #ddd', direction: 'ltr' }}>{formatTime12_clean(applyOffset(day.timings.Fajr, getOffset('Fajr')))}</td>
-                                <td style={{ padding: '8px', border: '1px solid #ddd', direction: 'ltr' }}>{formatTime12_clean(applyOffset(day.timings.Dhuhr, getOffset('Dhuhr')))}</td>
-                                <td style={{ padding: '8px', border: '1px solid #ddd', direction: 'ltr' }}>{formatTime12_clean(applyOffset(day.timings.Asr, getOffset('Asr')))}</td>
-                                <td style={{ padding: '8px', border: '1px solid #ddd', direction: 'ltr' }}>{formatTime12_clean(applyOffset(day.timings.Maghrib, getOffset('Maghrib')))}</td>
-                                <td style={{ padding: '8px', border: '1px solid #ddd', direction: 'ltr' }}>{formatTime12_clean(applyOffset(day.timings.Isha, getOffset('Isha')))}</td>
+                                <td style={{ padding: '8px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd' }}>{day.dayName}</td>
+                                <td style={{ padding: '8px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd', direction: 'ltr' }}>{day.hijriDateStr}</td>
+                                <td style={{ padding: '8px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd', direction: 'ltr' }}>{day.gregorianDateStr}</td>
+                                <td style={{ padding: '8px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd', direction: 'ltr' }}>{formatTime12_clean(applyOffset(day.timings.Fajr, getOffset('Fajr')))}</td>
+                                <td style={{ padding: '8px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd', direction: 'ltr' }}>{formatTime12_clean(applyOffset(day.timings.Dhuhr, getOffset('Dhuhr')))}</td>
+                                <td style={{ padding: '8px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd', direction: 'ltr' }}>{formatTime12_clean(applyOffset(day.timings.Asr, getOffset('Asr')))}</td>
+                                <td style={{ padding: '8px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd', direction: 'ltr' }}>{formatTime12_clean(applyOffset(day.timings.Maghrib, getOffset('Maghrib')))}</td>
+                                <td style={{ padding: '8px', borderWidth: '1px', borderStyle: 'solid', borderColor: '#ddd', direction: 'ltr' }}>{formatTime12_clean(applyOffset(day.timings.Isha, getOffset('Isha')))}</td>
                             </tr>
                         ))}
                     </tbody>

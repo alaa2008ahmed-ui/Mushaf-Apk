@@ -25,17 +25,27 @@ import { clearSearchCache } from './pages/GlobalSearch';
 
 // --- Main App Component ---
 function App() {
-  const { theme, applyPresetTheme } = useTheme();
+  const { theme, applyPresetTheme, setCurrentPage } = useTheme();
   const [showSplash, setShowSplash] = useState(true);
   const [history, setHistory] = useState(['home']);
   const [navParams, setNavParams] = useState<any>(null);
+  const [lastMenuPage, setLastMenuPage] = useState('home');
   const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
 
   useEffect(() => {
+    const currentPage = history[history.length - 1];
+    setCurrentPage(currentPage);
+  }, [history, setCurrentPage]);
+
+  useEffect(() => {
     if (!history.includes('search')) {
       clearSearchCache();
+    }
+    const currentPage = history[history.length - 1];
+    if (currentPage === 'home' || currentPage === 'more-menu') {
+      setLastMenuPage(currentPage);
     }
   }, [history]);
 
@@ -55,11 +65,34 @@ function App() {
     }
 
     if (pageId === 'home') {
-      // If we are in the Mushaf and it's a practical application from Tajweed,
-      // the Home button should take us back to Tajweed.
+      // 0. If force is true, reset to home
+      if (params?.force) {
+        setHistory(['home']);
+        setNavParams(null);
+        return;
+      }
+
+      // Logic for home button:
+      // 1. If currently in quran, go back (one step)
       if (history[history.length - 1] === 'quran') {
         setHistory(prev => (prev.length > 1 ? prev.slice(0, -1) : prev));
         return;
+      }
+      
+      // 2. If we are in more-menu, home should take us back to home
+      if (history[history.length - 1] === 'more-menu') {
+        setHistory(['home']);
+        setNavParams(null);
+        return;
+      }
+
+      // 3. Return to last menu
+      if (lastMenuPage === 'more-menu') {
+        const moreMenuIndex = history.lastIndexOf('more-menu');
+        if (moreMenuIndex !== -1) {
+          setHistory(prev => prev.slice(0, moreMenuIndex + 1));
+          return;
+        }
       }
 
       const quranIndex = history.lastIndexOf('quran');
@@ -79,10 +112,23 @@ function App() {
     if (validPages.includes(pageId)) {
       setNavParams(params || null);
       setHistory(prev => {
-        if (prev[prev.length - 1] !== pageId) {
-          return [...prev, pageId];
+        const current = prev[prev.length - 1];
+        
+        // If we are navigating to the same page, do nothing
+        if (current === pageId) return prev;
+
+        // Features list (all valid pages except home, more-menu)
+        const isMenu = (id: string) => id === 'home' || id === 'more-menu';
+
+        // If we are switching between features (and not coming from or going to a menu)
+        // we replace the last feature to keep history clean.
+        // Exception: quran reader usually stays in history for deep navigation if needed
+        // but for now, let's treat it as a feature too for consistency.
+        if (!isMenu(current) && !isMenu(pageId)) {
+          return [...prev.slice(0, -1), pageId];
         }
-        return prev;
+
+        return [...prev, pageId];
       });
     } else {
       alert(`التنقل إلى قسم "${pageId}" قيد الإنشاء.`);

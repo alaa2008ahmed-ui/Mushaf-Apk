@@ -794,10 +794,12 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onBack, onNavigate }) => {
         <div className="flex flex-col h-screen overflow-hidden" style={{ backgroundColor: theme.bgColor, color: theme.textColor }}>
             {/* Standard App Header */}
             <div 
-                className="flex items-center p-4 m-2 rounded-2xl shrink-0" 
+                className="flex items-center py-2 px-4 mt-12 mb-3 mx-2 rounded-2xl shrink-0" 
                 style={{ 
                     backgroundColor: theme.barBg, 
-                    border: `2px solid ${theme.accent || theme.palette[0]}`, 
+                    borderWidth: '2px',
+                    borderStyle: 'solid',
+                    borderColor: theme.accent || theme.palette[0],
                     color: theme.accent || theme.palette[0] 
                 }}
             >
@@ -819,9 +821,11 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onBack, onNavigate }) => {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="ابحث عن آية، كلمة، ذكر، أو دعاء..." 
-                        className="w-full p-4 pl-12 pr-12 rounded-2xl focus:outline-none font-bold"
+                        className="w-full p-3 pl-12 pr-12 rounded-2xl focus:outline-none font-bold"
                         style={{ 
-                            border: `2px solid ${theme.accent || theme.palette[0]}`, 
+                            borderWidth: '2px',
+                            borderStyle: 'solid',
+                            borderColor: theme.accent || theme.palette[0],
                             backgroundColor: `${theme.barBg}33`, 
                             color: theme.accent || theme.palette[0] 
                         }}

@@ -3,6 +3,7 @@ import React, { useState, useEffect, FC } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
+import ThemePageLock from '../components/ThemePageLock';
 import { umrahSteps, hajjTypes, hajjTamattuPlan, hajjIfradPlan, hajjQiranPlan, hajjGeneralInfo, allDuaas, homeScreenAdditions } from '../data/hajjUmrahData';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'motion/react';
@@ -287,7 +288,8 @@ function HajjUmrah({ onBack }) {
                             <ChevronRight size={24} />
                         </button>
                     )}
-                    <div className="relative flex items-center justify-center">
+                    <div className="relative flex items-center justify-center gap-2">
+                        <ThemePageLock />
                         <h1 className="app-top-bar__title text-2xl md:text-3xl font-kufi tracking-wide">الحج والعمرة</h1>
                     </div>
                     {screen === 'home' && <p className="app-top-bar__subtitle">دليل مبسّط لمناسك الحج والعمرة مع خطوات وأذكار واضحة</p>}

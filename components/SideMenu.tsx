@@ -12,7 +12,7 @@ import { THEMES } from './QuranReader/constants';
 interface SideMenuProps {
     isOpen: boolean;
     onClose: () => void;
-    onNavigate: (pageId: string) => void;
+    onNavigate: (pageId: string, params?: any) => void;
     onOpenThemes: () => void;
     currentTheme: any;
     currentPage: string;
@@ -150,6 +150,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
                                             if (item.id === 'themes') onOpenThemes();
                                             else if (item.id === 'whatsapp') window.open('https://wa.me/201000000000', '_blank');
                                             else if (item.id === 'settings' || item.id === 'readers' || item.id === 'font-type' || item.id === 'notifications' || item.id === 'sajdah') onNavigate('settings');
+                                            else if (item.id === 'home') onNavigate('home', { force: true });
                                             else onNavigate(item.id);
                                             onClose();
                                         }}

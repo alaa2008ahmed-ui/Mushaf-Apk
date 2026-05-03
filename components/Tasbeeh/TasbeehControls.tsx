@@ -21,14 +21,14 @@ const TasbeehControls: React.FC<TasbeehControlsProps> = ({ isBlackAndWhite, them
                 <button onClick={() => setModals((p: any) => ({...p, phrase: true}))} className="w-full py-4 px-4 rounded-xl flex justify-between items-center text-lg font-bold transition-all duration-300 themed-bg-alt hover:opacity-80 active:scale-[0.98]">
                     <div className="flex flex-col items-start min-w-0 pr-2">
                         <span className="text-xs tracking-wider uppercase opacity-80 mb-1" style={{color: secondaryTextColor}}>الذكر الحالي</span>
-                        <div className="flex-grow flex justify-start overflow-hidden h-8 w-full relative">
-                            <AnimatePresence mode="popLayout">
+                        <div className="flex-grow flex justify-start min-h-[3rem] w-full relative overflow-visible">
+                            <AnimatePresence>
                                 <motion.span 
                                     key={activePhrase}
                                     initial={{ y: 20, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
                                     exit={{ y: -20, opacity: 0 }}
-                                    className="text-xl md:text-2xl font-extrabold text-right font-amiri truncate absolute w-full" 
+                                    className="text-xl md:text-2xl font-extrabold text-right font-amiri leading-relaxed w-full whitespace-normal break-words" 
                                     style={{color: isBlackAndWhite ? '#FFFFFF' : undefined}}
                                 >
                                     {activePhrase}
