@@ -179,6 +179,13 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         // Apply visual updates immediately
         document.body.style.transition = 'background-color 0.5s ease-in-out, color 0.5s ease-in-out';
 
+        const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || currentPage.startsWith('quran_') ? 'quran' : currentPage;
+        if (pageKey === 'quran') {
+            document.body.classList.add('quran-context');
+        } else {
+            document.body.classList.remove('quran-context');
+        }
+
         if (settings.customBg) {
             if (settings.customBg.isVideo && videoBg) {
                 videoBg.style.display = 'block';
@@ -186,14 +193,25 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
                 if (videoBg.src !== settings.customBg.url) {
                     videoBg.src = settings.customBg.url;
                 }
-                const playPromise = videoBg.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(e => {
-                        if (e.name !== 'AbortError') {
-                            console.warn("Video autoplay failed:", e);
+                const startPlay = async () => {
+                    try {
+                        await videoBg.play();
+                    } catch (e: any) {
+                        const isAutoplayError = 
+                            e.name === 'NotAllowedError' || 
+                            (e.message && (
+                                e.message.includes('user agent') || 
+                                e.message.includes('platform') || 
+                                e.message.includes('permission') ||
+                                e.message.includes('interact')
+                            ));
+
+                        if (e.name !== 'AbortError' && !isAutoplayError) {
+                            console.warn("Background video play failed:", e);
                         }
-                    });
-                }
+                    }
+                };
+                startPlay();
                 document.body.style.backgroundImage = 'none';
                 document.body.style.backgroundColor = 'black';
             } else {
@@ -210,22 +228,19 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
             const colorLeft = hexToRgb(theme.palette[0]) || '20, 184, 166';
             const colorRight = hexToRgb(theme.palette[1] || theme.palette[0]) || '124, 58, 237';
             
-            document.body.style.backgroundImage = `
-                radial-gradient(circle at 15% 25%, rgba(${colorLeft}, 0.5), transparent 50%),
-                radial-gradient(circle at 85% 75%, rgba(${colorRight}, 0.5), transparent 50%)
-            `;
+            if (pageKey === 'quran') {
+                document.body.style.backgroundImage = `
+                    radial-gradient(circle at 15% 25%, rgba(${colorLeft}, 0.5), transparent 50%),
+                    radial-gradient(circle at 85% 75%, rgba(${colorRight}, 0.5), transparent 50%)
+                `;
+            } else {
+                document.body.style.backgroundImage = 'none';
+            }
         }
 
         document.body.style.color = theme.textColor;
         document.body.style.fontFamily = theme.font;
         root.style.setProperty('--theme-font', theme.font);
-        
-        const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || currentPage.startsWith('quran_') ? 'quran' : currentPage;
-        if (pageKey === 'quran') {
-            document.body.classList.add('quran-context');
-        } else {
-            document.body.classList.remove('quran-context');
-        }
 
         root.style.setProperty('--color-primary', theme.palette[0]);
         root.style.setProperty('--color-secondary', theme.palette[1]);
@@ -245,17 +260,23 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         root.style.setProperty('--bottom-bar-border', barBorderColor);
         root.style.setProperty('--qr-bar-bg', theme.barBg || (isDark ? '#1e293b' : '#ffffff'));
         root.style.setProperty('--qr-bar-border', barBorderColor);
-        root.style.setProperty('--card-bg', theme.cardBg || (isDark ? '#1e293b' : '#ffffff'));
-        root.style.setProperty('--card-border', theme.cardBorder || (isDark ? '#334155' : '#e2e8f0'));
+        
+        const quranCardBg = theme.cardBg || (isDark ? '#1e293b' : '#ffffff');
+        const quranCardBorder = theme.cardBorder || (isDark ? '#334155' : '#e2e8f0');
+        const defaultCardBg = isDark ? '#1f2937' : '#ffffff';
+        const defaultCardBorder = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+        
+        root.style.setProperty('--card-bg', pageKey === 'quran' ? quranCardBg : defaultCardBg);
+        root.style.setProperty('--card-border', pageKey === 'quran' ? quranCardBorder : defaultCardBorder);
         
         root.style.setProperty('--modal-bg', theme.cardBg || (isDark ? '#1e293b' : '#ffffff'));
         root.style.setProperty('--modal-text', theme.textColor);
         root.style.setProperty('--modal-border', theme.palette[0]);
 
-        root.style.setProperty('--card-bg-hover', isDark ? '#334155' : '#f8fafc');
+        root.style.setProperty('--card-bg-hover', pageKey === 'quran' ? (isDark ? '#334155' : '#f8fafc') : (isDark ? '#374151' : '#f9fafb'));
         root.style.setProperty('--card-shadow', isDark
             ? '0 8px 16px -4px rgba(0,0,0,0.4), 0 4px 6px -2px rgba(0,0,0,0.3)'
-            : '0 8px 16px -4px rgba(30,41,59,0.1), 0 4px 6px -2px rgba(30,41,59,0.05)');
+            : '0 8px 16px -4px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02)');
             
         root.style.setProperty('--badge-finished-bg', isDark ? 'rgba(74, 222, 128, 0.15)' : 'rgba(34, 197, 94, 0.1)');
         root.style.setProperty('--badge-finished-text', isDark ? '#4ade80' : '#16a34a');

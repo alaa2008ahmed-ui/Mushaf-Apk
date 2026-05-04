@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 interface DuaaSectionProps {
+    id: number;
     title: string;
     items: string[];
     isOpen: boolean;
@@ -21,40 +22,84 @@ interface DuaaSectionProps {
     onZoom: (item: string) => void;
 }
 
-const DuaaSection: FC<DuaaSectionProps> = ({ title, items, isOpen, onToggle, onZoom }) => (
-    <div className="border border-white/20 dark:border-gray-700 rounded-2xl overflow-hidden mb-3 bg-white/10 backdrop-blur-sm">
-        <button 
-            onClick={onToggle} 
-            className="w-full flex justify-between items-center p-4 bg-white/40 dark:bg-gray-800/50 hover:bg-white/60 dark:hover:bg-gray-800 transition-colors"
-        >
-            <span className="font-bold text-base md:text-lg" style={{ color: 'var(--text-color)' }}>{title}</span>
-            <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                <ChevronDown className="w-5 h-5 opacity-70" style={{ color: 'var(--text-color)' }} />
-            </motion.div>
-        </button>
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div 
-                    initial={{ height: 0, opacity: 0 }} 
-                    animate={{ height: 'auto', opacity: 1 }} 
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                >
-                    <ul className="p-4 space-y-3 bg-white/20 dark:bg-gray-900/20">
-                        {items.map((item, index) => (
-                            <li key={index} className="flex items-start justify-between gap-3 p-4 rounded-xl bg-white/50 dark:bg-gray-800/40 shadow-sm">
-                                <span className="text-base md:text-lg leading-loose font-medium" style={{ color: 'var(--text-color)' }} dangerouslySetInnerHTML={{ __html: item }}></span>
-                                <button onClick={() => onZoom(item)} className="p-2 shrink-0 opacity-60 hover:opacity-100 transition-opacity rounded-full dark:hover:bg-gray-700" style={{ color: 'var(--text-color)' }}>
+const DuaaSection: FC<DuaaSectionProps> = ({ id, title, items, isOpen, onToggle, onZoom }) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    useEffect(() => {
+        if (isOpen) {
+            setCurrentIndex(0);
+        }
+    }, [isOpen]);
+
+    const handleNext = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (currentIndex < items.length - 1) setCurrentIndex(i => i + 1);
+    };
+
+    const handlePrev = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (currentIndex > 0) setCurrentIndex(i => i - 1);
+    };
+
+    return (
+        <div id={`duaa-section-${id}`} className="border border-white/20 dark:border-gray-700 rounded-2xl overflow-hidden mb-3 bg-white/10 backdrop-blur-sm">
+            <button 
+                onClick={onToggle} 
+                className="w-full flex justify-between items-center p-4 bg-white/40 dark:bg-gray-800/50 hover:bg-white/60 dark:hover:bg-gray-800 transition-colors"
+            >
+                <span className="font-bold text-base md:text-lg text-right" style={{ color: 'var(--text-color)' }}>{title}</span>
+                <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                    <ChevronDown className="w-5 h-5 opacity-70" style={{ color: 'var(--text-color)' }} />
+                </motion.div>
+            </button>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div 
+                        initial={{ height: 0, opacity: 0 }} 
+                        animate={{ height: 'auto', opacity: 1 }} 
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="p-4 bg-white/20 dark:bg-gray-900/20">
+                            <div className="flex flex-col gap-4 p-5 rounded-xl bg-white/50 dark:bg-gray-800/40 shadow-sm relative min-h-[160px] justify-center items-center text-center">
+                                <span className="absolute top-3 right-4 text-xs font-bold opacity-50" style={{ color: 'var(--text-color)' }}>
+                                    {currentIndex + 1} / {items.length}
+                                </span>
+                                <button onClick={() => onZoom(items[currentIndex])} className="absolute top-2 left-2 p-2 shrink-0 opacity-60 hover:opacity-100 transition-opacity rounded-full dark:hover:bg-gray-700" style={{ color: 'var(--text-color)' }}>
                                     <ZoomIn className="w-5 h-5" />
                                 </button>
-                            </li>
-                        ))}
-                    </ul>
-                </motion.div>
-            )}
-        </AnimatePresence>
-    </div>
-);
+                                
+                                <span className="text-lg md:text-xl leading-loose font-amiri mt-6 mb-2" style={{ color: 'var(--text-color)' }} dangerouslySetInnerHTML={{ __html: items[currentIndex] }}></span>
+                                
+                                <div className="flex w-full justify-between items-center mt-2 border-t border-black/10 dark:border-white/10 pt-3">
+                                    <button 
+                                        onClick={handleNext}
+                                        disabled={currentIndex === items.length - 1}
+                                        className="p-2 rounded-lg bg-black/5 dark:bg-white/10 disabled:opacity-30 hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex items-center gap-1"
+                                        style={{ color: 'var(--text-color)' }}
+                                    >
+                                        <ChevronRight size={18} />
+                                        <span className="text-sm font-bold">التالي</span>
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={handlePrev}
+                                        disabled={currentIndex === 0}
+                                        className="p-2 rounded-lg bg-black/5 dark:bg-white/10 disabled:opacity-30 hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex items-center gap-1"
+                                        style={{ color: 'var(--text-color)' }}
+                                    >
+                                        <span className="text-sm font-bold">السابق</span>
+                                        <ChevronLeft size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
 
 const ChecklistScreen = ({ theme }) => {
     const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
@@ -103,7 +148,6 @@ const ChecklistScreen = ({ theme }) => {
                 <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: `${theme.palette[0]}20` }}>
                     <ListChecks className="w-6 h-6" style={{ color: theme.palette[0] }} />
                 </div>
-                <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-color)' }}>قائمة التجهيزات</h2>
                 <p className="text-sm opacity-70" style={{ color: 'var(--text-color)' }}>حدد الأشياء التي قمت بتجهيزها لرحلتك.</p>
             </div>
 
@@ -162,7 +206,6 @@ const CountersScreen = ({ theme }) => {
                 <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: `${theme.palette[0]}20` }}>
                     <RotateCcw className="w-6 h-6" style={{ color: theme.palette[0] }} />
                 </div>
-                <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-color)' }}>عداد الأشواط</h2>
                 <p className="text-sm opacity-70" style={{ color: 'var(--text-color)' }}>أداة مساعدة لعد أشواط الطواف والسعي.</p>
             </div>
 
@@ -223,9 +266,21 @@ function HajjUmrah({ onBack }) {
     const [hajjType, setHajjType] = useState('tamattu');
     const [openDuaaId, setOpenDuaaId] = useState<number | null>(null);
     const [zoomedDuaa, setZoomedDuaa] = useState(null);
+    const [selectedDetail, setSelectedDetail] = useState(null);
 
     const handleDuaaToggle = (id: number) => {
-        setOpenDuaaId(prevId => (prevId === id ? null : id));
+        setOpenDuaaId(prevId => {
+            const nextId = prevId === id ? null : id;
+            if (nextId !== null) {
+                setTimeout(() => {
+                    const el = document.getElementById(`duaa-section-${id}`);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 400);
+            }
+            return nextId;
+        });
     };
 
     const openZoomModal = (item) => {
@@ -260,8 +315,8 @@ function HajjUmrah({ onBack }) {
 
     const renderScreen = () => {
         switch (screen) {
-            case 'umrah': return <UmrahScreen key="umrah" theme={theme} />;
-            case 'hajj': return <HajjScreen key="hajj" hajjType={hajjType} setHajjType={setHajjType} theme={theme} />;
+            case 'umrah': return <UmrahScreen key="umrah" theme={theme} onSelectDetail={setSelectedDetail} />;
+            case 'hajj': return <HajjScreen key="hajj" hajjType={hajjType} setHajjType={setHajjType} theme={theme} onSelectDetail={setSelectedDetail} />;
             case 'duaa': return <DuaaScreen key="duaa" theme={theme} openDuaaId={openDuaaId} onToggle={handleDuaaToggle} onZoom={openZoomModal} />;
             case 'checklist': return <ChecklistScreen key="checklist" theme={theme} />;
             case 'counters': return <CountersScreen key="counters" theme={theme} />;
@@ -270,7 +325,9 @@ function HajjUmrah({ onBack }) {
     };
 
     const handleHomeClick = () => {
-        if (zoomedDuaa) {
+        if (selectedDetail) {
+            setSelectedDetail(null);
+        } else if (zoomedDuaa) {
             setZoomedDuaa(null);
         } else if (screen !== 'home') {
             setScreen('home');
@@ -279,20 +336,43 @@ function HajjUmrah({ onBack }) {
         }
     };
 
+    const getScreenTitle = () => {
+        switch (screen) {
+            case 'umrah': return 'دليل العمرة';
+            case 'hajj': return 'دليل الحج';
+            case 'duaa': return 'أدعية وأذكار';
+            case 'checklist': return 'قائمة التجهيزات';
+            case 'counters': return 'عداد الأشواط';
+            default: return 'الحج والعمرة';
+        }
+    };
+
+    const getScreenSubtitle = () => {
+        switch (screen) {
+            case 'umrah': return 'دليل أداء مناسك العمرة خطوة بخطوة';
+            case 'hajj': return 'دليل أداء مناسك الحج وأنواعه المختلفة';
+            case 'duaa': return 'أدعية وأذكار الطواف والسعي والمناسك';
+            case 'checklist': return 'قائمة احتياجات الحاج والمعتمر الضرورية';
+            case 'counters': return 'متابعة عدد الأشواط أثناء الطواف والسعي';
+            default: return '﴿ وَأَتِمُّوا الْحَجَّ وَالْعُمْرَةَ لِلَّهِ ﴾ (سورة البقرة - آية 196)';
+        }
+    };
+
     return (
         <div className="h-screen flex flex-col bg-transparent">
             <header className="app-top-bar">
-                <div className="app-top-bar__inner gap-2 relative">
-                    {screen !== 'home' && (
-                        <button onClick={() => setScreen('home')} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition">
-                            <ChevronRight size={24} />
-                        </button>
-                    )}
-                    <div className="relative flex items-center justify-center gap-2">
-                        <ThemePageLock />
-                        <h1 className="app-top-bar__title text-2xl md:text-3xl font-kufi tracking-wide">الحج والعمرة</h1>
+                <div className="app-top-bar__inner">
+                    <div className="relative flex items-center justify-center w-full">
+                        <div className="absolute left-0">
+                            {screen === 'home' && <ThemePageLock />}
+                        </div>
+                        <h1 className="app-top-bar__title text-2xl font-kufi">
+                            {getScreenTitle()}
+                        </h1>
                     </div>
-                    {screen === 'home' && <p className="app-top-bar__subtitle">دليل مبسّط لمناسك الحج والعمرة مع خطوات وأذكار واضحة</p>}
+                    <p className="app-top-bar__subtitle">
+                        {getScreenSubtitle()}
+                    </p>
                 </div>
             </header>
 
@@ -302,6 +382,61 @@ function HajjUmrah({ onBack }) {
             </main>
 
             <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
+
+            {selectedDetail && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 overflow-hidden" onClick={() => setSelectedDetail(null)}>
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="themed-card w-full max-w-lg rounded-3xl overflow-hidden flex flex-col max-h-[85vh] shadow-2xl border border-white/20"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="p-6 border-b border-white/10 flex items-center justify-between" style={{ backgroundColor: `${theme.palette[0]}15` }}>
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner shrink-0" style={{ backgroundColor: `${theme.palette[0]}30` }}>
+                                    {selectedDetail.icon || <Info style={{ color: theme.palette[0] }} />}
+                                </div>
+                                <h3 className="text-xl font-bold leading-tight" style={{ color: 'var(--text-color)' }}>{selectedDetail.title}</h3>
+                            </div>
+                            <button onClick={() => setSelectedDetail(null)} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition">
+                                <RotateCcw size={20} className="rotate-45" style={{ color: 'var(--text-color)' }} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                            {selectedDetail.text && (
+                                <div className="text-lg leading-relaxed text-right font-medium" 
+                                     style={{ color: 'var(--text-color)' }} 
+                                     dangerouslySetInnerHTML={{ __html: selectedDetail.text.replaceAll('{{THEME_PALETTE_0}}', theme.palette[0]) }}>
+                                </div>
+                            )}
+
+                            {selectedDetail.points && (
+                                <ul className="space-y-3">
+                                    {selectedDetail.points.map((point, i) => (
+                                        <li key={i} className="flex gap-3 p-4 rounded-xl bg-white/5 dark:bg-black/20 border border-white/10">
+                                            <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm" style={{ backgroundColor: theme.palette[0] }}>
+                                                {i + 1}
+                                            </div>
+                                            <p className="flex-1 text-base leading-relaxed" style={{ color: 'var(--text-color)' }} dangerouslySetInnerHTML={{ __html: point }}></p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        <div className="p-4 bg-white/5 border-t border-white/10">
+                            <button 
+                                onClick={() => setSelectedDetail(null)} 
+                                className="w-full py-3.5 rounded-2xl font-bold text-white shadow-lg active:scale-[0.98] transition-all"
+                                style={{ backgroundColor: theme.palette[0] }}
+                            >
+                                فهمت، جزاكم الله خيراً
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
 
             {zoomedDuaa && (
                 <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center p-4" onClick={closeZoomModal}>
@@ -322,19 +457,6 @@ function HajjUmrah({ onBack }) {
 
 const HomeScreen = ({ setScreen, theme }) => (
      <section id="home-screen" className="space-y-4">
-        <div className="relative overflow-hidden rounded-2xl p-4 text-center backdrop-blur-md border border-white/20 shadow-lg mb-2" 
-             style={{ backgroundColor: 'var(--secondary-bg)', color: 'var(--text-color)' }}>
-            <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none">
-                <Map size={60} />
-            </div>
-            <div className="relative z-10 py-1">
-                <p className="text-lg md:text-xl mb-1 font-amiri leading-relaxed tracking-wide">
-                    ﴿ وَأَتِمُّوا الْحَجَّ وَالْعُمْرَةَ لِلَّهِ ﴾
-                </p>
-                <p className="text-xs opacity-60 font-medium">سورة البقرة - آية 196</p>
-            </div>
-        </div>
-
         <div className="grid grid-cols-2 gap-3 md:gap-4">
             {[
                 { id: 'umrah', icon: <Compass size={20} />, label: 'دليل العمرة' },
@@ -366,13 +488,6 @@ const HomeScreen = ({ setScreen, theme }) => (
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-             <div className="bg-orange-500/5 dark:bg-orange-900/10 rounded-xl p-4 border border-orange-500/20 backdrop-blur-md">
-                <h3 className="font-bold text-orange-600 dark:text-orange-400 mb-1 flex items-center gap-2 text-base">
-                    <ShieldAlert size={16} />
-                    <span>تنبيه هام</span>
-                </h3>
-                <p className="leading-relaxed text-xs" style={{ color: 'var(--text-color)' }}>ترك ركن يبطل النسك، أما ترك واجب فيُجبر بدم، وارتكاب المحظورات يوجب الفدية.</p>
-            </div>
             {homeScreenAdditions.slice(0, 1).map((item, index) => (
                  <div key={index} className="bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 dark:border-white/5 shadow-lg">
                     <h3 className="font-bold text-base mb-1 flex items-center gap-2" style={{color: theme.name === 'أبيض وأسود' ? theme.textColor : theme.palette[index % 2]}}>
@@ -382,15 +497,21 @@ const HomeScreen = ({ setScreen, theme }) => (
                     <p className="text-xs leading-relaxed pr-3 border-r-2 font-medium" style={{ color: 'var(--text-color)', borderColor: theme.palette[0] }}>{item.content[0]}</p>
                 </div>
             ))}
+             <div className="col-span-1 md:col-span-2 bg-orange-500/5 dark:bg-orange-900/10 rounded-xl p-4 border border-orange-500/20 backdrop-blur-md">
+                <h3 className="font-bold text-orange-600 dark:text-orange-400 mb-1 flex items-center gap-2 text-base">
+                    <ShieldAlert size={16} />
+                    <span>تنبيه هام</span>
+                </h3>
+                <p className="leading-relaxed text-xs" style={{ color: 'var(--text-color)' }}>ترك ركن يبطل النسك، أما ترك واجب فيُجبر بدم، وارتكاب المحظورات يوجب الفدية.</p>
+            </div>
         </div>
     </section>
 );
 
-const UmrahScreen = ({ theme }) => (
+const UmrahScreen = ({ theme, onSelectDetail }) => (
      <section id="umrah-screen" className="space-y-4">
         <div className="rounded-xl p-3 text-center border backdrop-blur-sm" 
              style={{ backgroundColor: `${theme.palette[0]}15`, borderColor: `${theme.palette[0]}20` }}>
-            <h2 className="text-xl font-bold mb-1">أداء العمرة</h2>
             <p className="text-sm opacity-70">زيارة مخصوصة لبيت الله الحرام بأركان محددة.</p>
         </div>
 
@@ -427,7 +548,11 @@ const UmrahScreen = ({ theme }) => (
 
          <div className="space-y-3">
             {umrahSteps.map((step, index) => (
-                <div key={step.title} className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 border border-white/20 shadow-sm flex items-center gap-3 transition-all">
+                <button 
+                    key={step.title} 
+                    onClick={() => onSelectDetail(step)}
+                    className="w-full text-right bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 border border-white/20 shadow-sm flex items-center gap-3 hover:bg-white/20 dark:hover:bg-gray-700/50 transition-all active:scale-[0.98]"
+                >
                     <div className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-xl shadow-inner" style={{ backgroundColor: `${theme.palette[0]}20` }}>
                         {step.icon}
                     </div>
@@ -436,17 +561,16 @@ const UmrahScreen = ({ theme }) => (
                         <p className="text-xs opacity-60 line-clamp-1" style={{ color: 'var(--text-color)' }} dangerouslySetInnerHTML={{ __html: step.text?.replaceAll('{{THEME_PALETTE_0}}', theme.name === 'أبيض وأسود' ? theme.textColor : theme.palette[0]) }}></p>
                     </div>
                     <ChevronLeft size={16} className="opacity-30" style={{ color: 'var(--text-color)' }} />
-                </div>
+                </button>
             ))}
         </div>
     </section>
 );
 
-const HajjScreen = ({ hajjType, setHajjType, theme }) => (
+const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail }) => (
      <section id="hajj-screen" className="space-y-4">
         <div className="rounded-xl p-3 text-center border backdrop-blur-sm"
              style={{ backgroundColor: `${theme.palette[0]}15`, borderColor: `${theme.palette[0]}20` }}>
-            <h2 className="text-xl font-bold mb-1">أداء الحج</h2>
             <p className="text-sm opacity-70">المخطط الزمني للأيام المخصصة لأداء المناسك.</p>
         </div>
 
@@ -491,7 +615,11 @@ const HajjScreen = ({ hajjType, setHajjType, theme }) => (
             </h3>
             <div className="space-y-2">
                 {(hajjType === 'tamattu' ? hajjTamattuPlan : hajjType === 'ifrad' ? hajjIfradPlan : hajjQiranPlan).map((day, i) => (
-                    <div key={i} className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 border border-white/20 flex gap-3">
+                    <button 
+                        key={i} 
+                        onClick={() => onSelectDetail({ title: day.day, points: day.actions, icon: <Map className="w-5 h-5" style={{ color: theme.palette[0] }} /> })}
+                        className="w-full text-right bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 border border-white/20 flex gap-3 hover:bg-white/20 dark:hover:bg-gray-700/50 transition-all active:scale-[0.98]"
+                    >
                         <div className="shrink-0 w-8 h-8 rounded-lg text-white flex items-center justify-center font-bold shadow-lg text-sm" style={{ backgroundColor: theme.palette[0] }}>
                             {i+1}
                         </div>
@@ -500,7 +628,7 @@ const HajjScreen = ({ hajjType, setHajjType, theme }) => (
                             <p className="text-xs opacity-70 line-clamp-1" style={{ color: 'var(--text-color)' }}>{day.actions[0]}</p>
                         </div>
                         <ChevronLeft size={16} className="mt-1 opacity-30" style={{ color: 'var(--text-color)' }} />
-                    </div>
+                    </button>
                 ))}
             </div>
         </div>
@@ -515,7 +643,6 @@ const DuaaScreen = ({ theme, openDuaaId, onToggle, onZoom }) => {
                 <div className="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-1.5" style={{ backgroundColor: `${theme.palette[0]}20` }}>
                     <BookOpen className="w-5 h-5" style={{ color: theme.palette[0] }} />
                 </div>
-                <h2 className="text-lg font-bold mb-0.5">الأدعية والأذكار</h2>
                 <p className="text-xs opacity-70">أدعية مختارة لمناسك الحج والعمرة.</p>
             </div>
 
@@ -523,6 +650,7 @@ const DuaaScreen = ({ theme, openDuaaId, onToggle, onZoom }) => {
                 {allDuaas.map(section => (
                     <DuaaSection 
                         key={section.id}
+                        id={section.id}
                         title={section.title} 
                         items={section.items} 
                         isOpen={openDuaaId === section.id}

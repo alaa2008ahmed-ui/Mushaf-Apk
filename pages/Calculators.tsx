@@ -18,12 +18,14 @@ const Calculators: React.FC<CalculatorsProps> = ({ onBack }) => {
         <div className="h-screen flex flex-col bg-transparent">
             {/* Header */}
             <header className="app-top-bar shadow-sm z-10">
-                <div className="app-top-bar__inner flex justify-center items-center px-4 gap-2">
-                    <ThemePageLock />
-                    <div className="text-center">
-                        <h1 className="text-2xl font-kufi font-bold text-primary">الحاسبة الشاملة</h1>
-                        <p className="text-xs opacity-80 font-cairo">زكاة، مواريث، كفارات</p>
+                <div className="app-top-bar__inner">
+                    <div className="relative flex items-center justify-center w-full">
+                        <div className="absolute left-0">
+                            <ThemePageLock />
+                        </div>
+                        <h1 className="app-top-bar__title text-2xl font-kufi">الحاسبة الشاملة</h1>
                     </div>
+                    <p className="app-top-bar__subtitle">زكاة، مواريث، كفارات</p>
                 </div>
             </header>
 

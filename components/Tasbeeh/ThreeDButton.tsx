@@ -5,22 +5,19 @@ import { motion } from 'framer-motion';
 interface ThreeDButtonProps {
     label: string;
     onClick: () => void;
-    color: string;
+    color?: string;
     padding?: string;
     children?: React.ReactNode;
     theme: Theme;
 }
 
-const ThreeDButton: React.FC<ThreeDButtonProps> = ({ label, onClick, color, padding = "py-3 px-4 text-base", children = null, theme }) => (
+const ThreeDButton: React.FC<ThreeDButtonProps> = ({ label, onClick, padding = "py-3 px-4 text-base", children = null, theme }) => (
     <motion.button
-        whileTap={{ y: 2, scale: 0.98 }}
+        whileTap={{ scale: 0.95 }}
         onClick={onClick}
-        className={`w-full rounded-2xl font-bold cursor-pointer focus:outline-none overflow-hidden ${padding}`}
+        className={`w-full rounded-2xl font-bold cursor-pointer focus:outline-none overflow-hidden themed-card shadow-md transition-shadow hover:shadow-lg border border-black/5 ${padding}`}
         style={{
-            background: color,
-            color: '#FFFFFF',
-            textShadow: '0 1px 2px rgba(0,0,0,0.2)',
-            boxShadow: `0 4px 10px ${color}66`
+            color: 'var(--text-color, #000000)'
         }}
     >
         <div className="flex items-center justify-center relative z-10 h-full w-full gap-2">

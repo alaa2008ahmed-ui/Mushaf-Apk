@@ -811,9 +811,11 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
         <div className="h-screen flex flex-col bg-transparent font-sans overflow-hidden">
             <header className="app-top-bar shrink-0">
                 <div className="app-top-bar__inner">
-                    <div className="flex items-center justify-center gap-2">
-                        <ThemePageLock />
-                        <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi">التقويم</h1>
+                    <div className="relative flex items-center justify-center w-full">
+                        <div className="absolute left-0">
+                            <ThemePageLock />
+                        </div>
+                        <h1 className="app-top-bar__title text-2xl font-kufi">التقويم</h1>
                     </div>
                     <p className="app-top-bar__subtitle shrink-0">الميلادي والهجري في مكان واحد</p>
                 </div>
@@ -936,11 +938,11 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                                 <div className="flex p-1 rounded-xl bg-black/5 dark:bg-white/5 text-[10px] font-bold ring-1 ring-black/5">
                                     <button 
                                         onClick={() => setConvTab('hijriToGregorian')}
-                                        className={`flex-1 py-2 px-1 rounded-lg transition-all duration-300 ${convTab === 'hijriToGregorian' ? 'bg-white dark:bg-gray-800 shadow-md transform scale-100' : 'themed-text-muted opacity-50 scale-95'}`}
+                                        className={`flex-1 py-2 px-1 rounded-lg transition-all duration-300 ${convTab === 'hijriToGregorian' ? 'themed-card shadow-md transform scale-100' : 'themed-text-muted opacity-50 scale-95'}`}
                                     >هجري ← ميلادي</button>
                                     <button 
                                         onClick={() => setConvTab('gregorianToHijri')}
-                                        className={`flex-1 py-2 px-1 rounded-lg transition-all duration-300 ${convTab === 'gregorianToHijri' ? 'bg-white dark:bg-gray-800 shadow-md transform scale-100' : 'themed-text-muted opacity-50 scale-95'}`}
+                                        className={`flex-1 py-2 px-1 rounded-lg transition-all duration-300 ${convTab === 'gregorianToHijri' ? 'themed-card shadow-md transform scale-100' : 'themed-text-muted opacity-50 scale-95'}`}
                                     >ميلادي ← هجري</button>
                                 </div>
 

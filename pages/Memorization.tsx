@@ -259,11 +259,15 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
         <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, color: 'var(--text-color)' }}>
             <div className="relative z-10 flex flex-col h-full">
                 <header className="app-top-bar shrink-0 relative z-10" style={{ backgroundColor: 'var(--qr-bar-bg)', borderBottom: '1px solid var(--qr-bar-border)' }}>
-                    <div className="app-top-bar__inner flex items-center justify-center px-4">
-                        <h1 className="app-top-bar__title text-xl font-kufi flex items-center justify-center gap-2" style={{ color: 'var(--qr-bar-text)' }}>
-                            <ThemePageLock />
-                            التحفيظ
-                        </h1>
+                    <div className="app-top-bar__inner">
+                        <div className="relative flex items-center justify-center w-full">
+                            <div className="absolute left-0">
+                                <ThemePageLock />
+                            </div>
+                            <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2" style={{ color: 'var(--qr-bar-text)' }}>
+                                التحفيظ
+                            </h1>
+                        </div>
                     </div>
                 </header>
 

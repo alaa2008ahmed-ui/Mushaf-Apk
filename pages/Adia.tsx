@@ -117,9 +117,11 @@ function Adia({ onBack }) {
         <div className="h-screen flex flex-col bg-transparent relative">
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-center gap-2">
-                        <ThemePageLock />
-                        <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi flex items-center gap-2 justify-center">
+                    <div className="relative flex items-center justify-center w-full">
+                        <div className="absolute left-0">
+                            <ThemePageLock />
+                        </div>
+                        <h1 className="app-top-bar__title text-2xl font-kufi">
                             الأدعية
                         </h1>
                     </div>
@@ -135,25 +137,26 @@ function Adia({ onBack }) {
                         filteredDuaa.map((duaa) => (
                             <div 
                                 key={duaa.id} 
-                                className="p-5 rounded-3xl relative transition-all overflow-hidden bg-white group dark:bg-gray-800 shadow-sm border border-black/5 dark:border-white/5" 
+                                className="p-5 rounded-3xl relative transition-all overflow-hidden themed-card group shadow-sm border" 
                                 style={{ 
                                     fontFamily: theme.font,
+                                    borderColor: 'var(--card-border)',
                                 }}
                             >
-                                <p className="text-xl md:text-2xl leading-relaxed text-center font-amiri text-gray-800 dark:text-gray-100 mb-6">
+                                <p className="text-xl md:text-2xl leading-relaxed text-center font-amiri mb-6" style={{ color: 'var(--text-color)' }}>
                                     {duaa.text}
                                 </p>
 
-                                <div className="mt-auto pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
+                                <div className="mt-auto pt-4 border-t space-y-4" style={{borderColor: 'var(--card-border)'}}>
                                     <div className="flex justify-center">
-                                        <span className="text-xs sm:text-sm text-center opacity-70 font-bold bg-black/5 dark:bg-white/5 px-4 py-1.5 rounded-full text-gray-700 dark:text-gray-300">
+                                        <span className="text-xs sm:text-sm text-center opacity-70 font-bold bg-black/5 dark:bg-white/5 px-4 py-1.5 rounded-full" style={{ color: 'var(--text-color)' }}>
                                             {categoryForDuaa(duaa.categoryId)?.title || ''} • {duaa.source}
                                         </span>
                                     </div>
                                     
                                     <div className="flex justify-between items-center">
                                         <button onClick={(e) => toggleFavorite(duaa.id, e)} className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors">
-                                            <i className={`fa-heart ${favorites.includes(duaa.id) ? 'fa-solid text-red-500' : 'fa-regular text-gray-500 dark:text-gray-400'}`}></i>
+                                            <i className={`fa-heart ${favorites.includes(duaa.id) ? 'fa-solid text-red-500' : 'fa-regular opacity-70'}`} style={favorites.includes(duaa.id) ? {} : { color: 'var(--text-color)' }}></i>
                                         </button>
                                         <div className="flex gap-2">
                                             <button 
@@ -161,14 +164,15 @@ function Adia({ onBack }) {
                                                     e.stopPropagation();
                                                     openZoomModal(duaa);
                                                 }} 
-                                                className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300"
+                                                className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100"
+                                                style={{ color: 'var(--text-color)' }}
                                             >
                                                 <i className="fa-solid fa-magnifying-glass-plus"></i>
                                             </button>
-                                            <button onClick={(e) => handleCopy(duaa.text, e)} className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                                            <button onClick={(e) => handleCopy(duaa.text, e)} className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
                                                 <i className="fa-regular fa-copy"></i>
                                             </button>
-                                            <button onClick={(e) => handleShare(duaa, e)} className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                                            <button onClick={(e) => handleShare(duaa, e)} className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
                                                 <i className="fa-solid fa-share-nodes"></i>
                                             </button>
                                         </div>
@@ -209,7 +213,8 @@ function Adia({ onBack }) {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: menuOpenDirection === 'up' ? 20 : -20, scale: 0.9 }}
                             transition={{ duration: 0.2 }}
-                            className={`absolute right-0 ${menuOpenDirection === 'up' ? 'bottom-full mb-4 origin-bottom-right' : 'top-full mt-4 origin-top-right'} bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-black/10 dark:border-white/10 p-2 flex flex-col gap-1 overflow-hidden w-48 text-gray-800 dark:text-gray-200 z-0`}
+                            className={`absolute right-0 ${menuOpenDirection === 'up' ? 'bottom-full mb-4 origin-bottom-right' : 'top-full mt-4 origin-top-right'} themed-card rounded-2xl shadow-xl border p-2 flex flex-col gap-1 overflow-hidden w-48 z-0`}
+                            style={{ borderColor: 'var(--card-border)', color: 'var(--text-color)' }}
                         >
                             <button 
                                 onClick={() => { setActiveCategory('all'); setIsMenuOpen(false); }}

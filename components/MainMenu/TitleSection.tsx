@@ -23,7 +23,7 @@ const TitleSection: React.FC<TitleSectionProps> = ({
 }) => {
     return (
         <div className="relative">
-            <div className="text-center mt-6 select-none relative">
+            <div className="text-center mt-2 select-none relative">
                 <h1 id="app-title" className={`text-4xl font-black tracking-tight transition-transform ${isEditMode ? 'scale-110 text-yellow-400' : ''}`} style={{ color: isEditMode ? undefined : theme.textColor }}>
                     مُصْحَفُ أَحْمَدَ وَلَيْلَى
                 </h1>

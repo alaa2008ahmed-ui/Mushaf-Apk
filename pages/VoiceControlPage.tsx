@@ -7,6 +7,8 @@ import { useTheme } from '../context/ThemeContext';
 import BottomBar from '../components/BottomBar';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 
+import ThemePageLock from '../components/ThemePageLock';
+
 const AVAILABLE_ACTIONS = [
     { id: 'go_home', name: 'الرئيسية' },
     { id: 'open_quran', name: 'مصحف / صفحة القراءة / القرآن الكريم' },
@@ -145,11 +147,14 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
     return (
         <div className="h-screen flex flex-col bg-transparent overflow-hidden">
             <header className="app-top-bar">
-                <div className="app-top-bar__inner flex items-center justify-center px-4">
-                    <div className="text-center">
+                <div className="app-top-bar__inner">
+                    <div className="relative flex items-center justify-center w-full">
+                        <div className="absolute left-0">
+                            <ThemePageLock />
+                        </div>
                         <h1 className="app-top-bar__title text-2xl font-kufi">التحكم الصوتي</h1>
-                        <p className="app-top-bar__subtitle">إدارة الأوامر الصوتية الذكية</p>
                     </div>
+                    <p className="app-top-bar__subtitle">إدارة الأوامر الصوتية الذكية</p>
                 </div>
             </header>
 

@@ -7,7 +7,7 @@ import moment from 'moment-hijri';
 import { formatTime12_clean, applyOffset } from '../utils/prayerTimesUtils';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Share, ArrowRight, Download, ChevronRight, ChevronLeft, Calendar, X } from 'lucide-react';
+import { Share2, ArrowRight, Download, ChevronRight, ChevronLeft, Calendar, X, FileText } from 'lucide-react';
 import { Share as CapacitorShare } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
@@ -304,10 +304,12 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
         <div className="h-screen w-screen flex flex-col" style={{ backgroundColor: theme.bgColor, color: theme.textColor }}>
             {/* Top Bar */}
             <header className="app-top-bar">
-                <div className="app-top-bar__inner relative">
-                    <div className="flex items-center justify-center gap-2">
-                        <ThemePageLock />
-                        <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi" style={{ color: topBarTextColor }}>
+                <div className="app-top-bar__inner">
+                    <div className="relative flex items-center justify-center w-full">
+                        <div className="absolute left-0">
+                            <ThemePageLock />
+                        </div>
+                        <h1 className="app-top-bar__title text-2xl font-kufi" style={{ color: topBarTextColor }}>
                             مواقيت الشهر
                         </h1>
                     </div>
@@ -334,14 +336,14 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                     <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
                         <button 
                             onClick={() => setCalendarType('hijri')}
-                            className={`px-3 py-0.5 text-[10px] rounded-md transition-all ${calendarType === 'hijri' ? 'bg-white dark:bg-gray-800 shadow-sm' : 'opacity-50'}`}
+                            className={`px-3 py-0.5 text-[10px] rounded-md transition-all ${calendarType === 'hijri' ? 'themed-card shadow-sm' : 'opacity-50'}`}
                             style={{ color: calendarType === 'hijri' ? (isBlackAndWhite ? '#8B5CF6' : primaryColor) : (isBlackAndWhite ? '#fff' : undefined) }}
                         >
                             هجري
                         </button>
                         <button 
                             onClick={() => setCalendarType('gregorian')}
-                            className={`px-3 py-0.5 text-[10px] rounded-md transition-all ${calendarType === 'gregorian' ? 'bg-white dark:bg-gray-800 shadow-sm' : 'opacity-50'}`}
+                            className={`px-3 py-0.5 text-[10px] rounded-md transition-all ${calendarType === 'gregorian' ? 'themed-card shadow-sm' : 'opacity-50'}`}
                             style={{ color: calendarType === 'gregorian' ? (isBlackAndWhite ? '#8B5CF6' : primaryColor) : (isBlackAndWhite ? '#fff' : undefined) }}
                         >
                             ميلادي
@@ -354,7 +356,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
             </div>
 
             {/* Table */}
-            <main className="flex-1 flex flex-col overflow-hidden p-2 pb-4">
+            <main className="flex-1 flex flex-col overflow-hidden p-2">
                 <div className="max-w-4xl w-full mx-auto overflow-auto rounded-xl border shadow-sm" style={{ borderColor: 'var(--card-border)', backgroundColor: 'var(--card-bg)' }}>
                     <table className="w-full text-center text-[11px] xs:text-xs border-collapse" dir="rtl">
                         <thead className="z-20" style={{ color: '#fff' }}>
@@ -395,6 +397,7 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                             })}
                         </tbody>
                     </table>
+                    <div className="h-24 w-full shrink-0"></div>
                 </div>
             </main>
 
@@ -403,24 +406,6 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                 onThemesClick={() => {}} 
                 showThemes={false} 
                 leftButton={
-                    <button 
-                        onClick={handleShare}
-                        disabled={isSharing}
-                        className="bar-button btn-3d-effect min-w-[44px] h-[44px] flex items-center justify-center gap-2 px-3 rounded-xl shadow-md transition-all active:scale-95"
-                        style={{ 
-                            background: primaryColor, 
-                            color: isBlackAndWhite ? '#000' : 'white', 
-                            fontFamily: theme.font,
-                            borderWidth: btnBorderParts.borderWidth,
-                            borderStyle: btnBorderParts.borderStyle,
-                            borderColor: btnBorderParts.borderColor
-                        }}
-                    >
-                        <Share size={18} />
-                        <span className="hidden xs:inline">{isSharing ? '...' : 'مشاركة'}</span>
-                    </button>
-                }
-                rightButton={
                     <button 
                         onClick={handleExportPDF}
                         disabled={isExporting}
@@ -434,8 +419,25 @@ export default function MonthlyPrayerTimes({ onBack }: { onBack: () => void }) {
                             borderColor: btnBorderParts.borderColor
                         }}
                     >
-                        <Download size={18} />
-                        <span className="hidden xs:inline">{isExporting ? '...' : 'PDF'}</span>
+                        <span className="font-bold text-sm">{isExporting ? '...' : 'PDF'}</span>
+                    </button>
+                }
+                rightButton={
+                    <button 
+                        onClick={handleShare}
+                        disabled={isSharing}
+                        className="bar-button btn-3d-effect min-w-[44px] h-[44px] flex items-center justify-center gap-2 px-3 rounded-xl shadow-md transition-all active:scale-95"
+                        style={{ 
+                            background: primaryColor, 
+                            color: isBlackAndWhite ? '#000' : 'white', 
+                            fontFamily: theme.font,
+                            borderWidth: btnBorderParts.borderWidth,
+                            borderStyle: btnBorderParts.borderStyle,
+                            borderColor: btnBorderParts.borderColor
+                        }}
+                    >
+                        <Share2 size={18} />
+                        <span className="hidden xs:inline">{isSharing ? '...' : 'مشاركة'}</span>
                     </button>
                 }
             />

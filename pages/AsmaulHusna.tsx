@@ -20,14 +20,16 @@ const AsmaulHusna: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     return (
         <div className="h-screen flex flex-col overflow-hidden relative bg-transparent">
             <header className="app-top-bar z-20">
-                <div className="app-top-bar__inner flex items-center justify-center px-4">
-                    <div className="text-center">
-                        <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2">
+                <div className="app-top-bar__inner">
+                    <div className="relative flex items-center justify-center w-full">
+                        <div className="absolute left-0">
                             <ThemePageLock />
+                        </div>
+                        <h1 className="app-top-bar__title text-2xl font-kufi">
                             أسماء الله الحسنى
                         </h1>
-                        <p className="app-top-bar__subtitle text-xs">٩٩ اسماً من أحصاها دخل الجنة</p>
                     </div>
+                    <p className="app-top-bar__subtitle text-xs">٩٩ اسماً من أحصاها دخل الجنة</p>
                 </div>
             </header>
 

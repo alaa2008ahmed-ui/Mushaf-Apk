@@ -815,15 +815,17 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   return (
     <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, color: 'var(--text-color)' }}>
       <header className="app-top-bar shrink-0 relative z-10">
-        <div className="app-top-bar__inner flex items-center justify-center px-4">
-          <div className="text-center">
-            <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2">
+        <div className="app-top-bar__inner">
+          <div className="relative flex items-center justify-center w-full">
+            <div className="absolute left-0">
               <ThemePageLock />
+            </div>
+            <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2">
               <span className="text-green-500 dark:text-green-400">📅</span>
               الورد اليومي
             </h1>
-            <p className="app-top-bar__subtitle">تابع ختمتك للقرآن الكريم</p>
           </div>
+          <p className="app-top-bar__subtitle text-center">تابع ختمتك للقرآن الكريم</p>
         </div>
       </header>
 

@@ -33,7 +33,7 @@ const CategoryList: React.FC<CategoryListProps> = ({ onSelectCategory }) => {
                         onClick={() => onSelectCategory(category)}
                         className="relative group cursor-pointer active:scale-95 transition-transform"
                     >
-                        <div className="h-full p-3 rounded-3xl bg-white dark:bg-gray-800 border border-black/5 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center gap-1 overflow-hidden">
+                        <div className="h-full p-3 rounded-3xl themed-card border shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center gap-1 overflow-hidden" style={{ borderColor: 'var(--card-border)', color: 'var(--text-color)' }}>
                             {/* Background hint */}
                             <div 
                                 className="absolute -right-4 -top-4 w-16 h-16 rounded-full opacity-10 blur-xl pointer-events-none"
@@ -50,7 +50,7 @@ const CategoryList: React.FC<CategoryListProps> = ({ onSelectCategory }) => {
                                 <i className={`fa-solid ${category.icon || 'fa-book-open'} text-2xl`}></i>
                             </div>
                             
-                            <h2 className="font-bold text-sm sm:text-base leading-tight text-gray-800 dark:text-gray-100 line-clamp-2">
+                            <h2 className="font-bold text-sm sm:text-base leading-tight line-clamp-2" style={{ color: 'var(--text-color)' }}>
                                 {category.title}
                             </h2>
 

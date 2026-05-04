@@ -76,14 +76,16 @@ const TasbeehModals: React.FC<TasbeehModalsProps> = ({
             </ModalWrapper>
 
             <ModalWrapper isOpen={modals.phrase} onClose={() => setModals((p: any) => ({...p, phrase: false}))}>
-                <h3 className="text-xl font-bold text-center border-b pb-3 border-modal-border">اختر الذكر</h3>
-                <div className="space-y-3 overflow-y-auto max-h-60 pr-2">
+                <div className="space-y-1 overflow-y-auto max-h-[60vh] p-2 themed-card-bg rounded-2xl border border-black/5 dark:border-white/5 custom-scrollbar">
                     {phrases.map(p => (
-                        <div key={p.id} onClick={() => { setActivePhrase(p.text); handleReset(); setModals((p: any) => ({...p, phrase: false})); }}
-                             className={`p-3 rounded-xl cursor-pointer flex items-center justify-between border-2 ${activePhrase === p.text ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-card-bg-hover bg-card-bg-hover/50'}`}>
-                            <span className="text-right text-lg font-amiri text-modal-text">{p.text}</span>
-                            {activePhrase === p.text && <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0"></div>}
-                        </div>
+                        <button 
+                             key={p.id} 
+                             onClick={() => { setActivePhrase(p.text); handleReset(); setModals((p: any) => ({...p, phrase: false})); }}
+                             className={`w-full p-3 rounded-xl cursor-pointer flex items-center justify-between transition-all ${activePhrase === p.text ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}
+                        >
+                            <span className="text-right text-lg font-amiri leading-relaxed">{p.text}</span>
+                            {activePhrase === p.text && <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>}
+                        </button>
                     ))}
                 </div>
             </ModalWrapper>

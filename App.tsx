@@ -55,7 +55,7 @@ function App() {
       'home', 'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'qibla', 
       'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'more-menu', 'daily-wird', 'memorization',
-      'phone-notifications', 'search', 'asmaul-husna'
+      'phone-notifications', 'search', 'asmaul-husna', 'habit-tracker'
     ];
 
     if (pageId === 'phone-notifications') {
@@ -133,7 +133,7 @@ function App() {
     } else {
       alert(`التنقل إلى قسم "${pageId}" قيد الإنشاء.`);
     }
-  }, [history]);
+  }, [history, lastMenuPage]);
 
   useEffect(() => {
     setupNotifications();

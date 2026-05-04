@@ -43,28 +43,26 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
             fontFamily: theme.font 
         }}>
             <div className="app-bottom-bar__inner">
+                {leftButton && <div className="flex-1 flex justify-center">{leftButton}</div>}
+
                 {/* Home Section */}
-                <div className="flex items-center gap-2">
-                    {showHome && (
-                        <button 
-                            onClick={onHomeClick} 
-                            className={homeButtonClass}
-                            style={{ 
-                                background: themeKey === 'olive_grove' ? '#4D7C0F' : theme.palette[0], 
-                                color: 'white', 
-                                fontFamily: theme.font, 
-                                borderWidth: homeBtnBorder.borderWidth,
-                                borderStyle: homeBtnBorder.borderStyle,
-                                borderColor: homeBtnBorder.borderColor
-                            }}
-                        >
-                            <span className="text-xl">🏠</span>
-                            <span className="hidden sm:inline">{homeLabel}</span>
-                        </button>
-                    )}
-                </div>
-                
-                {leftButton && <div className="mx-1">{leftButton}</div>}
+                {showHome && (
+                    <button 
+                        onClick={onHomeClick} 
+                        className={homeButtonClass}
+                        style={{ 
+                            background: themeKey === 'olive_grove' ? '#4D7C0F' : theme.palette[0], 
+                            color: 'white', 
+                            fontFamily: theme.font, 
+                            borderWidth: homeBtnBorder.borderWidth,
+                            borderStyle: homeBtnBorder.borderStyle,
+                            borderColor: homeBtnBorder.borderColor
+                        }}
+                    >
+                        <span className="text-xl">🏠</span>
+                        <span>{homeLabel}</span>
+                    </button>
+                )}
                 
                 {showThemes && (
                     <button 
@@ -86,7 +84,7 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
                     </button>
                 )}
                 
-                {rightButton && <div className="mx-1">{rightButton}</div>}
+                {rightButton && <div className="flex-1 flex justify-center">{rightButton}</div>}
             </div>
         </nav>
     );

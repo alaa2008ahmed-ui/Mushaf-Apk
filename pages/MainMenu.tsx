@@ -18,7 +18,7 @@ import { Mic, Palette, Grid, BookOpen } from 'lucide-react';
 import { useVoiceControl } from '../context/VoiceControlContext';
 
 const ALL_POSSIBLE_ITEMS = [
-    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-10", colorIndex: 0 },
+    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
     { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
@@ -36,7 +36,7 @@ const ALL_POSSIBLE_ITEMS = [
 ];
 
 const DEFAULT_MENU_ITEMS = [
-    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-10", colorIndex: 0 },
+    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
     { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
     { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
@@ -61,7 +61,8 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     const savedVisible = localStorage.getItem('visibleMenuItems');
     if (savedVisible) {
         try {
-            return JSON.parse(savedVisible);
+            const parsed = JSON.parse(savedVisible);
+            return parsed.filter((id: string) => id !== 'habit-tracker');
         } catch (e) {
             return DEFAULT_MENU_ITEMS.map(i => i.id);
         }
@@ -72,7 +73,9 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     const savedLayout = localStorage.getItem('menuLayout');
     if (savedLayout) {
         try {
-            return JSON.parse(savedLayout);
+            const parsed = JSON.parse(savedLayout);
+            const filtered = parsed.filter((item: any) => item.id !== 'habit-tracker');
+            return filtered;
         } catch (e) {
             return DEFAULT_MENU_ITEMS;
         }
@@ -183,7 +186,10 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                     currentItem.className = currentItem.className + " flex justify-center";
                 }
                 if (currentItem.className) {
-                    const newClass = currentItem.className.replace(/h-\d+/g, 'h-10');
+                    const newClass = currentItem.className.replace(/h-\d+/g, (match) => {
+                        if (match === 'h-12') return 'h-12';
+                        return 'h-10';
+                    });
                     if (currentItem.className !== newClass) {
                         changed = true;
                         currentItem.className = newClass;
@@ -193,8 +199,16 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
             });
             
             if (changed) {
-                localStorage.setItem('menuLayout', JSON.stringify(updated));
-                setMenuItems(updated);
+                const filtered = updated.filter((item: any) => item.id !== 'habit-tracker');
+                localStorage.setItem('menuLayout', JSON.stringify(filtered));
+                setMenuItems(filtered);
+            } else {
+                // Always ensure habit-tracker is removed
+                const filtered = updated.filter((item: any) => item.id !== 'habit-tracker');
+                if (filtered.length !== updated.length) {
+                    localStorage.setItem('menuLayout', JSON.stringify(filtered));
+                    setMenuItems(filtered);
+                }
             }
         } catch (e) {
             // Error handled in initializer
@@ -293,7 +307,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
               {/* Footer/Save Button */}
               {!isEditMode && (
-                  <div className="flex items-center justify-center w-full max-w-sm mx-auto mt-4 mb-4 gap-2 h-[50px]">
+                  <div className="flex items-center justify-center w-full max-w-sm mx-auto mt-1 mb-4 gap-2 h-[50px]">
                       {!showVoiceIcon && (
                           <div className="flex items-center justify-center shrink-0">
                               <WhatsAppButton />

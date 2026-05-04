@@ -20,10 +20,12 @@ const PrayerTimesHeader: React.FC<PrayerTimesHeaderProps> = ({
 }) => {
     return (
         <header className="app-top-bar">
-            <div className="app-top-bar__inner relative">
+            <div className="app-top-bar__inner">
                 <div className="relative flex items-center justify-center min-h-[40px]">
-                    <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi truncate px-12 flex items-center justify-center gap-2" style={{ color: topBarTextColor }}>
+                    <div className="absolute left-0">
                         <ThemePageLock />
+                    </div>
+                    <h1 className="app-top-bar__title text-2xl font-kufi truncate px-12" style={{ color: topBarTextColor }}>
                         {cityGov}
                     </h1>
                     <div className="absolute right-0 flex items-center gap-1">

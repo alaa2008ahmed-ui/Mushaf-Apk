@@ -262,10 +262,14 @@ function ListenQuran({ onBack, onOpenThemes }) {
         <div className="h-screen flex flex-col font-cairo overflow-hidden" style={{ backgroundColor: 'transparent', color: theme.textColor }}>
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2">
-                        <ThemePageLock />
-                        الاستماع للقرآن
-                    </h1>
+                    <div className="relative flex items-center justify-center w-full">
+                        <div className="absolute left-0">
+                            <ThemePageLock />
+                        </div>
+                        <h1 className="app-top-bar__title text-2xl font-kufi">
+                            الاستماع للقرآن
+                        </h1>
+                    </div>
                     <p className="app-top-bar__subtitle">تلاوات عطرة من أشهر القراء</p>
                 </div>
             </header>
@@ -312,7 +316,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
                         <button onClick={handlePrevSurah} className="w-24 text-center hover:opacity-80 transition-opacity font-bold" style={{ color: theme.textColor }}>
                             السابق
                         </button>
-                        <button onClick={handlePlayPause} disabled={isLoading && !isPlaying} className="rounded-full w-20 h-20 flex items-center justify-center shadow-lg active:scale-95 transition disabled:opacity-70" style={{ backgroundColor: themeKey === 'deep_black' ? 'transparent' : theme.palette[0], color: themeKey === 'deep_black' ? '#FFFFFF' : (theme.btnText || theme.textColor) }}>
+                        <button onClick={handlePlayPause} disabled={isLoading && !isPlaying} className="rounded-full w-20 h-20 flex items-center justify-center shadow-lg active:scale-95 transition disabled:opacity-70" style={{ backgroundColor: themeKey === 'deep_black' ? 'transparent' : theme.palette[0], color: '#FFFFFF' }}>
                             {isLoading && !isPlaying ? <i className="fa-solid fa-spinner fa-spin fa-2x"></i> : <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'} fa-2x pl-1`}></i>}
                         </button>
                         <button onClick={handleNextSurah} className="w-24 text-center hover:opacity-80 transition-opacity font-bold" style={{ color: theme.textColor }}>

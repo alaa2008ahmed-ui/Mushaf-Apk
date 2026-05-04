@@ -69,6 +69,7 @@ function HisnAlmuslim({ onBack }) {
             <HisnHeader 
                 title={selectedCategory ? selectedCategory.title : 'حصن المسلم'} 
                 subtitle={selectedCategory ? `أذكار ${selectedCategory.title}` : 'استعرض أبواب وأذكار حصن المسلم بسهولة.'} 
+                showThemePageLock={!selectedCategory}
             />
 
             <main className="flex-1 overflow-y-auto hide-scrollbar relative mx-auto w-full max-w-lg p-4 pb-4">
@@ -99,7 +100,8 @@ function HisnAlmuslim({ onBack }) {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: menuOpenDirection === 'up' ? 20 : -20, scale: 0.9 }}
                             transition={{ duration: 0.2 }}
-                            className={`absolute right-0 ${menuOpenDirection === 'up' ? 'bottom-full mb-4 origin-bottom-right' : 'top-full mt-4 origin-top-right'} bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-black/10 dark:border-white/10 p-2 flex flex-col gap-1 overflow-hidden w-48 text-gray-800 dark:text-gray-200 z-0`}
+                            className={`absolute right-0 ${menuOpenDirection === 'up' ? 'bottom-full mb-4 origin-bottom-right' : 'top-full mt-4 origin-top-right'} themed-card rounded-2xl shadow-xl border p-2 flex flex-col gap-1 overflow-hidden w-48 z-0`}
+                            style={{ borderColor: 'var(--card-border)', color: 'var(--text-color)' }}
                         >
                             <button 
                                 onClick={() => { setSelectedCategory(null); setIsMenuOpen(false); }}

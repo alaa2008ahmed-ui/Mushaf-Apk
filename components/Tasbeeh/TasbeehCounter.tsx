@@ -26,10 +26,10 @@ const TasbeehCounter: React.FC<TasbeehCounterProps> = ({ isCountingStopped, targ
                 <motion.button 
                     whileTap={{ scale: 0.95 }}
                     onClick={handleIncrement} 
-                    className={`tasbeeh-counter w-48 h-48 rounded-full flex flex-col items-center justify-center transition-all duration-200 ease-out cursor-pointer select-none relative z-10 ${isBlackAndWhite ? 'border-2 border-white' : ''}`} 
+                    className={`tasbeeh-counter w-44 h-44 rounded-full flex flex-col items-center justify-center transition-all duration-200 ease-out cursor-pointer select-none relative z-10 ${isBlackAndWhite ? 'border-2 border-white' : ''}`} 
                     style={{ backgroundColor: counterColor, borderBottom: '6px solid rgba(0,0,0,0.2)' }}
                 >
-                    <span className="text-7xl font-mono font-black" style={{ fontFamily: 'Amiri', textShadow: '0 2px 4px rgba(0,0,0,0.3)', color: 'white' }}>
+                    <span className="text-6xl font-mono font-black" style={{ fontFamily: 'Amiri', textShadow: '0 2px 4px rgba(0,0,0,0.3)', color: 'white' }}>
                         {toArabicNumerals(count)}
                     </span>
                     <span className="text-sm font-bold mt-2" style={{color: 'white', opacity: 0.9}}>
@@ -48,13 +48,13 @@ const TasbeehCounter: React.FC<TasbeehCounterProps> = ({ isCountingStopped, targ
                         initial={{ y: -60, opacity: 0, scale: 0.8 }}
                         animate={{ y: 0, opacity: 1, scale: 1 }}
                         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                        className="w-24 h-24 rounded-full flex flex-col items-center justify-center shadow-lg relative z-10 cursor-pointer"
+                        className="w-20 h-20 rounded-full flex flex-col items-center justify-center shadow-lg relative z-10 cursor-pointer"
                         style={{ 
                             background: `radial-gradient(circle at 30% 30%, ${counterColor}, #000)`,
                             boxShadow: `0 10px 20px -5px rgba(0,0,0,0.3), inset 0 -4px 6px rgba(0,0,0,0.4), inset 0 4px 6px rgba(255,255,255,0.4)`
                         }}
                     >
-                        <span className="text-3xl font-mono font-black" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                        <span className="text-2xl font-mono font-black" style={{ color: 'rgba(255,255,255,0.9)' }}>
                             {toArabicNumerals(count)}
                         </span>
                     </motion.div>
@@ -68,7 +68,7 @@ const TasbeehCounter: React.FC<TasbeehCounterProps> = ({ isCountingStopped, targ
             <div className="relative flex items-center justify-center">
                 {/* SVG Progress Ring */}
                 {target > 0 && (
-                    <svg className="absolute w-[240px] h-[240px] -rotate-90 pointer-events-none drop-shadow-md z-0" viewBox="0 0 100 100">
+                    <svg className="absolute w-[220px] h-[220px] -rotate-90 pointer-events-none drop-shadow-md z-0" viewBox="0 0 100 100">
                         {/* Background track */}
                         <circle cx="50" cy="50" r="45" fill="transparent" stroke={counterColor} strokeWidth="3" strokeOpacity="0.2" />
                         {/* Progress indicator */}
@@ -86,13 +86,13 @@ const TasbeehCounter: React.FC<TasbeehCounterProps> = ({ isCountingStopped, targ
                 <motion.button 
                     whileTap={{ scale: 0.93 }}
                     onClick={handleIncrement} 
-                    className={`tasbeeh-counter w-52 h-52 rounded-full flex flex-col items-center justify-center transition-colors duration-200 ease-out cursor-pointer select-none relative z-10 shadow-xl ${isBlackAndWhite ? 'border-2 border-white' : ''}`} 
+                    className={`tasbeeh-counter w-48 h-48 rounded-full flex flex-col items-center justify-center transition-colors duration-200 ease-out cursor-pointer select-none relative z-10 shadow-xl ${isBlackAndWhite ? 'border-2 border-white' : ''}`} 
                     style={{ 
                         backgroundColor: counterColor,
                         boxShadow: `0 15px 35px -10px ${counterColor}80, 0 8px 10px -6px ${counterColor}60`
                     }}
                 >
-                    <div className="relative overflow-hidden h-32 flex items-center justify-center w-full mt-4">
+                    <div className="relative overflow-hidden h-28 flex items-center justify-center w-full mt-4">
                         <AnimatePresence mode="popLayout">
                             <motion.span 
                                 key={count}
@@ -100,7 +100,7 @@ const TasbeehCounter: React.FC<TasbeehCounterProps> = ({ isCountingStopped, targ
                                 animate={{ y: 0, opacity: 1, scale: 1 }}
                                 exit={{ y: -20, opacity: 0, scale: 0.8 }}
                                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                className="text-8xl md:text-9xl font-mono font-black absolute" 
+                                className="text-7xl md:text-8xl font-mono font-black absolute" 
                                 style={{ fontFamily: 'Amiri', textShadow: '0 4px 8px rgba(0,0,0,0.2)', color: 'white' }}
                             >
                                 {toArabicNumerals(count)}

@@ -21,6 +21,7 @@ import DailyWird from '../pages/DailyWird';
 import Memorization from '../pages/Memorization';
 import GlobalSearch from '../pages/GlobalSearch';
 import AsmaulHusna from '../pages/AsmaulHusna';
+import HabitTracker from '../pages/HabitTracker';
 
 interface AppRouterProps {
     page: string;
@@ -77,6 +78,8 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
         return <GlobalSearch onBack={onBack} onNavigate={onNavigate} />;
       case 'asmaul-husna':
         return <AsmaulHusna onBack={onBack} />;
+      case 'habit-tracker':
+        return <HabitTracker onBack={onBack} />;
       case 'home':
       default:
         return <MainMenu onNavigate={onNavigate} onOpenThemes={onOpenThemes} onOpenSideMenu={onOpenSideMenu} />;

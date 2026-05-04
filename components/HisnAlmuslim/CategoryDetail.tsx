@@ -32,22 +32,25 @@ const HisnItemCard = ({ item, onZoom, setToastMessage }: { item: any; onZoom: (i
     };
 
     return (
-        <div className="themed-card p-5 pb-2 rounded-2xl border relative overflow-hidden group mb-4 transition-shadow hover:shadow-md duration-300">
+        <div 
+            className="themed-card p-5 pb-2 rounded-2xl border relative overflow-hidden group mb-4 transition-shadow hover:shadow-md duration-300"
+            style={{ borderColor: 'var(--card-border)', color: 'var(--text-color)' }}
+        >
             <p className="text-xl leading-relaxed text-center font-amiri select-none">{item.text}</p>
             {item.source && <p className="text-xs mt-3 text-center themed-text-muted opacity-80">المصدر: {item.source}</p>}
             
-            <div className="flex justify-between items-center mt-4 mb-3 pt-3 border-t border-black/5 dark:border-white/5">
+            <div className="flex justify-between items-center mt-4 mb-3 pt-3 border-t" style={{ borderColor: 'var(--card-border)' }}>
                 <button onClick={toggleFav} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors">
-                    <i className={`fa-heart ${isFav ? 'fa-solid text-red-500' : 'fa-regular text-gray-500 dark:text-gray-400'}`}></i>
+                    <i className={`fa-heart ${isFav ? 'fa-solid text-red-500' : 'fa-regular opacity-70'}`} style={isFav ? {} : { color: 'var(--text-color)' }}></i>
                 </button>
                 <div className="flex gap-2">
-                   <button onClick={(e) => { e.stopPropagation(); onZoom(item); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                   <button onClick={(e) => { e.stopPropagation(); onZoom(item); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
                        <i className="fa-solid fa-magnifying-glass-plus"></i>
                    </button>
                    <button onClick={(e) => {
                        e.stopPropagation();
                        navigator.clipboard.writeText(item.text);
-                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
                        <i className="fa-regular fa-copy"></i>
                    </button>
                    <button onClick={async (e) => {
@@ -59,7 +62,7 @@ const HisnItemCard = ({ item, onZoom, setToastMessage }: { item: any; onZoom: (i
                            theme,
                            setToastMessage
                        });
-                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
                        <i className="fa-solid fa-share-nodes"></i>
                    </button>
                 </div>

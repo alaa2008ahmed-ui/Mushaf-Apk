@@ -1,7 +1,7 @@
 
 import {
     QuranIcon, SalahAdhkarIcon, ListenIcon, TasbeehIcon, CalendarIcon, QiblaIcon,
-    HajjIcon, HisnMuslimIcon, PrayerTimesIcon, AdiaIcon, SabahMasaaIcon, RadioIcon, CalculatorIcon, TajweedIcon
+    HajjIcon, HisnMuslimIcon, PrayerTimesIcon, AdiaIcon, SabahMasaaIcon, RadioIcon, CalculatorIcon, TajweedIcon, HabitTrackerIcon
 } from '../components/Icons';
 
 export const verses = [
@@ -17,6 +17,7 @@ export const verses = [
 
 export const navItems = [
   { id: 'quran', title: "القرآن الكريم", icon: QuranIcon, isFeatured: true },
+  { id: 'habit-tracker', title: "مربّي العبادات", icon: HabitTrackerIcon },
   { id: 'sabah-masaa', title: "أذكار الصباح والمساء", icon: SabahMasaaIcon },
   { id: 'adia', title: "أدعية", icon: AdiaIcon },
   { id: 'tasbeeh', title: "التسبيح", icon: TasbeehIcon },

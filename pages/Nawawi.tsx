@@ -157,11 +157,15 @@ const Nawawi = ({ onBack }) => {
         <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: 'transparent', color: theme.textColor, fontFamily: theme.font }}>
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <h1 className="app-top-bar__title text-2xl flex items-center justify-center gap-2" style={{ fontFamily: theme.font }}>
-                        <ThemePageLock />
-                        الأربعون النووية
-                    </h1>
-                    <p className="app-top-bar__subtitle" style={{ fontFamily: theme.font }}>متن الأربعين حديثًا في مباني الإسلام وقواعد الأحكام</p>
+                    <div className="relative flex items-center justify-center w-full">
+                        <div className="absolute left-0">
+                            <ThemePageLock />
+                        </div>
+                        <h1 className="app-top-bar__title text-2xl font-kufi">
+                            الأربعون النووية
+                        </h1>
+                    </div>
+                    <p className="app-top-bar__subtitle">متن الأربعين حديثًا في مباني الإسلام وقواعد الأحكام</p>
                 </div>
             </header>
 
@@ -192,7 +196,7 @@ const Nawawi = ({ onBack }) => {
                                 onClick={() => setSelectedHadith(hadith)} 
                                 className="relative group cursor-pointer active:scale-95 transition-all"
                             >
-                                <div className="h-full p-4 rounded-3xl bg-white dark:bg-gray-800 border border-black/5 dark:border-white/5 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center gap-3 overflow-hidden min-h-[160px]">
+                                <div className="h-full p-4 rounded-3xl themed-card border shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center gap-3 overflow-hidden min-h-[160px]" style={{ borderColor: 'var(--card-border)' }}>
                                     {/* Background hint */}
                                     <div 
                                         className="absolute -right-4 -top-4 w-16 h-16 rounded-full opacity-10 blur-xl pointer-events-none"

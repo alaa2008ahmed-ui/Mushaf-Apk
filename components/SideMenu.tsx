@@ -49,6 +49,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
 
     const menuItems = [
         { id: 'search', label: 'البحث المتقدم', icon: Search, color: '#14b8a6', description: 'البحث عن آية، أو دعاء، أو أذكار.' },
+        { id: 'habit-tracker', label: 'مربّي العبادات', icon: Calendar, color: '#ec4899', description: 'متابعة الصلاة وتلاوة القرآن والأذكار والأهداف اليومية.' },
         { id: 'home', label: 'الرئيسية', icon: Home, color: '#3b82f6', description: 'العودة إلى الشاشة الرئيسية للتطبيق.' },
         { id: 'quran', label: 'القرآن الكريم', icon: BookOpen, color: '#10b981', description: 'يقوم بعرض النص القرانى والترجمه باللغه الانجليزيه' },
         { id: 'listen', label: 'الاستماع', icon: Headphones, color: '#8b5cf6', description: 'الاستماع إلى تلاوات كبار القراء بمختلف الروايات.' },
