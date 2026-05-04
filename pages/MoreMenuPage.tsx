@@ -70,7 +70,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                             {ALL_MENU_ITEMS.map((item, idx) => {
                                 const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna'].includes(item.id);
                                 const primaryColor = getPrimaryColor(item.id, item.colorIndex);
-                                const isNew = showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'calculators', 'hajj-umrah', 'asmaul-husna', 'habit-tracker'].includes(item.id);
+                                const isNew = showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'asmaul-husna', 'habit-tracker'].includes(item.id);
                                 
                                 return (
                                     <motion.div
@@ -87,7 +87,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                             className="w-full h-full"
                                             color={primaryColor}
                                             showNewBadge={isNew}
-                                            badgeText={['calculators', 'hajj-umrah'].includes(item.id) ? 'تحديث' : 'جديد'}
+                                            badgeText="جديد"
                                             isGlass={theme.isGlass}
                                             btnText={theme.btnText}
                                         />

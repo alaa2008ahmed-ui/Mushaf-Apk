@@ -283,14 +283,17 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
             <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
-                    <h2 className="text-lg font-bold font-sans dark:text-white">إنجاز اليوم</h2>
+                    <h2 className="text-lg font-bold font-sans dark:text-white flex items-center gap-2">
+                        إنجاز اليوم
+                        <span className="text-xs font-normal opacity-60">({new Intl.DateTimeFormat('ar-EG', { month: 'short', day: 'numeric' }).format(new Date())})</span>
+                    </h2>
                     <motion.button
                        whileTap={{ scale: 0.95 }}
                        onClick={() => setViewMode('archive')}
-                       className="flex items-center gap-1 px-3 py-1 rounded-lg text-[10px] font-bold transition-transform bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+                       className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold transition-transform bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 shadow-sm"
                        style={{ color: hexColor }}
                     >
-                       <BookOpen className="w-3 h-3" />
+                       <BookOpen className="w-4 h-4" />
                        السجل
                     </motion.button>
                   </div>
@@ -299,30 +302,33 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
                   )}
                   
                   {/* Heatmap Row */}
-                  <div className="flex flex-col gap-1 w-full mt-1" dir="rtl">
-                    <p className="text-[10px] opacity-60 dark:text-gray-400 mb-0.5">أرشيف الشهر الحالي (الأيام المنجزة):</p>
+                  <div className="flex flex-col gap-1 w-full mt-2" dir="rtl">
                     <div className="flex justify-start gap-1 w-full">
-                      {heatmapData.slice(0, Math.ceil(heatmapData.length / 2)).map((day, i) => {
+                      {heatmapData.slice(0, 15).map((day, i) => {
                         let opacity = 0.1;
                         if (day.progress > 0) opacity = 0.4;
                         if (day.progress >= 50) opacity = 0.7;
                         if (day.progress === 100) opacity = 1;
 
-                        // Default background if no progress
-                        let bgClass = 'bg-gray-200 dark:bg-gray-700';
+                        let bgClass = '';
                         let inlineStyle: any = {};
                         
+                        const isPast = day.date < todayStr;
+                        const isToday = day.date === todayStr;
+                        
                         if (day.progress > 0) {
-                           bgClass = '';
                            inlineStyle = { backgroundColor: hexColor, opacity };
+                        } else if (isPast) {
+                           inlineStyle = { backgroundColor: hexColor, opacity: 0.15 };
+                        } else if (isToday) {
+                           inlineStyle = { backgroundColor: hexColor, opacity: 0.3 };
+                        } else {
+                           bgClass = 'bg-gray-200 dark:bg-gray-700 opacity-50'; 
                         }
                         
-                        // Highlight today's box
-                        if ((day as any).isToday) {
-                           if (day.progress === 0) {
-                               bgClass = 'bg-gray-400 dark:bg-gray-500'; // Make today more visible even if empty
-                           }
-                           inlineStyle = { ...inlineStyle, border: `2px solid ${hexColor}`, opacity: opacity < 0.5 ? 0.6 : opacity };
+                        // Highlight today's box with a border
+                        if (isToday) {
+                           inlineStyle = { ...inlineStyle, border: `2px solid ${hexColor}` };
                         }
 
                         return (
@@ -336,27 +342,31 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
                       })}
                     </div>
                     <div className="flex justify-start gap-1 w-full">
-                      {heatmapData.slice(Math.ceil(heatmapData.length / 2)).map((day, i) => {
+                      {heatmapData.slice(15).map((day, i) => {
                         let opacity = 0.1;
                         if (day.progress > 0) opacity = 0.4;
                         if (day.progress >= 50) opacity = 0.7;
                         if (day.progress === 100) opacity = 1;
 
-                        // Default background if no progress
-                        let bgClass = 'bg-gray-200 dark:bg-gray-700';
+                        let bgClass = '';
                         let inlineStyle: any = {};
                         
+                        const isPast = day.date < todayStr;
+                        const isToday = day.date === todayStr;
+                        
                         if (day.progress > 0) {
-                           bgClass = '';
                            inlineStyle = { backgroundColor: hexColor, opacity };
+                        } else if (isPast) {
+                           inlineStyle = { backgroundColor: hexColor, opacity: 0.15 };
+                        } else if (isToday) {
+                           inlineStyle = { backgroundColor: hexColor, opacity: 0.3 };
+                        } else {
+                           bgClass = 'bg-gray-200 dark:bg-gray-700 opacity-50'; 
                         }
                         
-                        // Highlight today's box
-                        if ((day as any).isToday) {
-                           if (day.progress === 0) {
-                               bgClass = 'bg-gray-400 dark:bg-gray-500';
-                           }
-                           inlineStyle = { ...inlineStyle, border: `2px solid ${hexColor}`, opacity: opacity < 0.5 ? 0.6 : opacity, transform: 'scale(1.1)' };
+                        // Highlight today's box with a border
+                        if (isToday) {
+                           inlineStyle = { ...inlineStyle, border: `2px solid ${hexColor}` };
                         }
 
                         return (

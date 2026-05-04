@@ -10,7 +10,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
     ChevronLeft, ChevronRight, ChevronDown, Map, Heart, Compass, 
     BookOpen, Info, ShieldAlert, ListChecks, Plus, Minus, RotateCcw, Tent,
-    ZoomIn, CheckCircle2, Circle, ArrowLeft, Footprints
+    ZoomIn, CheckCircle2, Circle, ArrowLeft, Footprints,
+    Ban, HelpCircle, MapPin
 } from 'lucide-react';
 
 interface DuaaSectionProps {
@@ -488,15 +489,34 @@ const HomeScreen = ({ setScreen, theme }) => (
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            {homeScreenAdditions.slice(0, 1).map((item, index) => (
+            {homeScreenAdditions.map((item, index) => {
+                let IconComponent = Info;
+                if (item.icon === 'fa-gem') IconComponent = BookOpen;
+                if (item.icon === 'fa-ban') IconComponent = Ban;
+                if (item.icon === 'fa-map-location-dot') IconComponent = MapPin;
+                if (item.icon === 'fa-circle-question') IconComponent = HelpCircle;
+
+                return (
                  <div key={index} className="bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 dark:border-white/5 shadow-lg">
-                    <h3 className="font-bold text-base mb-1 flex items-center gap-2" style={{color: theme.name === 'أبيض وأسود' ? theme.textColor : theme.palette[index % 2]}}>
-                        <Info size={16} />
+                    <h3 className="font-bold text-base mb-2 flex items-center gap-2" style={{color: theme.name === 'أبيض وأسود' ? theme.textColor : theme.palette[index % theme.palette.length]}}>
+                        <IconComponent size={16} />
                         <span>{item.title}</span>
                     </h3>
-                    <p className="text-xs leading-relaxed pr-3 border-r-2 font-medium" style={{ color: 'var(--text-color)', borderColor: theme.palette[0] }}>{item.content[0]}</p>
+                    {item.type === 'hadith' ? (
+                        <p className="text-xs leading-relaxed pr-3 border-r-2 font-medium" style={{ color: 'var(--text-color)', borderColor: theme.palette[0] }}>{item.content[0]}</p>
+                    ) : (
+                        <ul className="space-y-1.5 opacity-90 mt-2">
+                            {item.content.map((point, pi) => (
+                                <li key={pi} className="flex gap-2 items-start text-xs font-medium" style={{ color: 'var(--text-color)' }}>
+                                    <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 opacity-60" style={{ backgroundColor: theme.palette[0] }}></div>
+                                    <span className="flex-1 leading-relaxed opacity-80">{point}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
-            ))}
+                );
+            })}
              <div className="col-span-1 md:col-span-2 bg-orange-500/5 dark:bg-orange-900/10 rounded-xl p-4 border border-orange-500/20 backdrop-blur-md">
                 <h3 className="font-bold text-orange-600 dark:text-orange-400 mb-1 flex items-center gap-2 text-base">
                     <ShieldAlert size={16} />
@@ -551,16 +571,17 @@ const UmrahScreen = ({ theme, onSelectDetail }) => (
                 <button 
                     key={step.title} 
                     onClick={() => onSelectDetail(step)}
-                    className="w-full text-right bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 border border-white/20 shadow-sm flex items-center gap-3 hover:bg-white/20 dark:hover:bg-gray-700/50 transition-all active:scale-[0.98]"
+                    className="w-full text-right bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.08),0_10px_20px_-2px_rgba(0,0,0,0.04)] flex items-center gap-4 hover:shadow-lg transition-all active:scale-[0.982] group"
                 >
-                    <div className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-xl shadow-inner" style={{ backgroundColor: `${theme.palette[0]}20` }}>
+                    <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-inner bg-emerald-500/10 dark:bg-emerald-500/20" style={{ color: theme.palette[0] }}>
                         {step.icon}
                     </div>
+
                     <div className="flex-1">
-                        <h4 className="font-bold text-sm mb-0.5" style={{ color: 'var(--text-color)' }}>{step.title}</h4>
-                        <p className="text-xs opacity-60 line-clamp-1" style={{ color: 'var(--text-color)' }} dangerouslySetInnerHTML={{ __html: step.text?.replaceAll('{{THEME_PALETTE_0}}', theme.name === 'أبيض وأسود' ? theme.textColor : theme.palette[0]) }}></p>
+                        <h4 className="font-bold text-base" style={{ color: 'var(--text-color)' }}>{step.title}</h4>
                     </div>
-                    <ChevronLeft size={16} className="opacity-30" style={{ color: 'var(--text-color)' }} />
+
+                    <ChevronLeft size={18} className="opacity-30 group-hover:opacity-60 transition-opacity" style={{ color: 'var(--text-color)' }} />
                 </button>
             ))}
         </div>
@@ -613,21 +634,22 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail }) => (
             <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
                 <Map className="w-5 h-5" /> الجدول الزمني
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-3">
                 {(hajjType === 'tamattu' ? hajjTamattuPlan : hajjType === 'ifrad' ? hajjIfradPlan : hajjQiranPlan).map((day, i) => (
                     <button 
                         key={i} 
-                        onClick={() => onSelectDetail({ title: day.day, points: day.actions, icon: <Map className="w-5 h-5" style={{ color: theme.palette[0] }} /> })}
-                        className="w-full text-right bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 border border-white/20 flex gap-3 hover:bg-white/20 dark:hover:bg-gray-700/50 transition-all active:scale-[0.98]"
+                        onClick={() => onSelectDetail({ title: day.day, points: day.actions, icon: <div className="text-2xl">{day.icon}</div> })}
+                        className="w-full text-right bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.08),0_10px_20px_-2px_rgba(0,0,0,0.04)] flex items-center gap-4 hover:shadow-lg transition-all active:scale-[0.982] group"
                     >
-                        <div className="shrink-0 w-8 h-8 rounded-lg text-white flex items-center justify-center font-bold shadow-lg text-sm" style={{ backgroundColor: theme.palette[0] }}>
-                            {i+1}
+                        <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-inner bg-emerald-500/10 dark:bg-emerald-500/20" style={{ color: theme.palette[0] }}>
+                            {day.icon}
                         </div>
+
                         <div className="flex-1">
-                            <h5 className="font-bold text-sm mb-0.5" style={{ color: theme.palette[0] }}>{day.day}</h5>
-                            <p className="text-xs opacity-70 line-clamp-1" style={{ color: 'var(--text-color)' }}>{day.actions[0]}</p>
+                            <h5 className="font-bold text-base" style={{ color: 'var(--text-color)' }}>{i+1}. {day.day}</h5>
                         </div>
-                        <ChevronLeft size={16} className="mt-1 opacity-30" style={{ color: 'var(--text-color)' }} />
+
+                        <ChevronLeft size={18} className="opacity-30 group-hover:opacity-60 transition-opacity" style={{ color: 'var(--text-color)' }} />
                     </button>
                 ))}
             </div>

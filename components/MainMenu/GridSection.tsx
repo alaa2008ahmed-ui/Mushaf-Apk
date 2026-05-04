@@ -133,8 +133,8 @@ const GridSection: React.FC<GridSectionProps> = ({
                                         onResize={(e) => handleResize(item.id, e)}
                                         isGlass={theme.isGlass}
                                         btnText={theme.btnText}
-                                        showNewBadge={showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'calculators', 'hajj-umrah', 'habit-tracker'].includes(item.id)}
-                                        badgeText={['calculators', 'hajj-umrah'].includes(item.id) ? 'تحديث' : 'جديد'}
+                                        showNewBadge={showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'habit-tracker'].includes(item.id)}
+                                        badgeText="جديد"
                                     />
                                 </div>
                                 <VoiceControlToggle />
@@ -154,8 +154,8 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 onResize={(e) => handleResize(item.id, e)}
                                 isGlass={theme.isGlass}
                                 btnText={theme.btnText}
-                                showNewBadge={showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'calculators', 'hajj-umrah', 'habit-tracker'].includes(item.id)}
-                                badgeText={['calculators', 'hajj-umrah'].includes(item.id) ? 'تحديث' : 'جديد'}
+                                showNewBadge={showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'habit-tracker'].includes(item.id)}
+                                badgeText="جديد"
                             />
                         )}
                         {item.id === 'quran' && !isEditMode && (
