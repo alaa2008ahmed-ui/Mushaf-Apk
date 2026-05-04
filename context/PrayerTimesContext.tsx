@@ -354,19 +354,38 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                     cityGov: 'موقعي الحالي', fullCountry: '', combinedCode: ''
                 };
                 try {
-                    const res = await fetchWithTimeout(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=ar`, {}, 5000);
+                    const res = await fetchWithTimeout(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=ar`, {}, 7000);
                     const data = await res.json();
-                    const addr = data.address;
-                    const city = addr.village || addr.town || addr.city || "موقعي";
-                    const countryInfo = getCountryInfo(addr.country_code, addr.country, city);
-                    newLoc = {
-                        ...newLoc,
-                        cityGov: `${city} - ${addr.state || ""}`,
-                        fullCountry: countryInfo.fullName,
-                        combinedCode: countryInfo.combinedCode
-                    };
+                    if (data && data.address) {
+                        const addr = data.address;
+                        const city = addr.village || addr.town || addr.city || "موقعي";
+                        const countryInfo = getCountryInfo(addr.country_code, addr.country, city);
+                        newLoc = {
+                            ...newLoc,
+                            cityGov: `${city}${addr.state ? ` - ${addr.state}` : ''}`,
+                            fullCountry: countryInfo.fullName,
+                            combinedCode: countryInfo.combinedCode
+                        };
+                    } else {
+                        throw new Error("No address");
+                    }
                 } catch(e) {
-                    newLoc.cityGov = "موقعي الحالي (بدون اتصال)";
+                    try {
+                        const res2 = await fetchWithTimeout(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=ar`, {}, 7000);
+                        const data2 = await res2.json();
+                        if (data2 && data2.countryName) {
+                            newLoc = {
+                                ...newLoc,
+                                cityGov: data2.city || data2.locality || "موقعي الحالي",
+                                fullCountry: data2.countryName,
+                                combinedCode: ""
+                            };
+                        } else {
+                            throw new Error("No data");
+                        }
+                    } catch (err) {
+                        newLoc.cityGov = "موقعي الحالي";
+                    }
                 }
                 setConfig(prev => ({ ...prev, location: newLoc }));
                 resolve();
