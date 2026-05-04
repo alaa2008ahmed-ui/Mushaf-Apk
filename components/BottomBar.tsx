@@ -14,7 +14,7 @@ interface BottomBarProps {
 }
 
 function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = true, homeLabel = "الرئيسية", leftButton, rightButton }: BottomBarProps) {
-    const { theme, themeKey, isPageLocked, togglePageLock, isQuranPage } = useTheme();
+    const { theme, themeKey, isPageLocked, togglePageLock, isQuranPage, currentPage } = useTheme();
 
     const isSingleButton = !showHome || !showThemes;
     const homeButtonClass = `bar-button btn-3d-effect ${isSingleButton ? 'w-full max-w-[160px] mx-auto py-2.5 px-4 rounded-xl shadow-lg' : 'max-w-[120px]'}`;
@@ -35,6 +35,34 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
     const homeBtnBorder = parseBorder(theme.btnBorder);
     const themesBtnBorder = parseBorder(theme.btnBorder);
 
+    const isMainOrMoreMenu = currentPage === 'home' || currentPage === 'more-menu';
+    const isDefaultNonQuran = themeKey === 'default' && !isQuranPage && !isMainOrMoreMenu;
+
+    const getBtnStyle = (colorIdx: number) => {
+        if (isDefaultNonQuran) {
+            return {
+                background: '#f8fafc',
+                color: '#000000',
+                fontFamily: theme.font,
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: '#000000'
+            };
+        }
+        
+        const baseBg = themeKey === 'olive_grove' ? (colorIdx === 0 ? '#4D7C0F' : '#65A30D') : (theme.palette[colorIdx] || theme.palette[0]);
+        const border = colorIdx === 0 ? homeBtnBorder : themesBtnBorder;
+        
+        return {
+            background: baseBg,
+            color: 'white',
+            fontFamily: theme.font,
+            borderWidth: border.borderWidth,
+            borderStyle: border.borderStyle,
+            borderColor: border.borderColor
+        };
+    };
+
     return (
         <nav className="app-bottom-bar" style={{ 
             borderTopWidth: theme.barBorder ? navBorder.borderWidth : '2px',
@@ -50,14 +78,7 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
                     <button 
                         onClick={onHomeClick} 
                         className={homeButtonClass}
-                        style={{ 
-                            background: themeKey === 'olive_grove' ? '#4D7C0F' : theme.palette[0], 
-                            color: 'white', 
-                            fontFamily: theme.font, 
-                            borderWidth: homeBtnBorder.borderWidth,
-                            borderStyle: homeBtnBorder.borderStyle,
-                            borderColor: homeBtnBorder.borderColor
-                        }}
+                        style={getBtnStyle(0)}
                     >
                         <span className="text-xl">🏠</span>
                         <span>{homeLabel}</span>
@@ -69,14 +90,7 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
                         id="themes-btn"
                         onClick={onThemesClick} 
                         className={themesButtonClass}
-                        style={{ 
-                            background: themeKey === 'olive_grove' ? '#65A30D' : theme.palette[1], 
-                            color: 'white', 
-                            fontFamily: theme.font, 
-                            borderWidth: themesBtnBorder.borderWidth,
-                            borderStyle: themesBtnBorder.borderStyle,
-                            borderColor: themesBtnBorder.borderColor
-                        }}
+                        style={getBtnStyle(1)}
                         data-id="theme-toggle-button"
                     >
                          <span className="text-xl">🎨</span>

@@ -10,7 +10,7 @@ import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 function HisnAlmuslim({ onBack }) {
-    const { theme } = useTheme();
+    const { theme, themeKey } = useTheme();
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [zoomedItem, setZoomedItem] = useState(null);
     const [toastMessage, setToastMessage] = useState('');
@@ -125,8 +125,12 @@ function HisnAlmuslim({ onBack }) {
                 <button 
                     ref={fabRef}
                     onClick={handleFabClick}
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer relative z-10"
-                    style={{ backgroundColor: theme.palette[0] }}
+                    className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer relative z-10 ${themeKey === 'default' ? 'text-black' : 'text-white'}`}
+                    style={
+                        themeKey === 'default'
+                        ? { backgroundColor: '#ffffff', border: '1px solid #000000' }
+                        : { backgroundColor: theme.palette[0] }
+                    }
                 >
                     <i className={`fa-solid ${isMenuOpen ? 'fa-times' : 'fa-list-ul'} text-xl`}></i>
                 </button>

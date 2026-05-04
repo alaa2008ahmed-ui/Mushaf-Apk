@@ -5,9 +5,11 @@ interface ModalWrapperProps {
     children?: React.ReactNode;
     onClose: () => void;
     isOpen: boolean;
+    className?: string;
+    noStyles?: boolean;
 }
 
-const ModalWrapper: React.FC<ModalWrapperProps> = ({ children, onClose, isOpen }) => {
+const ModalWrapper: React.FC<ModalWrapperProps> = ({ children, onClose, isOpen, className = "", noStyles = false }) => {
     return (
         <AnimatePresence>
             {isOpen && (
@@ -23,7 +25,7 @@ const ModalWrapper: React.FC<ModalWrapperProps> = ({ children, onClose, isOpen }
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.95, opacity: 0, y: 20 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="p-6 rounded-2xl w-full max-w-xs space-y-4 bg-modal-bg text-modal-text shadow-2xl border border-modal-border" 
+                        className={noStyles ? `w-full max-w-xs ${className}` : `p-6 rounded-2xl w-full max-w-xs space-y-4 bg-modal-bg text-modal-text shadow-2xl border border-modal-border ${className}`} 
                         onClick={e => e.stopPropagation()}
                     >
                         {children}

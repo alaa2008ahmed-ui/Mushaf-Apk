@@ -1,6 +1,6 @@
 import React from 'react';
 import { Theme } from '../../context/themes';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 
 interface TasbeehControlsProps {
     isBlackAndWhite: boolean;
@@ -21,22 +21,13 @@ const TasbeehControls: React.FC<TasbeehControlsProps> = ({ isBlackAndWhite, them
                 <button onClick={() => setModals((p: any) => ({...p, phrase: true}))} className="w-full py-3 px-4 rounded-2xl flex justify-between items-center text-lg font-bold transition-all duration-300 themed-bg-alt hover:opacity-80 active:scale-[0.98]">
                     <div className="flex flex-col items-start min-w-0 pr-2">
                         <div className="flex-grow flex justify-start w-full relative overflow-visible">
-                            <AnimatePresence>
-                                <motion.span 
-                                    key={activePhrase}
-                                    initial={{ y: 10, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: -10, opacity: 0 }}
-                                    className="text-lg md:text-xl font-extrabold text-right font-amiri leading-normal w-full whitespace-normal break-words line-clamp-1" 
-                                    style={{color: isBlackAndWhite ? '#FFFFFF' : undefined}}
-                                >
-                                    {activePhrase}
-                                </motion.span>
-                            </AnimatePresence>
+                            <span 
+                                className="text-lg md:text-xl font-extrabold text-right font-amiri leading-normal w-full whitespace-normal break-words line-clamp-1" 
+                                style={{color: isBlackAndWhite ? '#FFFFFF' : undefined}}
+                            >
+                                {activePhrase}
+                            </span>
                         </div>
-                    </div>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 flex-shrink-0" style={{color: secondaryTextColor}}>
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
                     </div>
                 </button>
             </motion.div>

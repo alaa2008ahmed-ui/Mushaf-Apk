@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 const ADHKAR_STATUS_KEY = 'sabah_masaa_status_v1';
 
 function AdkarSabahMasaa({ onBack, onNavigate }) {
-    const { theme } = useTheme();
+    const { theme, themeKey } = useTheme();
     const [adhkarTab, setAdhkarTab] = useState<'morning' | 'evening' | 'favorites'>('morning');
     const [favorites, setFavorites] = useState<string[]>([]);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -208,8 +208,12 @@ function AdkarSabahMasaa({ onBack, onNavigate }) {
                 <button 
                     ref={fabRef}
                     onClick={handleFabClick}
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer relative z-10"
-                    style={{ backgroundColor: theme.palette[0] }}
+                    className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer relative z-10 ${themeKey === 'default' ? 'text-black' : 'text-white'}`}
+                    style={
+                        themeKey === 'default'
+                        ? { backgroundColor: '#ffffff', border: '1px solid #000000' }
+                        : { backgroundColor: theme.palette[0] }
+                    }
                 >
                     <i className={`fa-solid ${isMenuOpen ? 'fa-times' : 'fa-list-ul'} text-xl`}></i>
                 </button>

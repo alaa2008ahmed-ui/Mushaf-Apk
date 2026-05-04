@@ -75,16 +75,21 @@ const TasbeehModals: React.FC<TasbeehModalsProps> = ({
                  </div>
             </ModalWrapper>
 
-            <ModalWrapper isOpen={modals.phrase} onClose={() => setModals((p: any) => ({...p, phrase: false}))}>
-                <div className="space-y-1 overflow-y-auto max-h-[60vh] p-2 themed-card-bg rounded-2xl border border-black/5 dark:border-white/5 custom-scrollbar">
-                    {phrases.map(p => (
+            <ModalWrapper isOpen={modals.phrase} onClose={() => setModals((p: any) => ({...p, phrase: false}))} noStyles={true}>
+                <div className="overflow-y-auto max-h-[60vh] bg-modal-bg text-modal-text shadow-2xl rounded-2xl border border-modal-border custom-scrollbar">
+                    {phrases.map((p, index) => (
                         <button 
                              key={p.id} 
                              onClick={() => { setActivePhrase(p.text); handleReset(); setModals((p: any) => ({...p, phrase: false})); }}
-                             className={`w-full p-3 rounded-xl cursor-pointer flex items-center justify-between transition-all ${activePhrase === p.text ? 'bg-primary/10 text-primary font-bold shadow-sm' : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}
+                             className={`w-full px-4 py-3.5 flex items-center justify-between transition-all border-b border-modal-border last:border-0 hover:bg-black/5 dark:hover:bg-white/5 active:scale-[0.99] ${activePhrase === p.text ? 'bg-black/5 dark:bg-white/10 font-bold' : ''}`}
+                             style={activePhrase === p.text ? { color: theme.palette[0] } : {}}
                         >
-                            <span className="text-right text-lg font-amiri leading-relaxed">{p.text}</span>
-                            {activePhrase === p.text && <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>}
+                            <span className="text-right text-base leading-relaxed pl-2 font-amiri text-modal-text">{p.text}</span>
+                            {activePhrase === p.text && (
+                                <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10" style={{ color: theme.palette[0] }}>
+                                    <svg className="w-4 h-4" transform="scale(1.1)" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                                </div>
+                            )}
                         </button>
                     ))}
                 </div>

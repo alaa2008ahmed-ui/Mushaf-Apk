@@ -22,8 +22,8 @@ const SETTINGS_STORAGE_KEY = 'ahmed_laila_tasbeeh_settings_v1';
 function Tasbeeh({ onBack }) {
     const { theme, themeKey } = useTheme();
     const isBlackAndWhite = themeKey === 'deep_black';
-    const primaryTextColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
-    const secondaryTextColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[1];
+    const primaryTextColor = themeKey === 'default' ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
+    const secondaryTextColor = themeKey === 'default' ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[1]);
 
     const [phrases, setPhrases] = useState<{id: number, text: string}[]>([]);
     const [count, setCount] = useState(0);
@@ -39,6 +39,8 @@ function Tasbeeh({ onBack }) {
     const [counterColor, setCounterColor] = useState(theme.palette[0]);
     const [skin, setSkin] = useState<'modern' | 'classic' | 'beads'>('modern');
     const [dailyStats, setDailyStats] = useState<{date: string, count: number}[]>([]);
+
+    const activeCounterColor = themeKey === 'default' ? '#000000' : counterColor;
 
     const loadPhrases = useCallback(() => {
         try {
@@ -250,16 +252,16 @@ function Tasbeeh({ onBack }) {
         setModals(p => ({...p, skins: false}));
     };
 
-    // FIX: A list of predefined color options for the color picker modal.
+    // FIX: A list of predefined distinct color options for the color picker modal.
     const colorOptions = [
         theme.palette[0],
-        theme.palette[1],
-        ...(theme.palette[2] ? [theme.palette[2]] : []),
         '#3b82f6', // blue
         '#ef4444', // red
         '#10b981', // green
-        '#f97316', // orange
+        '#f59e0b', // amber
         '#8b5cf6', // violet
+        '#ec4899', // pink
+        '#14b8a6', // teal
     ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 8);
 
     const handleHomeClick = () => {
@@ -288,10 +290,10 @@ function Tasbeeh({ onBack }) {
                     target={target}
                     secondaryTextColor={secondaryTextColor}
                     primaryTextColor={primaryTextColor}
-                    counterColor={counterColor}
+                    counterColor={activeCounterColor}
                     count={count}
                     handleIncrement={handleIncrement}
-                    isBlackAndWhite={isBlackAndWhite}
+                    isBlackAndWhite={isBlackAndWhite || themeKey === 'default'}
                     skin={skin}
                  />
                 
@@ -324,7 +326,7 @@ function Tasbeeh({ onBack }) {
                 handleReset={handleReset}
                 colorOptions={colorOptions}
                 handleSetCounterColor={handleSetCounterColor}
-                counterColor={counterColor}
+                counterColor={activeCounterColor}
                 theme={theme}
                 dailyStats={dailyStats}
                 skin={skin}
