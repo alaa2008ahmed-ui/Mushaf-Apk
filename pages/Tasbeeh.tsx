@@ -37,10 +37,33 @@ function Tasbeeh({ onBack }) {
     const newPhraseInputRef = useRef<HTMLInputElement>(null);
     // FIX: Added state to manage the counter's background color, initialized with the primary theme color.
     const [counterColor, setCounterColor] = useState(theme.palette[0]);
+    const prevThemeKeyRef = useRef(themeKey);
     const [skin, setSkin] = useState<'modern' | 'classic' | 'beads'>('modern');
     const [dailyStats, setDailyStats] = useState<{date: string, count: number}[]>([]);
 
-    const activeCounterColor = themeKey === 'default' ? '#000000' : counterColor;
+    useEffect(() => {
+        // Reset counter color whenever the theme changes to follow the new theme primary color
+        if (prevThemeKeyRef.current !== themeKey) {
+            setCounterColor(theme.palette[0]);
+            
+            // Update local storage to reflect that we are now following the theme
+            try {
+                const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
+                if (savedSettings) {
+                    const settings = JSON.parse(savedSettings);
+                    settings.counterColor = theme.palette[0];
+                    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+                }
+            } catch (e) {
+                console.warn("Could not update saved settings on theme change", e);
+            }
+            
+            prevThemeKeyRef.current = themeKey;
+        }
+    }, [themeKey, theme.palette]);
+
+    const activeCounterColor = (themeKey === 'default' && counterColor === theme.palette[0]) ? '#FFFFFF' : counterColor;
+    const isCounterWhite = activeCounterColor === '#FFFFFF' || activeCounterColor === 'white' || activeCounterColor === '#fff';
 
     const loadPhrases = useCallback(() => {
         try {
@@ -69,7 +92,10 @@ function Tasbeeh({ onBack }) {
 
     useEffect(() => {
         loadPhrases();
-        // FIX: Load the counter color from local storage on component mount, falling back to the theme color.
+    }, [loadPhrases]);
+
+    useEffect(() => {
+        // Load the counter color from local storage on component mount, falling back to the theme color.
         try {
             const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
             if (savedSettings) {
@@ -90,7 +116,7 @@ function Tasbeeh({ onBack }) {
             console.warn("Could not load tasbeeh settings", e);
             setCounterColor(theme.palette[0]);
         }
-    }, [loadPhrases, theme.palette]);
+    }, []);
 
     useEffect(() => {
         const interceptor = () => {
@@ -295,6 +321,7 @@ function Tasbeeh({ onBack }) {
                     handleIncrement={handleIncrement}
                     isBlackAndWhite={isBlackAndWhite || themeKey === 'default'}
                     skin={skin}
+                    isDefaultTheme={themeKey === 'default'}
                  />
                 
                 <div className="w-full max-w-lg px-4 mt-auto mb-2">

@@ -38,13 +38,15 @@ const NavButton: React.FC<NavButtonProps> = ({
             onClick={onClick} 
             className={`w-full rounded-2xl p-1.5 font-bold relative text-sm h-full flex items-center justify-center text-center transition-all duration-200 ${isEditMode ? 'cursor-move animate-pulse opacity-80' : ''}`}
             style={{ 
-                backgroundColor: isGlass ? 'transparent' : color, 
+                backgroundColor: isGlass ? 'rgba(255, 255, 255, 0.25)' : color, 
+                backdropFilter: isGlass ? 'blur(12px) saturate(180%)' : 'none',
+                WebkitBackdropFilter: isGlass ? 'blur(12px) saturate(180%)' : 'none',
                 color: btnText || '#FFFFFF',
-                border: border || (isGlass ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(255,255,255,0.1)'),
+                border: border || (isGlass ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid rgba(255,255,255,0.1)'),
                 boxShadow: isGlass 
-                    ? '0 4px 12px rgba(0,0,0,0.2)' 
+                    ? '0 8px 32px 0 rgba(31, 38, 135, 0.07)' 
                     : `0 6px 0 ${color}90, 0 10px 15px rgba(0,0,0,0.15)`,
-                textShadow: isGlass ? '0 2px 4px rgba(0,0,0,0.8)' : '0 1px 2px rgba(0,0,0,0.1)',
+                textShadow: isGlass ? 'none' : '0 1px 2px rgba(0,0,0,0.1)',
                 textRendering: 'optimizeLegibility',
                 WebkitFontSmoothing: 'antialiased'
             }}

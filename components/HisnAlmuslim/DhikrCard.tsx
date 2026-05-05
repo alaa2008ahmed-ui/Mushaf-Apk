@@ -19,7 +19,7 @@ interface DhikrCardProps {
 const toArabicNumerals = (num: number) => String(num).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
 
 const DhikrCard: React.FC<DhikrCardProps> = ({ dhikr, currentCount, isFinished, onDecrement, onZoom, setToastMessage }) => {
-    const { theme } = useTheme();
+    const { theme, themeKey } = useTheme();
     const [isFav, setIsFav] = useState(false);
 
     useEffect(() => {
@@ -50,7 +50,17 @@ const DhikrCard: React.FC<DhikrCardProps> = ({ dhikr, currentCount, isFinished, 
                 <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold shadow-sm" style={{backgroundColor: theme.palette[1]+'30', color: theme.palette[1]}}>
                     {dhikr.count > 1 ? `يُقرأ ${toArabicNumerals(dhikr.count)} مرات` : 'يُقرأ مرة واحدة'}
                 </span>
-                <div className={`count-badge w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-md transform transition-transform`} style={isFinished ? {backgroundColor: 'var(--badge-finished-bg)', color: 'var(--badge-finished-text)'} : {backgroundImage: `linear-gradient(to bottom right, ${theme.palette[0]}, ${theme.palette[1]})`, color: theme.textColor}}>
+                <div 
+                    className={`count-badge w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-md transform transition-transform`} 
+                    style={
+                        isFinished 
+                        ? { backgroundColor: 'var(--badge-finished-bg)', color: 'var(--badge-finished-text)' } 
+                        : (themeKey === 'default' 
+                            ? { backgroundColor: '#ffffff', color: '#000000', border: '1px solid rgba(0,0,0,0.1)' } 
+                            : { backgroundImage: `linear-gradient(to bottom right, ${theme.palette[0]}, ${theme.palette[1]})`, color: '#ffffff' }
+                        )
+                    }
+                >
                     {isFinished ? <i className="fa-solid fa-check"></i> : toArabicNumerals(currentCount)}
                 </div>
             </div>

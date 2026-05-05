@@ -11,7 +11,7 @@ interface CalculatorsProps {
 }
 
 const Calculators: React.FC<CalculatorsProps> = ({ onBack }) => {
-    const { theme } = useTheme();
+    const { theme, themeKey } = useTheme();
     const [activeTab, setActiveTab] = useState<'zakat' | 'mawarith' | 'kaffarat'>('zakat');
 
     return (
@@ -41,8 +41,14 @@ const Calculators: React.FC<CalculatorsProps> = ({ onBack }) => {
                         onClick={() => setActiveTab(tab.id as any)}
                         className={`flex-1 py-3 px-2 rounded-t-xl font-bold transition-all duration-300 flex flex-col items-center gap-1
                             ${activeTab === tab.id 
-                                ? 'bg-primary text-white shadow-[0_-4px_10px_rgba(16,185,129,0.2)] scale-105 origin-bottom' 
-                                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                                ? (themeKey === 'default' 
+                                    ? 'bg-black text-white scale-105 origin-bottom shadow-lg' 
+                                    : 'bg-primary text-white shadow-[0_-4px_10px_rgba(16,185,129,0.2)] scale-105 origin-bottom'
+                                  ) 
+                                : (themeKey === 'default' 
+                                    ? 'bg-white text-black border border-gray-100 shadow-sm opacity-80 hover:opacity-100' 
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                  )}`}
                     >
                         <i className={`fa-solid ${tab.icon} ${activeTab === tab.id ? 'text-lg' : 'text-base'}`}></i>
                         <span className="text-sm">{tab.label}</span>

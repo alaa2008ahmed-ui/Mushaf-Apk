@@ -525,7 +525,7 @@ const historicalEvents = [
 
 // --- Sub-components ---
 
-const CalendarGrid = ({ viewDate, onSelectDay, selectedDay, theme, primaryColor, secondaryColor, isBlackAndWhite }: any) => {
+const CalendarGrid = ({ viewDate, onSelectDay, selectedDay, theme, primaryColor, secondaryColor, isBlackAndWhite, isDefaultTheme }: any) => {
     const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
     const firstDayOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay(); // 0 is Sunday
     
@@ -591,23 +591,23 @@ const CalendarGrid = ({ viewDate, onSelectDay, selectedDay, theme, primaryColor,
                             ${isSelected ? 'scale-110 z-10 shadow-xl' : 'hover:scale-[1.02] hover:bg-white/80 dark:hover:bg-white/10'}
                         `}
                         style={{ 
-                            backgroundColor: isSelected ? secondaryColor : undefined, 
-                            color: isSelected ? (isBlackAndWhite ? '#000' : '#FFF') : undefined 
+                            backgroundColor: isSelected ? (isDefaultTheme ? '#000000' : secondaryColor) : (isToday ? (isDefaultTheme ? '#000000' : undefined) : undefined), 
+                            color: isSelected ? (isBlackAndWhite ? '#000' : '#FFF') : (isToday ? (isDefaultTheme ? '#FFFFFF' : undefined) : undefined)
                         }}
                     >
-                        <span className={`text-sm sm:text-lg font-black leading-none ${event && !isSelected ? 'text-primary' : ''}`} style={event && !isSelected ? { color: secondaryColor } : {}}>
+                        <span className={`text-sm sm:text-lg font-black leading-none ${(event && !isSelected && !isToday) ? 'text-primary' : ''}`} style={(event && !isSelected && !isToday) ? { color: secondaryColor } : {}}>
                             {toArabicNumerals(cell.day)}
                         </span>
-                        <span className={`text-[9px] sm:text-[10px] mt-1 font-bold ${isSelected ? 'opacity-100' : 'opacity-40'} ${event && !isSelected ? 'opacity-100 font-black' : ''}`}>
+                        <span className={`text-[9px] sm:text-[10px] mt-1 font-bold ${isSelected || isToday ? 'opacity-100' : 'opacity-40'} ${(event && !isSelected && !isToday) ? 'opacity-100 font-black' : ''}`}>
                             {toArabicNumerals(hijri.day)}
                         </span>
                         
-                        {isToday && !isSelected && (
+                        {isToday && !isSelected && !isDefaultTheme && (
                             <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-2 border-white dark:border-gray-900" style={{ backgroundColor: secondaryColor }}></div>
                         )}
 
                         {event && (
-                            <div className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/50' : ''}`} style={!isSelected ? { backgroundColor: secondaryColor } : {}}></div>
+                            <div className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${isSelected || (isToday && isDefaultTheme) ? 'bg-white/50' : ''}`} style={(!isSelected && !(isToday && isDefaultTheme)) ? { backgroundColor: secondaryColor } : {}}></div>
                         )}
                     </button>
                 );
@@ -620,6 +620,7 @@ const CalendarGrid = ({ viewDate, onSelectDay, selectedDay, theme, primaryColor,
 function HijriCalendar({ onBack }: { onBack: () => void }) {
     const { theme, themeKey } = useTheme();
     const isBlackAndWhite = themeKey === 'deep_black';
+    const isDefaultTheme = themeKey === 'default';
     const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
     const secondaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[1];
     
@@ -825,19 +826,19 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                 <div className="w-full max-w-lg mx-auto space-y-3">
                     
                     {/* Mode Toggles */}
-                    <div className="flex p-1 rounded-2xl themed-bg-alt shadow-inner">
+                    <div className="flex p-1 rounded-2xl themed-bg-alt shadow-inner bg-white border border-gray-100">
                         <button 
                             onClick={() => setActiveTab('calendar')}
-                            className={`flex-1 py-2 px-1 rounded-xl font-bold transition-all flex items-center justify-center gap-2 duration-300 ${activeTab === 'calendar' ? 'shadow-lg' : 'themed-text-muted hover:bg-black/5'}`}
-                            style={activeTab === 'calendar' ? { backgroundColor: primaryColor, color: isBlackAndWhite ? '#000' : '#FFF' } : {}}
+                            className={`flex-1 py-2 px-1 rounded-xl font-bold transition-all flex items-center justify-center gap-2 duration-300 ${activeTab === 'calendar' ? 'shadow-lg' : (isDefaultTheme ? 'text-black opacity-60' : 'themed-text-muted hover:bg-black/5')}`}
+                            style={activeTab === 'calendar' ? { backgroundColor: isDefaultTheme ? '#000000' : primaryColor, color: isDefaultTheme ? '#FFFFFF' : (isBlackAndWhite ? '#000' : '#FFF') } : (isDefaultTheme ? { backgroundColor: '#FFFFFF', color: '#000000' } : {})}
                         >
                             <CalendarIcon size={16} />
                             عرض التقويم
                         </button>
                         <button 
                             onClick={() => setActiveTab('converter')}
-                            className={`flex-1 py-2 px-1 rounded-xl font-bold transition-all flex items-center justify-center gap-2 duration-300 ${activeTab === 'converter' ? 'shadow-lg' : 'themed-text-muted hover:bg-black/5'}`}
-                            style={activeTab === 'converter' ? { backgroundColor: primaryColor, color: isBlackAndWhite ? '#000' : '#FFF' } : {}}
+                            className={`flex-1 py-2 px-1 rounded-xl font-bold transition-all flex items-center justify-center gap-2 duration-300 ${activeTab === 'converter' ? 'shadow-lg' : (isDefaultTheme ? 'text-black opacity-60' : 'themed-text-muted hover:bg-black/5')}`}
+                            style={activeTab === 'converter' ? { backgroundColor: isDefaultTheme ? '#000000' : primaryColor, color: isDefaultTheme ? '#FFFFFF' : (isBlackAndWhite ? '#000' : '#FFF') } : (isDefaultTheme ? { backgroundColor: '#FFFFFF', color: '#000000' } : {})}
                         >
                             <RefreshCw size={16} />
                             محول التاريخ
@@ -848,13 +849,13 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                         <div className="space-y-2">
                             {/* Calendar Header Card */}
                             <div className="themed-card rounded-2xl shadow-lg overflow-hidden relative">
-                                <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: primaryColor }}></div>
+                                <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: isDefaultTheme ? '#000000' : primaryColor }}></div>
                                 <div className="flex items-center justify-between p-3">
                                     <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all group active:scale-90">
-                                        <ChevronRight size={22} style={{ color: primaryColor }} />
+                                        <ChevronRight size={22} style={{ color: isDefaultTheme ? '#000000' : primaryColor }} />
                                     </button>
                                     <div className="flex-1 flex flex-col items-center justify-center cursor-pointer group" onClick={() => openPicker('calendarMonth')}>
-                                        <h2 className="text-lg font-black tracking-tight group-active:scale-95 transition-transform" style={{ color: primaryColor }}>
+                                        <h2 className="text-lg font-black tracking-tight group-active:scale-95 transition-transform" style={{ color: isDefaultTheme ? '#000000' : primaryColor }}>
                                             {gregorianMonths[viewDate.getMonth()].name} <span onClick={(e) => { e.stopPropagation(); openPicker('calendarYear'); }}>{toArabicNumerals(viewDate.getFullYear())}</span>
                                         </h2>
                                         <p className="text-xs font-bold opacity-70 mt-0.5">
@@ -862,7 +863,7 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                                         </p>
                                     </div>
                                     <button onClick={() => changeMonth(1)} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all group active:scale-90">
-                                        <ChevronLeft size={22} style={{ color: primaryColor }} />
+                                        <ChevronLeft size={22} style={{ color: isDefaultTheme ? '#000000' : primaryColor }} />
                                     </button>
                                 </div>
 
@@ -876,6 +877,7 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                                         primaryColor={primaryColor}
                                         secondaryColor={secondaryColor}
                                         isBlackAndWhite={isBlackAndWhite}
+                                        isDefaultTheme={isDefaultTheme}
                                     />
                                 </div>
                             </div>
@@ -933,7 +935,7 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                         /* Converter View */
                         <div className="space-y-3">
                             <div className="themed-card p-5 rounded-2xl shadow-lg space-y-5 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-24 h-24 blur-3xl opacity-10 -mr-12 -mt-12" style={{ backgroundColor: primaryColor }}></div>
+                                <div className="absolute top-0 right-0 w-24 h-24 blur-3xl opacity-10 -mr-12 -mt-12" style={{ backgroundColor: isDefaultTheme ? '#000000' : primaryColor }}></div>
                                 
                                 <div className="flex p-1 rounded-xl bg-black/5 dark:bg-white/5 text-[10px] font-bold ring-1 ring-black/5">
                                     <button 
@@ -992,14 +994,6 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                                     )}
                                 </div>
 
-                                <button 
-                                    onClick={handleConversion}
-                                    className="w-full py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition-all duration-300 transform"
-                                    style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`, color: isBlackAndWhite ? '#000' : '#FFF' }}
-                                >
-                                    تحويل الآن
-                                </button>
-
                                 <AnimatePresence>
                                     {convResult && (
                                         <motion.div 
@@ -1010,7 +1004,7 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                                             style={{ borderColor: `${secondaryColor}30` }}
                                         >
                                             <p className="text-[10px] themed-text-muted font-black mb-1 tracking-widest">{convMessage}</p>
-                                            <p className="text-xl font-black" style={{ color: primaryColor }}>{convResult}</p>
+                                            <p className="text-xl font-black" style={{ color: isDefaultTheme ? '#000000' : primaryColor }}>{convResult}</p>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
@@ -1022,7 +1016,7 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                                     animate={{ opacity: 1 }}
                                     className="themed-card p-4 rounded-2xl shadow-md relative mt-1 group"
                                 >
-                                    <div className="absolute top-0 right-0 w-12 h-1 bg-gradient-to-l from-transparent" style={{ backgroundColor: secondaryColor, borderTopRightRadius: '999px' }}></div>
+                                    <div className="absolute top-0 right-0 w-12 h-1 bg-gradient-to-l from-transparent" style={{ backgroundColor: isDefaultTheme ? '#000000' : secondaryColor, borderTopRightRadius: '999px' }}></div>
                                     <div className="flex justify-between items-center mb-3">
                                         <div className="flex items-center gap-3">
                                             <button 
@@ -1054,7 +1048,7 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                                             </button>
                                         </div>
                                     </div>
-                                    <h5 className="text-lg sm:text-xl font-black mb-1.5" style={{ color: primaryColor }}>{historicalEvent.title}</h5>
+                                    <h5 className="text-lg sm:text-xl font-black mb-1.5" style={{ color: isDefaultTheme ? '#000000' : primaryColor }}>{historicalEvent.title}</h5>
                                     <div className="flex gap-4 text-xs font-bold themed-text-muted mb-3 justify-end">
                                         <span className="flex items-center gap-1.5"><CalendarIcon size={13} /> {toArabicNumerals(historicalEvent.hijriYear)}</span>
                                         <span className="flex items-center gap-1.5"><CalendarIcon size={13} /> {toArabicNumerals(historicalEvent.gregorianYear)}</span>
@@ -1106,7 +1100,7 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="overflow-y-auto hide-scrollbar flex-1 py-4">
-                                <h3 className="text-2xl font-black mb-6" style={{ color: primaryColor }}>{historicalEvent.title}</h3>
+                                <h3 className="text-2xl font-black mb-6" style={{ color: isDefaultTheme ? '#000000' : primaryColor }}>{historicalEvent.title}</h3>
                                 <div 
                                     className="text-2xl md:text-3xl leading-relaxed font-amiri themed-text"
                                 >

@@ -379,8 +379,12 @@ export default function MonthlyPrayerTimes({ onBack, onNavigate }: { onBack: () 
                                     <tr 
                                         key={idx} 
                                         ref={isToday ? todayRowRef : null}
-                                        className={`border-b last:border-0 transition-colors ${isToday ? (isDefaultTheme ? 'bg-gray-100 font-bold' : 'bg-primary/10 font-bold') : 'hover:bg-black/5 dark:hover:bg-white/5'}`} 
-                                        style={{ borderColor: isDefaultTheme ? '#f3f4f6' : 'var(--card-border)', color: textColor }}
+                                        className={`border-b last:border-0 transition-colors ${isToday ? (isDefaultTheme ? 'font-bold' : 'bg-primary/10 font-bold') : 'hover:bg-black/5 dark:hover:bg-white/5'}`} 
+                                        style={{ 
+                                            borderColor: isDefaultTheme ? '#f3f4f6' : 'var(--card-border)', 
+                                            backgroundColor: isToday && isDefaultTheme ? '#000000' : undefined,
+                                            color: isToday && isDefaultTheme ? '#FFFFFF' : textColor 
+                                        }}
                                     >
                                         <td className="px-1 py-2 border-l" style={{ borderColor: isDefaultTheme ? '#f3f4f6' : 'var(--card-border)' }}>{day.dayName}</td>
                                         <td className="px-1 py-2 border-l font-mono text-[9px] xs:text-[10px]" style={{ borderColor: isDefaultTheme ? '#f3f4f6' : 'var(--card-border)' }} dir="ltr">
@@ -412,15 +416,15 @@ export default function MonthlyPrayerTimes({ onBack, onNavigate }: { onBack: () 
                         disabled={isExporting}
                         className="bar-button btn-3d-effect min-w-[44px] h-[44px] flex items-center justify-center gap-2 px-3 rounded-xl shadow-md transition-all active:scale-95"
                         style={{ 
-                            background: primaryColor, 
-                            color: isBlackAndWhite ? '#000' : 'white', 
+                            background: isDefaultTheme ? '#FFFFFF' : primaryColor, 
+                            color: isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#000' : 'white'), 
                             fontFamily: theme.font,
-                            borderWidth: btnBorderParts.borderWidth,
-                            borderStyle: btnBorderParts.borderStyle,
-                            borderColor: btnBorderParts.borderColor
+                            borderWidth: isDefaultTheme ? '1px' : btnBorderParts.borderWidth,
+                            borderStyle: isDefaultTheme ? 'solid' : btnBorderParts.borderStyle,
+                            borderColor: isDefaultTheme ? 'rgba(0,0,0,0.1)' : btnBorderParts.borderColor
                         }}
                     >
-                        <span className="font-bold text-sm">{isExporting ? '...' : 'PDF'}</span>
+                        <span className="font-bold text-sm" style={{ color: isDefaultTheme ? '#000000' : 'inherit' }}>{isExporting ? '...' : 'PDF'}</span>
                     </button>
                 }
                 rightButton={
@@ -429,16 +433,16 @@ export default function MonthlyPrayerTimes({ onBack, onNavigate }: { onBack: () 
                         disabled={isSharing}
                         className="bar-button btn-3d-effect min-w-[44px] h-[44px] flex items-center justify-center gap-2 px-3 rounded-xl shadow-md transition-all active:scale-95"
                         style={{ 
-                            background: primaryColor, 
-                            color: isBlackAndWhite ? '#000' : 'white', 
+                            background: isDefaultTheme ? '#FFFFFF' : primaryColor, 
+                            color: isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#000' : 'white'), 
                             fontFamily: theme.font,
-                            borderWidth: btnBorderParts.borderWidth,
-                            borderStyle: btnBorderParts.borderStyle,
-                            borderColor: btnBorderParts.borderColor
+                            borderWidth: isDefaultTheme ? '1px' : btnBorderParts.borderWidth,
+                            borderStyle: isDefaultTheme ? 'solid' : btnBorderParts.borderStyle,
+                            borderColor: isDefaultTheme ? 'rgba(0,0,0,0.1)' : btnBorderParts.borderColor
                         }}
                     >
-                        <Share2 size={18} />
-                        <span className="hidden xs:inline">{isSharing ? '...' : 'مشاركة'}</span>
+                        <Share2 size={18} color={isDefaultTheme ? '#000000' : 'currentColor'} />
+                        <span className="hidden xs:inline" style={{ color: isDefaultTheme ? '#000000' : 'inherit' }}>{isSharing ? '...' : 'مشاركة'}</span>
                     </button>
                 }
             />

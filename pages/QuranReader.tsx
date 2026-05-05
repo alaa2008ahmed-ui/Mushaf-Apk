@@ -357,7 +357,42 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const [loadingStatus, setLoadingStatus] = useState('');
     const [loadingProgress, setLoadingProgress] = useState(100);
 
-    const [visiblePages, setVisiblePages] = useState<number[]>([1, 2, 3]);
+    const [visiblePages, setVisiblePages] = useState<number[]>(() => {
+        let p = initialPage;
+        if (!p && initialSurah) {
+            const surah = quranJsonData.surahs[initialSurah - 1];
+            const ayah = surah?.ayahs[(initialAyah || 1) - 1];
+            if (ayah) p = ayah.page;
+        }
+        if (!p && isMemorizationMode && memorizationSettings) {
+             const surah = quranJsonData.surahs[memorizationSettings.fromSurah - 1];
+             const ayah = surah?.ayahs[(memorizationSettings.fromAyah || 1) - 1];
+             if (ayah) p = ayah.page;
+        }
+        if (!p) {
+             try {
+                // readingMode is initialized before this
+                const orient = initialLandscape ? 'h' : 'v';
+                let key = '';
+                if (isWirdMode) key = `_wird_${orient}`;
+                else if (isMemorizationMode) key = `_memorization_${orient}`;
+                else if (readingMode === 'mushaf') key = `_${orient}`;
+                else key = `_${readingMode}_${orient}`;
+
+                const saved = localStorage.getItem(`last_pos${key}`);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && typeof parsed.s === 'number') {
+                        const surah = quranJsonData.surahs[parsed.s - 1];
+                        const ayah = surah?.ayahs[(parsed.a || 1) - 1];
+                        if (ayah) p = ayah.page;
+                    }
+                }
+            } catch(e) {}
+        }
+        const targetPage = p || 1;
+        return [...new Set([targetPage, targetPage + 1, targetPage + 2, targetPage - 1, targetPage - 2])].filter(n => n > 0 && n <= 604).sort((a: number, b: number) => a - b);
+    });
     const [wirdEndPage, setWirdEndPage] = useState<number | null>(null);
     const [showWirdCompleteModal, setShowWirdCompleteModal] = useState(false);
     const [hasShownWirdComplete, setHasShownWirdComplete] = useState(false);
@@ -382,11 +417,30 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         if (initialSurah) {
             return { s: initialSurah, a: initialAyah || 1 };
         }
+        if (initialPage) {
+            // Find the first ayah on this page
+            const pageInt = Number(initialPage);
+            for (let s = 1; s <= 114; s++) {
+                const surah = quranJsonData.surahs[s-1];
+                for (let a = 1; a <= surah.ayahs.length; a++) {
+                    if (surah.ayahs[a-1].page === pageInt) {
+                        return { s, a };
+                    }
+                }
+            }
+        }
         if (localIsMemorizationMode && localMemorizationSettings) {
             return { s: localMemorizationSettings.fromSurah, a: localMemorizationSettings.fromAyah };
         }
         try {
-            const saved = localStorage.getItem(`last_pos${posSuffix}`);
+            const orient = initialLandscape ? 'h' : 'v';
+            let key = '';
+            if (isWirdMode) key = `_wird_${orient}`;
+            else if (isMemorizationMode) key = `_memorization_${orient}`;
+            else if (readingMode === 'mushaf') key = `_${orient}`;
+            else key = `_${readingMode}_${orient}`;
+
+            const saved = localStorage.getItem(`last_pos${key}`);
             if (saved) {
                 const parsed = JSON.parse(saved);
                 if (parsed && typeof parsed.s === 'number') {
@@ -2719,17 +2773,17 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         }
                     }
                 }, 500);
-            }, 100);
+            }, 0);
         } else if (initialPage) {
             setTimeout(() => {
                 jumpToPage(initialPage, true);
-            }, 100);
+            }, 0);
         } else {
             const key = posSuffix;
             const lastPos = JSON.parse(localStorage.getItem(`last_pos${key}`) || '{}');
             setTimeout(() => {
                 jumpToAyah(lastPos.s || 1, lastPos.a || 1, true);
-            }, 100);
+            }, 0);
         }
     }, [jumpToAyah, jumpToPage, posSuffix, initialSurah, initialAyah, initialPage, localIsMemorizationMode, localMemorizationSettings, playAudio]);
 

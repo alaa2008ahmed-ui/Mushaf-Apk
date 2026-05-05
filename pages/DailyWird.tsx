@@ -468,12 +468,12 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
           <button 
             onClick={handleStart}
             className={`flex-1 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors border-b-4 ring-2 ${isDefaultTheme ? 'bg-white text-black border-gray-200 ring-gray-100' : ''}`}
-            style={!isDefaultTheme ? { 
+            style={(!isDefaultTheme ? { 
               backgroundColor: primaryColor, 
               color: btnTextColor,
               borderColor: isBlackAndWhite ? '#E5E5E5' : secondaryColor,
               '--tw-ring-color': `${primaryColor}40`
-            } : {} as React.CSSProperties}
+            } : {}) as React.CSSProperties}
           >
             <Play size={24} />
             {settings ? 'حفظ' : 'ابدأ الختمة'}

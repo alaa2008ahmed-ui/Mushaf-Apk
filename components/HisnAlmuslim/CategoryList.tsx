@@ -8,7 +8,7 @@ interface CategoryListProps {
 }
 
 const CategoryList: React.FC<CategoryListProps> = ({ onSelectCategory }) => {
-    const { theme } = useTheme();
+    const { theme, themeKey } = useTheme();
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -35,16 +35,19 @@ const CategoryList: React.FC<CategoryListProps> = ({ onSelectCategory }) => {
                     >
                         <div className="h-full p-3 rounded-3xl themed-card border shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center gap-1 overflow-hidden" style={{ borderColor: 'var(--card-border)', color: 'var(--text-color)' }}>
                             {/* Background hint */}
-                            <div 
-                                className="absolute -right-4 -top-4 w-16 h-16 rounded-full opacity-10 blur-xl pointer-events-none"
-                                style={{ backgroundColor: color }}
-                            />
+                            {themeKey !== 'default' && (
+                                <div 
+                                    className="absolute -right-4 -top-4 w-16 h-16 rounded-full opacity-10 blur-xl pointer-events-none"
+                                    style={{ backgroundColor: color }}
+                                />
+                            )}
                             
                             <div 
                                 className="w-14 h-14 rounded-2xl flex items-center justify-center mb-0 group-hover:scale-110 transition-transform duration-300 shadow-inner"
                                 style={{ 
-                                    backgroundColor: color + '15',
-                                    color: color
+                                    backgroundColor: themeKey === 'default' ? '#FFFFFF' : (color + '15'),
+                                    color: themeKey === 'default' ? '#000000' : color,
+                                    border: themeKey === 'default' ? '1px solid rgba(0,0,0,0.1)' : 'none'
                                 }}
                             >
                                 <i className={`fa-solid ${category.icon || 'fa-book-open'} text-2xl`}></i>

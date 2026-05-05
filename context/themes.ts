@@ -235,7 +235,9 @@ export const presetThemes: { [key: string]: Theme } = {
         font: "'Cairo', sans-serif",
         palette: ["#0284C7", "#0EA5E9", "#38BDF8"],
         barBg: "#E0F2FE",
-        barBorder: "1px solid #38BDF8"
+        barBorder: "1px solid #38BDF8",
+        btnText: "#0369A1",
+        isGlass: true
     },
     frosted_emerald: {
         name: "زمرد زجاجي",
@@ -244,7 +246,9 @@ export const presetThemes: { [key: string]: Theme } = {
         font: "'Cairo', sans-serif",
         palette: ["#10B981", "#34D399", "#064E3B"],
         barBg: "#D1FAE5",
-        barBorder: "1px solid #10B981"
+        barBorder: "1px solid #10B981",
+        btnText: "#065F46",
+        isGlass: true
     },
     midnight_glass: {
         name: "زجاج ليلي",
@@ -253,6 +257,8 @@ export const presetThemes: { [key: string]: Theme } = {
         font: "'Cairo', sans-serif",
         palette: ["#3B82F6", "#60A5FA", "#0F172A"],
         barBg: "#1E293B",
-        barBorder: "1px solid #3B82F6"
+        barBorder: "1px solid #3B82F6",
+        btnText: "#F1F5F9",
+        isGlass: true
     }
 };

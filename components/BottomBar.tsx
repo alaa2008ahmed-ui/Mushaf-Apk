@@ -55,7 +55,7 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
         
         return {
             background: baseBg,
-            color: 'white',
+            color: theme.btnText || 'white',
             fontFamily: theme.font,
             borderWidth: border.borderWidth,
             borderStyle: border.borderStyle,
