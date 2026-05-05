@@ -19,6 +19,7 @@ interface MemorizationProps {
 
 const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const { theme, themeKey } = useTheme();
+    const isDefaultTheme = themeKey === 'default';
     const isBlackAndWhite = themeKey === 'deep_black';
     const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
     const btnTextColor = isBlackAndWhite ? '#000000' : '#FFFFFF';
@@ -452,13 +453,13 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                             <button 
                                 id="btn-start-memorization"
                                 onClick={handleStart}
-                                className="w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3 border-b-4 ring-4"
+                                className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3 ${isDefaultTheme ? 'border' : 'border-b-4 ring-4'}`}
                                 style={{
-                                    backgroundColor: primaryColor,
-                                    borderColor: isBlackAndWhite ? '#E5E5E5' : theme.palette[1] || primaryColor,
-                                    color: btnTextColor,
-                                    boxShadow: `0 10px 30px -5px ${primaryColor}80`,
-                                    '--tw-ring-color': `${primaryColor}33`
+                                    backgroundColor: isDefaultTheme ? '#FFFFFF' : primaryColor,
+                                    borderColor: isDefaultTheme ? '#e5e7eb' : (isBlackAndWhite ? '#E5E5E5' : theme.palette[1] || primaryColor),
+                                    color: isDefaultTheme ? '#000000' : btnTextColor,
+                                    boxShadow: isDefaultTheme ? '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' : `0 10px 30px -5px ${primaryColor}80`,
+                                    '--tw-ring-color': isDefaultTheme ? 'transparent' : `${primaryColor}33`
                                 } as React.CSSProperties}
                             >
                                 <Play size={20} fill="currentColor" />

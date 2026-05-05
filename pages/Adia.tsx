@@ -13,6 +13,7 @@ function Adia({ onBack }) {
     const [zoomedDuaa, setZoomedDuaa] = useState(null);
     const [activeCategory, setActiveCategory] = useState('all');
     const [favorites, setFavorites] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const [toastMessage, setToastMessage] = useState('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [menuOpenDirection, setMenuOpenDirection] = useState<'up' | 'down'>('up');
@@ -107,10 +108,21 @@ function Adia({ onBack }) {
     };
 
     const filteredDuaa = ALL_DUAA.filter(duaa => {
-        if (activeCategory === 'all') return true;
-        if (activeCategory === 'favorites') return favorites.includes(duaa.id);
+        let matchesCategory = false;
+        if (activeCategory === 'all') matchesCategory = true;
+        else if (activeCategory === 'favorites') matchesCategory = favorites.includes(duaa.id);
+        else matchesCategory = duaa.categoryId === activeCategory;
+
+        if (!matchesCategory) return false;
+
+        if (!searchQuery.trim()) return true;
+
+        const normalizedSearch = searchQuery.toLowerCase();
+        const textMatch = duaa.text.includes(searchQuery);
+        const sourceMatch = duaa.source.includes(searchQuery);
+        const categoryMatch = (categoryForDuaa(duaa.categoryId)?.title || '').includes(searchQuery);
         
-        return duaa.categoryId === activeCategory;
+        return textMatch || sourceMatch || categoryMatch;
     });
 
     return (
@@ -122,7 +134,7 @@ function Adia({ onBack }) {
                             <ThemePageLock />
                         </div>
                         <h1 className="app-top-bar__title text-2xl font-kufi">
-                            الأدعية
+                            الأدعية المأثورة
                         </h1>
                     </div>
                     <p className="app-top-bar__subtitle">
@@ -132,6 +144,20 @@ function Adia({ onBack }) {
             </header>
 
             <main ref={mainRef} className="w-full flex-1 overflow-y-auto px-4 pt-4 pb-4">
+                <div className="mb-6">
+                    <div className="relative max-w-2xl mx-auto border-2 rounded-2xl overflow-hidden focus-within:ring-2 transition-all shadow-sm" style={{ borderColor: 'var(--card-border)', ...themeKey === 'default' ? { focusRingColor: '#000'} : { focusRingColor: theme.palette[0]} }}>
+                        <input 
+                            type="text" 
+                            placeholder="ابحث في الأدعية..." 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-black/5 dark:bg-white/5 py-3 pr-12 pl-4 text-right focus:outline-none placeholder-gray-500 dark:placeholder-gray-400 font-kufi"
+                            style={{ color: 'var(--text-color)' }}
+                        />
+                        <i className="fa-solid fa-search absolute right-4 top-1/2 transform -translate-y-1/2 opacity-50" style={{ color: 'var(--text-color)' }}></i>
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredDuaa.length > 0 ? (
                         filteredDuaa.map((duaa) => (

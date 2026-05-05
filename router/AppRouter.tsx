@@ -55,7 +55,7 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
       case 'prayer-times':
         return <PrayerTimes onBack={onBack} onNavigate={onNavigate} />;
       case 'monthly-prayer-times':
-        return <MonthlyPrayerTimes onBack={onBack} />;
+        return <MonthlyPrayerTimes onBack={onBack} onNavigate={onNavigate} />;
       case 'qibla':
         return <Qibla onBack={onBack} onNavigate={onNavigate} />;
       case 'sabah-masaa':

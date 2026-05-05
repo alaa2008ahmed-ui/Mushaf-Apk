@@ -12,6 +12,7 @@ interface PrayerCardProps {
     secondaryColor: string;
     isBlackAndWhite: boolean;
     themePalette1: string;
+    isDefaultTheme?: boolean;
     togglePrayerSound: (key: string) => void;
     openSettings: (key: string) => void;
     formatTime12: (time: string) => string;
@@ -32,6 +33,7 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
     primaryColor,
     secondaryColor,
     isBlackAndWhite,
+    isDefaultTheme,
     themePalette1,
     togglePrayerSound,
     openSettings,
@@ -42,7 +44,7 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
     supportsDST
 }) => {
     return (
-        <div className="prayer-card rounded-2xl p-2 flex flex-col items-center justify-between themed-card relative h-auto min-h-[105px]" style={{borderColor: isNextPrayer ? primaryColor : 'var(--card-border)', borderWidth: isNextPrayer ? '2px' : '1px'}}>
+        <div className="prayer-card rounded-2xl p-2 flex flex-col items-center justify-between themed-card relative h-auto min-h-[105px]" style={{borderColor: isNextPrayer ? (isDefaultTheme ? '#000000' : primaryColor) : 'var(--card-border)', borderWidth: isNextPrayer ? '2px' : '1px', backgroundColor: isDefaultTheme ? '#FFFFFF' : undefined}}>
             {/* Top row: Actions */}
             <div className="w-full flex justify-between items-start mb-0.5">
                 {prayerKey !== 'Sunrise' ? (
@@ -61,7 +63,7 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
                     ) : <div />
                 )}
                 
-                <div className="w-8 h-8 rounded-xl themed-bg-alt flex items-center justify-center border shrink-0" style={{color: idx % 2 === 0 ? primaryColor : secondaryColor, borderColor: 'var(--card-border)'}}>
+                <div className={`${isDefaultTheme ? 'bg-black/5' : 'themed-bg-alt'} w-8 h-8 rounded-xl flex items-center justify-center border shrink-0`} style={{color: idx % 2 === 0 ? primaryColor : secondaryColor, borderColor: 'var(--card-border)'}}>
                      <i className={`fa-regular ${prayerKey === 'Sunrise' ? 'fa-sun' : 'fa-moon'} text-base`}></i>
                 </div>
             </div>
@@ -75,7 +77,7 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
             {/* Bottom: Iqama */}
             <div className="mt-0.5 w-full flex justify-center min-h-[18px]">
                 {prayerKey !== 'Sunrise' && iqamaTime && !iqamaTime.includes('--') && (
-                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border whitespace-nowrap" style={{color: secondaryColor, backgroundColor: isBlackAndWhite ? '#333' : themePalette1 + '1A', borderColor: isBlackAndWhite ? '#FFF' : themePalette1 + '33'}}>إقامة {formatTime12_clean(iqamaTime)}</span>
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border whitespace-nowrap" style={{color: secondaryColor, backgroundColor: isBlackAndWhite ? '#333' : (isDefaultTheme ? '#f3f4f6' : themePalette1 + '1A'), borderColor: isBlackAndWhite ? '#FFF' : (isDefaultTheme ? '#e5e7eb' : themePalette1 + '33')}}>إقامة {formatTime12_clean(iqamaTime)}</span>
                 )}
             </div>
         </div>

@@ -28,10 +28,11 @@ function PrayerTimes({ onBack, onNavigate }) {
     const { theme, themeKey } = useTheme();
     const { times, dates, nextPrayer, countdown, config, refreshLocation, manualSearch, updateConfig } = usePrayerTimes();
 
+    const isDefaultTheme = themeKey === 'default';
     const isBlackAndWhite = themeKey === 'deep_black';
-    const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
-    const secondaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[1];
-    const topBarTextColor = theme.topBarText || (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
+    const primaryColor = isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
+    const secondaryColor = isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[1]);
+    const topBarTextColor = isDefaultTheme ? '#000000' : (theme.topBarText || (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]));
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
@@ -229,7 +230,7 @@ function PrayerTimes({ onBack, onNavigate }) {
     };
 
     return (
-        <div className="h-screen w-screen flex flex-col" style={{ backgroundColor: 'transparent', color: theme.textColor }}>
+        <div className="h-screen w-screen flex flex-col" style={{ backgroundColor: isDefaultTheme ? '#FFFFFF' : 'transparent', color: isDefaultTheme ? '#000000' : theme.textColor }}>
             <PrayerTimesHeader 
                 handleRefreshLocation={handleRefreshLocation}
                 onOpenNotifications={() => setIsNotifModalOpen(true)}
@@ -241,7 +242,7 @@ function PrayerTimes({ onBack, onNavigate }) {
 
             <main className="flex-1 overflow-y-auto hide-scrollbar p-4 pb-2">
                 <div className="max-w-md mx-auto">
-                    <div className="themed-card bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-[1.25rem] p-3 mb-3 shadow-sm">
+                    <div className={`themed-card ${isDefaultTheme ? 'bg-white border-gray-200' : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5'} border rounded-[1.25rem] p-3 mb-3 shadow-sm`}>
                         <div className="flex gap-2 mb-3">
                             <button
                                 onClick={() => {
@@ -253,16 +254,16 @@ function PrayerTimes({ onBack, onNavigate }) {
                                     }
                                     window.open(url, '_blank');
                                 }}
-                                className="themed-card flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5"
-                                style={{ color: primaryColor }}
+                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
+                                style={{ color: primaryColor, border: isDefaultTheme ? '1px solid #f3f4f6' : undefined }}
                             >
                                 <MapPin size={18} className="shrink-0" />
                                 <span className="truncate whitespace-nowrap">البحث عن المساجد</span>
                             </button>
                              <button
                                 onClick={() => onNavigate('monthly-prayer-times')}
-                                className="themed-card flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5"
-                                style={{ color: secondaryColor }}
+                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
+                                style={{ color: secondaryColor, border: isDefaultTheme ? '1px solid #f3f4f6' : undefined }}
                             >
                                 <Calendar size={18} className="shrink-0" />
                                 <span className="truncate whitespace-nowrap">المواقيت الشهرية</span>
@@ -310,6 +311,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                                 times={times}
                                 countdown={countdown}
                                 isBlackAndWhite={isBlackAndWhite}
+                                isDefaultTheme={isDefaultTheme}
                                 themePalette0={theme.palette[0]}
                                 themePalette1={theme.palette[1]}
                                 formatTime12={formatTime12}
@@ -338,19 +340,20 @@ function PrayerTimes({ onBack, onNavigate }) {
                              const isMuted = config.mutedPrayers[key] || isAudioMuted;
                              
                             return (
-                                <PrayerCard
-                                    key={key}
-                                    prayerKey={key}
-                                    idx={idx}
-                                    displayTimeStr={displayTimeStr}
-                                    iqamaTime={iqamaTime}
-                                    isMuted={isMuted}
-                                    isNextPrayer={nextPrayer?.key === key}
-                                    prayerNameAr={prayerNamesAr[key]}
-                                    primaryColor={primaryColor}
-                                    secondaryColor={secondaryColor}
-                                    isBlackAndWhite={isBlackAndWhite}
-                                    themePalette1={theme.palette[1]}
+                                    <PrayerCard
+                                        key={key}
+                                        prayerKey={key}
+                                        idx={idx}
+                                        displayTimeStr={displayTimeStr}
+                                        iqamaTime={iqamaTime}
+                                        isMuted={isMuted}
+                                        isNextPrayer={nextPrayer?.key === key}
+                                        prayerNameAr={prayerNamesAr[key]}
+                                        primaryColor={primaryColor}
+                                        secondaryColor={secondaryColor}
+                                        isBlackAndWhite={isBlackAndWhite}
+                                        isDefaultTheme={isDefaultTheme}
+                                        themePalette1={theme.palette[1]}
                                     togglePrayerSound={togglePrayerSound}
                                     openSettings={openSettings}
                                     formatTime12={formatTime12}

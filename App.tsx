@@ -74,13 +74,14 @@ function App() {
 
       // Logic for home button:
       // 1. If currently in quran, go back (one step)
-      if (history[history.length - 1] === 'quran') {
+      const current = history[history.length - 1];
+      if (current === 'quran' || current === 'quran-landscape') {
         setHistory(prev => (prev.length > 1 ? prev.slice(0, -1) : prev));
         return;
       }
       
       // 2. If we are in more-menu, home should take us back to home
-      if (history[history.length - 1] === 'more-menu') {
+      if (current === 'more-menu') {
         setHistory(['home']);
         setNavParams(null);
         return;
@@ -119,12 +120,16 @@ function App() {
 
         // Features list (all valid pages except home, more-menu)
         const isMenu = (id: string) => id === 'home' || id === 'more-menu';
+        const isQuran = (id: string) => id === 'quran' || id === 'quran-landscape';
 
         // If we are switching between features (and not coming from or going to a menu)
         // we replace the last feature to keep history clean.
-        // Exception: quran reader usually stays in history for deep navigation if needed
-        // but for now, let's treat it as a feature too for consistency.
+        // Exception: quran reader stays in history if reached from another feature
+        // to allow returning to the previous feature (like daily-wird).
         if (!isMenu(current) && !isMenu(pageId)) {
+          if (isQuran(pageId) && !isQuran(current)) {
+            return [...prev, pageId];
+          }
           return [...prev.slice(0, -1), pageId];
         }
 

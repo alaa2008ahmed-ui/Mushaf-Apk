@@ -25,10 +25,11 @@ const TOTAL_PAGES = 604;
 
 const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, params?: any) => void }> = ({ onBack, onNavigate }) => {
   const { theme, themeKey } = useTheme();
+  const isDefaultTheme = themeKey === 'default';
   const isBlackAndWhite = themeKey === 'deep_black';
-  const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
-  const secondaryColor = isBlackAndWhite ? '#FFFFFF' : (theme.palette[1] || theme.palette[0]);
-  const btnTextColor = isBlackAndWhite ? '#000000' : '#FFFFFF';
+  const primaryColor = isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
+  const secondaryColor = isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : (theme.palette[1] || theme.palette[0]));
+  const btnTextColor = isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#000000' : '#FFFFFF');
 
   const btnBorderParts = React.useMemo(() => {
     if (!theme.btnBorder || theme.btnBorder === 'none') {
@@ -378,7 +379,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   };
 
   const renderSettings = () => (
-    <div className="p-4 rounded-2xl shadow-lg border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+    <div className="p-4 rounded-2xl shadow-lg border" style={{ backgroundColor: isDefaultTheme ? '#FFFFFF' : 'var(--card-bg)', borderColor: isDefaultTheme ? '#e5e7eb' : 'var(--card-border)', color: isDefaultTheme ? '#000000' : 'inherit' }}>
       <h2 className="text-xl font-bold mb-4 text-center">{settings ? 'تعديل الختمة' : 'إعداد ختمة جديدة'}</h2>
       
       <div className="space-y-4">
@@ -389,7 +390,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             value={tempName}
             onChange={(e) => setTempName(e.target.value)}
             className="w-full border rounded-xl p-3 text-right focus:outline-none focus:border-green-500"
-            style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)', borderColor: 'var(--card-border)', color: 'var(--text-color)' }}
+            style={{ backgroundColor: isDefaultTheme ? '#f9fafb' : (theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)'), borderColor: isDefaultTheme ? '#e5e7eb' : 'var(--card-border)', color: isDefaultTheme ? '#000000' : 'var(--text-color)' }}
             placeholder="مثال: أحمد، ختمة رمضان..."
           />
         </div>
@@ -399,13 +400,13 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
           <div className="flex gap-4">
             <button 
               onClick={() => setTempMode('days')}
-              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMode === 'days' ? 'border-green-500 bg-green-500/10 text-green-600 dark:text-green-400' : 'border-gray-300 dark:border-gray-600'}`}
+              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMode === 'days' ? 'border-green-500 bg-green-500/10 text-green-600 dark:text-green-400' : (isDefaultTheme ? 'border-gray-200 bg-white text-black' : 'border-gray-300 dark:border-gray-600')}`}
             >
               حسب الأيام
             </button>
             <button 
               onClick={() => setTempMode('pages')}
-              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMode === 'pages' ? 'border-green-500 bg-green-500/10 text-green-600 dark:text-green-400' : 'border-gray-300 dark:border-gray-600'}`}
+              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMode === 'pages' ? 'border-green-500 bg-green-500/10 text-green-600 dark:text-green-400' : (isDefaultTheme ? 'border-gray-200 bg-white text-black' : 'border-gray-300 dark:border-gray-600')}`}
             >
               حسب الصفحات
             </button>
@@ -433,28 +434,28 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
               }
             }}
             className="w-full border rounded-xl p-3 text-center text-xl font-bold focus:outline-none focus:border-green-500"
-            style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)', borderColor: 'var(--card-border)', color: 'var(--text-color)' }}
+            style={{ backgroundColor: isDefaultTheme ? '#f9fafb' : (theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)'), borderColor: isDefaultTheme ? '#e5e7eb' : 'var(--card-border)', color: isDefaultTheme ? '#000000' : 'var(--text-color)' }}
             placeholder={tempMode === 'days' ? '30' : '20'}
           />
         </div>
 
         {settings && settings.completedDays.length > 0 && (
-          <div className="p-4 rounded-xl border-2 border-dashed" style={{ borderColor: theme.cardBorder }}>
-            <label className="block mb-3 font-bold text-sm text-emerald-600 dark:text-emerald-400">طريقة احتساب المتبقي:</label>
+          <div className="p-4 rounded-xl border-2 border-dashed" style={{ borderColor: isDefaultTheme ? '#e5e7eb' : theme.cardBorder }}>
+            <label className={`block mb-3 font-bold text-sm ${isDefaultTheme ? 'text-black' : 'text-emerald-600 dark:text-emerald-400'}`}>طريقة احتساب المتبقي:</label>
             <div className="space-y-3">
               <button 
                 onClick={() => setCalcMethod('remaining')}
-                className={`w-full p-3 rounded-xl text-right text-sm flex items-center justify-between border transition-all ${calcMethod === 'remaining' ? 'border-emerald-500 bg-emerald-500/10' : 'border-gray-200 dark:border-gray-700'}`}
+                className={`w-full p-3 rounded-xl text-right text-sm flex items-center justify-between border transition-all ${calcMethod === 'remaining' ? 'border-emerald-500 bg-emerald-500/10' : (isDefaultTheme ? 'border-gray-200 bg-white' : 'border-gray-200 dark:border-gray-700')}`}
               >
-                <span>خطة جديدة للمتبقي (العدد المدخل هو للمستقبل)</span>
-                <div className={`w-4 h-4 rounded-full border-2 ${calcMethod === 'remaining' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-400'}`} />
+                <span className={isDefaultTheme ? 'text-black' : ''}>خطة جديدة للمتبقي (العدد المدخل هو للمستقبل)</span>
+                <div className={`w-4 h-4 rounded-full border-2 ${calcMethod === 'remaining' ? 'border-emerald-500 bg-emerald-500' : (isDefaultTheme ? 'border-gray-400' : 'border-gray-400')}`} />
               </button>
               <button 
                 onClick={() => setCalcMethod('total')}
-                className={`w-full p-3 rounded-xl text-right text-sm flex items-center justify-between border transition-all ${calcMethod === 'total' ? 'border-emerald-500 bg-emerald-500/10' : 'border-gray-200 dark:border-gray-700'}`}
+                className={`w-full p-3 rounded-xl text-right text-sm flex items-center justify-between border transition-all ${calcMethod === 'total' ? 'border-emerald-500 bg-emerald-500/10' : (isDefaultTheme ? 'border-gray-200 bg-white' : 'border-gray-200 dark:border-gray-700')}`}
               >
-                <span>تعديل الخطة الحالية (العدد المدخل هو الإجمالي)</span>
-                <div className={`w-4 h-4 rounded-full border-2 ${calcMethod === 'total' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-400'}`} />
+                <span className={isDefaultTheme ? 'text-black' : ''}>تعديل الخطة الحالية (العدد المدخل هو الإجمالي)</span>
+                <div className={`w-4 h-4 rounded-full border-2 ${calcMethod === 'total' ? 'border-emerald-500 bg-emerald-500' : (isDefaultTheme ? 'border-gray-400' : 'border-gray-400')}`} />
               </button>
             </div>
             <p className="text-[10px] mt-2 opacity-60 leading-tight">
@@ -466,13 +467,13 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         <div className="flex gap-3 mt-6" id="wird-start-container">
           <button 
             onClick={handleStart}
-            className="flex-1 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors border-b-4 ring-2"
-            style={{ 
+            className={`flex-1 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors border-b-4 ring-2 ${isDefaultTheme ? 'bg-white text-black border-gray-200 ring-gray-100' : ''}`}
+            style={!isDefaultTheme ? { 
               backgroundColor: primaryColor, 
               color: btnTextColor,
               borderColor: isBlackAndWhite ? '#E5E5E5' : secondaryColor,
               '--tw-ring-color': `${primaryColor}40`
-            } as React.CSSProperties}
+            } : {} as React.CSSProperties}
           >
             <Play size={24} />
             {settings ? 'حفظ' : 'ابدأ الختمة'}
@@ -480,7 +481,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
           {(settings || allSettings.length > 0) && (
             <button 
               onClick={handleCancelEdit}
-              className="py-4 px-6 bg-gray-500 hover:bg-gray-400 text-white rounded-xl font-bold text-lg flex items-center justify-center transition-colors"
+              className={`py-4 px-6 ${isDefaultTheme ? 'bg-gray-100 text-black' : 'bg-gray-500 hover:bg-gray-400 text-white'} rounded-xl font-bold text-lg flex items-center justify-center transition-colors`}
             >
               <X size={24} />
             </button>
@@ -523,16 +524,16 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     return (
       <div className="space-y-4">
         {/* Progress Bar */}
-        <div id="wird-progress-container" className="rounded-2xl p-4 shadow-lg border" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
+        <div id="wird-progress-container" className="rounded-2xl p-4 shadow-lg border" style={{ backgroundColor: isDefaultTheme ? '#FFFFFF' : 'var(--card-bg)', borderColor: isDefaultTheme ? '#e5e7eb' : 'var(--card-border)', color: isDefaultTheme ? '#000000' : 'inherit' }}>
           <div className="flex justify-between mb-1">
             <span className="font-bold text-sm">نسبة الإنجاز</span>
-            <span className="font-bold text-green-500 dark:text-green-400 text-sm">{progress.toFixed(1)}%</span>
+            <span className={`font-bold ${isDefaultTheme ? 'text-black' : 'text-green-500 dark:text-green-400'} text-sm`}>{progress.toFixed(1)}%</span>
           </div>
-          <div className="w-full h-3 rounded-full overflow-hidden" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+          <div className="w-full h-3 rounded-full overflow-hidden" style={{ backgroundColor: isDefaultTheme ? '#f3f4f6' : (theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)') }}>
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              className="h-full bg-gradient-to-r from-green-500 to-emerald-400"
+              className={`h-full ${isDefaultTheme ? 'bg-black' : 'bg-gradient-to-r from-green-500 to-emerald-400'}`}
             />
           </div>
           <div className="flex justify-between mt-1 text-xs opacity-80">
@@ -542,24 +543,24 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
 
         {/* Current Wird */}
-        <div id="wird-today-container" className="rounded-2xl p-4 shadow-lg border text-center" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
-          <h3 className="text-lg font-bold mb-3 text-emerald-600 dark:text-emerald-400">ورد اليوم ({settings.currentDay})</h3>
+        <div id="wird-today-container" className="rounded-2xl p-4 shadow-lg border text-center" style={{ backgroundColor: isDefaultTheme ? '#FFFFFF' : 'var(--card-bg)', borderColor: isDefaultTheme ? '#e5e7eb' : 'var(--card-border)', color: isDefaultTheme ? '#000000' : 'inherit' }}>
+          <h3 className={`text-lg font-bold mb-3 ${isDefaultTheme ? 'text-black' : 'text-emerald-600 dark:text-emerald-400'}`}>ورد اليوم ({settings.currentDay})</h3>
           
           <div className="flex justify-center items-center gap-3 mb-4">
             {hasPages ? (
               <>
-                <div className="p-3 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
+                <div className="p-3 rounded-xl flex-1" style={{ backgroundColor: isDefaultTheme ? '#f9fafb' : (theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)') }}>
                   <p className="text-xs opacity-80 mb-1">من صفحة</p>
                   <p className="text-2xl font-bold">{startPage}</p>
                 </div>
                 <span className="text-xl opacity-50">-</span>
-                <div className="p-3 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
+                <div className="p-3 rounded-xl flex-1" style={{ backgroundColor: isDefaultTheme ? '#f9fafb' : (theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)') }}>
                   <p className="text-xs opacity-80 mb-1">إلى صفحة</p>
                   <p className="text-2xl font-bold">{endPage}</p>
                 </div>
               </>
             ) : (
-              <div className="p-3 rounded-xl flex-1" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)' }}>
+              <div className="p-3 rounded-xl flex-1" style={{ backgroundColor: isDefaultTheme ? '#f9fafb' : (theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)') }}>
                 <p className="text-lg font-bold">لقد أكملت جميع الصفحات!</p>
               </div>
             )}
@@ -575,14 +576,14 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
                     handleOpenQuran(startPage);
                   }
                 }}
-                className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md"
-                style={{ 
+                className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md ${isDefaultTheme ? 'bg-white text-black border border-gray-200' : ''}`}
+                style={!isDefaultTheme ? { 
                   backgroundColor: primaryColor, 
                   color: btnTextColor, 
                   borderWidth: btnBorderParts.borderWidth,
                   borderStyle: btnBorderParts.borderStyle,
                   borderColor: btnBorderParts.borderColor
-                }}
+                } : {}}
               >
                 <BookOpen size={20} />
                 {canContinue ? `تكملة الورد (صفحة ${settings.lastPage})` : 'افتح المصحف للقراءة'}
@@ -592,14 +593,14 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             {!isCompleted ? (
               <button 
                 onClick={markDayCompleted}
-                className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md"
-                style={{ 
+                className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md ${isDefaultTheme ? 'bg-white text-black border border-gray-200' : ''}`}
+                style={!isDefaultTheme ? { 
                   backgroundColor: secondaryColor, 
                   color: btnTextColor, 
                   borderWidth: btnBorderParts.borderWidth,
                   borderStyle: btnBorderParts.borderStyle,
                   borderColor: btnBorderParts.borderColor
-                }}
+                } : {}}
               >
                 <CheckCircle size={20} />
                 تمت القراءة
@@ -607,12 +608,12 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             ) : (
               <div className="flex flex-col gap-2">
                 <div 
-                  className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-sm border shadow-sm"
-                  style={{ 
+                  className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-sm border shadow-sm ${isDefaultTheme ? 'bg-gray-50 text-black border-gray-200' : ''}`}
+                  style={!isDefaultTheme ? { 
                     backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : `${secondaryColor}20`, 
                     color: isBlackAndWhite ? '#FFFFFF' : secondaryColor,
                     borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : `${secondaryColor}30`
-                  }}
+                  } : {}}
                 >
                   <CheckCircle size={20} />
                   انجزت الورد كاملا
@@ -620,26 +621,26 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
                 <div className="flex gap-2">
                   <button 
                     onClick={handleStartNewWird}
-                    className="flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md"
-                    style={{ 
+                    className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md ${isDefaultTheme ? 'bg-white text-black border border-gray-200' : ''}`}
+                    style={!isDefaultTheme ? { 
                       backgroundColor: primaryColor, 
                       color: btnTextColor, 
                       borderWidth: btnBorderParts.borderWidth,
                       borderStyle: btnBorderParts.borderStyle,
                       borderColor: btnBorderParts.borderColor
-                    }}
+                    } : {}}
                   >
                     <Plus size={20} />
                     بداية ورد جديد
                   </button>
                   <button 
                     onClick={() => onNavigate('home')}
-                    className="flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm"
-                    style={{ 
+                    className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm ${isDefaultTheme ? 'bg-white text-black border border-gray-200' : ''}`}
+                    style={!isDefaultTheme ? { 
                       backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : `${secondaryColor}10`, 
                       color: isBlackAndWhite ? '#FFFFFF' : secondaryColor,
                       borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : `${secondaryColor}30`
-                    }}
+                    } : {}}
                   >
                     <Home size={20} />
                     الرئيسية
@@ -654,12 +655,12 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
           <button 
             id="wird-edit-btn"
             onClick={handleEdit}
-            className="flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm"
-            style={{ 
+            className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm ${isDefaultTheme ? 'bg-white text-black border-gray-200' : ''}`}
+            style={!isDefaultTheme ? { 
               backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : `${primaryColor}10`, 
               color: isBlackAndWhite ? '#FFFFFF' : primaryColor,
               borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : `${primaryColor}30`
-            }}
+            } : {}}
           >
             <Settings size={18} />
             تعديل الختمة
@@ -667,12 +668,12 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
           <button 
             id="wird-reset-btn"
             onClick={handleReset}
-            className="flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm"
-            style={{ 
+            className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm ${isDefaultTheme ? 'bg-white text-black border-gray-200' : ''}`}
+            style={!isDefaultTheme ? { 
               backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : '#ef444410', 
               color: isBlackAndWhite ? '#FFFFFF' : '#ef4444',
               borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : '#ef444430'
-            }}
+            } : {}}
           >
             <RotateCcw size={18} />
             إعادة تعيين
@@ -689,10 +690,10 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         <button 
           onClick={() => setShowProfileMenu(!showProfileMenu)}
           className="w-full p-4 rounded-2xl border flex items-center justify-between transition-all"
-          style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+          style={{ backgroundColor: isDefaultTheme ? '#FFFFFF' : 'var(--card-bg)', borderColor: isDefaultTheme ? '#e5e7eb' : 'var(--card-border)', color: isDefaultTheme ? '#000000' : 'inherit' }}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDefaultTheme ? 'bg-black/5 text-black' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'}`}>
               <User size={20} />
             </div>
             <div className="text-right">
@@ -712,8 +713,9 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             <div 
               className="absolute top-full left-0 right-0 mt-2 rounded-2xl border shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200" 
               style={{ 
-                backgroundColor: theme.isDark ? '#1a1a1a' : '#ffffff', 
-                borderColor: theme.cardBorder 
+                backgroundColor: isDefaultTheme ? '#ffffff' : (theme.isDark ? '#1a1a1a' : '#ffffff'), 
+                borderColor: isDefaultTheme ? '#e5e7eb' : theme.cardBorder,
+                color: isDefaultTheme ? '#000000' : 'inherit'
               }}
             >
               {allSettings.map(profile => (
@@ -723,24 +725,24 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
                     setActiveId(profile.id);
                     setShowProfileMenu(false);
                   }}
-                  className={`p-4 flex items-center justify-between border-b last:border-0 cursor-pointer transition-colors ${activeId === profile.id ? 'bg-emerald-500/10' : 'hover:bg-gray-500/5'}`}
-                  style={{ borderColor: theme.cardBorder }}
+                  className={`p-4 flex items-center justify-between border-b last:border-0 cursor-pointer transition-colors ${activeId === profile.id ? (isDefaultTheme ? 'bg-black/5' : 'bg-emerald-500/10') : 'hover:bg-gray-500/5'}`}
+                  style={{ borderColor: isDefaultTheme ? '#f3f4f6' : theme.cardBorder }}
                 >
                   <div className="flex items-center gap-3 flex-1">
-                    <User size={18} className={activeId === profile.id ? 'text-emerald-500' : 'opacity-40'} />
-                    <span className={activeId === profile.id ? 'font-bold text-emerald-600 dark:text-emerald-400' : ''}>{profile.name}</span>
+                    <User size={18} className={activeId === profile.id ? (isDefaultTheme ? 'text-black' : 'text-emerald-500') : 'opacity-40'} />
+                    <span className={activeId === profile.id ? (isDefaultTheme ? 'font-bold' : 'font-bold text-emerald-600 dark:text-emerald-400') : ''}>{profile.name}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <button 
                       onClick={(e) => handleEditProfile(profile, e)}
-                      className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
+                      className={`p-2 rounded-lg transition-colors ${isDefaultTheme ? 'text-gray-600 hover:bg-black/5' : 'text-blue-500 hover:bg-blue-500/10'}`}
                       title="تعديل"
                     >
                       <Edit2 size={16} />
                     </button>
                     <button 
                       onClick={(e) => handleDeleteProfile(profile.id, e)}
-                      className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                      className={`p-2 rounded-lg transition-colors ${isDefaultTheme ? 'text-red-500 hover:bg-red-500/10' : 'text-red-500 hover:bg-red-500/10'}`}
                       title="حذف"
                     >
                       <Trash2 size={16} />
@@ -753,7 +755,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
                   handleAddNew();
                   setShowProfileMenu(false);
                 }}
-                className="w-full p-4 flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/5 transition-colors"
+                className={`w-full p-4 flex items-center justify-center gap-2 font-bold transition-colors ${isDefaultTheme ? 'text-black hover:bg-black/5' : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/5'}`}
               >
                 <Plus size={20} />
                 إضافة مستخدم جديد
@@ -777,14 +779,18 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="w-full max-w-sm p-6 rounded-3xl shadow-2xl text-center border"
-          style={{ backgroundColor: 'var(--modal-bg)', borderColor: 'var(--card-border)', color: 'var(--modal-text)' }}
+          className="w-full max-w-sm p-8 rounded-[32px] shadow-2xl text-center border"
+          style={{ 
+            backgroundColor: isDefaultTheme ? '#FFFFFF' : 'var(--modal-bg)', 
+            borderColor: isDefaultTheme ? '#f3f4f6' : 'var(--card-border)', 
+            color: isDefaultTheme ? '#000000' : 'var(--modal-text)' 
+          }}
         >
-          <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Trash2 size={32} />
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm ${isDefaultTheme ? 'bg-red-500/10 text-red-500' : 'bg-red-500/10 text-red-500'}`}>
+            <Trash2 size={40} />
           </div>
-          <h3 className="text-xl font-bold mb-2">حذف المستخدم؟</h3>
-          <p className="opacity-70 mb-4">هل أنت متأكد من حذف "{profileToDelete.name}"؟ لا يمكن التراجع عن هذه الخطوة.</p>
+          <h3 className="text-2xl font-black mb-3">حذف المستخدم؟</h3>
+          <p className={`mb-6 ${isDefaultTheme ? 'text-gray-600' : 'opacity-70'}`}>هل أنت متأكد من حذف "{profileToDelete.name}"؟ لا يمكن التراجع عن هذه الخطوة.</p>
           
           {isWirdIncomplete && (
             <div className="p-3 mb-6 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-sm font-bold flex items-center gap-2 text-right">
@@ -793,16 +799,16 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
             </div>
           )}
 
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <button 
               onClick={confirmDeleteProfile}
-              className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold transition-colors"
+              className={`flex-1 py-4 rounded-2xl font-bold font-kufi transition-all active:scale-95 shadow-md ${isDefaultTheme ? 'bg-red-500 text-white' : 'bg-red-600 hover:bg-red-500 text-white'}`}
             >
               تأكيد الحذف
             </button>
             <button 
               onClick={() => setShowDeleteConfirm(null)}
-              className="flex-1 py-3 bg-gray-500/10 hover:bg-gray-500/20 rounded-xl font-bold transition-colors"
+              className={`flex-1 py-4 rounded-2xl font-bold font-kufi transition-all active:scale-95 ${isDefaultTheme ? 'bg-gray-100 text-black' : 'bg-gray-500/10 hover:bg-gray-500/20'}`}
             >
               إلغاء
             </button>
@@ -813,15 +819,15 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   };
 
   return (
-    <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, color: 'var(--text-color)' }}>
+    <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, backgroundColor: isDefaultTheme ? '#FFFFFF' : 'transparent', color: isDefaultTheme ? '#000000' : 'var(--text-color)' }}>
       <header className="app-top-bar shrink-0 relative z-10">
         <div className="app-top-bar__inner">
           <div className="relative flex items-center justify-center w-full">
             <div className="absolute left-0">
               <ThemePageLock />
             </div>
-            <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2">
-              <span className="text-green-500 dark:text-green-400">📅</span>
+            <h1 className={`app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2 ${isDefaultTheme ? 'text-black' : ''}`}>
+              <span className={isDefaultTheme ? '' : 'text-green-500 dark:text-green-400'}>📅</span>
               الورد اليومي
             </h1>
           </div>

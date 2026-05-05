@@ -182,8 +182,8 @@ const DISTRESS_RELIEF_DUAA = [
 const ALL_RAW_DUAA = [...RAW_DUAA, ...RUQYAH_DUAA, ...DISTRESS_RELIEF_DUAA];
 
 const DUAA_SOURCE_SEGMENTS = [
-    { start: 0, end: 49, label: 'من الآيات القرآنية والأدعية النبوية الصحيحة', categoryId: 'quran_sunnah' },
-    { start: 50, end: 99, label: 'من الأدعية النبوية والأقوال المأثورة عن السلف الصالح', categoryId: 'nabawi_salaf' },
+    { start: 0, end: 23, label: 'من الآيات القرآنية', categoryId: 'quran' },
+    { start: 24, end: 99, label: 'من الأدعية النبوية الصحيحة والأقوال المأثورة', categoryId: 'sunnah' },
     { start: 100, end: 153, label: 'من الأدعية الجامعة المأثورة والدعاء الصالح', categoryId: 'jamia' },
     { start: 154, end: 162, label: 'من القرآن والسنة النبوية', categoryId: 'ruqyah' },
     { start: 163, end: ALL_RAW_DUAA.length - 1, label: 'أدعية نبوية صحيحة', categoryId: 'distress' }
@@ -217,8 +217,8 @@ export const ALL_DUAA = ALL_RAW_DUAA.map((duaa, index) => ({
 }));
 
 export const DUAA_CATEGORIES = [
-    { id: 'quran_sunnah', title: 'أدعية من القرآن والسنة', description: 'أدعية مأثورة من الآيات والأحاديث.', icon: 'fa-book-quran' },
-    { id: 'nabawi_salaf', title: 'أدعية نبوية ومأثورة', description: 'أدعية من أقوال النبي والسلف الصالح.', icon: 'fa-star-and-crescent' },
+    { id: 'quran', title: 'أدعية من القرآن الكريم', description: 'أدعية مأثورة من الآيات الكريمة.', icon: 'fa-book-open' },
+    { id: 'sunnah', title: 'أدعية من السنة النبوية', description: 'أدعية صحيحة عن النبي ﷺ.', icon: 'fa-moon' },
     { id: 'jamia', title: 'أدعية جامعة', description: 'شاملة لخيري الدنيا والآخرة.', icon: 'fa-hands-praying' },
     { id: 'ruqyah', title: 'الرقية الشرعية', description: 'آيات وأدعية للشفاء والحفظ.', icon: 'fa-shield-heart' },
     { id: 'distress', title: 'أدعية تفريج الكروب', description: 'للهم والحزن والضيق.', icon: 'fa-face-sad-tear' }
