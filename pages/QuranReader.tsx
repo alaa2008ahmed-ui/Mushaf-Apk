@@ -153,7 +153,7 @@ const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentThe
                     <button 
                         onClick={onGoHome}
                         className="w-full py-3 rounded-xl font-bold text-sm transition-transform hover:scale-105 flex items-center justify-center gap-2"
-                        style={currentTheme?.bgColor === '#000000' ? {
+                        style={currentTheme?.bg === '#000000' ? {
                             backgroundColor: '#000000',
                             color: '#FFFFFF',
                             border: '1px solid #FFFFFF'
@@ -3328,7 +3328,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
 
     const getToolbarStyle = (type: string, defaultBg: string, defaultText: string, defaultBorder: string) => {
-        const isBlackTheme = currentTheme?.bgColor === '#000000';
+        const isBlackTheme = currentTheme?.bg === '#000000';
         if (isBlackTheme && type === 'btn-home') {
             return {
                 backgroundColor: '#000000',

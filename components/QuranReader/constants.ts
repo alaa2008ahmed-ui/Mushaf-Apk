@@ -90,7 +90,7 @@ export const MEMORIZATION_READERS = [
     { id: 'Abu_Bakr_Ash-Shaatree_128kbps', name: 'أبو بكر الشاطري' },
     { id: 'Saood_ash-Shuraym_128kbps', name: 'سعود الشريم' },
     { id: 'Abdurrahmaan_As-Sudais_192kbps', name: 'عبدالرحمن السديس' }
-];
+].sort((a, b) => a.name.localeCompare(b.name, 'ar'));
 
 export const READERS = [
     { id: 'Abu_Bakr_Ash-Shaatree_128kbps', name: 'أبو بكر الشاطري' },

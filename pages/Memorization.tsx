@@ -118,6 +118,15 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
         localStorage.setItem('memorization_settings_v1', JSON.stringify(settings));
     }, [selectedReader, fromSurah, fromAyah, toSurah, toAyah, rangeRepeat, ayahRepeat, linkedRepeat, pauseLength, testAfterSession]);
 
+    useEffect(() => {
+        if (activePicker === 'reader') {
+            setTimeout(() => {
+                const el = document.getElementById(`reader-btn-${selectedReader}`);
+                if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }, 100);
+        }
+    }, [activePicker]);
+
     const handleStart = () => {
         const session = localStorage.getItem('memorization_session_v1');
         if (savedSession && session) {
@@ -673,6 +682,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                             {activePicker === 'reader' && MEMORIZATION_READERS.map(r => (
                                 <button
                                     key={r.id}
+                                    id={`reader-btn-${r.id}`}
                                     onClick={() => { setSelectedReader(r.id); setSavedSession(null); setActivePicker(null); }}
                                     className={`w-full p-2.5 rounded-xl text-right font-bold transition-all flex items-center justify-between ${selectedReader === r.id ? 'theme-accent-btn text-white' : 'hover:bg-black/5 opacity-70 hover:opacity-100'}`}
                                 >

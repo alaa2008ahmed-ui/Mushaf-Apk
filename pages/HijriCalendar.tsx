@@ -581,33 +581,82 @@ const CalendarGrid = ({ viewDate, onSelectDay, selectedDay, theme, primaryColor,
                 const isSelected = selectedDay && dayDate.getTime() === new Date(selectedDay).setHours(0,0,0,0);
                 const hijri = getHijriDetails(cell.date);
                 const event = islamicEvents.find(e => e.day === hijri.day && e.month === hijri.month);
+                const isRamadan = hijri.month === 9;
+
+                let dynamicBgClass = 'bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/5 shadow-sm';
+                let dynamicTextClass = '';
+                let dynamicDotClass = '';
+                
+                if (event?.isPrimary) {
+                    if (isSelected) {
+                        dynamicBgClass = 'bg-red-500 text-white shadow-lg border-transparent';
+                        dynamicDotClass = 'bg-white';
+                    } else {
+                        dynamicBgClass = 'bg-red-500/15 dark:bg-red-500/25 border border-red-500/30 shadow-sm text-red-500';
+                        dynamicTextClass = 'text-red-600 dark:text-red-400';
+                        dynamicDotClass = 'bg-red-500';
+                    }
+                } else if (event) {
+                    if (isSelected) {
+                        dynamicBgClass = 'bg-blue-500 text-white shadow-lg border-transparent';
+                        dynamicDotClass = 'bg-white';
+                    } else {
+                        dynamicBgClass = 'bg-blue-500/15 dark:bg-blue-500/25 border border-blue-500/30 shadow-sm text-blue-500';
+                        dynamicTextClass = 'text-blue-600 dark:text-blue-400';
+                        dynamicDotClass = 'bg-blue-500';
+                    }
+                } else if (isRamadan) {
+                    if (isSelected) {
+                        dynamicBgClass = 'bg-emerald-500 text-white shadow-lg border-transparent';
+                    } else {
+                        dynamicBgClass = 'bg-emerald-500/15 dark:bg-emerald-500/25 border border-emerald-500/30 shadow-sm text-emerald-600 dark:text-emerald-400';
+                        dynamicTextClass = 'text-emerald-700 dark:text-emerald-400';
+                    }
+                } else {
+                    if (isSelected) {
+                        dynamicBgClass = 'shadow-xl text-white';
+                    }
+                }
+
+                let cellStyle: React.CSSProperties = {};
+                if (!event && !isRamadan) {
+                    if (isSelected) {
+                        cellStyle.backgroundColor = isDefaultTheme ? '#000000' : secondaryColor;
+                        cellStyle.color = isBlackAndWhite ? '#000' : '#FFF';
+                    } else if (isToday) {
+                        if (isDefaultTheme) {
+                            cellStyle.backgroundColor = '#000000';
+                            cellStyle.color = '#FFFFFF';
+                        }
+                    }
+                } else if (isToday && !isSelected) {
+                    // Just put a colored ring if it's today and an event
+                    dynamicBgClass += ' ring-2 ring-offset-1 ' + (event?.isPrimary ? 'ring-red-500 dark:ring-offset-gray-900' : (event ? 'ring-blue-500 dark:ring-offset-gray-900' : 'ring-emerald-500 dark:ring-offset-gray-900'));
+                }
 
                 return (
                     <button
                         key={idx}
                         onClick={() => onSelectDay(cell.date)}
                         className={`relative flex flex-col items-center justify-center rounded-xl sm:rounded-2xl transition-all aspect-square 
-                            ${cell.isCurrentMonth ? 'bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/5 shadow-sm' : 'opacity-10'}
+                            ${cell.isCurrentMonth ? dynamicBgClass : 'opacity-30 ' + dynamicBgClass}
                             ${isSelected ? 'scale-110 z-10 shadow-xl' : 'hover:scale-[1.02] hover:bg-white/80 dark:hover:bg-white/10'}
                         `}
-                        style={{ 
-                            backgroundColor: isSelected ? (isDefaultTheme ? '#000000' : secondaryColor) : (isToday ? (isDefaultTheme ? '#000000' : undefined) : undefined), 
-                            color: isSelected ? (isBlackAndWhite ? '#000' : '#FFF') : (isToday ? (isDefaultTheme ? '#FFFFFF' : undefined) : undefined)
-                        }}
+                        style={cellStyle}
                     >
-                        <span className={`text-sm sm:text-lg font-black leading-none ${(event && !isSelected && !isToday) ? 'text-primary' : ''}`} style={(event && !isSelected && !isToday) ? { color: secondaryColor } : {}}>
+                        <span className={`text-sm sm:text-lg font-black leading-none ${!isSelected ? dynamicTextClass : ''}`}>
                             {toArabicNumerals(cell.day)}
                         </span>
-                        <span className={`text-[9px] sm:text-[10px] mt-1 font-bold ${isSelected || isToday ? 'opacity-100' : 'opacity-40'} ${(event && !isSelected && !isToday) ? 'opacity-100 font-black' : ''}`}>
+                        <span className={`text-[9px] sm:text-[10px] mt-1 font-bold ${isSelected || isToday ? 'opacity-100' : 'opacity-40'} ${event ? 'opacity-100 font-black' : ''}`}>
                             {toArabicNumerals(hijri.day)}
                         </span>
                         
-                        {isToday && !isSelected && !isDefaultTheme && (
+                        {isToday && !isSelected && !isDefaultTheme && !event && !isRamadan && (
                             <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-2 border-white dark:border-gray-900" style={{ backgroundColor: secondaryColor }}></div>
                         )}
 
                         {event && (
-                            <div className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${isSelected || (isToday && isDefaultTheme) ? 'bg-white/50' : ''}`} style={(!isSelected && !(isToday && isDefaultTheme)) ? { backgroundColor: secondaryColor } : {}}></div>
+                            <div className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${dynamicDotClass}`}></div>
                         )}
                     </button>
                 );
@@ -888,47 +937,58 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                                     <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: secondaryColor }}></div>
                                     أبرز المناسبات هذا الشهر
                                 </h3>
-                                <div className="space-y-3">
-                                    {(() => {
-                                        const hInfo = getHijriDetails(viewDate);
-                                        const filteredEvents = islamicEvents.filter(e => e.month === hInfo.month || e.month === getHijriDetails(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1)).month);
-                                        
-                                        if (filteredEvents.length > 0) {
-                                            return filteredEvents.map(event => {
-                                                // Calculate Gregorian date for this event instance
-                                                const targetHYear = (event.month < hInfo.month && hInfo.month >= 11) ? hInfo.year + 1 : hInfo.year;
-                                                const gDate = h2g(targetHYear, event.month, event.day);
-                                                const dayName = WEEKDAYS[gDate.getDay()];
-                                                const gFormatted = `${toArabicNumerals(gDate.getDate())} ${gregorianMonths[gDate.getMonth()].name}`;
+                            <div className="space-y-3">
+                                {(() => {
+                                    const mYear = viewDate.getFullYear();
+                                    const mMonth = viewDate.getMonth();
+                                    const daysInMonth = new Date(mYear, mMonth + 1, 0).getDate();
+                                    
+                                    const eventsToShow: any[] = [];
+                                    for (let i = 1; i <= daysInMonth; i++) {
+                                        const dayDate = new Date(mYear, mMonth, i);
+                                        const hInfo = getHijriDetails(dayDate);
+                                        const e = islamicEvents.find(ev => ev.day === hInfo.day && ev.month === hInfo.month);
+                                        if (e) {
+                                            if (!eventsToShow.find(existing => existing.id === e.id)) {
+                                                eventsToShow.push({ ...e, gDate: dayDate });
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (eventsToShow.length > 0) {
+                                        return eventsToShow.map((event: any) => {
+                                            const gDate = event.gDate;
+                                            const dayName = WEEKDAYS[gDate.getDay()];
+                                            const gFormatted = `${toArabicNumerals(gDate.getDate())} ${gregorianMonths[gDate.getMonth()].name}`;
 
-                                                return (
-                                                    <div key={event.id} className="flex items-center gap-4 p-3 hover:bg-black/5 dark:hover:bg-white/5 rounded-2xl transition-all border border-black/5 dark:border-white/5 shadow-sm">
-                                                        <div className={`w-2.5 h-2.5 rounded-full shadow-sm shrink-0 ${event.isPrimary ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}></div>
-                                                        <div className="flex-1">
-                                                            <p className="font-black text-base opacity-95 mb-1" style={{ color: primaryColor }}>{event.name}</p>
-                                                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                                                <span className="text-sm font-black" style={{ color: 'var(--text-color)' }}>
-                                                                    {toArabicNumerals(event.day)} {hijriMonths[event.month - 1].name}
-                                                                </span>
-                                                                <span className="text-xs opacity-30">|</span>
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <span className="text-sm font-black" style={{ color: secondaryColor }}>{dayName}</span>
-                                                                    <span className="text-xs font-black" style={{ color: 'var(--text-color)' }}>{gFormatted}</span>
-                                                                </div>
+                                            return (
+                                                <div key={event.id} className="flex items-center gap-4 p-3 hover:bg-black/5 dark:hover:bg-white/5 rounded-2xl transition-all border border-black/5 dark:border-white/5 shadow-sm">
+                                                    <div className={`w-2.5 h-2.5 rounded-full shadow-sm shrink-0 ${event.isPrimary ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}></div>
+                                                    <div className="flex-1">
+                                                        <p className="font-black text-base opacity-95 mb-1" style={{ color: primaryColor }}>{event.name}</p>
+                                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                            <span className="text-sm font-black" style={{ color: 'var(--text-color)' }}>
+                                                                {toArabicNumerals(event.day)} {hijriMonths[event.month - 1].name}
+                                                            </span>
+                                                            <span className="text-xs opacity-30">|</span>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="text-sm font-black" style={{ color: secondaryColor }}>{dayName}</span>
+                                                                <span className="text-xs font-black" style={{ color: 'var(--text-color)' }}>{gFormatted}</span>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                );
-                                            });
-                                        }
-                                        return (
-                                            <div className="text-center py-6 opacity-40 grayscale">
-                                                <CalendarIcon size={36} className="mx-auto mb-2" />
-                                                <p className="text-sm font-bold">لا توجد مناسبات مسجلة</p>
-                                            </div>
-                                        );
-                                    })()}
-                                </div>
+                                                </div>
+                                            );
+                                        });
+                                    }
+                                    return (
+                                        <div className="text-center py-6 opacity-40 grayscale">
+                                            <CalendarIcon size={36} className="mx-auto mb-2" />
+                                            <p className="text-sm font-bold">لا توجد مناسبات مسجلة</p>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
                             </div>
                         </div>
                     ) : (
