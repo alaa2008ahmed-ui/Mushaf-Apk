@@ -200,14 +200,14 @@ const Nawawi = ({ onBack }) => {
                                     {/* Background hint */}
                                     <div 
                                         className="absolute -right-4 -top-4 w-16 h-16 rounded-full opacity-10 blur-xl pointer-events-none"
-                                        style={{ backgroundColor: color }}
+                                        style={{ backgroundColor: themeKey === 'default' ? '#000000' : color }}
                                     />
                                     
                                     <div 
                                         className="w-14 h-14 rounded-2xl flex items-center justify-center mb-1 group-hover:scale-110 transition-transform duration-300 shadow-inner"
                                         style={{ 
-                                            backgroundColor: color + '20',
-                                            color: color
+                                            backgroundColor: themeKey === 'default' ? 'rgba(0,0,0,0.05)' : color + '20',
+                                            color: themeKey === 'default' ? '#000000' : color
                                         }}
                                     >
                                         <span className="text-2xl font-bold" style={{ fontFamily: theme.font }}>
@@ -220,7 +220,7 @@ const Nawawi = ({ onBack }) => {
                                     </h2>
 
                                     <div className="mt-auto pt-2 w-full flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <i className="fa-solid fa-arrow-left-long text-xs" style={{ color }}></i>
+                                        <i className="fa-solid fa-arrow-left-long text-xs" style={{ color: themeKey === 'default' ? '#000000' : color }}></i>
                                     </div>
                                 </div>
                             </motion.div>
