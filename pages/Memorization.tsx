@@ -9,7 +9,7 @@ import BottomBar from '../components/BottomBar';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { QuranDownloadModal } from '../components/QuranReader/DownloadModals';
 import Toast from '../components/QuranReader/Toast';
-import { memorizationService, MemorizedRange } from '../src/services/memorizationService';
+import { memorizationService, MemorizedRange } from '../services/memorizationService';
 import './QuranReader.css';
 
 interface MemorizationProps {
@@ -259,20 +259,20 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     return (
         <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, color: 'var(--text-color)' }}>
             <div className="relative z-10 flex flex-col h-full">
-                <header className="app-top-bar">
+                <header className="app-top-bar shrink-0 relative z-10" style={{ backgroundColor: 'var(--qr-bar-bg)', borderBottom: '1px solid var(--qr-bar-border)' }}>
                     <div className="app-top-bar__inner">
                         <div className="relative flex items-center justify-center w-full">
                             <div className="absolute left-0">
                                 <ThemePageLock />
                             </div>
-                            <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2">
+                            <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2" style={{ color: 'var(--qr-bar-text)' }}>
                                 التحفيظ
                             </h1>
                         </div>
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto px-3 pb-3 space-y-4 hide-scrollbar relative z-10" dir="rtl">
+                <main className="flex-1 overflow-y-auto p-3 space-y-4 hide-scrollbar relative z-10" dir="rtl">
                     {/* Tabs */}
                     <div className="flex p-1 rounded-2xl bg-black/5 border mb-2" style={{ borderColor: 'var(--card-border)' }}>
                         <button 

@@ -237,7 +237,7 @@ function Qibla({ onBack, onNavigate }) {
                         </div>
                         
                         {qiblaDirection !== null && (
-                            <div className="themed-card p-4 rounded-xl transition-all duration-300 w-64" style={{borderColor: isAligned ? (theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]) : 'var(--card-border)', borderWidth: '2px'}}>
+                            <div className="themed-card p-4 rounded-xl transition-all duration-300 w-64 mt-12 mb-8" style={{borderColor: isAligned ? (theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]) : 'var(--card-border)', borderWidth: '2px'}}>
                                 <p className="text-lg font-bold transition-colors" style={{color: isAligned ? (theme.name === 'أبيض وأسود' ? '#ffffff' : theme.palette[0]) : 'var(--text-color)'}}>
                                      {isAligned ? "هذا هو اتجاه القبلة" : `اتجاه القبلة: ${Math.round(qiblaDirection)}°`}
                                 </p>

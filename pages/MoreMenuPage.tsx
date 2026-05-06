@@ -74,7 +74,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                 </header>
                 <div className="flex-1 overflow-y-auto pb-32 hide-scrollbar">
                     <div className="main-layout px-4 flex flex-col" style={{ fontFamily: theme.font }}>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-5 w-full max-w-sm mx-auto">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-5 w-full max-w-sm mx-auto mt-6">
                             {ALL_MENU_ITEMS.map((item, idx) => {
                                 const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna'].includes(item.id);
                                 const isDefault = themeKey === 'default';
@@ -88,7 +88,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                         initial={isVisible ? { opacity: 0, y: 20 } : false}
                                         animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, scale: 0.95 }}
                                         transition={{ duration: 0.4, delay: idx * 0.03 }}
-                                        className={item.className}
+                                        className={`${item.className} relative`}
                                         style={{ visibility: isVisible ? 'visible' : 'hidden' }}
                                     >
                                         <NavButton
@@ -102,6 +102,18 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                             btnText={textColor}
                                             border={isDefault ? '2px solid #000000' : undefined}
                                         />
+                                        {item.id === 'quran' && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onNavigate('quran-landscape');
+                                                }}
+                                                className="absolute top-1/2 left-1.5 -translate-y-1/2 bg-black text-white rounded-full w-7 h-7 flex items-center justify-center z-10 transition-colors shadow-lg border border-white/20"
+                                                title="وضع العرض"
+                                            >
+                                                <i className="fa-solid fa-arrows-rotate text-sm"></i>
+                                            </button>
+                                        )}
                                     </motion.div>
                                 );
                             })}

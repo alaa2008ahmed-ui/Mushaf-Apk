@@ -82,6 +82,10 @@
           border-bottom: 2px solid var(--bottom-bar-border, #334155);
           position: sticky; top: 0; z-index: 40;
           padding-top: env(safe-area-inset-top);
+          min-height: 80px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
       }
       body.hide-top-bars .app-top-bar { display: none !important; }
       
@@ -89,10 +93,21 @@
       body.hide-top-bars:not(.quran-context) main:not(.absolute),
       body.hide-top-bars:not(.quran-context) .main-layout,
       body.hide-top-bars:not(.quran-context) .app-top-bar + * {
-          padding-top: env(safe-area-inset-top) !important;
+          padding-top: calc(env(safe-area-inset-top) + 3rem) !important;
       }
 
-      .app-top-bar__inner { max-width: 900px; margin: 0 auto; padding: 1rem 1.25rem 1.1rem; display: flex; flex-direction: column; gap: 0.35rem; text-align: center; }
+      .app-top-bar__inner { 
+          width: 100%;
+          max-width: 900px; 
+          margin: 0 auto; 
+          padding: 0.5rem 1.25rem; 
+          display: flex; 
+          flex-direction: column; 
+          gap: 0.1rem; 
+          text-align: center; 
+          justify-content: center;
+          height: 100%;
+      }
       .app-top-bar__title { font-weight: 800; letter-spacing: 0.03em; }
       .app-top-bar__subtitle { font-size: 0.85rem; opacity: 0.9; }
       .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -254,7 +269,7 @@
         });
     })();
 </script>
-  <script type="module" crossorigin src="/assets/index-C6kETZv8.js"></script>
+  <script type="module" crossorigin src="/assets/index-BfQkBmTj.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-BWDrnrLt.css">
 </head>
 <body>

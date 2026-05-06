@@ -38,7 +38,7 @@ import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOv
 import { MousePointer2, Move, ZoomIn, Grid, Mic, Bookmark, Home, Share2, BookOpen, Trophy, Play, Menu, Palette } from 'lucide-react';
 import { quranData as quranJsonData } from '../utils/quranData';
 import ReviewTestModal from '../components/QuranReader/ReviewTestModal';
-import { memorizationService } from '../src/services/memorizationService';
+import { memorizationService } from '../services/memorizationService';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { parseVoiceCommand, normalizeArabic } from '../utils/voiceParser';
 import { useTheme } from '../context/ThemeContext';

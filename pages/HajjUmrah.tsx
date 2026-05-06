@@ -377,7 +377,7 @@ function HajjUmrah({ onBack }) {
                 </div>
             </header>
 
-            <main className="w-full max-w-4xl mx-auto px-4 pt-0 flex-grow overflow-y-auto pb-2">
+            <main className="w-full max-w-4xl mx-auto px-4 pt-0 flex-1 overflow-y-auto pb-2">
                 {renderScreen()}
                 <div className="w-full h-24 shrink-0"></div>
             </main>
