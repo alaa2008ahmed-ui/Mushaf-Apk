@@ -18,36 +18,36 @@ import { Mic, Palette, Grid, BookOpen } from 'lucide-react';
 import { useVoiceControl } from '../context/VoiceControlContext';
 
 const ALL_POSSIBLE_ITEMS = [
-    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
-    { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
-    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "h-10", colorIndex: 1 },
-    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-10", colorIndex: 1 },
-    { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "h-10", colorIndex: 1 },
-    { id: 'tasbeeh', label: "📿 السبحة", className: "h-10", colorIndex: 1 },
-    { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 1 },
-    { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
-    { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
-    { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
-    { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
-    { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-10", colorIndex: 1 },
-    { id: 'more', label: "✨ المزيد", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
+    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-14", colorIndex: 0 },
+    { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-12", colorIndex: 0 },
+    { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-12", colorIndex: 0 },
+    { id: 'adia', label: "🤲 الأدعية", className: "h-12", colorIndex: 1 },
+    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "h-12", colorIndex: 1 },
+    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-12", colorIndex: 1 },
+    { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "h-12", colorIndex: 1 },
+    { id: 'tasbeeh', label: "📿 السبحة", className: "h-12", colorIndex: 1 },
+    { id: 'calendar', label: "📅 التقويم", className: "h-12", colorIndex: 1 },
+    { id: 'qibla', label: "🧭 القبلة", className: "h-12", colorIndex: 1 },
+    { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-12", colorIndex: 1 },
+    { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-12", colorIndex: 1 },
+    { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-12", colorIndex: 1 },
+    { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-12", colorIndex: 1 },
+    { id: 'more', label: "✨ المزيد", className: "col-span-2 h-12 flex justify-center", colorIndex: 0 },
 ];
 
 const DEFAULT_MENU_ITEMS = [
-    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
-    { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
-    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "h-10", colorIndex: 1 },
-    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-10", colorIndex: 1 },
-    { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "h-10", colorIndex: 1 },
-    { id: 'tasbeeh', label: "📿 السبحة", className: "h-10", colorIndex: 1 },
-    { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 1 },
-    { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
-    { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
-    { id: 'more', label: "✨ المزيد", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
+    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-14", colorIndex: 0 },
+    { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-12", colorIndex: 0 },
+    { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-12", colorIndex: 0 },
+    { id: 'adia', label: "🤲 الأدعية", className: "h-12", colorIndex: 1 },
+    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "h-12", colorIndex: 1 },
+    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-12", colorIndex: 1 },
+    { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "h-12", colorIndex: 1 },
+    { id: 'tasbeeh', label: "📿 السبحة", className: "h-12", colorIndex: 1 },
+    { id: 'calendar', label: "📅 التقويم", className: "h-12", colorIndex: 1 },
+    { id: 'qibla', label: "🧭 القبلة", className: "h-12", colorIndex: 1 },
+    { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-12", colorIndex: 1 },
+    { id: 'more', label: "✨ المزيد", className: "col-span-2 h-12 flex justify-center", colorIndex: 0 },
 ];
 
 function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
@@ -187,8 +187,11 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                 }
                 if (currentItem.className) {
                     const newClass = currentItem.className.replace(/h-\d+/g, (match) => {
+                        if (match === 'h-14') return 'h-14';
                         if (match === 'h-12') return 'h-12';
-                        return 'h-10';
+                        // Upgrade h-10 to h-12
+                        if (match === 'h-10') return 'h-12';
+                        return 'h-12';
                     });
                     if (currentItem.className !== newClass) {
                         changed = true;
@@ -266,10 +269,10 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     <div className="fade-in">
       <InteractiveBackground />
       <div className="h-screen w-full flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-hidden pb-32">
-          <div className="main-layout px-4 h-full flex flex-col" style={{ fontFamily: theme.font }}>
+        <div className="flex-1 overflow-hidden pb-4">
+          <div className="main-layout px-4 h-full flex flex-col justify-between" style={{ fontFamily: theme.font }}>
               
-              <div id="verse-section">
+              <div id="verse-section" className="pt-2">
                 <VerseSection 
                     currentVerse={currentVerse}
                     verseFontSize={verseFontSize}
@@ -278,36 +281,38 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                 />
               </div>
 
-              <TitleSection 
-                  isEditMode={isEditMode}
-                  setIsEditMode={setIsEditMode}
-                  handleSaveLayout={handleSaveLayout}
-                  handleResetLayout={handleResetLayout}
-                  handleCancelEdit={handleCancelEdit}
-                  theme={theme}
-                  themeKey={themeKey}
-                  onOpenSideMenu={onOpenSideMenu}
-              />
-
-              <div id="grid-section">
-                <GridSection 
-                    menuItems={menuItems}
-                    setMenuItems={setMenuItems}
-                    visibleItems={visibleItems}
+              <div className="flex-grow flex flex-col justify-center gap-2">
+                <TitleSection 
                     isEditMode={isEditMode}
-                    onNavigate={(id) => {
-                        if (id === 'more') onNavigate('more-menu');
-                        else onNavigate(id, { from: 'home' });
-                    }}
+                    setIsEditMode={setIsEditMode}
+                    handleSaveLayout={handleSaveLayout}
+                    handleResetLayout={handleResetLayout}
+                    handleCancelEdit={handleCancelEdit}
                     theme={theme}
                     themeKey={themeKey}
-                    DEFAULT_MENU_ITEMS={DEFAULT_MENU_ITEMS}
+                    onOpenSideMenu={onOpenSideMenu}
                 />
+
+                <div id="grid-section" className="flex-grow flex items-center">
+                    <GridSection 
+                        menuItems={menuItems}
+                        setMenuItems={setMenuItems}
+                        visibleItems={visibleItems}
+                        isEditMode={isEditMode}
+                        onNavigate={(id) => {
+                            if (id === 'more') onNavigate('more-menu');
+                            else onNavigate(id, { from: 'home' });
+                        }}
+                        theme={theme}
+                        themeKey={themeKey}
+                        DEFAULT_MENU_ITEMS={DEFAULT_MENU_ITEMS}
+                    />
+                </div>
               </div>
 
               {/* Footer/Save Button */}
               {!isEditMode && (
-                  <div className="flex items-center justify-center w-full max-w-sm mx-auto mt-1 mb-4 gap-2 h-[50px]">
+                  <div className="flex items-center justify-center w-full max-w-sm mx-auto mt-2 mb-24 gap-2 min-h-[50px]">
                       {!showVoiceIcon && (
                           <div className="flex items-center justify-center shrink-0">
                               <WhatsAppButton />

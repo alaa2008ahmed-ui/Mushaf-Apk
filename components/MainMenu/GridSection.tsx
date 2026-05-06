@@ -97,7 +97,7 @@ const GridSection: React.FC<GridSectionProps> = ({
     };
 
     return (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3 w-full max-w-sm mx-auto flex-grow content-center relative mt-6 pb-4">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-[1.5vh] w-full max-w-sm mx-auto flex-grow content-center relative mt-2 pb-2">
             {menuItems.map(item => {
                 const isVisible = visibleItems.includes(item.id);
                 return (
