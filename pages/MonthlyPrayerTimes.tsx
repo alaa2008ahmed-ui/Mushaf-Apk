@@ -310,11 +310,11 @@ export default function MonthlyPrayerTimes({ onBack, onNavigate }: { onBack: () 
                         <div className="absolute left-0">
                             <ThemePageLock />
                         </div>
-                        <h1 className="app-top-bar__title text-2xl font-kufi" style={{ color: topBarTextColor }}>
+                        <h1 className="app-top-bar__title text-2xl font-kufi">
                             مواقيت الشهر
                         </h1>
                     </div>
-                    <p className="app-top-bar__subtitle font-bold" style={{ color: topBarTextColor }}>
+                    <p className="app-top-bar__subtitle font-bold">
                         {config.location.cityGov}
                     </p>
                 </div>

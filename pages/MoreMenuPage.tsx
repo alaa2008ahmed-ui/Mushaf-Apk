@@ -64,9 +64,17 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
         <div id="more-menu-container">
             <InteractiveBackground />
             <div className="h-screen w-full flex flex-col overflow-hidden">
+                <header className="app-top-bar">
+                    <div className="app-top-bar__inner">
+                        <div className="relative flex items-center justify-center w-full">
+                            <h1 className="app-top-bar__title text-2xl font-kufi">قائمة التطبيقات</h1>
+                        </div>
+                        <p className="app-top-bar__subtitle">تصفح جميع أقسام التطبيق</p>
+                    </div>
+                </header>
                 <div className="flex-1 overflow-y-auto pb-32 hide-scrollbar">
                     <div className="main-layout px-4 flex flex-col" style={{ fontFamily: theme.font }}>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-5 w-full max-w-sm mx-auto pt-10">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-5 w-full max-w-sm mx-auto">
                             {ALL_MENU_ITEMS.map((item, idx) => {
                                 const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna'].includes(item.id);
                                 const isDefault = themeKey === 'default';

@@ -11,7 +11,6 @@ interface ThemeSettings {
         url: string;
         isVideo: boolean;
     };
-    showTopBars?: boolean;
 }
 
 interface ThemeContextType {
@@ -21,14 +20,12 @@ interface ThemeContextType {
     isPageLocked: boolean;
     isQuranPage: boolean;
     currentPage: string;
-    showTopBars: boolean;
     togglePageLock: () => void;
     applyPresetTheme: (themeKey: string) => void;
     setCustomBackground: (dataUrl: string, isVideo: boolean) => void;
     resetBackground: () => void;
     setIsGlobalTheme: (isGlobal: boolean) => void;
     setCurrentPage: (pageId: string) => void;
-    toggleTopBars: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -53,13 +50,12 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
                     isGlobalTheme: parsed.isGlobalTheme !== undefined ? parsed.isGlobalTheme : true,
                     pageThemes: parsed.pageThemes || {},
                     lockedPages: parsed.lockedPages || [],
-                    customBg: parsed.customBg,
-                    showTopBars: parsed.showTopBars !== undefined ? parsed.showTopBars : false
+                    customBg: parsed.customBg
                 };
             }
-            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {}, lockedPages: [], showTopBars: false };
+            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {}, lockedPages: [] };
         } catch (e) {
-            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {}, lockedPages: [], showTopBars: false };
+            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {}, lockedPages: [] };
         }
     });
 
@@ -190,8 +186,8 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
             document.body.classList.remove('quran-context');
         }
 
-        const isHub = currentPage === 'home' || currentPage === 'more-menu';
-        if (settings.showTopBars === false || isHub) {
+        const isHub = currentPage === 'home';
+        if (isHub) {
             document.body.classList.add('hide-top-bars');
         } else {
             document.body.classList.remove('hide-top-bars');
@@ -332,10 +328,6 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         return pageKey === 'quran';
     }, [currentPage]);
 
-    const toggleTopBars = () => {
-        saveSettings({ ...settings, showTopBars: settings.showTopBars === false ? true : false });
-    };
-
     const contextValue = useMemo(() => ({
         theme,
         themeKey: activeThemeKey,
@@ -343,14 +335,12 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         isPageLocked,
         isQuranPage,
         currentPage,
-        showTopBars: settings.showTopBars !== false,
         togglePageLock,
         applyPresetTheme,
         setCustomBackground,
         resetBackground,
         setIsGlobalTheme,
-        setCurrentPage,
-        toggleTopBars
+        setCurrentPage
     }), [theme, settings, activeThemeKey, isPageLocked, currentPage]);
 
     return (

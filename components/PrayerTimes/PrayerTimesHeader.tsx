@@ -25,15 +25,15 @@ const PrayerTimesHeader: React.FC<PrayerTimesHeaderProps> = ({
                     <div className="absolute left-0">
                         <ThemePageLock />
                     </div>
-                    <h1 className="app-top-bar__title text-xl md:text-2xl font-kufi truncate px-12" style={{ color: topBarTextColor }}>
+                    <h1 className="app-top-bar__title text-xl md:text-2xl font-kufi truncate px-12">
                         {cityGov}
                     </h1>
                     <div className="absolute right-0 flex items-center gap-1">
-                         <i onClick={onOpenNotifications} className="text-xl cursor-pointer fa-solid fa-bell p-2" style={{ color: topBarTextColor }}></i>
-                         <i id="location-refresh-btn" onClick={handleRefreshLocation} className="text-xl cursor-pointer active:rotate-180 duration-700 fa-solid fa-location-crosshairs p-2" style={{ color: topBarTextColor }}></i>
+                         <i onClick={onOpenNotifications} className="text-xl cursor-pointer fa-solid fa-bell p-2 opacity-80 hover:opacity-100"></i>
+                         <i id="location-refresh-btn" onClick={handleRefreshLocation} className="text-xl cursor-pointer active:rotate-180 duration-700 fa-solid fa-location-crosshairs p-2 opacity-80 hover:opacity-100"></i>
                     </div>
                 </div>
-                 <div className="app-top-bar__subtitle flex items-center justify-center gap-1.5" dir="rtl" style={{ color: topBarTextColor }}>
+                 <div className="app-top-bar__subtitle flex items-center justify-center gap-1.5" dir="rtl">
                     <span className="font-bold">{fullCountry}</span>
                     {combinedCode && (
                         <span className="text-[10px] font-black text-white bg-black/20 px-1.5 py-0 rounded border border-white/20" dir="ltr">{combinedCode}</span>

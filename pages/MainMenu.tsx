@@ -32,7 +32,7 @@ const ALL_POSSIBLE_ITEMS = [
     { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
     { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-10", colorIndex: 1 },
-    { id: 'more', label: "✨ المزيد", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
+    { id: 'more', label: "✨ قائمة التطبيقات", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
 ];
 
 const DEFAULT_MENU_ITEMS = [
@@ -47,7 +47,7 @@ const DEFAULT_MENU_ITEMS = [
     { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 1 },
     { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
-    { id: 'more', label: "✨ المزيد", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
+    { id: 'more', label: "✨ قائمة التطبيقات", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
 ];
 
 function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {

@@ -141,9 +141,9 @@ function Qibla({ onBack, onNavigate }) {
     }, [heading, qiblaDirection]);
 
     return (
-        <div className="h-screen w-screen relative overflow-hidden bg-transparent pt-6">
-            <header className="app-top-bar relative z-30 bg-transparent border-none shadow-none mt-2">
-                <div className="app-top-bar__inner bg-transparent">
+        <div className="h-screen w-screen relative overflow-hidden bg-transparent">
+            <header className="app-top-bar">
+                <div className="app-top-bar__inner">
                     <div className="relative flex items-center justify-center w-full">
                         <div className="absolute left-0 flex items-center gap-2">
                              <ThemePageLock />
@@ -151,8 +151,8 @@ function Qibla({ onBack, onNavigate }) {
                         </div>
                         <h1 className="app-top-bar__title text-2xl font-kufi">اتجاه القبلة</h1>
                     </div>
-                    <p className="app-top-bar__subtitle bg-transparent">
-                        {config?.location?.cityGov ? `حسب موقعك في: ${config.location.cityGov}` : 'استخدم البوصلة لتحديد اتجاه الكعبة المشرفة'}
+                    <p className="app-top-bar__subtitle text-center">
+                        {config?.location?.cityGov ? `حسب موقعك في: ${config.location.cityGov}` : 'تحديد اتجاه القبلة بدقة'}
                     </p>
                 </div>
             </header>
