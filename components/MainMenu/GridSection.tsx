@@ -96,10 +96,18 @@ const GridSection: React.FC<GridSectionProps> = ({
         }
     };
 
+    const isBlackTheme = theme.bgColor === '#000000';
+
     return (
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 w-full max-w-sm mx-auto flex-grow content-center relative mt-6 pb-4">
             {menuItems.map(item => {
                 const isVisible = visibleItems.includes(item.id);
+                const buttonColor = isBlackTheme 
+                    ? '#000000' 
+                    : (themeKey === 'olive_grove' ? (['quran', 'listen', 'prayer-times'].includes(item.id) ? '#4D7C0F' : '#65A30D') : (item.customColor || theme.palette[DEFAULT_MENU_ITEMS.find(d => d.id === item.id)?.colorIndex ?? item.colorIndex]));
+                const textColor = isBlackTheme ? '#FFFFFF' : theme.btnText;
+                const buttonBorder = isBlackTheme ? '1px solid #333333' : theme.btnBorder;
+
                 return (
                     <motion.div
                         layout
@@ -125,14 +133,12 @@ const GridSection: React.FC<GridSectionProps> = ({
                                         label={item.label} 
                                         onClick={() => !isEditMode && onNavigate(item.id)} 
                                         className="w-full h-full shadow-lg"
-                                        color={
-                                            themeKey === 'olive_grove' ? '#65A30D' : (item.customColor || theme.palette[DEFAULT_MENU_ITEMS.find(d => d.id === item.id)?.colorIndex ?? item.colorIndex])
-                                        } 
-                                        border={theme.btnBorder || (theme.palette[0] ? `2px solid ${theme.palette[0]}` : undefined)} 
+                                        color={buttonColor} 
+                                        border={buttonBorder || (theme.isGlass ? undefined : (theme.palette[0] ? `2px solid ${theme.palette[0]}` : undefined))} 
                                         isEditMode={isEditMode}
                                         onResize={(e) => handleResize(item.id, e)}
                                         isGlass={theme.isGlass}
-                                        btnText={theme.btnText}
+                                        btnText={textColor}
                                         showNewBadge={showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'habit-tracker'].includes(item.id)}
                                         badgeText="جديد"
                                     />
@@ -144,16 +150,12 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 label={item.label} 
                                 onClick={() => !isEditMode && onNavigate(item.id)} 
                                 className="w-full h-full"
-                                color={
-                                    themeKey === 'olive_grove' ? (
-                                        ['quran', 'listen', 'prayer-times'].includes(item.id) ? '#4D7C0F' : '#65A30D'
-                                    ) : (item.customColor || theme.palette[DEFAULT_MENU_ITEMS.find(d => d.id === item.id)?.colorIndex ?? item.colorIndex])
-                                } 
-                                border={theme.btnBorder} 
+                                color={buttonColor} 
+                                border={buttonBorder} 
                                 isEditMode={isEditMode}
                                 onResize={(e) => handleResize(item.id, e)}
                                 isGlass={theme.isGlass}
-                                btnText={theme.btnText}
+                                btnText={textColor}
                                 showNewBadge={showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'habit-tracker'].includes(item.id)}
                                 badgeText="جديد"
                             />

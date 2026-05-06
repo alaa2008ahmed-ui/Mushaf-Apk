@@ -39,7 +39,20 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
     const isDefaultMoreMenu = themeKey === 'default' && currentPage === 'more-menu';
     const isDefaultNonQuran = themeKey === 'default' && !isQuranPage && !isMainOrMoreMenu;
 
+    const isBlackTheme = theme.bgColor === '#000000';
+
     const getBtnStyle = (colorIdx: number) => {
+        if (isBlackTheme) {
+            return {
+                background: '#000000',
+                color: '#FFFFFF',
+                fontFamily: theme.font,
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: '#FFFFFF'
+            };
+        }
+
         if (isDefaultNonQuran || isDefaultMoreMenu) {
             return {
                 background: '#FFFFFF',

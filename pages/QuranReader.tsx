@@ -153,7 +153,11 @@ const WirdCompletionModal = ({ isOpen, onClose, onGoToWird, onGoHome, currentThe
                     <button 
                         onClick={onGoHome}
                         className="w-full py-3 rounded-xl font-bold text-sm transition-transform hover:scale-105 flex items-center justify-center gap-2"
-                        style={{ backgroundColor: `${currentTheme?.barBg}80`, color: currentTheme?.barText, border: `1px solid ${currentTheme?.barBorder}` }}
+                        style={currentTheme?.bgColor === '#000000' ? {
+                            backgroundColor: '#000000',
+                            color: '#FFFFFF',
+                            border: '1px solid #FFFFFF'
+                        } : { backgroundColor: `${currentTheme?.barBg}80`, color: currentTheme?.barText, border: `1px solid ${currentTheme?.barBorder}` }}
                     >
                         <i className="fa-solid fa-house"></i>
                         الصفحة الرئيسية
@@ -3321,6 +3325,19 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
 
     const getToolbarStyle = (type: string, defaultBg: string, defaultText: string, defaultBorder: string) => {
+        const isBlackTheme = currentTheme?.bgColor === '#000000';
+        if (isBlackTheme && type === 'btn-home') {
+            return {
+                backgroundColor: '#000000',
+                color: '#FFFFFF',
+                border: '1px solid #FFFFFF',
+                fontFamily: toolbarColors[type]?.font || 'inherit',
+                opacity: 1,
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none'
+            };
+        }
+
         const config = toolbarColors[type];
         let bg = config?.bg || defaultBg || "#ffffff";
         let border = config?.border || defaultBorder || "#e5e7eb";

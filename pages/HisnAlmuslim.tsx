@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 function HisnAlmuslim({ onBack }) {
     const { theme, themeKey } = useTheme();
+    const isBlackTheme = theme.bgColor === '#000000';
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [zoomedItem, setZoomedItem] = useState(null);
     const [toastMessage, setToastMessage] = useState('');
@@ -106,14 +107,14 @@ function HisnAlmuslim({ onBack }) {
                             <button 
                                 onClick={() => { setSelectedCategory(null); setIsMenuOpen(false); }}
                                 className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${!selectedCategory ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                style={!selectedCategory ? { color: theme.palette[0] } : {}}
+                                style={!selectedCategory ? { color: isBlackTheme ? '#FFFFFF' : theme.palette[0] } : {}}
                             >
                                 كل الأبواب
                             </button>
                             <button 
                                 onClick={() => { setSelectedCategory({ id: 'favorites', title: 'المفضلة' }); setIsMenuOpen(false); }}
                                 className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-between ${selectedCategory?.id === 'favorites' ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                style={selectedCategory?.id === 'favorites' ? { color: theme.palette[0] } : {}}
+                                style={selectedCategory?.id === 'favorites' ? { color: isBlackTheme ? '#FFFFFF' : theme.palette[0] } : {}}
                             >
                                 <span>المفضلة</span>
                                 <i className="fa-solid fa-heart text-red-500"></i>
@@ -125,11 +126,11 @@ function HisnAlmuslim({ onBack }) {
                 <button 
                     ref={fabRef}
                     onClick={handleFabClick}
-                    className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer relative z-10 ${themeKey === 'default' ? 'text-black' : 'text-white'}`}
+                    className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer relative z-10 ${themeKey === 'default' ? 'text-black' : (isBlackTheme ? 'text-black' : 'text-white')}`}
                     style={
                         themeKey === 'default'
                         ? { backgroundColor: '#ffffff', border: '1px solid #000000' }
-                        : { backgroundColor: theme.palette[0] }
+                        : { backgroundColor: isBlackTheme ? '#FFFFFF' : theme.palette[0] }
                     }
                 >
                     <i className={`fa-solid ${isMenuOpen ? 'fa-times' : 'fa-list-ul'} text-xl`}></i>

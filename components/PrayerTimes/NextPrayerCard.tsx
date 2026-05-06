@@ -9,6 +9,7 @@ interface NextPrayerCardProps {
     themePalette0: string;
     themePalette1: string;
     isDefaultTheme?: boolean;
+    isBlackTheme?: boolean;
     formatTime12: (time: string) => string;
     applyOffset: (timeStr: string, offsetMins: number) => string;
     prayerOffset: number;
@@ -23,6 +24,7 @@ const NextPrayerCard: React.FC<NextPrayerCardProps> = ({
     countdown,
     isBlackAndWhite,
     isDefaultTheme,
+    isBlackTheme,
     themePalette0,
     themePalette1,
     formatTime12,
@@ -58,7 +60,7 @@ const NextPrayerCard: React.FC<NextPrayerCardProps> = ({
                                     onClick={() => onToggleNightNotification('firstThird')}
                                     className={`p-1 rounded-full ${isDefaultTheme ? 'bg-black/5 hover:bg-black/10' : 'bg-white/10 hover:bg-white/20'} transition-colors`}
                                 >
-                                    {nightNotifications.firstThird ? <Bell className={`w-3 h-3 ${isDefaultTheme ? 'text-green-600' : 'text-green-300'}`} /> : <BellOff className="w-3 h-3 text-red-400 opacity-70" />}
+                                    {nightNotifications.firstThird ? <Bell className={`w-3 h-3 ${isBlackTheme ? 'text-white' : (isDefaultTheme ? 'text-green-600' : 'text-green-300')}`} /> : <BellOff className="w-3 h-3 text-red-400 opacity-70" />}
                                 </button>
                             )}
                             <span className="text-[9px] font-bold">أول الليل</span>
@@ -73,7 +75,7 @@ const NextPrayerCard: React.FC<NextPrayerCardProps> = ({
                                     onClick={() => onToggleNightNotification('midnight')}
                                     className={`p-1 rounded-full ${isDefaultTheme ? 'bg-black/5 hover:bg-black/10' : 'bg-white/10 hover:bg-white/20'} transition-colors`}
                                 >
-                                    {nightNotifications.midnight ? <Bell className={`w-3 h-3 ${isDefaultTheme ? 'text-green-600' : 'text-green-300'}`} /> : <BellOff className="w-3 h-3 text-red-400 opacity-70" />}
+                                    {nightNotifications.midnight ? <Bell className={`w-3 h-3 ${isBlackTheme ? 'text-white' : (isDefaultTheme ? 'text-green-600' : 'text-green-300')}`} /> : <BellOff className="w-3 h-3 text-red-400 opacity-70" />}
                                 </button>
                             )}
                             <span className="text-[9px] font-bold">منتصف الليل</span>
@@ -88,7 +90,7 @@ const NextPrayerCard: React.FC<NextPrayerCardProps> = ({
                                     onClick={() => onToggleNightNotification('lastThird')}
                                     className={`p-1 rounded-full ${isDefaultTheme ? 'bg-black/5 hover:bg-black/10' : 'bg-white/10 hover:bg-white/20'} transition-colors`}
                                 >
-                                    {nightNotifications.lastThird ? <Bell className={`w-3 h-3 ${isDefaultTheme ? 'text-green-600' : 'text-green-300'}`} /> : <BellOff className="w-3 h-3 text-red-400 opacity-70" />}
+                                    {nightNotifications.lastThird ? <Bell className={`w-3 h-3 ${isBlackTheme ? 'text-white' : (isDefaultTheme ? 'text-green-600' : 'text-green-300')}`} /> : <BellOff className="w-3 h-3 text-red-400 opacity-70" />}
                                 </button>
                             )}
                             <span className="text-[9px] font-bold">الثلث الأخير</span>

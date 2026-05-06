@@ -31,9 +31,10 @@ interface MoreMenuPageProps {
     onNavigate: (pageId: string, params?: any) => void;
     onBack: () => void;
 }
+import ThemePageLock from '../components/ThemePageLock';
 
 const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
-    const { theme, themeKey } = useTheme();
+    const { theme, themeKey, togglePageLock, isPageLocked } = useTheme();
     const [showNewBadges, setShowNewBadges] = useState(false);
     const [visibleItems, setVisibleItems] = useState<string[]>(() => {
         const savedVisible = localStorage.getItem('visibleMenuItems');
@@ -67,6 +68,9 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                 <header className="app-top-bar">
                     <div className="app-top-bar__inner">
                         <div className="relative flex items-center justify-center w-full">
+                            <div className="absolute left-0">
+                                <ThemePageLock />
+                            </div>
                             <h1 className="app-top-bar__title text-2xl font-kufi">قائمة التطبيقات</h1>
                         </div>
                         <p className="app-top-bar__subtitle">تصفح جميع أقسام التطبيق</p>
@@ -78,8 +82,9 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                             {ALL_MENU_ITEMS.map((item, idx) => {
                                 const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna'].includes(item.id);
                                 const isDefault = themeKey === 'default';
-                                const primaryColor = isDefault ? '#FFFFFF' : getPrimaryColor(item.id, item.colorIndex);
-                                const textColor = isDefault ? '#000000' : theme.btnText;
+                                const isBlackTheme = theme.bgColor === '#000000';
+                                const primaryColor = isBlackTheme ? '#000000' : (isDefault ? '#FFFFFF' : getPrimaryColor(item.id, item.colorIndex));
+                                const textColor = isBlackTheme ? '#FFFFFF' : (isDefault ? '#000000' : theme.btnText);
                                 const isNew = showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'asmaul-husna', 'habit-tracker'].includes(item.id);
                                 
                                 return (
@@ -98,9 +103,9 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                             color={primaryColor}
                                             showNewBadge={isNew}
                                             badgeText="جديد"
-                                            isGlass={isDefault ? false : theme.isGlass}
+                                            isGlass={isBlackTheme ? false : (isDefault ? false : theme.isGlass)}
                                             btnText={textColor}
-                                            border={isDefault ? '2px solid #000000' : undefined}
+                                            border={isBlackTheme ? '1px solid #333333' : (isDefault ? '2px solid #000000' : undefined)}
                                         />
                                         {item.id === 'quran' && (
                                             <button
@@ -108,10 +113,18 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                                     e.stopPropagation();
                                                     onNavigate('quran-landscape');
                                                 }}
-                                                className="absolute top-1/2 left-1.5 -translate-y-1/2 bg-black text-white rounded-full w-7 h-7 flex items-center justify-center z-10 transition-colors shadow-lg border border-white/20"
+                                                className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full w-9 h-9 flex items-center justify-center z-[20] transition-all shadow-xl border"
+                                                style={{ 
+                                                    backgroundColor: isBlackTheme ? '#000000' : (themeKey === 'default' ? '#ffffff' : (theme.isGlass ? 'rgba(255, 255, 255, 0.2)' : (theme.palette[1] || '#8B5CF6'))),
+                                                    color: isBlackTheme ? '#ffffff' : (themeKey === 'default' ? '#000000' : '#ffffff'),
+                                                    borderColor: isBlackTheme ? '#333333' : (themeKey === 'default' ? '#000000' : (theme.isGlass ? 'rgba(255, 255, 255, 0.3)' : 'transparent')),
+                                                    backdropFilter: theme.isGlass ? 'blur(4px)' : 'none',
+                                                    WebkitBackdropFilter: theme.isGlass ? 'blur(4px)' : 'none',
+                                                    borderWidth: (isBlackTheme || themeKey === 'default') ? '2px' : '1px'
+                                                }}
                                                 title="وضع العرض"
                                             >
-                                                <i className="fa-solid fa-arrows-rotate text-sm"></i>
+                                                <i className="fa-solid fa-arrows-rotate text-lg"></i>
                                             </button>
                                         )}
                                     </motion.div>

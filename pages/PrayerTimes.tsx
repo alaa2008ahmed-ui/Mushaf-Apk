@@ -30,9 +30,10 @@ function PrayerTimes({ onBack, onNavigate }) {
 
     const isDefaultTheme = themeKey === 'default';
     const isBlackAndWhite = themeKey === 'deep_black';
-    const primaryColor = isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
-    const secondaryColor = isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[1]);
-    const topBarTextColor = isDefaultTheme ? '#000000' : (theme.topBarText || (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]));
+    const isBlackTheme = theme.bgColor === '#000000';
+    const primaryColor = isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]));
+    const secondaryColor = isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[1]));
+    const topBarTextColor = isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : (theme.topBarText || (isBlackAndWhite ? '#FFFFFF' : theme.palette[0])));
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
@@ -313,6 +314,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                                 countdown={countdown}
                                 isBlackAndWhite={isBlackAndWhite}
                                 isDefaultTheme={isDefaultTheme}
+                                isBlackTheme={isBlackTheme}
                                 themePalette0={theme.palette[0]}
                                 themePalette1={theme.palette[1]}
                                 formatTime12={formatTime12}
@@ -354,6 +356,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                                         secondaryColor={secondaryColor}
                                         isBlackAndWhite={isBlackAndWhite}
                                         isDefaultTheme={isDefaultTheme}
+                                        isBlackTheme={isBlackTheme}
                                         themePalette1={theme.palette[1]}
                                     togglePrayerSound={togglePrayerSound}
                                     openSettings={openSettings}

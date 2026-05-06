@@ -34,6 +34,7 @@ function formatTime(seconds) {
 
 function ListenQuran({ onBack, onOpenThemes }) {
     const { theme, themeKey } = useTheme();
+    const isBlackTheme = theme.bgColor === '#000000';
     const [reciterId, setReciterId] = useState(RECITERS[0].id);
     const [surahNumber, setSurahNumber] = useState(1);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -338,7 +339,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
                         <button onClick={handlePrevSurah} className="w-24 text-center hover:opacity-80 transition-opacity font-bold" style={{ color: theme.textColor }}>
                             السابق
                         </button>
-                        <button onClick={handlePlayPause} disabled={isLoading && !isPlaying} className="rounded-full w-20 h-20 flex items-center justify-center shadow-lg active:scale-95 transition disabled:opacity-70" style={{ backgroundColor: themeKey === 'default' ? '#000000' : (themeKey === 'deep_black' ? 'transparent' : theme.palette[0]), color: '#FFFFFF' }}>
+                        <button onClick={handlePlayPause} disabled={isLoading && !isPlaying} className="rounded-full w-20 h-20 flex items-center justify-center shadow-lg active:scale-95 transition disabled:opacity-70" style={{ backgroundColor: themeKey === 'default' ? '#000000' : (themeKey === 'deep_black' || isBlackTheme ? '#FFFFFF' : theme.palette[0]), color: (themeKey === 'deep_black' || isBlackTheme) ? '#000000' : '#FFFFFF' }}>
                             {isLoading && !isPlaying ? <i className="fa-solid fa-spinner fa-spin fa-2x"></i> : <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'} fa-2x pl-1`}></i>}
                         </button>
                         <button onClick={handleNextSurah} className="w-24 text-center hover:opacity-80 transition-opacity font-bold" style={{ color: theme.textColor }}>
@@ -352,14 +353,14 @@ function ListenQuran({ onBack, onOpenThemes }) {
                     <div className="themed-card rounded-2xl p-4 space-y-4">
                         <div className="flex items-center justify-between">
                             <label htmlFor="continuous-play-toggle" className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textColor }}>
-                                <i className="fa-solid fa-repeat" style={{ color: themeKey === 'default' ? '#000000' : theme.palette[0] }}></i>
+                                <i className="fa-solid fa-repeat" style={{ color: (themeKey === 'default' || isBlackTheme) ? (isBlackTheme ? '#FFFFFF' : '#000000') : theme.palette[0] }}></i>
                                 <span>تشغيل متواصل</span>
                             </label>
                             <button
                                 id="continuous-play-toggle"
                                 onClick={() => setIsContinuousPlay(prev => !prev)}
                                 className={`relative w-12 h-7 rounded-full transition-colors`}
-                                style={{ backgroundColor: isContinuousPlay ? (themeKey === 'default' ? '#000000' : theme.palette[0]) : theme.cardBorder }}
+                                style={{ backgroundColor: isContinuousPlay ? (themeKey === 'default' ? '#000000' : (isBlackTheme ? '#FFFFFF' : theme.palette[0])) : theme.cardBorder }}
                                 aria-checked={isContinuousPlay}
                                 role="switch"
                             >
@@ -374,7 +375,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
                             className="w-full flex justify-between items-center group"
                         >
                             <div className="flex items-center gap-2">
-                                <i className="fa-solid fa-download" style={{ color: themeKey === 'default' ? '#000000' : theme.palette[0] }}></i>
+                                <i className="fa-solid fa-download" style={{ color: (themeKey === 'default' || isBlackTheme) ? (isBlackTheme ? '#FFFFFF' : '#000000') : theme.palette[0] }}></i>
                                 <span className="font-bold text-sm">تحميل المصحف</span>
                             </div>
                             <i className="fa-solid fa-chevron-left opacity-30 group-hover:opacity-100 transition-opacity"></i>

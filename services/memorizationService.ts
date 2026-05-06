@@ -8,6 +8,7 @@ export interface MemorizedRange {
     readerId: string;
     timestamp: number;
     lastReviewed?: number;
+    nextReviewDate?: number;
     reviewCount?: number;
 }
 

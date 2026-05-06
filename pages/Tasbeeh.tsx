@@ -22,8 +22,9 @@ const SETTINGS_STORAGE_KEY = 'ahmed_laila_tasbeeh_settings_v1';
 function Tasbeeh({ onBack }) {
     const { theme, themeKey } = useTheme();
     const isBlackAndWhite = themeKey === 'deep_black';
-    const primaryTextColor = themeKey === 'default' ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
-    const secondaryTextColor = themeKey === 'default' ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[1]);
+    const isBlackTheme = theme.bgColor === '#000000';
+    const primaryTextColor = isBlackTheme ? '#FFFFFF' : (themeKey === 'default' ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]));
+    const secondaryTextColor = isBlackTheme ? '#FFFFFF' : (themeKey === 'default' ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[1]));
 
     const getDefaultCounterColor = useCallback((tKey: string, tObj: any) => {
         return tKey === 'default' ? '#FFFFFF' : tObj.palette[0];
@@ -371,7 +372,7 @@ function Tasbeeh({ onBack }) {
                         initial={{ opacity: 0, y: 20, x: '-50%' }}
                         animate={{ opacity: 1, y: 0, x: '-50%' }}
                         exit={{ opacity: 0, y: 10, x: '-50%' }}
-                        className={`fixed bottom-24 left-1/2 p-3 text-white rounded-lg shadow-xl z-[200] font-bold ${message.type === 'green' ? 'bg-emerald-500' : 'bg-red-500'}`}
+                        className={`fixed bottom-24 left-1/2 p-3 text-white rounded-lg shadow-xl z-[200] font-bold ${message.type === 'green' ? (isBlackTheme ? 'bg-white text-black' : 'bg-emerald-500') : 'bg-red-500'}`}
                     >
                         {message.text}
                     </motion.div>

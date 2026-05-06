@@ -54,7 +54,8 @@ const ProgressRing = ({ progress, size = 100, strokeWidth = 8, color }: { progre
 
 const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
   const { theme } = useTheme();
-  const hexColor = theme.palette && theme.palette.length > 0 ? theme.palette[0] : '#059669';
+  const isBlackTheme = theme.bgColor === '#000000';
+  const hexColor = isBlackTheme ? '#FFFFFF' : (theme.palette && theme.palette.length > 0 ? theme.palette[0] : '#059669');
   const todayStr = moment().format('YYYY-MM-DD');
 
   const records = useHabitTracker((state) => state.records);
@@ -80,7 +81,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
 
   if (diff > 0) {
     comparisonMsg = `أعلى من الأمس بـ ${diff}% 📈`;
-    comparisonClass = 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
+    comparisonClass = isBlackTheme ? 'bg-white/10 text-white border border-white/20' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
   } else if (diff < 0) {
     comparisonMsg = `أقل من الأمس بـ ${Math.abs(diff)}% 📉`;
     comparisonClass = 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300';
@@ -194,23 +195,23 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
             <motion.button 
                whileTap={{ scale: 0.95 }}
                onClick={() => handleToggle('prayers', fardId)}
-               className={`flex-1 flex items-center justify-between py-1.5 px-2 rounded-xl text-xs font-semibold transition-colors border ${isFardCompleted ? 'text-white' : 'text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700'}`}
+               className={`flex-1 flex items-center justify-between py-1.5 px-2 rounded-xl text-xs font-semibold transition-colors border ${isFardCompleted ? (isBlackTheme ? 'text-black' : 'text-white') : 'text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700'}`}
                style={isFardCompleted ? { backgroundColor: hexColor, borderColor: hexColor } : {}}
             >
                <span>الفريضة</span>
-               <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${isFardCompleted ? 'border-transparent' : 'border-gray-300 dark:border-gray-600'}`} style={isFardCompleted ? { backgroundColor: 'rgba(255,255,255,0.3)' } : {}}>
-                  {isFardCompleted && <CheckCircle className="w-2.5 h-2.5 text-white" />}
+               <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${isFardCompleted ? 'border-transparent' : 'border-gray-300 dark:border-gray-600'}`} style={isFardCompleted ? { backgroundColor: isBlackTheme ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)' } : {}}>
+                  {isFardCompleted && <CheckCircle className={`w-2.5 h-2.5 ${isBlackTheme ? 'text-black' : 'text-white'}`} />}
                </div>
             </motion.button>
             <motion.button 
                whileTap={{ scale: 0.95 }}
                onClick={() => handleToggle('prayers', sunnahId)}
-               className={`flex-1 flex items-center justify-between py-1.5 px-2 rounded-xl text-xs font-semibold transition-colors border ${isSunnahCompleted ? 'text-white' : 'text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700'}`}
+               className={`flex-1 flex items-center justify-between py-1.5 px-2 rounded-xl text-xs font-semibold transition-colors border ${isSunnahCompleted ? (isBlackTheme ? 'text-black' : 'text-white') : 'text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700'}`}
                style={isSunnahCompleted ? { backgroundColor: hexColor, borderColor: hexColor } : {}}
             >
                <span>السنة</span>
-               <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${isSunnahCompleted ? 'border-transparent' : 'border-gray-300 dark:border-gray-600'}`} style={isSunnahCompleted ? { backgroundColor: 'rgba(255,255,255,0.3)' } : {}}>
-                  {isSunnahCompleted && <CheckCircle className="w-2.5 h-2.5 text-white" />}
+               <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${isSunnahCompleted ? 'border-transparent' : 'border-gray-300 dark:border-gray-600'}`} style={isSunnahCompleted ? { backgroundColor: isBlackTheme ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)' } : {}}>
+                  {isSunnahCompleted && <CheckCircle className={`w-2.5 h-2.5 ${isBlackTheme ? 'text-black' : 'text-white'}`} />}
                </div>
             </motion.button>
          </div>
@@ -248,7 +249,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
             }`}
             style={isCompleted ? { backgroundColor: hexColor } : {}}
           >
-            {isCompleted && <CheckCircle className="w-3 h-3 text-white" />}
+            {isCompleted && <CheckCircle className={`w-3 h-3 ${isBlackTheme ? 'text-black' : 'text-white'}`} />}
           </div>
         </div>
       </motion.button>
@@ -480,7 +481,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
               onClick={() => handleToggle('quran', 'completed', () => todayRecord.quran?.completed)}
               className={`w-full py-2.5 rounded-xl font-bold text-sm transition-colors ${
                   todayRecord.quran?.completed
-                    ? 'text-white'
+                    ? (isBlackTheme ? 'text-black' : 'text-white')
                     : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
               }`}
               style={todayRecord.quran?.completed ? { backgroundColor: hexColor } : {}}
@@ -541,7 +542,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
             </div>
             <div className="relative z-10 flex flex-col items-center">
               <div 
-                className="w-16 h-16 flex items-center justify-center rounded-full mb-4 text-white shadow-lg"
+                className={`w-16 h-16 flex items-center justify-center rounded-full mb-4 shadow-lg ${isBlackTheme ? 'text-black' : 'text-white'}`}
                 style={{ backgroundColor: hexColor }}
               >
                 <Medal className="w-8 h-8" />

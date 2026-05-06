@@ -82,7 +82,7 @@
           border-bottom: 2px solid var(--bottom-bar-border, #334155);
           position: sticky; top: 0; z-index: 40;
           padding-top: env(safe-area-inset-top);
-          min-height: 80px;
+          min-height: 90px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -93,7 +93,7 @@
       body.hide-top-bars:not(.quran-context) main:not(.absolute),
       body.hide-top-bars:not(.quran-context) .main-layout,
       body.hide-top-bars:not(.quran-context) .app-top-bar + * {
-          padding-top: calc(env(safe-area-inset-top) + 3rem) !important;
+          padding-top: calc(env(safe-area-inset-top) + 0.5rem) !important;
       }
 
       .app-top-bar__inner { 
@@ -107,6 +107,7 @@
           text-align: center; 
           justify-content: center;
           height: 100%;
+          min-height: 70px;
       }
       .app-top-bar__title { font-weight: 800; letter-spacing: 0.03em; }
       .app-top-bar__subtitle { font-size: 0.85rem; opacity: 0.9; }
@@ -269,7 +270,7 @@
         });
     })();
 </script>
-  <script type="module" crossorigin src="/assets/index-BfQkBmTj.js"></script>
+  <script type="module" crossorigin src="/assets/index-CDnDOMhg.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-BWDrnrLt.css">
 </head>
 <body>

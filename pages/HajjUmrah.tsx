@@ -103,6 +103,7 @@ const DuaaSection: FC<DuaaSectionProps> = ({ id, title, items, isOpen, onToggle,
 };
 
 const ChecklistScreen = ({ theme }) => {
+    const isBlackTheme = theme.bgColor === '#000000';
     const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
@@ -145,9 +146,9 @@ const ChecklistScreen = ({ theme }) => {
 
     return (
         <section className="space-y-4">
-            <div className="rounded-2xl p-4 text-center backdrop-blur-sm border" style={{ backgroundColor: `${theme.palette[0]}15`, borderColor: `${theme.palette[0]}30` }}>
-                <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: `${theme.palette[0]}20` }}>
-                    <ListChecks className="w-6 h-6" style={{ color: theme.palette[0] }} />
+            <div className="rounded-2xl p-4 text-center backdrop-blur-sm border" style={{ backgroundColor: isBlackTheme ? 'rgba(255,255,255,0.05)' : `${theme.palette[0]}15`, borderColor: isBlackTheme ? 'rgba(255,255,255,0.1)' : `${theme.palette[0]}30` }}>
+                <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : `${theme.palette[0]}20` }}>
+                    <ListChecks className="w-6 h-6" style={{ color: isBlackTheme ? '#000000' : theme.palette[0] }} />
                 </div>
                 <p className="text-sm opacity-70" style={{ color: 'var(--text-color)' }}>حدد الأشياء التي قمت بتجهيزها لرحلتك.</p>
             </div>
@@ -155,18 +156,18 @@ const ChecklistScreen = ({ theme }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {categories.map((cat, i) => (
                     <div key={i} className="bg-white/30 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20 dark:border-gray-700">
-                        <h3 className="font-bold text-base mb-2 border-b pb-1" style={{ color: theme.palette[0], borderColor: `${theme.palette[0]}20` }}>{cat.title}</h3>
+                        <h3 className="font-bold text-base mb-2 border-b pb-1" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0], borderColor: isBlackTheme ? 'rgba(255,255,255,0.2)' : `${theme.palette[0]}20` }}>{cat.title}</h3>
                         <div className="space-y-1.5">
                             {cat.items.map(item => (
                                 <button 
                                     key={item.id} 
                                     onClick={() => toggleItem(item.id)}
                                     className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-gray-700 transition-all border border-transparent"
-                                    style={{ borderColor: checkedItems[item.id] ? `${theme.palette[0]}20` : 'transparent' }}
+                                    style={{ borderColor: checkedItems[item.id] ? (isBlackTheme ? 'rgba(255,255,255,0.3)' : `${theme.palette[0]}20`) : 'transparent' }}
                                 >
                                     <div className={`shrink-0 w-4 h-4 rounded-md flex items-center justify-center transition-colors ${checkedItems[item.id] ? '' : 'border-2 border-gray-300/50 dark:border-gray-600'}`}
-                                         style={{ backgroundColor: checkedItems[item.id] ? theme.palette[0] : 'transparent' }}>
-                                        {checkedItems[item.id] && <CheckCircle2 size={10} className="text-white" />}
+                                         style={{ backgroundColor: checkedItems[item.id] ? (isBlackTheme ? '#FFFFFF' : theme.palette[0]) : 'transparent' }}>
+                                        {checkedItems[item.id] && <CheckCircle2 size={10} className={isBlackTheme ? "text-black" : "text-white"} />}
                                     </div>
                                     <span className={`text-sm text-right leading-relaxed font-medium transition-opacity ${checkedItems[item.id] ? 'opacity-40 line-through' : ''}`} style={{ color: 'var(--text-color)' }}>
                                         {item.text}
@@ -182,6 +183,7 @@ const ChecklistScreen = ({ theme }) => {
 };
 
 const CountersScreen = ({ theme }) => {
+    const isBlackTheme = theme.bgColor === '#000000';
     const [tawaf, setTawaf] = useState(0);
     const [sai, setSai] = useState(0);
     const [activeTab, setActiveTab] = useState<'tawaf'|'sai'>('tawaf');
@@ -203,9 +205,9 @@ const CountersScreen = ({ theme }) => {
 
     return (
         <section className="space-y-4">
-            <div className="backdrop-blur-md rounded-2xl p-4 text-center border" style={{ backgroundColor: `${theme.palette[0]}15`, borderColor: `${theme.palette[0]}20` }}>
-                <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: `${theme.palette[0]}20` }}>
-                    <RotateCcw className="w-6 h-6" style={{ color: theme.palette[0] }} />
+            <div className="backdrop-blur-md rounded-2xl p-4 text-center border" style={{ backgroundColor: isBlackTheme ? 'rgba(255,255,255,0.05)' : `${theme.palette[0]}15`, borderColor: isBlackTheme ? 'rgba(255,255,255,0.1)' : `${theme.palette[0]}20` }}>
+                <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : `${theme.palette[0]}20` }}>
+                    <RotateCcw className="w-6 h-6" style={{ color: isBlackTheme ? '#000000' : theme.palette[0] }} />
                 </div>
                 <p className="text-sm opacity-70" style={{ color: 'var(--text-color)' }}>أداة مساعدة لعد أشواط الطواف والسعي.</p>
             </div>
@@ -213,20 +215,20 @@ const CountersScreen = ({ theme }) => {
             <div className="flex bg-white/10 dark:bg-gray-800/50 backdrop-blur-xl p-1 rounded-2xl border border-white/20">
                 <button 
                     onClick={() => setActiveTab('tawaf')} 
-                    className={`flex-1 py-2 rounded-xl font-bold transition-all ${activeTab === 'tawaf' ? 'text-white shadow-lg' : 'opacity-60'}`}
+                    className={`flex-1 py-2 rounded-xl font-bold transition-all ${activeTab === 'tawaf' ? (isBlackTheme ? 'text-black shadow-lg' : 'text-white shadow-lg') : 'opacity-60'}`}
                     style={{ 
-                        backgroundColor: activeTab === 'tawaf' ? theme.palette[0] : 'transparent',
-                        color: activeTab === 'tawaf' ? 'white' : 'var(--text-color)' 
+                        backgroundColor: activeTab === 'tawaf' ? (isBlackTheme ? '#FFFFFF' : theme.palette[0]) : 'transparent',
+                        color: activeTab === 'tawaf' ? (isBlackTheme ? 'black' : 'white') : 'var(--text-color)' 
                     }}
                 >
                     الطواف
                 </button>
                 <button 
                     onClick={() => setActiveTab('sai')} 
-                    className={`flex-1 py-2 rounded-xl font-bold transition-all ${activeTab === 'sai' ? 'text-white shadow-lg' : 'opacity-60'}`}
+                    className={`flex-1 py-2 rounded-xl font-bold transition-all ${activeTab === 'sai' ? (isBlackTheme ? 'text-black shadow-lg' : 'text-white shadow-lg') : 'opacity-60'}`}
                     style={{ 
-                        backgroundColor: activeTab === 'sai' ? theme.palette[0] : 'transparent',
-                        color: activeTab === 'sai' ? 'white' : 'var(--text-color)' 
+                        backgroundColor: activeTab === 'sai' ? (isBlackTheme ? '#FFFFFF' : theme.palette[0]) : 'transparent',
+                        color: activeTab === 'sai' ? (isBlackTheme ? 'black' : 'white') : 'var(--text-color)' 
                     }}
                 >
                     السعي
@@ -237,10 +239,10 @@ const CountersScreen = ({ theme }) => {
                 <div className="relative mb-5">
                      <svg className="w-32 h-32 transform -rotate-90">
                         <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="5" fill="none" className="text-white/10 dark:text-gray-700" />
-                        <circle cx="64" cy="64" r="58" stroke={theme.palette[0]} strokeWidth="5" fill="none" strokeDasharray="364.4" strokeDashoffset={364.4 - (364.4 * currentCount) / 7} style={{ transition: 'stroke-dashoffset 0.5s ease' }} strokeLinecap="round" />
+                        <circle cx="64" cy="64" r="58" stroke={isBlackTheme ? '#FFFFFF' : theme.palette[0]} strokeWidth="5" fill="none" strokeDasharray="364.4" strokeDashoffset={364.4 - (364.4 * currentCount) / 7} style={{ transition: 'stroke-dashoffset 0.5s ease' }} strokeLinecap="round" />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                         <span className="text-3xl font-bold font-mono" style={{ color: theme.isDark ? '#ffffff' : theme.palette[0], textShadow: `0 0 20px ${theme.palette[0]}4D` }}>{currentCount}</span>
+                         <span className="text-3xl font-bold font-mono" style={{ color: theme.isDark ? '#ffffff' : (isBlackTheme ? '#FFFFFF' : theme.palette[0]), textShadow: isBlackTheme ? '0 0 20px rgba(255,255,255,0.3)' : `0 0 20px ${theme.palette[0]}4D` }}>{currentCount}</span>
                          <span className="text-[10px] font-bold mt-0.5 opacity-50" style={{ color: 'var(--text-color)' }}>من 7</span>
                     </div>
                 </div>
@@ -250,8 +252,8 @@ const CountersScreen = ({ theme }) => {
                         <RotateCcw size={18} style={{ color: 'var(--text-color)' }} />
                     </button>
                     <button onClick={increment} disabled={currentCount >= 7} 
-                            className={`flex-1 py-3 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 text-base shadow-lg ${currentCount >= 7 ? 'bg-gray-400 cursor-not-allowed' : 'active:scale-95'}`}
-                            style={{ backgroundColor: currentCount >= 7 ? '#9ca3af' : theme.palette[0] }}>
+                            className={`flex-1 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-base shadow-lg ${currentCount >= 7 ? 'bg-gray-400 cursor-not-allowed opacity-50' : 'active:scale-95 text-white'}`}
+                            style={{ backgroundColor: currentCount >= 7 ? '#9ca3af' : (isBlackTheme ? '#FFFFFF' : theme.palette[0]), color: (currentCount < 7 && isBlackTheme) ? '#000000' : 'white' }}>
                         {currentCount >= 7 ? <CheckCircle2 size={20} /> : <Plus size={20} />}
                         <span>{currentCount >= 7 ? 'اكتمل' : 'شوط جديد'}</span>
                     </button>
@@ -262,7 +264,9 @@ const CountersScreen = ({ theme }) => {
 };
 
 function HajjUmrah({ onBack }) {
-    const { theme } = useTheme();
+    const { theme, themeKey } = useTheme();
+    const isBlackTheme = theme.bgColor === '#000000';
+    const isDefaultTheme = themeKey === 'default' || theme.name?.includes('الافتراضي') || (!themeKey && theme.palette[0] === '#10b981');
     const [screen, setScreen] = useState('home');
     const [hajjType, setHajjType] = useState('tamattu');
     const [openDuaaId, setOpenDuaaId] = useState<number | null>(null);
@@ -392,10 +396,10 @@ function HajjUmrah({ onBack }) {
                         className="themed-card w-full max-w-lg rounded-3xl overflow-hidden flex flex-col max-h-[85vh] shadow-2xl border border-white/20"
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="p-6 border-b border-white/10 flex items-center justify-between" style={{ backgroundColor: `${theme.palette[0]}15` }}>
+                        <div className="p-6 border-b border-white/10 flex items-center justify-between" style={{ backgroundColor: isDefaultTheme ? 'rgba(0,0,0,0.05)' : `${theme.palette[0]}15` }}>
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner shrink-0" style={{ backgroundColor: `${theme.palette[0]}30` }}>
-                                    {selectedDetail.icon || <Info style={{ color: theme.palette[0] }} />}
+                                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner shrink-0" style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : `${theme.palette[0]}30`), color: isBlackTheme ? '#000000' : (isDefaultTheme ? '#FFFFFF' : theme.palette[0]) }}>
+                                    {selectedDetail.icon || <Info />}
                                 </div>
                                 <h3 className="text-xl font-bold leading-tight" style={{ color: 'var(--text-color)' }}>{selectedDetail.title}</h3>
                             </div>
@@ -416,7 +420,7 @@ function HajjUmrah({ onBack }) {
                                 <ul className="space-y-3">
                                     {selectedDetail.points.map((point, i) => (
                                         <li key={i} className="flex gap-3 p-4 rounded-xl bg-white/5 dark:bg-black/20 border border-white/10">
-                                            <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm" style={{ backgroundColor: theme.palette[0] }}>
+                                <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm" style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]), color: isBlackTheme ? '#000000' : '#FFFFFF' }}>
                                                 {i + 1}
                                             </div>
                                             <p className="flex-1 text-base leading-relaxed" style={{ color: 'var(--text-color)' }} dangerouslySetInnerHTML={{ __html: point }}></p>
@@ -429,8 +433,8 @@ function HajjUmrah({ onBack }) {
                         <div className="p-4 bg-white/5 border-t border-white/10">
                             <button 
                                 onClick={() => setSelectedDetail(null)} 
-                                className="w-full py-3.5 rounded-2xl font-bold text-white shadow-lg active:scale-[0.98] transition-all"
-                                style={{ backgroundColor: theme.palette[0] }}
+                                className="w-full py-3.5 rounded-2xl font-bold shadow-lg active:scale-[0.98] transition-all"
+                                style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]), color: isBlackTheme ? '#000000' : '#FFFFFF' }}
                             >
                                 فهمت، جزاكم الله خيراً
                             </button>
@@ -457,8 +461,9 @@ function HajjUmrah({ onBack }) {
 }
 
 const HomeScreen = ({ setScreen, theme }) => {
-    const isDefaultTheme = theme.key === 'default' || theme.name?.includes('الافتراضي') || (!theme.key && theme.palette[0] === '#10b981');
-
+    const { themeKey } = useTheme();
+    const isBlackTheme = theme.bgColor === '#000000';
+    const isDefaultTheme = themeKey === 'default' || theme.name?.includes('الافتراضي') || (!themeKey && theme.palette[0] === '#10b981');
     return (
      <section id="home-screen" className="space-y-4">
         <div className="grid grid-cols-2 gap-3 md:gap-4">
@@ -475,8 +480,8 @@ const HomeScreen = ({ setScreen, theme }) => {
                 >
                     <div className="relative z-10 w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-inner border border-black/5" 
                          style={{ 
-                            backgroundColor: isDefaultTheme ? '#FFFFFF' : `${theme.palette[0]}20`, 
-                            color: isDefaultTheme ? '#000000' : theme.palette[0] 
+                            backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#FFFFFF' : `${theme.palette[0]}20`), 
+                            color: isBlackTheme ? '#000000' : (isDefaultTheme ? '#000000' : theme.palette[0]) 
                          }}>
                         {item.icon}
                     </div>
@@ -490,8 +495,8 @@ const HomeScreen = ({ setScreen, theme }) => {
             >
                 <div className="relative z-10 w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-inner border border-black/5" 
                      style={{ 
-                        backgroundColor: isDefaultTheme ? '#FFFFFF' : `${theme.palette[0]}20`, 
-                        color: isDefaultTheme ? '#000000' : theme.palette[0] 
+                        backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#FFFFFF' : `${theme.palette[0]}20`), 
+                        color: isBlackTheme ? '#000000' : (isDefaultTheme ? '#000000' : theme.palette[0]) 
                      }}>
                     <ListChecks size={20} />
                 </div>
@@ -509,17 +514,17 @@ const HomeScreen = ({ setScreen, theme }) => {
 
                 return (
                  <div key={index} className="bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 dark:border-white/5 shadow-lg">
-                    <h3 className="font-bold text-base mb-2 flex items-center gap-2" style={{color: theme.name === 'أبيض وأسود' ? theme.textColor : theme.palette[index % theme.palette.length]}}>
+                    <h3 className="font-bold text-base mb-2 flex items-center gap-2" style={{color: (isBlackTheme ? '#FFFFFF' : (theme.name === 'أبيض وأسود' ? theme.textColor : theme.palette[index % theme.palette.length]))}}>
                         <IconComponent size={16} />
                         <span>{item.title}</span>
                     </h3>
                     {item.type === 'hadith' ? (
-                        <p className="text-xs leading-relaxed pr-3 border-r-2 font-medium" style={{ color: 'var(--text-color)', borderColor: theme.palette[0] }}>{item.content[0]}</p>
+                        <p className="text-xs leading-relaxed pr-3 border-r-2 font-medium" style={{ color: 'var(--text-color)', borderColor: isBlackTheme ? '#FFFFFF' : theme.palette[0] }}>{item.content[0]}</p>
                     ) : (
                         <ul className="space-y-1.5 opacity-90 mt-2">
                             {item.content.map((point, pi) => (
                                 <li key={pi} className="flex gap-2 items-start text-xs font-medium" style={{ color: 'var(--text-color)' }}>
-                                    <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 opacity-60" style={{ backgroundColor: theme.palette[0] }}></div>
+                                    <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 opacity-60" style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : theme.palette[0] }}></div>
                                     <span className="flex-1 leading-relaxed opacity-80">{point}</span>
                                 </li>
                             ))}
@@ -540,16 +545,21 @@ const HomeScreen = ({ setScreen, theme }) => {
     );
 };
 
-const UmrahScreen = ({ theme, onSelectDetail }) => (
+const UmrahScreen = ({ theme, onSelectDetail }) => {
+    const { themeKey } = useTheme();
+    const isBlackTheme = theme.bgColor === '#000000';
+    const isDefaultTheme = themeKey === 'default' || theme.name?.includes('الافتراضي') || (!themeKey && theme.palette[0] === '#10b981');
+    
+    return (
      <section id="umrah-screen" className="space-y-4">
         <div className="rounded-xl p-3 text-center border backdrop-blur-sm" 
-             style={{ backgroundColor: `${theme.palette[0]}15`, borderColor: `${theme.palette[0]}20` }}>
+             style={{ backgroundColor: isBlackTheme ? 'rgba(255,255,255,0.05)' : (isDefaultTheme ? 'rgba(0,0,0,0.05)' : `${theme.palette[0]}15`), borderColor: isBlackTheme ? 'rgba(255,255,255,0.1)' : (isDefaultTheme ? '#00000020' : `${theme.palette[0]}20`) }}>
             <p className="text-sm opacity-70">زيارة مخصوصة لبيت الله الحرام بأركان محددة.</p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 border border-white/20">
-                <h3 className="font-bold text-sm flex items-center gap-2 mb-2" style={{ color: theme.palette[0] }}>
+                <h3 className="font-bold text-sm flex items-center gap-2 mb-2" style={{ color: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]) }}>
                     <CheckCircle2 size={16} /> الأركان
                 </h3>
                 <ul className="space-y-1 text-[10px] opacity-80" style={{ color: 'var(--text-color)' }}>
@@ -559,7 +569,7 @@ const UmrahScreen = ({ theme, onSelectDetail }) => (
                 </ul>
             </div>
             <div className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 border border-white/20">
-                <h3 className="font-bold text-sm flex items-center gap-2 mb-2" style={{ color: theme.palette[0] }}>
+                <h3 className="font-bold text-sm flex items-center gap-2 mb-2" style={{ color: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]) }}>
                     <ListChecks size={16} /> الواجبات
                 </h3>
                 <ul className="space-y-1 text-[10px] opacity-80" style={{ color: 'var(--text-color)' }}>
@@ -568,7 +578,7 @@ const UmrahScreen = ({ theme, onSelectDetail }) => (
                 </ul>
             </div>
             <div className="bg-orange-500/5 dark:bg-orange-900/20 backdrop-blur-md rounded-xl p-3 border border-orange-500/10 col-span-2 md:col-span-1">
-                <h3 className="font-bold text-sm flex items-center gap-2 mb-2 text-orange-500">
+                <h3 className="font-bold text-sm flex items-center gap-2 mb-2" style={{ color: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : '#f97316') }}>
                     <ShieldAlert size={16} /> المفسدات
                 </h3>
                  <ul className="space-y-1 text-[10px] opacity-80" style={{ color: 'var(--text-color)' }}>
@@ -585,7 +595,11 @@ const UmrahScreen = ({ theme, onSelectDetail }) => (
                     onClick={() => onSelectDetail(step)}
                     className="w-full text-right bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.08),0_10px_20px_-2px_rgba(0,0,0,0.04)] flex items-center gap-4 hover:shadow-lg transition-all active:scale-[0.982] group"
                 >
-                    <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-inner bg-emerald-500/10 dark:bg-emerald-500/20" style={{ color: theme.palette[0] }}>
+                    <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-inner" 
+                         style={{ 
+                            backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : `${theme.palette[0]}20`), 
+                            color: isBlackTheme ? '#000000' : (isDefaultTheme ? '#FFFFFF' : theme.palette[0]) 
+                         }}>
                         {step.icon}
                     </div>
 
@@ -598,23 +612,29 @@ const UmrahScreen = ({ theme, onSelectDetail }) => (
             ))}
         </div>
     </section>
-);
+    );
+};
 
-const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail }) => (
+const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail }) => {
+    const { themeKey } = useTheme();
+    const isBlackTheme = theme.bgColor === '#000000';
+    const isDefaultTheme = themeKey === 'default' || theme.name?.includes('الافتراضي') || (!themeKey && theme.palette[0] === '#10b981');
+
+    return (
      <section id="hajj-screen" className="space-y-4">
         <div className="rounded-xl p-3 text-center border backdrop-blur-sm"
-             style={{ backgroundColor: `${theme.palette[0]}15`, borderColor: `${theme.palette[0]}20` }}>
+             style={{ backgroundColor: isDefaultTheme ? 'rgba(0,0,0,0.05)' : `${theme.palette[0]}15`, borderColor: isDefaultTheme ? '#00000020' : `${theme.palette[0]}20` }}>
             <p className="text-sm opacity-70">المخطط الزمني للأيام المخصصة لأداء المناسك.</p>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
             {Object.keys(hajjTypes).map(key => (
                 <button key={key} onClick={() => setHajjType(key)} 
-                    className={`px-2 py-2 rounded-lg font-bold transition-all border text-xs ${hajjType === key ? 'text-white shadow-md' : 'bg-white/10 text-gray-400 border-white/20'}`}
+                    className={`px-2 py-2 rounded-lg font-bold transition-all border text-xs ${hajjType === key ? 'shadow-md' : 'bg-white/10 text-gray-400 border-white/20'}`}
                     style={{ 
-                        backgroundColor: hajjType === key ? theme.palette[0] : 'transparent',
-                        borderColor: hajjType === key ? theme.palette[0] : 'var(--white-20)',
-                        color: hajjType === key ? 'white' : 'var(--text-color)', 
+                        backgroundColor: hajjType === key ? (isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0])) : 'transparent',
+                        borderColor: hajjType === key ? (isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0])) : 'var(--white-20)',
+                        color: hajjType === key ? (isBlackTheme ? '#000000' : '#FFFFFF') : 'var(--text-color)', 
                         opacity: hajjType === key ? 1 : 0.6 
                     }}
                 >
@@ -625,9 +645,9 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail }) => (
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
-                { title: 'الأركان', items: hajjGeneralInfo.arkan, color: theme.palette[0], icon: <CheckCircle2 size={14}/> },
-                { title: 'الواجبات', items: hajjGeneralInfo.wajibat, color: theme.palette[0], icon: <ListChecks size={14}/> },
-                { title: 'المفسدات', items: hajjGeneralInfo.mufsidat, color: '#f97316', icon: <ShieldAlert size={14}/> }
+                { title: 'الأركان', items: hajjGeneralInfo.arkan, color: isDefaultTheme ? '#000000' : theme.palette[0], icon: <CheckCircle2 size={14}/> },
+                { title: 'الواجبات', items: hajjGeneralInfo.wajibat, color: isDefaultTheme ? '#000000' : theme.palette[0], icon: <ListChecks size={14}/> },
+                { title: 'المفسدات', items: hajjGeneralInfo.mufsidat, color: isDefaultTheme ? '#000000' : '#f97316', icon: <ShieldAlert size={14}/> }
             ].map((section, idx) => (
                 <div key={idx} className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 border border-white/20">
                     <h3 className="font-bold text-xs mb-1.5 flex items-center gap-2" style={{ color: section.color }}>
@@ -653,7 +673,11 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail }) => (
                         onClick={() => onSelectDetail({ title: day.day, points: day.actions, icon: <div className="text-2xl">{day.icon}</div> })}
                         className="w-full text-right bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.08),0_10px_20px_-2px_rgba(0,0,0,0.04)] flex items-center gap-4 hover:shadow-lg transition-all active:scale-[0.982] group"
                     >
-                        <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-inner bg-emerald-500/10 dark:bg-emerald-500/20" style={{ color: theme.palette[0] }}>
+                        <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-inner" 
+                             style={{ 
+                                backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : `${theme.palette[0]}20`), 
+                                color: isBlackTheme ? '#000000' : (isDefaultTheme ? '#FFFFFF' : theme.palette[0]) 
+                             }}>
                             {day.icon}
                         </div>
 
@@ -667,15 +691,17 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail }) => (
             </div>
         </div>
     </section>
-);
+    );
+};
 
 const DuaaScreen = ({ theme, openDuaaId, onToggle, onZoom }) => {
+    const isBlackTheme = theme.bgColor === '#000000';
     return (
         <section id="duaa-screen" className="space-y-4">
              <div className="rounded-xl p-3 text-center mb-3 border backdrop-blur-sm"
-                  style={{ backgroundColor: `${theme.palette[0]}15`, borderColor: `${theme.palette[0]}20` }}>
-                <div className="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-1.5" style={{ backgroundColor: `${theme.palette[0]}20` }}>
-                    <BookOpen className="w-5 h-5" style={{ color: theme.palette[0] }} />
+                  style={{ backgroundColor: isBlackTheme ? 'rgba(255,255,255,0.05)' : `${theme.palette[0]}15`, borderColor: isBlackTheme ? 'rgba(255,255,255,0.1)' : `${theme.palette[0]}20` }}>
+                <div className="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-1.5" style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : `${theme.palette[0]}20` }}>
+                    <BookOpen className="w-5 h-5" style={{ color: isBlackTheme ? '#000000' : theme.palette[0] }} />
                 </div>
                 <p className="text-xs opacity-70">أدعية مختارة لمناسك الحج والعمرة.</p>
             </div>

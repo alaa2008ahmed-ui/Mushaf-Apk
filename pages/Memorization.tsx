@@ -21,8 +21,9 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const { theme, themeKey } = useTheme();
     const isDefaultTheme = themeKey === 'default';
     const isBlackAndWhite = themeKey === 'deep_black';
-    const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
-    const btnTextColor = isBlackAndWhite ? '#000000' : '#FFFFFF';
+    const isBlackTheme = theme.bgColor === '#000000';
+    const primaryColor = isBlackTheme ? '#FFFFFF' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
+    const btnTextColor = isBlackTheme ? '#000000' : (isBlackAndWhite ? '#000000' : '#FFFFFF');
     
     const [selectedReader, setSelectedReader] = useState(MEMORIZATION_READERS[1].id); // Default to Abdul Basit
     
@@ -420,7 +421,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                 <label className="relative inline-flex items-center cursor-pointer scale-90">
                                     <input type="checkbox" className="sr-only peer" checked={linkedRepeat} onChange={(e) => { setLinkedRepeat(e.target.checked); setSavedSession(null); }} />
                                     <div 
-                                        className={`w-8 h-4.5 rounded-full peer peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:after:-translate-x-3.5 peer-checked:after:border-white ${linkedRepeat ? 'bg-emerald-500' : 'bg-gray-400'}`}
+                                        className={`w-8 h-4.5 rounded-full peer peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:after:-translate-x-3.5 peer-checked:after:border-white ${linkedRepeat ? (isBlackTheme ? 'bg-white' : 'bg-emerald-500') : 'bg-gray-400'}`}
                                     ></div>
                                 </label>
                             </div>
@@ -448,7 +449,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" className="sr-only peer" checked={testAfterSession} onChange={(e) => { setTestAfterSession(e.target.checked); setSavedSession(null); }} />
                             <div 
-                                className={`w-9 h-5 rounded-full peer peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:-translate-x-full peer-checked:after:border-white ${testAfterSession ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                                className={`w-9 h-5 rounded-full peer peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:-translate-x-full peer-checked:after:border-white ${testAfterSession ? (isBlackTheme ? 'bg-white' : 'bg-emerald-500') : 'bg-gray-300'}`}
                             ></div>
                         </label>
                     </div>
@@ -483,8 +484,8 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                 }}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                                        <Download size={18} className="text-emerald-500" />
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isBlackTheme ? 'bg-white' : 'bg-emerald-500/10'}`}>
+                                        <Download size={18} className={isBlackTheme ? 'text-black' : 'text-emerald-500'} />
                                     </div>
                                     <span className="font-bold text-sm">تحميل القراء</span>
                                 </div>

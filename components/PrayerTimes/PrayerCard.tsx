@@ -13,6 +13,7 @@ interface PrayerCardProps {
     isBlackAndWhite: boolean;
     themePalette1: string;
     isDefaultTheme?: boolean;
+    isBlackTheme?: boolean;
     togglePrayerSound: (key: string) => void;
     openSettings: (key: string) => void;
     formatTime12: (time: string) => string;
@@ -34,6 +35,7 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
     secondaryColor,
     isBlackAndWhite,
     isDefaultTheme,
+    isBlackTheme,
     themePalette1,
     togglePrayerSound,
     openSettings,
@@ -49,14 +51,14 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
             <div className="w-full flex justify-between items-start mb-0.5">
                 {prayerKey !== 'Sunrise' ? (
                     <div id={idx === 0 ? "prayer-actions-container" : undefined} className="flex items-center gap-3">
-                        <div onClick={() => togglePrayerSound(prayerKey)} className={`toggle-dot ${isMuted ? 'bg-red-500' : 'bg-green-500'} cursor-pointer`} style={{borderColor: primaryColor, width: '16px', height: '16px', borderRadius: '50%', borderWidth: '1px', borderStyle: 'solid'}}></div>
+                        <div onClick={() => togglePrayerSound(prayerKey)} className={`toggle-dot ${isMuted ? 'bg-red-500' : (isBlackTheme ? 'bg-white' : 'bg-green-500')} cursor-pointer`} style={{borderColor: primaryColor, width: '16px', height: '16px', borderRadius: '50%', borderWidth: '1px', borderStyle: 'solid'}}></div>
                         <button onClick={() => openSettings(prayerKey)} className="text-base opacity-70 hover:opacity-100 p-1" style={{ color: primaryColor }}><i className="fa-solid fa-sliders"></i></button>
                     </div>
                 ) : (
                     supportsDST ? (
                         <button 
                             onClick={toggleSummerTime}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors border text-xs ${isSummerTime ? 'bg-green-500 text-white border-green-600' : 'bg-gray-200 text-gray-500 border-gray-300 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600'}`}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors border text-xs ${isSummerTime ? (isBlackTheme ? 'bg-white text-black border-white' : 'bg-green-500 text-white border-green-600') : 'bg-gray-200 text-gray-500 border-gray-300 dark:bg-gray-700 dark:text-gray-400 dark:border-gray-600'}`}
                         >
                             <i className="fa-solid fa-clock"></i>
                         </button>

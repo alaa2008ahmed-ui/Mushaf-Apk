@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useMemo, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, useLayoutEffect, useMemo, ReactNode } from 'react';
 import { presetThemes, Theme } from './themes';
 
 // State to be saved to localStorage
@@ -172,14 +172,24 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         saveSettings(newSettings as ThemeSettings);
     };
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const root = document.documentElement;
         const videoBg = document.getElementById('video-background') as HTMLVideoElement;
 
-        // Apply visual updates immediately
-        document.body.style.transition = 'background-color 0.5s ease-in-out, color 0.5s ease-in-out';
-
         const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || currentPage.startsWith('quran_') ? 'quran' : currentPage;
+        
+        // Apply visual updates immediately
+        const isReadingMode = pageKey === 'quran';
+        const isAppList = currentPage === 'more-menu';
+        const isPinned = settings.lockedPages?.includes(pageKey);
+        const isHome = currentPage === 'home';
+
+        if ((isPinned || isHome) && !isReadingMode && !isAppList) {
+            document.body.style.transition = 'none';
+        } else {
+            document.body.style.transition = 'background-color 0.5s ease-in-out, color 0.5s ease-in-out';
+        }
+
         if (pageKey === 'quran') {
             document.body.classList.add('quran-context');
         } else {
