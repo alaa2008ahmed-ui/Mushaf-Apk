@@ -22,7 +22,27 @@ export const RECITERS = [
     { id: 'https://server8.mp3quran.net/afs', name: 'مشاري راشد العفاسي' },
     { id: 'https://server8.mp3quran.net/mustafa', name: 'مصطفى إسماعيل' },
     { id: 'https://server6.mp3quran.net/qtm', name: 'ناصر القطامي' },
-    { id: 'https://server11.mp3quran.net/yasser', name: 'ياسر الدوسري' }
+    { id: 'https://server11.mp3quran.net/yasser', name: 'ياسر الدوسري' },
+    { id: 'https://server9.mp3quran.net/akrm', name: 'أكرم العلاقمي' },
+    { id: 'https://server8.mp3quran.net/majd_onazi', name: 'ماجد العنزي' },
+    { id: 'https://server6.mp3quran.net/earawi', name: 'محمد الأيراوي' },
+    { id: 'https://server13.mp3quran.net/braak', name: 'محمد البراك' },
+    { id: 'https://server8.mp3quran.net/lhdan', name: 'محمد اللحيدان' },
+    { id: 'https://server11.mp3quran.net/mhsny', name: 'محمد المحيسني' },
+    { id: 'https://server8.mp3quran.net/ayyub', name: 'محمد أيوب' },
+    { id: 'https://server8.mp3quran.net/3zazi', name: 'الحسيني العزازي' },
+    { id: 'https://server12.mp3quran.net/shah', name: 'محمد صالح عالم شاه' },
+    { id: 'https://server8.mp3quran.net/jbrl', name: 'محمد جبريل' },
+    { id: 'https://server12.mp3quran.net/m_krm', name: 'محمد عبدالكريم' },
+    { id: 'https://server6.mp3quran.net/abkr', name: 'إدريس أبكر' },
+    { id: 'https://server6.mp3quran.net/lahoni', name: 'مصطفى اللاهوني' },
+    { id: 'https://server8.mp3quran.net/ra3ad', name: 'مصطفى رعد العزاوي' },
+    { id: 'https://server9.mp3quran.net/alzain', name: 'الزين محمد أحمد' },
+    { id: 'https://server16.mp3quran.net/a_binaoun/Rewayat-Hafs-A-n-Assem', name: 'عبدالإله بن عون' },
+    { id: 'https://server16.mp3quran.net/a_binhameed/Rewayat-Hafs-A-n-Assem', name: 'أحمد طالب بن حميد' },
+    { id: 'https://server9.mp3quran.net/zaml', name: 'ماجد الزامل' },
+    { id: 'https://server11.mp3quran.net/qari', name: 'القارئ ياسين' },
+    { id: 'https://server6.mp3quran.net/twfeeq', name: 'توفيق الصايغ' }
 ];
 
 export const SURAH_LIST = [

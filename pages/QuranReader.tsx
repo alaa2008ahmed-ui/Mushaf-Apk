@@ -1789,6 +1789,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const playAudio = useCallback(async (s: number, a: number, isLinked = false, targetAyah?: {s: number, a: number}) => {
         stopAudio();
         setIsAudioLoading(true);
+
+        const reader = localIsMemorizationMode && memorizationSettingsRef.current ? memorizationSettingsRef.current.reader : settings.reader;
+
         setPlayingAyah({ s, a });
         setCurrentAyah({ s, a });
         setHighlightedAyahId(`ayah-${s}-${a}`);

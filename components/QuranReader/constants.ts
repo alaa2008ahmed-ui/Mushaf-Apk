@@ -68,16 +68,28 @@ export const RECITERS = [
 ];
 
 export const MEMORIZATION_READERS = [
-    { id: 'Alafasy_128kbps', name: 'مشاري العفاسي' },
-    { id: 'Abdul_Basit_Mujawwad_128kbps', name: 'عبد الباسط عبد الصمد' },
-    { id: 'Husary_128kbps', name: 'محمود خليل الحصري' },
     { id: 'Minshawy_Teacher_128kbps', name: 'محمد صديق المنشاوي (معلم)' },
-    { id: 'MaherAlMuaiqly128kbps', name: 'ماهر المعيقلي' },
+    { id: 'Husary_Muallim_128kbps', name: 'محمود خليل الحصري (معلم)' },
+    { id: 'Khalefa_al_Tunaiji_64kbps', name: 'خليفة الطنيجي (معلم)' },
+    { id: 'Ayman_Sowaid_64kbps', name: 'أيمن سويد' },
+    { id: 'Ibrahim_Akhdar_32kbps', name: 'إبراهيم الأخضر' },
+    { id: 'Husary_128kbps', name: 'محمود خليل الحصري' },
+    { id: 'Husary_Mujawwad_64kbps', name: 'الحصري (مجود)' },
+    { id: 'Minshawy_Mujawwad_64kbps', name: 'محمد صديق المنشاوي (مجود)' },
+    { id: 'Minshawy_Murattal_128kbps', name: 'محمد صديق المنشاوي (مرتل)' },
+    { id: 'Abdul_Basit_Mujawwad_128kbps', name: 'عبدالباسط عبدالصمد (مجود)' },
+    { id: 'Abdul_Basit_Murattal_192kbps', name: 'عبدالباسط عبدالصمد (مرتل)' },
+    { id: 'Ali_Hajjaj_AlSuesy_128kbps', name: 'علي حجاج السويسي' },
+    { id: 'Abdullah_Basfar_192kbps', name: 'عبدالله بصفر' },
     { id: 'Hudhaify_128kbps', name: 'علي الحذيفي' },
-    { id: 'Abu_Bakr_Ash-Shaatree_128kbps', name: 'أبو بكر الشاطري' },
+    { id: 'Mahmoud_Ali_Al_Banna_32kbps', name: 'محمود علي البنا' },
+    { id: 'Mohammad_al_Tablaway_128kbps', name: 'محمد الطبلاوي' },
     { id: 'Muhammad_Ayyoub_128kbps', name: 'محمد أيوب' },
+    { id: 'Alafasy_128kbps', name: 'مشاري راشد العفاسي' },
+    { id: 'MaherAlMuaiqly128kbps', name: 'ماهر المعيقلي' },
+    { id: 'Abu_Bakr_Ash-Shaatree_128kbps', name: 'أبو بكر الشاطري' },
     { id: 'Saood_ash-Shuraym_128kbps', name: 'سعود الشريم' },
-    { id: 'Abdurrahmaan_As-Sudais_192kbps', name: 'عبد الرحمن السديس' }
+    { id: 'Abdurrahmaan_As-Sudais_192kbps', name: 'عبدالرحمن السديس' }
 ];
 
 export const READERS = [

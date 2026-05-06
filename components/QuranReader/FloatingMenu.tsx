@@ -43,7 +43,6 @@ import {
   DEFAULT_SETTINGS,
   READERS,
   MEMORIZATION_READERS,
-  RECITERS,
   FONTS,
   TAFSEERS,
   JUZ_MAP,
@@ -54,6 +53,7 @@ import {
 import { quranData } from "../../utils/quranData";
 import { usePrayerTimes } from "../../context/PrayerTimesContext";
 import { useTheme } from "../../context/ThemeContext";
+import { RECITERS as LISTEN_RECITERS } from "../../data/listenQuranData";
 import { setupNotifications } from "../../utils/notifications";
 import TutorialOverlay, { TutorialStep } from "../Tutorial/TutorialOverlay";
 
@@ -301,7 +301,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
       } else if (currentView === "download_memorization") {
         setSelectedReader(MEMORIZATION_READERS[0].id);
       } else if (currentView === "download_listening") {
-        setSelectedReader(RECITERS[0].id);
+        setSelectedReader(LISTEN_RECITERS[0].id);
       }
     }
   }, [currentView, selectedReader]);
@@ -320,8 +320,8 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
         setSelectedReader(MEMORIZATION_READERS[0].id);
       }
     } else if (currentView === "download_listening") {
-      if (selectedReader && !RECITERS.some((r) => r.id === selectedReader)) {
-        setSelectedReader(RECITERS[0].id);
+      if (selectedReader && !LISTEN_RECITERS.some((r) => r.id === selectedReader)) {
+        setSelectedReader(LISTEN_RECITERS[0].id);
       }
     }
   }, [currentView, selectedReader]);
@@ -1752,7 +1752,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                         ? MEMORIZATION_READERS
                         : currentView === "download_quran"
                           ? READERS
-                          : RECITERS
+                          : LISTEN_RECITERS
                       ).map((r) => (
                         <button
                           key={r.id}
