@@ -65,11 +65,13 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
             <InteractiveBackground />
             <div className="h-screen w-full flex flex-col overflow-hidden">
                 <div className="flex-1 overflow-y-auto pb-32 hide-scrollbar">
-                    <div className="main-layout px-4 flex flex-col pt-6" style={{ fontFamily: theme.font }}>
+                    <div className="main-layout px-4 flex flex-col pt-0" style={{ fontFamily: theme.font }}>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-5 w-full max-w-sm mx-auto">
                             {ALL_MENU_ITEMS.map((item, idx) => {
                                 const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna'].includes(item.id);
-                                const primaryColor = getPrimaryColor(item.id, item.colorIndex);
+                                const isDefault = themeKey === 'default';
+                                const primaryColor = isDefault ? '#FFFFFF' : getPrimaryColor(item.id, item.colorIndex);
+                                const textColor = isDefault ? '#000000' : theme.btnText;
                                 const isNew = showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'asmaul-husna', 'habit-tracker'].includes(item.id);
                                 
                                 return (
@@ -88,8 +90,9 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                             color={primaryColor}
                                             showNewBadge={isNew}
                                             badgeText="جديد"
-                                            isGlass={theme.isGlass}
-                                            btnText={theme.btnText}
+                                            isGlass={isDefault ? false : theme.isGlass}
+                                            btnText={textColor}
+                                            border={isDefault ? '2px solid #000000' : undefined}
                                         />
                                     </motion.div>
                                 );

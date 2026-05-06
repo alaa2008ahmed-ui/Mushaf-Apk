@@ -51,7 +51,7 @@ function PrayerTimes({ onBack, onNavigate }) {
     const prayerTutorialSteps: TutorialStep[] = [
         {
             id: 'location-refresh',
-            title: 'تحديد الموقع الجغرافي بدقة',
+            title: 'تحديد الموقع الجغرافي',
             text: 'اضغط هنا لتحديث موقعك الحالي عبر الـ GPS. هذا يضمن لك الحصول على مواقيت صلاة دقيقة جداً متوافقة مع مكان تواجدك الفعلي، وهو أمر حيوي خاصة عند السفر أو التنقل بين المدن.',
             selector: '#location-refresh-btn',
             icon: <MapPin className="w-8 h-8 text-white" />
@@ -65,7 +65,7 @@ function PrayerTimes({ onBack, onNavigate }) {
         },
         {
             id: 'next-prayer',
-            title: 'عداد الصلاة القادمة',
+            title: 'عداد الصلاة',
             text: 'هذا القسم هو رفيقك لتنظيم وقتك؛ فهو يعرض اسم الصلاة القادمة مع عد تنازلي دقيق بالثواني.',
             selector: '#next-prayer-countdown-container',
             icon: <Clock className="w-8 h-8 text-white" />
@@ -79,7 +79,7 @@ function PrayerTimes({ onBack, onNavigate }) {
         },
         {
             id: 'prayer-settings',
-            title: 'التحكم في الأذان والتنبيهات',
+            title: 'التحكم في الأذان',
             text: 'لكل صلاة إعدادات مستقلة؛ يمكنك تفعيل الأذان الكامل، أو التنبيه فقط، أو كتم الصوت. كما يمكنك الضغط على "تخصيص" لاختيار صوت المؤذن المفضل لديك (مثل الحرم المكي أو المدني) وضبط دقائق التنبيه قبل الصلاة.',
             selector: '#prayer-actions-container',
             icon: <Bell className="w-8 h-8 text-white" />
@@ -240,7 +240,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                 topBarTextColor={topBarTextColor}
             />
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar p-4 pb-2">
+            <main className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-2">
                 <div className="max-w-md mx-auto">
                     <div className={`themed-card ${isDefaultTheme ? 'bg-white border-gray-200' : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5'} border rounded-[1.25rem] p-3 mb-3 shadow-sm`}>
                         <div className="flex gap-2 mb-3">
@@ -262,6 +262,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                             </button>
                              <button
                                 onClick={() => onNavigate('monthly-prayer-times')}
+                                id="monthly-times-btn"
                                 className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
                                 style={{ color: secondaryColor, border: isDefaultTheme ? '1px solid #f3f4f6' : undefined }}
                             >

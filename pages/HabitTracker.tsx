@@ -6,6 +6,7 @@ import { useHabitTracker, DailyRecord, HabitCategory, defaultRecord } from '../h
 import { useTheme } from '../context/ThemeContext';
 import ThemePageLock from '../components/ThemePageLock';
 import BottomBar from '../components/BottomBar';
+import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import Confetti from 'react-dom-confetti';
@@ -187,7 +188,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
     const isSunnahCompleted = (todayRecord.prayers as any)[sunnahId];
     
     return (
-      <div key={id} className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-3 shadow-sm border border-black/5 dark:border-white/5 mb-0">
+      <div key={id} id={`prayer-card-${id}`} className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-3 shadow-sm border border-black/5 dark:border-white/5 mb-0">
          <span className="font-bold text-sm block mb-2 px-1 text-gray-800 dark:text-gray-200">{label}</span>
          <div className="flex gap-2">
             <motion.button 
@@ -258,6 +259,44 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
     return <HabitArchive onBack={() => setViewMode('tracker')} />;
   }
 
+  const habitTrackerTutorialSteps: TutorialStep[] = [
+    {
+        id: 'habit-welcome',
+        title: 'مرحباً بك في مربّي العبادات',
+        text: 'هذا القسم مصمم خصيصاً ليساعدك على بناء عادات إيمانية قوية والمحافظة على طاعاتك اليومية بكل سهولة ويسر.',
+        position: { top: '60%' },
+        icon: <Heart className="w-8 h-8 text-white" />
+    },
+    {
+        id: 'habit-progress',
+        title: 'إنجازك اليومي والسنوي',
+        text: 'هنا ترى ملخص إنجازك اليومي، ومخطط الحرارة الذي يوضح استمراريتك طوال الشهر. كل مربع ملون يمثل يوماً مليئاً بالطاعات.',
+        selector: '#daily-achievement-card',
+        icon: <CheckCircle className="w-8 h-8 text-white" />
+    },
+    {
+        id: 'habit-fajr',
+        title: 'الفرائض والسنن',
+        text: 'يمكنك هنا تسجيل صلواتك الخمس، مع إمكانية متابعة السنن الرواتب لكل صلاة بشكل منفصل لزيادة الأجر.',
+        selector: '#prayer-card-fajr',
+        icon: <Clock className="w-8 h-8 text-white" />
+    },
+    {
+        id: 'habit-quran',
+        title: 'الورد القرآني',
+        text: 'لا تنسَ نصيبك من كتاب الله؛ سجل عدد الصفحات التي قرأتها اليوم وتابع تقدمك في الورد اليومي.',
+        selector: '#quran-habit-section',
+        icon: <BookOpen className="w-8 h-8 text-white" />
+    },
+    {
+        id: 'habit-streaks',
+        title: 'أوسمة الاستمرارية',
+        text: 'عندما تحافظ على عبادة معينة لـ 7 أيام متتالية، ستحصل على وسام تقديري تشجيعاً لك على المداومة. "أحب الأعمال إلى الله أدومها وإن قل".',
+        position: { top: '70%' },
+        icon: <Medal className="w-8 h-8 text-white" />
+    }
+  ];
+
   return (
     <div className={`h-screen flex flex-col bg-transparent relative`}>
       <header className="app-top-bar">
@@ -277,9 +316,9 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
       </header>
 
       {/* Content */}
-      <main className="w-full flex-1 overflow-y-auto px-4 pt-4 pb-24">
+      <main className="w-full flex-1 overflow-y-auto px-4 pt-0 pb-24">
         
-        <div className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-4 shadow-sm border border-black/5 dark:border-white/5 mb-6 mt-2">
+        <div id="daily-achievement-card" className="bg-white/80 dark:bg-gray-800/80 rounded-2xl p-4 shadow-sm border border-black/5 dark:border-white/5 mb-6 mt-2">
             <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
@@ -411,7 +450,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
         </section>
 
         {/* Quran */}
-        <section className="mb-6">
+        <section id="quran-habit-section" className="mb-6">
           <h3 className="text-sm font-bold mb-3 flex items-center gap-2 dark:text-white">
             <BookOpen className="w-4 h-4 opacity-70" style={{ color: hexColor }} />
             الورد القرآني
@@ -484,6 +523,8 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
       </main>
 
       <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+
+      <TutorialOverlay tutorialId="habit-tracker-tutorial" steps={habitTrackerTutorialSteps} />
 
       {/* Streak Achievement Modal */}
       <AnimatePresence>

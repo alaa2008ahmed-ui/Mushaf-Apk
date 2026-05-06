@@ -94,6 +94,11 @@ interface FloatingMenuProps {
 
 const ALL_SHORTCUTS = [
   {
+    id: "more-menu",
+    label: "قائمة الصفحات",
+    icon: <Grid size={18} />,
+  },
+  {
     id: "quran-download-parent",
     label: "تحميل القرآن",
     icon: <Download size={18} />,
@@ -115,6 +120,7 @@ const ALL_SHORTCUTS = [
 ];
 
 const DEFAULT_SHORTCUTS = [
+  "more-menu",
   "quran-download-parent",
   "tafseer-download",
   "interface-customization",
@@ -781,6 +787,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
   };
 
   const iconColor = currentTheme.accent || "#000000";
+  const sidebarIconColor = currentTheme.id === 'black' ? '#14b8a6' : iconColor;
 
   const applyTheme = (themeId: string) => {
     const theme = THEMES[themeId as keyof typeof THEMES];
@@ -2100,7 +2107,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
               {/* خيارات القراءة */}
               <MenuSection
                 title="خيارات القراءة"
-                iconColor={iconColor}
+                iconColor={sidebarIconColor}
                 titleColor="#2563eb"
                 currentTheme={currentTheme}
               >
@@ -2113,7 +2120,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                       setReadingMode("mushaf");
                     })
                   }
-                  iconColor={iconColor}
+                  iconColor={sidebarIconColor}
                   isActive={readingMode === "mushaf"}
                   currentTheme={currentTheme}
                 />
@@ -2122,7 +2129,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   icon={<Book size={18} />}
                   label="التفسير"
                   onClick={() => handleAction(() => setReadingMode("tafseer"))}
-                  iconColor={iconColor}
+                  iconColor={sidebarIconColor}
                   isActive={readingMode === "tafseer"}
                   currentTheme={currentTheme}
                 />
@@ -2131,7 +2138,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   icon={<FileText size={18} />}
                   label="المعاني"
                   onClick={() => handleAction(() => setReadingMode("meanings"))}
-                  iconColor={iconColor}
+                  iconColor={sidebarIconColor}
                   isActive={readingMode === "meanings"}
                   currentTheme={currentTheme}
                 />
@@ -2142,7 +2149,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   onClick={() =>
                     handleAction(() => setReadingMode("translation"))
                   }
-                  iconColor={iconColor}
+                  iconColor={sidebarIconColor}
                   isActive={readingMode === "translation"}
                   currentTheme={currentTheme}
                 />
@@ -2151,7 +2158,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
               {/* الإعدادات والبحث */}
               <MenuSection
                 title="الإعدادات والبحث"
-                iconColor={iconColor}
+                iconColor={sidebarIconColor}
                 titleColor="#16a34a"
                 currentTheme={currentTheme}
               >
@@ -2160,7 +2167,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   icon={<Palette size={18} />}
                   label="المظهر"
                   onClick={() => setCurrentView("themes")}
-                  iconColor={iconColor}
+                  iconColor={sidebarIconColor}
                   currentTheme={currentTheme}
                 />
                 <MenuItem
@@ -2168,7 +2175,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   icon={<Search size={18} />}
                   label="البحث المتقدم"
                   onClick={() => handleAction(() => onNavigate('search'))}
-                  iconColor={iconColor}
+                  iconColor={sidebarIconColor}
                   currentTheme={currentTheme}
                 />
                 <MenuItem
@@ -2178,7 +2185,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   onClick={() =>
                     handleAction(() => openModal("settings-modal"))
                   }
-                  iconColor={iconColor}
+                  iconColor={sidebarIconColor}
                   currentTheme={currentTheme}
                 />
                 <MenuItem
@@ -2186,7 +2193,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   icon={<Bookmark size={18} />}
                   label="العلامات المرجعية"
                   onClick={() => setCurrentView("bookmarks")}
-                  iconColor={iconColor}
+                  iconColor={sidebarIconColor}
                   currentTheme={currentTheme}
                 />
               </MenuSection>
@@ -2194,7 +2201,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
               {/* اختصارات أخرى */}
               <MenuSection
                 title="اختصارات أخرى"
-                iconColor={iconColor}
+                iconColor={sidebarIconColor}
                 titleColor="#d97706"
                 currentTheme={currentTheme}
               >
@@ -2228,7 +2235,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                           handleAction(() => onNavigate(shortcut.id));
                         }
                       }}
-                      iconColor={iconColor}
+                      iconColor={sidebarIconColor}
                       showChevron={false}
                       isActive={page === shortcut.id}
                       currentTheme={currentTheme}

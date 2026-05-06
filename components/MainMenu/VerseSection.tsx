@@ -19,7 +19,7 @@ const VerseSection: React.FC<VerseSectionProps> = ({
 }) => {
     return (
         <div 
-            className="text-center mt-10 pt-4 select-none touch-manipulation mx-4 p-2 rounded-3xl"
+            className="text-center select-none touch-manipulation mx-4 p-2 rounded-3xl"
             dir="rtl"
             style={{ 
                 userSelect: 'none', 

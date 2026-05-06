@@ -35,7 +35,7 @@ import FloatingMenu from '../components/QuranReader/FloatingMenu';
 import AyahContextMenu from '../components/QuranReader/AyahContextMenu';
 import ShareAyahModal from '../components/QuranReader/ShareAyahModal';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
-import { MousePointer2, Move, ZoomIn, Grid, Mic, Bookmark, Home, Share2, BookOpen, Trophy, Play, Menu } from 'lucide-react';
+import { MousePointer2, Move, ZoomIn, Grid, Mic, Bookmark, Home, Share2, BookOpen, Trophy, Play, Menu, Palette } from 'lucide-react';
 import { quranData as quranJsonData } from '../utils/quranData';
 import ReviewTestModal from '../components/QuranReader/ReviewTestModal';
 import { memorizationService } from '../src/services/memorizationService';
@@ -896,8 +896,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             return initialSettings;
         });
 
-        const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
-        const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
+        const themeId = localStorage.getItem('current_theme_id' + mode) || 'black';
+        const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['black'];
         
         setCurrentTheme(prev => {
             if (prev?.id === newTheme.id) return prev;
@@ -970,7 +970,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 setToolbarColors(colors);
             } catch (e) {}
         } else {
-            const theme = THEMES['night_sky'];
+            const theme = THEMES['black'];
             
             setToolbarColors({
                 'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
@@ -1270,11 +1270,11 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const [settings, setSettings] = useState(() => {
         const mode = getScopedSuffix(readingMode, initialLandscape);
         const saved = localStorage.getItem('quran_settings' + mode);
-        const defaultTheme = THEMES['night_sky'];
+        const defaultTheme = THEMES['black'];
         return saved ? JSON.parse(saved) : {
             fontSize: 1.7, fontFamily: defaultTheme.font, textColor: defaultTheme.text, bgColor: defaultTheme.bg,
             highlightTextColor: defaultTheme.highlightText || defaultTheme.accent,
-            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'night_sky', scrollMinutes: 20, tafseer: 'ar.jalalayn',
+            reader: 'Abu_Bakr_Ash-Shaatree_128kbps', theme: 'black', scrollMinutes: 20, tafseer: 'ar.jalalayn',
             hideUIOnAutoScroll: false,
             lockHighlightColor: false
         };
@@ -1282,8 +1282,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const [currentTheme, setCurrentTheme] = useState(() => {
         const mode = getScopedSuffix(readingMode, initialLandscape);
-        const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
-        return THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
+        const themeId = localStorage.getItem('current_theme_id' + mode) || 'black';
+        return THEMES[themeId as keyof typeof THEMES] || THEMES['black'];
     });
 
     // Keep screen awake logic
@@ -1338,7 +1338,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             } catch (e) {}
         }
         
-        const theme = THEMES['night_sky'];
+        const theme = THEMES['black'];
         
         return {
             'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
@@ -1372,6 +1372,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             text: 'يعرض رقم الصفحة الحالية وفقاً لطبعة المدينة المنورة. بالضغط عليه، تظهر نافذة تتيح لك كتابة رقم الصفحة التي ترغب في الذهاب إليها مباشرة، مما يوفر عليك عناء التقليب اليدوي في المصحف.',
             selector: '#header-page',
             icon: <Move className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'surah-design',
+            title: 'تصميم رأس السورة',
+            text: 'يوجد أكثر من ٢٠ تصميماً مختلفاً ومميزاً لرأس السورة. يمكنك الضغط مطولاً على اسم السورة لتغيير التصميم واختيار ما يناسب ذوقك الخاص.',
+            selector: '#surah-header-container',
+            icon: <Palette className="w-8 h-8 text-white" />
         },
         {
             id: 'audio-play',
@@ -2316,8 +2323,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     useEffect(() => {
         const handleThemeChange = () => {
             const mode = themeSuffix;
-            const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
-            const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
+            const themeId = localStorage.getItem('current_theme_id' + mode) || 'black';
+            const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['black'];
             
             setCurrentTheme(prev => {
                 if (prev?.id === newTheme.id) return prev;
@@ -2349,7 +2356,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     });
                 } catch (e) {}
             } else {
-                const theme = THEMES['night_sky'];
+                const theme = THEMES['black'];
                 const defaultColors = {
                     'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
                     'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder },
@@ -2455,8 +2462,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     // Initial load for the current themeSuffix
     useEffect(() => {
         const mode = themeSuffix;
-        const themeId = localStorage.getItem('current_theme_id' + mode) || 'night_sky';
-        const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['night_sky'];
+        const themeId = localStorage.getItem('current_theme_id' + mode) || 'black';
+        const newTheme = THEMES[themeId as keyof typeof THEMES] || THEMES['black'];
         setCurrentTheme(newTheme);
         
         const saved = localStorage.getItem('quran_settings' + mode);

@@ -137,8 +137,8 @@ export const parseVoiceCommand = (
     
     // Theme names mapping from constants.ts
     const themeNameMap: Record<string, string> = {
-        'الافتراضي': 'night_sky',
-        'افتراضي': 'night_sky',
+        'الافتراضي': 'black',
+        'افتراضي': 'black',
         'اخضر': 'green',
         'احمر': 'red',
         'نبيتي': 'maroon',

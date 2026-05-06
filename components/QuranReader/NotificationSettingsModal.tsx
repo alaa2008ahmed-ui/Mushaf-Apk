@@ -139,15 +139,6 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
     return (
         <div className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[1200] flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md rounded-2xl max-h-[85vh]'} shadow-2xl overflow-hidden flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()}>
-                <div className="theme-header-bg p-4 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        <Bell className="w-5 h-5" />
-                        <h3 className="font-bold text-lg">الإشعارات</h3>
-                    </div>
-                    <button onClick={onClose} className="p-1 hover:bg-black/10 rounded-full transition-colors">
-                        <X className="w-6 h-6" />
-                    </button>
-                </div>
 
                 <div className="flex border-b border-gray-200 dark:border-gray-700">
                     <button 
@@ -203,7 +194,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                             ))}
                         </div>
                     ) : (
-                        <div className="space-y-4 animate-fadeIn pb-8">
+                        <div className="space-y-4 animate-fadeIn pb-16">
                             <p className="text-xs opacity-70 text-center mb-2">
                                 إشعارات تظهر على شاشة الهاتف حتى لو كان التطبيق مغلقاً
                             </p>

@@ -272,21 +272,27 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto p-3 space-y-4 hide-scrollbar relative z-10" dir="rtl">
+                <main className="flex-1 overflow-y-auto px-3 pb-3 space-y-4 hide-scrollbar relative z-10" dir="rtl">
                     {/* Tabs */}
-                    <div className="flex p-1.5 rounded-2xl bg-black/10 border mb-2" style={{ borderColor: 'var(--card-border)' }}>
+                    <div className="flex p-1 rounded-2xl bg-black/5 border mb-2" style={{ borderColor: 'var(--card-border)' }}>
                         <button 
                             onClick={() => setActiveTab('setup')}
-                            className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'setup' ? 'bg-white shadow-sm' : 'opacity-70'}`}
-                            style={{ color: activeTab === 'setup' ? theme.palette[0] : 'var(--text-color)' }}
+                            className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'setup' ? 'shadow-md' : 'opacity-60'}`}
+                            style={{ 
+                                backgroundColor: activeTab === 'setup' ? (isDefaultTheme ? '#000000' : primaryColor) : (isDefaultTheme ? '#FFFFFF' : 'transparent'),
+                                color: activeTab === 'setup' ? (isDefaultTheme ? '#FFFFFF' : btnTextColor) : (isDefaultTheme ? '#000000' : 'var(--text-color)')
+                            }}
                         >
                             <BookOpen size={16} />
                             إعداد الحفظ
                         </button>
                         <button 
                             onClick={() => setActiveTab('review')}
-                            className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'review' ? 'bg-white shadow-sm' : 'opacity-70'}`}
-                            style={{ color: activeTab === 'review' ? theme.palette[0] : 'var(--text-color)' }}
+                            className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'review' ? 'shadow-md' : 'opacity-60'}`}
+                            style={{ 
+                                backgroundColor: activeTab === 'review' ? (isDefaultTheme ? '#000000' : primaryColor) : (isDefaultTheme ? '#FFFFFF' : 'transparent'),
+                                color: activeTab === 'review' ? (isDefaultTheme ? '#FFFFFF' : btnTextColor) : (isDefaultTheme ? '#000000' : 'var(--text-color)')
+                            }}
                         >
                             <Calendar size={16} />
                             جدول المراجعة

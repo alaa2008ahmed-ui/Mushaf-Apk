@@ -400,13 +400,23 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
           <div className="flex gap-4">
             <button 
               onClick={() => setTempMode('days')}
-              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMode === 'days' ? 'border-green-500 bg-green-500/10 text-green-600 dark:text-green-400' : (isDefaultTheme ? 'border-gray-200 bg-white text-black' : 'border-gray-300 dark:border-gray-600')}`}
+              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMode === 'days' ? (isDefaultTheme ? 'border-black bg-white text-black' : '') : (isDefaultTheme ? 'border-gray-200 bg-white text-black' : 'border-gray-300 dark:border-gray-600 opacity-60')}`}
+              style={!isDefaultTheme && tempMode === 'days' ? { 
+                borderColor: primaryColor, 
+                backgroundColor: `${primaryColor}20`, 
+                color: theme.isDark ? '#FFFFFF' : primaryColor 
+              } : {}}
             >
               حسب الأيام
             </button>
             <button 
               onClick={() => setTempMode('pages')}
-              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMode === 'pages' ? 'border-green-500 bg-green-500/10 text-green-600 dark:text-green-400' : (isDefaultTheme ? 'border-gray-200 bg-white text-black' : 'border-gray-300 dark:border-gray-600')}`}
+              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMode === 'pages' ? (isDefaultTheme ? 'border-black bg-white text-black' : '') : (isDefaultTheme ? 'border-gray-200 bg-white text-black' : 'border-gray-300 dark:border-gray-600 opacity-60')}`}
+              style={!isDefaultTheme && tempMode === 'pages' ? { 
+                borderColor: primaryColor, 
+                backgroundColor: `${primaryColor}20`, 
+                color: theme.isDark ? '#FFFFFF' : primaryColor 
+              } : {}}
             >
               حسب الصفحات
             </button>
@@ -835,7 +845,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
       </header>
 
-      <main className={`flex-1 min-h-0 overflow-y-auto p-4 flex flex-col items-center pb-4 ${isInputFocused ? 'justify-start' : 'justify-center'}`}>
+      <main className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 flex flex-col items-center ${isInputFocused ? 'justify-start' : 'justify-center'}`}>
         <div className="w-full max-w-md pb-10">
           {!showSettings && renderProfileSelector()}
           {showSettings || !settings ? renderSettings() : renderProgress()}

@@ -54,16 +54,19 @@ const SurahHeader: React.FC<SurahHeaderProps> = ({
         }
     };
     const isDarkGroup = currentTheme?.id === 'deep_black' || currentTheme?.id?.startsWith('i_');
+    const isDefaultTheme = currentTheme?.id === 'black';
+    const isDesign1 = design === 1 || !design; // Handle cases where design might be undefined or 1
     
     // Improved color logic for better contrast and vibrancy across all themes
     // For light themes, we use the accent color as the background to make it stand out
-    const headerBg = isDarkGroup ? (currentTheme?.headerBg || '#000000') : (currentTheme?.accent || '#22c55e');
-    const headerText = '#ffffff'; 
-    const headerBorder = isDarkGroup ? '#ffffff' : 'rgba(255,255,255,0.6)';
+    // EXCEPT for the default theme where the user wants a specific minimalist black & white look for Design 1
+    const headerBg = (isDefaultTheme && isDesign1) ? '#ffffff' : (isDarkGroup ? (currentTheme?.headerBg || '#000000') : (currentTheme?.accent || '#22c55e'));
+    const headerText = (isDefaultTheme && isDesign1) ? '#000000' : '#ffffff'; 
+    const headerBorder = (isDefaultTheme && isDesign1) ? '#000000' : (isDarkGroup ? '#ffffff' : 'rgba(255,255,255,0.6)');
     
     // Cartouche (the inner box for the surah name)
     const cartoucheBg = isDarkGroup ? (currentTheme?.bg || '#000000') : '#ffffff';
-    const cartoucheText = isDarkGroup ? (currentTheme?.accent || '#ffffff') : (currentTheme?.accent || '#14532d');
+    const cartoucheText = (isDefaultTheme && isDesign1) ? '#000000' : (isDarkGroup ? (currentTheme?.accent || '#ffffff') : (currentTheme?.accent || '#14532d'));
 
     // Ensure "Surah" is not repeated
     const cleanSurahName = surahName.replace(/سورة|سُورَةُ|سُورَة/g, '').trim();
@@ -77,9 +80,9 @@ const SurahHeader: React.FC<SurahHeaderProps> = ({
                          style={{ 
                              background: headerBg,
                              borderColor: headerBorder,
-                             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
+                             boxShadow: isDefaultTheme ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
                          }}>
-                        <div className="font-bold text-sm sm:text-lg z-10 drop-shadow-md whitespace-nowrap" style={{ color: headerText }}>
+                        <div className={`font-bold text-sm sm:text-lg z-10 ${isDefaultTheme ? '' : 'drop-shadow-md'} whitespace-nowrap`} style={{ color: headerText }}>
                             {getAyahCountText(ayahCount)}
                         </div>
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -97,7 +100,7 @@ const SurahHeader: React.FC<SurahHeaderProps> = ({
                                 <div className="absolute right-0 top-0 bottom-0 w-4 border-l-2 rounded-r-full opacity-30" style={{ borderColor: headerBorder }}></div>
                             </div>
                         </div>
-                        <div className="font-bold text-sm sm:text-lg z-10 drop-shadow-md whitespace-nowrap" style={{ color: headerText }}>
+                        <div className={`font-bold text-sm sm:text-lg z-10 ${isDefaultTheme ? '' : 'drop-shadow-md'} whitespace-nowrap`} style={{ color: headerText }}>
                             {surahType}
                         </div>
                     </div>
@@ -361,9 +364,9 @@ const SurahHeader: React.FC<SurahHeaderProps> = ({
                          style={{ 
                              background: headerBg,
                              borderColor: headerBorder,
-                             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
+                             boxShadow: (isDefaultTheme && isDesign1) ? 'none' : '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
                          }}>
-                        <div className="font-bold text-sm sm:text-lg z-10 drop-shadow-md whitespace-nowrap" style={{ color: headerText }}>
+                        <div className={`font-bold text-sm sm:text-lg z-10 ${(isDefaultTheme && isDesign1) ? '' : 'drop-shadow-md'} whitespace-nowrap`} style={{ color: headerText }}>
                             {getAyahCountText(ayahCount)}
                         </div>
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -381,7 +384,7 @@ const SurahHeader: React.FC<SurahHeaderProps> = ({
                                 <div className="absolute right-0 top-0 bottom-0 w-4 border-l-2 rounded-r-full opacity-30" style={{ borderColor: headerBorder }}></div>
                             </div>
                         </div>
-                        <div className="font-bold text-sm sm:text-lg z-10 drop-shadow-md whitespace-nowrap" style={{ color: headerText }}>
+                        <div className={`font-bold text-sm sm:text-lg z-10 ${(isDefaultTheme && isDesign1) ? '' : 'drop-shadow-md'} whitespace-nowrap`} style={{ color: headerText }}>
                             {surahType}
                         </div>
                     </div>
@@ -390,7 +393,7 @@ const SurahHeader: React.FC<SurahHeaderProps> = ({
     };
 
     return (
-        <div className={`surah-header-container-wrapper ${compact ? 'px-0 pt-1 pb-0' : 'px-0 pt-4 pb-0'}`}
+        <div id="surah-header-container" className={`surah-header-container-wrapper ${compact ? 'px-0 pt-1 pb-0' : 'px-0 pt-4 pb-0'}`}
              onMouseDown={handleMouseDown}
              onMouseUp={handleMouseUp}
              onMouseLeave={handleMouseUp}

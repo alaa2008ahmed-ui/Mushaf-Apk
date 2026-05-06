@@ -59,7 +59,13 @@ function App() {
     ];
 
     if (pageId === 'phone-notifications') {
-      setNavParams({ openModal: 'notification-settings-modal', tab: 'phone' });
+      setNavParams({ openModal: 'notification-settings-modal' });
+      setHistory(prev => [...prev, 'quran']);
+      return;
+    }
+
+    if (pageId === 'settings') {
+      setNavParams({ openModal: 'settings-modal' });
       setHistory(prev => [...prev, 'quran']);
       return;
     }

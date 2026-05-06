@@ -66,9 +66,9 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
     const activeThemeKey = useMemo(() => {
         const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || (currentPage && currentPage.startsWith('quran_')) || currentPage === 'search' ? 'quran' : currentPage;
 
-        // Exempt Quran reading context from global themes
+        // Exempt Quran reading context from global themes but default to default
         if (pageKey === 'quran') {
-            return 'default';
+            return settings.pageThemes[pageKey] || 'default';
         }
 
         // Home page ALWAYS follows the global theme key

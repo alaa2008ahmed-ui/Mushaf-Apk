@@ -34,7 +34,7 @@ const AsmaulHusna: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             </header>
 
             <main className="flex-1 overflow-hidden flex flex-col px-4 z-10">
-                <div className="flex-1 overflow-y-auto hide-scrollbar pt-6 pb-48">
+                <div className="flex-1 overflow-y-auto hide-scrollbar pt-0 pb-48">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-w-5xl mx-auto">
                         {asmaulHusna.map((item) => (
                             <motion.button

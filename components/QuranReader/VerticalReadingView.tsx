@@ -328,11 +328,12 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     const renderItem = useCallback((index: number, item: any) => {
         if (item.type === 'page-marker') {
             const getContrastingColors = () => {
-                const themeId = currentTheme?.id || 'night_sky';
+                const themeId = currentTheme?.id || 'black';
                 const bracketColor = currentTheme?.verseBracket || currentTheme?.accent || '#9333ea';
                 const numColor = currentTheme?.accent || currentTheme?.sajdah || '#9333ea';
                 
                 switch(themeId) {
+                    case 'black': return { num: '#000000', bracket: '#d97706' };
                     case 'night_sky': return { num: '#9333ea', bracket: '#9333ea' };
                     case 'green': return { num: '#dc2626', bracket: '#dc2626' };
                     case 'red': return { num: '#2563eb', bracket: '#2563eb' };

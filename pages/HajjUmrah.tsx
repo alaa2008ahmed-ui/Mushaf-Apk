@@ -377,7 +377,7 @@ function HajjUmrah({ onBack }) {
                 </div>
             </header>
 
-            <main className="w-full max-w-4xl mx-auto px-4 pt-4 flex-grow overflow-y-auto pb-2">
+            <main className="w-full max-w-4xl mx-auto px-4 pt-0 flex-grow overflow-y-auto pb-2">
                 {renderScreen()}
                 <div className="w-full h-24 shrink-0"></div>
             </main>
@@ -456,7 +456,10 @@ function HajjUmrah({ onBack }) {
     );
 }
 
-const HomeScreen = ({ setScreen, theme }) => (
+const HomeScreen = ({ setScreen, theme }) => {
+    const isDefaultTheme = theme.key === 'default' || theme.name?.includes('الافتراضي') || (!theme.key && theme.palette[0] === '#10b981');
+
+    return (
      <section id="home-screen" className="space-y-4">
         <div className="grid grid-cols-2 gap-3 md:gap-4">
             {[
@@ -470,7 +473,11 @@ const HomeScreen = ({ setScreen, theme }) => (
                     onClick={() => setScreen(item.id)} 
                     className="group relative flex flex-col items-center justify-center p-4 rounded-xl bg-white/10 dark:bg-white/5 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-lg hover:bg-white/20 transition-all duration-300"
                 >
-                    <div className="relative z-10 w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-inner" style={{ backgroundColor: `${theme.palette[0]}20`, color: theme.palette[0] }}>
+                    <div className="relative z-10 w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-inner border border-black/5" 
+                         style={{ 
+                            backgroundColor: isDefaultTheme ? '#FFFFFF' : `${theme.palette[0]}20`, 
+                            color: isDefaultTheme ? '#000000' : theme.palette[0] 
+                         }}>
                         {item.icon}
                     </div>
                     <h2 className="relative z-10 font-bold text-sm mt-2" style={{ color: 'var(--text-color)' }}>{item.label}</h2>
@@ -481,7 +488,11 @@ const HomeScreen = ({ setScreen, theme }) => (
                 onClick={() => setScreen('checklist')} 
                 className="group relative flex flex-col items-center justify-center p-4 rounded-xl bg-white/10 dark:bg-white/5 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-lg hover:bg-white/20 transition-all duration-300 col-span-2"
             >
-                <div className="relative z-10 w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-inner" style={{ backgroundColor: `${theme.palette[0]}20`, color: theme.palette[0] }}>
+                <div className="relative z-10 w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-inner border border-black/5" 
+                     style={{ 
+                        backgroundColor: isDefaultTheme ? '#FFFFFF' : `${theme.palette[0]}20`, 
+                        color: isDefaultTheme ? '#000000' : theme.palette[0] 
+                     }}>
                     <ListChecks size={20} />
                 </div>
                 <h2 className="relative z-10 font-bold text-sm mt-2" style={{ color: 'var(--text-color)' }}>قائمة التجهيزات والأمتعة</h2>
@@ -526,7 +537,8 @@ const HomeScreen = ({ setScreen, theme }) => (
             </div>
         </div>
     </section>
-);
+    );
+};
 
 const UmrahScreen = ({ theme, onSelectDetail }) => (
      <section id="umrah-screen" className="space-y-4">

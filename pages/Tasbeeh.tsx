@@ -25,44 +25,71 @@ function Tasbeeh({ onBack }) {
     const primaryTextColor = themeKey === 'default' ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
     const secondaryTextColor = themeKey === 'default' ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[1]);
 
+    const getDefaultCounterColor = useCallback((tKey: string, tObj: any) => {
+        return tKey === 'default' ? '#FFFFFF' : tObj.palette[0];
+    }, []);
+
     const [phrases, setPhrases] = useState<{id: number, text: string}[]>([]);
     const [count, setCount] = useState(0);
     const [target, setTarget] = useState(33);
     const [activePhrase, setActivePhrase] = useState('');
     const [isCountingStopped, setIsCountingStopped] = useState(false);
-    // FIX: Added 'color' to the modals state object to manage the color picker modal.
     const [modals, setModals] = useState({ target: false, phrase: false, add: false, delete: false, color: false, stats: false, skins: false });
     const [message, setMessage] = useState({ text: '', type: 'green', visible: false });
     const targetInputRef = useRef<HTMLInputElement>(null);
     const newPhraseInputRef = useRef<HTMLInputElement>(null);
-    // FIX: Added state to manage the counter's background color, initialized with the primary theme color.
-    const [counterColor, setCounterColor] = useState(theme.palette[0]);
-    const prevThemeKeyRef = useRef(themeKey);
+    
+    // Initial color from theme - we'll update it in useEffect after mounting
+    const [counterColor, setCounterColor] = useState(() => getDefaultCounterColor(themeKey, theme));
+    const prevThemeKeyRef = useRef<string | null>(null);
     const [skin, setSkin] = useState<'modern' | 'classic' | 'beads'>('modern');
     const [dailyStats, setDailyStats] = useState<{date: string, count: number}[]>([]);
 
     useEffect(() => {
-        // Reset counter color whenever the theme changes to follow the new theme primary color
-        if (prevThemeKeyRef.current !== themeKey) {
-            setCounterColor(theme.palette[0]);
+        // 1. Load settings and handle "Dominant Theme" logic
+        try {
+            const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
+            let finalColor = getDefaultCounterColor(themeKey, theme);
             
-            // Update local storage to reflect that we are now following the theme
-            try {
-                const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
-                if (savedSettings) {
-                    const settings = JSON.parse(savedSettings);
-                    settings.counterColor = theme.palette[0];
-                    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                
+                // If it's the first mount (prevThemeKeyRef is null) 
+                // OR if themeKey has actually changed since last time
+                const themeHasChanged = prevThemeKeyRef.current !== null && prevThemeKeyRef.current !== themeKey;
+                const wasSavedWithDifferentTheme = settings.lastThemeKey && settings.lastThemeKey !== themeKey;
+
+                if (themeHasChanged || wasSavedWithDifferentTheme || !settings.counterColor) {
+                    // Use theme color if theme changed or no saved color
+                    finalColor = getDefaultCounterColor(themeKey, theme);
+                    
+                    // Sync the change to storage immediately
+                    const newSettings = { ...settings, counterColor: finalColor, lastThemeKey: themeKey };
+                    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
+                } else {
+                    // Theme is the same, use saved manual color
+                    finalColor = settings.counterColor;
                 }
-            } catch (e) {
-                console.warn("Could not update saved settings on theme change", e);
+
+                if (settings.skin) setSkin(settings.skin);
+                if (settings.dailyStats) setDailyStats(settings.dailyStats);
+            } else {
+                // No settings at all, use default and save theme key
+                localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ 
+                    counterColor: finalColor, 
+                    lastThemeKey: themeKey 
+                }));
             }
             
-            prevThemeKeyRef.current = themeKey;
+            setCounterColor(finalColor);
+        } catch(e) {
+            console.error("Error loading tasbeeh settings", e);
         }
-    }, [themeKey, theme.palette]);
 
-    const activeCounterColor = (themeKey === 'default' && counterColor === theme.palette[0]) ? '#FFFFFF' : counterColor;
+        prevThemeKeyRef.current = themeKey;
+    }, [themeKey, theme, getDefaultCounterColor]);
+
+    const activeCounterColor = counterColor;
     const isCounterWhite = activeCounterColor === '#FFFFFF' || activeCounterColor === 'white' || activeCounterColor === '#fff';
 
     const loadPhrases = useCallback(() => {
@@ -93,30 +120,6 @@ function Tasbeeh({ onBack }) {
     useEffect(() => {
         loadPhrases();
     }, [loadPhrases]);
-
-    useEffect(() => {
-        // Load the counter color from local storage on component mount, falling back to the theme color.
-        try {
-            const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
-            if (savedSettings) {
-                const settings = JSON.parse(savedSettings);
-                if (settings.counterColor) {
-                    setCounterColor(settings.counterColor);
-                }
-                if (settings.skin) {
-                    setSkin(settings.skin);
-                }
-                if (settings.dailyStats) {
-                    setDailyStats(settings.dailyStats);
-                }
-            } else {
-                setCounterColor(theme.palette[0]);
-            }
-        } catch(e) {
-            console.warn("Could not load tasbeeh settings", e);
-            setCounterColor(theme.palette[0]);
-        }
-    }, []);
 
     useEffect(() => {
         const interceptor = () => {
@@ -256,6 +259,7 @@ function Tasbeeh({ onBack }) {
             const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
             const settings = savedSettings ? JSON.parse(savedSettings) : {};
             settings.counterColor = color;
+            settings.lastThemeKey = themeKey; // Save current theme key with this color
             localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
         } catch (e) {
             console.error("Failed to save counter color", e);
@@ -280,14 +284,14 @@ function Tasbeeh({ onBack }) {
 
     // FIX: A list of predefined distinct color options for the color picker modal.
     const colorOptions = [
-        theme.palette[0],
+        themeKey === 'default' ? '#FFFFFF' : theme.palette[0],
+        themeKey === 'default' ? theme.palette[0] : '#FFFFFF',
         '#3b82f6', // blue
         '#ef4444', // red
         '#10b981', // green
         '#f59e0b', // amber
         '#8b5cf6', // violet
         '#ec4899', // pink
-        '#14b8a6', // teal
     ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 8);
 
     const handleHomeClick = () => {
@@ -302,7 +306,7 @@ function Tasbeeh({ onBack }) {
         <div className="h-screen flex flex-col bg-transparent">
             <TasbeehHeader title="السبحة الإلكترونية" subtitle="أضف أذكارك الخاصة وتتبع تسبيحك بدقة" />
             
-            <main className="p-4 flex-grow relative flex flex-col items-center overflow-y-auto pb-4 fade-in">
+            <main className="px-4 pb-4 flex-grow relative flex flex-col items-center overflow-y-auto fade-in">
                  <TasbeehControls 
                     isBlackAndWhite={isBlackAndWhite}
                     theme={theme}
@@ -319,9 +323,10 @@ function Tasbeeh({ onBack }) {
                     counterColor={activeCounterColor}
                     count={count}
                     handleIncrement={handleIncrement}
-                    isBlackAndWhite={isBlackAndWhite || themeKey === 'default'}
+                    isBlackAndWhite={isBlackAndWhite}
                     skin={skin}
                     isDefaultTheme={themeKey === 'default'}
+                    theme={theme}
                  />
                 
                 <div className="w-full max-w-lg px-4 mt-auto mb-2">

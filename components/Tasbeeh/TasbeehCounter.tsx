@@ -13,9 +13,10 @@ interface TasbeehCounterProps {
     isBlackAndWhite?: boolean;
     skin?: string;
     isDefaultTheme?: boolean;
+    theme?: any;
 }
 
-const TasbeehCounter: React.FC<TasbeehCounterProps> = ({ isCountingStopped, target, secondaryTextColor, primaryTextColor, counterColor, count, handleIncrement, isBlackAndWhite, skin = 'modern', isDefaultTheme }) => {
+const TasbeehCounter: React.FC<TasbeehCounterProps> = ({ isCountingStopped, target, secondaryTextColor, primaryTextColor, counterColor, count, handleIncrement, isBlackAndWhite, skin = 'modern', isDefaultTheme, theme }) => {
     // Calculate progress percentage
     const progress = target > 0 ? Math.min((count / target) * 100, 100) : 0;
     const strokeDasharray = 283; // 2 * pi * r (approx 45)
@@ -81,10 +82,10 @@ const TasbeehCounter: React.FC<TasbeehCounterProps> = ({ isCountingStopped, targ
                 {target > 0 && (
                     <svg className="absolute w-[180px] h-[180px] -rotate-90 pointer-events-none drop-shadow-md z-0" viewBox="0 0 100 100">
                         {/* Background track */}
-                        <circle cx="50" cy="50" r="45" fill="transparent" stroke={counterColor} strokeWidth="3" strokeOpacity="0.1" />
+                        <circle cx="50" cy="50" r="45" fill="transparent" stroke={isWhite && isDefaultTheme ? (theme?.palette[0] || '#059669') : counterColor} strokeWidth="3" strokeOpacity="0.1" />
                         {/* Progress indicator */}
                         <motion.circle
-                            cx="50" cy="50" r="45" fill="transparent" stroke={counterColor} strokeWidth="6" strokeLinecap="round"
+                            cx="50" cy="50" r="45" fill="transparent" stroke={isWhite && isDefaultTheme ? (theme?.palette[0] || '#059669') : counterColor} strokeWidth="6" strokeLinecap="round"
                             initial={{ strokeDashoffset: strokeDasharray }}
                             animate={{ strokeDashoffset }}
                             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -97,7 +98,7 @@ const TasbeehCounter: React.FC<TasbeehCounterProps> = ({ isCountingStopped, targ
                 <motion.button 
                     whileTap={{ scale: 0.93 }}
                     onClick={handleIncrement} 
-                    className={`tasbeeh-counter w-40 h-40 rounded-full flex flex-col items-center justify-center transition-colors duration-200 ease-out cursor-pointer select-none relative z-10 shadow-xl ${isBlackAndWhite ? 'border-2 border-white' : (isWhite ? 'border border-gray-200' : '')}`} 
+                    className={`tasbeeh-counter w-40 h-40 rounded-full flex flex-col items-center justify-center transition-colors duration-200 ease-out cursor-pointer select-none relative z-10 shadow-xl ${isBlackAndWhite ? 'border-4 border-white shadow-[0_0_20px_rgba(255,255,255,0.3)]' : (isWhite ? 'border border-gray-200 shadow-md' : '')}`} 
                     style={{ 
                         backgroundColor: counterColor,
                         boxShadow: isWhite 

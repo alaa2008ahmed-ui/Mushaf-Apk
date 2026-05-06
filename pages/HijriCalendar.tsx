@@ -822,7 +822,7 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto px-3 py-3 pb-24">
+            <main className="flex-1 overflow-y-auto px-3 pb-24 shadow-inner">
                 <div className="w-full max-w-lg mx-auto space-y-3">
                     
                     {/* Mode Toggles */}

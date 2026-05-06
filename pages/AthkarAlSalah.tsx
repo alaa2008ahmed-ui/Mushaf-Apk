@@ -221,7 +221,7 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar relative max-w-md mx-auto w-full p-4 pb-4 flex flex-col">
+            <main className="flex-1 overflow-y-auto hide-scrollbar relative max-w-md mx-auto w-full px-4 pb-4 flex flex-col">
                 {isFavoritesView ? (
                     <div className="space-y-4">
                         {favoriteAthkar.length > 0 ? (
@@ -252,7 +252,11 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                                       className={`themed-card p-4 rounded-xl shadow-sm border-r-4 flex items-center justify-between cursor-pointer active:scale-95 transition`}
                                       style={{ borderRightColor: prayer.color === 'primary' ? theme.palette[0] : theme.palette[1] }}>
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center`} style={{backgroundColor: prayer.color === 'primary' ? theme.palette[0]+'20' : theme.palette[1]+'20', color: prayer.color === 'primary' ? theme.palette[0] : theme.palette[1]}}>
+                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${themeKey === 'default' ? 'shadow-inner border border-black/5' : ''}`} 
+                                             style={{
+                                                 backgroundColor: themeKey === 'default' ? '#FFFFFF' : (prayer.color === 'primary' ? theme.palette[0]+'20' : theme.palette[1]+'20'), 
+                                                 color: themeKey === 'default' ? '#000000' : (prayer.color === 'primary' ? theme.palette[0] : theme.palette[1])
+                                             }}>
                                             <i className={`fa-solid ${prayer.icon} text-xl`}></i>
                                         </div>
                                         <div>

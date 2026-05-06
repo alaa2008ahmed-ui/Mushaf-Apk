@@ -48,7 +48,7 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
             {/* Top row: Actions */}
             <div className="w-full flex justify-between items-start mb-0.5">
                 {prayerKey !== 'Sunrise' ? (
-                    <div className="flex items-center gap-3">
+                    <div id={idx === 0 ? "prayer-actions-container" : undefined} className="flex items-center gap-3">
                         <div onClick={() => togglePrayerSound(prayerKey)} className={`toggle-dot ${isMuted ? 'bg-red-500' : 'bg-green-500'} cursor-pointer`} style={{borderColor: primaryColor, width: '16px', height: '16px', borderRadius: '50%', borderWidth: '1px', borderStyle: 'solid'}}></div>
                         <button onClick={() => openSettings(prayerKey)} className="text-base opacity-70 hover:opacity-100 p-1" style={{ color: primaryColor }}><i className="fa-solid fa-sliders"></i></button>
                     </div>

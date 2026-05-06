@@ -12,8 +12,8 @@ interface ThemesModalProps {
 
 const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandscape, readingMode, modeSuffix }) => {
     const { applyPresetTheme: _unused } = useTheme();
-    const currentThemeId = localStorage.getItem('current_theme_id' + modeSuffix) || 'olive';
-    const activeTheme = THEMES[currentThemeId as keyof typeof THEMES] || THEMES['olive'];
+    const currentThemeId = localStorage.getItem('current_theme_id' + modeSuffix) || 'black';
+    const activeTheme = THEMES[currentThemeId as keyof typeof THEMES] || THEMES['black'];
 
     React.useEffect(() => {
         const activeEl = document.getElementById(`theme-btn-${currentThemeId}`);

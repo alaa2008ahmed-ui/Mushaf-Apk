@@ -19,6 +19,9 @@ export interface Theme {
     cardBg?: string;
     cardBorder?: string;
     isGlass?: boolean;
+    modalBg?: string;
+    modalText?: string;
+    sajdah?: string;
 }
 
 export const presetThemes: { [key: string]: Theme } = {
@@ -43,10 +46,19 @@ export const presetThemes: { [key: string]: Theme } = {
         bgColor: "#000000",
         textColor: "#FFFFFF",
         font: "'Cairo', sans-serif",
-        palette: ["#000000", "#000000", "#333333"],
+        palette: ["#10B981", "#059669", "#000000"],
         barBg: "#000000",
-        barBorder: "1px solid #FFFFFF",
-        btnBorder: "1px solid #FFFFFF"
+        barBorder: "1px solid #333333",
+        btnBorder: "1px solid #10B981",
+        accent: "#10B981",
+        highlightText: "#10B981",
+        cardBg: "#111111",
+        cardBorder: "#333333",
+        btnBg: "#10B981",
+        btnText: "#FFFFFF",
+        modalBg: "#000000",
+        modalText: "#FFFFFF",
+        sajdah: "#10B981"
     },
     fajr_light: {
         name: "نور الفجر",

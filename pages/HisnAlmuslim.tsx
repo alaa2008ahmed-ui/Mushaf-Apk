@@ -72,7 +72,7 @@ function HisnAlmuslim({ onBack }) {
                 showThemePageLock={!selectedCategory}
             />
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar relative mx-auto w-full max-w-lg p-4 pb-4">
+            <main className="flex-1 overflow-y-auto hide-scrollbar relative mx-auto w-full max-w-lg px-4 pb-4">
                 <div className="opacity-0 animate-[fadeInPure_0.4s_ease-out_forwards]">
                     {selectedCategory ? (
                         <CategoryDetail 

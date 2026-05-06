@@ -374,7 +374,7 @@ export default function MonthlyPrayerTimes({ onBack, onNavigate }: { onBack: () 
                         <tbody>
                             {monthData.map((day, idx) => {
                                 const isToday = day.gregorianDateStr === `${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`;
-                                const textColor = isToday ? primaryColor : 'inherit';
+                                const textColor = isToday ? (isDefaultTheme ? '#FFFFFF' : primaryColor) : 'inherit';
                                 return (
                                     <tr 
                                         key={idx} 
@@ -388,7 +388,7 @@ export default function MonthlyPrayerTimes({ onBack, onNavigate }: { onBack: () 
                                     >
                                         <td className="px-1 py-2 border-l" style={{ borderColor: isDefaultTheme ? '#f3f4f6' : 'var(--card-border)' }}>{day.dayName}</td>
                                         <td className="px-1 py-2 border-l font-mono text-[9px] xs:text-[10px]" style={{ borderColor: isDefaultTheme ? '#f3f4f6' : 'var(--card-border)' }} dir="ltr">
-                                            <span style={{ color: isToday ? primaryColor : (isDefaultTheme ? '#000000' : primaryColor) }}>{day.hijriDay}</span>
+                                            <span style={{ color: isToday ? (isDefaultTheme ? '#FFFFFF' : primaryColor) : (isDefaultTheme ? '#000000' : primaryColor) }}>{day.hijriDay}</span>
                                             <span className="mx-0.5 opacity-50">/</span>
                                             <span className="opacity-70">{day.gregorianDay}</span>
                                         </td>

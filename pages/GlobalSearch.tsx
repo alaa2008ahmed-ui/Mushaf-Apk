@@ -11,9 +11,9 @@ import { BASE_ADHKAR_MORNING, BASE_ADHKAR_EVENING } from '../data/adkarSabahMasa
 // Help helper to get reader theme
 const getReaderTheme = () => {
     try {
-        const themeId = localStorage.getItem('current_theme_id_v') || 'night_sky';
+        const themeId = localStorage.getItem('current_theme_id_v') || 'black';
         const quranSettings = JSON.parse(localStorage.getItem('quran_settings_v') || '{}');
-        const theme = THEMES[themeId as keyof typeof THEMES] || THEMES.night_sky;
+        const theme = THEMES[themeId as keyof typeof THEMES] || THEMES.black;
         
         return {
             bgColor: quranSettings.bgColor || theme.bg,

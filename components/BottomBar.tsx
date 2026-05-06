@@ -36,15 +36,16 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
     const themesBtnBorder = parseBorder(theme.btnBorder);
 
     const isMainOrMoreMenu = currentPage === 'home' || currentPage === 'more-menu';
+    const isDefaultMoreMenu = themeKey === 'default' && currentPage === 'more-menu';
     const isDefaultNonQuran = themeKey === 'default' && !isQuranPage && !isMainOrMoreMenu;
 
     const getBtnStyle = (colorIdx: number) => {
-        if (isDefaultNonQuran) {
+        if (isDefaultNonQuran || isDefaultMoreMenu) {
             return {
-                background: '#f8fafc',
+                background: '#FFFFFF',
                 color: '#000000',
                 fontFamily: theme.font,
-                borderWidth: '1px',
+                borderWidth: '2px',
                 borderStyle: 'solid',
                 borderColor: '#000000'
             };

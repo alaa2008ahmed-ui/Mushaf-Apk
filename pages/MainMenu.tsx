@@ -315,7 +315,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                       )}
                       <div className="themed-card p-2 rounded-2xl text-center flex-1 relative h-full flex flex-col justify-center overflow-hidden">
                           <FloatingNeonTicker />
-                          <p className={`${!showVoiceIcon ? 'text-[12px]' : 'text-[14px]'} font-bold leading-tight`} style={{ color: themeKey === 'olive_grove' ? '#65A30D' : theme.textColor }}>
+                          <p className={`${!showVoiceIcon ? 'text-[12px]' : 'text-[14px]'} font-bold leading-tight`} style={{ color: themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#65A30D' : theme.textColor) }}>
                               اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
                           </p>
                       </div>

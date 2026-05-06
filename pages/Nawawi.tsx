@@ -169,7 +169,7 @@ const Nawawi = ({ onBack }) => {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar p-4 pb-4">
+            <main className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-4">
                 <motion.div 
                     initial="hidden"
                     animate="visible"

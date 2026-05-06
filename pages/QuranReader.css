@@ -64,11 +64,11 @@
 .quran-reader-container::before {
     content: '';
     position: absolute;
-    top: var(--logical-safe-top);
-    bottom: var(--logical-safe-bottom);
-    left: var(--logical-safe-left);
-    right: var(--logical-safe-right);
-    border: 4px double var(--quran-border-color, #000);
+    top: calc(var(--logical-safe-top) + 2px);
+    bottom: calc(var(--logical-safe-bottom) + 2px);
+    left: calc(var(--logical-safe-left) + 2px);
+    right: calc(var(--logical-safe-right) + 2px);
+    border: 8px double var(--quran-border-color, #000);
     pointer-events: none;
     z-index: 100;
 }
@@ -97,8 +97,8 @@
     left: 0;
     right: 0;
     z-index: 100;
-    padding-top: calc(var(--logical-safe-top) + 4px) !important;
-    height: calc(50px + var(--logical-safe-top) + 4px);
+    padding-top: calc(var(--logical-safe-top) + 8px) !important;
+    height: calc(3.5rem + var(--logical-safe-top) + 8px);
 }
 
 .quran-reader-container.is-transparent-mode:not(.landscape-mode) #bottom-bar {
@@ -107,13 +107,13 @@
     left: 0;
     right: 0;
     z-index: 100;
-    padding-bottom: calc(var(--logical-safe-bottom) + 4px) !important;
-    height: calc(48px + var(--logical-safe-bottom) + 4px);
+    padding-bottom: calc(var(--logical-safe-bottom) + 12px) !important;
+    height: calc(3.5rem + var(--logical-safe-bottom) + 12px);
 }
 
 .quran-reader-container.is-transparent-mode:not(.landscape-mode) #mushaf-content {
-    padding-top: calc(50px + var(--logical-safe-top)) !important;
-    padding-bottom: calc(48px + var(--logical-safe-bottom)) !important;
+    padding-top: calc(3.5rem + var(--logical-safe-top) + 8px) !important;
+    padding-bottom: calc(3.5rem + var(--logical-safe-bottom) + 12px) !important;
 }
 
 .quran-reader-container .header-default, .quran-reader-container .footer-default { 
@@ -380,17 +380,17 @@
 .btn-purple:hover { opacity: 0.8; }
 
 #header {
-    height: calc(3.5rem + var(--logical-safe-top) + 4px);
-    padding-top: calc(var(--logical-safe-top) + 4px) !important;
-    padding-left: calc(var(--logical-safe-left) + 4px) !important;
-    padding-right: calc(var(--logical-safe-right) + 4px) !important;
+    height: calc(3.5rem + var(--logical-safe-top) + 8px);
+    padding-top: calc(var(--logical-safe-top) + 8px) !important;
+    padding-left: calc(var(--logical-safe-left) + 8px) !important;
+    padding-right: calc(var(--logical-safe-right) + 8px) !important;
     transition: transform 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
 }
 #bottom-bar {
-    height: calc(3.5rem + var(--logical-safe-bottom) + 4px);
-    padding-bottom: calc(var(--logical-safe-bottom) + 4px) !important;
-    padding-left: calc(var(--logical-safe-left) + 4px) !important;
-    padding-right: calc(var(--logical-safe-right) + 4px) !important;
+    height: calc(3.5rem + var(--logical-safe-bottom) + 12px);
+    padding-bottom: calc(var(--logical-safe-bottom) + 12px) !important;
+    padding-left: calc(var(--logical-safe-left) + 8px) !important;
+    padding-right: calc(var(--logical-safe-right) + 8px) !important;
     transition: transform 0.3s ease, opacity 0.3s ease, margin-bottom 0.3s ease;
 }
 #mushaf-content {
@@ -568,10 +568,10 @@
     margin-top: 0 !important;
 }
 .quran-reader-container.landscape-mode #header {
-    height: calc(40px + var(--logical-safe-top));
-    padding-top: var(--logical-safe-top) !important;
-    padding-left: calc(4px + var(--logical-safe-left)) !important;
-    padding-right: calc(4px + var(--logical-safe-right)) !important;
+    height: calc(44px + var(--logical-safe-top));
+    padding-top: calc(8px + var(--logical-safe-top)) !important;
+    padding-left: calc(8px + var(--logical-safe-left)) !important;
+    padding-right: calc(8px + var(--logical-safe-right)) !important;
     font-size: 0.85rem;
     transition: transform 0.3s ease, opacity 0.3s ease;
     position: absolute;
@@ -587,9 +587,9 @@
 }
 .quran-reader-container.landscape-mode #bottom-bar {
     height: calc(50px + var(--logical-safe-bottom));
-    padding-bottom: var(--logical-safe-bottom) !important;
-    padding-left: calc(4px + var(--logical-safe-left)) !important;
-    padding-right: calc(4px + var(--logical-safe-right)) !important;
+    padding-bottom: calc(8px + var(--logical-safe-bottom)) !important;
+    padding-left: calc(8px + var(--logical-safe-left)) !important;
+    padding-right: calc(8px + var(--logical-safe-right)) !important;
     transition: transform 0.3s ease, opacity 0.3s ease;
     position: absolute;
     bottom: 0;
@@ -616,14 +616,14 @@
 .quran-reader-container.landscape-mode.landscape-ui-hidden #header,
 .quran-reader-container.hide-toolbars-autoscroll #header {
     transform: translateY(-100%) !important;
-    margin-top: calc(-3.5rem - var(--logical-safe-top)) !important;
+    margin-top: calc(-3.5rem - var(--logical-safe-top) - 8px) !important;
     opacity: 0 !important;
     pointer-events: none !important;
 }
 .quran-reader-container.landscape-mode.landscape-ui-hidden #bottom-bar,
 .quran-reader-container.hide-toolbars-autoscroll #bottom-bar {
     transform: translateY(100%) !important;
-    margin-bottom: calc(-3.5rem - var(--logical-safe-bottom)) !important;
+    margin-bottom: calc(-3.5rem - var(--logical-safe-bottom) - 12px) !important;
     opacity: 0 !important;
     pointer-events: none !important;
 }

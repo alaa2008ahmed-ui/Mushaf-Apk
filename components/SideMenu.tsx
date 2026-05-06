@@ -21,18 +21,18 @@ interface SideMenuProps {
 const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpenThemes, currentTheme: _appTheme, currentPage }) => {
     const [readerTheme, setReaderTheme] = React.useState(() => {
         try {
-            const themeId = localStorage.getItem('current_theme_id_v') || 'night_sky';
-            return THEMES[themeId as keyof typeof THEMES] || THEMES.night_sky;
+            const themeId = localStorage.getItem('current_theme_id_v') || 'black';
+            return THEMES[themeId as keyof typeof THEMES] || THEMES.black;
         } catch (e) {
-            return THEMES.night_sky;
+            return THEMES.black;
         }
     });
 
     React.useEffect(() => {
         const handleThemeChange = () => {
             try {
-                const themeId = localStorage.getItem('current_theme_id_v') || 'night_sky';
-                setReaderTheme(THEMES[themeId as keyof typeof THEMES] || THEMES.night_sky);
+                const themeId = localStorage.getItem('current_theme_id_v') || 'black';
+                setReaderTheme(THEMES[themeId as keyof typeof THEMES] || THEMES.black);
             } catch (e) {}
         };
         window.addEventListener('theme-change', handleThemeChange);
@@ -150,7 +150,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
                                         onClick={() => {
                                             if (item.id === 'themes') onOpenThemes();
                                             else if (item.id === 'whatsapp') window.open('https://wa.me/201000000000', '_blank');
-                                            else if (item.id === 'settings' || item.id === 'readers' || item.id === 'font-type' || item.id === 'notifications' || item.id === 'sajdah') onNavigate('settings');
+                                            else if (item.id === 'notifications') onNavigate('phone-notifications');
+                                            else if (item.id === 'settings' || item.id === 'readers' || item.id === 'font-type' || item.id === 'sajdah') onNavigate('settings');
                                             else if (item.id === 'home') onNavigate('home', { force: true });
                                             else onNavigate(item.id);
                                             onClose();
