@@ -54,12 +54,12 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
                     pageThemes: parsed.pageThemes || {},
                     lockedPages: parsed.lockedPages || [],
                     customBg: parsed.customBg,
-                    showTopBars: parsed.showTopBars !== undefined ? parsed.showTopBars : true
+                    showTopBars: parsed.showTopBars !== undefined ? parsed.showTopBars : false
                 };
             }
-            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {}, lockedPages: [], showTopBars: true };
+            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {}, lockedPages: [], showTopBars: false };
         } catch (e) {
-            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {}, lockedPages: [], showTopBars: true };
+            return { themeKey: 'default', isGlobalTheme: true, pageThemes: {}, lockedPages: [], showTopBars: false };
         }
     });
 
@@ -190,7 +190,8 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
             document.body.classList.remove('quran-context');
         }
 
-        if (settings.showTopBars === false) {
+        const isHub = currentPage === 'home' || currentPage === 'more-menu';
+        if (settings.showTopBars === false || isHub) {
             document.body.classList.add('hide-top-bars');
         } else {
             document.body.classList.remove('hide-top-bars');
