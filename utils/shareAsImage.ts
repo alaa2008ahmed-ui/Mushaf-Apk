@@ -46,7 +46,7 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
         container.innerHTML = `
             <div id="share-card" style="
                 background: linear-gradient(135deg, ${primaryColor}, ${secondaryColor});
-                padding: 60px;
+                padding: 24px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -57,6 +57,7 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                 text-align: center;
                 box-shadow: inset 0 0 100px rgba(0,0,0,0.2);
                 font-family: ${theme?.font || '"Amiri", serif'};
+                box-sizing: border-box;
             ">
                 <!-- Decorative Islamic Pattern Overlay -->
                 <div style="
@@ -72,9 +73,10 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                 <div style="
                     border: 2px solid rgba(255,255,255,0.3);
                     padding: 40px;
-                    border-radius: 30px;
+                    border-radius: 20px;
                     background: rgba(255,255,255,0.15);
                     width: 100%;
+                    box-sizing: border-box;
                     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
                     position: relative;
                     z-index: 1;
@@ -111,17 +113,18 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                             </span>
                         </div>
                     ` : ''}
-                </div>
-                
-                <!-- Brand Footer -->
-                <div style="
-                    margin-top: 30px;
-                    font-size: 20px;
-                    font-weight: bold;
-                    opacity: 0.9;
-                    font-family: inherit;
-                ">
-                    مصحف أحمد وليلى
+                    
+                    <!-- Brand Footer -->
+                    <div style="
+                        margin-top: ${(category || source) ? '15px' : '30px'};
+                        font-size: 20px;
+                        font-weight: bold;
+                        opacity: 0.9;
+                        font-family: inherit;
+                        ${!(category || source) ? 'padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);' : ''}
+                    ">
+                        مصحف أحمد وليلى
+                    </div>
                 </div>
             </div>`;
 

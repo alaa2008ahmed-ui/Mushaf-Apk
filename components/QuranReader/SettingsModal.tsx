@@ -80,10 +80,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             icon: <Palette className="w-8 h-8 text-white" />
         },
         {
+            id: 'font-weight',
+            title: 'سماكة الخط',
+            text: 'تمكنك هذه الميزة من زيادة سماكة الخط (Bold) لتوضيح النص القرآني بشكل أكبر، مما يساعد على قراءة أسهل وأكثر راحة للعين.',
+            selector: '#font-weight-btn',
+            icon: <Type className="w-8 h-8 text-white" />
+        },
+        {
             id: 'font-family',
             title: 'نوع الخط',
             text: 'اختر من بين مجموعة متنوعة من الخطوط العربية الأصيلة (مثل خط عثمان، خط النسخ، وغيرها) الخط الذي تفضل قراءة القرآن به.',
-            selector: '#font-family-section',
+            selector: '#font-family-btn',
             icon: <Type className="w-8 h-8 text-white" />
         },
         {
@@ -106,6 +113,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
             text: 'حدد كتاب التفسير المفضل لديك (مثل التفسير الميسر، ابن كثير، الجلالين) الذي تود الرجوع إليه عند عرض تفسير الآيات.',
             selector: '#tafseer-section',
             icon: <Book className="w-8 h-8 text-white" />
+        },
+        {
+            id: 'surah-header-design',
+            title: 'تصميم رأس السورة',
+            text: 'اختر التصميم والشكل المفضل لك لعرض رأس السورة أعلى الآيات ليتناسب مع ذوقك الشخصي وتجربة القراءة.',
+            selector: '#surah-header-design-section',
+            icon: <Palette className="w-8 h-8 text-white" />
         },
         {
             id: 'scroll-speed',
@@ -272,10 +286,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     <div id="font-family-section" className="border-b border-gray-200 dark:border-gray-700 py-1">
                         <label className="text-xs font-bold block opacity-80 mb-1">تخصيص الخط</label>
                         <div className="grid grid-cols-3 gap-2">
-                            <button onClick={() => updateSetting('isBold', !settings.isBold)} className={`col-span-1 p-2 text-xs h-8 rounded-lg border flex justify-center items-center font-bold transition-all ${settings.isBold ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700' : 'themed-card-bg'}`} title="تفعيل/إلغاء سماكة الخط (Bold)">
+                            <button id="font-weight-btn" onClick={() => updateSetting('isBold', !settings.isBold)} className={`col-span-1 p-2 text-xs h-8 rounded-lg border flex justify-center items-center font-bold transition-all ${settings.isBold ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700' : 'themed-card-bg'}`} title="تفعيل/إلغاء سماكة الخط (Bold)">
                                 <span className={`text-[13px] ${settings.isBold ? 'font-black' : ''}`}>سماكة (B)</span>
                             </button>
-                            <button onClick={() => onOpenModal('font-modal')} className="col-span-2 p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
+                            <button id="font-family-btn" onClick={() => onOpenModal('font-modal')} className="col-span-2 p-2 text-xs h-8 themed-card-bg rounded-lg border flex justify-between items-center px-3 font-bold">
                                 <span className="truncate">{getFontName(settings.fontFamily)}</span>
                                 <i className="fa-solid fa-chevron-left opacity-50"></i>
                             </button>

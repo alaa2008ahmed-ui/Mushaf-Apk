@@ -95,7 +95,7 @@ interface FloatingMenuProps {
 const ALL_SHORTCUTS = [
   {
     id: "more-menu",
-    label: "قائمة الصفحات",
+    label: "قائمة التطبيقات",
     icon: <Grid size={18} />,
   },
   {
@@ -250,6 +250,13 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
       icon: <Bookmark className="w-8 h-8 text-white" />,
     },
     {
+      id: "floating-menu-more-menu",
+      title: "قائمة التطبيقات",
+      text: "يمكنك الانتقال مباشرة الى قائمة التطبيقات والاختيار منها",
+      selector: '[data-id="menu-item-more-menu"]',
+      icon: <Grid className="w-8 h-8 text-white" />,
+    },
+    {
       id: "floating-menu-quran-download",
       title: "تحميل القرآن",
       text: "تحميل صفحات المصحف والتلاوات للاستخدام بدون إنترنت.",
@@ -262,6 +269,13 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
       text: "تحميل كتب التفسير للقراءة في أي وقت بدون إنترنت.",
       selector: '[data-id="menu-item-tafseer-download"]',
       icon: <Download className="w-8 h-8 text-white" />,
+    },
+    {
+      id: "floating-menu-interface-customization",
+      title: "تخصيص الواجهة",
+      text: "تخصيص أزرار الاختصارات التي تظهر في القائمة الجانبية.",
+      selector: '[data-id="menu-item-interface-customization"]',
+      icon: <Palette className="w-8 h-8 text-white" />,
     },
     {
       id: "floating-menu-readers",
