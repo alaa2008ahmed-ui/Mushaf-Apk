@@ -114,7 +114,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                         key={item.id}
                         id={`menu-item-${item.id}`}
                         data-item-id={item.id}
-                        className={`${item.className} relative transition-all duration-300 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
+                        className={`${item.className} relative ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
                         style={{ 
                             visibility: isVisible ? 'visible' : 'hidden',
                         }}

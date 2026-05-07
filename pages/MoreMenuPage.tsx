@@ -88,11 +88,8 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                 const isNew = showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'asmaul-husna', 'habit-tracker'].includes(item.id);
                                 
                                 return (
-                                    <motion.div
+                                    <div
                                         key={item.id}
-                                        initial={isVisible ? { opacity: 0, y: 20 } : false}
-                                        animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, scale: 0.95 }}
-                                        transition={{ duration: 0.4, delay: idx * 0.03 }}
                                         className={`${item.className} relative`}
                                         style={{ visibility: isVisible ? 'visible' : 'hidden' }}
                                     >
@@ -127,7 +124,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                                 <i className="fa-solid fa-arrows-rotate text-lg"></i>
                                             </button>
                                         )}
-                                    </motion.div>
+                                    </div>
                                 );
                             })}
                         </div>

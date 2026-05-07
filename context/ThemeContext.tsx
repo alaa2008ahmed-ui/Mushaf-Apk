@@ -179,7 +179,16 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || currentPage.startsWith('quran_') ? 'quran' : currentPage;
         
         // Apply visual updates immediately
-        document.body.style.transition = 'none';
+        const isReadingMode = pageKey === 'quran';
+        const isAppList = currentPage === 'more-menu';
+        const isPinned = settings.lockedPages?.includes(pageKey);
+        const isHome = currentPage === 'home';
+
+        if ((isPinned || isHome) && !isReadingMode && !isAppList) {
+            document.body.style.transition = 'none';
+        } else {
+            document.body.style.transition = 'background-color 0.5s ease-in-out, color 0.5s ease-in-out';
+        }
 
         if (pageKey === 'quran') {
             document.body.classList.add('quran-context');

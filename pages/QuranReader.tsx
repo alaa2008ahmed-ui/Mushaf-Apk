@@ -1383,7 +1383,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         {
             id: 'surah-design',
             title: 'تصميم رأس السورة',
-            text: 'يوجد أكثر من ٢٠ تصميماً مختلفاً ومميزاً لرأس السورة. يمكنك الضغط مطولاً على اسم السورة لتغيير التصميم واختيار ما يناسب ذوقك الخاص.',
+            text: 'يوجد مجموعة متنوعة من التصميمات المختلفة والمميزة لرأس السورة. يمكنك الضغط مطولاً على اسم السورة لتغيير التصميم واختيار ما يناسب ذوقك الخاص.',
             selector: '#surah-header-container',
             icon: <Palette className="w-8 h-8 text-white" />
         },

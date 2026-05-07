@@ -14,7 +14,7 @@ import { TutorialProvider } from './context/TutorialContext';
 import SideMenu from './components/SideMenu';
 import MawlidNotification from './components/MawlidNotification';
 import { Mic, MicOff } from 'lucide-react';
-import { motion, MotionConfig } from 'motion/react';
+import { motion } from 'motion/react';
 import { useTheme } from './context/ThemeContext';
 import { normalizeArabic } from './utils/voiceParser';
 import { usePrayerTimes } from './context/PrayerTimesContext';
@@ -34,6 +34,11 @@ function App() {
   const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const currentPage = history[history.length - 1];
+    setCurrentPage(currentPage);
+  }, [history, setCurrentPage]);
 
   useEffect(() => {
     if (!history.includes('search')) {
@@ -90,7 +95,6 @@ function App() {
       // 0. If force is true, reset to home
       if (params?.force) {
         setHistory(['home']);
-        setCurrentPage('home');
         setNavParams(null);
         return;
       }
@@ -99,16 +103,13 @@ function App() {
       // 1. If currently in quran, go back (one step)
       const current = history[history.length - 1];
       if (current === 'quran' || current === 'quran-landscape') {
-        const nextArr = history.length > 1 ? history.slice(0, -1) : history;
-        setHistory(nextArr);
-        setCurrentPage(nextArr[nextArr.length - 1]);
+        setHistory(prev => (prev.length > 1 ? prev.slice(0, -1) : prev));
         return;
       }
       
       // 2. If we are in more-menu, home should take us back to home
       if (current === 'more-menu') {
         setHistory(['home']);
-        setCurrentPage('home');
         setNavParams(null);
         return;
       }
@@ -117,9 +118,7 @@ function App() {
       if (lastMenuPage === 'more-menu') {
         const moreMenuIndex = history.lastIndexOf('more-menu');
         if (moreMenuIndex !== -1) {
-          const nextArr = history.slice(0, moreMenuIndex + 1);
-          setHistory(nextArr);
-          setCurrentPage(nextArr[nextArr.length - 1]);
+          setHistory(prev => prev.slice(0, moreMenuIndex + 1));
           return;
         }
       }
@@ -129,14 +128,11 @@ function App() {
       const targetIndex = Math.max(quranIndex, quranLandscapeIndex);
       
       if (targetIndex !== -1 && targetIndex < history.length - 1) {
-        const nextArr = history.slice(0, targetIndex + 1);
-        setHistory(nextArr);
-        setCurrentPage(nextArr[nextArr.length - 1]);
+        setHistory(prev => prev.slice(0, targetIndex + 1));
         return;
       }
 
       setHistory(['home']);
-      setCurrentPage('home');
       setNavParams(null);
       return;
     }
@@ -157,20 +153,14 @@ function App() {
         // we replace the last feature to keep history clean.
         // Exception: quran reader stays in history if reached from another feature
         // to allow returning to the previous feature (like daily-wird).
-        let nextArr = [...prev];
         if (!isMenu(current) && !isMenu(pageId)) {
           if (isQuran(pageId) && !isQuran(current)) {
-            nextArr = [...prev, pageId];
-          } else {
-            nextArr = [...prev.slice(0, -1), pageId];
+            return [...prev, pageId];
           }
-        } else {
-          nextArr = [...prev, pageId];
+          return [...prev.slice(0, -1), pageId];
         }
-        
-        // Update theme page immediately
-        setCurrentPage(pageId);
-        return nextArr;
+
+        return [...prev, pageId];
       });
     } else {
       alert(`التنقل إلى قسم "${pageId}" قيد الإنشاء.`);
@@ -214,12 +204,8 @@ function App() {
   }, []);
 
   const navigateBack = useCallback(() => {
-    setHistory(prev => {
-      const nextArr = prev.length > 1 ? prev.slice(0, -1) : prev;
-      setCurrentPage(nextArr[nextArr.length - 1]);
-      return nextArr;
-    });
-  }, [setCurrentPage]);
+    setHistory(prev => (prev.length > 1 ? prev.slice(0, -1) : prev));
+  }, []);
 
   const handleVoiceAction = useCallback((action: string, text: string, params?: any) => {
     console.log('Voice Action:', action, text, params);
@@ -300,27 +286,25 @@ function App() {
   }
 
   return (
-    <MotionConfig transition={{ duration: 0, type: false }}>
-      <TutorialProvider>
-        <PrayerTimesProvider>
-          <VoiceControlProvider onAction={handleVoiceAction}>
-            <AppContent 
-              page={page} 
-              history={history}
-              navParams={navParams}
-              isThemeSelectorOpen={isThemeSelectorOpen}
-              showExitConfirm={showExitConfirm}
-              isSideMenuOpen={isSideMenuOpen}
-              setIsSideMenuOpen={setIsSideMenuOpen}
-              handleNavigate={handleNavigate}
-              navigateBack={navigateBack}
-              setIsThemeSelectorOpen={setIsThemeSelectorOpen}
-              setShowExitConfirm={setShowExitConfirm}
-            />
-          </VoiceControlProvider>
-        </PrayerTimesProvider>
-      </TutorialProvider>
-    </MotionConfig>
+    <TutorialProvider>
+      <PrayerTimesProvider>
+        <VoiceControlProvider onAction={handleVoiceAction}>
+          <AppContent 
+            page={page} 
+            history={history}
+            navParams={navParams}
+            isThemeSelectorOpen={isThemeSelectorOpen}
+            showExitConfirm={showExitConfirm}
+            isSideMenuOpen={isSideMenuOpen}
+            setIsSideMenuOpen={setIsSideMenuOpen}
+            handleNavigate={handleNavigate}
+            navigateBack={navigateBack}
+            setIsThemeSelectorOpen={setIsThemeSelectorOpen}
+            setShowExitConfirm={setShowExitConfirm}
+          />
+        </VoiceControlProvider>
+      </PrayerTimesProvider>
+    </TutorialProvider>
   );
 }
 
@@ -339,11 +323,12 @@ function AppContent({
   setShowExitConfirm 
 }: any) {
   const { setCurrentPage: setVoicePage } = useVoiceControl();
-  const { theme, themeKey, applyPresetTheme } = useTheme();
+  const { theme, themeKey, applyPresetTheme, setCurrentPage: setThemePage } = useTheme();
 
   useEffect(() => {
     setVoicePage(page);
-  }, [page, setVoicePage]);
+    setThemePage(page);
+  }, [page, setVoicePage, setThemePage]);
 
   useWakeLock();
 

@@ -170,28 +170,11 @@ const Nawawi = ({ onBack }) => {
             </header>
 
             <main className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-4">
-                <motion.div 
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                        hidden: { opacity: 0 },
-                        visible: {
-                            opacity: 1,
-                            transition: {
-                                staggerChildren: 0.05
-                            }
-                        }
-                    }}
-                    className="grid grid-cols-2 gap-4"
-                >
+                <div className="grid grid-cols-2 gap-4">
                     {NAWAWI_DATA.map((hadith, index) => {
                         const color = theme.palette[index % theme.palette.length];
                         return (
-                            <motion.div 
-                                variants={{
-                                    hidden: { opacity: 0, y: 20 },
-                                    visible: { opacity: 1, y: 0 }
-                                }}
+                            <div 
                                 key={hadith.id} 
                                 onClick={() => setSelectedHadith(hadith)} 
                                 className="relative group cursor-pointer active:scale-95 transition-all"
@@ -223,10 +206,10 @@ const Nawawi = ({ onBack }) => {
                                         <i className="fa-solid fa-arrow-left-long text-xs" style={{ color: themeKey === 'default' ? '#000000' : color }}></i>
                                     </div>
                                 </div>
-                            </motion.div>
+                            </div>
                         );
                     })}
-                </motion.div>
+                </div>
                 <div className="shrink-0 w-full h-32"></div>
             </main>
 
