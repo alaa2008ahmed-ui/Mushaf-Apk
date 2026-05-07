@@ -43,15 +43,15 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
       case 'salah-adhkar':
         return <AthkarAlSalah onBack={onBack} onNavigate={onNavigate} />;
       case 'calendar':
-        return <HijriCalendar onBack={onBack} />;
+        return <HijriCalendar onBack={onBack} onNavigate={onNavigate} />;
       case 'listen':
-        return <ListenQuran onBack={onBack} onOpenThemes={onOpenThemes} />;
+        return <ListenQuran onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} />;
       case 'tasbeeh':
-        return <Tasbeeh onBack={onBack} />;
+        return <Tasbeeh onBack={onBack} onNavigate={onNavigate} />;
       case 'hajj-umrah':
-        return <HajjUmrah onBack={onBack} />;
+        return <HajjUmrah onBack={onBack} onNavigate={onNavigate} />;
       case 'hisn-muslim':
-        return <HisnAlmuslim onBack={onBack} />;
+        return <HisnAlmuslim onBack={onBack} onNavigate={onNavigate} />;
       case 'prayer-times':
         return <PrayerTimes onBack={onBack} onNavigate={onNavigate} />;
       case 'monthly-prayer-times':
@@ -61,11 +61,11 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
       case 'sabah-masaa':
         return <AdkarSabahMasaa onBack={onBack} onNavigate={onNavigate} />;
       case 'adia':
-        return <Adia onBack={onBack} />;
+        return <Adia onBack={onBack} onNavigate={onNavigate} />;
       case 'nawawi':
-        return <Nawawi onBack={onBack} />;
+        return <Nawawi onBack={onBack} onNavigate={onNavigate} />;
       case 'calculators':
-        return <Calculators onBack={onBack} />;
+        return <Calculators onBack={onBack} onNavigate={onNavigate} />;
       case 'voice-control':
         return <VoiceControlPage onBack={onBack} onNavigate={onNavigate} />;
       case 'more-menu':
@@ -77,9 +77,9 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
       case 'search':
         return <GlobalSearch onBack={onBack} onNavigate={onNavigate} />;
       case 'asmaul-husna':
-        return <AsmaulHusna onBack={onBack} />;
+        return <AsmaulHusna onBack={onBack} onNavigate={onNavigate} />;
       case 'habit-tracker':
-        return <HabitTracker onBack={onBack} />;
+        return <HabitTracker onBack={onBack} onNavigate={onNavigate} />;
       case 'home':
       default:
         return <MainMenu onNavigate={onNavigate} onOpenThemes={onOpenThemes} onOpenSideMenu={onOpenSideMenu} />;

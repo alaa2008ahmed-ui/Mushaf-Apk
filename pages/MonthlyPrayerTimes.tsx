@@ -407,7 +407,7 @@ export default function MonthlyPrayerTimes({ onBack, onNavigate }: { onBack: () 
             </main>
 
             <BottomBar 
-                onHomeClick={() => onNavigate('prayer-times')} 
+                onHomeClick={onBack} 
                 onThemesClick={() => {}} 
                 showThemes={false} 
                 leftButton={

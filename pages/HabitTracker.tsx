@@ -27,7 +27,7 @@ const CONFETTI_CONFIG = {
 };
 
 interface HabitTrackerProps {
-  onBack: () => void;
+  onBack: () => void; onNavigate: (id: string, params?: any) => void; 
 }
 
 const ProgressRing = ({ progress, size = 100, strokeWidth = 8, color }: { progress: number, size?: number, strokeWidth?: number, color: string }) => {
@@ -53,7 +53,7 @@ const ProgressRing = ({ progress, size = 100, strokeWidth = 8, color }: { progre
   );
 };
 
-const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
+const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack , onNavigate }) => {
   const { theme } = useTheme();
   const isBlackTheme = theme.bgColor === '#000000';
   const hexColor = isBlackTheme ? '#FFFFFF' : (theme.palette && theme.palette.length > 0 ? theme.palette[0] : '#059669');

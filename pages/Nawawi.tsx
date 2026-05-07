@@ -74,7 +74,7 @@ const HadithModal = ({ hadith, onClose, favorites, toggleFavorite, handleCopy, h
     );
 };
 
-const Nawawi = ({ onBack }) => {
+const Nawawi = ({ onBack, onNavigate }) => {
     const { theme, themeKey } = useTheme();
     const [selectedHadith, setSelectedHadith] = useState(null);
     const [favorites, setFavorites] = useState([]);

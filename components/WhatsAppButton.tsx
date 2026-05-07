@@ -1,10 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTheme } from '../context/ThemeContext';
 
 function WhatsAppButton() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { theme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -41,20 +47,21 @@ function WhatsAppButton() {
                 </button>
             </div>
 
-            {isMenuOpen && (
-                <>
-                    {/* Full screen backdrop to block all interactions */}
+            {isMenuOpen && mounted && createPortal(
+                <div className="whatsapp-portal-root">
+                    {/* Full screen backdrop to block all interactions without darkening */}
                     <div 
-                        className="fixed inset-0 bg-black/60 backdrop-blur-[4px] z-[10000] pointer-events-auto" 
+                        className="fixed inset-0 z-[10000] pointer-events-auto" 
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
+                            toggleMenu();
                         }}
                     />
                     
-                    {/* Menu positioned above the button */}
+                    {/* Menu positioned in the middle of the screen */}
                     <div 
-                        className="fixed bottom-[100px] left-1/2 -translate-x-1/2 md:left-auto md:right-4 md:translate-x-0 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-gray-100 p-6 w-[280px] z-[10001] font-cairo animate-in zoom-in-95 slide-in-from-bottom-10 fade-in duration-300"
+                        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-gray-100 p-6 w-[280px] z-[10001] font-cairo animate-in zoom-in-95 fade-in duration-300"
                     >
                         <button 
                             onClick={toggleMenu} 
@@ -81,7 +88,8 @@ function WhatsAppButton() {
                             <p className="mt-3 text-[10px] text-gray-400" dir="ltr">+966 59 216 6023</p>
                         </div>
                     </div>
-                </>
+                </div>,
+                document.body
             )}
         </>
     );

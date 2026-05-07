@@ -7,7 +7,7 @@ import ThemePageLock from '../components/ThemePageLock';
 import { asmaulHusna, AsmaulHusnaItem } from '../data/asmaulHusnaData';
 import { X, Info, Book } from 'lucide-react';
 
-const AsmaulHusna: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const AsmaulHusna: React.FC<{ onBack: () => void, onNavigate: (id: string, params?: any) => void; }> = ({ onBack, onNavigate }) => {
     const [selectedName, setSelectedName] = useState<AsmaulHusnaItem | null>(null);
 
     const handleHomeClick = () => {

@@ -46,9 +46,9 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
     supportsDST
 }) => {
     return (
-        <div className="prayer-card rounded-2xl p-2 flex flex-col items-center justify-between themed-card relative h-auto min-h-[105px]" style={{borderColor: isNextPrayer ? (isDefaultTheme ? '#000000' : primaryColor) : 'var(--card-border)', borderWidth: isNextPrayer ? '2px' : '1px', backgroundColor: isDefaultTheme ? '#FFFFFF' : undefined}}>
+        <div className="prayer-card rounded-2xl p-2 flex flex-col items-center justify-start themed-card relative h-auto min-h-[105px]" style={{borderColor: isNextPrayer ? (isDefaultTheme ? '#000000' : primaryColor) : 'var(--card-border)', borderWidth: isNextPrayer ? '2px' : '1px', backgroundColor: isDefaultTheme ? '#FFFFFF' : undefined}}>
             {/* Top row: Actions */}
-            <div className="w-full flex justify-between items-start mb-0.5">
+            <div className="w-full flex justify-between items-start z-10 relative">
                 {prayerKey !== 'Sunrise' ? (
                     <div id={idx === 0 ? "prayer-actions-container" : undefined} className="flex items-center gap-3">
                         <div onClick={() => togglePrayerSound(prayerKey)} className={`toggle-dot ${isMuted ? 'bg-red-500' : (isBlackTheme ? 'bg-white' : 'bg-green-500')} cursor-pointer`} style={{borderColor: primaryColor, width: '16px', height: '16px', borderRadius: '50%', borderWidth: '1px', borderStyle: 'solid'}}></div>
@@ -71,13 +71,13 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
             </div>
 
             {/* Middle: Name */}
-            <div className="flex flex-col items-center -mt-1.5">
+            <div className="flex flex-col items-center -mt-3 z-0 relative">
                 <h3 className="font-bold text-[10px] mb-0" style={{ color: primaryColor }}>{prayerNameAr}</h3>
                 <span className="font-black text-sm" style={{ color: primaryColor }} dangerouslySetInnerHTML={{ __html: formatTime12(displayTimeStr) }}></span>
             </div>
 
             {/* Bottom: Iqama */}
-            <div className="mt-0.5 w-full flex justify-center min-h-[18px]">
+            <div className="mt-auto pb-1 w-full flex justify-center min-h-[18px]">
                 {prayerKey !== 'Sunrise' && iqamaTime && !iqamaTime.includes('--') && (
                     <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border whitespace-nowrap" style={{color: secondaryColor, backgroundColor: isBlackAndWhite ? '#333' : (isDefaultTheme ? '#f3f4f6' : themePalette1 + '1A'), borderColor: isBlackAndWhite ? '#FFF' : (isDefaultTheme ? '#e5e7eb' : themePalette1 + '33')}}>إقامة {formatTime12_clean(iqamaTime)}</span>
                 )}

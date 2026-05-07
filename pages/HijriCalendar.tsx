@@ -667,7 +667,7 @@ const CalendarGrid = ({ viewDate, onSelectDay, selectedDay, theme, primaryColor,
 };
 
 // --- Main Component ---
-function HijriCalendar({ onBack }: { onBack: () => void }) {
+function HijriCalendar({ onBack , onNavigate }: { onBack: () => void, onNavigate: (id: string, params?: any) => void; }) {
     const { theme, themeKey } = useTheme();
     const isBlackAndWhite = themeKey === 'deep_black';
     const isDefaultTheme = themeKey === 'default';
