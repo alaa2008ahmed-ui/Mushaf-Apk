@@ -46,8 +46,8 @@ const NextPrayerCard: React.FC<NextPrayerCardProps> = ({
     };
 
     return (
-        <div id="next-prayer-card" className={`rounded-2xl ${isDefaultTheme ? 'text-black bg-white border border-gray-100 shadow-sm' : 'text-white'} mb-1.5 relative overflow-hidden flex flex-col`} style={{background: isDefaultTheme ? undefined : (isBlackAndWhite ? `linear-gradient(135deg, #333, #000)` : `linear-gradient(135deg, ${themePalette1}, ${themePalette0})`)}}>
-            <div className="px-3 py-3 flex justify-between items-center relative z-10">
+        <div id="next-prayer-card" className={`rounded-2xl ${isDefaultTheme ? 'text-black bg-white border border-gray-100 shadow-md' : 'text-white'} mb-1 relative overflow-hidden flex flex-col`} style={{background: isDefaultTheme ? undefined : (isBlackAndWhite ? `linear-gradient(135deg, #333, #000)` : `linear-gradient(135deg, ${themePalette1}, ${themePalette0})`)}}>
+            <div className="px-4 py-5 flex justify-between items-center relative z-10">
                 <div id="next-prayer-countdown-container" className="text-center flex flex-col items-center">
                     <p className={`text-[10px] font-bold ${isDefaultTheme ? 'opacity-70' : 'opacity-90'} mb-0.5`}>المتبقي على صلاة <span className={`underline ${isDefaultTheme ? 'decoration-black/20' : 'decoration-white/40'}`}>{nextPrayer.name}</span></p>
                     <p className="text-xl font-black font-mono tracking-tighter leading-none">{countdown}</p>

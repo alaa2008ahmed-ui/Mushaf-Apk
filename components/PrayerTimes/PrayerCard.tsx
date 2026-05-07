@@ -46,9 +46,9 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
     supportsDST
 }) => {
     return (
-        <div className="prayer-card rounded-xl p-1.5 flex flex-col items-center justify-between themed-card relative h-auto min-h-[90px]" style={{borderColor: isNextPrayer ? (isDefaultTheme ? '#000000' : primaryColor) : 'var(--card-border)', borderWidth: isNextPrayer ? '2px' : '1px', backgroundColor: isDefaultTheme ? '#FFFFFF' : undefined}}>
+        <div className="prayer-card rounded-2xl p-2 flex flex-col items-center justify-between themed-card relative h-auto min-h-[105px]" style={{borderColor: isNextPrayer ? (isDefaultTheme ? '#000000' : primaryColor) : 'var(--card-border)', borderWidth: isNextPrayer ? '2px' : '1px', backgroundColor: isDefaultTheme ? '#FFFFFF' : undefined}}>
             {/* Top row: Actions */}
-            <div className="w-full flex justify-between items-start mb-0">
+            <div className="w-full flex justify-between items-start mb-0.5">
                 {prayerKey !== 'Sunrise' ? (
                     <div id={idx === 0 ? "prayer-actions-container" : undefined} className="flex items-center gap-3">
                         <div onClick={() => togglePrayerSound(prayerKey)} className={`toggle-dot ${isMuted ? 'bg-red-500' : (isBlackTheme ? 'bg-white' : 'bg-green-500')} cursor-pointer`} style={{borderColor: primaryColor, width: '16px', height: '16px', borderRadius: '50%', borderWidth: '1px', borderStyle: 'solid'}}></div>

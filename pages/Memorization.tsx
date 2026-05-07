@@ -5,6 +5,7 @@ import ThemePageLock from '../components/ThemePageLock';
 import { quranData as quranJsonData } from '../utils/quranData';
 const quranData = { data: quranJsonData };
 import { SURAH_NAMES_AR, MEMORIZATION_READERS } from '../components/QuranReader/constants';
+import { registerBackInterceptor } from '../hooks/useBackButton';
 import BottomBar from '../components/BottomBar';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { QuranDownloadModal } from '../components/QuranReader/DownloadModals';
@@ -265,6 +266,19 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
         else if (showDownloadModal) setShowDownloadModal(false);
         else onBack();
     };
+
+    useEffect(() => {
+        const interceptor = () => {
+            if (showHelpModal) { setShowHelpModal(false); return true; }
+            if (showExplanationModal) { setShowExplanationModal(false); return true; }
+            if (showResumePrompt) { setShowResumePrompt(false); return true; }
+            if (activePicker) { setActivePicker(null); return true; }
+            if (showDownloadModal) { setShowDownloadModal(false); return true; }
+            return false;
+        };
+        const unregister = registerBackInterceptor(interceptor);
+        return unregister;
+    }, [showHelpModal, showExplanationModal, showResumePrompt, activePicker, showDownloadModal]);
 
     return (
         <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, color: 'var(--text-color)' }}>

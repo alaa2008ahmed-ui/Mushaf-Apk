@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'motion/react';
 import BottomBar from '../components/BottomBar';
 import ThemePageLock from '../components/ThemePageLock';
@@ -16,6 +17,18 @@ const AsmaulHusna: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             onBack();
         }
     };
+
+    useEffect(() => {
+        const interceptor = () => {
+            if (selectedName) {
+                setSelectedName(null);
+                return true;
+            }
+            return false;
+        };
+        const unregister = registerBackInterceptor(interceptor);
+        return unregister;
+    }, [selectedName]);
 
     return (
         <div className="h-screen flex flex-col overflow-hidden relative bg-transparent">

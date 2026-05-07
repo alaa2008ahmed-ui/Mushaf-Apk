@@ -110,7 +110,6 @@ const GridSection: React.FC<GridSectionProps> = ({
 
                 return (
                     <motion.div
-                        layout
                         key={item.id}
                         id={`menu-item-${item.id}`}
                         data-item-id={item.id}

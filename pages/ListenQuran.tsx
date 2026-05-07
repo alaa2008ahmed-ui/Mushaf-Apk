@@ -8,6 +8,7 @@ import ListenSurahSelectModal from '../components/QuranReader/ListenSurahSelectM
 import { QuranDownloadModal } from '../components/QuranReader/DownloadModals';
 import Toast from '../components/QuranReader/Toast';
 import { SURAH_INFO } from '../components/QuranReader/constants';
+import { registerBackInterceptor } from '../hooks/useBackButton';
 import './QuranReader.css';
 
 const STORAGE_KEY = 'listen_quran_state_v7';
@@ -64,6 +65,24 @@ function ListenQuran({ onBack, onOpenThemes }) {
             console.error("Failed to load state from localStorage", e);
         }
     }, []);
+
+    const handleHomeClick = useCallback(() => {
+        if (showReciterModal) { setShowReciterModal(false); }
+        else if (showSurahModal) { setShowSurahModal(false); }
+        else if (showDownloadModal) { setShowDownloadModal(false); }
+        else { onBack(); }
+    }, [showReciterModal, showSurahModal, showDownloadModal, onBack]);
+
+    useEffect(() => {
+        const interceptor = () => {
+            if (showReciterModal) { setShowReciterModal(false); return true; }
+            if (showSurahModal) { setShowSurahModal(false); return true; }
+            if (showDownloadModal) { setShowDownloadModal(false); return true; }
+            return false;
+        };
+        const unregister = registerBackInterceptor(interceptor);
+        return unregister;
+    }, [showReciterModal, showSurahModal, showDownloadModal]);
 
     const handleNextSurah = useCallback(() => setSurahNumber(s => s === 114 ? 1 : s + 1), []);
     const handlePrevSurah = useCallback(() => setSurahNumber(s => s === 1 ? 114 : s - 1), []);
@@ -385,7 +404,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
                 <div className="w-full h-24 shrink-0"></div>
             </main>
 
-            <BottomBar onHomeClick={onBack} onThemesClick={onOpenThemes} showThemes={false} />
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={onOpenThemes} showThemes={false} />
 
             {showReciterModal && (
                 <ReciterSelectModal

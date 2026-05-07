@@ -145,21 +145,6 @@ function App() {
         // If we are navigating to the same page, do nothing
         if (current === pageId) return prev;
 
-        // Features list (all valid pages except home, more-menu)
-        const isMenu = (id: string) => id === 'home' || id === 'more-menu';
-        const isQuran = (id: string) => id === 'quran' || id === 'quran-landscape';
-
-        // If we are switching between features (and not coming from or going to a menu)
-        // we replace the last feature to keep history clean.
-        // Exception: quran reader stays in history if reached from another feature
-        // to allow returning to the previous feature (like daily-wird).
-        if (!isMenu(current) && !isMenu(pageId)) {
-          if (isQuran(pageId) && !isQuran(current)) {
-            return [...prev, pageId];
-          }
-          return [...prev.slice(0, -1), pageId];
-        }
-
         return [...prev, pageId];
       });
     } else {

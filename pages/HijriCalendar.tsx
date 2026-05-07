@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import BottomBar from '../components/BottomBar';
+import { registerBackInterceptor } from '../hooks/useBackButton';
 import { useTheme } from '../context/ThemeContext';
 import ThemePageLock from '../components/ThemePageLock';
 import { gregorianMonths, hijriMonths, islamicEvents, IslamicEvent } from '../data/calendarData';
@@ -717,6 +718,26 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
     };
     const selectedEvent = useMemo(() => islamicEvents.find(e => e.day === selectedHijri.day && e.month === selectedHijri.month), [selectedHijri]);
 
+    const handleHomeClick = () => {
+        if (showZoomModal) {
+            setShowZoomModal(false);
+        } else if (pickerConfig.isOpen) {
+            setPickerConfig({ ...pickerConfig, isOpen: false });
+        } else {
+            onBack();
+        }
+    };
+
+    useEffect(() => {
+        const interceptor = () => {
+            if (showZoomModal) { setShowZoomModal(false); return true; }
+            if (pickerConfig.isOpen) { setPickerConfig({ ...pickerConfig, isOpen: false }); return true; }
+            return false;
+        };
+        const unregister = registerBackInterceptor(interceptor);
+        return unregister;
+    }, [showZoomModal, pickerConfig.isOpen]);
+
     const changeMonth = (offset: number) => {
         setViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
     };
@@ -1132,7 +1153,7 @@ function HijriCalendar({ onBack }: { onBack: () => void }) {
                 </div>
             </main>
 
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
 
             {/* Toast Notification */}
             <AnimatePresence>

@@ -6,6 +6,7 @@ import { useHabitTracker, DailyRecord, HabitCategory, defaultRecord } from '../h
 import { useTheme } from '../context/ThemeContext';
 import ThemePageLock from '../components/ThemePageLock';
 import BottomBar from '../components/BottomBar';
+import { registerBackInterceptor } from '../hooks/useBackButton';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
@@ -97,6 +98,18 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
       onBack();
     }
   };
+
+  useEffect(() => {
+    const interceptor = () => {
+      if (viewMode === 'archive') {
+        setViewMode('tracker');
+        return true;
+      }
+      return false;
+    };
+    const unregister = registerBackInterceptor(interceptor);
+    return unregister;
+  }, [viewMode]);
 
   const heatmapData = useMemo(() => getHeatmapData(), [records, todayStr]);
 

@@ -23,6 +23,8 @@ interface WirdSettings {
 
 const TOTAL_PAGES = 604;
 
+import { registerBackInterceptor } from '../hooks/useBackButton';
+
 const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, params?: any) => void }> = ({ onBack, onNavigate }) => {
   const { theme, themeKey } = useTheme();
   const isDefaultTheme = themeKey === 'default';
@@ -846,6 +848,31 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       onBack();
     }
   };
+
+  useEffect(() => {
+    const interceptor = () => {
+      if (showDeleteConfirm) {
+        setShowDeleteConfirm(null);
+        return true;
+      }
+      if (showResetConfirm) {
+        setShowResetConfirm(false);
+        return true;
+      }
+      if (showProfileMenu) {
+        setShowProfileMenu(false);
+        return true;
+      }
+      if (showSettings && allSettings.length > 0) {
+        setShowSettings(false);
+        return true;
+      }
+      return false;
+    };
+
+    const unregister = registerBackInterceptor(interceptor);
+    return unregister;
+  }, [showDeleteConfirm, showResetConfirm, showProfileMenu, showSettings, allSettings.length]);
 
   return (
     <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, backgroundColor: isDefaultTheme ? '#FFFFFF' : 'transparent', color: isDefaultTheme ? '#000000' : 'var(--text-color)' }}>

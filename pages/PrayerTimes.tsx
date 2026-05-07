@@ -255,19 +255,19 @@ function PrayerTimes({ onBack, onNavigate }) {
                                     }
                                     window.open(url, '_blank');
                                 }}
-                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-2 flex items-center justify-center gap-1 shadow-sm font-bold text-[12px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
+                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
                                 style={{ color: primaryColor, border: isDefaultTheme ? '1px solid #f3f4f6' : undefined }}
                             >
-                                <MapPin size={16} className="shrink-0" />
+                                <MapPin size={18} className="shrink-0" />
                                 <span className="truncate whitespace-nowrap">البحث عن المساجد</span>
                             </button>
                              <button
                                 onClick={() => onNavigate('monthly-prayer-times')}
                                 id="monthly-times-btn"
-                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-2 flex items-center justify-center gap-1 shadow-sm font-bold text-[12px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
+                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
                                 style={{ color: secondaryColor, border: isDefaultTheme ? '1px solid #f3f4f6' : undefined }}
                             >
-                                <Calendar size={16} className="shrink-0" />
+                                <Calendar size={18} className="shrink-0" />
                                 <span className="truncate whitespace-nowrap">المواقيت الشهرية</span>
                             </button>
                         </div>
@@ -335,7 +335,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                         );
                     })()}
 
-                    <div id="prayer-list" className="grid grid-cols-2 gap-1.5 mt-1">
+                    <div id="prayer-list" className="grid grid-cols-2 gap-2 mt-2">
                         {['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((key, idx) => {
                              const totalOffset = (config.prayerOffsets[key] || 0) + (isSummerTimeActive ? 60 : 0);
                              const displayTimeStr = applyOffset(times[key], totalOffset);
@@ -370,11 +370,11 @@ function PrayerTimes({ onBack, onNavigate }) {
                         })}
                     </div>
                     
-                    <p className="text-center text-[10px] mt-2 opacity-70" style={{ color: secondaryColor }}>
+                    <p className="text-center text-sm mt-6 opacity-70" style={{ color: secondaryColor }}>
                         (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
                     </p>
                 </div>
-                <div className="w-full h-8 shrink-0"></div>
+                <div className="w-full h-24 shrink-0"></div>
             </main>
 
             <PrayerTimesSettingsModal 
