@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { Lock, Unlock } from 'lucide-react';
+import { registerBackInterceptor } from '../hooks/useBackButton';
 
 interface BottomBarProps {
     onHomeClick: () => void;
@@ -15,6 +16,26 @@ interface BottomBarProps {
 
 function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = true, homeLabel = "الرئيسية", leftButton, rightButton }: BottomBarProps) {
     const { theme, themeKey, isPageLocked, togglePageLock, isQuranPage, currentPage } = useTheme();
+
+    const onHomeClickRef = useRef(onHomeClick);
+    useEffect(() => {
+        onHomeClickRef.current = onHomeClick;
+    }, [onHomeClick]);
+
+    useEffect(() => {
+        if (currentPage === 'home' || currentPage === 'more-menu') return;
+
+        const interceptor = () => {
+            if (onHomeClickRef.current) {
+                onHomeClickRef.current();
+                return true;
+            }
+            return false;
+        };
+
+        const unregister = registerBackInterceptor(interceptor);
+        return unregister;
+    }, [currentPage]);
 
     const isSingleButton = !showHome || !showThemes;
     const homeButtonClass = `bar-button btn-3d-effect ${isSingleButton ? 'w-full max-w-[160px] mx-auto py-2.5 px-4 rounded-xl shadow-lg' : 'max-w-[120px]'}`;

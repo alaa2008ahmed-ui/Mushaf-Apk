@@ -24,6 +24,16 @@ function ThemeSelector({ onClose, isLandscape }: { onClose: () => void, isLandsc
         };
     }, [wrapperRef, onClose]);
 
+    useEffect(() => {
+        // Scroll to the active theme button after render
+        if (themeKey) {
+            const activeButton = wrapperRef.current?.querySelector(`[data-theme-key="${themeKey}"]`);
+            if (activeButton) {
+                activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+    }, [themeKey]);
+
     const handleBgUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
             const file = event.target.files[0];
@@ -53,7 +63,7 @@ function ThemeSelector({ onClose, isLandscape }: { onClose: () => void, isLandsc
                             <span className="text-lg">🔄</span>
                             <span>استعادة</span>
                         </button>
-                        <button onClick={() => { applyPresetTheme('default'); onClose(); }} className="p-2 rounded-xl font-bold text-[10px] flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm" style={{backgroundColor: theme.palette[2] + '20', color: theme.textColor, borderWidth: '1px', borderStyle: 'solid', borderColor: theme.palette[2] + '40'}}>
+                        <button data-theme-key="default" onClick={() => { applyPresetTheme('default'); onClose(); }} className="p-2 rounded-xl font-bold text-[10px] flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm" style={{backgroundColor: theme.palette[2] + '20', color: theme.textColor, borderWidth: '1px', borderStyle: 'solid', borderColor: theme.palette[2] + '40'}}>
                             <span className="text-lg">🎨</span>
                             <span>الافتراضي</span>
                         </button>
@@ -65,6 +75,7 @@ function ThemeSelector({ onClose, isLandscape }: { onClose: () => void, isLandsc
                         {Object.entries(presetThemes).filter(([key]) => key !== 'default').map(([key, themeOption], index) => (
                             <button
                                 key={key}
+                                data-theme-key={key}
                                 onClick={() => { applyPresetTheme(key); onClose(); }}
                                 className="theme-selector-button w-[85px] h-14 rounded-xl border-2 text-[10px] font-bold flex items-center justify-center text-center shadow-sm transition-all active:scale-95 hover:brightness-110"
                                     style={{

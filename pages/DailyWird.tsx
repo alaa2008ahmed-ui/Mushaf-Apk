@@ -833,6 +833,20 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     );
   };
 
+  const handleHomeClick = () => {
+    if (showDeleteConfirm) {
+      setShowDeleteConfirm(null);
+    } else if (showResetConfirm) {
+      setShowResetConfirm(false);
+    } else if (showProfileMenu) {
+      setShowProfileMenu(false);
+    } else if (showSettings && allSettings.length > 0) {
+      setShowSettings(false);
+    } else {
+      onBack();
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, backgroundColor: isDefaultTheme ? '#FFFFFF' : 'transparent', color: isDefaultTheme ? '#000000' : 'var(--text-color)' }}>
       <header className="app-top-bar">
@@ -858,7 +872,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         <div className="shrink-0 w-full h-32"></div>
       </main>
 
-      {!isInputFocused && <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />}
+      {!isInputFocused && <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />}
 
       {renderDeleteConfirmModal()}
 

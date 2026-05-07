@@ -4,8 +4,8 @@ import { useTheme } from '../context/ThemeContext';
 const ThemePageLock: React.FC = () => {
     const { isPageLocked, togglePageLock, isQuranPage, currentPage } = useTheme();
 
-    // Do not show on Quran page or Home page
-    if (isQuranPage || currentPage === 'home') return null;
+    // Only show on Quran page
+    if (!isQuranPage) return null;
 
     return (
         <button

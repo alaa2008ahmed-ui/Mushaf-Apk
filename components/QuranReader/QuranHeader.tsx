@@ -1,6 +1,7 @@
 import React from 'react';
 import { toArabic } from './constants';
 import { Menu } from 'lucide-react';
+import ThemePageLock from '../ThemePageLock';
 
 interface QuranHeaderProps {
     isPageInputActive: boolean;
@@ -66,15 +67,20 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
 
     return (
         <header id="header" className={`header-default flex-none z-50 flex items-center justify-between border shadow-xl w-full gap-1 ${isAnyMenuOpen ? 'pointer-events-none opacity-50' : ''}`} style={getToolbarStyle('top-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
-            <button 
-                id="btn-menu-header" 
-                onClick={() => (setIsFloatingMenuOpen as any)()}
-                className={`top-bar-text-button !rounded-full !w-10 !h-10 !p-0 flex items-center justify-center flex-shrink-0 aspect-square ${isFloatingMenuOpen ? 'pointer-events-auto opacity-100' : (isAnyMenuOpen ? 'pointer-events-none opacity-50' : 'pointer-events-auto opacity-100')}`} 
-                style={getToolbarStyle('btn-menu', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBorder || currentTheme.btnBg)}
-                title="القائمة"
-            >
-                <Menu size={20} />
-            </button>
+            <div className="flex items-center">
+                <button 
+                    id="btn-menu-header" 
+                    onClick={() => (setIsFloatingMenuOpen as any)()}
+                    className={`top-bar-text-button !rounded-full !w-10 !h-10 !p-0 flex items-center justify-center flex-shrink-0 aspect-square ${isFloatingMenuOpen ? 'pointer-events-auto opacity-100' : (isAnyMenuOpen ? 'pointer-events-none opacity-50' : 'pointer-events-auto opacity-100')}`} 
+                    style={getToolbarStyle('btn-menu', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBorder || currentTheme.btnBg)}
+                    title="القائمة"
+                >
+                    <Menu size={20} />
+                </button>
+                <div className="mr-1">
+                    <ThemePageLock />
+                </div>
+            </div>
             <button 
                 id="surah-name-header" 
                 onClick={() => openModal('surah-modal')}

@@ -241,10 +241,10 @@ function PrayerTimes({ onBack, onNavigate }) {
                 topBarTextColor={topBarTextColor}
             />
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-2">
-                <div className="max-w-md mx-auto">
-                    <div className={`themed-card ${isDefaultTheme ? 'bg-white border-gray-200' : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5'} border rounded-[1.25rem] p-3 mb-3 shadow-sm`}>
-                        <div className="flex gap-2 mb-3">
+            <main className="flex-1 overflow-y-auto hide-scrollbar px-2 pb-1">
+                <div className="max-w-md mx-auto flex flex-col h-full">
+                    <div className={`themed-card ${isDefaultTheme ? 'bg-white border-gray-200' : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5'} border rounded-xl p-2 mb-1.5 shadow-sm`}>
+                        <div className="flex gap-2 mb-1.5">
                             <button
                                 onClick={() => {
                                     const lat = config.location?.lat;
@@ -255,19 +255,19 @@ function PrayerTimes({ onBack, onNavigate }) {
                                     }
                                     window.open(url, '_blank');
                                 }}
-                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
+                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-2 flex items-center justify-center gap-1 shadow-sm font-bold text-[12px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
                                 style={{ color: primaryColor, border: isDefaultTheme ? '1px solid #f3f4f6' : undefined }}
                             >
-                                <MapPin size={18} className="shrink-0" />
+                                <MapPin size={16} className="shrink-0" />
                                 <span className="truncate whitespace-nowrap">البحث عن المساجد</span>
                             </button>
                              <button
                                 onClick={() => onNavigate('monthly-prayer-times')}
                                 id="monthly-times-btn"
-                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
+                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-2 flex items-center justify-center gap-1 shadow-sm font-bold text-[12px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
                                 style={{ color: secondaryColor, border: isDefaultTheme ? '1px solid #f3f4f6' : undefined }}
                             >
-                                <Calendar size={18} className="shrink-0" />
+                                <Calendar size={16} className="shrink-0" />
                                 <span className="truncate whitespace-nowrap">المواقيت الشهرية</span>
                             </button>
                         </div>
@@ -335,7 +335,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                         );
                     })()}
 
-                    <div id="prayer-list" className="grid grid-cols-2 gap-2 mt-2">
+                    <div id="prayer-list" className="grid grid-cols-2 gap-1.5 mt-1">
                         {['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((key, idx) => {
                              const totalOffset = (config.prayerOffsets[key] || 0) + (isSummerTimeActive ? 60 : 0);
                              const displayTimeStr = applyOffset(times[key], totalOffset);
@@ -370,11 +370,11 @@ function PrayerTimes({ onBack, onNavigate }) {
                         })}
                     </div>
                     
-                    <p className="text-center text-sm mt-6 opacity-70" style={{ color: secondaryColor }}>
+                    <p className="text-center text-[10px] mt-2 opacity-70" style={{ color: secondaryColor }}>
                         (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
                     </p>
                 </div>
-                <div className="w-full h-24 shrink-0"></div>
+                <div className="w-full h-8 shrink-0"></div>
             </main>
 
             <PrayerTimesSettingsModal 

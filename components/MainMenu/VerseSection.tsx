@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 
 interface VerseSectionProps {
     currentVerse: { text: string; surah: string; number: string | number };
@@ -18,6 +18,15 @@ const VerseSection: React.FC<VerseSectionProps> = ({
     verseSettings
 }) => {
     const isBlackTheme = theme.bgColor === '#000000';
+    const isDarkBg = ['#000000', '#0f172a', '#1e1b4b', '#0b0f19', '#022c22', '#2e1065'].includes(theme.bgColor?.toLowerCase());
+    const isLightTheme = !isDarkBg;
+
+    let finalTextColor = verseSettings.textColor;
+    if (isBlackTheme) {
+        finalTextColor = '#FFFFFF';
+    } else if (isLightTheme) {
+        finalTextColor = theme.palette?.[0] || theme.textColor;
+    }
 
     return (
         <div 
@@ -30,10 +39,10 @@ const VerseSection: React.FC<VerseSectionProps> = ({
                 fontFamily: verseSettings.fontFamily
             }}
         >
-            <p className="font-bold leading-tight mb-1 pointer-events-none transition-all duration-75" style={{ color: isBlackTheme ? '#FFFFFF' : (verseSettings.textColor === theme.textColor && theme.textColor === '#000000' ? theme.palette[0] : verseSettings.textColor), fontSize: `${verseFontSize}rem` }}>
+            <p className="font-bold leading-tight mb-1 pointer-events-none transition-all duration-75" style={{ color: finalTextColor, fontSize: `${verseFontSize}rem` }}>
                 {currentVerse.text}
             </p>
-            <p className="text-[12px] font-bold text-left pl-8 pointer-events-none transition-all duration-75 opacity-70" style={{ color: isBlackTheme ? '#FFFFFF' : (verseSettings.textColor === theme.textColor && theme.textColor === '#000000' ? theme.palette[1] : verseSettings.textColor), fontSize: `${Math.max(0.75, verseFontSize * 0.6)}rem` }}>
+            <p className="text-[12px] font-bold text-left pl-8 pointer-events-none transition-all duration-75 opacity-70" style={{ color: finalTextColor, fontSize: `${Math.max(0.75, verseFontSize * 0.6)}rem` }}>
                 {`(${currentVerse.surah}: ${currentVerse.number})`}
             </p>
         </div>

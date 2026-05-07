@@ -90,6 +90,14 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
     comparisonClass = 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
   }
 
+  const handleHomeClick = () => {
+    if (viewMode === 'archive') {
+      setViewMode('tracker');
+    } else {
+      onBack();
+    }
+  };
+
   const heatmapData = useMemo(() => getHeatmapData(), [records, todayStr]);
 
   useEffect(() => {
@@ -523,7 +531,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack }) => {
 
       </main>
 
-      <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+      <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
 
       <TutorialOverlay tutorialId="habit-tracker-tutorial" steps={habitTrackerTutorialSteps} />
 
