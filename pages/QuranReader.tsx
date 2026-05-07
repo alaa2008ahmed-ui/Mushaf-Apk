@@ -877,6 +877,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         return () => {
             const unlockOrientation = async () => {
                 try {
+                    if (Capacitor.isNativePlatform()) {
+                        await ScreenOrientation.lock({ orientation: 'portrait' });
+                    }
                     await ScreenOrientation.unlock();
                 } catch (e) {
                     console.log('Screen orientation unlock failed', e);

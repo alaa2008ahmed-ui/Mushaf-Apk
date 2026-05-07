@@ -1,3 +1,9 @@
+/* --- Global Override to disable animations --- */
+* {
+    transition: none !important;
+    animation: none !important;
+}
+
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
