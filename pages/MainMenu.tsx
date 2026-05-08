@@ -295,8 +295,8 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     <div>
       <InteractiveBackground />
       <div className="h-screen w-full flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-hidden pb-32">
-          <div className="main-layout px-4 h-full flex flex-col" style={{ fontFamily: theme.font }}>
+        <div className="flex-1 overflow-y-auto pb-24 no-scrollbar">
+          <div className="main-layout px-4 flex flex-col" style={{ fontFamily: theme.font }}>
               
               <div id="verse-section">
                 <VerseSection 
@@ -338,7 +338,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
               {!isEditMode && (
                   <div className="flex flex-col gap-2 w-full max-w-sm mx-auto mt-1 mb-4">
                       {/* Dua Card */}
-                      <div className="flex items-center justify-center gap-2 h-14">
+                      <div className="flex items-center justify-center gap-2 h-12">
                           {!showVoiceIcon && (
                               <div className="flex items-center justify-center shrink-0">
                                   <WhatsAppButton />
@@ -355,20 +355,22 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                       {/* Prayer Status Cards */}
                       <div className="grid grid-cols-3 gap-2 px-1">
                            {/* Right Card: Previous Prayer */}
-                           <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border border-transparent hover:border-current/10 transition-all">
+                           <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border-2 transition-all" 
+                                style={{ borderColor: `${theme.palette[0]}33` }}>
                                <span className="text-[10px] opacity-70 font-bold mb-0.5">انتهت</span>
                                <span className="text-[15px] font-black truncate w-full" style={{ color: theme.textColor }}>{prevSalah}</span>
                            </div>
 
                            {/* Middle Card: Remaining Time */}
-                           <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-md border-b-2 relative overflow-hidden" 
-                                style={{ borderBottomColor: theme.bgColor === '#000000' ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#65A30D' : theme.textColor)) }}>
+                           <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-md border-2 relative overflow-hidden" 
+                                style={{ borderColor: theme.palette[0] }}>
                                <span className="text-[10px] opacity-70 font-bold mb-0.5">متبقي</span>
                                <span className="text-[16px] font-mono font-black tracking-wider" style={{ color: theme.textColor }}>{prayerCountdown}</span>
                            </div>
 
                            {/* Left Card: Next Prayer */}
-                           <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border border-transparent hover:border-current/10 transition-all">
+                           <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border-2 transition-all"
+                                style={{ borderColor: `${theme.palette[0]}33` }}>
                                <span className="text-[10px] opacity-70 font-bold mb-0.5">القادمة</span>
                                <span className="text-[15px] font-black truncate w-full" style={{ color: theme.textColor }}>{nextSalah}</span>
                            </div>
