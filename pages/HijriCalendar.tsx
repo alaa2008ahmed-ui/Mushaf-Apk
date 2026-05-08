@@ -796,7 +796,7 @@ function HijriCalendar({ onBack , onNavigate }: { onBack: () => void, onNavigate
     };
 
     const handleShare = async (title: string, desc: string) => {
-        const dateStr = `${toArabicNumerals(historicalEvent.hijriYear)} هـ • ${toArabicNumerals(historicalEvent.gregorianYear)} م`;
+        const dateStr = `${toArabicNumerals(historicalEvent.hijriYear)} • ${toArabicNumerals(historicalEvent.gregorianYear)}`;
         await shareAsImage({
             text: desc,
             source: `${title} (${dateStr})`,

@@ -654,7 +654,13 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         for (const ay of ayahsToShare) {
                             const sStr = String(ay.s).padStart(3, '0');
                             const aStr = String(ay.a).padStart(3, '0');
-                            const audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
+                            let audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
+                            if (/^[a-z]{2,3}\./.test(audioReader)) {
+                                const globalAyahNum = quranData?.surahs[ay.s - 1]?.ayahs[ay.a - 1]?.number;
+                                if (globalAyahNum) {
+                                    audioUrl = `https://cdn.islamic.network/quran/audio/128/${audioReader}/${globalAyahNum}.mp3`;
+                                }
+                            }
                             
                             const res = await fetch(audioUrl);
                             if (!res.ok) throw new Error(`Failed to fetch audio for ayah ${ay.a}`);
@@ -696,7 +702,13 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         for (const ay of ayahsToShare) {
                             const sStr = String(ay.s).padStart(3, '0');
                             const aStr = String(ay.a).padStart(3, '0');
-                            const audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
+                            let audioUrl = `https://everyayah.com/data/${audioReader}/${sStr}${aStr}.mp3`;
+                            if (/^[a-z]{2,3}\./.test(audioReader)) {
+                                const globalAyahNum = quranData?.surahs[ay.s - 1]?.ayahs[ay.a - 1]?.number;
+                                if (globalAyahNum) {
+                                    audioUrl = `https://cdn.islamic.network/quran/audio/128/${audioReader}/${globalAyahNum}.mp3`;
+                                }
+                            }
                             
                             const res = await fetch(audioUrl);
                             if (!res.ok) throw new Error(`Failed to fetch audio for ayah ${ay.a}`);

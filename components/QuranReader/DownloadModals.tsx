@@ -633,7 +633,29 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
                         </div>
                         
                         {!isDownloading ? (
-                            <button onClick={downloadSelected} disabled={!selectedReader || (selectedSurahs.length === 0 && selectedJuzs.length === 0)} className={`w-full theme-btn-bg py-2.5 rounded-lg shadow font-bold text-sm ${(!selectedReader || (selectedSurahs.length === 0 && selectedJuzs.length === 0)) ? 'opacity-50 cursor-not-allowed' : ''}`}>تحميل</button>
+                            <button 
+                                onClick={downloadSelected} 
+                                disabled={!selectedReader || (selectedSurahs.length === 0 && selectedJuzs.length === 0) || (() => {
+                                    if (selectedSurahs.includes('all')) return downloadedSurahs.length === 114;
+                                    const allSelection = [...selectedSurahs, ...selectedJuzs.flatMap(j => getAyahsForJuz(parseInt(j), quranData).map(a => a.surah.toString()))];
+                                    if (allSelection.length === 0) return false;
+                                    return allSelection.every(s => downloadedSurahs.includes(s));
+                                })()} 
+                                className={`w-full theme-btn-bg py-2.5 rounded-lg shadow font-bold text-sm ${(!selectedReader || (selectedSurahs.length === 0 && selectedJuzs.length === 0) || (() => {
+                                    if (selectedSurahs.includes('all')) return downloadedSurahs.length === 114;
+                                    const allSelection = [...selectedSurahs, ...selectedJuzs.flatMap(j => getAyahsForJuz(parseInt(j), quranData).map(a => a.surah.toString()))];
+                                    if (allSelection.length === 0) return false;
+                                    return allSelection.every(s => downloadedSurahs.includes(s));
+                                })()) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                            >
+                                {(() => {
+                                    if (!selectedReader || (selectedSurahs.length === 0 && selectedJuzs.length === 0)) return 'تحميل';
+                                    if (selectedSurahs.includes('all')) return downloadedSurahs.length === 114 ? 'محمل' : 'تحميل';
+                                    const allSelection = [...selectedSurahs, ...selectedJuzs.flatMap(j => getAyahsForJuz(parseInt(j), quranData).map(a => a.surah.toString()))];
+                                    if (allSelection.every(s => downloadedSurahs.includes(s))) return 'محمل';
+                                    return 'تحميل';
+                                })()}
+                            </button>
                         ) : (
                             <div className="mt-2">
                                 <div className="text-xs font-bold mb-1">{status}</div>
@@ -930,7 +952,32 @@ export const TafsirDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qur
                         </div>
                         
                         {!isDownloading ? (
-                            <button onClick={downloadSelected} disabled={!selectedTafsir || (selectedSurahs.length === 0 && selectedJuzs.length === 0)} className={`w-full theme-btn-bg py-2.5 rounded-lg shadow font-bold text-sm ${(!selectedTafsir || (selectedSurahs.length === 0 && selectedJuzs.length === 0)) ? 'opacity-50 cursor-not-allowed' : ''}`}>تحميل</button>
+                            <button 
+                                onClick={downloadSelected} 
+                                disabled={!selectedTafsir || (selectedSurahs.length === 0 && selectedJuzs.length === 0) || (() => {
+                                    if (selectedSurahs.includes('all')) return downloadedSurahs.length === 114;
+                                    const surahsFromJuz = selectedJuzs.flatMap(j => Array.from(new Set(getAyahsForJuz(parseInt(j), quranData).map(a => a.surah.toString()))));
+                                    const allSelection = Array.from(new Set([...selectedSurahs.filter(s => s !== 'all'), ...surahsFromJuz]));
+                                    if (allSelection.length === 0) return false;
+                                    return allSelection.every(s => downloadedSurahs.includes(s));
+                                })()} 
+                                className={`w-full theme-btn-bg py-2.5 rounded-lg shadow font-bold text-sm ${(!selectedTafsir || (selectedSurahs.length === 0 && selectedJuzs.length === 0) || (() => {
+                                    if (selectedSurahs.includes('all')) return downloadedSurahs.length === 114;
+                                    const surahsFromJuz = selectedJuzs.flatMap(j => Array.from(new Set(getAyahsForJuz(parseInt(j), quranData).map(a => a.surah.toString()))));
+                                    const allSelection = Array.from(new Set([...selectedSurahs.filter(s => s !== 'all'), ...surahsFromJuz]));
+                                    if (allSelection.length === 0) return false;
+                                    return allSelection.every(s => downloadedSurahs.includes(s));
+                                })()) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                            >
+                                {(() => {
+                                    if (!selectedTafsir || (selectedSurahs.length === 0 && selectedJuzs.length === 0)) return 'تحميل';
+                                    if (selectedSurahs.includes('all')) return downloadedSurahs.length === 114 ? 'محمل' : 'تحميل';
+                                    const surahsFromJuz = selectedJuzs.flatMap(j => Array.from(new Set(getAyahsForJuz(parseInt(j), quranData).map(a => a.surah.toString()))));
+                                    const allSelection = Array.from(new Set([...selectedSurahs.filter(s => s !== 'all'), ...surahsFromJuz]));
+                                    if (allSelection.every(s => downloadedSurahs.includes(s))) return 'محمل';
+                                    return 'تحميل';
+                                })()}
+                            </button>
                         ) : (
                             <div className="mt-2">
                                 <div className="text-xs font-bold mb-1">{status}</div>

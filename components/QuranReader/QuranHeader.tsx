@@ -1,7 +1,6 @@
 import React from 'react';
 import { toArabic } from './constants';
 import { Menu } from 'lucide-react';
-import ThemePageLock from '../ThemePageLock';
 
 interface QuranHeaderProps {
     isPageInputActive: boolean;
@@ -78,7 +77,6 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                     <Menu size={20} />
                 </button>
                 <div className="mr-1">
-                    <ThemePageLock />
                 </div>
             </div>
             <button 
