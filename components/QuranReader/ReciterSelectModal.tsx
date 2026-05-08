@@ -72,7 +72,6 @@ const ReciterSelectModal: React.FC<ReciterSelectModalProps> = ({ onClose, curren
                         >
                             <div className="flex flex-col justify-center items-center w-full gap-2">
                                 <span className="text-sm">{r.name}</span>
-                                {currentReader === r.id && <i className="fa-solid fa-check text-xs"></i>}
                             </div>
                         </button>
                     ))}

@@ -243,7 +243,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
         root.style.setProperty('--qr-bar-border', t.barBorder || 'transparent');
         root.style.setProperty('--qr-btn-bg', t.palette[0]);
         root.style.setProperty('--qr-btn-text', '#ffffff');
-        root.style.setProperty('--qr-accent', t.palette[1] || t.palette[0]);
+        root.style.setProperty('--qr-accent', themeKey === 'default' ? '#000000' : (t.palette[1] || t.palette[0]));
         root.style.setProperty('--qr-accent-text', '#ffffff');
         root.style.setProperty('--qr-modal-bg', t.bgColor || '#0D1B2A');
         root.style.setProperty('--qr-modal-text', t.textColor);

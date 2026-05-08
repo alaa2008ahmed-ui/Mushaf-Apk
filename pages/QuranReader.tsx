@@ -2537,8 +2537,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         root.style.setProperty('--qr-bar-border', t.barBorder);
         root.style.setProperty('--qr-btn-bg', t.btnBg);
         root.style.setProperty('--qr-btn-text', t.btnText);
-        root.style.setProperty('--qr-accent', t.accent);
-        root.style.setProperty('--qr-accent-text', t.accentText);
+        root.style.setProperty('--qr-accent', themeKey === 'default' ? '#000000' : t.accent);
+        root.style.setProperty('--qr-accent-text', themeKey === 'default' ? '#ffffff' : t.accentText);
         root.style.setProperty('--qr-modal-bg', t.modalBg);
         root.style.setProperty('--qr-modal-text', t.modalText);
         root.style.setProperty('--qr-header-bg', t.headerBg);

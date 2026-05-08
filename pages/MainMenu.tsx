@@ -307,7 +307,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
               {/* Footer/Save Button */}
               {!isEditMode && (
-                  <div className="flex items-center justify-center w-full max-w-sm mx-auto mt-1 mb-4 gap-2 h-10">
+                  <div className="flex items-center justify-center w-full max-w-sm mx-auto mt-1 mb-4 gap-2 h-14">
                       {!showVoiceIcon && (
                           <div className="flex items-center justify-center shrink-0">
                               <WhatsAppButton />
