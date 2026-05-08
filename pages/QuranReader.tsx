@@ -203,7 +203,7 @@ const ResumeSessionModal = ({ isOpen, onClose, onResume, onStartNew, currentThem
 };
 
 const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: string) => void, onOpenThemes?: () => void, initialLandscape?: boolean, initialSurah?: number, initialAyah?: number, initialPage?: number, isWirdMode?: boolean, isMemorizationMode?: boolean, memorizationSettings?: any, navParams?: any }> = ({ page, onBack, onNavigate, onOpenThemes, initialLandscape = false, initialSurah, initialAyah, initialPage, isWirdMode = false, isMemorizationMode = false, memorizationSettings, navParams }) => {
-    const { setCurrentPage, isGlobalTheme } = useTheme();
+    const { setCurrentPage, isGlobalTheme, themeKey } = useTheme();
 
     const [isLandscape, setIsLandscape] = useState(initialLandscape);
 
@@ -2558,7 +2558,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         const isDark = (settings.bgColor || t.bg) && darkBgs.includes((settings.bgColor || t.bg).toLowerCase());
         if (isDark) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
-    }, [currentTheme, settings.highlightTextColor, settings.textColor, settings.bgColor, settings.fontFamily]);
+    }, [currentTheme, themeKey, settings.highlightTextColor, settings.textColor, settings.bgColor, settings.fontFamily]);
 
     const isBookmarksModalOpen = activeModals.includes('bookmarks-modal');
     useEffect(() => {
