@@ -119,14 +119,33 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
         localStorage.setItem('memorization_settings_v1', JSON.stringify(settings));
     }, [selectedReader, fromSurah, fromAyah, toSurah, toAyah, rangeRepeat, ayahRepeat, linkedRepeat, pauseLength, testAfterSession]);
 
+    // Auto-scroll to selected items when pickers are opened
     useEffect(() => {
-        if (activePicker === 'reader') {
-            setTimeout(() => {
-                const el = document.getElementById(`reader-btn-${selectedReader}`);
-                if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-            }, 100);
-        }
-    }, [activePicker]);
+        if (!activePicker) return;
+
+        const timer = setTimeout(() => {
+            let elementId = '';
+            if (activePicker === 'reader') {
+                elementId = `reader-btn-${selectedReader}`;
+            } else if (activePicker === 'fromSurah') {
+                elementId = `surah-btn-${fromSurah}`;
+            } else if (activePicker === 'toSurah') {
+                elementId = `surah-btn-${toSurah}`;
+            } else if (activePicker === 'fromAyah') {
+                elementId = `ayah-btn-${fromAyah}`;
+            } else if (activePicker === 'toAyah') {
+                elementId = `ayah-btn-${toAyah}`;
+            }
+
+            if (elementId) {
+                const el = document.getElementById(elementId);
+                if (el) {
+                    el.scrollIntoView({ block: 'center', behavior: 'auto' });
+                }
+            }
+        }, 50);
+        return () => clearTimeout(timer);
+    }, [activePicker, selectedReader, fromSurah, toSurah, fromAyah, toAyah]);
 
     const handleStart = () => {
         const session = localStorage.getItem('memorization_session_v1');
@@ -711,6 +730,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                 return (
                                     <button
                                         key={i}
+                                        id={`surah-btn-${surahNum}`}
                                         onClick={() => {
                                             if (activePicker === 'fromSurah') {
                                                 setFromSurah(surahNum);
@@ -745,6 +765,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                         return (
                                             <button
                                                 key={i}
+                                                id={`ayah-btn-${ayahNum}`}
                                                 onClick={() => {
                                                     if (activePicker === 'fromAyah') setFromAyah(ayahNum);
                                                     else setToAyah(ayahNum);

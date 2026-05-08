@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import BottomBar from '../components/BottomBar';
 import ThemePageLock from '../components/ThemePageLock';
 import { useTheme } from '../context/ThemeContext';
@@ -25,6 +25,34 @@ const mockQuranData = {
 // FIX: Correctly convert digits to numbers for array indexing.
 const toArabicNumerals = (numStr) => String(numStr).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d]);
 
+// Normalize URL for consistent mapping
+const normalizeUrl = (url: string) => {
+    if (!url) return '';
+    return url.toLowerCase()
+        .replace(/^https?:\/\//, '')
+        .replace(/www\./, '')
+        .replace(/\/+/g, '/') // Group multiple slashes into one
+        .replace(/\/$/, '')
+        .trim();
+};
+
+// Simplify Arabic names for better matching
+const simplifyName = (name: string) => {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .replace(/^(ال)/, '') // Remove prefix Al
+        .replace(/\s(ال)/g, ' ') // Remove Al after space
+        .replace(/[أإآا]/g, 'ا')
+        .replace(/ة/g, 'ه')
+        .replace(/ى/g, 'ي')
+        .replace(/ئ/g, 'ي')
+        .replace(/ؤ/g, 'و')
+        .replace(/[\u064B-\u065F]/g, '') // Remove harakat
+        .replace(/[^ا-ي0-9]/g, '') // Keep only Arabic letters and numbers
+        .trim();
+};
+
 function formatTime(seconds) {
     if (isNaN(seconds) || seconds < 0) return toArabicNumerals('00:00');
     const minutes = Math.floor(seconds / 60);
@@ -47,10 +75,108 @@ function ListenQuran({ onBack, onOpenThemes }) {
     const [showSurahModal, setShowSurahModal] = useState(false);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '' });
+    const [reciterSurahs, setReciterSurahs] = useState<Record<string, number[]>>({});
+
+    const getAvailableSurahs = useCallback((id: string) => {
+        const fullList = Array.from({ length: 114 }, (_, i) => i + 1);
+        if (!Object.keys(reciterSurahs).length) {
+            return fullList;
+        }
+
+        // 1. Try URL exact match
+        const currentUrlKey = normalizeUrl(id);
+        if (reciterSurahs[currentUrlKey]) return reciterSurahs[currentUrlKey];
+
+        // 2. Try Name match
+        const rName = RECITERS.find(r => r.id === id)?.name;
+        if (rName) {
+            const currentNameKey = `name:${simplifyName(rName)}`;
+            if (reciterSurahs[currentNameKey]) return reciterSurahs[currentNameKey];
+            
+            // Loose name match
+            const simplifiedNameCurrent = simplifyName(rName);
+            const matchedNameKey = Object.keys(reciterSurahs).find(key => 
+                key.startsWith('name:') && (key.includes(simplifiedNameCurrent) || simplifiedNameCurrent.includes(key.replace('name:', '')))
+            );
+            if (matchedNameKey) return reciterSurahs[matchedNameKey];
+        }
+
+        // 3. Try URL loose match
+        const matchedUrlKey = Object.keys(reciterSurahs).find(key => 
+            !key.startsWith('name:') && (currentUrlKey.includes(key) || key.includes(currentUrlKey))
+        );
+        if (matchedUrlKey) return reciterSurahs[matchedUrlKey];
+        
+        return fullList;
+    }, [reciterSurahs]);
+
+    const availableSurahIds = useMemo(() => {
+        return getAvailableSurahs(reciterId);
+    }, [reciterId, getAvailableSurahs]);
+
+    const filteredQuranData = useMemo(() => {
+        return {
+            surahs: mockQuranData.surahs.filter(s => availableSurahIds.includes(s.number))
+        };
+    }, [availableSurahIds]);
     
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const autoPlayNextRef = useRef(false);
     const objectUrlRef = useRef<string | null>(null);
+
+    // Fetch reciter availability mapping
+    useEffect(() => {
+        const fetchSurahs = async () => {
+            try {
+                const CACHE_KEY = 'mp3quran_surahs_cache_v5';
+                const cached = localStorage.getItem(CACHE_KEY);
+                if (cached) {
+                    const { data, timestamp } = JSON.parse(cached);
+                    if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+                        setReciterSurahs(data);
+                        return;
+                    }
+                }
+
+                const res = await fetch('https://mp3quran.net/api/v3/reciters?language=ar');
+                if (!res.ok) throw new Error('Network response was not ok');
+                const data = await res.json();
+                const mapping: Record<string, number[]> = {};
+                
+                if (data.reciters && Array.isArray(data.reciters)) {
+                    data.reciters.forEach((r: any) => {
+                        const nameKey = `name:${simplifyName(r.name)}`;
+                        if (r.moshaf && Array.isArray(r.moshaf)) {
+                            r.moshaf.forEach((m: any) => {
+                                if (m.server && m.suras) {
+                                    const surasArray = typeof m.suras === 'string' ? m.suras.split(',').map(Number) : (Array.isArray(m.suras) ? m.suras : []);
+                                    const urlKey = normalizeUrl(m.server);
+                                    if (urlKey) mapping[urlKey] = surasArray;
+                                    
+                                    // Merge surahs for the same name to show all available across different moshafs
+                                    if (!mapping[nameKey]) {
+                                        mapping[nameKey] = surasArray;
+                                    } else {
+                                        const merged = Array.from(new Set([...mapping[nameKey], ...surasArray]));
+                                        mapping[nameKey] = merged;
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                setReciterSurahs(mapping);
+                localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    data: mapping,
+                    timestamp: Date.now()
+                }));
+            } catch (e) {
+                console.error("Failed to fetch surahs mapping", e);
+            }
+        };
+        fetchSurahs();
+    }, []);
 
     useEffect(() => {
         try {
@@ -84,8 +210,25 @@ function ListenQuran({ onBack, onOpenThemes }) {
         return unregister;
     }, [showReciterModal, showSurahModal, showDownloadModal]);
 
-    const handleNextSurah = useCallback(() => setSurahNumber(s => s === 114 ? 1 : s + 1), []);
-    const handlePrevSurah = useCallback(() => setSurahNumber(s => s === 1 ? 114 : s - 1), []);
+    const handleNextSurah = useCallback(() => {
+        const available = getAvailableSurahs(reciterId);
+        const currentIndex = available.indexOf(surahNumber);
+        if (currentIndex !== -1 && currentIndex < available.length - 1) {
+            setSurahNumber(available[currentIndex + 1]);
+        } else {
+            setSurahNumber(available[0] || 1);
+        }
+    }, [getAvailableSurahs, reciterId, surahNumber]);
+
+    const handlePrevSurah = useCallback(() => {
+        const available = getAvailableSurahs(reciterId);
+        const currentIndex = available.indexOf(surahNumber);
+        if (currentIndex !== -1 && currentIndex > 0) {
+            setSurahNumber(available[currentIndex - 1]);
+        } else {
+            setSurahNumber(available[available.length - 1] || 1);
+        }
+    }, [getAvailableSurahs, reciterId, surahNumber]);
 
     useEffect(() => {
         const root = document.documentElement;
@@ -176,6 +319,15 @@ function ListenQuran({ onBack, onOpenThemes }) {
     const showToast = (message: string) => {
         setToast({ show: true, message });
     };
+
+    useEffect(() => {
+        if (Object.keys(reciterSurahs).length > 0) {
+            const available = getAvailableSurahs(reciterId);
+            if (!available.includes(surahNumber)) {
+                setSurahNumber(available[0] || 1);
+            }
+        }
+    }, [reciterId, reciterSurahs, getAvailableSurahs, surahNumber]);
 
     useEffect(() => {
         if (!reciterId || !surahNumber) return;
@@ -416,7 +568,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
             )}
             {showSurahModal && (
                 <ListenSurahSelectModal
-                    surahsList={SURAH_LIST}
+                    surahsList={SURAH_LIST.filter(s => availableSurahIds.includes(s.number))}
                     onSelect={(surah) => {
                         setSurahNumber(surah);
                         setShowSurahModal(false);
@@ -428,7 +580,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
             {showDownloadModal && (
                 <QuranDownloadModal
                     onClose={() => setShowDownloadModal(false)}
-                    quranData={mockQuranData}
+                    quranData={filteredQuranData}
                     showToast={showToast}
                     mode="surah"
                     readersList={RECITERS}
