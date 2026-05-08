@@ -1,5 +1,6 @@
 import React, { FC } from 'react';
 import { TAFSEERS } from './constants';
+import { useTheme } from '../../context/ThemeContext';
 
 const TafseerSelectionModal: FC<{
     isOpen: boolean,
@@ -8,23 +9,29 @@ const TafseerSelectionModal: FC<{
     currentTafseerId: string,
     isLandscape?: boolean
 }> = ({ isOpen, onClose, onSelect, currentTafseerId, isLandscape }) => {
+    const { theme } = useTheme();
     if (!isOpen) return null;
     return (
         <div className={`fixed inset-0 z-[1200] bg-transparent flex items-center justify-center ${isLandscape ? 'p-2' : 'p-4'} animate-fadeIn`} onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-[300px] max-h-[90vh] rounded-xl' : 'max-w-[280px] rounded-2xl max-h-[80vh]'} shadow-2xl flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-[300px] max-h-[90vh] rounded-xl' : 'max-w-[280px] rounded-2xl max-h-[80vh]'} shadow-2xl flex flex-col animate-modal-enter`} 
+                style={{ backgroundColor: theme.modalBg || theme.bgColor || '#FFF', color: theme.modalText || theme.textColor }}
+                onClick={e => e.stopPropagation()}>
                 <div className={`${isLandscape ? 'p-2.5 gap-2' : 'p-5 gap-4'} overflow-y-auto flex-1 flex flex-col`}>
-                    {TAFSEERS.map(t => (
-                        <button key={t.id} onClick={() => onSelect(t.id)} 
-                            className={`w-full ${isLandscape ? 'py-1.5 px-2 text-sm' : 'py-3 px-4 text-lg'} rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2 ${currentTafseerId === t.id ? '' : 'hover:opacity-80'}`} 
-                            style={{ 
-                                backgroundColor: 'transparent', 
-                                color: currentTafseerId === t.id ? 'var(--qr-accent)' : 'var(--qr-card-text)', 
-                                border: `2px solid ${currentTafseerId === t.id ? 'var(--qr-accent)' : 'var(--qr-card-border)'}` 
-                            }}>
-                            <span>{t.name}</span>
-                            {currentTafseerId === t.id && <i className="fa-solid fa-check text-sm"></i>}
-                        </button>
-                    ))}
+                    {TAFSEERS.map(t => {
+                        const isSelected = currentTafseerId === t.id;
+                        return (
+                            <button key={t.id} onClick={() => onSelect(t.id)} 
+                                className={`w-full ${isLandscape ? 'py-1.5 px-2 text-sm' : 'py-3 px-4 text-lg'} rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2 ${isSelected ? '' : 'hover:opacity-80'}`} 
+                                style={{ 
+                                    backgroundColor: isSelected ? `${theme.accent}15` : 'transparent', 
+                                    color: isSelected ? theme.accent : theme.textColor, 
+                                    border: `2px solid ${isSelected ? theme.accent : (theme.cardBorder || `${theme.textColor}20`)}` 
+                                }}>
+                                <span>{t.name}</span>
+                                {isSelected && <i className="fa-solid fa-check text-sm" style={{ color: theme.accent }}></i>}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </div>

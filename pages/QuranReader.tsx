@@ -2537,8 +2537,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         root.style.setProperty('--qr-bar-border', t.barBorder);
         root.style.setProperty('--qr-btn-bg', t.btnBg);
         root.style.setProperty('--qr-btn-text', t.btnText);
-        root.style.setProperty('--qr-accent', themeKey === 'default' ? '#000000' : t.accent);
-        root.style.setProperty('--qr-accent-text', themeKey === 'default' ? '#ffffff' : t.accentText);
+        root.style.setProperty('--qr-accent', t.accent);
+        root.style.setProperty('--qr-accent-text', t.accentText);
         root.style.setProperty('--qr-modal-bg', t.modalBg);
         root.style.setProperty('--qr-modal-text', t.modalText);
         root.style.setProperty('--qr-header-bg', t.headerBg);
@@ -2572,48 +2572,50 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         if (!contentEl) return;
     
         const handleScroll = () => {
-            if (isJumpingRef.current || readingMode !== 'mushaf') return;
+            if (isJumpingRef.current) return;
 
             const { scrollTop, scrollHeight, clientHeight } = contentEl;
 
-            if (scrollTop < 500) {
-                setVisiblePages(prev => {
-                    if (prev.length === 0) return prev;
-                    const firstPage = Math.min(...prev);
-                    if (firstPage > 1) {
-                        const newPage = firstPage - 1;
-                        if (!prev.includes(newPage)) {
-                            return [newPage, ...prev].sort((a, b) => a - b);
+            if (readingMode === 'mushaf') {
+                if (scrollTop < 500) {
+                    setVisiblePages(prev => {
+                        if (prev.length === 0) return prev;
+                        const firstPage = Math.min(...prev);
+                        if (firstPage > 1) {
+                            const newPage = firstPage - 1;
+                            if (!prev.includes(newPage)) {
+                                return [newPage, ...prev].sort((a, b) => a - b);
+                            }
                         }
-                    }
-                    return prev;
-                });
-            }
-            if (scrollHeight - scrollTop <= clientHeight + 800) {
-                setVisiblePages(prev => {
-                    if (prev.length === 0) return prev;
-                    const lastPage = Math.max(...prev);
-                    if (lastPage < 604) {
-                        const newPage = lastPage + 1;
-                        if (!prev.includes(newPage)) {
-                            return [...prev, newPage].sort((a, b) => a - b);
+                        return prev;
+                    });
+                }
+                if (scrollHeight - scrollTop <= clientHeight + 800) {
+                    setVisiblePages(prev => {
+                        if (prev.length === 0) return prev;
+                        const lastPage = Math.max(...prev);
+                        if (lastPage < 604) {
+                            const newPage = lastPage + 1;
+                            if (!prev.includes(newPage)) {
+                                return [...prev, newPage].sort((a, b) => a - b);
+                            }
                         }
-                    }
-                    return prev;
-                });
+                        return prev;
+                    });
+                }
             }
     
             const now = Date.now();
-            if (now - lastScrollUpdateTime.current < 100) return;
+            if (now - lastScrollUpdateTime.current < 50) return; // More frequent updates
             lastScrollUpdateTime.current = now;
     
             const x = window.innerWidth / 2;
-            const y = window.innerHeight / 4;
+            const y = window.innerHeight / 2;
             
             const el = document.elementFromPoint(x, y);
             if (!el) return;
             
-            const ayahBlock = el.closest('.ayah-text-block');
+            const ayahBlock = el.closest('.ayah-text-block, .ayah-item');
             if (ayahBlock && ayahBlock.id) {
                 const parts = ayahBlock.id.split('-');
                 if (parts.length === 3) {
@@ -2631,7 +2633,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         }
                         
                         setCurrentAyah({ s, a });
-                        localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a }));
+                        localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a })); 
+                        localStorage.setItem("last_read_ayah_global", JSON.stringify({ s, a, ts: Date.now() }));
+                        window.dispatchEvent(new Event('last_read_update'));
 
                         // Detect Surah change
                         /* 
@@ -3483,7 +3487,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const handleVerticalAyahClick = useCallback((s: number, a: number) => {
         setCurrentAyah({ s, a });
         setHighlightedAyahId(`ayah-${s}-${a}`);
-        localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a }));
+        localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a })); 
+        localStorage.setItem("last_read_ayah_global", JSON.stringify({ s, a, ts: Date.now() }));
+        window.dispatchEvent(new Event('last_read_update'));
     }, [posSuffix]);
 
     const sortedVisiblePages = useMemo(() => {
@@ -3605,7 +3611,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                                 if (isJumpingRef.current) return;
                                 if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
                                     setCurrentAyah({ s, a });
-                                    localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a }));
+                                    localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a })); 
+                                    localStorage.setItem("last_read_ayah_global", JSON.stringify({ s, a, ts: Date.now() }));
+                                    window.dispatchEvent(new Event('last_read_update'));
                                 }
                             }}
                             showMarkerNotification={showMarkerNotification}

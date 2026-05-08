@@ -191,11 +191,11 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                             <div className="space-y-2">
                                 <label className="text-xs font-bold opacity-60 px-1">لون الخلفية</label>
                                 <button 
-                                    className={`h-12 w-full rounded-xl border-2 transition-all flex items-center justify-center ${activeColorField === 'bg' ? 'border-emerald-500 scale-[1.02] shadow-lg' : 'border-gray-200 dark:border-gray-700'}`}
-                                    style={renderCheckerboard(editConfig.bg)}
+                                    className={`h-12 w-full rounded-xl border-2 transition-all flex items-center justify-center ${activeColorField === 'bg' ? 'scale-[1.02] shadow-lg' : 'border-gray-200 dark:border-gray-700'}`}
+                                    style={{ borderColor: activeColorField === 'bg' ? 'var(--qr-accent)' : 'var(--qr-card-border)', ...renderCheckerboard(editConfig.bg) }}
                                     onClick={() => setActiveColorField(activeColorField === 'bg' ? null : 'bg')}
                                 >
-                                    {activeColorField === 'bg' && <Check className="w-6 h-6 text-emerald-500 drop-shadow-md" />}
+                                    {activeColorField === 'bg' && <Check className="w-6 h-6 drop-shadow-md" style={{ color: 'var(--qr-accent)' }} />}
                                 </button>
                             </div>
 
@@ -203,11 +203,11 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold opacity-60 px-1">لون النص/الأيقونة</label>
                                     <button 
-                                        className={`h-12 w-full rounded-xl border-2 transition-all flex items-center justify-center ${activeColorField === 'text' ? 'border-emerald-500 scale-[1.02] shadow-lg' : 'border-gray-200 dark:border-gray-700'}`}
-                                        style={renderCheckerboard(editConfig.text)}
+                                        className={`h-12 w-full rounded-xl border-2 transition-all flex items-center justify-center ${activeColorField === 'text' ? 'scale-[1.02] shadow-lg' : 'border-gray-200 dark:border-gray-700'}`}
+                                        style={{ borderColor: activeColorField === 'text' ? 'var(--qr-accent)' : 'var(--qr-card-border)', ...renderCheckerboard(editConfig.text) }}
                                         onClick={() => setActiveColorField(activeColorField === 'text' ? null : 'text')}
                                     >
-                                        {activeColorField === 'text' && <Check className="w-6 h-6 text-emerald-500 drop-shadow-md" />}
+                                        {activeColorField === 'text' && <Check className="w-6 h-6 drop-shadow-md" style={{ color: 'var(--qr-accent)' }} />}
                                     </button>
                                 </div>
                             )}
@@ -215,11 +215,11 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                             <div className="space-y-2">
                                 <label className="text-xs font-bold opacity-60 px-1">لون الحدود</label>
                                 <button 
-                                    className={`h-12 w-full rounded-xl border-2 transition-all flex items-center justify-center ${activeColorField === 'border' ? 'border-emerald-500 scale-[1.02] shadow-lg' : 'border-gray-200 dark:border-gray-700'}`}
-                                    style={renderCheckerboard(editConfig.border)}
+                                    className={`h-12 w-full rounded-xl border-2 transition-all flex items-center justify-center ${activeColorField === 'border' ? 'scale-[1.02] shadow-lg' : 'border-gray-200 dark:border-gray-700'}`}
+                                    style={{ borderColor: activeColorField === 'border' ? 'var(--qr-accent)' : 'var(--qr-card-border)', ...renderCheckerboard(editConfig.border) }}
                                     onClick={() => setActiveColorField(activeColorField === 'border' ? null : 'border')}
                                 >
-                                    {activeColorField === 'border' && <Check className="w-6 h-6 text-emerald-500 drop-shadow-md" />}
+                                    {activeColorField === 'border' && <Check className="w-6 h-6 drop-shadow-md" style={{ color: 'var(--qr-accent)' }} />}
                                 </button>
                             </div>
                             
@@ -230,10 +230,10 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                                             <button
                                                 key={c}
                                                 onClick={() => setEditConfig({...editConfig, [activeColorField]: c})}
-                                                className={`h-12 rounded-lg border-2 transition-all hover:scale-110 active:scale-90 flex items-center justify-center ${editConfig[activeColorField] === c ? 'border-emerald-500 shadow-md z-10' : 'border-transparent'}`}
-                                                style={renderCheckerboard(c)}
+                                                className={`h-12 rounded-lg border-2 transition-all hover:scale-110 active:scale-90 flex items-center justify-center ${editConfig[activeColorField] === c ? 'shadow-md z-10' : 'border-transparent'}`}
+                                                style={{ borderColor: editConfig[activeColorField] === c ? 'var(--qr-accent)' : 'transparent', ...renderCheckerboard(c) }}
                                             >
-                                                {editConfig[activeColorField] === c && <Check className="w-5 h-5 text-emerald-500" />}
+                                                {editConfig[activeColorField] === c && <Check className="w-5 h-5" style={{ color: 'var(--qr-accent)' }} />}
                                             </button>
                                         ))}
                                     </div>
@@ -273,19 +273,19 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                     {/* Main Toolbars Section */}
                     <div className="space-y-3">
                         <h4 className="text-sm font-bold opacity-60 px-2 flex items-center gap-2">
-                            <div className="w-1 h-4 bg-emerald-500 rounded-full"></div>
+                            <div className="w-1 h-4 rounded-full" style={{ backgroundColor: 'var(--qr-accent)' }}></div>
                             الأشرطة الرئيسية
                         </h4>
                         <div className="grid grid-cols-2 gap-4">
                             <button onClick={() => openEditModal('top-toolbar')} className="themed-card-bg p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500 opacity-50"></div>
+                                <div className="absolute top-0 left-0 w-full h-1 opacity-50" style={{ backgroundColor: 'var(--qr-accent)' }}></div>
                                 <div className="flex flex-col items-center gap-2">
                                     <span className="font-bold text-sm">الشريط العلوى</span>
                                     <div className="h-6 w-12 rounded border border-gray-300 dark:border-gray-600" style={renderCheckerboard(getStyleForType('top-toolbar').bg)}></div>
                                 </div>
                             </button>
                             <button onClick={() => openEditModal('bottom-toolbar')} className="themed-card-bg p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
-                                <div className="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 opacity-50"></div>
+                                <div className="absolute bottom-0 left-0 w-full h-1 opacity-50" style={{ backgroundColor: 'var(--qr-accent)' }}></div>
                                 <div className="flex flex-col items-center gap-2">
                                     <span className="font-bold text-sm">الشريط السفلى</span>
                                     <div className="h-6 w-12 rounded border border-gray-300 dark:border-gray-600" style={renderCheckerboard(getStyleForType('bottom-toolbar').bg)}></div>
@@ -359,7 +359,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
                 <div className="p-4 themed-card-bg border-t border-gray-200 dark:border-gray-700 flex justify-center">
                     <button 
                         onClick={handleClose} 
-                        className="w-full py-3 bg-gray-800 dark:bg-gray-700 text-white rounded-xl font-bold shadow-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-all flex items-center justify-center gap-2 text-sm"
+                        className="theme-accent-btn w-full py-3 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
                     >
                         <ChevronLeft className="w-4 h-4" />
                         الرجوع للإعدادات

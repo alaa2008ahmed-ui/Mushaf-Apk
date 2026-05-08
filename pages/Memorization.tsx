@@ -24,8 +24,8 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const isDefaultTheme = themeKey === 'default';
     const isBlackAndWhite = themeKey === 'deep_black';
     const isBlackTheme = theme.bgColor === '#000000';
-    const primaryColor = isBlackTheme ? '#FFFFFF' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]);
-    const btnTextColor = isBlackTheme ? '#000000' : (isBlackAndWhite ? '#000000' : '#FFFFFF');
+    const primaryColor = theme.accent || (isBlackTheme ? '#FFFFFF' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]));
+    const btnTextColor = theme.btnText || (isBlackTheme ? '#000000' : (isBlackAndWhite ? '#000000' : '#FFFFFF'));
     
     const [selectedReader, setSelectedReader] = useState(MEMORIZATION_READERS[1].id); // Default to Abdul Basit
     
@@ -321,8 +321,8 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                             onClick={() => setActiveTab('setup')}
                             className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'setup' ? 'shadow-md' : 'opacity-60'}`}
                             style={{ 
-                                backgroundColor: activeTab === 'setup' ? (isDefaultTheme ? '#000000' : primaryColor) : (isDefaultTheme ? '#FFFFFF' : 'transparent'),
-                                color: activeTab === 'setup' ? (isDefaultTheme ? '#FFFFFF' : btnTextColor) : (isDefaultTheme ? '#000000' : 'var(--text-color)')
+                                backgroundColor: activeTab === 'setup' ? primaryColor : 'transparent',
+                                color: activeTab === 'setup' ? btnTextColor : 'var(--text-color)'
                             }}
                         >
                             <BookOpen size={16} />
@@ -332,8 +332,8 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                             onClick={() => setActiveTab('review')}
                             className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'review' ? 'shadow-md' : 'opacity-60'}`}
                             style={{ 
-                                backgroundColor: activeTab === 'review' ? (isDefaultTheme ? '#000000' : primaryColor) : (isDefaultTheme ? '#FFFFFF' : 'transparent'),
-                                color: activeTab === 'review' ? (isDefaultTheme ? '#FFFFFF' : btnTextColor) : (isDefaultTheme ? '#000000' : 'var(--text-color)')
+                                backgroundColor: activeTab === 'review' ? primaryColor : 'transparent',
+                                color: activeTab === 'review' ? btnTextColor : 'var(--text-color)'
                             }}
                         >
                             <Calendar size={16} />
@@ -462,7 +462,8 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                 <label className="relative inline-flex items-center cursor-pointer scale-90">
                                     <input type="checkbox" className="sr-only peer" checked={linkedRepeat} onChange={(e) => { setLinkedRepeat(e.target.checked); setSavedSession(null); }} />
                                     <div 
-                                        className={`w-8 h-4.5 rounded-full peer peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:after:-translate-x-3.5 peer-checked:after:border-white ${linkedRepeat ? (isBlackTheme ? 'bg-white' : 'bg-emerald-500') : 'bg-gray-400'}`}
+                                        className={`w-8 h-4.5 rounded-full peer peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:after:-translate-x-3.5 peer-checked:after:border-white ${linkedRepeat ? (isBlackTheme ? 'bg-white' : (theme.accent ? 'opacity-100' : 'bg-emerald-500')) : 'bg-gray-400'}`}
+                                        style={linkedRepeat && !isBlackTheme ? { backgroundColor: primaryColor } : {}}
                                     ></div>
                                 </label>
                             </div>
@@ -490,7 +491,8 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" className="sr-only peer" checked={testAfterSession} onChange={(e) => { setTestAfterSession(e.target.checked); setSavedSession(null); }} />
                             <div 
-                                className={`w-9 h-5 rounded-full peer peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:-translate-x-full peer-checked:after:border-white ${testAfterSession ? (isBlackTheme ? 'bg-white' : 'bg-emerald-500') : 'bg-gray-300'}`}
+                                className={`w-9 h-5 rounded-full peer peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:-translate-x-full peer-checked:after:border-white ${testAfterSession ? (isBlackTheme ? 'bg-white' : (theme.accent ? 'opacity-100' : 'bg-emerald-500')) : 'bg-gray-300'}`}
+                                style={testAfterSession && !isBlackTheme ? { backgroundColor: primaryColor } : {}}
                             ></div>
                         </label>
                     </div>
@@ -501,13 +503,13 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                             <button 
                                 id="btn-start-memorization"
                                 onClick={handleStart}
-                                className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3 ${isDefaultTheme ? 'border' : 'border-b-4 ring-4'}`}
+                                className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3 border-b-4 ring-4`}
                                 style={{
-                                    backgroundColor: isDefaultTheme ? '#FFFFFF' : primaryColor,
-                                    borderColor: isDefaultTheme ? '#e5e7eb' : (isBlackAndWhite ? '#E5E5E5' : theme.palette[1] || primaryColor),
-                                    color: isDefaultTheme ? '#000000' : btnTextColor,
-                                    boxShadow: isDefaultTheme ? '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' : `0 10px 30px -5px ${primaryColor}80`,
-                                    '--tw-ring-color': isDefaultTheme ? 'transparent' : `${primaryColor}33`
+                                    backgroundColor: primaryColor,
+                                    borderColor: (isBlackAndWhite ? '#E5E5E5' : theme.palette[1] || primaryColor),
+                                    color: btnTextColor,
+                                    boxShadow: `0 10px 30px -5px ${primaryColor}80`,
+                                    '--tw-ring-color': `${primaryColor}33`
                                 } as React.CSSProperties}
                             >
                                 <Play size={20} fill="currentColor" />
@@ -756,8 +758,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                             setSavedSession(null);
                                             setActivePicker(null);
                                         }}
-                                        id={`surah-btn-${surahNum}`}
-                                        className={`w-full p-2.5 rounded-xl text-right font-bold transition-all flex items-center justify-between ${current === surahNum ? (isDefaultTheme ? 'bg-black text-white' : 'theme-accent-btn text-white') : 'hover:bg-black/5 opacity-70 hover:opacity-100'}`}
+                                        className={`w-full p-2.5 rounded-xl text-right font-bold transition-all flex items-center justify-between ${current === surahNum ? 'theme-accent-btn text-white' : 'hover:bg-black/5 opacity-70 hover:opacity-100'}`}
                                     >
                                         <div className="flex items-center gap-3">
                                             <span className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] opacity-40 border" style={{ borderColor: 'var(--card-border)' }}>{surahNum}</span>
@@ -782,7 +783,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                                     setSavedSession(null);
                                                     setActivePicker(null);
                                                 }}
-                                                className={`aspect-square flex items-center justify-center rounded-xl font-bold transition-all text-sm border-2 ${current === ayahNum ? (isDefaultTheme ? 'bg-black text-white border-transparent' : 'theme-accent-btn text-white border-transparent') : 'border-current opacity-30 hover:opacity-100 hover:border-emerald-500'}`}
+                                                className={`aspect-square flex items-center justify-center rounded-xl font-bold transition-all text-sm border-2 ${current === ayahNum ? 'theme-accent-btn text-white border-transparent' : 'border-current opacity-30 hover:opacity-100 hover:border-emerald-500'}`}
                                             >
                                                 {ayahNum}
                                             </button>

@@ -419,7 +419,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
             <div className={`px-4 py-2 ${isLandscape ? 'flex justify-center' : ''}`}>
                 <div 
                     id={`ayah-${item.surahNumber}-${item.ayahNumber}`}
-                    className={`ayah-item p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2' : ''} ${isLandscape ? 'max-w-3xl w-full' : ''}`}
+                    className={`ayah-item ayah-text-block p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2' : ''} ${isLandscape ? 'max-w-3xl w-full' : ''}`}
                     style={{ 
                         backgroundColor: isHighlighted ? `${settings.highlightTextColor || currentTheme.accent}30` : 'transparent',
                         borderColor: isHighlighted ? (settings.highlightTextColor || currentTheme.accent) : 'transparent'
@@ -502,7 +502,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     className="scrollbar-hide"
                     itemContent={renderItem}
                     rangeChanged={(range) => {
-                    const item = flattenedItems[range.startIndex];
+                    const midIndex = Math.round((range.startIndex + range.endIndex) / 2);
+                    const item = flattenedItems[midIndex] || flattenedItems[range.startIndex];
                     if (item && item.type === 'ayah') {
                         // Detect Juz change
                         if (item.juz && lastNotifiedJuz.current !== null && item.juz !== lastNotifiedJuz.current) {
@@ -544,7 +545,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                         }
 
                         lastScrolledAyahRef.current = { s: item.surahNumber, a: item.ayahNumber };
-                        onVisibleAyahChange?.(item.surahNumber, item.ayahNumber);
+                        // onVisibleAyahChange?.(item.surahNumber, item.ayahNumber);
                     }
                 }}
             />

@@ -227,7 +227,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                             <label className="text-sm font-bold opacity-80">حجم الخط</label>
                             <span className="text-xs px-2 rounded themed-card-bg">{settings.fontSize}</span>
                         </div>
-                        <input type="range" min="0.5" max="4.5" step="0.1" value={settings.fontSize} onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value))} className="w-full h-1.5 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                        <input type="range" min="0.5" max="4.5" step="0.1" value={settings.fontSize} onChange={(e) => updateSetting('fontSize', parseFloat(e.target.value))} className="w-full h-1.5 bg-gray-300 rounded-lg appearance-none cursor-pointer" style={{ accentColor: 'var(--qr-accent)' }} />
                     </div>
 
                     <div id="colors-section" className={`${isLandscape ? 'col-span-2 grid grid-cols-3 gap-3' : 'grid grid-cols-1 gap-3'} border-b pb-2 border-gray-200 dark:border-gray-700`}>
@@ -343,7 +343,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         <div className="relative">
                             <button 
                                 onClick={() => setIsDesignDropdownOpen(!isDesignDropdownOpen)}
-                                className="w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 themed-card-bg p-1 flex items-center justify-center relative hover:border-emerald-500 transition-all min-h-[60px]"
+                                className="w-full rounded-xl border-2 border-gray-200 dark:border-gray-700 themed-card-bg p-1 flex items-center justify-center relative transition-all min-h-[60px]"
+                                style={{ borderColor: isDesignDropdownOpen ? 'var(--qr-accent)' : undefined }}
                             >
                                 <div className="pointer-events-none w-full">
                                     <SurahHeader 
@@ -362,7 +363,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                             </button>
 
                             {isDesignDropdownOpen && (
-                                <div className="absolute z-[200] top-full left-0 right-0 mt-2 themed-card-bg border-2 border-emerald-500 rounded-xl shadow-2xl overflow-hidden animate-fadeIn">
+                                <div className="absolute z-[200] top-full left-0 right-0 mt-2 themed-card-bg border-2 rounded-xl shadow-2xl overflow-hidden animate-fadeIn" style={{ borderColor: 'var(--qr-accent)' }}>
                                     <div 
                                         ref={designDropdownRef}
                                         className="max-h-80 overflow-y-auto p-2 space-y-2 scrollbar-hide scroll-smooth"
@@ -375,11 +376,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                                     updateSetting('surahHeaderDesign', design);
                                                     setIsDesignDropdownOpen(false);
                                                 }}
-                                                className={`relative w-full rounded-lg border-2 transition-all overflow-hidden ${
-                                                    (settings.surahHeaderDesign || 1) === design 
-                                                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' 
-                                                    : 'border-gray-100 dark:border-gray-800 hover:border-emerald-300'
-                                                }`}
+                                                className={`relative w-full rounded-lg border-2 transition-all overflow-hidden ${(settings.surahHeaderDesign || 1) === design ? 'shadow-md' : 'border-gray-100 dark:border-gray-800'}`}
+                                                style={{ 
+                                                    borderColor: (settings.surahHeaderDesign || 1) === design ? 'var(--qr-accent)' : undefined,
+                                                    backgroundColor: (settings.surahHeaderDesign || 1) === design ? 'var(--qr-accent-bg, rgba(16, 185, 129, 0.1))' : undefined
+                                                }}
                                             >
                                                 <div className="pointer-events-none w-full">
                                                     <SurahHeader 
@@ -393,7 +394,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                                     />
                                                 </div>
                                                 {(settings.surahHeaderDesign || 1) === design && (
-                                                    <div className="absolute top-1 left-1 bg-emerald-500 text-white rounded-full p-0.5 shadow-md">
+                                                    <div className="absolute top-1 left-1 text-white rounded-full p-0.5 shadow-md" style={{ backgroundColor: 'var(--qr-accent)' }}>
                                                         <i className="fa-solid fa-check text-[8px]"></i>
                                                     </div>
                                                 )}
@@ -424,7 +425,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                     <label className="text-sm font-bold opacity-80">إظهار بطاقة السجدة</label>
                                     <div className="relative inline-block w-10 align-middle select-none">
                                         <input type="checkbox" id="show-sajdah-card" checked={showSajdahCard} onChange={(e) => handleSajdahCardToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                                        <label htmlFor="show-sajdah-card" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${showSajdahCard ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                        <label htmlFor="show-sajdah-card" className="toggle-label block overflow-hidden h-5 rounded-full cursor-pointer" style={{ backgroundColor: showSajdahCard ? 'var(--qr-accent)' : '#d1d5db' }}></label>
                                     </div>
                                 </div>
                             </div>
@@ -433,7 +434,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                     <label className="text-sm font-bold opacity-80">إخفاء الأشرطة</label>
                                     <div className="relative inline-block w-10 align-middle select-none">
                                         <input type="checkbox" id="hide-toolbars" checked={isHideToolbarsEnabled} onChange={(e) => handleHideToolbarsToggle(e.target.checked)} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                                        <label htmlFor="hide-toolbars" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${isHideToolbarsEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                        <label htmlFor="hide-toolbars" className="toggle-label block overflow-hidden h-5 rounded-full cursor-pointer" style={{ backgroundColor: isHideToolbarsEnabled ? 'var(--qr-accent)' : '#d1d5db' }}></label>
                                     </div>
                                 </div>
                             </div>
@@ -445,7 +446,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                             updateSetting('showPageBorder', e.target.checked);
                                             showToast(e.target.checked ? 'تم تفعيل الإطار الخارجي' : 'تم إخفاء الإطار الخارجي');
                                         }} className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 appearance-none cursor-pointer"/>
-                                        <label htmlFor="show-page-border" className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${settings.showPageBorder !== false ? 'bg-emerald-500' : 'bg-gray-300'}`}></label>
+                                        <label htmlFor="show-page-border" className="toggle-label block overflow-hidden h-5 rounded-full cursor-pointer" style={{ backgroundColor: settings.showPageBorder !== false ? 'var(--qr-accent)' : '#d1d5db' }}></label>
                                     </div>
                                 </div>
                             </div>
@@ -453,7 +454,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         <div id="notifications-section" className="border-b pb-2 border-gray-200 dark:border-gray-700 py-1">
                             <button onClick={() => onOpenModal('notification-settings-modal')} className="w-full flex items-center justify-between py-1">
                                 <label className="text-sm font-bold opacity-80 cursor-pointer">الإشعارات</label>
-                                <i className="fa-solid fa-bell text-emerald-500"></i>
+                                <i className="fa-solid fa-bell" style={{ color: 'var(--qr-accent)' }}></i>
                             </button>
                         </div>
                     </div>

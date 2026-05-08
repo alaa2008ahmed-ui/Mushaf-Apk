@@ -15,13 +15,19 @@ export interface Theme {
     btnBg?: string;
     btnText?: string;
     accent?: string;
+    accentText?: string;
     highlightText?: string;
     cardBg?: string;
+    cardText?: string;
     cardBorder?: string;
     isGlass?: boolean;
     modalBg?: string;
     modalText?: string;
     sajdah?: string;
+    bg?: string;
+    text?: string;
+    headerBg?: string;
+    headerText?: string;
 }
 
 export const presetThemes: { [key: string]: Theme } = {
@@ -39,7 +45,7 @@ export const presetThemes: { [key: string]: Theme } = {
         btnBg: "#FFFFFF",
         btnText: "#FFFFFF",
         btnBorder: "1px solid #000000",
-        accent: "#000000"
+        accent: "#059669"
     },
     deep_black: {
         name: "(اسود)",

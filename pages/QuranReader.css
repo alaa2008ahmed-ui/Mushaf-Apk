@@ -28,9 +28,9 @@
     --font-warsh: 'Amiri', serif;
     --font-default: var(--font-amiri-quran);
     --font-ui: var(--font-cairo);
-    --search-result-bg: rgba(16, 185, 129, 0.1);
-    --search-result-border: #10b981;
-    --search-result-text: #e2e8f0;
+    --search-result-bg: rgba(var(--qr-accent-rgb, 16, 185, 129), 0.1);
+    --search-result-border: var(--qr-accent, #10b981);
+    --search-result-text: var(--qr-modal-text, #e2e8f0);
     --search-highlight-bg: #fef08a;
     --search-highlight-text: #000000;
 }
@@ -426,8 +426,15 @@
 .dark .color-option-btn.active { background-color: rgba(16, 185, 129, 0.2) !important; border-color: #34d399 !important; }
 .color-preview-dot { width: 20px; height: 20px; border-radius: 50%; border: 1px solid #d1d5db; box-shadow: 0 1px 2px rgba(0,0,0,0.1); flex-shrink: 0; background-color: #fff; }
 
-.toggle-checkbox:checked + .toggle-label { background-color: #10B981; }
+.toggle-checkbox:checked + .toggle-label { background-color: var(--qr-accent, #10B981) !important; }
 .toggle-checkbox { appearance: none; }
+
+.downloaded-item {
+    background-color: var(--qr-accent-bg, rgba(16, 185, 129, 0.1)) !important;
+    border-color: var(--qr-accent, #10B981) !important;
+    color: var(--qr-accent, #10B981) !important;
+}
+
 .toggle-label { transition: background-color 0.2s ease; }
 .sync-toggle:checked + .sync-label { background-color: #8b5cf6; }
 

@@ -128,7 +128,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
     useEffect(() => {
         const fetchSurahs = async () => {
             try {
-                const CACHE_KEY = 'mp3quran_surahs_cache_v5';
+                const CACHE_KEY = 'mp3quran_surahs_cache_v6';
                 const cached = localStorage.getItem(CACHE_KEY);
                 if (cached) {
                     const { data, timestamp } = JSON.parse(cached);
@@ -148,8 +148,9 @@ function ListenQuran({ onBack, onOpenThemes }) {
                         const nameKey = `name:${simplifyName(r.name)}`;
                         if (r.moshaf && Array.isArray(r.moshaf)) {
                             r.moshaf.forEach((m: any) => {
-                                if (m.server && m.suras) {
-                                    const surasArray = typeof m.suras === 'string' ? m.suras.split(',').map(Number) : (Array.isArray(m.suras) ? m.suras : []);
+                                const rawSuras = m.suras || m.surah_list;
+                                if (m.server && rawSuras) {
+                                    const surasArray = typeof rawSuras === 'string' ? rawSuras.split(',').map(Number) : (Array.isArray(rawSuras) ? rawSuras : []);
                                     const urlKey = normalizeUrl(m.server);
                                     if (urlKey) mapping[urlKey] = surasArray;
                                     
