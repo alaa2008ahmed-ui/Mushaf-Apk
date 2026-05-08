@@ -42,38 +42,39 @@ function App() {
 
   useEffect(() => {
     const checkUpdate = async () => {
-      // تجنب المحاولة إذا كان الرابط لا يزال الرابط الافتراضي الوهمي
-      if (!REMOTE_VERSION_URL || REMOTE_VERSION_URL.includes('your-server.com')) {
-        return;
-      }
+      if (!REMOTE_VERSION_URL || REMOTE_VERSION_URL.includes('your-server.com')) return;
 
       try {
-        const response = await fetch(REMOTE_VERSION_URL, { cache: 'no-store' });
+        // إضافة timestamp للرابط لمنع التخزين المؤقت (Cache Busting)
+        const cacheBuster = `t=${new Date().getTime()}`;
+        const fullUrl = REMOTE_VERSION_URL.includes('?') 
+          ? `${REMOTE_VERSION_URL}&${cacheBuster}` 
+          : `${REMOTE_VERSION_URL}?${cacheBuster}`;
+
+        const response = await fetch(fullUrl, { cache: 'no-store' });
+        
         if (!response.ok) {
-          console.log('Update Check: Server response not OK');
+          console.warn('Update check: Server returned error', response.status);
           return;
         }
-        const data = await response.json();
         
+        const data = await response.json();
         const localVersion = APP_VERSION.trim();
         const remoteVersion = (data?.version || '').toString().trim();
 
-        console.log(`Update Check: Local (${localVersion}) vs Remote (${remoteVersion})`);
-        
+        console.log(`Update check: Local [${localVersion}] Remote [${remoteVersion}]`);
+
         if (remoteVersion && remoteVersion !== localVersion) {
-          console.log('Update Check: Found different version, showing modal...');
-          setUpdateInfo({ show: true, newVersion: remoteVersion });
-        } else {
-          console.log('Update Check: App is up to date.');
+            console.log('Update found! Showing modal...');
+            setUpdateInfo({ show: true, newVersion: remoteVersion });
         }
       } catch (error) {
-        // لا تظهر خطأ الشبكة في الواجهة، فقط في سجل المطورين
-        console.warn('Update check failed (URL might be invalid or unreachable):', error);
+        console.warn('Update check failed:', error);
       }
     };
 
-    // Check after a short delay to not affect startup performance
-    const timeout = setTimeout(checkUpdate, 5000);
+    // فحص التحديث بعد ثانية واحدة من التشغيل
+    const timeout = setTimeout(checkUpdate, 1000);
     return () => clearTimeout(timeout);
   }, []);
 
