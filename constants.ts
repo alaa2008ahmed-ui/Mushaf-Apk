@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.0.3';
+export const APP_VERSION = '1.0.6';
 // رابط لمشروعك على جوجل بلاي (سيستخدمه المستخدم للتحديث)
 export const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.AhmedLaila.Quran&hl=ar&pli=1'; 
 // رابط ملف النسخة على سيرفرك (مثلا Github raw أو استضافة خاصة)

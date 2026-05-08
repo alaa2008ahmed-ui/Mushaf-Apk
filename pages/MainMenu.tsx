@@ -16,6 +16,8 @@ import VerseContextMenu from '../components/MainMenu/VerseContextMenu';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { Mic, Palette, Grid, BookOpen } from 'lucide-react';
 import { useVoiceControl } from '../context/VoiceControlContext';
+import { usePrayerTimes } from '../context/PrayerTimesContext';
+import { prayerNamesAr } from '../data/prayerTimesData';
 
 const ALL_POSSIBLE_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
@@ -165,6 +167,33 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   ];
 
   const [currentTutorialStep, setCurrentTutorialStep] = useState<string>('');
+  const { times, nextPrayer, countdown } = usePrayerTimes();
+
+  // --- Logic to determine Previous and Next "Salah" (excluding Sunrise) ---
+  const getSalahStats = () => {
+    if (!nextPrayer || !times || Object.keys(times).length === 0) {
+      return { prev: '-', next: '-', remaining: '--:--:--' };
+    }
+
+    const salahKeys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+    let nextIndex = salahKeys.indexOf(nextPrayer.key);
+    
+    // If nextPrayer is Sunrise, the next ACTUAL salah is Dhuhr (index 1)
+    if (nextPrayer.key === 'Sunrise') {
+      nextIndex = 1; 
+    }
+
+    const prevIndex = (nextIndex - 1 + salahKeys.length) % salahKeys.length;
+    const actualNextIndex = nextIndex % salahKeys.length;
+
+    return {
+      prev: prayerNamesAr[salahKeys[prevIndex] as keyof typeof prayerNamesAr],
+      next: prayerNamesAr[salahKeys[actualNextIndex] as keyof typeof prayerNamesAr],
+      remaining: countdown
+    };
+  };
+
+  const { prev: prevSalah, next: nextSalah, remaining: prayerCountdown } = getSalahStats();
 
   useEffect(() => {
     // Check if we need to update layout in storage (migration/fix)
@@ -307,17 +336,42 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
               {/* Footer/Save Button */}
               {!isEditMode && (
-                  <div className="flex items-center justify-center w-full max-w-sm mx-auto mt-1 mb-4 gap-2 h-14">
-                      {!showVoiceIcon && (
-                          <div className="flex items-center justify-center shrink-0">
-                              <WhatsAppButton />
+                  <div className="flex flex-col gap-2 w-full max-w-sm mx-auto mt-1 mb-4">
+                      {/* Dua Card */}
+                      <div className="flex items-center justify-center gap-2 h-14">
+                          {!showVoiceIcon && (
+                              <div className="flex items-center justify-center shrink-0">
+                                  <WhatsAppButton />
+                              </div>
+                          )}
+                          <div className="themed-card p-1 rounded-2xl text-center flex-1 relative h-full flex flex-col justify-center overflow-hidden">
+                              <FloatingNeonTicker />
+                              <p className={`${!showVoiceIcon ? 'text-[14px]' : 'text-[16px]'} font-bold leading-tight`} style={{ color: theme.bgColor === '#000000' ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#65A30D' : theme.textColor)) }}>
+                                  اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
+                              </p>
                           </div>
-                      )}
-                      <div className="themed-card p-1 rounded-2xl text-center flex-1 relative h-full flex flex-col justify-center overflow-hidden">
-                          <FloatingNeonTicker />
-                          <p className={`${!showVoiceIcon ? 'text-[14px]' : 'text-[16px]'} font-bold leading-tight`} style={{ color: theme.bgColor === '#000000' ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#65A30D' : theme.textColor)) }}>
-                              اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
-                          </p>
+                      </div>
+
+                      {/* Prayer Status Cards */}
+                      <div className="grid grid-cols-3 gap-2 px-1">
+                           {/* Right Card: Previous Prayer */}
+                           <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border border-transparent hover:border-current/10 transition-all">
+                               <span className="text-[10px] opacity-70 font-bold mb-0.5">انتهت</span>
+                               <span className="text-[15px] font-black truncate w-full" style={{ color: theme.textColor }}>{prevSalah}</span>
+                           </div>
+
+                           {/* Middle Card: Remaining Time */}
+                           <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-md border-b-2 relative overflow-hidden" 
+                                style={{ borderBottomColor: theme.bgColor === '#000000' ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#65A30D' : theme.textColor)) }}>
+                               <span className="text-[10px] opacity-70 font-bold mb-0.5">متبقي</span>
+                               <span className="text-[16px] font-mono font-black tracking-wider" style={{ color: theme.textColor }}>{prayerCountdown}</span>
+                           </div>
+
+                           {/* Left Card: Next Prayer */}
+                           <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border border-transparent hover:border-current/10 transition-all">
+                               <span className="text-[10px] opacity-70 font-bold mb-0.5">القادمة</span>
+                               <span className="text-[15px] font-black truncate w-full" style={{ color: theme.textColor }}>{nextSalah}</span>
+                           </div>
                       </div>
                   </div>
               )}
