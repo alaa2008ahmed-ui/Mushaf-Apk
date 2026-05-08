@@ -49,11 +49,22 @@ function App() {
 
       try {
         const response = await fetch(REMOTE_VERSION_URL, { cache: 'no-store' });
-        if (!response.ok) return;
+        if (!response.ok) {
+          console.log('Update Check: Server response not OK');
+          return;
+        }
         const data = await response.json();
         
-        if (data && data.version && data.version !== APP_VERSION) {
-          setUpdateInfo({ show: true, newVersion: data.version });
+        const localVersion = APP_VERSION.trim();
+        const remoteVersion = (data?.version || '').toString().trim();
+
+        console.log(`Update Check: Local (${localVersion}) vs Remote (${remoteVersion})`);
+        
+        if (remoteVersion && remoteVersion !== localVersion) {
+          console.log('Update Check: Found different version, showing modal...');
+          setUpdateInfo({ show: true, newVersion: remoteVersion });
+        } else {
+          console.log('Update Check: App is up to date.');
         }
       } catch (error) {
         // لا تظهر خطأ الشبكة في الواجهة، فقط في سجل المطورين
