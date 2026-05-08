@@ -337,7 +337,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
 
 
                 <div className="themed-card rounded-3xl p-6 space-y-5 flex-shrink-0">
-                    <div className="w-full space-y-1.5" dir="ltr">
+                    <div className="w-full space-y-1.5" dir="rtl">
                         <input
                             type="range"
                             min="0"
@@ -345,7 +345,7 @@ function ListenQuran({ onBack, onOpenThemes }) {
                             value={currentTime}
                             onChange={handleSeek}
                             className="w-full h-1.5 rounded-lg appearance-none cursor-pointer quran-slider"
-                            style={{ background: `linear-gradient(to right, ${theme.palette[0]} ${duration > 0 ? (currentTime / duration) * 100 : 0}%, ${theme.cardBorder} ${duration > 0 ? (currentTime / duration) * 100 : 0}%)` }}
+                            style={{ background: `linear-gradient(to left, ${theme.palette[0]} ${duration > 0 ? (currentTime / duration) * 100 : 0}%, ${theme.cardBorder} ${duration > 0 ? (currentTime / duration) * 100 : 0}%)` }}
                         />
                         <div className="flex justify-between text-xs font-mono" style={{ color: theme.textColor, opacity: 0.7 }}>
                             <span>{formatTime(currentTime)}</span>
