@@ -23,6 +23,8 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { clearSearchCache } from './pages/GlobalSearch';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
+import { APP_VERSION, REMOTE_VERSION_URL, GOOGLE_PLAY_URL } from './constants';
+import UpdateNotificationModal from './components/UpdateNotificationModal';
 
 // --- Main App Component ---
 function App() {
@@ -34,6 +36,35 @@ function App() {
   const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
+  
+  // --- Update Notification Logic ---
+  const [updateInfo, setUpdateInfo] = useState<{ show: boolean; newVersion: string }>({ show: false, newVersion: '' });
+
+  useEffect(() => {
+    const checkUpdate = async () => {
+      // تجنب المحاولة إذا كان الرابط لا يزال الرابط الافتراضي الوهمي
+      if (!REMOTE_VERSION_URL || REMOTE_VERSION_URL.includes('your-server.com')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(REMOTE_VERSION_URL, { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await response.json();
+        
+        if (data && data.version && data.version !== APP_VERSION) {
+          setUpdateInfo({ show: true, newVersion: data.version });
+        }
+      } catch (error) {
+        // لا تظهر خطأ الشبكة في الواجهة، فقط في سجل المطورين
+        console.warn('Update check failed (URL might be invalid or unreachable):', error);
+      }
+    };
+
+    // Check after a short delay to not affect startup performance
+    const timeout = setTimeout(checkUpdate, 5000);
+    return () => clearTimeout(timeout);
+  }, []);
 
   useEffect(() => {
     const currentPage = history[history.length - 1];
@@ -286,6 +317,8 @@ function App() {
             navigateBack={navigateBack}
             setIsThemeSelectorOpen={setIsThemeSelectorOpen}
             setShowExitConfirm={setShowExitConfirm}
+            updateInfo={updateInfo}
+            setUpdateInfo={setUpdateInfo}
           />
         </VoiceControlProvider>
       </PrayerTimesProvider>
@@ -305,7 +338,9 @@ function AppContent({
   handleNavigate, 
   navigateBack, 
   setIsThemeSelectorOpen, 
-  setShowExitConfirm 
+  setShowExitConfirm,
+  updateInfo,
+  setUpdateInfo
 }: any) {
   const { setCurrentPage: setVoicePage } = useVoiceControl();
   const { theme, themeKey, applyPresetTheme, setCurrentPage: setThemePage } = useTheme();
@@ -385,6 +420,16 @@ function AppContent({
               isOpen={showExitConfirm}
               onConfirm={handleConfirmExit}
               onClose={() => setShowExitConfirm(false)}
+              isLandscape={isLandscape}
+          />
+      )}
+
+      {updateInfo?.show && (
+          <UpdateNotificationModal 
+              isOpen={updateInfo.show}
+              onClose={() => setUpdateInfo({ ...updateInfo, show: false })}
+              newVersion={updateInfo.newVersion}
+              updateUrl={GOOGLE_PLAY_URL}
               isLandscape={isLandscape}
           />
       )}
