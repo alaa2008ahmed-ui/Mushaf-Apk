@@ -43,10 +43,10 @@ const DuaaSection: FC<DuaaSectionProps> = ({ id, title, items, isOpen, onToggle,
     };
 
     return (
-        <div id={`duaa-section-${id}`} className="border border-white/20 dark:border-gray-700 rounded-2xl overflow-hidden mb-3 bg-white/10 backdrop-blur-sm">
+        <div id={`duaa-section-${id}`} className="themed-card rounded-2xl overflow-hidden mb-3 backdrop-blur-sm">
             <button 
                 onClick={onToggle} 
-                className="w-full flex justify-between items-center p-4 bg-white/40 dark:bg-gray-800/50 hover:bg-white/60 dark:hover:bg-gray-800 transition-colors"
+                className="w-full flex justify-between items-center p-4 bg-white/10 dark:bg-gray-800/50 hover:bg-white/20 dark:hover:bg-gray-800 transition-colors"
             >
                 <span className="font-bold text-base md:text-lg text-right" style={{ color: 'var(--text-color)' }}>{title}</span>
                 <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
@@ -61,8 +61,8 @@ const DuaaSection: FC<DuaaSectionProps> = ({ id, title, items, isOpen, onToggle,
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                     >
-                        <div className="p-4 bg-white/20 dark:bg-gray-900/20">
-                            <div className="flex flex-col gap-4 p-5 rounded-xl bg-white/50 dark:bg-gray-800/40 shadow-sm relative min-h-[160px] justify-center items-center text-center">
+                        <div className="p-4 bg-white/10 dark:bg-gray-900/20">
+                            <div className="flex flex-col gap-4 p-5 rounded-xl bg-white/10 dark:bg-gray-800/40 shadow-sm relative min-h-[160px] justify-center items-center text-center">
                                 <span className="absolute top-3 right-4 text-xs font-bold opacity-50" style={{ color: 'var(--text-color)' }}>
                                     {currentIndex + 1} / {items.length}
                                 </span>
@@ -155,7 +155,7 @@ const ChecklistScreen = ({ theme }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {categories.map((cat, i) => (
-                    <div key={i} className="bg-white/30 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20 dark:border-gray-700">
+                    <div key={i} className="themed-card backdrop-blur-md rounded-xl p-3">
                         <h3 className="font-bold text-base mb-2 border-b pb-1" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0], borderColor: isBlackTheme ? 'rgba(255,255,255,0.2)' : `${theme.palette[0]}20` }}>{cat.title}</h3>
                         <div className="space-y-1.5">
                             {cat.items.map(item => (
@@ -593,7 +593,7 @@ const UmrahScreen = ({ theme, onSelectDetail }) => {
                 <button 
                     key={step.title} 
                     onClick={() => onSelectDetail(step)}
-                    className="w-full text-right bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.08),0_10px_20px_-2px_rgba(0,0,0,0.04)] flex items-center gap-4 hover:shadow-lg transition-all active:scale-[0.982] group"
+                    className="w-full text-right themed-card backdrop-blur-md rounded-2xl p-4 flex items-center gap-4 hover:shadow-lg transition-all active:scale-[0.982] group"
                 >
                     <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-inner" 
                          style={{ 
@@ -649,7 +649,7 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail }) => {
                 { title: 'الواجبات', items: hajjGeneralInfo.wajibat, color: isDefaultTheme ? '#000000' : theme.palette[0], icon: <ListChecks size={14}/> },
                 { title: 'المفسدات', items: hajjGeneralInfo.mufsidat, color: isDefaultTheme ? '#000000' : '#f97316', icon: <ShieldAlert size={14}/> }
             ].map((section, idx) => (
-                <div key={idx} className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 border border-white/20">
+                <div key={idx} className="themed-card backdrop-blur-md rounded-xl p-3">
                     <h3 className="font-bold text-xs mb-1.5 flex items-center gap-2" style={{ color: section.color }}>
                         {section.icon} {section.title}
                     </h3>
@@ -671,7 +671,7 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail }) => {
                     <button 
                         key={i} 
                         onClick={() => onSelectDetail({ title: day.day, points: day.actions, icon: <div className="text-2xl">{day.icon}</div> })}
-                        className="w-full text-right bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/5 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.08),0_10px_20px_-2px_rgba(0,0,0,0.04)] flex items-center gap-4 hover:shadow-lg transition-all active:scale-[0.982] group"
+                        className="w-full text-right themed-card backdrop-blur-md rounded-2xl p-4 flex items-center gap-4 hover:shadow-lg transition-all active:scale-[0.982] group"
                     >
                         <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-inner" 
                              style={{ 
