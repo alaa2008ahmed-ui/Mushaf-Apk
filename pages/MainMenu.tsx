@@ -571,8 +571,8 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
                       {/* Prayer Status Cards */}
                       <div 
-                          className="p-2 rounded-[1.8rem] border-2 transition-all duration-300" 
-                          style={{ borderColor: `${theme.palette[0]}44`, backgroundColor: theme.cardBg ? `${theme.cardBg}66` : 'rgba(255, 255, 255, 0.1)' }}
+                          className="p-2 rounded-2xl shadow-lg border-2 transition-all duration-300" 
+                          style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
                       >
                           <div className="grid grid-cols-3 gap-2">
                            {/* Right Card: Previous Prayer */}
@@ -708,6 +708,71 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                               </div>
                           </div>
                       )}
+
+                      {/* Web App Link Card */}
+                      <div 
+                          className="w-full mt-3 py-4 px-5 rounded-2xl shadow-lg border-2 relative flex flex-col gap-3"
+                          style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
+                          dir="rtl"
+                      >
+                          <div className="flex items-center gap-2 z-10 w-full relative" style={{ color: theme.palette[0] }}>
+                              <i className="fa-solid fa-globe text-base"></i>
+                              <span className="text-sm font-bold font-kufi">تصفح التطبيق</span>
+                          </div>
+                          
+                          <p className="text-sm font-bold leading-relaxed" style={{ color: theme.textColor }}>
+                              لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط
+                          </p>
+
+                          <div className="flex items-center gap-2 mt-1">
+                              <button 
+                                  onClick={() => window.open('https://mushaf-ahmed-and-laila.netlify.app/', '_blank')}
+                                  className="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-center flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
+                                  style={{ backgroundColor: theme.palette[0], color: '#ffffff' }}
+                              >
+                                  <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                                  <span>فتح الرابط</span>
+                              </button>
+                              
+                              <button 
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText('https://mushaf-ahmed-and-laila.netlify.app/').then(() => {
+                                          setToastMessage('تم نسخ الرابط');
+                                          setTimeout(() => setToastMessage(''), 2000);
+                                      });
+                                  }}
+                                  className="w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
+                                  title="نسخ الرابط"
+                                  style={{ color: theme.palette[0] }}
+                              >
+                                  <i className="fa-regular fa-copy text-lg"></i>
+                              </button>
+
+                              <button 
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (navigator.share) {
+                                          navigator.share({
+                                              title: 'تطبيق القرآن الكريم',
+                                              text: 'لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط',
+                                              url: 'https://mushaf-ahmed-and-laila.netlify.app/',
+                                          }).catch(console.error);
+                                      } else {
+                                          navigator.clipboard.writeText('https://mushaf-ahmed-and-laila.netlify.app/').then(() => {
+                                              setToastMessage('تم نسخ الرابط (المشاركة غير مدعومة)');
+                                              setTimeout(() => setToastMessage(''), 2000);
+                                          });
+                                      }
+                                  }}
+                                  className="w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
+                                  title="مشاركة الرابط"
+                                  style={{ color: theme.palette[0] }}
+                              >
+                                  <i className="fa-solid fa-share-nodes text-lg"></i>
+                              </button>
+                          </div>
+                      </div>
 
                   </div>
               )}
