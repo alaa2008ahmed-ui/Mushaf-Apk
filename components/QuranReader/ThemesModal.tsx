@@ -154,7 +154,7 @@ const ThemesModal: React.FC<ThemesModalProps> = ({ onClose, showToast, isLandsca
                                 <p className="text-xs truncate" style={{ color: t.text, fontFamily: t.font }}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
                                 <div className="flex items-center justify-end gap-1 mt-1">
                                     <div className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: t.btnBg }}></div>
-                                    <div className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: t.accent }}></div>
+                                    <div className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: key === 'black' ? '#000000' : t.accent }}></div>
                                 </div>
                             </div>
                         </button>

@@ -1057,7 +1057,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
       fontFamily: theme.font,
       ...(baseSettings.lockHighlightColor
         ? {}
-        : { highlightTextColor: theme.highlightText || theme.accent }),
+        : { highlightTextColor: theme.highlightText || theme.accent || theme.palette?.[0] }),
       theme: themeId,
     };
     localStorage.setItem(
@@ -1294,11 +1294,14 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                               className={`w-[20px] h-[20px] rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem("current_theme_id" + (isMemorizationMode ? `_memorization_${isLandscape ? "h" : "v"}` : isWirdMode ? `_wird_${isLandscape ? "h" : "v"}` : readingMode === "mushaf" ? (isLandscape ? "_h" : "_v") : `_${readingMode}_${isLandscape ? "h" : "v"}`)) === id ? "scale-110 border-gray-400 shadow-md" : "border-transparent hover:scale-105"}`}
                               style={{
                                 backgroundColor:
-                                  id === "deep_black"
+                                  id === "black"
                                     ? "#000000"
-                                    : theme.accent ||
-                                      theme.barText ||
-                                      "#000000",
+                                    : id === "deep_black"
+                                      ? "#000000"
+                                      : theme.accent ||
+                                        theme.palette?.[0] ||
+                                        theme.barText ||
+                                        "#000000",
                               }}
                             >
                               {localStorage.getItem(
