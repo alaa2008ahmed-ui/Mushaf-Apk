@@ -9,7 +9,7 @@ import ZoomModal from '../components/HisnAlmuslim/ZoomModal';
 import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'motion/react';
 
-function HisnAlmuslim({ onBack }) {
+function HisnAlmuslim({ onBack, onNavigate }) {
     const { theme, themeKey } = useTheme();
     const isBlackTheme = theme.bgColor === '#000000';
     const [selectedCategory, setSelectedCategory] = useState(null);

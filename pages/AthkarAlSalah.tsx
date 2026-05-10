@@ -80,6 +80,7 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
 
 function AthkarAlSalah({ onBack, onNavigate }) {
     const { theme, themeKey } = useTheme();
+    const isBlackTheme = theme.bgColor === '#000000';
     const [currentPrayer, setCurrentPrayer] = useState(null);
     const [athkarList, setAthkarList] = useState([]);
     const [zoomedZikr, setZoomedZikr] = useState(null);
@@ -426,7 +427,7 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                             <button 
                                 onClick={() => { setIsFavoritesView(true); setCurrentPrayer(null); setIsMenuOpen(false); }}
                                 className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-between ${isFavoritesView ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                style={isFavoritesView ? { color: theme.palette[0] } : {}}
+                                style={isFavoritesView ? { color: isBlackTheme ? '#FFFFFF' : theme.palette[0] } : {}}
                             >
                                 المفضلة
                                 <i className="fa-solid fa-heart text-xs opacity-70"></i>
@@ -437,7 +438,7 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                                     key={prayer.id}
                                     onClick={() => { openPrayer(prayer.id, `أذكار ${prayer.title}`); setIsMenuOpen(false); }}
                                     className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${currentPrayer?.id === prayer.id ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                    style={currentPrayer?.id === prayer.id ? { color: theme.palette[0] } : {}}
+                                    style={currentPrayer?.id === prayer.id ? { color: isBlackTheme ? '#FFFFFF' : theme.palette[0] } : {}}
                                 >
                                     {prayer.title}
                                 </button>
@@ -449,11 +450,11 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                 <button 
                     ref={fabRef}
                     onClick={handleFabClick}
-                    className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer relative z-10 ${themeKey === 'default' ? 'text-black' : 'text-white'}`}
+                    className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer relative z-10 ${themeKey === 'default' ? 'text-black' : (isBlackTheme ? 'text-black' : 'text-white')}`}
                     style={
                         themeKey === 'default'
                         ? { backgroundColor: '#ffffff', border: '1px solid #000000' }
-                        : { backgroundColor: theme.palette[0] }
+                        : { backgroundColor: isBlackTheme ? '#FFFFFF' : theme.palette[0] }
                     }
                 >
                     <i className={`fa-solid ${isMenuOpen ? 'fa-times' : 'fa-list-ul'} text-xl`}></i>

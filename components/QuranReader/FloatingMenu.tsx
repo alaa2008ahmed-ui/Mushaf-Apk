@@ -1057,7 +1057,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
       fontFamily: theme.font,
       ...(baseSettings.lockHighlightColor
         ? {}
-        : { highlightTextColor: theme.highlightText || theme.accent || theme.palette?.[0] }),
+        : { highlightTextColor: theme.highlightText || theme.accent || (theme as any).palette?.[0] }),
       theme: themeId,
     };
     localStorage.setItem(

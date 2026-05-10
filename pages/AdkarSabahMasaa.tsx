@@ -12,6 +12,7 @@ const ADHKAR_STATUS_KEY = 'sabah_masaa_status_v1';
 
 function AdkarSabahMasaa({ onBack, onNavigate }) {
     const { theme, themeKey } = useTheme();
+    const isBlackTheme = theme.bgColor === '#000000';
     const [adhkarTab, setAdhkarTab] = useState<'morning' | 'evening' | 'favorites'>('morning');
     const [favorites, setFavorites] = useState<string[]>([]);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -174,7 +175,7 @@ function AdkarSabahMasaa({ onBack, onNavigate }) {
                             <button 
                                 onClick={() => { setAdhkarTab('morning'); setIsMenuOpen(false); }}
                                 className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-between ${adhkarTab === 'morning' ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                style={adhkarTab === 'morning' ? { color: theme.palette[0] } : {}}
+                                style={adhkarTab === 'morning' ? { color: isBlackTheme ? '#FFFFFF' : theme.palette[0] } : {}}
                             >
                                 أذكار الصباح
                                 <i className="fa-solid fa-sun text-xs opacity-70"></i>
@@ -182,7 +183,7 @@ function AdkarSabahMasaa({ onBack, onNavigate }) {
                             <button 
                                 onClick={() => { setAdhkarTab('evening'); setIsMenuOpen(false); }}
                                 className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-between ${adhkarTab === 'evening' ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                style={adhkarTab === 'evening' ? { color: theme.palette[0] } : {}}
+                                style={adhkarTab === 'evening' ? { color: isBlackTheme ? '#FFFFFF' : theme.palette[0] } : {}}
                             >
                                 أذكار المساء
                                 <i className="fa-solid fa-moon text-xs opacity-70"></i>
@@ -196,7 +197,7 @@ function AdkarSabahMasaa({ onBack, onNavigate }) {
                                     setIsMenuOpen(false); 
                                 }}
                                 className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-between ${adhkarTab === 'favorites' ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
-                                style={adhkarTab === 'favorites' ? { color: theme.palette[0] } : {}}
+                                style={adhkarTab === 'favorites' ? { color: isBlackTheme ? '#FFFFFF' : theme.palette[0] } : {}}
                             >
                                 المفضلة
                                 <i className="fa-solid fa-heart text-xs opacity-70"></i>
@@ -208,11 +209,11 @@ function AdkarSabahMasaa({ onBack, onNavigate }) {
                 <button 
                     ref={fabRef}
                     onClick={handleFabClick}
-                    className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer relative z-10 ${themeKey === 'default' ? 'text-black' : 'text-white'}`}
+                    className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer relative z-10 ${themeKey === 'default' ? 'text-black' : (isBlackTheme ? 'text-black' : 'text-white')}`}
                     style={
                         themeKey === 'default'
                         ? { backgroundColor: '#ffffff', border: '1px solid #000000' }
-                        : { backgroundColor: theme.palette[0] }
+                        : { backgroundColor: isBlackTheme ? '#FFFFFF' : theme.palette[0] }
                     }
                 >
                     <i className={`fa-solid ${isMenuOpen ? 'fa-times' : 'fa-list-ul'} text-xl`}></i>

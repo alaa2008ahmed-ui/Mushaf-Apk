@@ -263,7 +263,7 @@ const CountersScreen = ({ theme }) => {
     );
 };
 
-function HajjUmrah({ onBack }) {
+function HajjUmrah({ onBack, onNavigate }) {
     const { theme, themeKey } = useTheme();
     const isBlackTheme = theme.bgColor === '#000000';
     const isDefaultTheme = themeKey === 'default' || theme.name?.includes('الافتراضي') || (!themeKey && theme.palette[0] === '#10b981');

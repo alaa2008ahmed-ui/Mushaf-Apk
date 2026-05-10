@@ -60,7 +60,7 @@ function formatTime(seconds) {
     return toArabicNumerals(`${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
 }
 
-function ListenQuran({ onBack, onOpenThemes }) {
+function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
     const { theme, themeKey } = useTheme();
     const isBlackTheme = theme.bgColor === '#000000';
     const [reciterId, setReciterId] = useState(RECITERS[0].id);

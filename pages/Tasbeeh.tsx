@@ -19,7 +19,7 @@ const PHRASES_STORAGE_KEY = 'ahmed_laila_tasbeeh_phrases';
 const SETTINGS_STORAGE_KEY = 'ahmed_laila_tasbeeh_settings_v1';
 
 // --- Main Component ---
-function Tasbeeh({ onBack }) {
+function Tasbeeh({ onBack, onNavigate }) {
     const { theme, themeKey } = useTheme();
     const isBlackAndWhite = themeKey === 'deep_black';
     const isBlackTheme = theme.bgColor === '#000000';
