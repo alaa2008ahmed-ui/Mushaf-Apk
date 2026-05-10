@@ -18,11 +18,11 @@ const VerseSection: React.FC<VerseSectionProps> = ({
     verseSettings
 }) => {
     const isBlackTheme = theme.bgColor === '#000000';
-    const isDarkBg = ['#000000', '#0f172a', '#1e1b4b', '#0b0f19', '#022c22', '#2e1065'].includes(theme.bgColor?.toLowerCase());
-    const isLightTheme = !isDarkBg;
+    const isDarkTheme = theme.isDark;
+    const isLightTheme = !isDarkTheme;
 
     let finalTextColor = verseSettings.textColor;
-    if (isBlackTheme) {
+    if (isDarkTheme) {
         finalTextColor = '#FFFFFF';
     } else if (isLightTheme) {
         finalTextColor = theme.palette?.[0] || theme.textColor;

@@ -25,12 +25,15 @@ function ThemeSelector({ onClose, isLandscape }: { onClose: () => void, isLandsc
     }, [wrapperRef, onClose]);
 
     useEffect(() => {
-        // Scroll to the active theme button after render
+        // Scroll to the active theme button after render (Instant jump)
         if (themeKey) {
-            const activeButton = wrapperRef.current?.querySelector(`[data-theme-key="${themeKey}"]`);
-            if (activeButton) {
-                activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            }
+            const timer = setTimeout(() => {
+                const activeButton = wrapperRef.current?.querySelector(`[data-theme-key="${themeKey}"]`);
+                if (activeButton) {
+                    activeButton.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+                }
+            }, 10);
+            return () => clearTimeout(timer);
         }
     }, [themeKey]);
 
@@ -79,7 +82,6 @@ function ThemeSelector({ onClose, isLandscape }: { onClose: () => void, isLandsc
                                 onClick={() => { applyPresetTheme(key); onClose(); }}
                                 className="theme-selector-button w-[85px] h-14 rounded-xl border-2 text-[10px] font-bold flex items-center justify-center text-center shadow-sm transition-all active:scale-95 hover:brightness-110"
                                     style={{
-                                        animationDelay: `${index * 0.03}s`,
                                         backgroundColor: themeOption.bgColor || '#fff',
                                         backgroundSize: 'cover',
                                         color: themeOption.textColor || '#000',

@@ -278,7 +278,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                                             type="time" 
                                                             value={setting.time}
                                                             onChange={(e) => handleTimeChange(item.id as keyof Omit<PhoneNotificationSettings, 'randomAthkar'>, e.target.value)}
-                                                            className="bg-transparent border-none outline-none font-bold"
+                                                            className="bg-transparent border-none outline-none font-bold dark:[color-scheme:dark]"
                                                             style={{ color: 'var(--qr-accent)' }}
                                                         />
                                                     </div>
@@ -316,14 +316,14 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                             <div className="flex items-center gap-3">
                                                 <button 
                                                     onClick={() => handleRandomSettingChange({ frequency: Math.max(1, phoneSettings.randomAthkar.frequency - 1) })}
-                                                    className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold"
+                                                    className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 flex items-center justify-center font-bold"
                                                 >
                                                     -
                                                 </button>
                                                 <span className="text-sm font-bold text-emerald-600">{toArabic(phoneSettings.randomAthkar.frequency)}</span>
                                                 <button 
                                                     onClick={() => handleRandomSettingChange({ frequency: Math.min(20, phoneSettings.randomAthkar.frequency + 1) })}
-                                                    className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold"
+                                                    className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 flex items-center justify-center font-bold"
                                                 >
                                                     +
                                                 </button>
@@ -337,7 +337,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                                     type="time" 
                                                     value={phoneSettings.randomAthkar.startTime}
                                                     onChange={(e) => handleRandomSettingChange({ startTime: e.target.value })}
-                                                    className="w-full text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-2 rounded-lg font-bold"
+                                                    className="w-full text-xs bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 p-2 rounded-lg font-bold dark:[color-scheme:dark]"
                                                 />
                                             </div>
                                             <div className="space-y-1">
@@ -346,7 +346,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                                     type="time" 
                                                     value={phoneSettings.randomAthkar.endTime}
                                                     onChange={(e) => handleRandomSettingChange({ endTime: e.target.value })}
-                                                    className="w-full text-xs bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-2 rounded-lg font-bold"
+                                                    className="w-full text-xs bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 p-2 rounded-lg font-bold dark:[color-scheme:dark]"
                                                 />
                                             </div>
                                         </div>

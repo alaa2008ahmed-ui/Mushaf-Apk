@@ -728,7 +728,10 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                               <button 
                                   onClick={() => window.open('https://mushaf-ahmed-and-laila.netlify.app/', '_blank')}
                                   className="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-center flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
-                                  style={{ backgroundColor: theme.palette[0], color: '#ffffff' }}
+                                  style={{ 
+                                      backgroundColor: theme.palette[0], 
+                                      color: (theme.palette[0]?.toLowerCase() === '#ffffff' || theme.palette[0]?.toLowerCase() === 'white') ? '#000000' : '#ffffff' 
+                                  }}
                               >
                                   <i className="fa-solid fa-arrow-up-right-from-square"></i>
                                   <span>فتح الرابط</span>

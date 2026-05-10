@@ -268,6 +268,12 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         
         const isDark = theme.isDark;
 
+        if (isDark) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
         root.style.setProperty('--bg-color', theme.bgColor || '#0D1B2A');
         root.style.setProperty('--text-color', theme.textColor);
         root.style.setProperty('--text-color-muted', isDark ? '#94a3b8' : '#64748b');

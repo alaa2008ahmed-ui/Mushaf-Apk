@@ -48,7 +48,7 @@ export const presetThemes: { [key: string]: Theme } = {
         accent: "#059669"
     },
     deep_black: {
-        name: "(اسود)",
+        name: "اسود",
         bgColor: "#000000",
         textColor: "#FFFFFF",
         font: "'Cairo', sans-serif",
@@ -57,6 +57,7 @@ export const presetThemes: { [key: string]: Theme } = {
         barBorder: "1px solid #333333",
         btnBorder: "1px solid #FFFFFF",
         accent: "#FFFFFF",
+        accentText: "#000000",
         highlightText: "#FFFFFF",
         cardBg: "#111111",
         cardBorder: "#333333",
@@ -130,6 +131,7 @@ export const presetThemes: { [key: string]: Theme } = {
         barBg: "#1E293B",
         barBorder: "1px solid #3B82F6",
         accent: "#FCD34D",
+        accentText: "#000000",
         cardBg: "#1E293B",
         cardBorder: "#334155",
         modalBg: "#0F172A",
@@ -199,7 +201,8 @@ export const presetThemes: { [key: string]: Theme } = {
         font: "'Cairo', sans-serif",
         palette: ["#F97316", "#FB923C", "#EA580C"],
         barBg: "#FFEDD5",
-        barBorder: "1px solid #FED7AA"
+        barBorder: "1px solid #FED7AA",
+        accentText: "#000000"
     },
     electric_violet: {
         name: "بنفسجي كهربائي",
