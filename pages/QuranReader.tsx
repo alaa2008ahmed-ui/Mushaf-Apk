@@ -274,7 +274,17 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             const height = window.innerHeight;
             
             // Use matchMedia for more reliable orientation detection that ignores keyboard height
-            const isL = window.matchMedia("(orientation: landscape)").matches;
+            let isL = window.matchMedia("(orientation: landscape)").matches;
+            
+            // Only auto-switch to landscape mode on mobile/native devices. 
+            // On desktop/preview, a wide window shouldn't force the mobile landscape reading UI 
+            // which hides toolbars and share buttons.
+            if (!Capacitor.isNativePlatform()) {
+                const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (!isMobileUA) {
+                    isL = false; // Always default to portrait in desktop preview so toolbars/share buttons appear normally
+                }
+            }
             
             if (isL !== isLandscapeRef.current) {
                 setIsLandscape(isL);

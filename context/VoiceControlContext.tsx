@@ -108,7 +108,7 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
 const VoiceControlContext = createContext<VoiceControlContextType | undefined>(undefined);
 
 export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onAction: (action: string, text: string, params?: any) => void }> = ({ children, onAction }) => {
-    const [isEnabled, setIsEnabled] = useState(() => localStorage.getItem('voice_control_enabled') === 'true');
+    const [isEnabled, setIsEnabled] = useState(false);
     const [showVoiceIcon, setShowVoiceIcon] = useState(() => localStorage.getItem('show_voice_icon') !== 'false');
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
@@ -404,7 +404,6 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
     // Sync state changes to refs and trigger start/stop
     useEffect(() => {
         isEnabledRef.current = isEnabled;
-        localStorage.setItem('voice_control_enabled', isEnabled.toString());
         
         if (isEnabled) {
             startRecognition();
