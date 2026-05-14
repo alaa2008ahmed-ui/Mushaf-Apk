@@ -93,7 +93,7 @@ const MawlidNotification: React.FC = () => {
                             <button
                                 onClick={handleClose}
                                 className="w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-transform active:scale-95"
-                                style={{ backgroundColor: theme.palette[0], color: '#fff' }}
+                                style={{ backgroundColor: theme.palette[0], color: theme.name === 'اسود' ? '#000000' : '#fff' }}
                             >
                                 صلّوا عليه وسلّموا تسليماً
                             </button>

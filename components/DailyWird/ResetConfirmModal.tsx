@@ -80,7 +80,7 @@ const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({ isOpen, onClose, 
                                     className="flex-1 py-4 rounded-2xl font-bold transition-all active:scale-95 shadow-lg flex items-center justify-center gap-2"
                                     style={{
                                         backgroundColor: isDefaultTheme ? '#10b981' : (theme.palette[0] || '#ef4444'),
-                                        color: '#ffffff',
+                                        color: theme.name === 'اسود' ? '#000000' : '#ffffff',
                                         boxShadow: isDefaultTheme ? '0 10px 15px -3px rgba(16, 185, 129, 0.3)' : `0 8px 20px -6px ${theme.palette[0]}60`
                                     }}
                                 >

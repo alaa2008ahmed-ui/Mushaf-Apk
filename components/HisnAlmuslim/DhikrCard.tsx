@@ -57,7 +57,7 @@ const DhikrCard: React.FC<DhikrCardProps> = ({ dhikr, currentCount, isFinished, 
                         ? { backgroundColor: 'var(--badge-finished-bg)', color: 'var(--badge-finished-text)' } 
                         : (themeKey === 'default' 
                             ? { backgroundColor: '#ffffff', color: '#000000', border: '1px solid rgba(0,0,0,0.1)' } 
-                            : { backgroundImage: `linear-gradient(to bottom right, ${theme.palette[0]}, ${theme.palette[1]})`, color: '#ffffff' }
+                            : { backgroundImage: `linear-gradient(to bottom right, ${theme.palette[0]}, ${theme.palette[1]})`, color: theme.name === 'اسود' ? '#000000' : '#ffffff' }
                         )
                     }
                 >
