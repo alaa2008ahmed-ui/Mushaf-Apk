@@ -218,10 +218,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
         return fontMap[val] || "افتراضي";
     };
 
+    const currentTheme = THEMES[settings.theme] || Object.values(THEMES)[0];
+
     return (
-        <div className={`fixed inset-0 bg-transparent z-[1200] flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} onClick={handleClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md sm:max-w-2xl rounded-2xl max-h-[85vh]'} shadow-2xl overflow-hidden flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()}>
-                <div className={`p-3 overflow-y-auto text-center flex-1 ${isLandscape ? 'grid grid-cols-2 gap-x-6 gap-y-2' : 'space-y-2'}`}>
+        <div className="fixed z-[1200] bg-black/40 backdrop-blur-sm flex items-center justify-center overflow-hidden" style={{ top: 0, bottom: 0, left: 0, right: 0 }} dir="rtl" onClick={handleClose}>
+            <div className="w-full h-full flex flex-col overflow-hidden shadow-none border-[4px]" style={{ backgroundColor: currentTheme.background || '#ffffff', borderColor: currentTheme.accent || '#3b82f6' }} onClick={e => e.stopPropagation()}>
+                <div className="flex-1 w-full flex flex-col overflow-hidden" style={{ color: currentTheme.textColor || '#000000' }}>
+                    
+                    {/* Full Screen Modal Header */}
+                    <div className="p-3 border-b flex items-center justify-center shrink-0" style={{ backgroundColor: currentTheme.background || '#ffffff', borderColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
+                        <h3 className="text-sm font-bold" style={{ color: currentTheme.textColor }}>الإعدادات</h3>
+                    </div>
+
+                    <div className={`p-3 overflow-y-auto text-center flex-1 scrollbar-hide ${isLandscape ? 'grid grid-cols-2 gap-x-6 gap-y-2' : 'space-y-2'}`}>
                     <div id="font-size-section" className={`${isLandscape ? 'col-span-2' : ''} border-b pb-2 border-gray-200 dark:border-gray-700 space-y-2`}>
                         <div className="flex items-center justify-between mt-3">
                             <label className="text-sm font-bold opacity-80">حجم الخط</label>
@@ -490,8 +499,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                         </div>
                     </div>
                 </div>
-                <div className="p-3 text-center flex-none themed-card-bg">
-                    <button onClick={handleClose} className="theme-accent-btn font-bold py-2 px-8 rounded-lg shadow text-sm w-full">حفظ وإغلاق</button>
+                </div>
+                <div className="p-3 border-t flex gap-2 shrink-0 z-10" style={{ backgroundColor: currentTheme.background, borderColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
+                    <button
+                        onClick={handleClose}
+                        className="flex-1 py-4 rounded-xl text-xs font-bold w-full transition-all shadow-md active:scale-95 border-[2px]"
+                        style={{ backgroundColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.05)' : '#ffffff', color: currentTheme.textColor, borderColor: currentTheme.accent || '#3b82f6' }}
+                    >
+                        رجوع
+                    </button>
                 </div>
             </div>
             {!isLandscape && <TutorialOverlay tutorialId="settings-tutorial" steps={settingsTutorialSteps} />}

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import WhatsAppButton from '../components/WhatsAppButton';
@@ -40,6 +40,31 @@ const ISLAMIC_EVENTS = [
 
 const HIJRI_MONTHS = ["محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
 const GREGORIAN_MONTHS = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+
+const APP_SHARE_TEXT = `إليك التحديث الأضخم لتطبيق "مصحف أحمد وليلى"! 🕋✨
+
+بشرى سارة لكل مسلم، تطبيقك الإسلامي الشامل الذي يعمل "بدون إنترنت" صار الآن أفضل وأجمل بكثير! لقد قمنا بتحديث جميع صفحات التطبيق بالكامل لضمان تجربة أسرع وسهولة تامة في الاستخدام.
+
+ما الجديد في هذا التحديث؟ 🚀
+لقد تمت إضافة صفحات وميزات جديدة وحصرية لتكون رفيقك اليومي في التقرب إلى الله:
+
+✅ صفحة التحفيظ: لمساعدتك على حفظ كتاب الله ومراجعته بيسر وسهولة.
+✅ الورد اليومي: لتنظيم قراءتك اليومية والالتزام بها بانتظام.
+✅ التحكم الصوتي: ميزة ذكية فريدة تمكنك من التنقل داخل التطبيق عبر أوامرك الصوتية.
+✅ أسماء الله الحسنى: شرح وتدبر لمعاني أسماء الله العظيمة بتصميم مميز.
+✅ مربي العبادات: دليلك العملي والمحفز للالتزام بالفرائض والسنن اليومية.
+
+مميزات التطبيق المتكاملة:
+بجانب الإضافات الجديدة، التطبيق يوفر لك: (القرآن الكريم كاملاً، حصن المسلم والأذكار، الادعية، مواقيت الصلاة بدقة، اتجاه القبلة ، التقويم ، اذكار الصلاه ، السبحة الإلكترونية ، الحاسبة الشرعية ، الاربعون النوويه).. وكل ذلك بدون الحاجة للاتصال بالإنترنت.
+
+مميزات اخرى كثيرة تنتظرك اكتشفها بنفسك .
+
+حمل التطبيق الآن وشاركه مع أحبابك لتكون لك صدقة جارية:
+📥 رابط التطبيق على متجر جوجل بلاي:
+
+https://play.google.com/store/apps/details?id=com.AhmedLaila.Quran
+
+نفعنا الله وإياكم به، وجعله في ميزان حسناتنا جميعاً. 🤲✨`;
 
 const ALL_POSSIBLE_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
@@ -122,6 +147,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
       };
   });
   const [isVerseMenuOpen, setIsVerseMenuOpen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const PREDEFINED_COLORS = [
       '#ffffff', '#f3f4f6', '#9ca3af', '#4b5563', '#000000',
@@ -512,7 +538,10 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     <div>
       <InteractiveBackground />
       <div className="h-screen w-full flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto pb-24 no-scrollbar">
+        <div 
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto pb-24 no-scrollbar"
+        >
           <div className="main-layout px-4 flex flex-col" style={{ fontFamily: theme.font }}>
               
               <div id="verse-section">
@@ -554,21 +583,6 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
               {/* Footer/Save Button */}
               {!isEditMode && (
                   <div className="flex flex-col gap-2 w-full max-w-sm mx-auto mt-1 mb-4">
-                      {/* Dua Card */}
-                      <div className="flex items-center justify-center gap-2 h-12">
-                          {!showVoiceIcon && (
-                              <div className="flex items-center justify-center shrink-0">
-                                  <WhatsAppButton />
-                              </div>
-                          )}
-                          <div className="themed-card p-1 rounded-2xl text-center flex-1 relative h-full flex flex-col justify-center overflow-hidden">
-                              <FloatingNeonTicker />
-                              <p className={`${!showVoiceIcon ? 'text-[14px]' : 'text-[16px]'} font-bold leading-tight`} style={{ color: theme.bgColor === '#000000' ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#65A30D' : theme.textColor)) }}>
-                                  اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
-                              </p>
-                          </div>
-                      </div>
-
                       {/* Prayer Status Cards */}
                       <div 
                           className="p-2 rounded-2xl shadow-lg border-2 transition-all duration-300" 
@@ -711,23 +725,23 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
                       {/* Web App Link Card */}
                       <div 
-                          className="w-full mt-3 py-4 px-5 rounded-2xl shadow-lg border-2 relative flex flex-col gap-3"
+                          className="w-full mt-3 py-3 px-4 rounded-2xl shadow-lg border-2 relative flex flex-col gap-2"
                           style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
                           dir="rtl"
                       >
                           <div className="flex items-center gap-2 z-10 w-full relative" style={{ color: theme.palette[0] }}>
-                              <i className="fa-solid fa-globe text-base"></i>
-                              <span className="text-sm font-bold font-kufi">تصفح التطبيق</span>
+                              <i className="fa-solid fa-globe text-xs"></i>
+                              <span className="text-xs font-bold font-kufi">تصفح التطبيق</span>
                           </div>
                           
-                          <p className="text-sm font-bold leading-relaxed" style={{ color: theme.textColor }}>
+                          <p className="text-xs font-bold opacity-80 leading-relaxed" style={{ color: theme.textColor }}>
                               لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط
                           </p>
 
                           <div className="flex items-center gap-2 mt-1">
                               <button 
                                   onClick={() => window.open('https://mushaf-ahmed-and-laila.netlify.app/', '_blank')}
-                                  className="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-center flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
+                                  className="flex-1 py-2 px-4 rounded-xl font-bold text-xs text-center flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
                                   style={{ 
                                       backgroundColor: theme.palette[0], 
                                       color: (theme.palette[0]?.toLowerCase() === '#ffffff' || theme.palette[0]?.toLowerCase() === 'white') ? '#000000' : '#ffffff' 
@@ -745,11 +759,11 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           setTimeout(() => setToastMessage(''), 2000);
                                       });
                                   }}
-                                  className="w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
+                                  className="w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
                                   title="نسخ الرابط"
                                   style={{ color: theme.palette[0] }}
                               >
-                                  <i className="fa-regular fa-copy text-lg"></i>
+                                  <i className="fa-regular fa-copy text-base"></i>
                               </button>
 
                               <button 
@@ -768,15 +782,103 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           });
                                       }
                                   }}
-                                  className="w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
+                                  className="w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
                                   title="مشاركة الرابط"
                                   style={{ color: theme.palette[0] }}
                               >
-                                  <i className="fa-solid fa-share-nodes text-lg"></i>
+                                  <i className="fa-solid fa-share-nodes text-base"></i>
                               </button>
                           </div>
                       </div>
 
+                      {/* App Share Card */}
+                      <div 
+                          className="w-full mt-3 py-3 px-4 rounded-2xl shadow-lg border-2 relative flex flex-col gap-2 overflow-hidden"
+                          style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
+                          dir="rtl"
+                      >
+                          <div className="flex items-center gap-2 z-10 w-full relative" style={{ color: theme.palette[0] }}>
+                              <i className="fa-solid fa-share-nodes text-xs"></i>
+                              <span className="text-xs font-bold font-kufi">شارك التطبيق</span>
+                          </div>
+                          
+                          <p className="text-xs font-bold opacity-80 leading-relaxed" style={{ color: theme.textColor }}>
+                              اذا اعجبك التطبيق قم بنشره على وسائل التواصل ليكون لك الاجر ولمن تحب ان شاء الله .
+                          </p>
+
+                          <div className="flex items-center justify-between gap-1 mt-1">
+                              {[
+                                  { icon: 'fa-brands fa-whatsapp', label: 'واتساب', color: '#25D366', action: 'whatsapp' },
+                                  { icon: 'fa-brands fa-facebook-f', label: 'فيسبوك', color: '#1877F2', action: 'facebook' },
+                                  { icon: 'fa-regular fa-copy', label: 'نسخ', color: theme.palette[0], action: 'copy' }
+                              ].map((item, index) => (
+                                  <button 
+                                      key={index}
+                                      onClick={(e) => {
+                                          e.stopPropagation();
+                                          // Copy text first
+                                          navigator.clipboard.writeText(APP_SHARE_TEXT);
+                                          
+                                          const encodedText = encodeURIComponent(APP_SHARE_TEXT);
+                                          const appUrl = 'https://play.google.com/store/apps/details?id=com.AhmedLaila.Quran';
+                                          const encodedUrl = encodeURIComponent(appUrl);
+
+                                          switch(item.action) {
+                                              case 'whatsapp':
+                                                  window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+                                                  break;
+                                              case 'facebook':
+                                                  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank');
+                                                  break;
+                                              case 'copy':
+                                                  setToastMessage('تم نسخ نص المشاركة');
+                                                  setTimeout(() => setToastMessage(''), 2000);
+                                                  break;
+                                              case 'share':
+                                                  if (navigator.share) {
+                                                      navigator.share({
+                                                          title: 'مصحف أحمد وليلى',
+                                                          text: APP_SHARE_TEXT,
+                                                      }).catch((error) => {
+                                                          if (error.name !== 'AbortError') {
+                                                              console.error('Share error:', error);
+                                                          }
+                                                      });
+                                                  } else {
+                                                       setToastMessage('تم نسخ النص');
+                                                       setTimeout(() => setToastMessage(''), 2000);
+                                                  }
+                                                  break;
+                                          }
+                                      }}
+                                      className="flex items-center justify-center p-1 rounded-xl transition-all active:scale-90 hover:bg-black/5 dark:hover:bg-white/5"
+                                      title={item.label}
+                                  >
+                                      <div 
+                                          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-sm"
+                                          style={{ backgroundColor: item.color + '20', color: item.color }}
+                                      >
+                                          <i className={item.icon}></i>
+                                      </div>
+                                  </button>
+                              ))}
+                          </div>
+                      </div>
+
+                      {/* Dua Card */}
+                      <div className="flex items-center justify-center gap-2 h-10 mt-3">
+                          {!showVoiceIcon && (
+                              <div className="flex items-center justify-center shrink-0">
+                                  <WhatsAppButton />
+                              </div>
+                          )}
+                          <div className="themed-card p-1 rounded-2xl text-center flex-1 relative h-full flex flex-col justify-center overflow-hidden">
+                              <FloatingNeonTicker />
+                              <p className={`${!showVoiceIcon ? 'text-[13px]' : 'text-[15px]'} font-bold leading-tight`} style={{ color: theme.bgColor === '#000000' ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#65A30D' : theme.textColor)) }}>
+                                  اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
+                              </p>
+                          </div>
+                      </div>
                   </div>
               )}
           </div>
@@ -904,6 +1006,12 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
         tutorialId="home-tutorial" 
         steps={homeTutorialSteps} 
         onStepChange={setCurrentTutorialStep}
+        onComplete={() => {
+            if (scrollContainerRef.current) {
+                // Ensure we go to the very top immediately
+                scrollContainerRef.current.scrollTo(0, 0);
+            }
+        }}
       />
       {currentTutorialStep && (
         <style>{`

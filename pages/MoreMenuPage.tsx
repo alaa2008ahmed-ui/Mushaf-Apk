@@ -6,25 +6,25 @@ import NavButton from '../components/MainMenu/NavButton';
 import { motion } from 'motion/react';
 
 const ALL_MENU_ITEMS = [
-    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-16", colorIndex: 0 },
-    { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-1 h-16", colorIndex: 0 },
-    { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-1 h-16", colorIndex: 0 },
-    { id: 'adia', label: "🤲 الأدعية", className: "col-span-1 h-16", colorIndex: 1 },
-    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "col-span-1 h-16", colorIndex: 1 },
-    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "col-span-1 h-16", colorIndex: 1 },
-    { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "col-span-1 h-16", colorIndex: 1 },
-    { id: 'tasbeeh', label: "📿 السبحة", className: "col-span-1 h-16", colorIndex: 1 },
-    { id: 'calendar', label: "📅 التقويم", className: "col-span-1 h-16", colorIndex: 1 },
-    { id: 'qibla', label: "🧭 القبلة", className: "col-span-1 h-16", colorIndex: 1 },
-    { id: 'nawawi', label: "📚 الأربعون النووية", className: "col-span-1 h-16", colorIndex: 1 },
-    { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "col-span-1 h-16", colorIndex: 1 },
-    { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "col-span-1 h-16", colorIndex: 1 },
+    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-14", colorIndex: 0 },
+    { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'adia', label: "🤲 الأدعية", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'tasbeeh', label: "📿 السبحة", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'calendar', label: "📅 التقويم", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'qibla', label: "🧭 القبلة", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'nawawi', label: "📚 الأربعون النووية", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "col-span-1 h-14", colorIndex: 1 },
     // الصفحات الجديدة في نهاية القائمة
-    { id: 'daily-wird', label: "📅 الورد اليومي", className: "col-span-1 h-16", colorIndex: 0 },
-    { id: 'habit-tracker', label: "🎯 مربّي العبادات", className: "col-span-1 h-16", colorIndex: 0 },
-    { id: 'memorization', label: "🧠 التحفيظ", className: "col-span-1 h-16", colorIndex: 0 },
-    { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "col-span-1 h-16", colorIndex: 0 },
-    { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-16", colorIndex: 0 },
+    { id: 'daily-wird', label: "📅 الورد اليومي", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'habit-tracker', label: "🎯 مربّي العبادات", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'memorization', label: "🧠 التحفيظ", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-14", colorIndex: 0 },
 ];
 
 interface MoreMenuPageProps {

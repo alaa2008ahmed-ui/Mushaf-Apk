@@ -42,6 +42,8 @@ import { memorizationService } from '../services/memorizationService';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { parseVoiceCommand, normalizeArabic } from '../utils/voiceParser';
 import { useTheme } from '../context/ThemeContext';
+import { useAudioStore } from '../hooks/useAudioStore';
+import { App as CapacitorApp } from '@capacitor/app';
 
 declare var window: any;
 
@@ -1235,9 +1237,11 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const autoScrollFrameRef = useRef<number | null>(null);
     const landscapeAutoHideTimerRef = useRef<NodeJS.Timeout | null>(null);
     const lastScrollTimeRef = useRef<number>(0);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [isAudioLoading, setIsAudioLoading] = useState(false);
-    const [playingAyah, setPlayingAyah] = useState<{s: number; a: number} | null>(null);
+    const { 
+        isPlaying, setIsPlaying, 
+        isAudioLoading, setIsAudioLoading, 
+        playingAyah, setPlayingAyah 
+    } = useAudioStore();
     
     const [tafseerInfo, setTafseerInfo] = useState({ isOpen: false, s: 0, a: 0, text: '', surahName: '', wasAutoscrolling: false });
     const [tafseerSelectionInfo, setTafseerSelectionInfo] = useState({ isOpen: false, s: 0, a: 0, wasAutoscrolling: false });
@@ -1252,10 +1256,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const [quranTranslationInfo, setQuranTranslationInfo] = useState({ isOpen: false, s: 0, a: 0, text: '', surahName: '', wasAutoscrolling: false });
 
     useEffect(() => {
-        if (tafseerInfo.isOpen) setCurrentPage('tafseer');
-        else if (quranMeaningsInfo.isOpen) setCurrentPage('meanings');
-        else if (quranTranslationInfo.isOpen) setCurrentPage('translation');
-        else setCurrentPage(page);
+        const updateCurrentPage = () => {
+            if (tafseerInfo.isOpen) setCurrentPage('tafseer');
+            else if (quranMeaningsInfo.isOpen) setCurrentPage('meanings');
+            else if (quranTranslationInfo.isOpen) setCurrentPage('translation');
+            else setCurrentPage(page);
+        };
+        setTimeout(updateCurrentPage, 0);
     }, [tafseerInfo.isOpen, quranMeaningsInfo.isOpen, quranTranslationInfo.isOpen, page, setCurrentPage]);
     const [isQuranTranslationLoading, setIsQuranTranslationLoading] = useState(false);
     const quranTranslationCache = useRef<any>(null);
@@ -1580,13 +1587,26 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         setIsPlaying(false);
         setIsAudioLoading(false);
         setPlayingAyah(null);
-    }, []);
+    }, [setIsPlaying, setIsAudioLoading, setPlayingAyah]);
 
     const isSessionFinishedRef = useRef(false);
 
     // Stop audio on unmount and save memorization session if active
     useEffect(() => {
+        const handleStopAudio = () => stopAudio();
+        window.addEventListener('quran-stop-audio', handleStopAudio);
+
+        // Stop audio when app is backgrounded (minimized)
+        const appStateListener = CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+            if (!isActive) {
+                stopAudio();
+            }
+        });
+
         return () => {
+            window.removeEventListener('quran-stop-audio', handleStopAudio);
+            appStateListener.then(l => l.remove());
+            
             if (localIsMemorizationMode && !isSessionFinishedRef.current) {
                 const sessionData = {
                     currentAyah: currentAyahRef.current,
@@ -1605,22 +1625,30 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         const settingKey = type === 'quarter' ? 'quarter' : type === 'sajda' ? 'sajda' : 'general';
         if (!notificationSettings[settingKey]) return;
         
-        if (markerTimeoutRef.current) clearTimeout(markerTimeoutRef.current);
-        setMarkerNotification({ show: true, type, text });
-        markerTimeoutRef.current = setTimeout(() => {
-            setMarkerNotification(prev => ({ ...prev, show: false }));
-            markerTimeoutRef.current = null;
-        }, 3500);
+        // Defer state update to prevent "Cannot update a component while rendering" error
+        // as this can be called from Virtuoso callbacks
+        setTimeout(() => {
+            if (markerTimeoutRef.current) clearTimeout(markerTimeoutRef.current);
+            setMarkerNotification({ show: true, type, text });
+            markerTimeoutRef.current = setTimeout(() => {
+                setMarkerNotification(prev => ({ ...prev, show: false }));
+                markerTimeoutRef.current = null;
+            }, 3500);
+        }, 0);
     }, [notificationSettings]);
 
     const showJuzNotification = useCallback((text: string) => {
         if (notificationSettings.juz === false) return;
-        if (juzTimeoutRef.current) clearTimeout(juzTimeoutRef.current);
-        setJuzNotification({ show: true, text });
-        juzTimeoutRef.current = setTimeout(() => {
-            setJuzNotification(prev => ({ ...prev, show: false }));
-            juzTimeoutRef.current = null;
-        }, 4000);
+        
+        // Defer state update to prevent "Cannot update a component while rendering" error
+        setTimeout(() => {
+            if (juzTimeoutRef.current) clearTimeout(juzTimeoutRef.current);
+            setJuzNotification({ show: true, text });
+            juzTimeoutRef.current = setTimeout(() => {
+                setJuzNotification(prev => ({ ...prev, show: false }));
+                juzTimeoutRef.current = null;
+            }, 4000);
+        }, 0);
     }, [notificationSettings.juz]);
 
     const handleSajdahVisible = useCallback((surahName: string, sNum: number, ayahNum: number) => {
@@ -1640,35 +1668,46 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             const wasAutoscrolling = autoScrollStateRef.current.isActive && !autoScrollStateRef.current.isPaused;
             const wasPlaying = isPlayingRef.current || isAudioLoadingRef.current;
 
-            if (wasAutoscrolling) {
-                autoScrollPausedRef.current = true;
-                const newState = { ...autoScrollStateRef.current, isPaused: true };
-                autoScrollStateRef.current = newState;
-                setAutoScrollState(newState);
-            }
-            if (wasPlaying) {
-                stopAudio();
-            }
+            // Defer state updates to prevent "Cannot update a component while rendering" error
+            // if this is called during Virtuoso render
+            setTimeout(() => {
+                if (wasAutoscrolling) {
+                    autoScrollPausedRef.current = true;
+                    const newState = { ...autoScrollStateRef.current, isPaused: true };
+                    autoScrollStateRef.current = newState;
+                    setAutoScrollState(newState);
+                }
+                if (wasPlaying) {
+                    stopAudio();
+                }
 
-            setSajdahCardInfo({
-                show: true,
-                surah: surahName,
-                ayah: ayahNum,
-                juz,
-                page,
-                wasAutoscrolling,
-                wasPlaying,
-                openedFromMenu: false
-            });
+                setSajdahCardInfo({
+                    show: true,
+                    surah: surahName,
+                    ayah: ayahNum,
+                    juz,
+                    page,
+                    wasAutoscrolling,
+                    wasPlaying,
+                    openedFromMenu: false
+                });
+            }, 0);
         }
     }, [quranData, showMarkerNotification, stopAudio, showSajdahCard]);
 
     const toggleFloatingMenu = useCallback(() => {
         setIsFloatingMenuOpen(prev => {
-            if (!prev) setFloatingMenuInitialView('main');
-            return !prev;
+            const willOpen = !prev;
+            if (willOpen) {
+                // Defer these updates as they cannot be called inside a state updater
+                setTimeout(() => {
+                    setFloatingMenuInitialView('main');
+                    stopAudio();
+                }, 0);
+            }
+            return willOpen;
         });
-    }, []);
+    }, [stopAudio]);
 
     const handleCloseSajdahCard = () => {
         const wasFromMenu = sajdahCardInfo.openedFromMenu;
@@ -1686,7 +1725,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const scrollToAyah = useCallback((s: number, a: number, instant: boolean = false, retries: number = 50, isPageJump: boolean = false) => {
         const container = document.getElementById('mushaf-content');
-        if (!document.getElementById('pages-container') || !container) {
+        if (!container) {
             setTimeout(() => {
                 isJumpingRef.current = false;
             }, 600);
@@ -2080,11 +2119,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     }, [navParams, openModal]);
     
     const handleAyahClick = useCallback((s, a) => {
-        setHighlightedAyahId(`ayah-${s}-${a}`);
-        setCurrentAyah({ s, a });
-        currentAyahRef.current = { s, a };
-        const key = `last_pos${posSuffix}`;
-        localStorage.setItem(key, JSON.stringify({ s, a }));
+        setTimeout(() => {
+            setHighlightedAyahId(`ayah-${s}-${a}`);
+            setCurrentAyah({ s, a });
+            currentAyahRef.current = { s, a };
+            const key = `last_pos${posSuffix}`;
+            localStorage.setItem(key, JSON.stringify({ s, a }));
+        }, 0);
     }, [posSuffix]);
 
     const handleAyahTextClick = useCallback((s: number, a: number) => {
@@ -2150,7 +2191,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     }, []);
 
     const handleAyahLongPress = useCallback((s: number, a: number, x: number, y: number) => {
-        setAyahContextColorField(null); // Reset color field to hide colors by default
+        stopAudio();
+        setAyahContextColorField(null); 
         setAyahContextMenu({ 
             isOpen: true, 
             isCustomizing: true, 
@@ -3620,10 +3662,14 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             onVisibleAyahChange={(s, a) => {
                                 if (isJumpingRef.current) return;
                                 if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
-                                    setCurrentAyah({ s, a });
-                                    localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a })); 
-                                    localStorage.setItem("last_read_ayah_global", JSON.stringify({ s, a, ts: Date.now() }));
-                                    window.dispatchEvent(new Event('last_read_update'));
+                                    // Wrap in setTimeout to prevent "Cannot update a component while rendering" error
+                                    // as rangeChanged can be called during Virtuoso render
+                                    setTimeout(() => {
+                                        setCurrentAyah({ s, a });
+                                        localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a })); 
+                                        localStorage.setItem("last_read_ayah_global", JSON.stringify({ s, a, ts: Date.now() }));
+                                        window.dispatchEvent(new Event('last_read_update'));
+                                    }, 0);
                                 }
                             }}
                             showMarkerNotification={showMarkerNotification}
@@ -3695,8 +3741,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 isLandscape={isLandscape}
             />
         )}
-        {activeModals.includes('surah-modal') && <SurahJuzModal type="surah" quranData={quranData} onSelect={(s, a) => { closeModal('surah-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('surah-modal')} isLandscape={isLandscape} currentSelection={currentAyah.s} currentAyah={currentAyah} />}
-            {activeModals.includes('juz-modal') && <SurahJuzModal type="juz" quranData={quranData} onSelect={(s, a) => { closeModal('juz-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('juz-modal')} isLandscape={isLandscape} currentSelection={juz} currentAyah={currentAyah} />}
+        {activeModals.includes('surah-modal') && <SurahJuzModal type="surah" quranData={quranData} currentTheme={currentTheme} onSelect={(s, a) => { closeModal('surah-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('surah-modal')} isLandscape={isLandscape} currentSelection={currentAyah.s} currentAyah={currentAyah} />}
+            {activeModals.includes('juz-modal') && <SurahJuzModal type="juz" quranData={quranData} currentTheme={currentTheme} onSelect={(s, a) => { closeModal('juz-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('juz-modal')} isLandscape={isLandscape} currentSelection={juz} currentAyah={currentAyah} />}
             {activeModals.includes('bookmarks-modal') && (
                 <BookmarksModal 
                     bookmarks={bookmarks} 

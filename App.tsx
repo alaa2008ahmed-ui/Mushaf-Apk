@@ -404,7 +404,10 @@ function AppContent({
         onBack={navigateBack} 
         onNavigate={handleNavigate} 
         onOpenThemes={handleOpenThemes}
-        onOpenSideMenu={() => setIsSideMenuOpen(true)}
+        onOpenSideMenu={() => {
+          setIsSideMenuOpen(true);
+          window.dispatchEvent(new CustomEvent('quran-stop-audio'));
+        }}
         navParams={navParams}
       />
 

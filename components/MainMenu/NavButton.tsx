@@ -36,7 +36,7 @@ const NavButton: React.FC<NavButtonProps> = ({
             whileTap={!isEditMode ? { scale: 0.98, y: 2 } : {}}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             onClick={onClick} 
-            className={`w-full rounded-2xl p-1.5 font-bold relative text-sm h-full flex items-center justify-center text-center ${isEditMode ? 'cursor-move animate-pulse opacity-80' : ''}`}
+            className={`w-full rounded-2xl p-1.5 font-bold relative text-[13px] h-full flex items-center justify-center text-center ${isEditMode ? 'cursor-move animate-pulse opacity-80' : ''}`}
             style={{ 
                 backgroundColor: isGlass ? 'rgba(255, 255, 255, 0.25)' : color, 
                 backdropFilter: isGlass ? 'blur(12px) saturate(180%)' : 'none',

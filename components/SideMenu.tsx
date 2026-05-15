@@ -114,7 +114,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={onClose}
-                            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[10000]"
+                            className="fixed inset-0 bg-black/40 z-[10000]"
                         />
                         
                         {/* Menu Content */}

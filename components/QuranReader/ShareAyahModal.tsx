@@ -1019,7 +1019,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                 <div className="flex-1 w-full flex flex-col overflow-hidden" style={{ color: currentTheme.textColor || '#000000' }}>
                     
                     {/* Full Screen Modal Header */}
-                    <div className="p-3 border-b flex items-center justify-center shrink-0" style={{ backgroundColor: currentTheme.background || '#ffffff', borderColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
+                    <div className="p-3 border-b flex items-center justify-center shrink-0" style={{ backgroundColor: currentTheme.background || '#ffffff', borderColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
                         <h3 className="text-sm font-bold" style={{ color: currentTheme.textColor }}>خيارات المشاركة</h3>
                     </div>
 
@@ -1456,12 +1456,24 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
             {rangeSelectorOpen && (
                 <div 
                     className="fixed inset-0 z-[200] flex items-start justify-center pt-24" 
-                    style={{ backgroundColor: 'transparent' }}
-                    onClick={() => setRangeSelectorOpen(null)}
+                    style={{ backgroundColor: 'transparent', touchAction: 'none' }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onPointerUp={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setRangeSelectorOpen(null);
+                    }}
                 >
                     <div 
                         className="w-[85%] max-w-[280px] flex flex-col max-h-[60vh] overflow-hidden rounded-[32px] p-2 border-[4px] shadow-2xl" 
                         style={{ backgroundColor: '#ffffff', borderColor: currentTheme.accent || '#3b82f6' }} 
+                        onPointerDown={e => e.stopPropagation()}
+                        onPointerUp={e => e.stopPropagation()}
+                        onTouchStart={e => e.stopPropagation()}
+                        onTouchEnd={e => e.stopPropagation()}
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5 scrollbar-hide">
@@ -1472,8 +1484,20 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 return (
                                     <button 
                                         key={ay.numberInSurah}
+                                        ref={(el) => {
+                                            if (el && isSelected) {
+                                                // auto-scroll logic on mount
+                                                // Using setTimeout to ensure DOM is ready
+                                                setTimeout(() => {
+                                                    el.scrollIntoView({ block: 'center' });
+                                                }, 10);
+                                            }
+                                        }}
                                         onClick={() => {
-                                            if (rangeSelectorOpen === 'from') setFromAyah(val);
+                                            if (rangeSelectorOpen === 'from') {
+                                                setFromAyah(val);
+                                                setToAyah(val);
+                                            }
                                             else setToAyah(val);
                                             setRangeSelectorOpen(null);
                                         }}

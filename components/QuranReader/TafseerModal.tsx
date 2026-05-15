@@ -33,7 +33,7 @@ const TafseerModal: React.FC<TafseerModalProps> = ({ isOpen, isLoading, title, t
                         <i className="fa-solid fa-palette"></i>
                     </button>
                 </div>
-                <div className="p-5 overflow-y-auto text-center flex-1">
+                <div className="p-5 px-8 overflow-y-auto text-center flex-1">
                     {isLoading ? (
                         <div>
                             <div className="animate-spin rounded-full h-10 w-10 border-b-2 mx-auto" style={{ borderColor: currentTheme?.accent || '#10b981' }}></div>

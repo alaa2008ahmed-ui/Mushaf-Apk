@@ -93,11 +93,9 @@ const SurahHeader: React.FC<SurahHeaderProps> = ({
                                      backgroundColor: cartoucheBg,
                                      borderColor: headerBorder
                                  }}>
-                                <h2 className="text-base sm:text-xl font-bold whitespace-nowrap mb-0" style={{ color: cartoucheText, transform: 'translateY(-4px)' }}>
+                                <h2 className="text-base sm:text-xl font-bold whitespace-nowrap w-full text-center mb-0" style={{ color: cartoucheText, transform: 'translateY(-4px)' }}>
                                     {fullSurahName}
                                 </h2>
-                                <div className="absolute left-0 top-0 bottom-0 w-4 border-r-2 rounded-l-full opacity-30" style={{ borderColor: headerBorder }}></div>
-                                <div className="absolute right-0 top-0 bottom-0 w-4 border-l-2 rounded-r-full opacity-30" style={{ borderColor: headerBorder }}></div>
                             </div>
                         </div>
                         <div className={`font-bold text-sm sm:text-lg z-10 ${isDefaultTheme ? '' : 'drop-shadow-md'} whitespace-nowrap`} style={{ color: headerText }}>
@@ -377,11 +375,9 @@ const SurahHeader: React.FC<SurahHeaderProps> = ({
                                      backgroundColor: cartoucheBg,
                                      borderColor: headerBorder
                                  }}>
-                                <h2 className="text-base sm:text-xl font-bold whitespace-nowrap mb-0" style={{ color: cartoucheText, transform: 'translateY(-4px)' }}>
+                                <h2 className="text-base sm:text-xl font-bold whitespace-nowrap w-full text-center mb-0" style={{ color: cartoucheText, transform: 'translateY(-4px)' }}>
                                     {fullSurahName}
                                 </h2>
-                                <div className="absolute left-0 top-0 bottom-0 w-4 border-r-2 rounded-l-full opacity-30" style={{ borderColor: headerBorder }}></div>
-                                <div className="absolute right-0 top-0 bottom-0 w-4 border-l-2 rounded-r-full opacity-30" style={{ borderColor: headerBorder }}></div>
                             </div>
                         </div>
                         <div className={`font-bold text-sm sm:text-lg z-10 ${(isDefaultTheme && isDesign1) ? '' : 'drop-shadow-md'} whitespace-nowrap`} style={{ color: headerText }}>

@@ -345,7 +345,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
             const { num: pageNumColor, bracket: bracketColor } = getContrastingColors();
 
             return (
-                <div className="page-footer flex flex-col items-center py-10" style={{ color: currentTheme.text }}>
+                <div className="page-footer flex flex-col items-center py-2" style={{ color: currentTheme.text }}>
                     <div className="flex items-center justify-center">
                         <span className="page-number-bracket" style={{ color: bracketColor }}>﴿</span>
                         <span className="page-number-text" style={{ color: pageNumColor }}>{toArabic(item.pageNumber)}</span>
@@ -416,13 +416,12 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
         }
 
         return (
-            <div className={`px-4 py-2 ${isLandscape ? 'flex justify-center' : ''}`}>
+            <div className={`${isLandscape ? 'flex justify-center' : ''} px-1`}>
                 <div 
                     id={`ayah-${item.surahNumber}-${item.ayahNumber}`}
-                    className={`ayah-item ayah-text-block p-4 rounded-xl transition-all border ${isHighlighted ? 'ring-2' : ''} ${isLandscape ? 'max-w-3xl w-full' : ''}`}
+                    className={`ayah-item ayah-text-block px-1 py-0 rounded-none border-b ${isLandscape ? 'max-w-3xl w-full' : ''}`}
                     style={{ 
-                        backgroundColor: isHighlighted ? `${settings.highlightTextColor || currentTheme.accent}30` : 'transparent',
-                        borderColor: isHighlighted ? (settings.highlightTextColor || currentTheme.accent) : 'transparent'
+                        borderBottomColor: isHighlighted ? (settings.highlightTextColor || currentTheme.accent) : `${currentTheme.border}33`,
                     }}
                     onPointerDown={(e) => handlePointerDown(item.surahNumber, item.ayahNumber, e)}
                     onPointerMove={handlePointerMoveItem}
@@ -434,14 +433,16 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                         onAyahClick(item.surahNumber, item.ayahNumber);
                     }}
                 >
-                    <div className="ayah-text mb-4 text-right leading-relaxed transition-all duration-300" 
+                    <div className="ayah-text mb-0 text-right leading-loose" 
                          style={{ 
                              fontSize: `${localFontSize}rem`, 
                              fontFamily: settings.fontFamily,
                              fontWeight: settings.isBold ? '900' : 'normal',
+                             paddingTop: '4px',
+                             paddingBottom: '2px',
                              WebkitTextStroke: settings.isBold ? '0.5px currentColor' : '0px',
-                             color: shouldHide ? 'transparent' : (settings.textColor || currentTheme.accent),
-                             backgroundColor: shouldHide ? `${settings.highlightTextColor || currentTheme.accent}20` : 'transparent',
+                             color: shouldHide ? 'transparent' : (isHighlighted ? (settings.highlightTextColor || currentTheme.highlightText || currentTheme.accent) : (settings.textColor || currentTheme.text)),
+                             backgroundColor: shouldHide ? `${settings.highlightTextColor || currentTheme.accent}33` : 'transparent',
                              borderRadius: shouldHide ? '8px' : '0',
                              letterSpacing: 0,
                              fontFeatureSettings: '"kern", "liga", "clig", "calt", "ccmp"',
@@ -451,18 +452,20 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                              userSelect: shouldHide ? 'none' : 'auto'
                          }}>
                         {item.text}
-                        <span className="inline-flex items-center justify-center w-8 h-8 mr-2 rounded-full border border-current text-sm font-bold"
-                              style={{ color: settings.textColor || currentTheme.text }}>
-                            {toArabic(item.ayahNumber)}
+                        <span className="inline-flex items-center justify-center mr-2 font-bold opacity-60"
+                              style={{ 
+                                  fontSize: '0.9em',
+                                  color: isHighlighted ? (settings.highlightTextColor || currentTheme.highlightText || currentTheme.accent) : currentTheme.accent
+                              }}>
+                            ﴿{toArabic(item.ayahNumber)}﴾
                         </span>
                     </div>
                     
-                    <div className="divider h-px w-full my-4 opacity-20" style={{ backgroundColor: settings.textColor || currentTheme.text }}></div>
-                    
-                    <div className="explanation-text text-right opacity-90 leading-relaxed"
+                    <div className="explanation-text text-right opacity-90 leading-relaxed pb-2"
                          style={{ 
                              fontSize: `${localFontSize * 0.8}rem`, 
-                             color: settings.textColor || currentTheme.text,
+                             marginTop: '-2px',
+                             color: isHighlighted ? (settings.highlightTextColor || currentTheme.highlightText || currentTheme.accent) : (settings.textColor || currentTheme.text),
                              direction: readingMode === 'translation' ? 'ltr' : 'rtl',
                              textAlign: readingMode === 'translation' ? 'left' : 'right'
                          }}>
@@ -499,8 +502,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     data={flattenedItems}
                     initialTopMostItemIndex={{ index: initialIndex, align: 'center' }}
                     overscan={200} // Pre-render items for smoother experience
-                    className="scrollbar-hide"
-                    itemContent={renderItem}
+                    className="scrollbar-hide pb-8"
+                    itemContent={(index, item) => renderItem(index, item)}
                     rangeChanged={(range) => {
                     const midIndex = Math.round((range.startIndex + range.endIndex) / 2);
                     const item = flattenedItems[midIndex] || flattenedItems[range.startIndex];

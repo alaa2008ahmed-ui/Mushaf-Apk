@@ -165,9 +165,10 @@ const GridSection: React.FC<GridSectionProps> = ({
                                     e.stopPropagation();
                                     onNavigate('quran-landscape');
                                 }}
-                                className="absolute top-1/2 left-1.5 -translate-y-1/2 text-white rounded-full w-7 h-7 flex items-center justify-center z-10 transition-colors shadow-lg border border-white/20"
+                                className={`absolute top-1/2 left-1.5 -translate-y-1/2 rounded-full w-7 h-7 flex items-center justify-center z-10 transition-colors shadow-lg border border-white/20`}
                                 style={{ 
-                                    backgroundColor: theme.isGlass ? 'rgba(255, 255, 255, 0.2)' : (theme.palette[1] || '#9333ea'),
+                                    backgroundColor: isBlackTheme ? '#FFFFFF' : (theme.isGlass ? 'rgba(255, 255, 255, 0.2)' : (theme.palette[1] || '#9333ea')),
+                                    color: isBlackTheme ? '#000000' : '#ffffff',
                                     backdropFilter: theme.isGlass ? 'blur(4px)' : 'none',
                                     WebkitBackdropFilter: theme.isGlass ? 'blur(4px)' : 'none'
                                 }}

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, Search, BookOpen, Sun, Moon, Heart, X } from 'lucide-react';
+import { Keyboard } from '@capacitor/keyboard';
+import { Capacitor } from '@capacitor/core';
 import { useTheme } from '../context/ThemeContext';
 import { quranData } from '../utils/quranData';
 import { THEMES, toArabic } from '../components/QuranReader/constants';
@@ -71,6 +73,23 @@ interface GlobalSearchProps {
 const GlobalSearch: React.FC<GlobalSearchProps> = ({ onBack, onNavigate }) => {
     const { setCurrentPage } = useTheme();
     const [readerTheme, setReaderTheme] = useState(getReaderTheme());
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+    useEffect(() => {
+        if (Capacitor.isNativePlatform()) {
+            Keyboard.setScroll({ isDisabled: true });
+            const showListener = Keyboard.addListener('keyboardWillShow', info => {
+                setKeyboardHeight(info.keyboardHeight);
+            });
+            const hideListener = Keyboard.addListener('keyboardWillHide', () => {
+                setKeyboardHeight(0);
+            });
+            return () => {
+                showListener.then(l => l.remove());
+                hideListener.then(l => l.remove());
+            };
+        }
+    }, []);
     
     useEffect(() => {
         setCurrentPage('quran_search');
@@ -370,7 +389,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onBack, onNavigate }) => {
                     <Search className="w-16 h-16 mb-4 opacity-50" />
                     <p className="font-bold text-center">
                         ابحث عن آية أو رقمها<br/>
-                        أو ابحث في الأذكار والأدعية
+                        أو ابحث في الأذكار والأدعية وحصن المسلم
                     </p>
                 </div>
             );
@@ -791,107 +810,125 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onBack, onNavigate }) => {
     };
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden" style={{ backgroundColor: theme.bgColor, color: theme.textColor }}>
-            {/* Standard App Header */}
-            <div 
-                className="flex items-center py-2 px-4 mt-12 mb-3 mx-2 rounded-2xl shrink-0" 
-                style={{ 
-                    backgroundColor: theme.barBg, 
-                    borderWidth: '2px',
-                    borderStyle: 'solid',
-                    borderColor: theme.accent || theme.palette[0],
-                    color: theme.accent || theme.palette[0] 
-                }}
-            >
-                <button 
-                    onClick={onBack}
-                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                >
-                    <ChevronLeft className="w-6 h-6" />
-                </button>
-                <h1 className="flex-1 text-center font-bold text-lg ml-8 relative z-10 font-amiri-quran">
-                    البحث المتقدم
-                </h1>
-            </div>
-            
-            <div className="px-4 py-2 shrink-0">
-                <div className="relative">
-                    <input 
-                        type="text" 
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="ابحث عن آية، كلمة، ذكر، أو دعاء..." 
-                        className="w-full p-3 pl-12 pr-12 rounded-2xl focus:outline-none font-bold"
-                        style={{ 
-                            borderWidth: '2px',
-                            borderStyle: 'solid',
-                            borderColor: theme.accent || theme.palette[0],
-                            backgroundColor: `${theme.barBg}33`, 
-                            color: theme.accent || theme.palette[0] 
-                        }}
-                        autoFocus
-                    />
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 opacity-50" style={{ color: theme.accent || theme.palette[0] }} />
-                    {query && (
-                        <button 
-                            onClick={() => { setQuery(''); setTimeout(() => document.querySelector('input')?.focus(), 10); }} 
-                            className="absolute right-4 top-1/2 transform -translate-y-1/2 opacity-80 hover:opacity-100 p-2 rounded-full bg-black/5 dark:bg-white/10"
-                        >
-                            <X className="w-4 h-4" style={{ color: theme.accent || theme.palette[0] }} />
-                        </button>
+        <div className="fixed inset-0 z-[1500] flex items-center justify-center overflow-hidden" dir="rtl" onClick={onBack} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="w-full h-full max-w-lg overflow-hidden shadow-none relative flex flex-col pointer-events-auto border-[4px]" dir="rtl" style={{ backgroundColor: theme.bgColor, borderColor: theme.accent || theme.palette[0] }} onClick={e => e.stopPropagation()}>
+                
+                {/* Header */}
+                <div className="p-3 border-b flex items-center justify-center shrink-0" style={{ backgroundColor: theme.bgColor, borderColor: theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
+                    <h3 className="text-sm font-bold" style={{ color: theme.textColor }}>البحث المتقدم</h3>
+                </div>
+
+                {/* Sub-header with Search Input */}
+                <div className="p-4 border-b shrink-0 z-10" style={{ backgroundColor: `${theme.barBg}33`, borderColor: theme.barBorder }}>
+                    <div className="relative">
+                        <input 
+                            type="text" 
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="ابحث عن آية، كلمة، ذكر، دعاء، أو حصن المسلم..." 
+                            className="w-full p-3 pl-12 pr-12 rounded-2xl focus:outline-none font-bold"
+                            style={{ 
+                                borderWidth: '2px',
+                                borderStyle: 'solid',
+                                borderColor: theme.accent || theme.palette[0],
+                                backgroundColor: theme.barBg, 
+                                color: theme.textColor 
+                            }}
+                        />
+                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 opacity-50" style={{ color: theme.accent || theme.palette[0] }} />
+                        {query && (
+                            <button 
+                                onClick={() => { setQuery(''); setTimeout(() => (document.querySelector('input') as HTMLElement)?.focus(), 10); }} 
+                                className="absolute right-4 top-1/2 transform -translate-y-1/2 opacity-80 hover:opacity-100 p-2 rounded-full bg-black/5 dark:bg-white/10"
+                            >
+                                <X className="w-4 h-4" style={{ color: theme.accent || theme.palette[0] }} />
+                            </button>
+                        )}
+                    </div>
+
+                    {query && totalResults > 0 && (
+                        <div className="flex overflow-x-auto gap-2 mt-4 hide-scrollbar">
+                            <button 
+                                onClick={() => setActiveTab('all')}
+                                className={`px-4 py-2 rounded-xl whitespace-nowrap text-xs font-bold transition-all border-[2px] ${activeTab === 'all' ? 'text-white' : ''}`}
+                                style={{ 
+                                    backgroundColor: activeTab === 'all' ? (theme.accent || theme.palette[0]) : `${theme.barBg}`, 
+                                    borderColor: theme.accent || theme.palette[0],
+                                    color: activeTab === 'all' ? '#fff' : theme.textColor 
+                                }}
+                            >
+                                الكل ({toArabic(totalResults)})
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('quran')}
+                                className={`px-4 py-2 rounded-xl whitespace-nowrap text-xs font-bold transition-all border-[2px] ${activeTab === 'quran' ? 'text-white' : ''}`}
+                                style={{ 
+                                    backgroundColor: activeTab === 'quran' ? (theme.accent || theme.palette[0]) : `${theme.barBg}`, 
+                                    borderColor: theme.accent || theme.palette[0],
+                                    color: activeTab === 'quran' ? '#fff' : theme.textColor 
+                                }}
+                            >
+                                القرآن ({toArabic(quranResults.length)})
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('dua')}
+                                className={`px-4 py-2 rounded-xl whitespace-nowrap text-xs font-bold transition-all border-[2px] ${activeTab === 'dua' ? 'text-white' : ''}`}
+                                style={{ 
+                                    backgroundColor: activeTab === 'dua' ? (theme.accent || theme.palette[0]) : `${theme.barBg}`, 
+                                    borderColor: theme.accent || theme.palette[0],
+                                    color: activeTab === 'dua' ? '#fff' : theme.textColor 
+                                }}
+                            >
+                                الأدعية ({toArabic(duaResults.length)})
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('athkar')}
+                                className={`px-4 py-2 rounded-xl whitespace-nowrap text-xs font-bold transition-all border-[2px] ${activeTab === 'athkar' ? 'text-white' : ''}`}
+                                style={{ 
+                                    backgroundColor: activeTab === 'athkar' ? (theme.accent || theme.palette[0]) : `${theme.barBg}`, 
+                                    borderColor: theme.accent || theme.palette[0],
+                                    color: activeTab === 'athkar' ? '#fff' : theme.textColor 
+                                }}
+                            >
+                                الأذكار ({toArabic(athkarResults.length)})
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('hisn')}
+                                className={`px-4 py-2 rounded-xl whitespace-nowrap text-xs font-bold transition-all border-[2px] ${activeTab === 'hisn' ? 'text-white' : ''}`}
+                                style={{ 
+                                    backgroundColor: activeTab === 'hisn' ? (theme.accent || theme.palette[0]) : `${theme.barBg}`, 
+                                    borderColor: theme.accent || theme.palette[0],
+                                    color: activeTab === 'hisn' ? '#fff' : theme.textColor 
+                                }}
+                            >
+                                حصن ({toArabic(hisnResults.length)})
+                            </button>
+                        </div>
                     )}
                 </div>
-            </div>
 
-            {query && totalResults > 0 && (
-                <div className="flex overflow-x-auto gap-2 px-4 py-3 border-b hide-scrollbar" style={{ borderColor: theme.barBorder }}>
+                {/* Content */}
+                <div 
+                    className="flex-1 overflow-y-auto px-4 py-4" 
+                    dir="rtl" 
+                    style={{ 
+                        backgroundColor: theme.bgColor,
+                        paddingBottom: keyboardHeight > 0 ? `${keyboardHeight + 20}px` : '1rem'
+                    }}
+                >
+                    {renderResults()}
+                </div>
+
+                {/* Footer */}
+                <div className="p-3 border-t flex gap-2 shrink-0 z-10" style={{ backgroundColor: theme.bgColor, borderColor: theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
                     <button 
-                        onClick={() => setActiveTab('all')}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${activeTab === 'all' ? 'text-white' : ''}`}
-                        style={{ backgroundColor: activeTab === 'all' ? (theme.accent || theme.palette[0]) : `${theme.accent || theme.palette[0]}11`, color: activeTab === 'all' ? '#fff' : theme.textColor }}
+                        onClick={onBack} 
+                        className="flex-1 py-4 rounded-xl text-xs font-bold w-full transition-all shadow-md active:scale-95 border-[2px]"
+                        style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.05)' : '#ffffff', color: theme.textColor, borderColor: theme.accent || theme.palette[0] }}
                     >
-                        الكل ({toArabic(totalResults)})
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('quran')}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${activeTab === 'quran' ? 'text-white' : ''}`}
-                        style={{ backgroundColor: activeTab === 'quran' ? (theme.accent || theme.palette[0]) : `${theme.accent || theme.palette[0]}11`, color: activeTab === 'quran' ? '#fff' : theme.textColor }}
-                    >
-                        القرآن ({toArabic(quranResults.length)})
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('dua')}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${activeTab === 'dua' ? 'text-white' : ''}`}
-                        style={{ backgroundColor: activeTab === 'dua' ? (theme.accent || theme.palette[0]) : `${theme.accent || theme.palette[0]}11`, color: activeTab === 'dua' ? '#fff' : theme.textColor }}
-                    >
-                        الأدعية ({toArabic(duaResults.length)})
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('athkar')}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${activeTab === 'athkar' ? 'text-white' : ''}`}
-                        style={{ backgroundColor: activeTab === 'athkar' ? (theme.accent || theme.palette[0]) : `${theme.accent || theme.palette[0]}11`, color: activeTab === 'athkar' ? '#fff' : theme.textColor }}
-                    >
-                        الأذكار ({toArabic(athkarResults.length)})
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('hisn')}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${activeTab === 'hisn' ? 'text-white' : ''}`}
-                        style={{ backgroundColor: activeTab === 'hisn' ? (theme.accent || theme.palette[0]) : `${theme.accent || theme.palette[0]}11`, color: activeTab === 'hisn' ? '#fff' : theme.textColor }}
-                    >
-                        حصن ({toArabic(hisnResults.length)})
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('nawawi')}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all ${activeTab === 'nawawi' ? 'text-white' : ''}`}
-                        style={{ backgroundColor: activeTab === 'nawawi' ? (theme.accent || theme.palette[0]) : `${theme.accent || theme.palette[0]}11`, color: activeTab === 'nawawi' ? '#fff' : theme.textColor }}
-                    >
-                        نووي ({toArabic(nawawiResults.length)})
+                        رجوع
                     </button>
                 </div>
-            )}
-
-            <div className="flex-1 overflow-y-auto px-4 py-6" dir="rtl">
-                {renderResults()}
             </div>
         </div>
     );
