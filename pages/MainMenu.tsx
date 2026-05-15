@@ -23,6 +23,8 @@ import { SURAH_NAMES_AR, toArabic } from '../components/QuranReader/constants';
 import { ON_THIS_DAY_EVENTS } from '../data/onThisDayEvents';
 import { shareAsImage } from '../utils/shareAsImage';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Share as CapacitorShare } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 import moment from 'moment-hijri';
 
 const ISLAMIC_EVENTS = [
@@ -331,12 +333,22 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     const text = onThisDayEvent.text;
     const source = `حدث في مثل هذا اليوم - ${onThisDayEvent.year}م`;
     const category = onThisDayEvent.dateStr;
+    const shareText = `${text}\n${source}\n${category}`;
 
-    if (navigator.share) {
+    if (Capacitor.isNativePlatform()) {
+        try {
+            await CapacitorShare.share({
+                title: 'حدث في مثل هذا اليوم',
+                text: shareText,
+            });
+        } catch (error: any) {
+            await shareAsImage({ text, source, category, theme, setToastMessage });
+        }
+    } else if (navigator.share) {
         try {
             await navigator.share({
                 title: 'حدث في مثل هذا اليوم',
-                text: `${text}\n${source}\n${category}`,
+                text: shareText,
             });
         } catch (error: any) {
             if (error.name !== 'AbortError') {
@@ -369,12 +381,22 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     const text = `المناسبة: ${upcomingEvent.name}\nالمتبقي: ${upcomingEvent.isToday ? 'اليوم' : toArabic(upcomingEvent.daysRemaining) + ' يوم'}`;
     const source = upcomingEvent.gregorianDateStr;
     const category = upcomingEvent.dateStr;
+    const shareText = `${text}\n${source}\n${category}`;
 
-    if (navigator.share) {
+    if (Capacitor.isNativePlatform()) {
+        try {
+            await CapacitorShare.share({
+                title: upcomingEvent.name,
+                text: shareText,
+            });
+        } catch (error: any) {
+            await shareAsImage({ text, source, category, theme, setToastMessage });
+        }
+    } else if (navigator.share) {
         try {
             await navigator.share({
                 title: upcomingEvent.name,
-                text: `${text}\n${source}\n${category}`,
+                text: shareText,
             });
         } catch (error: any) {
             if (error.name !== 'AbortError') {
@@ -812,7 +834,17 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           url: 'https://mushaf-ahmed-and-laila.netlify.app/',
                                       };
 
-                                      if (navigator.share) {
+                                      if (Capacitor.isNativePlatform()) {
+                                          try {
+                                              await CapacitorShare.share(shareData);
+                                          } catch (err: any) {
+                                              try {
+                                                  await navigator.clipboard.writeText(shareData.url);
+                                                  setToastMessage('تم نسخ الرابط');
+                                                  setTimeout(() => setToastMessage(''), 2000);
+                                              } catch (copyErr) {}
+                                          }
+                                      } else if (navigator.share) {
                                           try {
                                               await navigator.share(shareData);
                                           } catch (err: any) {
@@ -843,7 +875,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
                       {/* App Share Card */}
                       <div 
-                          className="w-full mt-3 py-2 px-4 rounded-2xl shadow-lg border-2 relative flex flex-col gap-1 overflow-hidden"
+                          className="w-full mt-2 py-1.5 px-4 rounded-2xl shadow-lg border-2 relative flex flex-col gap-0.5 overflow-hidden"
                           style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
                           dir="rtl"
                       >
@@ -852,11 +884,11 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                               <span className="text-xs font-bold font-kufi">شارك التطبيق</span>
                           </div>
                           
-                          <p className="text-xs font-bold opacity-80 leading-relaxed" style={{ color: theme.textColor }}>
+                          <p className="text-[10px] font-bold opacity-80 leading-tight" style={{ color: theme.textColor }}>
                               اذا اعجبك التطبيق قم بنشره على وسائل التواصل ليكون لك الاجر ولمن تحب ان شاء الله .
                           </p>
 
-                          <div className="flex items-center justify-center gap-6 mt-1">
+                          <div className="flex items-center justify-center gap-6">
                               {[
                                   { icon: 'fa-regular fa-copy', label: 'نسخ', color: theme.palette[0], action: 'copy' },
                                   { icon: 'fa-solid fa-share-nodes', label: 'مشاركة', color: theme.palette[0], action: 'share' }
@@ -876,12 +908,24 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                                   setTimeout(() => setToastMessage(''), 2000);
                                               }
                                           } else if (item.action === 'share') {
-                                              if (navigator.share) {
+                                              const shareData = {
+                                                  title: 'مصحف أحمد وليلى',
+                                                  text: APP_SHARE_TEXT,
+                                              };
+
+                                              if (Capacitor.isNativePlatform()) {
                                                   try {
-                                                      await navigator.share({
-                                                          title: 'مصحف أحمد وليلى',
-                                                          text: APP_SHARE_TEXT,
-                                                      });
+                                                      await CapacitorShare.share(shareData);
+                                                  } catch (error: any) {
+                                                      try {
+                                                          await navigator.clipboard.writeText(APP_SHARE_TEXT);
+                                                          setToastMessage('تم نسخ نص المشاركة');
+                                                          setTimeout(() => setToastMessage(''), 2000);
+                                                      } catch (copyErr) {}
+                                                  }
+                                              } else if (navigator.share) {
+                                                  try {
+                                                      await navigator.share(shareData);
                                                   } catch (error: any) {
                                                       if (error.name !== 'AbortError') {
                                                           try {
