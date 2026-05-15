@@ -327,45 +327,78 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   const handleShareHighlight = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!onThisDayEvent) return;
-    await shareAsImage({
-        text: onThisDayEvent.text,
-        source: `حدث في مثل هذا اليوم - ${onThisDayEvent.year}م`,
-        category: onThisDayEvent.dateStr,
-        theme,
-        setToastMessage
-    });
+
+    const text = onThisDayEvent.text;
+    const source = `حدث في مثل هذا اليوم - ${onThisDayEvent.year}م`;
+    const category = onThisDayEvent.dateStr;
+
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'حدث في مثل هذا اليوم',
+                text: `${text}\n${source}\n${category}`,
+            });
+        } catch (error: any) {
+            if (error.name !== 'AbortError') {
+                await shareAsImage({ text, source, category, theme, setToastMessage });
+            }
+        }
+    } else {
+        await shareAsImage({ text, source, category, theme, setToastMessage });
+    }
   };
 
-  const handleCopyHighlight = (e: React.MouseEvent) => {
+  const handleCopyHighlight = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!onThisDayEvent) return;
     const textToCopy = `${onThisDayEvent.dateStr}\nفي عام ${onThisDayEvent.year} ميلادي\n${onThisDayEvent.text}`;
-    navigator.clipboard.writeText(textToCopy).then(() => {
+    try {
+        await navigator.clipboard.writeText(textToCopy);
         setToastMessage('تم النسخ إلى الحافظة');
         setTimeout(() => setToastMessage(''), 2000);
-    });
+    } catch (err) {
+        console.error('Clipboard error:', err);
+        setToastMessage('فشل في النسخ');
+        setTimeout(() => setToastMessage(''), 2000);
+    }
   };
 
   const handleShareUpcomingEvent = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!upcomingEvent) return;
-    await shareAsImage({
-        text: `المناسبة: ${upcomingEvent.name}\nالمتبقي: ${upcomingEvent.isToday ? 'اليوم' : toArabic(upcomingEvent.daysRemaining) + ' يوم'}`,
-        source: upcomingEvent.gregorianDateStr,
-        category: upcomingEvent.dateStr,
-        theme,
-        setToastMessage
-    });
+    const text = `المناسبة: ${upcomingEvent.name}\nالمتبقي: ${upcomingEvent.isToday ? 'اليوم' : toArabic(upcomingEvent.daysRemaining) + ' يوم'}`;
+    const source = upcomingEvent.gregorianDateStr;
+    const category = upcomingEvent.dateStr;
+
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: upcomingEvent.name,
+                text: `${text}\n${source}\n${category}`,
+            });
+        } catch (error: any) {
+            if (error.name !== 'AbortError') {
+                await shareAsImage({ text, source, category, theme, setToastMessage });
+            }
+        }
+    } else {
+        await shareAsImage({ text, source, category, theme, setToastMessage });
+    }
   };
 
-  const handleCopyUpcomingEvent = (e: React.MouseEvent) => {
+  const handleCopyUpcomingEvent = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!upcomingEvent) return;
     const textToCopy = `المناسبة الإسلامية القادمة: ${upcomingEvent.name}\nالتاريخ الهجري: ${upcomingEvent.dateStr}\nالتاريخ الميلادي: ${upcomingEvent.gregorianDateStr}\nالمتبقي: ${upcomingEvent.isToday ? 'اليوم' : toArabic(upcomingEvent.daysRemaining) + ' يوم'}`;
-    navigator.clipboard.writeText(textToCopy).then(() => {
+    try {
+        await navigator.clipboard.writeText(textToCopy);
         setToastMessage('تم النسخ إلى الحافظة');
         setTimeout(() => setToastMessage(''), 2000);
-    });
+    } catch (err) {
+        console.error('Clipboard error:', err);
+        setToastMessage('فشل في النسخ');
+        setTimeout(() => setToastMessage(''), 2000);
+    }
   };
 
   useEffect(() => {
@@ -738,10 +771,10 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                               لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط
                           </p>
 
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center justify-center gap-3 mt-1">
                               <button 
                                   onClick={() => window.open('https://mushaf-ahmed-and-laila.netlify.app/', '_blank')}
-                                  className="flex-1 py-2 px-4 rounded-xl font-bold text-xs text-center flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
+                                  className="py-2 px-4 rounded-xl font-bold text-xs text-center flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
                                   style={{ 
                                       backgroundColor: theme.palette[0], 
                                       color: (theme.palette[0]?.toLowerCase() === '#ffffff' || theme.palette[0]?.toLowerCase() === 'white') ? '#000000' : '#ffffff' 
@@ -752,12 +785,16 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                               </button>
                               
                               <button 
-                                  onClick={(e) => {
+                                  onClick={async (e) => {
                                       e.stopPropagation();
-                                      navigator.clipboard.writeText('https://mushaf-ahmed-and-laila.netlify.app/').then(() => {
+                                      try {
+                                          await navigator.clipboard.writeText('https://mushaf-ahmed-and-laila.netlify.app/');
                                           setToastMessage('تم نسخ الرابط');
                                           setTimeout(() => setToastMessage(''), 2000);
-                                      });
+                                      } catch (err) {
+                                          setToastMessage('فشل في النسخ');
+                                          setTimeout(() => setToastMessage(''), 2000);
+                                      }
                                   }}
                                   className="w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
                                   title="نسخ الرابط"
@@ -767,19 +804,32 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                               </button>
 
                               <button 
-                                  onClick={(e) => {
+                                  onClick={async (e) => {
                                       e.stopPropagation();
+                                      const shareData = {
+                                          title: 'تطبيق القرآن الكريم',
+                                          text: 'لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط',
+                                          url: 'https://mushaf-ahmed-and-laila.netlify.app/',
+                                      };
+
                                       if (navigator.share) {
-                                          navigator.share({
-                                              title: 'تطبيق القرآن الكريم',
-                                              text: 'لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط',
-                                              url: 'https://mushaf-ahmed-and-laila.netlify.app/',
-                                          }).catch(console.error);
+                                          try {
+                                              await navigator.share(shareData);
+                                          } catch (err: any) {
+                                              if (err.name !== 'AbortError') {
+                                                  try {
+                                                      await navigator.clipboard.writeText(shareData.url);
+                                                      setToastMessage('تم نسخ الرابط');
+                                                      setTimeout(() => setToastMessage(''), 2000);
+                                                  } catch (copyErr) {}
+                                              }
+                                          }
                                       } else {
-                                          navigator.clipboard.writeText('https://mushaf-ahmed-and-laila.netlify.app/').then(() => {
-                                              setToastMessage('تم نسخ الرابط (المشاركة غير مدعومة)');
+                                          try {
+                                              await navigator.clipboard.writeText(shareData.url);
+                                              setToastMessage('تم نسخ الرابط');
                                               setTimeout(() => setToastMessage(''), 2000);
-                                          });
+                                          } catch (copyErr) {}
                                       }
                                   }}
                                   className="w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
@@ -793,7 +843,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
                       {/* App Share Card */}
                       <div 
-                          className="w-full mt-3 py-3 px-4 rounded-2xl shadow-lg border-2 relative flex flex-col gap-2 overflow-hidden"
+                          className="w-full mt-3 py-2 px-4 rounded-2xl shadow-lg border-2 relative flex flex-col gap-1 overflow-hidden"
                           style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
                           dir="rtl"
                       >
@@ -806,42 +856,48 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                               اذا اعجبك التطبيق قم بنشره على وسائل التواصل ليكون لك الاجر ولمن تحب ان شاء الله .
                           </p>
 
-                          <div className="flex items-center justify-center gap-6 mt-3">
+                          <div className="flex items-center justify-center gap-6 mt-1">
                               {[
                                   { icon: 'fa-regular fa-copy', label: 'نسخ', color: theme.palette[0], action: 'copy' },
                                   { icon: 'fa-solid fa-share-nodes', label: 'مشاركة', color: theme.palette[0], action: 'share' }
                               ].map((item, index) => (
                                   <button 
                                       key={index}
-                                      onClick={(e) => {
+                                      onClick={async (e) => {
                                           e.stopPropagation();
-                                          // Copy text first
-                                          navigator.clipboard.writeText(APP_SHARE_TEXT);
                                           
-                                          const encodedText = encodeURIComponent(APP_SHARE_TEXT);
-                                          const appUrl = 'https://play.google.com/store/apps/details?id=com.AhmedLaila.Quran';
-                                          const encodedUrl = encodeURIComponent(appUrl);
-
-                                          switch(item.action) {
-                                              case 'copy':
+                                          if (item.action === 'copy') {
+                                              try {
+                                                  await navigator.clipboard.writeText(APP_SHARE_TEXT);
                                                   setToastMessage('تم نسخ نص المشاركة');
                                                   setTimeout(() => setToastMessage(''), 2000);
-                                                  break;
-                                              case 'share':
-                                                  if (navigator.share) {
-                                                      navigator.share({
+                                              } catch (err) {
+                                                  setToastMessage('فشل في النسخ');
+                                                  setTimeout(() => setToastMessage(''), 2000);
+                                              }
+                                          } else if (item.action === 'share') {
+                                              if (navigator.share) {
+                                                  try {
+                                                      await navigator.share({
                                                           title: 'مصحف أحمد وليلى',
                                                           text: APP_SHARE_TEXT,
-                                                      }).catch((error) => {
-                                                          if (error.name !== 'AbortError') {
-                                                              console.error('Share error:', error);
-                                                          }
                                                       });
-                                                  } else {
-                                                       setToastMessage('تم نسخ النص');
-                                                       setTimeout(() => setToastMessage(''), 2000);
+                                                  } catch (error: any) {
+                                                      if (error.name !== 'AbortError') {
+                                                          try {
+                                                              await navigator.clipboard.writeText(APP_SHARE_TEXT);
+                                                              setToastMessage('تم نسخ نص المشاركة');
+                                                              setTimeout(() => setToastMessage(''), 2000);
+                                                          } catch (copyErr) {}
+                                                      }
                                                   }
-                                                  break;
+                                              } else {
+                                                  try {
+                                                      await navigator.clipboard.writeText(APP_SHARE_TEXT);
+                                                      setToastMessage('تم نسخ نص المشاركة');
+                                                      setTimeout(() => setToastMessage(''), 2000);
+                                                  } catch (copyErr) {}
+                                              }
                                           }
                                       }}
                                       className="flex items-center justify-center p-1 rounded-xl transition-all active:scale-90 hover:bg-black/5 dark:hover:bg-white/5"
@@ -871,28 +927,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                   اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
                               </p>
                           </div>
-                          <button 
-                              onClick={(e) => {
-                                  e.stopPropagation();
-                                  const text = "اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة";
-                                  if (navigator.share) {
-                                      navigator.share({
-                                          title: 'دعاء',
-                                          text: text,
-                                      }).catch(console.error);
-                                  } else {
-                                      navigator.clipboard.writeText(text).then(() => {
-                                          setToastMessage('تم نسخ الدعاء');
-                                          setTimeout(() => setToastMessage(''), 2000);
-                                      });
-                                  }
-                              }}
-                              className="w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
-                              title="مشاركة"
-                              style={{ color: theme.palette[0] }}
-                          >
-                              <i className="fa-solid fa-share-nodes text-base"></i>
-                          </button>
+
                       </div>
                   </div>
               )}

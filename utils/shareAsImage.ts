@@ -178,9 +178,11 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                 } else {
                     await downloadFile(dataUrl, setToastMessage);
                 }
-            } catch (e) {
-                console.error('Navigator share failed', e);
-                await downloadFile(dataUrl, setToastMessage);
+            } catch (e: any) {
+                if (e.name !== 'AbortError') {
+                    console.error('Navigator share failed', e);
+                    await downloadFile(dataUrl, setToastMessage);
+                }
             }
         } else {
             await downloadFile(dataUrl, setToastMessage);

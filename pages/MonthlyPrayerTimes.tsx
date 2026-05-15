@@ -245,8 +245,10 @@ export default function MonthlyPrayerTimes({ onBack, onNavigate }: { onBack: () 
                             text: text,
                         });
                     }
-                } catch (e) {
-                    await navigator.share({ title: `مواقيت الصلاة`, text: text });
+                } catch (e: any) {
+                    if (e.name !== 'AbortError') {
+                        await navigator.share({ title: `مواقيت الصلاة`, text: text }).catch(() => {});
+                    }
                 }
             } else {
                 alert("المشاركة غير مدعومة في هذا المتصفح");

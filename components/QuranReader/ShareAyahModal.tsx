@@ -345,6 +345,8 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     await navigator.share({
                         title: 'مشاركة آية',
                         text: fullText,
+                    }).catch(e => {
+                        if (e.name !== 'AbortError') throw e;
                     });
                 } else {
                     showToast?.("المشاركة غير مدعومة في هذا المتصفح");
@@ -414,7 +416,9 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                     files: [file],
                                 });
                             } else {
-                                await navigator.share({ title: 'مشاركة آية', text: shareText });
+                                await navigator.share({ title: 'مشاركة آية', text: shareText }).catch((e) => {
+                                    if (e.name !== 'AbortError') console.error('Share error:', e);
+                                });
                                 // Also provide download fallback since image couldn't be shared directly
                                 const link = document.createElement('a');
                                 link.download = `ayah_${Date.now()}.jpg`;
@@ -423,7 +427,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                             }
                         } catch (e: any) {
                             const errorMsg = e?.message || String(e);
-                            if (errorMsg.includes('Share canceled') || errorMsg.includes('canceled') || errorMsg.includes('AbortError')) {
+                            if (e.name === 'AbortError' || errorMsg.includes('Share canceled') || errorMsg.includes('canceled')) {
                                 console.log('Image share interaction finished');
                             } else if (errorMsg.includes('user gesture')) {
                                 console.warn('User gesture lost during capture. Falling back to download.');
@@ -447,7 +451,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     }
                 } catch (e: any) {
                     const errorMsg = e?.message || String(e);
-                    if (errorMsg.includes('Share canceled') || errorMsg.includes('canceled') || errorMsg.includes('AbortError')) {
+                    if (e.name === 'AbortError' || errorMsg.includes('Share canceled') || errorMsg.includes('canceled')) {
                         console.log('Image share interaction cancelled or failed');
                     } else {
                         console.error('Error sharing image:', e);
@@ -524,7 +528,9 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                         files: [file],
                                     });
                                 } else {
-                                    await navigator.share({ title: 'مشاركة صفحة', text: shareText }).catch(() => {});
+                                    await navigator.share({ title: 'مشاركة صفحة', text: shareText }).catch((e) => {
+                                        if (e.name !== 'AbortError') console.error('Share error:', e);
+                                    });
                                     // Download fallback
                                     const link = document.createElement('a');
                                     link.download = `page_${pageNum}.jpg`;
@@ -533,7 +539,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                                 }
                             } catch (e: any) {
                                 const errorMsg = e?.message || String(e);
-                                if (errorMsg.includes('Share canceled') || errorMsg.includes('canceled') || errorMsg.includes('AbortError')) {
+                                if (e.name === 'AbortError' || errorMsg.includes('Share canceled') || errorMsg.includes('canceled')) {
                                     console.log('Page share interaction finished');
                                 } else if (errorMsg.includes('user gesture')) {
                                     console.warn('User gesture lost during page capture. Falling back to download.');
@@ -556,7 +562,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         }
                     } catch (e: any) {
                         const errorMsg = e?.message || String(e);
-                        if (errorMsg.includes('Share canceled') || errorMsg.includes('canceled') || errorMsg.includes('AbortError')) {
+                        if (e.name === 'AbortError' || errorMsg.includes('Share canceled') || errorMsg.includes('canceled')) {
                             console.log('Page share interaction cancelled or failed');
                         } else {
                             console.error('Error capturing page:', e);
@@ -733,7 +739,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     }
                 } catch (e: any) {
                     const errorMsg = e?.message || String(e);
-                    if (errorMsg.includes('Share canceled') || errorMsg.includes('canceled')) {
+                    if (e.name === 'AbortError' || errorMsg.includes('Share canceled') || errorMsg.includes('canceled')) {
                         console.log('Share canceled by user');
                     } else {
                         console.error('Error sharing audio file:', e);
