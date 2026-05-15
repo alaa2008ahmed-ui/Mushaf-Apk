@@ -307,25 +307,6 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
             
         root.style.setProperty('--badge-finished-bg', isDark ? 'rgba(74, 222, 128, 0.15)' : 'rgba(34, 197, 94, 0.1)');
         root.style.setProperty('--badge-finished-text', isDark ? '#4ade80' : '#16a34a');
-
-        root.style.setProperty('--qr-accent', theme.accent || theme.palette[0]);
-        const accentRgb = hexToRgb(theme.accent || theme.palette[0]);
-        if (accentRgb) root.style.setProperty('--qr-accent-rgb', accentRgb);
-        root.style.setProperty('--qr-accent-text', theme.accentText || '#ffffff');
-        
-        root.style.setProperty('--qr-modal-bg', theme.modalBg || quranCardBg);
-        root.style.setProperty('--qr-modal-text', theme.modalText || theme.textColor);
-        root.style.setProperty('--qr-card-bg', quranCardBg);
-        root.style.setProperty('--qr-card-border', quranCardBorder);
-        root.style.setProperty('--qr-card-text', theme.cardText || theme.textColor);
-        root.style.setProperty('--qr-bg', theme.bgColor || (isDark ? '#000000' : '#f3f4f6'));
-        root.style.setProperty('--qr-text', theme.textColor);
-        
-        root.style.setProperty('--qr-btn-bg', theme.btnBg || theme.accent || theme.palette[0]);
-        root.style.setProperty('--qr-btn-text', theme.btnText || theme.accentText || '#ffffff');
-        root.style.setProperty('--qr-header-bg', theme.headerBg || theme.topBarBg || theme.palette[0]);
-        root.style.setProperty('--qr-header-text', theme.headerText || theme.topBarText || '#ffffff');
-        root.style.setProperty('--qr-highlight-text', theme.highlightText || theme.accent || theme.palette[0]);
     }, [settings.customBg, theme, currentPage]);
 
     const isPageLocked = useMemo(() => {

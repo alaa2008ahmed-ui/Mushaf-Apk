@@ -81,21 +81,11 @@ interface GlobalSearchProps {
 const GlobalSearch: React.FC<GlobalSearchProps> = ({ onBack, onNavigate }) => {
     const { setCurrentPage } = useTheme();
     const [readerTheme, setReaderTheme] = useState(getReaderTheme());
-    const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const [initialHeight] = useState(() => typeof window !== 'undefined' ? window.innerHeight : 800);
 
     useEffect(() => {
         if (Capacitor.isNativePlatform()) {
             Keyboard.setScroll({ isDisabled: true });
-            const showListener = Keyboard.addListener('keyboardWillShow', info => {
-                setKeyboardHeight(info.keyboardHeight);
-            });
-            const hideListener = Keyboard.addListener('keyboardWillHide', () => {
-                setKeyboardHeight(0);
-            });
-            return () => {
-                showListener.then(l => l.remove());
-                hideListener.then(l => l.remove());
-            };
         }
     }, []);
     
@@ -818,7 +808,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onBack, onNavigate }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[1500] flex items-center justify-center overflow-hidden" dir="rtl" onClick={onBack} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div className="fixed top-0 left-0 right-0 z-[1500] flex items-center justify-center overflow-hidden" dir="rtl" onClick={onBack} style={{ backgroundColor: 'rgba(0,0,0,0.5)', height: `${initialHeight}px` }}>
             <div className="w-full h-full max-w-lg overflow-hidden shadow-none relative flex flex-col pointer-events-auto border-[4px]" dir="rtl" style={{ backgroundColor: theme.bgColor, borderColor: theme.accent || theme.palette[0] }} onClick={e => e.stopPropagation()}>
                 
                 {/* Header */}
@@ -921,7 +911,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onBack, onNavigate }) => {
                     dir="rtl" 
                     style={{ 
                         backgroundColor: theme.bgColor,
-                        paddingBottom: keyboardHeight > 0 ? `${keyboardHeight + 20}px` : '1rem'
+                        paddingBottom: '1rem'
                     }}
                 >
                     {renderResults()}

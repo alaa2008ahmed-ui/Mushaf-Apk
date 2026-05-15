@@ -330,34 +330,13 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     e.stopPropagation();
     if (!onThisDayEvent) return;
 
-    const text = onThisDayEvent.text;
-    const source = `حدث في مثل هذا اليوم - ${onThisDayEvent.year}م`;
-    const category = onThisDayEvent.dateStr;
-    const shareText = `${text}\n${source}\n${category}`;
-
-    if (Capacitor.isNativePlatform()) {
-        try {
-            await CapacitorShare.share({
-                title: 'حدث في مثل هذا اليوم',
-                text: shareText,
-            });
-        } catch (error: any) {
-            await shareAsImage({ text, source, category, theme, setToastMessage });
-        }
-    } else if (navigator.share) {
-        try {
-            await navigator.share({
-                title: 'حدث في مثل هذا اليوم',
-                text: shareText,
-            });
-        } catch (error: any) {
-            if (error.name !== 'AbortError') {
-                await shareAsImage({ text, source, category, theme, setToastMessage });
-            }
-        }
-    } else {
-        await shareAsImage({ text, source, category, theme, setToastMessage });
-    }
+    await shareAsImage({ 
+      text: onThisDayEvent.text, 
+      source: `حدث في مثل هذا اليوم - ${onThisDayEvent.year}م`, 
+      category: onThisDayEvent.dateStr, 
+      theme, 
+      setToastMessage 
+    });
   };
 
   const handleCopyHighlight = async (e: React.MouseEvent) => {
@@ -378,34 +357,14 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   const handleShareUpcomingEvent = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!upcomingEvent) return;
-    const text = `المناسبة: ${upcomingEvent.name}\nالمتبقي: ${upcomingEvent.isToday ? 'اليوم' : toArabic(upcomingEvent.daysRemaining) + ' يوم'}`;
-    const source = upcomingEvent.gregorianDateStr;
-    const category = upcomingEvent.dateStr;
-    const shareText = `${text}\n${source}\n${category}`;
 
-    if (Capacitor.isNativePlatform()) {
-        try {
-            await CapacitorShare.share({
-                title: upcomingEvent.name,
-                text: shareText,
-            });
-        } catch (error: any) {
-            await shareAsImage({ text, source, category, theme, setToastMessage });
-        }
-    } else if (navigator.share) {
-        try {
-            await navigator.share({
-                title: upcomingEvent.name,
-                text: shareText,
-            });
-        } catch (error: any) {
-            if (error.name !== 'AbortError') {
-                await shareAsImage({ text, source, category, theme, setToastMessage });
-            }
-        }
-    } else {
-        await shareAsImage({ text, source, category, theme, setToastMessage });
-    }
+    await shareAsImage({ 
+      text: `المناسبة: ${upcomingEvent.name}\nالمتبقي: ${upcomingEvent.isToday ? 'اليوم' : toArabic(upcomingEvent.daysRemaining) + ' يوم'}`, 
+      source: upcomingEvent.gregorianDateStr, 
+      category: upcomingEvent.dateStr, 
+      theme, 
+      setToastMessage 
+    });
   };
 
   const handleCopyUpcomingEvent = async (e: React.MouseEvent) => {
@@ -830,8 +789,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                       e.stopPropagation();
                                       const shareData = {
                                           title: 'تطبيق القرآن الكريم',
-                                          text: 'لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط',
-                                          url: 'https://mushaf-ahmed-and-laila.netlify.app/',
+                                          text: 'لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط\nhttps://mushaf-ahmed-and-laila.netlify.app/',
                                       };
 
                                       if (Capacitor.isNativePlatform()) {
@@ -839,7 +797,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                               await CapacitorShare.share(shareData);
                                           } catch (err: any) {
                                               try {
-                                                  await navigator.clipboard.writeText(shareData.url);
+                                                  await navigator.clipboard.writeText(shareData.text);
                                                   setToastMessage('تم نسخ الرابط');
                                                   setTimeout(() => setToastMessage(''), 2000);
                                               } catch (copyErr) {}
@@ -850,7 +808,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           } catch (err: any) {
                                               if (err.name !== 'AbortError') {
                                                   try {
-                                                      await navigator.clipboard.writeText(shareData.url);
+                                                      await navigator.clipboard.writeText(shareData.text);
                                                       setToastMessage('تم نسخ الرابط');
                                                       setTimeout(() => setToastMessage(''), 2000);
                                                   } catch (copyErr) {}
@@ -858,7 +816,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           }
                                       } else {
                                           try {
-                                              await navigator.clipboard.writeText(shareData.url);
+                                              await navigator.clipboard.writeText(shareData.text);
                                               setToastMessage('تم نسخ الرابط');
                                               setTimeout(() => setToastMessage(''), 2000);
                                           } catch (copyErr) {}
