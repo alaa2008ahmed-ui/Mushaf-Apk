@@ -15,23 +15,31 @@ const getReaderTheme = () => {
     try {
         const themeId = localStorage.getItem('current_theme_id_v') || 'black';
         const quranSettings = JSON.parse(localStorage.getItem('quran_settings_v') || '{}');
-        const theme = THEMES[themeId as keyof typeof THEMES] || THEMES.black;
+        const originalTheme = THEMES[themeId as keyof typeof THEMES] || THEMES.black;
         
+        const bgColor = quranSettings.bgColor || originalTheme.bg;
+        const textColor = quranSettings.textColor || originalTheme.text;
+        const accent = quranSettings.highlightTextColor || originalTheme.accent;
+
         return {
-            bgColor: quranSettings.bgColor || theme.bg,
-            textColor: quranSettings.textColor || theme.text,
-            barBg: theme.barBg,
-            barText: theme.barText,
-            barBorder: theme.barBorder,
-            accent: quranSettings.highlightTextColor || theme.accent,
-            palette: [quranSettings.highlightTextColor || theme.accent, theme.barText, theme.btnBg],
-            font: quranSettings.fontFamily || theme.font,
-            isDark: ['#000000', '#0a0a0a', '#18181b', '#09090b', '#022c22', '#450a0a', '#1e3a8a', '#422006', '#78350f', '#4c1d95', '#0f172a', '#134e4a', '#334155'].includes((quranSettings.bgColor || theme.bg).toUpperCase())
+            ...originalTheme,
+            bgColor,
+            textColor,
+            text: textColor, // Alias for compatibility with button styles
+            bg: bgColor,     // Alias
+            accent,
+            palette: [accent, originalTheme.barText, originalTheme.btnBg],
+            font: quranSettings.fontFamily || originalTheme.font,
+            isDark: ['#000000', '#0a0a0a', '#18181b', '#09090b', '#022c22', '#450a0a', '#1e3a8a', '#422006', '#78350f', '#4c1d95', '#0f172a', '#134e4a', '#334155'].includes(bgColor.toUpperCase())
         };
     } catch (e) {
+        const defaultTheme = THEMES.black;
         return {
+            ...defaultTheme,
             bgColor: '#ffffff',
             textColor: '#000000',
+            text: '#000000',
+            bg: '#ffffff',
             barBg: '#ffffff',
             barText: '#3b82f6',
             barBorder: '#3b82f6',

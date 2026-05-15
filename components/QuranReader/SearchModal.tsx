@@ -375,11 +375,15 @@ const SearchModal: React.FC<SearchModalProps> = ({ quranData, onSelect, onClose,
                         </button>
                     )}
                 </div>
-                <div className="p-3 border-t flex gap-2 shrink-0 z-10" style={{ backgroundColor: currentTheme?.background || '#ffffff', borderColor: currentTheme?.id === 'night' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
+                <div className="p-3 border-t flex gap-2 shrink-0 z-10" style={{ backgroundColor: currentTheme?.bg || '#ffffff', borderColor: currentTheme?.text === '#ffffff' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
                     <button 
                         onClick={onClose} 
                         className="flex-1 py-4 rounded-xl text-xs font-bold w-full transition-all shadow-md active:scale-95 border-[2px]"
-                        style={{ backgroundColor: currentTheme?.id === 'night' ? 'rgba(255,255,255,0.05)' : '#ffffff', color: currentTheme?.text, borderColor: currentTheme?.accent || '#3b82f6' }}
+                        style={{ 
+                            backgroundColor: currentTheme?.btnBg || (currentTheme?.text === '#ffffff' ? 'rgba(255,255,255,0.05)' : '#ffffff'), 
+                            color: currentTheme?.btnText || currentTheme?.text, 
+                            borderColor: currentTheme?.accent || '#3b82f6' 
+                        }}
                     >
                         إغلاق
                     </button>

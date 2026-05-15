@@ -584,7 +584,7 @@ export const QuranDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qura
 
     return (
         <div style={modalStyle} className={`fixed inset-0 bg-transparent z-[1200] flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md rounded-2xl max-h-[90vh]'} shadow-2xl overflow-hidden flex flex-col`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md rounded-2xl max-h-[90vh]'} shadow-2xl overflow-hidden flex flex-col`} onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--qr-bg)', color: 'var(--qr-text)' }}>
                 <div className="p-3 space-y-4 overflow-y-auto text-center flex-1">
                     <div className="space-y-4">
                         <div className="text-right">
@@ -948,7 +948,7 @@ export const TafsirDownloadModal: React.FC<DownloadModalProps> = ({ onClose, qur
 
     return (
         <div style={modalStyle} className={`fixed inset-0 bg-transparent z-[1200] flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md rounded-2xl max-h-[90vh]'} shadow-2xl overflow-hidden flex flex-col`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md rounded-2xl max-h-[90vh]'} shadow-2xl overflow-hidden flex flex-col`} onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--qr-bg)', color: 'var(--qr-text)' }}>
                 <div className="p-3 space-y-4 overflow-y-auto text-center flex-1">
                     <div className="space-y-4">
                         <div className="text-right">

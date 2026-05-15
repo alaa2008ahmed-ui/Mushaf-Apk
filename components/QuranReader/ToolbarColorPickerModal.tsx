@@ -138,7 +138,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
     if (editingType) {
         return (
             <div className={`fixed inset-0 z-[1200] bg-black/40 backdrop-blur-sm flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} onClick={() => setEditingType(null)}>
-                <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md rounded-3xl max-h-[85vh]'} shadow-2xl overflow-hidden animate-modal-enter flex flex-col`} onClick={e => e.stopPropagation()}>
+                <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md rounded-3xl max-h-[85vh]'} shadow-2xl overflow-hidden animate-modal-enter flex flex-col`} onClick={e => e.stopPropagation()} style={{ backgroundColor: currentTheme.bg, color: currentTheme.text, borderColor: currentTheme.text === '#ffffff' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
                     <div className="theme-header-bg p-4 flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <Palette className="w-5 h-5" />
@@ -258,7 +258,7 @@ const ToolbarColorPickerModal: React.FC<ToolbarColorPickerModalProps> = ({ onClo
     
     return (
         <div className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[1200] flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} onClick={handleClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-5xl h-full rounded-none max-h-screen' : 'max-w-md rounded-2xl max-h-[85vh]'} shadow-2xl overflow-hidden flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()}>
+            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-5xl h-full rounded-none max-h-screen' : 'max-w-md rounded-2xl max-h-[85vh]'} shadow-2xl overflow-hidden flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()} style={{ backgroundColor: currentTheme.bg, color: currentTheme.text, borderColor: currentTheme.text === '#ffffff' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
                 <div className="theme-header-bg p-4 flex justify-between items-center">
                     <div className="flex items-center gap-2">
                         <Palette className="w-5 h-5" />

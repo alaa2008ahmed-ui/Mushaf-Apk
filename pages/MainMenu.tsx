@@ -806,11 +806,10 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                               اذا اعجبك التطبيق قم بنشره على وسائل التواصل ليكون لك الاجر ولمن تحب ان شاء الله .
                           </p>
 
-                          <div className="flex items-center justify-between gap-1 mt-1">
+                          <div className="flex items-center justify-center gap-6 mt-3">
                               {[
-                                  { icon: 'fa-brands fa-whatsapp', label: 'واتساب', color: '#25D366', action: 'whatsapp' },
-                                  { icon: 'fa-brands fa-facebook-f', label: 'فيسبوك', color: '#1877F2', action: 'facebook' },
-                                  { icon: 'fa-regular fa-copy', label: 'نسخ', color: theme.palette[0], action: 'copy' }
+                                  { icon: 'fa-regular fa-copy', label: 'نسخ', color: theme.palette[0], action: 'copy' },
+                                  { icon: 'fa-solid fa-share-nodes', label: 'مشاركة', color: theme.palette[0], action: 'share' }
                               ].map((item, index) => (
                                   <button 
                                       key={index}
@@ -824,12 +823,6 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           const encodedUrl = encodeURIComponent(appUrl);
 
                                           switch(item.action) {
-                                              case 'whatsapp':
-                                                  window.open(`https://wa.me/?text=${encodedText}`, '_blank');
-                                                  break;
-                                              case 'facebook':
-                                                  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, '_blank');
-                                                  break;
                                               case 'copy':
                                                   setToastMessage('تم نسخ نص المشاركة');
                                                   setTimeout(() => setToastMessage(''), 2000);
@@ -878,6 +871,28 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                   اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
                               </p>
                           </div>
+                          <button 
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  const text = "اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة";
+                                  if (navigator.share) {
+                                      navigator.share({
+                                          title: 'دعاء',
+                                          text: text,
+                                      }).catch(console.error);
+                                  } else {
+                                      navigator.clipboard.writeText(text).then(() => {
+                                          setToastMessage('تم نسخ الدعاء');
+                                          setTimeout(() => setToastMessage(''), 2000);
+                                      });
+                                  }
+                              }}
+                              className="w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
+                              title="مشاركة"
+                              style={{ color: theme.palette[0] }}
+                          >
+                              <i className="fa-solid fa-share-nodes text-base"></i>
+                          </button>
                       </div>
                   </div>
               )}
