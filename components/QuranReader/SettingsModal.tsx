@@ -222,12 +222,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
 
     return (
         <div className="fixed z-[1200] bg-black/40 backdrop-blur-sm flex items-center justify-center overflow-hidden" style={{ top: 0, bottom: 0, left: 0, right: 0 }} dir="rtl" onClick={handleClose}>
-            <div className="w-full h-full flex flex-col overflow-hidden shadow-none border-[4px]" style={{ backgroundColor: currentTheme.background || '#ffffff', borderColor: currentTheme.accent || '#3b82f6' }} onClick={e => e.stopPropagation()}>
-                <div className="flex-1 w-full flex flex-col overflow-hidden" style={{ color: currentTheme.textColor || '#000000' }}>
+            <div className="w-full h-full flex flex-col overflow-hidden shadow-none border-[4px]" style={{ backgroundColor: currentTheme.bg || '#ffffff', borderColor: currentTheme.accent || '#3b82f6' }} onClick={e => e.stopPropagation()}>
+                <div className="flex-1 w-full flex flex-col overflow-hidden" style={{ color: currentTheme.text || '#000000' }}>
                     
                     {/* Full Screen Modal Header */}
-                    <div className="p-3 border-b flex items-center justify-center shrink-0" style={{ backgroundColor: currentTheme.background || '#ffffff', borderColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
-                        <h3 className="text-sm font-bold" style={{ color: currentTheme.textColor }}>الإعدادات</h3>
+                    <div className="p-3 border-b flex items-center justify-center shrink-0" style={{ backgroundColor: currentTheme.bg || '#ffffff', borderColor: currentTheme.text === '#ffffff' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
+                        <h3 className="text-sm font-bold" style={{ color: currentTheme.text }}>الإعدادات</h3>
                     </div>
 
                     <div className={`p-3 overflow-y-auto text-center flex-1 scrollbar-hide ${isLandscape ? 'grid grid-cols-2 gap-x-6 gap-y-2' : 'space-y-2'}`}>
@@ -500,11 +500,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     </div>
                 </div>
                 </div>
-                <div className="p-3 border-t flex gap-2 shrink-0 z-10" style={{ backgroundColor: currentTheme.background, borderColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
+                <div className="p-3 border-t flex gap-2 shrink-0 z-10" style={{ backgroundColor: currentTheme.bg, borderColor: currentTheme.text === '#ffffff' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
                     <button
                         onClick={handleClose}
                         className="flex-1 py-4 rounded-xl text-xs font-bold w-full transition-all shadow-md active:scale-95 border-[2px]"
-                        style={{ backgroundColor: currentTheme.id === 'night' ? 'rgba(255,255,255,0.05)' : '#ffffff', color: currentTheme.textColor, borderColor: currentTheme.accent || '#3b82f6' }}
+                        style={{ backgroundColor: currentTheme.btnBg || (currentTheme.text === '#ffffff' ? 'rgba(255,255,255,0.05)' : '#ffffff'), color: currentTheme.btnText || currentTheme.text, borderColor: currentTheme.accent || '#3b82f6' }}
                     >
                         رجوع
                     </button>

@@ -345,7 +345,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
             const { num: pageNumColor, bracket: bracketColor } = getContrastingColors();
 
             return (
-                <div className="page-footer flex flex-col items-center py-2" style={{ color: currentTheme.text }}>
+                <div className="page-footer flex flex-col items-center pt-1 pb-4" style={{ color: currentTheme.text }}>
                     <div className="flex items-center justify-center">
                         <span className="page-number-bracket" style={{ color: bracketColor }}>﴿</span>
                         <span className="page-number-text" style={{ color: pageNumColor }}>{toArabic(item.pageNumber)}</span>

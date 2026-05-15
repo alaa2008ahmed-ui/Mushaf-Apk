@@ -924,7 +924,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({ onBack, onNavigate }) => {
                     <button 
                         onClick={onBack} 
                         className="flex-1 py-4 rounded-xl text-xs font-bold w-full transition-all shadow-md active:scale-95 border-[2px]"
-                        style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.05)' : '#ffffff', color: theme.textColor, borderColor: theme.accent || theme.palette[0] }}
+                        style={{ backgroundColor: theme.btnBg || (theme.text === '#ffffff' ? 'rgba(255,255,255,0.05)' : '#ffffff'), color: theme.btnText || theme.text, borderColor: theme.accent || theme.palette?.[0] || '#000' }}
                     >
                         رجوع
                     </button>
