@@ -2310,35 +2310,39 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   isActive={readingMode === "mushaf"}
                   currentTheme={currentTheme}
                 />
-                <MenuItem
-                  data-id="menu-item-tafseer"
-                  icon={<Book size={18} />}
-                  label="التفسير"
-                  onClick={() => handleAction(() => setReadingMode("tafseer"))}
-                  iconColor={sidebarIconColor}
-                  isActive={readingMode === "tafseer"}
-                  currentTheme={currentTheme}
-                />
-                <MenuItem
-                  data-id="menu-item-meanings"
-                  icon={<FileText size={18} />}
-                  label="المعاني"
-                  onClick={() => handleAction(() => setReadingMode("meanings"))}
-                  iconColor={sidebarIconColor}
-                  isActive={readingMode === "meanings"}
-                  currentTheme={currentTheme}
-                />
-                <MenuItem
-                  data-id="menu-item-translation"
-                  icon={<Languages size={18} />}
-                  label="الترجمة"
-                  onClick={() =>
-                    handleAction(() => setReadingMode("translation"))
-                  }
-                  iconColor={sidebarIconColor}
-                  isActive={readingMode === "translation"}
-                  currentTheme={currentTheme}
-                />
+                {!isLandscape && (
+                  <>
+                    <MenuItem
+                      data-id="menu-item-tafseer"
+                      icon={<Book size={18} />}
+                      label="التفسير"
+                      onClick={() => handleAction(() => setReadingMode("tafseer"))}
+                      iconColor={sidebarIconColor}
+                      isActive={readingMode === "tafseer"}
+                      currentTheme={currentTheme}
+                    />
+                    <MenuItem
+                      data-id="menu-item-meanings"
+                      icon={<FileText size={18} />}
+                      label="المعاني"
+                      onClick={() => handleAction(() => setReadingMode("meanings"))}
+                      iconColor={sidebarIconColor}
+                      isActive={readingMode === "meanings"}
+                      currentTheme={currentTheme}
+                    />
+                    <MenuItem
+                      data-id="menu-item-translation"
+                      icon={<Languages size={18} />}
+                      label="الترجمة"
+                      onClick={() =>
+                        handleAction(() => setReadingMode("translation"))
+                      }
+                      iconColor={sidebarIconColor}
+                      isActive={readingMode === "translation"}
+                      currentTheme={currentTheme}
+                    />
+                  </>
+                )}
               </MenuSection>
 
               {/* الإعدادات والبحث */}
