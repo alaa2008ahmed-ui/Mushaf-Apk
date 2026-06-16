@@ -1,0 +1,10 @@
+لا تقم بتغيير مجلد src-tauri
+ولا تقم بتغيير ملف package.json
+
+ ثم تنفيذ التالى
+
+npm install
+
+npm run build
+
+npm run tauri:build

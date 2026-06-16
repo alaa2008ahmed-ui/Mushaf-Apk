@@ -1,4 +1,4 @@
-package com.personalexpenses.app;
+package com.alaa.dailysales;
 
 import com.getcapacitor.BridgeActivity;
 
