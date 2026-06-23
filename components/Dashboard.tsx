@@ -320,10 +320,17 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
 
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                         <div className="flex items-end gap-3">
-                            <p className="text-5xl sm:text-6xl lg:text-7xl font-black leading-none drop-shadow-lg tracking-tighter">
-                                {overallTodayStats.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </p>
-                            <p className="text-xl sm:text-2xl font-black opacity-60 mb-1 lg:mb-3 uppercase">SAR</p>
+                            <div className="flex flex-col">
+                                <div className="flex items-end gap-3">
+                                    <p className="text-5xl sm:text-6xl lg:text-7xl font-black leading-none drop-shadow-lg tracking-tighter">
+                                        {overallTodayStats.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </p>
+                                    <p className="text-xl sm:text-2xl font-black opacity-60 mb-1 lg:mb-3 uppercase">SAR</p>
+                                </div>
+                                <p className="text-sm sm:text-base font-bold text-yellow-300 mt-2 opacity-90 drop-shadow">
+                                    {(overallTodayStats.total / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR
+                                </p>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 sm:gap-6 min-w-[280px]">
@@ -333,6 +340,9 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                     <span className="text-[13px] font-black bg-blue-400/30 px-2 py-0.5 rounded-lg border border-blue-400/20 text-blue-50">{overallTodayStats.cashCount}</span>
                                 </div>
                                 <p className="text-xl sm:text-2xl font-black">{overallTodayStats.cashTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] opacity-60">SAR</span></p>
+                                <p className="text-xs font-bold mt-0.5 text-green-300">
+                                    {(overallTodayStats.cashTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
                             </div>
                             <div className="bg-white/10 backdrop-blur-md rounded-2xl py-1.5 px-4 border border-white/5 hover:bg-white/15 transition-all">
                                 <div className="flex justify-between items-center mb-1">
@@ -340,6 +350,9 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                     <span className="text-[13px] font-black bg-sky-400/30 px-2 py-0.5 rounded-lg border border-sky-400/20 text-sky-50">{overallTodayStats.creditCount}</span>
                                 </div>
                                 <p className="text-xl sm:text-2xl font-black text-sky-200">{overallTodayStats.creditTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] opacity-60">SAR</span></p>
+                                <p className="text-xs font-bold mt-0.5 text-green-300">
+                                    {(overallTodayStats.creditTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -373,6 +386,9 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                             {branch.dailyStats[0].total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
                                             <span className="text-xs sm:text-sm font-normal opacity-70 ml-1">SAR</span>
                                         </p>
+                                        <p className={`text-xs font-bold mt-1 ${branch.branchId === 'unassigned' ? 'text-red-600' : 'text-orange-500'}`}>
+                                            {(branch.dailyStats[0].total / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </p>
                                     </div>
                                     <div className="text-right">
                                         <p className={`text-[10px] sm:text-xs uppercase font-black mb-0.5 ${branch.branchId === 'unassigned' ? 'text-red-400' : 'text-blue-400'}`}>Count</p>
@@ -384,10 +400,16 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                     <div className="bg-white/50 rounded-lg p-3 border border-blue-100/50">
                                         <p className="text-[9px] uppercase font-black text-blue-500 mb-0.5">Cash</p>
                                         <p className="text-xl font-black text-blue-800 leading-tight">{branch.dailyStats[0].cashTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                        <p className="text-[10px] font-bold text-green-600 mt-0.5">
+                                            {(branch.dailyStats[0].cashTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </p>
                                     </div>
                                     <div className="bg-white/50 rounded-lg p-3 border border-blue-100/50 text-right">
                                         <p className="text-[9px] uppercase font-black text-sky-500 mb-0.5">Credit</p>
                                         <p className="text-xl font-black text-sky-800 leading-tight">{branch.dailyStats[0].creditTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                        <p className="text-[10px] font-bold text-green-600 mt-0.5">
+                                            {(branch.dailyStats[0].creditTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </p>
                                     </div>
                                 </div>
  
@@ -438,6 +460,9 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                             </p>
                                             <p className="text-[10px] font-black text-indigo-300">SAR</p>
                                         </div>
+                                        <p className="text-[10px] font-bold text-orange-500 mt-1">
+                                            {(day.total / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </p>
                                         <p className="text-[9px] font-bold text-indigo-400/70 mt-1 uppercase tracking-tighter">{day.count} Invoices</p>
                                     </motion.div>
                                 ))}

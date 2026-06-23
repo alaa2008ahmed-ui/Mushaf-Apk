@@ -401,11 +401,14 @@ const AccountStatement: React.FC<AccountStatementProps> = ({
                         <p className="text-lg text-gray-600 mb-1">Total Quantity: <span className="text-2xl font-black text-blue-700 ml-2">{totalQuantity.toFixed(2)}</span></p>
                         {(salesType === 'all' || salesType === 'total') && (
                             <div className="flex flex-col gap-1 mb-2">
-                                <p className="text-base text-gray-600">Cash Sales: <span className="text-xl font-bold text-blue-600 ml-2">{cashTotal.toFixed(2)}</span></p>
-                                <p className="text-base text-gray-600">Credit Sales: <span className="text-xl font-bold text-sky-600 ml-2">{creditTotal.toFixed(2)}</span></p>
+                                <p className="text-base text-gray-600 flex items-center justify-end">Cash Sales: <span className="text-xl font-bold text-blue-600 ml-2">{cashTotal.toFixed(2)}</span><span className="text-sm font-bold text-orange-500 ml-3">{(cashTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
+                                <p className="text-base text-gray-600 flex items-center justify-end">Credit Sales: <span className="text-xl font-bold text-sky-600 ml-2">{creditTotal.toFixed(2)}</span><span className="text-sm font-bold text-orange-500 ml-3">{(creditTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
                             </div>
                         )}
-                        <p className="text-xl text-gray-700">Grand Total: <span className="text-4xl font-black text-green-700 ml-2">{grandTotal.toFixed(2)}</span></p>
+                        <p className="text-xl text-gray-700 flex flex-col items-end">
+                            <span className="flex items-baseline">Grand Total: <span className="text-4xl font-black text-green-700 ml-2">{grandTotal.toFixed(2)}</span></span>
+                            <span className="text-lg font-bold text-orange-600 mt-1">{(grandTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </p>
                     </div>
                 </div>
 

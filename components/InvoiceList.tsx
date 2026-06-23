@@ -196,7 +196,10 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                     );})}
                     <div className={`p-4 rounded-xl font-bold ${currentTheme.totalBg} ${currentTheme.textColor} flex justify-between items-center border border-current border-opacity-10 shadow-sm`}>
                         <span className="text-sm">Total ({overallQuantity.toFixed(2)} items)</span>
-                        <span className="text-2xl font-black">{overallTotal.toFixed(2)}</span>
+                        <div className="flex flex-col items-end">
+                            <span className="text-2xl font-black">{overallTotal.toFixed(2)}</span>
+                            <span className="text-sm font-bold text-orange-500 mt-1">{(overallTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -301,8 +304,11 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                                 <td className={`px-4 py-3 text-left text-sm font-bold ${currentTheme.textColor}`}>
                                     {overallQuantity.toFixed(2)}
                                 </td>
-                                <td className={`px-4 py-3 text-left text-sm font-bold ${currentTheme.textColor}`}>
-                                    {overallTotal.toFixed(2)}
+                                <td className={`px-4 py-3 text-left text-sm font-bold ${currentTheme.textColor} align-middle`}>
+                                    <div className="flex flex-col">
+                                        <span>{overallTotal.toFixed(2)}</span>
+                                        <span className="text-[10px] font-bold text-orange-600 mt-1">{(overallTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    </div>
                                 </td>
                             </tr>
                         </tfoot>

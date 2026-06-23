@@ -204,7 +204,7 @@ class DualStorageService {
       if (collectionName === "salesInvoices") {
           // 1. FAST BOOT: First fetch only the last 3 days for immediate UI load
           const d3 = new Date();
-          d3.setDate(d3.getDate() - 3);
+          d3.setDate(d3.getDate() - 2); // Today and 2 previous days
           d3.setHours(0,0,0,0);
           const threeDaysAgoStr = d3.toISOString();
           
@@ -219,9 +219,9 @@ class DualStorageService {
           getDocs(qFast).then(snapshot => {
             const fastData = snapshot.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
             console.log(`DualStorage [${collectionName}]: Fast boot loaded ${fastData.length} invoices.`);
-            this.processDataUpdate(collectionName, fastData, false);
+            this.processDataUpdate(collectionName, fastData, true); // Use partial=true to preserve existing cache during boot
             
-            // 2. ACTIVE PERIOD: After fast boot, fetch the full active month and set up realtime listener
+            // 2. ACTIVE PERIOD: After fast boot, fetch the full active month
             const activeStartDateStr = this.getActivePeriodStartDate();
             console.log(`DualStorage [${collectionName}]: Starting active period query >= ${activeStartDateStr}`);
 
@@ -230,19 +230,45 @@ class DualStorageService {
               where('date', '>=', activeStartDateStr)
             );
 
-            const unsubscribe = onSnapshot(qRecent, (snapshotRecent) => {
+            getDocs(qRecent).then(snapshotRecent => {
               const recentData = snapshotRecent.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-              console.log(`DualStorage [${collectionName}]: [Realtime] Fetched ${recentData.length} active month invoices.`);
+              console.log(`DualStorage [${collectionName}]: Fetched ${recentData.length} active month invoices.`);
               
-              // isPartial=false replaces local cache and memory with ONLY the active period.
-              this.processDataUpdate(collectionName, recentData, false); 
-            }, (error) => {
-              console.error(`DualStorage [${collectionName}]: Realtime listener error:`, error);
-              handleFirestoreError(error, OperationType.LIST, collectionName);
-            });
-            
-            this.listeners.push(unsubscribe);
-          });
+              // partial=true so we merge without deleting anything.
+              this.processDataUpdate(collectionName, recentData, true); 
+
+              // 3. FULL HISTORICAL DATA: Fetch everything older in the background
+              console.log(`DualStorage [${collectionName}]: Starting historical data fetch < ${activeStartDateStr}`);
+              const qHistorical = query(
+                collection(db, collectionName),
+                where('date', '<', activeStartDateStr)
+              );
+              
+              getDocs(qHistorical).then(snapshotHist => {
+                 const histData = snapshotHist.docs.map(doc => ({...this.convertTimestamps(doc.data()), id: doc.id}));
+                 console.log(`DualStorage [${collectionName}]: Fetched ${histData.length} historical invoices.`);
+                 this.processDataUpdate(collectionName, histData, true);
+
+                 // 4. LIVE UPDATES: Hook up a live listener for any changes happening CONCURRENTLY during session
+                 const sessionStartTime = new Date().toISOString();
+                 const qLive = query(
+                   collection(db, collectionName), 
+                   where('updatedAt', '>=', sessionStartTime)
+                 );
+                 const unsubscribeLive = onSnapshot(qLive, (snapshotLive) => {
+                   const liveUpdates = snapshotLive.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+                   if (liveUpdates.length > 0) {
+                     this.processDataUpdate(collectionName, liveUpdates, true); 
+                   }
+                 }, (error) => {
+                   handleFirestoreError(error, OperationType.LIST, collectionName);
+                 });
+                 this.listeners.push(unsubscribeLive);
+
+              }).catch(err => console.error(`DualStorage [${collectionName}]: Historical fetch error:`, err));
+
+            }).catch(err => console.error(`DualStorage [${collectionName}]: Active fetch error:`, err));
+          }).catch(err => console.error(`DualStorage [${collectionName}]: Fast fetch error:`, err));
           
           return;
       }
@@ -631,11 +657,6 @@ class DualStorageService {
     const syncPromises = Object.values(COLLECTIONS).map(async (collectionName) => {
       try {
         let q = query(collection(db, collectionName));
-        if (collectionName === COLLECTIONS.SALES_INVOICES) {
-            const activeStartDateStr = this.getActivePeriodStartDate();
-            console.log(`DualStorage: Restricting cloud sync for ${collectionName} to active period >= ${activeStartDateStr}`);
-            q = query(collection(db, collectionName), where('date', '>=', activeStartDateStr));
-        }
         const snapshot = await getDocs(q);
         const cloudData = snapshot.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
         const cloudIds = new Set(cloudData.map(d => d.id));

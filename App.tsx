@@ -204,13 +204,8 @@ const App: React.FC = () => {
                 setNotification({ message: msg, type: type === 'error' ? 'error' : 'info' });
             });
 
-            // 2. Start full sync from cloud and WAIT for it before seeding
-            try {
-                await dualStorage.fullSyncFromCloud();
-                console.log("App: Initial cloud sync complete.");
-            } catch (err) {
-                console.error("App: Initial cloud sync failed:", err);
-            }
+            // 2. Seeding and Migrations (Non-blocking)
+            // Removed await dualStorage.fullSyncFromCloud() which previously blocked UI
             
             // Notification if offline
             if (!navigator.onLine) {
@@ -1467,9 +1462,10 @@ const App: React.FC = () => {
             const currentTimeStr = `${currentHour}:${currentMin}`;
 
             const targetTimeStr = appSettings.autoBackupTime!;
+            const localLastBackup = localStorage.getItem('localLastTriggeredBackupDate');
 
-            // Verify if we are at or past the target time and have not triggered backup today yet
-            if (currentTimeStr >= targetTimeStr && appSettings.lastTriggeredBackupDate !== todayStr) {
+            // Verify if we are at or past the target time and have not triggered backup today yet on THIS device
+            if (currentTimeStr >= targetTimeStr && localLastBackup !== todayStr) {
                 
                 let frequencyMatch = false;
                 const freq = appSettings.autoBackupFrequency || 'daily';
@@ -1530,17 +1526,14 @@ const App: React.FC = () => {
                             accept: { 'application/json': ['.json'] },
                         });
 
-                        // Log triggered date
-                        handleUpdateSettings({
-                            ...appSettings,
-                            lastTriggeredBackupDate: todayStr
-                        });
+                        // Log triggered date locally
+                        localStorage.setItem('localLastTriggeredBackupDate', todayStr);
                         
                         setNotification({ 
                             message: `تم أخذ نسخة احتياطية تلقائية من جميع البيانات وحفظها باسم ${filename}`, 
                             type: 'success' 
                         });
-                        console.log(`Automatic Backup triggered successfully for ${todayStr}.`);
+                        console.log(`Automatic Backup triggered successfully for ${todayStr} on this device.`);
                     } catch (error) {
                         console.error("Auto Backup timer failed:", error);
                     }
