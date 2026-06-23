@@ -90,11 +90,28 @@ class DualStorageService {
     this.listeners.forEach(unsubscribe => unsubscribe());
     this.listeners = [];
 
-    // Prioritize instant loading: Emit all existing cached local data immediately so UI renders in <15ms!
+    // Prioritize instant loading: Emit existing cached local data immediately so UI renders in <15ms!
     Object.values(COLLECTIONS).forEach(collectionName => {
       const localData = this.getLocalData(collectionName);
       if (localData && localData.length > 0) {
-        onDataUpdate(collectionName, localData);
+        if (collectionName === COLLECTIONS.SALES_INVOICES) {
+          // 1. STAGED LOCAL LOAD: Push last 3 days first to instantly render Dashboard
+          const d3 = new Date();
+          d3.setDate(d3.getDate() - 2);
+          d3.setHours(0,0,0,0);
+          const threeDaysAgoStr = d3.toISOString();
+          
+          const recentLocalData = localData.filter((item: any) => item.date >= threeDaysAgoStr);
+          onDataUpdate(collectionName, recentLocalData);
+          
+          // 2. Then push the rest of the local cache after a tiny delay
+          setTimeout(() => {
+             // In DualStorageService we always pass the full array to onDataUpdate
+             onDataUpdate(collectionName, localData);
+          }, 200);
+        } else {
+          onDataUpdate(collectionName, localData);
+        }
       }
     });
 
@@ -237,35 +254,23 @@ class DualStorageService {
               // partial=true so we merge without deleting anything.
               this.processDataUpdate(collectionName, recentData, true); 
 
-              // 3. FULL HISTORICAL DATA: Fetch everything older in the background
-              console.log(`DualStorage [${collectionName}]: Starting historical data fetch < ${activeStartDateStr}`);
-              const qHistorical = query(
-                collection(db, collectionName),
-                where('date', '<', activeStartDateStr)
-              );
+              // 3. Historical Data is now fetched ON DEMAND via reports caching instead of pre-fetching everything.
               
-              getDocs(qHistorical).then(snapshotHist => {
-                 const histData = snapshotHist.docs.map(doc => ({...this.convertTimestamps(doc.data()), id: doc.id}));
-                 console.log(`DualStorage [${collectionName}]: Fetched ${histData.length} historical invoices.`);
-                 this.processDataUpdate(collectionName, histData, true);
-
-                 // 4. LIVE UPDATES: Hook up a live listener for any changes happening CONCURRENTLY during session
-                 const sessionStartTime = new Date().toISOString();
-                 const qLive = query(
-                   collection(db, collectionName), 
-                   where('updatedAt', '>=', sessionStartTime)
-                 );
-                 const unsubscribeLive = onSnapshot(qLive, (snapshotLive) => {
-                   const liveUpdates = snapshotLive.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-                   if (liveUpdates.length > 0) {
-                     this.processDataUpdate(collectionName, liveUpdates, true); 
-                   }
-                 }, (error) => {
-                   handleFirestoreError(error, OperationType.LIST, collectionName);
-                 });
-                 this.listeners.push(unsubscribeLive);
-
-              }).catch(err => console.error(`DualStorage [${collectionName}]: Historical fetch error:`, err));
+              // 4. LIVE UPDATES: Hook up a live listener for any changes happening CONCURRENTLY during session
+              const sessionStartTime = new Date().toISOString();
+              const qLive = query(
+                collection(db, collectionName), 
+                where('updatedAt', '>=', sessionStartTime)
+              );
+              const unsubscribeLive = onSnapshot(qLive, (snapshotLive) => {
+                const liveUpdates = snapshotLive.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+                if (liveUpdates.length > 0) {
+                  this.processDataUpdate(collectionName, liveUpdates, true); 
+                }
+              }, (error) => {
+                handleFirestoreError(error, OperationType.LIST, collectionName);
+              });
+              this.listeners.push(unsubscribeLive);
 
             }).catch(err => console.error(`DualStorage [${collectionName}]: Active fetch error:`, err));
           }).catch(err => console.error(`DualStorage [${collectionName}]: Fast fetch error:`, err));
@@ -345,14 +350,9 @@ class DualStorageService {
          this.processDataUpdate(collectionName, fetchedItems, true);
       }
       
-      // Optional Step 4: Run a full background cache cleanup sync 5-10 seconds after startup to verify deletions
+      // Optional Step 4: Run a background cleanup (Removed fullSyncFromCloud to avoid performance hits)
       if (enableBackgroundCleanup) {
-        setTimeout(() => {
-          if (navigator.onLine) {
-            console.log(`DualStorage [${collectionName}]: Executing background integrity sync...`);
-            this.fullSyncFromCloud();
-          }
-        }, 8000); // give the app plenty of time to render first
+        console.log(`DualStorage [${collectionName}]: Background cleanup flag checked, skipping full sync for performance.`);
       }
 
     } catch (error) {
