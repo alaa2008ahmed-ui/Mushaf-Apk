@@ -30,6 +30,23 @@ const AsmaulHusna: React.FC<{ onBack: () => void, onNavigate: (id: string, param
         return unregister;
     }, [selectedName]);
 
+    const renderEvidence = (evidence: string) => {
+        const match = evidence.match(/(.*)(\(.*\))/);
+        if (match) {
+            const text = match[1];
+            const ref = match[2];
+            return (
+                <>
+                    {text}
+                    <span className="text-secondary font-bold mr-2 inline-block" style={{ color: 'var(--color-brand-purple)' }}>
+                        {ref}
+                    </span>
+                </>
+            );
+        }
+        return evidence;
+    };
+
     return (
         <div className="h-screen flex flex-col overflow-hidden relative bg-transparent">
             <header className="app-top-bar z-20">
@@ -48,30 +65,24 @@ const AsmaulHusna: React.FC<{ onBack: () => void, onNavigate: (id: string, param
 
             <main className="flex-1 overflow-hidden flex flex-col px-4 z-10">
                 <div className="flex-1 overflow-y-auto hide-scrollbar pt-0 pb-48">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-w-5xl mx-auto">
+                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 sm:gap-2.5 max-w-5xl mx-auto">
                         {asmaulHusna.map((item) => (
                             <motion.button
                                 key={item.id}
                                 whileHover={{ y: -5, scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => setSelectedName(item)}
-                                className="relative themed-card rounded-3xl p-4 flex flex-col items-center justify-center text-center aspect-square group border border-black/5 shadow-md transition-all duration-300 overflow-hidden"
+                                className="relative themed-card rounded-xl sm:rounded-2xl p-1.5 sm:p-3 flex flex-col items-center justify-center text-center aspect-square group border border-black/5 shadow-sm transition-all duration-300 overflow-hidden"
                             >
                                 {/* ID Badge */}
-                                <div className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 text-[9px] font-bold opacity-60">
+                                <div className="absolute top-1 sm:top-2 right-1 sm:right-2 w-4 sm:w-6 h-4 sm:h-6 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/10 text-[8px] font-bold opacity-60">
                                     {item.id}
                                 </div>
                                 
-                                <div className="flex flex-col items-center justify-center flex-1 w-full gap-1">
-                                    <h3 className="text-3xl font-bold font-quran leading-none group-hover:scale-110 transition-transform duration-300 mb-1" style={{ color: 'var(--text-color)' }}>
+                                <div className="flex flex-col items-center justify-center flex-1 w-full">
+                                    <h3 className="text-lg sm:text-2xl font-bold font-quran leading-none group-hover:scale-110 transition-transform duration-300" style={{ color: 'var(--text-color)' }}>
                                         {item.name}
                                     </h3>
-                                    
-                                    <div className="h-px w-8 bg-black/10 dark:bg-white/10 mb-1" />
-                                    
-                                    <span className="text-[11px] font-medium uppercase tracking-wider opacity-60 transition-all font-sans line-clamp-1" style={{ color: 'var(--text-color)' }}>
-                                        {item.transliteration}
-                                    </span>
                                 </div>
                             </motion.button>
                         ))}
@@ -88,66 +99,64 @@ const AsmaulHusna: React.FC<{ onBack: () => void, onNavigate: (id: string, param
                         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
                         onClick={() => setSelectedName(null)}
                     >
-                        <motion.div 
-                            initial={{ scale: 0.8, opacity: 0, y: 40 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.8, opacity: 0, y: 40 }}
-                            className="themed-card w-full max-w-md p-0 overflow-hidden relative rounded-[2.5rem] shadow-2xl border border-white/20"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {/* Decorative Top Section */}
-                            <div className="bg-primary/10 pt-10 pb-8 px-6 text-center border-b border-primary/10 relative">
-                                <div className="absolute top-4 left-0 right-0 flex justify-center">
-                                    <span className="px-4 py-1 rounded-full bg-primary/20 text-xs font-mono tracking-widest uppercase text-primary">
-                                        الاسم رقم {selectedName.id}
-                                    </span>
-                                </div>
-                                
-                                <h2 className="text-7xl font-bold font-quran text-primary mb-4 drop-shadow-md">
-                                    {selectedName.name}
-                                </h2>
-                                
-                                <div className="inline-block px-6 py-2 rounded-2xl bg-white/10 dark:bg-black/20 border border-white/10 mt-2">
-                                    <p className="text-xl font-mono tracking-wider italic text-primary/80">
-                                        {selectedName.transliteration}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="p-8 space-y-6">
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-end gap-3 text-primary/70">
-                                        <h4 className="font-bold text-sm font-kufi">المعنى الميسر</h4>
-                                        <div className="p-1.5 rounded-lg bg-primary/10"><Info className="w-4 h-4" /></div>
-                                    </div>
-                                    <p className="text-xl leading-relaxed opacity-90 font-amiri text-right pr-2">
-                                        {selectedName.meaning}
-                                    </p>
-                                </div>
-
-                                <div className="h-px bg-primary/10 w-1/2 mx-auto" />
-
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-end gap-3 text-primary/70">
-                                        <h4 className="font-bold text-sm font-kufi">الدليل من الكتاب والسنة</h4>
-                                        <div className="p-1.5 rounded-lg bg-primary/10"><Book className="w-4 h-4" /></div>
-                                    </div>
-                                    <div className="relative">
-                                        <div className="absolute top-0 right-0 bottom-0 w-1 bg-primary rounded-full opacity-30" />
-                                        <p className="text-lg italic leading-relaxed opacity-80 pr-6 font-amiri text-right">
-                                            {selectedName.evidence}
-                                        </p>
+                            <motion.div 
+                                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                                className="themed-card w-[92vw] sm:w-[450px] p-6 sm:p-8 overflow-hidden relative rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl border border-black/5 dark:border-white/5 flex flex-col gap-6 sm:gap-7 max-h-[85vh]"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {/* Header */}
+                                <div className="flex justify-end items-start w-full relative z-10" dir="ltr">
+                                    <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 text-primary font-bold text-sm sm:text-base border border-primary/20">
+                                        {selectedName.id}
                                     </div>
                                 </div>
 
-                                <button 
-                                    onClick={() => setSelectedName(null)}
-                                    className="w-full py-5 rounded-2xl bg-primary text-white text-xl font-kufi shadow-xl shadow-primary/30 active:scale-[0.98] transition-all mt-6"
-                                >
-                                    إغلاق
-                                </button>
-                            </div>
-                        </motion.div>
+                                {/* Title Section */}
+                                <div className="flex flex-col items-center justify-center text-center mt-[-45px] sm:mt-[-55px] relative z-10">
+                                    <h2 className="text-4xl sm:text-5xl font-bold font-quran text-primary drop-shadow-sm">
+                                        {selectedName.name}
+                                    </h2>
+                                </div>
+
+                                {/* Content */}
+                                <div className="flex flex-col gap-6 sm:gap-7 overflow-y-auto hide-scrollbar pb-2 relative z-10" dir="rtl">
+                                    {/* Meaning */}
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-center gap-2 opacity-80 text-primary">
+                                            <div className="p-1.5 rounded-lg bg-primary/10"><Info className="w-4 h-4 sm:w-5 sm:h-5" /></div>
+                                            <span className="text-sm sm:text-base font-bold font-kufi">شرح الاسم ومعناه</span>
+                                        </div>
+                                        <div className="bg-black/5 dark:bg-white/5 p-4 sm:p-5 rounded-2xl border border-black/5 dark:border-white/5">
+                                            <p className="text-[17px] sm:text-[19px] leading-[1.8] font-hafs text-justify opacity-90 text-primary">
+                                                {selectedName.meaning}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Evidence */}
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-center gap-2 opacity-80 text-primary">
+                                            <div className="p-1.5 rounded-lg bg-primary/10"><Book className="w-4 h-4 sm:w-5 sm:h-5" /></div>
+                                            <span className="text-sm sm:text-base font-bold font-kufi">الدليل الشرعي</span>
+                                        </div>
+                                        <div className="relative bg-primary/5 p-4 sm:p-5 rounded-2xl border border-primary/10">
+                                            <div className="absolute top-0 right-0 bottom-0 w-1.5 bg-primary/40 rounded-r-2xl" />
+                                            <p className="text-[16px] sm:text-[18px] leading-[1.8] font-hafs text-justify opacity-80 pr-2 text-primary">
+                                                {renderEvidence(selectedName.evidence)}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={() => setSelectedName(null)}
+                                        className="w-full py-4 rounded-2xl bg-primary text-white text-lg sm:text-xl font-bold font-kufi shadow-xl shadow-primary/30 hover:shadow-primary/40 active:scale-[0.98] transition-all mt-2"
+                                    >
+                                        إغلاق
+                                    </button>
+                                </div>
+                            </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>

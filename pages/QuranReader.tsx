@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, FC } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, FC } from 'react';
 import { flushSync } from 'react-dom';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import { Capacitor } from '@capacitor/core';
@@ -15,6 +15,7 @@ import { KeepAwake } from '@capacitor-community/keep-awake';
 import BookmarksModal from '../components/QuranReader/BookmarksModal';
 import MushafPage from '../components/QuranReader/MushafPage';
 import VerticalReadingView from '../components/QuranReader/VerticalReadingView';
+import HorizontalPagingView from '../components/QuranReader/HorizontalPagingView';
 import SurahDesignPickerModal from '../components/QuranReader/SurahDesignPickerModal';
 import Toast from '../components/QuranReader/Toast';
 import TafseerModal from '../components/QuranReader/TafseerModal';
@@ -417,7 +418,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 let key = '';
                 if (isWirdMode) key = `_wird_${orient}`;
                 else if (isMemorizationMode) key = `_memorization_${orient}`;
-                else if (readingMode === 'mushaf') key = `_${orient}`;
+                else if (readingMode === 'mushaf' || readingMode === 'mushaf_paging') key = `_${orient}`;
                 else key = `_${readingMode}_${orient}`;
 
                 const saved = localStorage.getItem(`last_pos${key}`);
@@ -478,7 +479,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             let key = '';
             if (isWirdMode) key = `_wird_${orient}`;
             else if (isMemorizationMode) key = `_memorization_${orient}`;
-            else if (readingMode === 'mushaf') key = `_${orient}`;
+            else if (readingMode === 'mushaf' || readingMode === 'mushaf_paging') key = `_${orient}`;
             else key = `_${readingMode}_${orient}`;
 
             const saved = localStorage.getItem(`last_pos${key}`);
@@ -1235,7 +1236,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const lastNotifiedJuz = useRef<number | null>(null);
     const [bookmarks, setBookmarks] = useState(() => {
         const mode = initialLandscape ? '_h' : '_v';
-        const bSuffix = (localIsMemorizationMode ? `_memorization_${mode}` : isWirdMode ? `_wird_${mode}` : readingMode === 'mushaf' ? mode : `_${readingMode}_${mode}`);
+        const bSuffix = (localIsMemorizationMode ? `_memorization_${mode}` : isWirdMode ? `_wird_${mode}` : (readingMode === 'mushaf' || readingMode === 'mushaf_paging') ? mode : `_${readingMode}_${mode}`);
         return JSON.parse(localStorage.getItem('quran_bookmarks_list' + bSuffix) || '[]');
     });
 
@@ -2605,7 +2606,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         }
     }, [showToast]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const root = document.documentElement;
         const t = currentTheme;
         
@@ -2635,11 +2636,23 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         root.style.setProperty('--search-result-border', t.accent || (t as any).palette?.[0]);
         root.style.setProperty('--search-result-text', t.cardText);
         
-        const darkBgs = ['#000000', '#2c241b', '#101010', '#0f172a', '#2e1065', '#064e3b', '#1e293b', '#4c1d95', '#1e1b4b', '#451a03'];
-        const isDark = (settings.bgColor || t.bg) && darkBgs.includes((settings.bgColor || t.bg).toLowerCase());
+        const darkBgs = [
+            '#000000', '#2c241b', '#101010', '#0f172a', '#2e1065', '#064e3b', '#1e293b', '#4c1d95', 
+            '#1e1b4b', '#451a03', '#022c22', '#450a0a', '#1e3a8a', '#422006', '#78350f', '#4c1d95',
+            '#280a1e', '#041e3a', '#1c1917', '#0f172a', '#09090b', '#064e3b', '#134e4a', '#334155',
+            '#0a0a0a', '#111111'
+        ];
+        // Ensure isDark is true if either background is in the list OR the text color is explicitly white
+        const textColor = (settings.textColor || t.text || '').toLowerCase();
+        const bgColor = (settings.bgColor || t.bg || '').toLowerCase();
+        const isDark = darkBgs.includes(bgColor) || textColor === '#ffffff';
+        
         if (isDark) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
-    }, [currentTheme, themeKey, settings.highlightTextColor, settings.textColor, settings.bgColor, settings.fontFamily]);
+        
+        // Signal that quran context variables have been set to avoid other contexts overwriting them
+        window.dispatchEvent(new CustomEvent('quran-vars-applied', { detail: { themeId: t.id } }));
+    }, [currentTheme, themeKey, settings.highlightTextColor, settings.textColor, settings.bgColor, settings.fontFamily, activeModals]);
 
     const isBookmarksModalOpen = activeModals.includes('bookmarks-modal');
     useEffect(() => {
@@ -2657,7 +2670,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
             const { scrollTop, scrollHeight, clientHeight } = contentEl;
 
-            if (readingMode === 'mushaf') {
+            if (readingMode === 'mushaf' || readingMode === 'mushaf_paging') {
                 if (scrollTop < 500) {
                     setVisiblePages(prev => {
                         if (prev.length === 0) return prev;
@@ -3655,7 +3668,45 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
-                {readingMode === 'mushaf' ? (
+                {readingMode === 'mushaf_paging' ? (
+                    <div className="w-full h-full">
+                        <HorizontalPagingView
+                            currentPage={visiblePages[1] || visiblePages[0] || 1}
+                            onPageChange={(page) => {
+                                for (let s = 1; s <= 114; s++) {
+                                    const surah = quranJsonData.surahs[s-1];
+                                    for (let a = 1; a <= surah.ayahs.length; a++) {
+                                        if (surah.ayahs[a-1].page === page) {
+                                            if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
+                                                setCurrentAyah({ s, a });
+                                                localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a })); 
+                                                localStorage.setItem("last_read_ayah_global", JSON.stringify({ s, a, ts: Date.now() }));
+                                                window.dispatchEvent(new Event('last_read_update'));
+                                            }
+                                            return;
+                                        }
+                                    }
+                                }
+                            }}
+                            settings={ayahContextMenu.isOpen ? { ...settings, ...ayahContextMenu.tempSettings } : settings}
+                            currentTheme={currentTheme}
+                            highlightedAyahId={highlightedAyahId}
+                            onAyahClick={handleAyahTextClick}
+                            onVerseClick={handleVerseClick}
+                            onVerseLongPress={handleVerseLongPress}
+                            onAyahLongPress={handleAyahLongPress}
+                            onInteractionStart={handleInteractionStart}
+                            onInteractionEnd={handleInteractionEnd}
+                            hideVerses={isHideMode}
+                            memorizationSettings={localMemorizationSettings}
+                            isPlaying={isPlaying}
+                            isRecording={isRecording}
+                            revealedAyahs={revealedAyahs}
+                            tempRevealedAyah={tempRevealedAyah}
+                            onSurahHeaderLongPress={() => setIsSurahDesignPickerOpen(true)}
+                        />
+                    </div>
+                ) : readingMode === 'mushaf' ? (
                     <div id="pages-container" className="full-mushaf-container">
                     {sortedVisiblePages.map(pageNum => {
                         const displaySettings = ayahContextMenu.isOpen ? { ...settings, ...ayahContextMenu.tempSettings } : settings;

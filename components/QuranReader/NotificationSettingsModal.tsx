@@ -140,11 +140,11 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
         <div className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[1200] flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} onClick={onClose}>
             <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md rounded-2xl max-h-[85vh]'} shadow-2xl overflow-hidden flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()}>
 
-                <div className="flex border-b border-gray-200 dark:border-gray-700">
+                <div className="flex border-b border-black/10 dark:border-white/10">
                     <button 
                         className="flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 transition-colors"
                         style={{ 
-                            color: activeTab === 'app' ? 'var(--qr-accent)' : undefined, 
+                            color: activeTab === 'app' ? 'var(--qr-accent)' : 'inherit', 
                             borderBottom: activeTab === 'app' ? '2px solid var(--qr-accent)' : 'none',
                             opacity: activeTab === 'app' ? 1 : 0.6
                         }}
@@ -156,7 +156,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                     <button 
                         className="flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 transition-colors"
                         style={{ 
-                            color: activeTab === 'phone' ? 'var(--qr-accent)' : undefined, 
+                            color: activeTab === 'phone' ? 'var(--qr-accent)' : 'inherit', 
                             borderBottom: activeTab === 'phone' ? '2px solid var(--qr-accent)' : 'none',
                             opacity: activeTab === 'phone' ? 1 : 0.6
                         }}
@@ -170,7 +170,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                 <div className="p-4 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
                     {activeTab === 'app' ? (
                         <div className="space-y-2 animate-fadeIn">
-                            <p className="text-xs opacity-70 text-center mb-4">
+                            <p className="text-[11px] opacity-80 text-center mb-4">
                                 إشعارات تظهر داخل التطبيق أثناء الاستخدام
                             </p>
                             {[
@@ -188,15 +188,15 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                     className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer ${
                                         appSettings[item.id] 
                                         ? 'themed-card-bg shadow-sm' 
-                                        : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60'
+                                        : 'bg-black/5 dark:bg-white/10 border-transparent opacity-70'
                                     }`}
                                     style={{ borderColor: appSettings[item.id] ? 'var(--qr-accent)' : undefined }}
                                 >
                                     <div className="flex flex-col gap-0.5">
                                         <span className="font-bold text-sm">{item.label}</span>
-                                        <span className="text-[10px] opacity-60">{item.desc}</span>
+                                        <span className="text-[10px] opacity-80">{item.desc}</span>
                                     </div>
-                                    <div className="w-5 h-5 rounded-full flex items-center justify-center transition-colors" style={{ backgroundColor: appSettings[item.id] ? 'var(--qr-accent)' : undefined, color: appSettings[item.id] ? 'var(--qr-accent-text, #fff)' : undefined }}>
+                                    <div className="w-5 h-5 rounded-full flex items-center justify-center transition-colors" style={{ backgroundColor: appSettings[item.id] ? 'var(--qr-accent)' : 'rgba(0,0,0,0.1)', color: appSettings[item.id] ? 'var(--qr-accent-text, #fff)' : 'transparent' }}>
                                         {appSettings[item.id] && <Check className="w-3 h-3" />}
                                     </div>
                                 </div>
@@ -204,12 +204,12 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                         </div>
                     ) : (
                         <div className="space-y-4 animate-fadeIn pb-16">
-                            <p className="text-xs opacity-70 text-center mb-2">
+                            <p className="text-[11px] opacity-80 text-center mb-2">
                                 إشعارات تظهر على شاشة الهاتف حتى لو كان التطبيق مغلقاً
                             </p>
 
                             <div className="space-y-2">
-                                <h4 className="font-bold text-sm mb-2 opacity-80">أوقات الليل</h4>
+                                <h4 className="font-bold text-sm mb-2 opacity-90">أوقات الليل</h4>
                                 {[
                                     { id: 'firstThird', label: 'أول الليل', desc: 'تنبيه بدخول وقت أول الليل' },
                                     { id: 'midnight', label: 'منتصف الليل', desc: 'تنبيه بدخول منتصف الليل الشرعي' },
@@ -223,15 +223,15 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                             className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer ${
                                                 isEnabled 
                                                 ? 'themed-card-bg shadow-sm' 
-                                                : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60'
+                                                : 'bg-black/5 dark:bg-white/10 border-transparent opacity-70'
                                             }`}
                                             style={{ borderColor: isEnabled ? 'var(--qr-accent)' : undefined }}
                                         >
                                             <div className="flex flex-col gap-0.5">
                                                 <span className="font-bold text-sm">{item.label}</span>
-                                                <span className="text-[10px] opacity-60">{item.desc}</span>
+                                                <span className="text-[10px] opacity-80">{item.desc}</span>
                                             </div>
-                                            <div className="w-5 h-5 rounded-full flex items-center justify-center transition-colors" style={{ backgroundColor: isEnabled ? 'var(--qr-accent)' : undefined, color: isEnabled ? 'var(--qr-accent-text, #fff)' : undefined }}>
+                                            <div className="w-5 h-5 rounded-full flex items-center justify-center transition-colors" style={{ backgroundColor: isEnabled ? 'var(--qr-accent)' : 'rgba(0,0,0,0.1)', color: isEnabled ? 'var(--qr-accent-text, #fff)' : 'transparent' }}>
                                                 {isEnabled && <Check className="w-3 h-3" />}
                                             </div>
                                         </div>
@@ -239,8 +239,8 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                 })}
                             </div>
 
-                            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800 text-right" dir="rtl">
-                                <h4 className="font-bold text-sm mb-2 opacity-80">الأذكار والتسبيح</h4>
+                            <div className="space-y-2 pt-2 border-t border-black/10 dark:border-white/10 text-right" dir="rtl">
+                                <h4 className="font-bold text-sm mb-2 opacity-90">الأذكار والتسبيح</h4>
                                 {[
                                     { id: 'sabah', label: 'أذكار الصباح' },
                                     { id: 'masaa', label: 'أذكار المساء' },
@@ -256,7 +256,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                             className={`p-3 rounded-xl border-2 transition-all ${
                                                 setting.enabled 
                                                 ? 'themed-card-bg shadow-sm' 
-                                                : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60'
+                                                : 'bg-black/5 dark:bg-white/10 border-transparent opacity-70'
                                             }`}
                                             style={{ borderColor: setting.enabled ? 'var(--qr-accent)' : undefined }}
                                         >
@@ -265,14 +265,14 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                                     className="flex items-center gap-2 cursor-pointer"
                                                     onClick={() => togglePhoneSetting(item.id as keyof Omit<PhoneNotificationSettings, 'randomAthkar'>)}
                                                 >
-                                                    <div className="w-5 h-5 rounded-full flex items-center justify-center transition-colors" style={{ backgroundColor: setting.enabled ? 'var(--qr-accent)' : undefined, color: setting.enabled ? 'var(--qr-accent-text, #fff)' : undefined }}>
+                                                    <div className="w-5 h-5 rounded-full flex items-center justify-center transition-colors" style={{ backgroundColor: setting.enabled ? 'var(--qr-accent)' : 'rgba(0,0,0,0.1)', color: setting.enabled ? 'var(--qr-accent-text, #fff)' : 'transparent' }}>
                                                         {setting.enabled && <Check className="w-3 h-3" />}
                                                     </div>
                                                     <span className="font-bold text-sm">{item.label}</span>
                                                 </div>
                                                 
                                                 {setting.enabled && (
-                                                    <div className="flex items-center gap-2 text-xs opacity-80">
+                                                    <div className="flex items-center gap-2 text-xs opacity-90">
                                                         <Clock className="w-3 h-3" />
                                                         <input 
                                                             type="time" 
@@ -284,7 +284,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                                     </div>
                                                 )}
                                             </div>
-                                            <p className="text-[10px] opacity-60">
+                                            <p className="text-[10px] opacity-80">
                                                 {item.id === 'kahf' ? 'تنبيه أسبوعي يوم الجمعة' : 'تنبيه يومي في الوقت المحدد'}
                                             </p>
                                         </div>
@@ -292,9 +292,9 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                 })}
                             </div>
 
-                            <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-800 text-right" dir="rtl">
+                            <div className="space-y-3 pt-2 border-t border-black/10 dark:border-white/10 text-right" dir="rtl">
                                 <div className="flex items-center justify-between mb-1">
-                                    <h4 className="font-bold text-sm opacity-80 flex items-center gap-2">
+                                    <h4 className="font-bold text-sm opacity-90 flex items-center gap-2">
                                         <Shuffle className="w-4 h-4" />
                                         أذكار عشوائية
                                     </h4>
@@ -305,7 +305,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                         <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${phoneSettings.randomAthkar.enabled ? 'right-6' : 'right-1'}`} />
                                     </div>
                                 </div>
-                                <p className="text-[10px] opacity-60 -mt-2">
+                                <p className="text-[10px] opacity-80 -mt-2">
                                     تلقي أذكار وتنبيهات عشوائية خلال اليوم لتذكيرك بذكر الله
                                 </p>
 
@@ -316,14 +316,14 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                             <div className="flex items-center gap-3">
                                                 <button 
                                                     onClick={() => handleRandomSettingChange({ frequency: Math.max(1, phoneSettings.randomAthkar.frequency - 1) })}
-                                                    className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 flex items-center justify-center font-bold"
+                                                    className="w-6 h-6 rounded-md bg-black/5 dark:bg-white/10 flex items-center justify-center font-bold"
                                                 >
                                                     -
                                                 </button>
                                                 <span className="text-sm font-bold text-emerald-600">{toArabic(phoneSettings.randomAthkar.frequency)}</span>
                                                 <button 
                                                     onClick={() => handleRandomSettingChange({ frequency: Math.min(20, phoneSettings.randomAthkar.frequency + 1) })}
-                                                    className="w-6 h-6 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 flex items-center justify-center font-bold"
+                                                    className="w-6 h-6 rounded-md bg-black/5 dark:bg-white/10 flex items-center justify-center font-bold"
                                                 >
                                                     +
                                                 </button>
@@ -332,21 +332,21 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-1">
-                                                <span className="text-[10px] opacity-60">وقت البدء:</span>
+                                                <span className="text-[10px] opacity-80">وقت البدء:</span>
                                                 <input 
                                                     type="time" 
                                                     value={phoneSettings.randomAthkar.startTime}
                                                     onChange={(e) => handleRandomSettingChange({ startTime: e.target.value })}
-                                                    className="w-full text-xs bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 p-2 rounded-lg font-bold dark:[color-scheme:dark]"
+                                                    className="w-full text-xs bg-black/5 dark:bg-white/10 text-inherit border border-transparent p-2 rounded-lg font-bold dark:[color-scheme:dark]"
                                                 />
                                             </div>
                                             <div className="space-y-1">
-                                                <span className="text-[10px] opacity-60">وقت الانتهاء:</span>
+                                                <span className="text-[10px] opacity-80">وقت الانتهاء:</span>
                                                 <input 
                                                     type="time" 
                                                     value={phoneSettings.randomAthkar.endTime}
                                                     onChange={(e) => handleRandomSettingChange({ endTime: e.target.value })}
-                                                    className="w-full text-xs bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 p-2 rounded-lg font-bold dark:[color-scheme:dark]"
+                                                    className="w-full text-xs bg-black/5 dark:bg-white/10 text-inherit border border-transparent p-2 rounded-lg font-bold dark:[color-scheme:dark]"
                                                 />
                                             </div>
                                         </div>
@@ -354,9 +354,9 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                 )}
                             </div>
 
-                            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800 text-right" dir="rtl">
+                            <div className="space-y-2 pt-2 border-t border-black/10 dark:border-white/10 text-right" dir="rtl">
                                 <div className="flex items-center justify-between mb-2">
-                                    <h4 className="font-bold text-sm opacity-80 flex items-center gap-2">
+                                    <h4 className="font-bold text-sm opacity-90 flex items-center gap-2">
                                         <VolumeX className="w-4 h-4" />
                                         إيقاف التنبيهات الصوتية للصلاة
                                     </h4>
@@ -385,7 +385,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                         <button
                                             key={opt.label}
                                             onClick={() => muteAudioForDuration(opt.days)}
-                                            className="py-2 px-1 text-xs font-bold rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                                            className="py-2 px-1 text-xs font-bold rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                                         >
                                             {opt.label}
                                         </button>
@@ -396,7 +396,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                     )}
                 </div>
 
-                <div className="p-4 themed-card-bg border-t border-gray-100 dark:border-gray-800">
+                <div className="p-4 themed-card-bg border-t border-black/10 dark:border-white/10">
                     <button 
                         onClick={() => {
                             setupNotifications();

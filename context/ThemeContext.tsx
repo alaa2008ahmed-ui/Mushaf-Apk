@@ -62,25 +62,35 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
     const activeThemeKey = useMemo(() => {
         const pageKey = currentPage === 'quran' || currentPage === 'quran-landscape' || (currentPage && currentPage.startsWith('quran_')) || currentPage === 'search' ? 'quran' : currentPage;
 
-        // Exempt Quran reading context from global themes but default to default
         if (pageKey === 'quran') {
+            const modeSuffix = (currentPage && currentPage.includes('landscape')) ? '_h' : '_v';
+            const savedQuranTheme = localStorage.getItem('current_theme_id' + modeSuffix);
+            if (savedQuranTheme && presetThemes[savedQuranTheme]) return savedQuranTheme;
             return settings.pageThemes[pageKey] || 'default';
         }
 
-        // Home page ALWAYS follows the global theme key
         if (pageKey === 'home') {
             return settings.themeKey || 'default';
         }
 
-        // Use page-specific theme if it exists (locked or previously locked), 
-        // fallback to global theme
         return settings.pageThemes[pageKey] || settings.themeKey || 'default';
     }, [settings, currentPage]);
 
     const theme = useMemo(() => {
         const baseTheme = presetThemes[activeThemeKey] || presetThemes.default;
-        const isDark = !baseTheme.bgColor || 
-            ['#191D3A', '#0C0A09', '#000000', '#4C1D95', '#7C2D12', '#1E40AF', '#1E1B4B', '#1C1917', '#0B0F19', '#3E2723', '#450A0A', '#064E3B', '#0F766E', '#155E75', '#581C87', '#0F172A', '#2E1065', '#0B0F19', '#022C22'].includes(baseTheme.bgColor.toUpperCase());
+        const bg = (baseTheme.bgColor || '').toUpperCase();
+        const darkBgs = [
+            '#191D3A', '#0C0A09', '#000000', '#4C1D95', '#7C2D12', '#1E40AF', '#1E1B4B', '#1C1917', 
+            '#0B0F19', '#3E2723', '#450A0A', '#064E3B', '#0F766E', '#155E75', '#581C87', '#0F172A', 
+            '#2E1065', '#0B0F19', '#022C22', '#134E4A', '#334155', '#280A1E', '#041E3A', '#09090B',
+            '#1C1917', '#1E3A8A', '#422006', '#78350F', '#0A0A0A', '#111111'
+        ];
+        
+        // Improved isDark detection: if specific textColor is white OR bgColor is in dark list
+        const isDark = (baseTheme.textColor && baseTheme.textColor.toLowerCase() === '#ffffff') || 
+                      !baseTheme.bgColor || 
+                      darkBgs.includes(bg);
+                      
         const isGlass = activeThemeKey.includes('glass') || activeThemeKey.includes('emerald') || activeThemeKey.includes('crystal');
         
         return {
@@ -93,7 +103,8 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
             accent: baseTheme.accent || baseTheme.palette[0],
             accentText: baseTheme.accentText || '#ffffff',
             modalBg: baseTheme.modalBg || baseTheme.cardBg || (isDark ? '#1e293b' : '#ffffff'),
-            modalText: baseTheme.modalText || baseTheme.textColor || (isDark ? '#ffffff' : '#000000')
+            modalText: baseTheme.modalText || baseTheme.textColor || (isDark ? '#ffffff' : '#000000'),
+            topBarText: baseTheme.topBarText || baseTheme.textColor || (isDark ? '#ffffff' : '#000000')
         };
     }, [activeThemeKey]);
 
@@ -307,6 +318,18 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
             
         root.style.setProperty('--badge-finished-bg', isDark ? 'rgba(74, 222, 128, 0.15)' : 'rgba(34, 197, 94, 0.1)');
         root.style.setProperty('--badge-finished-text', isDark ? '#4ade80' : '#16a34a');
+
+        // Set compatibility variables for components that use qr- prefix
+        root.style.setProperty('--qr-accent', theme.palette[0]);
+        root.style.setProperty('--qr-accent-text', theme.accentText || '#ffffff');
+        root.style.setProperty('--qr-bg', theme.bgColor || '#0D1B2A');
+        root.style.setProperty('--qr-text', theme.textColor);
+        root.style.setProperty('--qr-card-bg', pageKey === 'quran' ? quranCardBg : defaultCardBg);
+        root.style.setProperty('--qr-card-text', theme.textColor);
+        root.style.setProperty('--qr-card-border', pageKey === 'quran' ? quranCardBorder : defaultCardBorder);
+        root.style.setProperty('--qr-modal-bg', theme.cardBg || (isDark ? '#1e293b' : '#ffffff'));
+        root.style.setProperty('--qr-modal-text', theme.textColor);
+        root.style.setProperty('--qr-modal-border', theme.palette[0]);
     }, [settings.customBg, theme, currentPage]);
 
     const isPageLocked = useMemo(() => {

@@ -228,40 +228,44 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   const [showExpandedEventsModal, setShowExpandedEventsModal] = useState(false);
   const [showExpandedUpcomingEventModal, setShowExpandedUpcomingEventModal] = useState(false);
 
-  const [upcomingEvent, setUpcomingEvent] = useState<{name: string, dateStr: string, gregorianDateStr: string, daysRemaining: number, isToday: boolean} | null>(null);
+  const [upcomingEvents, setUpcomingEvents] = useState<{name: string, dateStr: string, gregorianDateStr: string, daysRemaining: number, isToday: boolean}[]>([]);
+  const [eventIndex, setEventIndex] = useState(0);
 
   useEffect(() => {
-      // calculate the next Islamic event
+      // calculate Islamic events for the current Hijri year cycle
       const today = moment().startOf('day');
       const currentHijriYear = today.iYear();
       
-      let nextEvent = null;
-      let minDiff = Infinity;
+      let allCycleEvents: any[] = [];
       
+      // We want to show events in a way that includes some past and mostly future
+      // Actually, let's just take all 10 events for the current Hijri year
       ISLAMIC_EVENTS.forEach(event => {
-          let eventDate = moment(`${currentHijriYear}-${event.month}-${event.day}`, 'iYYYY-iM-iD').startOf('day');
-          let diff = eventDate.diff(today, 'days');
-          
-          if (diff < 0) {
-              eventDate = moment(`${currentHijriYear + 1}-${event.month}-${event.day}`, 'iYYYY-iM-iD').startOf('day');
-              diff = eventDate.diff(today, 'days');
-          }
-          
-          if (diff >= 0 && diff < minDiff) {
-              minDiff = diff;
-              nextEvent = { ...event, date: eventDate, diff };
-          }
+          const eventDate = moment(`${currentHijriYear}-${event.month}-${event.day}`, 'iYYYY-iM-iD').startOf('day');
+          const diff = eventDate.diff(today, 'days');
+          allCycleEvents.push({ ...event, date: eventDate, diff });
       });
-      
-      if (nextEvent) {
-          setUpcomingEvent({
-              name: nextEvent.name,
-              dateStr: `${toArabic(nextEvent.date.iDate())} ${HIJRI_MONTHS[nextEvent.date.iMonth()]} ${toArabic(nextEvent.date.iYear())} هـ`,
-              gregorianDateStr: `${toArabic(nextEvent.date.date())} ${GREGORIAN_MONTHS[nextEvent.date.month()]} ${toArabic(nextEvent.date.year())} م`,
-              daysRemaining: nextEvent.diff,
-              isToday: nextEvent.diff === 0
-          });
-      }
+
+      // Sort by Hijri date (month then day)
+      allCycleEvents.sort((a, b) => {
+          if (a.month !== b.month) return a.month - b.month;
+          return a.day - b.day;
+      });
+
+      const formattedEvents = allCycleEvents.map(ev => ({
+          name: ev.name,
+          dateStr: `${toArabic(ev.date.iDate())} ${HIJRI_MONTHS[ev.date.iMonth()]} ${toArabic(ev.date.iYear())} هـ`,
+          gregorianDateStr: `${toArabic(ev.date.date())} ${GREGORIAN_MONTHS[ev.date.month()]} ${toArabic(ev.date.year())} م`,
+          daysRemaining: ev.diff,
+          isToday: ev.diff === 0
+      }));
+
+      setUpcomingEvents(formattedEvents);
+
+      // Find the first event that is today or in the future
+      let initialIndex = formattedEvents.findIndex(ev => ev.daysRemaining >= 0);
+      if (initialIndex === -1) initialIndex = 0; // If all passed, start at 0
+      setEventIndex(initialIndex);
   }, []);
 
   useEffect(() => {
@@ -356,12 +360,22 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
   const handleShareUpcomingEvent = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!upcomingEvent) return;
+    if (upcomingEvents.length === 0) return;
+
+    const event = upcomingEvents[eventIndex];
+    let diffText = '';
+    if (event.isToday) {
+        diffText = 'اليوم';
+    } else if (event.daysRemaining > 0) {
+        diffText = `المتبقي: ${toArabic(event.daysRemaining)} يوم`;
+    } else {
+        diffText = `مر عليها: ${toArabic(Math.abs(event.daysRemaining))} يوم`;
+    }
 
     await shareAsImage({ 
-      text: `المناسبة: ${upcomingEvent.name}\nالمتبقي: ${upcomingEvent.isToday ? 'اليوم' : toArabic(upcomingEvent.daysRemaining) + ' يوم'}`, 
-      source: upcomingEvent.gregorianDateStr, 
-      category: upcomingEvent.dateStr, 
+      text: `المناسبة: ${event.name}\n${diffText}`, 
+      source: event.gregorianDateStr, 
+      category: event.dateStr, 
       theme, 
       setToastMessage 
     });
@@ -369,8 +383,18 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
   const handleCopyUpcomingEvent = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!upcomingEvent) return;
-    const textToCopy = `المناسبة الإسلامية القادمة: ${upcomingEvent.name}\nالتاريخ الهجري: ${upcomingEvent.dateStr}\nالتاريخ الميلادي: ${upcomingEvent.gregorianDateStr}\nالمتبقي: ${upcomingEvent.isToday ? 'اليوم' : toArabic(upcomingEvent.daysRemaining) + ' يوم'}`;
+    if (upcomingEvents.length === 0) return;
+    const event = upcomingEvents[eventIndex];
+    let diffText = '';
+    if (event.isToday) {
+        diffText = 'اليوم';
+    } else if (event.daysRemaining > 0) {
+        diffText = `المتبقي: ${toArabic(event.daysRemaining)} يوم`;
+    } else {
+        diffText = `مر عليها: ${toArabic(Math.abs(event.daysRemaining))} يوم`;
+    }
+
+    const textToCopy = `المناسبة الإسلامية: ${event.name}\nالتاريخ الهجري: ${event.dateStr}\nالتاريخ الميلادي: ${event.gregorianDateStr}\n${diffText}`;
     try {
         await navigator.clipboard.writeText(textToCopy);
         setToastMessage('تم النسخ إلى الحافظة');
@@ -515,6 +539,22 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
   useEffect(() => {
       const interceptor = () => {
+          if (showExpandedEventsModal) {
+              setShowExpandedEventsModal(false);
+              return true;
+          }
+          if (showExpandedUpcomingEventModal) {
+              setShowExpandedUpcomingEventModal(false);
+              return true;
+          }
+          if (isVerseMenuOpen) {
+              setIsVerseMenuOpen(false);
+              return true;
+          }
+          if (isPasscodeOpen) {
+              setIsPasscodeOpen(false);
+              return true;
+          }
           if (isCustomizationOpen) {
               setIsCustomizationOpen(false);
               return true;
@@ -527,7 +567,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
       };
       const unregister = registerBackInterceptor(interceptor);
       return unregister;
-  }, [isCustomizationOpen, isEditMode]);
+  }, [isCustomizationOpen, isEditMode, showExpandedEventsModal, showExpandedUpcomingEventModal, isPasscodeOpen, isVerseMenuOpen]);
 
   const handleSaveCustomization = (selectedIds: string[]) => {
       setVisibleItems(selectedIds);
@@ -607,21 +647,21 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                            <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border-2 transition-all" 
                                 style={{ borderColor: `${theme.palette[0]}33` }}>
                                <span className="text-[10px] opacity-70 font-bold mb-0.5">السابقة</span>
-                               <span className="text-[15px] font-black truncate w-full" style={{ color: theme.textColor }}>{prevSalah}</span>
+                               <span className="text-base font-black truncate w-full" style={{ color: theme.textColor }}>{prevSalah}</span>
                            </div>
 
                            {/* Middle Card: Remaining Time */}
                            <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-md border-2 relative overflow-hidden" 
                                 style={{ borderColor: theme.palette[0] }}>
                                <span className="text-[10px] opacity-70 font-bold mb-0.5">متبقي</span>
-                               <span className="text-[16px] font-mono font-black tracking-wider" style={{ color: theme.textColor }}>{prayerCountdown}</span>
+                               <span className="text-base font-mono font-black tracking-wider" style={{ color: theme.textColor }}>{prayerCountdown}</span>
                            </div>
 
                            {/* Left Card: Next Prayer */}
                            <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border-2 transition-all"
                                 style={{ borderColor: `${theme.palette[0]}33` }}>
                                <span className="text-[10px] opacity-70 font-bold mb-0.5">القادمة</span>
-                               <span className="text-[15px] font-black truncate w-full" style={{ color: theme.textColor }}>{nextSalah}</span>
+                               <span className="text-base font-black truncate w-full" style={{ color: theme.textColor }}>{nextSalah}</span>
                            </div>
                           </div>
                       </div>
@@ -638,7 +678,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                               <div className="flex items-center justify-between z-10 w-full relative">
                                   <div className="flex items-center gap-2" style={{ color: theme.palette[0] }}>
                                       <i className="fa-solid fa-calendar-day text-base"></i>
-                                      <span className="text-sm font-bold font-kufi">حدث في مثل هذا اليوم</span>
+                                      <span className="text-[11px] font-bold font-kufi">حدث في مثل هذا اليوم</span>
                                   </div>
                                   <div className="flex items-center gap-2">
                                       <button 
@@ -667,13 +707,15 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                       </button>
                                   </div>
                               </div>
-                              <div className="flex items-start gap-4 w-full relative z-10">
-                                  <div className="flex flex-col items-center justify-center shrink-0 min-w-[85px] p-2.5 rounded-xl bg-black/5 dark:bg-white/5" style={{ color: theme.textColor }}>
-                                      <span className="text-[10px] font-bold opacity-70 mb-1 text-center">{onThisDayEvent.dateStr}</span>
-                                      <span className="text-xl font-black font-kufi leading-none">{toArabic(onThisDayEvent.year)}</span>
-                                      <span className="text-[10px] font-bold opacity-70 mt-1">ميلادي</span>
+                              <div className="flex flex-col gap-3 w-full relative z-10">
+                                  <div className="flex flex-row items-center justify-center gap-3 w-full py-2 px-3 rounded-xl bg-black/5 dark:bg-white/5" style={{ color: theme.textColor }}>
+                                      <span className="text-[10px] font-bold opacity-80">{onThisDayEvent.dateStr}</span>
+                                      <div className="w-[1px] h-4 bg-black/20 dark:bg-white/20"></div>
+                                      <span className="text-base font-black font-kufi leading-none">{toArabic(onThisDayEvent.year)}</span>
+                                      <div className="w-[1px] h-4 bg-black/20 dark:bg-white/20"></div>
+                                      <span className="text-[10px] font-bold opacity-80">ميلادي</span>
                                   </div>
-                                  <p className="text-base leading-relaxed flex-1 break-words font-hafs font-bold" style={{ color: theme.textColor }}>
+                                  <p className="text-sm text-justify leading-relaxed break-words font-hafs font-bold" style={{ color: theme.textColor }}>
                                       {onThisDayEvent.text}
                                   </p>
                               </div>
@@ -681,81 +723,115 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                       )}
 
                       {/* Upcoming Islamic Event Card */}
-                      {upcomingEvent && (
+                      {upcomingEvents.length > 0 && (
                           <div 
-                              className="w-full mt-3 py-4 px-5 rounded-2xl shadow-lg border-2 relative overflow-hidden flex flex-col gap-3 cursor-pointer"
+                              className="w-full mt-2 py-4 px-5 rounded-2xl shadow-lg border-2 relative overflow-hidden flex flex-col gap-3 cursor-pointer"
                               style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
                               dir="rtl"
                               onClick={() => setShowExpandedUpcomingEventModal(true)}
                           >
-                              <div className="absolute top-4 left-5 flex gap-2 z-20">
-                                  <button 
-                                      onClick={handleCopyUpcomingEvent}
-                                      className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                                      title="نسخ"
-                                      style={{ color: theme.palette[0] }}
-                                  >
-                                      <i className="fa-regular fa-copy text-xs"></i>
-                                  </button>
-                                  <button 
-                                      onClick={handleShareUpcomingEvent}
-                                      className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                                      title="مشاركة"
-                                      style={{ color: theme.palette[0] }}
-                                  >
-                                      <i className="fa-solid fa-share-nodes text-xs"></i>
-                                  </button>
-                              </div>
-                              <div className="flex items-center gap-2 z-10 w-full relative" style={{ color: theme.palette[0] }}>
-                                  <i className="fa-solid fa-moon text-base"></i>
-                                  <span className="text-sm font-bold font-kufi">المناسبة الإسلامية القادمة</span>
-                              </div>
-                              <div className="flex items-center gap-4 w-full relative z-10">
-                                  <div className="flex flex-col items-center justify-center shrink-0 min-w-[85px] p-2.5 rounded-xl bg-black/5 dark:bg-white/5" style={{ color: theme.textColor }}>
-                                      {!upcomingEvent.isToday && (
-                                          <span className="text-xs font-bold opacity-70 mb-1">باقي</span>
-                                      )}
-                                      <span className="text-xl font-black font-kufi leading-none mt-1" style={{ color: theme.palette[0] }}>
-                                          {upcomingEvent.isToday ? 'اليوم' : toArabic(upcomingEvent.daysRemaining)}
+                              <div className="flex items-center justify-between z-10 w-full relative mb-1.5">
+                                  <div className="flex items-center gap-2" style={{ color: theme.palette[0] }}>
+                                      <i className="fa-solid fa-moon text-base"></i>
+                                      <span className="text-[11px] font-bold font-kufi">
+                                          المناسبات الإسلامية
                                       </span>
-                                      {!upcomingEvent.isToday && (
-                                          <span className="text-xs font-bold opacity-70 mt-1">يوم</span>
-                                      )}
                                   </div>
-                                  <div className="flex flex-col flex-1 mt-1" style={{ color: theme.textColor }}>
-                                      <p className="text-lg leading-relaxed break-words font-kufi font-bold">
-                                          {upcomingEvent.name}
-                                      </p>
-                                      <p className="text-sm font-bold opacity-70 mt-1">
-                                          {upcomingEvent.dateStr}
-                                      </p>
-                                      <p className="text-sm font-bold opacity-70 mt-1">
-                                          {upcomingEvent.gregorianDateStr}
-                                      </p>
+                                  <div className="flex items-center gap-1">
+                                      <button 
+                                          onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEventIndex(prev => (prev - 1 + upcomingEvents.length) % upcomingEvents.length);
+                                          }}
+                                          className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                                          title="المناسبة السابقة"
+                                          style={{ color: theme.palette[0] }}
+                                      >
+                                          <i className="fa-solid fa-chevron-right text-xs"></i>
+                                      </button>
+                                      <button 
+                                          onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEventIndex(prev => (prev + 1) % upcomingEvents.length);
+                                          }}
+                                          className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                                          title="المناسبة التالية"
+                                          style={{ color: theme.palette[0] }}
+                                      >
+                                          <i className="fa-solid fa-chevron-left text-xs"></i>
+                                      </button>
+                                      <button 
+                                          onClick={handleCopyUpcomingEvent}
+                                          className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                                          title="نسخ"
+                                          style={{ color: theme.palette[0] }}
+                                      >
+                                          <i className="fa-regular fa-copy text-xs"></i>
+                                      </button>
+                                      <button 
+                                          onClick={handleShareUpcomingEvent}
+                                          className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                                          title="مشاركة"
+                                          style={{ color: theme.palette[0] }}
+                                      >
+                                          <i className="fa-solid fa-share-nodes text-xs"></i>
+                                      </button>
                                   </div>
+                              </div>
+                              
+                              <div className="flex flex-col gap-3 w-full relative z-10">
+                                  {upcomingEvents[eventIndex] && (
+                                      <div className="flex flex-col gap-2 w-full">
+                                          <div className="flex flex-row items-center justify-center gap-2.5 w-full py-1.5 px-2 rounded-xl bg-black/5 dark:bg-white/5" style={{ color: theme.textColor }}>
+                                              {upcomingEvents[eventIndex].isToday ? (
+                                                  <span className="text-base font-black font-kufi leading-none" style={{ color: theme.palette[0] }}>اليوم</span>
+                                              ) : (
+                                                  <>
+                                                      <span className="text-xs font-bold opacity-80">{upcomingEvents[eventIndex].daysRemaining > 0 ? 'باقي' : 'مر عليها'}</span>
+                                                      <div className="w-[1px] h-3 bg-black/20 dark:bg-white/20"></div>
+                                                      <span className="text-base font-black font-kufi leading-none" style={{ color: theme.palette[0] }}>
+                                                          {toArabic(Math.abs(upcomingEvents[eventIndex].daysRemaining))}
+                                                      </span>
+                                                      <div className="w-[1px] h-3 bg-black/20 dark:bg-white/20"></div>
+                                                      <span className="text-xs font-bold opacity-80">يوم</span>
+                                                  </>
+                                              )}
+                                          </div>
+                                          <div className="flex flex-col text-center gap-1" style={{ color: theme.textColor }}>
+                                              <p className="text-sm leading-tight break-words font-kufi font-bold">
+                                                  {upcomingEvents[eventIndex].name}
+                                              </p>
+                                              <div className="flex flex-row items-center justify-center gap-2 opacity-60 text-[10px] font-bold">
+                                                  <span>{upcomingEvents[eventIndex].dateStr}</span>
+                                                  <span className="opacity-40">•</span>
+                                                  <span>{upcomingEvents[eventIndex].gregorianDateStr}</span>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  )}
                               </div>
                           </div>
                       )}
 
                       {/* Web App Link Card */}
                       <div 
-                          className="w-full mt-3 py-3 px-4 rounded-2xl shadow-lg border-2 relative flex flex-col gap-2"
+                          className="w-full mt-3 py-2 px-3 rounded-2xl shadow-lg border-2 relative flex flex-col gap-1"
                           style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
                           dir="rtl"
                       >
                           <div className="flex items-center gap-2 z-10 w-full relative" style={{ color: theme.palette[0] }}>
                               <i className="fa-solid fa-globe text-xs"></i>
-                              <span className="text-xs font-bold font-kufi">تصفح التطبيق</span>
+                              <span className="text-[11px] font-bold font-kufi">تصفح التطبيق</span>
                           </div>
                           
-                          <p className="text-xs font-bold opacity-80 leading-relaxed" style={{ color: theme.textColor }}>
+                          <p className="text-sm font-bold opacity-80 leading-relaxed" style={{ color: theme.textColor }}>
                               لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط
                           </p>
 
-                          <div className="flex items-center justify-center gap-3 mt-1">
+                          <div className="flex items-center justify-center gap-3 mt-0.5">
                               <button 
                                   onClick={() => window.open('https://mushaf-ahmed-and-laila.netlify.app/', '_blank')}
-                                  className="py-2 px-4 rounded-xl font-bold text-xs text-center flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
+                                  className="py-1.5 px-3 rounded-xl font-bold text-[10px] text-center flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
                                   style={{ 
                                       backgroundColor: theme.palette[0], 
                                       color: (theme.palette[0]?.toLowerCase() === '#ffffff' || theme.palette[0]?.toLowerCase() === 'white') ? '#000000' : '#ffffff' 
@@ -777,11 +853,11 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           setTimeout(() => setToastMessage(''), 2000);
                                       }
                                   }}
-                                  className="w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
+                                  className="w-8 h-8 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
                                   title="نسخ الرابط"
                                   style={{ color: theme.palette[0] }}
                               >
-                                  <i className="fa-regular fa-copy text-base"></i>
+                                  <i className="fa-regular fa-copy text-sm"></i>
                               </button>
 
                               <button 
@@ -822,11 +898,11 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           } catch (copyErr) {}
                                       }
                                   }}
-                                  className="w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
+                                  className="w-8 h-8 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
                                   title="مشاركة الرابط"
                                   style={{ color: theme.palette[0] }}
                               >
-                                  <i className="fa-solid fa-share-nodes text-base"></i>
+                                  <i className="fa-solid fa-share-nodes text-sm"></i>
                               </button>
                           </div>
                       </div>
@@ -839,10 +915,10 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                       >
                           <div className="flex items-center gap-2 z-10 w-full relative" style={{ color: theme.palette[0] }}>
                               <i className="fa-solid fa-share-nodes text-xs"></i>
-                              <span className="text-xs font-bold font-kufi">شارك التطبيق</span>
+                              <span className="text-[11px] font-bold font-kufi">شارك التطبيق</span>
                           </div>
                           
-                          <p className="text-[10px] font-bold opacity-80 leading-tight" style={{ color: theme.textColor }}>
+                          <p className="text-sm font-bold opacity-80 leading-tight" style={{ color: theme.textColor }}>
                               اذا اعجبك التطبيق قم بنشره على وسائل التواصل ليكون لك الاجر ولمن تحب ان شاء الله .
                           </p>
 
@@ -906,7 +982,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                       title={item.label}
                                   >
                                       <div 
-                                          className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-sm"
+                                          className="w-8 h-8 rounded-xl flex items-center justify-center text-lg shadow-sm"
                                           style={{ backgroundColor: item.color + '20', color: item.color }}
                                       >
                                           <i className={item.icon}></i>
@@ -925,7 +1001,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                           )}
                           <div className="themed-card p-1 rounded-2xl text-center flex-1 relative h-full flex flex-col justify-center overflow-hidden">
                               <FloatingNeonTicker />
-                              <p className={`${!showVoiceIcon ? 'text-[13px]' : 'text-[15px]'} font-bold leading-tight`} style={{ color: theme.bgColor === '#000000' ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#65A30D' : theme.textColor)) }}>
+                              <p className="text-sm font-bold leading-tight" style={{ color: theme.bgColor === '#000000' ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#65A30D' : theme.textColor)) }}>
                                   اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
                               </p>
                           </div>
@@ -968,42 +1044,44 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
         </div>
       )}
 
-      {showExpandedUpcomingEventModal && upcomingEvent && (
+      {showExpandedUpcomingEventModal && upcomingEvents.length > 0 && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" dir="rtl" onClick={() => setShowExpandedUpcomingEventModal(false)}>
             <div className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#F7F5F0] dark:bg-[#1A1A1A] rounded-3xl shadow-2xl p-6" onClick={e => e.stopPropagation()} style={{ backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.95)' }}>
                 <div className="flex flex-col items-center gap-4 mb-6">
                     <div className="text-center font-bold text-2xl font-kufi flex items-center gap-2" style={{ color: theme.palette[0] }}>
                         <i className="fa-solid fa-moon"></i>
-                        المناسبة الإسلامية القادمة
+                        المناسبة الإسلامية
                     </div>
                 </div>
                 
                 <div className="flex flex-col gap-6 w-full">
-                    <div className="flex flex-col items-center justify-center gap-6 p-8 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 w-full text-center">
-                        <p className="text-[32px] sm:text-[38px] leading-[1.6] font-kufi font-bold w-full" style={{ color: theme.textColor }}>
-                            {upcomingEvent.name}
-                        </p>
-                        <hr className="w-1/2 opacity-20 border-current" style={{ color: theme.textColor }} />
-                        <div className="flex flex-col gap-2">
-                            <p className="text-xl font-bold opacity-80" style={{ color: theme.textColor }}>
-                                {upcomingEvent.dateStr}
+                    {upcomingEvents[eventIndex] && (
+                        <div className="flex flex-col items-center justify-center gap-6 p-8 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 w-full text-center">
+                            <p className="text-[32px] sm:text-[38px] leading-[1.6] font-kufi font-bold w-full" style={{ color: theme.textColor }}>
+                                {upcomingEvents[eventIndex].name}
                             </p>
-                            <p className="text-xl font-bold opacity-80" style={{ color: theme.textColor }}>
-                                {upcomingEvent.gregorianDateStr}
-                            </p>
+                            <hr className="w-1/2 opacity-20 border-current" style={{ color: theme.textColor }} />
+                            <div className="flex flex-col gap-2">
+                                <p className="text-xl font-bold opacity-80" style={{ color: theme.textColor }}>
+                                    {upcomingEvents[eventIndex].dateStr}
+                                </p>
+                                <p className="text-xl font-bold opacity-80" style={{ color: theme.textColor }}>
+                                    {upcomingEvents[eventIndex].gregorianDateStr}
+                                </p>
+                            </div>
+                            <div className="w-full p-4 rounded-xl mt-2 flex flex-col items-center" style={{ backgroundColor: theme.palette[0] + '20', color: theme.palette[0] }}>
+                               <span className="text-lg font-bold mb-1 opacity-80">
+                                   {upcomingEvents[eventIndex].isToday ? 'توافق' : (upcomingEvents[eventIndex].daysRemaining > 0 ? 'يتبقى عليها' : 'مر عليها')}
+                               </span>
+                               <span className="text-5xl font-black font-kufi my-2">
+                                   {upcomingEvents[eventIndex].isToday ? 'اليوم' : toArabic(Math.abs(upcomingEvents[eventIndex].daysRemaining))}
+                               </span>
+                               {!upcomingEvents[eventIndex].isToday && (
+                                   <span className="text-lg font-bold opacity-80">يوم</span>
+                               )}
+                            </div>
                         </div>
-                        <div className="w-full p-4 rounded-xl mt-2 flex flex-col items-center" style={{ backgroundColor: theme.palette[0] + '20', color: theme.palette[0] }}>
-                           <span className="text-lg font-bold mb-1 opacity-80">
-                               {upcomingEvent.isToday ? 'توافق' : 'يتبقى عليها'}
-                           </span>
-                           <span className="text-5xl font-black font-kufi my-2">
-                               {upcomingEvent.isToday ? 'اليوم' : toArabic(upcomingEvent.daysRemaining)}
-                           </span>
-                           {!upcomingEvent.isToday && (
-                               <span className="text-lg font-bold opacity-80">يوم</span>
-                           )}
-                        </div>
-                    </div>
+                    )}
 
                     <button 
                         onClick={() => setShowExpandedUpcomingEventModal(false)}

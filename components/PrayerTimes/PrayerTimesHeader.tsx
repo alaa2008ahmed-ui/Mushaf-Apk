@@ -25,7 +25,7 @@ const PrayerTimesHeader: React.FC<PrayerTimesHeaderProps> = ({
                     <div className="absolute left-0">
                         <ThemePageLock />
                     </div>
-                    <h1 className="app-top-bar__title text-xl md:text-2xl font-kufi truncate px-12">
+                    <h1 className="app-top-bar__title text-base sm:text-lg md:text-xl font-kufi truncate px-14 sm:px-20">
                         {cityGov}
                     </h1>
                     <div className="absolute right-0 flex items-center gap-1">
