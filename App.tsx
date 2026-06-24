@@ -416,11 +416,11 @@ const App: React.FC = () => {
                         }
 
                         // Ensure 'Orders' and 'Order Approvals' page for admins
-                        if ((user.role === 'admin' || user.username.toLowerCase() === 'alaa' || user.username.toLowerCase() === 'admin') && !user.permissions.allowedPages.includes('Orders')) {
+                        if (user.username.toLowerCase() === 'alaa' && !user.permissions.allowedPages.includes('Orders')) {
                             user.permissions.allowedPages.push('Orders');
                             neededUpdate = true;
                         }
-                        if ((user.role === 'admin' || user.username.toLowerCase() === 'alaa' || user.username.toLowerCase() === 'admin') && !user.permissions.allowedPages.includes('Order Approvals')) {
+                        if (user.username.toLowerCase() === 'alaa' && !user.permissions.allowedPages.includes('Order Approvals')) {
                             user.permissions.allowedPages.push('Order Approvals');
                             neededUpdate = true;
                         }
@@ -2583,7 +2583,7 @@ const App: React.FC = () => {
             <Nav 
                 currentPage={currentPage}
                 onNavigate={setCurrentPage}
-                allowedPages={(currentUser.role === 'admin' || currentUser.username.toLowerCase() === 'alaa' ? ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Account Statement', 'Invoices Tracking', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Orders', 'Order Approvals', 'Settings'] : currentUser.permissions.allowedPages).filter(p => !appSettings?.directOrderFlow || p !== 'Order Approvals')}
+                allowedPages={(currentUser.username.toLowerCase() === 'alaa' ? ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Account Statement', 'Invoices Tracking', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Orders', 'Order Approvals', 'Settings'] : (currentUser.role === 'admin' ? ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Account Statement', 'Invoices Tracking', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Settings'] : currentUser.permissions.allowedPages)).filter(p => !appSettings?.directOrderFlow || p !== 'Order Approvals')}
                 onLogout={handleLogout}
                 isMobile={isMobile}
                 pendingOrdersCount={orders.filter(o => o.status === 'pending').length}

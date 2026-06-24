@@ -254,8 +254,25 @@ class DualStorageService {
               // partial=true so we merge without deleting anything.
               this.processDataUpdate(collectionName, recentData, true); 
 
-              // 3. Historical Data is now fetched ON DEMAND via reports caching instead of pre-fetching everything.
+              // 3. PREVIOUS MONTH: Fetch the preceding month for comparison stats in Dashboard/Ticker
+              const prevMonthStart = new Date(activeStartDateStr);
+              prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
+              const prevMonthStartStr = prevMonthStart.toISOString();
               
+              console.log(`DualStorage [${collectionName}]: Fetching previous month comparison data [${prevMonthStartStr} to ${activeStartDateStr}]`);
+              
+              const qPrev = query(
+                collection(db, collectionName),
+                where('date', '>=', prevMonthStartStr),
+                where('date', '<', activeStartDateStr)
+              );
+
+              getDocs(qPrev).then(snapshotPrev => {
+                const prevData = snapshotPrev.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+                console.log(`DualStorage [${collectionName}]: Fetched ${prevData.length} previous month invoices.`);
+                this.processDataUpdate(collectionName, prevData, true);
+              }).catch(err => console.error(`DualStorage [${collectionName}]: Previous month fetch error:`, err));
+
               // 4. LIVE UPDATES: Hook up a live listener for any changes happening CONCURRENTLY during session
               const sessionStartTime = new Date().toISOString();
               const qLive = query(

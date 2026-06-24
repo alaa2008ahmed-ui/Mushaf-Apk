@@ -1193,6 +1193,7 @@ const Settings: React.FC<SettingsProps> = ({
                                     </div>
 
                                     {/* Order Flow System Section */}
+                                    {currentUser?.username.toLowerCase() === 'alaa' && (
                                     <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-200 shadow-sm">
                                         <div className="flex items-center gap-3 mb-3">
                                             <div className="bg-emerald-600 p-1.5 rounded-lg text-white">
@@ -1231,6 +1232,7 @@ const Settings: React.FC<SettingsProps> = ({
                                             </div>
                                         </div>
                                     </div>
+                                    )}
 
                                     {/* Daily Sales Notification System Section */}
                                     <div className="bg-orange-50 p-5 rounded-xl border border-orange-200 shadow-sm">
@@ -2260,6 +2262,7 @@ const Settings: React.FC<SettingsProps> = ({
                                         </div>
 
                                         {/* Orders Page */}
+                                        {currentUser?.username.toLowerCase() === 'alaa' && (
                                         <div className="grid grid-cols-1 gap-3">
                                             <div className="p-3 border rounded-lg bg-white shadow-sm border-orange-100 hover:border-orange-300 transition-all">
                                                 <div className="flex items-center justify-between">
@@ -2348,6 +2351,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                 )}
                                             </div>
                                         </div>
+                                        )}
 
                                         {/* -------------------- NEW SECTION FOR ORDER WORKFLOW -------------------- */}
                                         <div className="grid grid-cols-1 gap-3 mb-3">
@@ -2359,6 +2363,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                 <div className="grid grid-cols-1 gap-3">
                                                     
                                                     {/* 1. استقبال الطلبات */}
+                                                    {currentUser?.username.toLowerCase() === 'alaa' && (
                                                     <div className="p-3 bg-white rounded-md border border-teal-100 shadow-sm">
                                                         <label className="flex items-center gap-2 cursor-pointer font-bold text-teal-900 border-b border-teal-50 pb-2 mb-2">
                                                             <input 
@@ -2371,8 +2376,10 @@ const Settings: React.FC<SettingsProps> = ({
                                                         </label>
                                                         <p className="text-xs text-gray-500 mb-1">To limit specific customers or items, please use the main Orders configuration above.</p>
                                                     </div>
+                                                    )}
 
                                                     {/* 2. الموافقة على الطلبات */}
+                                                    {currentUser?.username.toLowerCase() === 'alaa' && (
                                                     <div className="p-3 bg-white rounded-md border border-teal-100 shadow-sm">
                                                         <label className="flex items-center gap-2 cursor-pointer font-bold text-teal-900">
                                                             <input 
@@ -2384,6 +2391,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                             <span>2. Order Approvals</span>
                                                         </label>
                                                     </div>
+                                                    )}
 
                                                     {/* 3. الإشعار بـ تم التسليم */}
                                                     <div className="p-3 bg-white rounded-md border border-teal-100 shadow-sm">
@@ -2434,6 +2442,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                     </div>
                                                     
                                                     {/* Extra Order Privileges (View All, Delete) */}
+                                                    {currentUser?.username.toLowerCase() === 'alaa' && (
                                                     <div className="p-3 bg-white rounded-md border border-teal-100 shadow-sm mt-2">
                                                         <h6 className="font-bold text-teal-900 mb-2 border-b border-teal-50 pb-1 text-sm">Extra Privileges</h6>
                                                         <div className="grid grid-cols-1 gap-2">
@@ -2475,6 +2484,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                             </label>
                                                         </div>
                                                     </div>
+                                                    )}
 
                                                 </div>
                                             </div>
@@ -2555,7 +2565,9 @@ const Settings: React.FC<SettingsProps> = ({
                                                      </div>
 
                                                      <div>
+                                                      {currentUser?.username.toLowerCase() === 'alaa' && (
                                                          <h6 className="text-xs font-bold text-gray-500 mb-2 border-b pb-1">Orders & Approvals</h6>
+                                                      )}
                                                          <div className="flex flex-col gap-2">
                                                              {[
                                                                  { key: 'notifyAddOrder', label: 'Add Order' },
