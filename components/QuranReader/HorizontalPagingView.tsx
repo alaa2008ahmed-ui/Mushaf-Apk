@@ -71,8 +71,7 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
             if (scrollContainerRef.current) {
                 const pages = scrollContainerRef.current.querySelectorAll('.mushaf-page');
                 pages.forEach(p => {
-                    (p as HTMLElement).style.transform = '';
-                    (p as HTMLElement).style.transformOrigin = '';
+                    (p as HTMLElement).style.fontSize = '';
                 });
                 const containers = scrollContainerRef.current.querySelectorAll('.page-scroll-container');
                 containers.forEach(c => {
@@ -91,39 +90,59 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
                 const page = container.querySelector('.mushaf-page') as HTMLElement;
                 if (!page) return;
 
-                // Temporarily remove transform to measure natural height
-                page.style.transform = '';
+                // Make container hidden overflow
+                (container as HTMLElement).style.overflowY = 'hidden';
+                (container as HTMLElement).style.display = 'flex';
+                (container as HTMLElement).style.flexDirection = 'column';
+                (container as HTMLElement).style.alignItems = 'center';
+                (container as HTMLElement).style.justifyContent = 'center';
+
+                // Get base font size from settings or computed
+                const baseFontSize = settings?.fontSize ? (settings.fontSize * 16) : 27; // 1rem = 16px usually
                 
                 const containerHeight = container.clientHeight;
-                const pageHeight = page.scrollHeight;
+                const containerWidth = container.clientWidth;
                 
+                // Set initial size
+                page.style.fontSize = `${baseFontSize}px`;
+                let pageHeight = page.scrollHeight;
+                
+                // If it overflows, reduce font size iteratively until it fits
                 if (pageHeight > containerHeight && containerHeight > 0) {
-                    const scale = (containerHeight - 20) / pageHeight; // Add 20px padding
-                    page.style.transform = `scale(${scale})`;
-                    page.style.transformOrigin = 'top center';
+                    let low = 10;
+                    let high = baseFontSize;
+                    let best = baseFontSize;
                     
-                    (container as HTMLElement).style.overflowY = 'hidden';
-                    (container as HTMLElement).style.display = 'flex';
-                    (container as HTMLElement).style.flexDirection = 'column';
-                    (container as HTMLElement).style.alignItems = 'center';
-                } else {
-                    page.style.transform = '';
-                    (container as HTMLElement).style.overflowY = 'hidden';
+                    while (low <= high) {
+                        const mid = Math.floor((low + high) / 2);
+                        page.style.fontSize = `${mid}px`;
+                        if (page.scrollHeight <= containerHeight) {
+                            best = mid;
+                            low = mid + 1; // Try bigger
+                        } else {
+                            high = mid - 1; // Try smaller
+                        }
+                    }
+                    // Apply best size with a tiny margin of safety
+                    page.style.fontSize = `${Math.max(10, best - 1)}px`;
                 }
             });
         };
 
-        // Apply immediately and on delay to allow DOM to settle
+        // Apply scaling
         applyScaling();
-        const timeout1 = setTimeout(applyScaling, 100);
-        const timeout2 = setTimeout(applyScaling, 500);
+        
+        // Setup observer to watch for container size changes
+        const resizeObserver = new ResizeObserver(() => {
+            applyScaling();
+        });
+        
+        if (scrollContainerRef.current) {
+            resizeObserver.observe(scrollContainerRef.current);
+        }
 
-        // Also scale on window resize
-        window.addEventListener('resize', applyScaling);
         return () => {
-            clearTimeout(timeout1);
-            clearTimeout(timeout2);
-            window.removeEventListener('resize', applyScaling);
+            resizeObserver.disconnect();
         };
     }, [settings?.fitToScreen, settings?.fontSize, currentPage, pages]);
 
@@ -238,6 +257,7 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
             `}</style>
             
             {!isTwoPageView ? pages.map(pageNum => {
+                const isVisible = Math.abs(pageNum - currentPage) <= 15;
                 return (
                 <div 
                     key={pageNum}
@@ -245,6 +265,7 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
                     className="snap-center snap-always flex-shrink-0 flex items-center justify-center h-full w-full"
                 >
                     <div className="h-full w-full overflow-y-auto overflow-x-hidden page-scroll-container">
+                        {isVisible && (
                         <MushafPage 
                             pageNum={pageNum} 
                             pageData={getPageData(pageNum)} 
@@ -265,9 +286,11 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
                             tempRevealedAyah={tempRevealedAyah}
                             onSurahHeaderLongPress={onSurahHeaderLongPress}
                         />
+                        )}
                     </div>
                 </div>
             )}) : pages.filter(p => p % 2 !== 0).map(oddPage => {
+                const isVisible = Math.abs(oddPage - currentPage) <= 16 || Math.abs((oddPage + 1) - currentPage) <= 16;
                 return (
                 <div 
                     key={`spread-${oddPage}`}
@@ -280,6 +303,7 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
                              borderColor: currentTheme?.barBorder,
                              backgroundColor: currentTheme?.bg 
                          }}>
+                        {isVisible && (
                         <MushafPage 
                             pageNum={oddPage} 
                             pageData={getPageData(oddPage)} 
@@ -300,6 +324,7 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
                             tempRevealedAyah={tempRevealedAyah}
                             onSurahHeaderLongPress={onSurahHeaderLongPress}
                         />
+                        )}
                     </div>
                     {/* Even page (Left) */}
                     {oddPage + 1 <= 604 && (
@@ -308,6 +333,7 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
                                  borderColor: currentTheme?.barBorder,
                                  backgroundColor: currentTheme?.bg 
                              }}>
+                            {isVisible && (
                             <MushafPage 
                                 pageNum={oddPage + 1} 
                                 pageData={getPageData(oddPage + 1)} 
@@ -328,6 +354,7 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
                                 tempRevealedAyah={tempRevealedAyah}
                                 onSurahHeaderLongPress={onSurahHeaderLongPress}
                             />
+                            )}
                         </div>
                     )}
                 </div>
