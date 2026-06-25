@@ -3671,7 +3671,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 {readingMode === 'mushaf_paging' ? (
                     <div className="w-full h-full">
                         <HorizontalPagingView
-                            currentPage={visiblePages[1] || visiblePages[0] || 1}
+                            currentPage={currentPageNumber}
                             onPageChange={(page) => {
                                 for (let s = 1; s <= 114; s++) {
                                     const surah = quranJsonData.surahs[s-1];
@@ -3816,6 +3816,13 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 handleAutoScrollButtonPointerLeave={handleAutoScrollButtonPointerLeave}
                 autoScrollState={autoScrollState}
                 onBack={handleHomeClick}
+                fitToScreen={settings.fitToScreen}
+                toggleFitToScreen={() => {
+                    const newFit = !settings.fitToScreen;
+                    setSettings(p => ({...p, fitToScreen: newFit}));
+                    localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify({...settings, fitToScreen: newFit}));
+                    window.dispatchEvent(new Event('settings-change'));
+                }}
             />
             {isAutoScrollSettingsOpen && (
             <AutoScrollSettingsModal

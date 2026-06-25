@@ -64,6 +64,69 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
         return arr;
     }, [isTwoPageView]);
 
+    // Effect for "fit to screen" mode
+    useEffect(() => {
+        if (!settings?.fitToScreen || !scrollContainerRef.current) {
+            // Reset transforms if disabled
+            if (scrollContainerRef.current) {
+                const pages = scrollContainerRef.current.querySelectorAll('.mushaf-page');
+                pages.forEach(p => {
+                    (p as HTMLElement).style.transform = '';
+                    (p as HTMLElement).style.transformOrigin = '';
+                });
+                const containers = scrollContainerRef.current.querySelectorAll('.page-scroll-container');
+                containers.forEach(c => {
+                    (c as HTMLElement).style.overflowY = 'auto';
+                    (c as HTMLElement).style.display = 'block';
+                    (c as HTMLElement).style.alignItems = '';
+                });
+            }
+            return;
+        }
+
+        const applyScaling = () => {
+            if (!scrollContainerRef.current) return;
+            const containers = scrollContainerRef.current.querySelectorAll('.page-scroll-container');
+            containers.forEach(container => {
+                const page = container.querySelector('.mushaf-page') as HTMLElement;
+                if (!page) return;
+
+                // Temporarily remove transform to measure natural height
+                page.style.transform = '';
+                
+                const containerHeight = container.clientHeight;
+                const pageHeight = page.scrollHeight;
+                
+                if (pageHeight > containerHeight && containerHeight > 0) {
+                    const scale = (containerHeight - 20) / pageHeight; // Add 20px padding
+                    page.style.transform = `scale(${scale})`;
+                    page.style.transformOrigin = 'top center';
+                    
+                    (container as HTMLElement).style.overflowY = 'hidden';
+                    (container as HTMLElement).style.display = 'flex';
+                    (container as HTMLElement).style.flexDirection = 'column';
+                    (container as HTMLElement).style.alignItems = 'center';
+                } else {
+                    page.style.transform = '';
+                    (container as HTMLElement).style.overflowY = 'hidden';
+                }
+            });
+        };
+
+        // Apply immediately and on delay to allow DOM to settle
+        applyScaling();
+        const timeout1 = setTimeout(applyScaling, 100);
+        const timeout2 = setTimeout(applyScaling, 500);
+
+        // Also scale on window resize
+        window.addEventListener('resize', applyScaling);
+        return () => {
+            clearTimeout(timeout1);
+            clearTimeout(timeout2);
+            window.removeEventListener('resize', applyScaling);
+        };
+    }, [settings?.fitToScreen, settings?.fontSize, currentPage, pages]);
+
     const lastBroadcastedPage = useRef(-1);
 
     // Track scroll programmatically to avoid jumpiness
@@ -155,7 +218,7 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
             (window as any).snapTimeout = setTimeout(() => {
                 lastBroadcastedPage.current = closestPage;
                 onPageChange(closestPage);
-            }, 100);
+            }, 50);
         }
     }, [currentPage, onPageChange, isTwoPageView]);
 
@@ -175,7 +238,6 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
             `}</style>
             
             {!isTwoPageView ? pages.map(pageNum => {
-                const isVisible = Math.abs(pageNum - currentPage) <= 2;
                 return (
                 <div 
                     key={pageNum}
@@ -183,32 +245,29 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
                     className="snap-center snap-always flex-shrink-0 flex items-center justify-center h-full w-full"
                 >
                     <div className="h-full w-full overflow-y-auto overflow-x-hidden page-scroll-container">
-                        {isVisible && (
-                            <MushafPage 
-                                pageNum={pageNum} 
-                                pageData={getPageData(pageNum)} 
-                                highlightedAyahId={highlightedAyahId} 
-                                onAyahClick={onAyahClick} 
-                                onVerseClick={onVerseClick} 
-                                onVerseLongPress={onVerseLongPress} 
-                                onAyahLongPress={onAyahLongPress} 
-                                onInteractionStart={onInteractionStart} 
-                                onInteractionEnd={onInteractionEnd} 
-                                settings={settings} 
-                                currentTheme={currentTheme}
-                                hideVerses={hideVerses}
-                                memorizationSettings={memorizationSettings}
-                                isPlaying={isPlaying}
-                                isRecording={isRecording}
-                                revealedAyahs={revealedAyahs}
-                                tempRevealedAyah={tempRevealedAyah}
-                                onSurahHeaderLongPress={onSurahHeaderLongPress}
-                            />
-                        )}
+                        <MushafPage 
+                            pageNum={pageNum} 
+                            pageData={getPageData(pageNum)} 
+                            highlightedAyahId={highlightedAyahId} 
+                            onAyahClick={onAyahClick} 
+                            onVerseClick={onVerseClick} 
+                            onVerseLongPress={onVerseLongPress} 
+                            onAyahLongPress={onAyahLongPress} 
+                            onInteractionStart={onInteractionStart} 
+                            onInteractionEnd={onInteractionEnd} 
+                            settings={settings} 
+                            currentTheme={currentTheme}
+                            hideVerses={hideVerses}
+                            memorizationSettings={memorizationSettings}
+                            isPlaying={isPlaying}
+                            isRecording={isRecording}
+                            revealedAyahs={revealedAyahs}
+                            tempRevealedAyah={tempRevealedAyah}
+                            onSurahHeaderLongPress={onSurahHeaderLongPress}
+                        />
                     </div>
                 </div>
             )}) : pages.filter(p => p % 2 !== 0).map(oddPage => {
-                const isVisible = Math.abs(oddPage - currentPage) <= 3 || Math.abs((oddPage + 1) - currentPage) <= 3;
                 return (
                 <div 
                     key={`spread-${oddPage}`}
@@ -221,10 +280,37 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
                              borderColor: currentTheme?.barBorder,
                              backgroundColor: currentTheme?.bg 
                          }}>
-                        {isVisible && (
+                        <MushafPage 
+                            pageNum={oddPage} 
+                            pageData={getPageData(oddPage)} 
+                            highlightedAyahId={highlightedAyahId} 
+                            onAyahClick={onAyahClick} 
+                            onVerseClick={onVerseClick} 
+                            onVerseLongPress={onVerseLongPress} 
+                            onAyahLongPress={onAyahLongPress} 
+                            onInteractionStart={onInteractionStart} 
+                            onInteractionEnd={onInteractionEnd} 
+                            settings={settings} 
+                            currentTheme={currentTheme}
+                            hideVerses={hideVerses}
+                            memorizationSettings={memorizationSettings}
+                            isPlaying={isPlaying}
+                            isRecording={isRecording}
+                            revealedAyahs={revealedAyahs}
+                            tempRevealedAyah={tempRevealedAyah}
+                            onSurahHeaderLongPress={onSurahHeaderLongPress}
+                        />
+                    </div>
+                    {/* Even page (Left) */}
+                    {oddPage + 1 <= 604 && (
+                        <div className="h-full w-1/2 shadow-2xl rounded-xl overflow-y-auto overflow-x-hidden border page-scroll-container"
+                             style={{ 
+                                 borderColor: currentTheme?.barBorder,
+                                 backgroundColor: currentTheme?.bg 
+                             }}>
                             <MushafPage 
-                                pageNum={oddPage} 
-                                pageData={getPageData(oddPage)} 
+                                pageNum={oddPage + 1} 
+                                pageData={getPageData(oddPage + 1)} 
                                 highlightedAyahId={highlightedAyahId} 
                                 onAyahClick={onAyahClick} 
                                 onVerseClick={onVerseClick} 
@@ -242,37 +328,6 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
                                 tempRevealedAyah={tempRevealedAyah}
                                 onSurahHeaderLongPress={onSurahHeaderLongPress}
                             />
-                        )}
-                    </div>
-                    {/* Even page (Left) */}
-                    {oddPage + 1 <= 604 && (
-                        <div className="h-full w-1/2 shadow-2xl rounded-xl overflow-y-auto overflow-x-hidden border page-scroll-container"
-                             style={{ 
-                                 borderColor: currentTheme?.barBorder,
-                                 backgroundColor: currentTheme?.bg 
-                             }}>
-                            {isVisible && (
-                                <MushafPage 
-                                    pageNum={oddPage + 1} 
-                                    pageData={getPageData(oddPage + 1)} 
-                                    highlightedAyahId={highlightedAyahId} 
-                                    onAyahClick={onAyahClick} 
-                                    onVerseClick={onVerseClick} 
-                                    onVerseLongPress={onVerseLongPress} 
-                                    onAyahLongPress={onAyahLongPress} 
-                                    onInteractionStart={onInteractionStart} 
-                                    onInteractionEnd={onInteractionEnd} 
-                                    settings={settings} 
-                                    currentTheme={currentTheme}
-                                    hideVerses={hideVerses}
-                                    memorizationSettings={memorizationSettings}
-                                    isPlaying={isPlaying}
-                                    isRecording={isRecording}
-                                    revealedAyahs={revealedAyahs}
-                                    tempRevealedAyah={tempRevealedAyah}
-                                    onSurahHeaderLongPress={onSurahHeaderLongPress}
-                                />
-                            )}
                         </div>
                     )}
                 </div>
