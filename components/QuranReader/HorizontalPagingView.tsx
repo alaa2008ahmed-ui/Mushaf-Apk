@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import MushafPage from './MushafPage';
 import { quranData as quranJsonData } from '../../utils/quranData';
 
@@ -64,11 +64,18 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
         return arr;
     }, [isTwoPageView]);
 
+    const lastBroadcastedPage = useRef(-1);
+
     // Track scroll programmatically to avoid jumpiness
     const isProgrammaticScroll = useRef(false);
 
     // Re-center scroll position when current page changes programmatically (e.g. from nav menu)
     useEffect(() => {
+        if (lastBroadcastedPage.current === currentPage) {
+            return;
+        }
+        lastBroadcastedPage.current = currentPage;
+
         if (!scrollContainerRef.current) return;
         const container = scrollContainerRef.current;
         // Find the group or page element
@@ -146,6 +153,7 @@ const HorizontalPagingView: React.FC<HorizontalPagingViewProps> = React.memo(({
         if (closestPage !== currentPage && minDistance < container.offsetWidth / 3) {
             if ((window as any).snapTimeout) clearTimeout((window as any).snapTimeout);
             (window as any).snapTimeout = setTimeout(() => {
+                lastBroadcastedPage.current = closestPage;
                 onPageChange(closestPage);
             }, 100);
         }
