@@ -591,6 +591,17 @@ const App: React.FC = () => {
         return saved ? JSON.parse(saved) : null;
     });
 
+    useEffect(() => {
+        if (currentUser) {
+            const hidden = localStorage.getItem(`hideBeforeTax_${currentUser.username}`) === 'true';
+            if (hidden) {
+                document.body.classList.add('hide-before-tax');
+            } else {
+                document.body.classList.remove('hide-before-tax');
+            }
+        }
+    }, [currentUser]);
+
     const [showPendingOrdersModal, setShowPendingOrdersModal] = useState(false);
     const lastPendingIdsRef = React.useRef<Set<string>>(new Set());
     const lastApprovedIdsRef = React.useRef<Set<string>>(new Set());

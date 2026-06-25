@@ -146,14 +146,11 @@ const SalesTicker = ({ invoices, branches }: { invoices: Invoice[], branches: Br
 
     return (
         <div className="flex-1 overflow-hidden mx-4 relative h-14 hidden lg:flex items-center">
-            <motion.div 
-                animate={{ x: ["0%", "-50%"] }}
-                transition={{ 
-                    duration: Math.max(25, tickerItems.length * 12), 
-                    repeat: Infinity, 
-                    ease: "linear" 
+            <div 
+                className="flex whitespace-nowrap items-center gap-10 text-[10px] font-black uppercase tracking-widest text-white/60 animate-ticker hover:[animation-play-state:paused]"
+                style={{ 
+                    ['--ticker-duration' as any]: `${Math.max(25, tickerItems.length * 12)}s`
                 }}
-                className="flex whitespace-nowrap items-center gap-10 text-[10px] font-black uppercase tracking-widest text-white/60"
             >
                 {seamlessItems.map((item: any, idx) => (
                     <div key={idx} className={`flex flex-col gap-1 px-5 py-2 rounded-2xl border shadow-lg shrink-0 ${item.isTotal ? "bg-white/20 border-white/30" : "bg-white/10 border-white/10"}`}>
@@ -184,7 +181,7 @@ const SalesTicker = ({ invoices, branches }: { invoices: Invoice[], branches: Br
                         </div>
                     </div>
                 ))}
-            </motion.div>
+            </div>
         </div>
     );
 };
@@ -202,6 +199,32 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
         total: number;
         quantity: number;
     } | null>(null);
+
+    const currentUserStr = localStorage.getItem('currentUser');
+    const currentUsername = currentUserStr ? JSON.parse(currentUserStr).username : 'default';
+
+    const [hideTax, setHideTax] = useState(() => {
+        return localStorage.getItem(`hideBeforeTax_${currentUsername}`) === 'true';
+    });
+
+    const toggleBeforeTax = () => {
+        const newVal = !hideTax;
+        setHideTax(newVal);
+        localStorage.setItem(`hideBeforeTax_${currentUsername}`, newVal.toString());
+        if (newVal) {
+            document.body.classList.add('hide-before-tax');
+        } else {
+            document.body.classList.remove('hide-before-tax');
+        }
+    };
+
+    React.useEffect(() => {
+        if (hideTax) {
+            document.body.classList.add('hide-before-tax');
+        } else {
+            document.body.classList.remove('hide-before-tax');
+        }
+    }, [hideTax]);
 
     const {
         last3Days,
@@ -494,6 +517,11 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                         <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                     </span>
                     <span className="text-xs font-bold text-green-600">Live</span>
+                    <button 
+                        onClick={toggleBeforeTax}
+                        className={`ml-2 w-3 h-3 rounded-full shadow-sm transition-colors border ${hideTax ? 'bg-red-500 border-red-600' : 'bg-transparent border-red-500'}`}
+                        title="Toggle Before Tax Amounts"
+                    />
                 </div>
             </div>
 
@@ -539,7 +567,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                             </p>
                                             <p className="text-xl sm:text-2xl font-black opacity-60 mb-1 lg:mb-3 uppercase">SAR</p>
                                         </div>
-                                        <p className={`text-sm sm:text-base font-bold mt-2 opacity-90 drop-shadow ${isHistorical ? 'text-yellow-200/80' : 'text-yellow-300'}`}>
+                                        <p className={`text-sm sm:text-base font-bold mt-2 opacity-90 drop-shadow ${isHistorical ? 'text-yellow-200/80' : 'text-yellow-300'} before-tax-amount`}>
                                             {(displayStats.total / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR
                                         </p>
                                     </div>
@@ -552,7 +580,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                             <span className={`text-[13px] font-black ${isHistorical ? 'bg-yellow-400/30 border-yellow-400/20' : 'bg-blue-400/30 border-blue-400/20'} px-2 py-0.5 rounded-lg border text-blue-50`}>{displayStats.cashCount}</span>
                                         </div>
                                         <p className={`text-xl sm:text-2xl font-black ${isHistorical ? 'text-yellow-100' : ''}`}>{displayStats.cashTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] opacity-60">SAR</span></p>
-                                        <p className={`text-xs font-bold mt-0.5 ${isHistorical ? 'text-yellow-200/60' : 'text-green-300'}`}>
+                                        <p className={`text-xs font-bold mt-0.5 ${isHistorical ? 'text-yellow-200/60' : 'text-green-300'} before-tax-amount`}>
                                             {(displayStats.cashTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </p>
                                     </div>
@@ -562,7 +590,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                             <span className={`text-[13px] font-black ${isHistorical ? 'bg-yellow-400/30 border-yellow-400/20' : 'bg-sky-400/30 border-sky-400/20'} px-2 py-0.5 rounded-lg border text-sky-50`}>{displayStats.creditCount}</span>
                                         </div>
                                         <p className={`text-xl sm:text-2xl font-black ${isHistorical ? 'text-yellow-100' : 'text-sky-200'}`}>{displayStats.creditTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] opacity-60">SAR</span></p>
-                                        <p className={`text-xs font-bold mt-0.5 ${isHistorical ? 'text-yellow-200/60' : 'text-green-300'}`}>
+                                        <p className={`text-xs font-bold mt-0.5 ${isHistorical ? 'text-yellow-200/60' : 'text-green-300'} before-tax-amount`}>
                                             {(displayStats.creditTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </p>
                                     </div>
@@ -611,7 +639,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                             {displayStat.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
                                             <span className="text-xs sm:text-sm font-normal opacity-70 ml-1">SAR</span>
                                         </p>
-                                        <p className={`text-xs font-bold mt-1 ${branch.branchId === 'unassigned' ? 'text-red-600' : 'text-orange-500'}`}>
+                                        <p className={`text-xs font-bold mt-1 ${branch.branchId === 'unassigned' ? 'text-red-600' : 'text-orange-500'} before-tax-amount`}>
                                             {(displayStat.total / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </p>
                                     </div>
@@ -625,14 +653,14 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                     <div className="bg-white/50 rounded-lg p-3 border border-blue-100/50">
                                         <p className={`text-[9px] uppercase font-black mb-0.5 ${isHistorical ? 'text-amber-500' : 'text-blue-500'}`}>Cash</p>
                                         <p className={`text-xl font-black leading-tight ${isHistorical ? 'text-amber-700' : 'text-blue-800'}`}>{displayStat.cashTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                        <p className={`text-[10px] font-bold mt-0.5 ${isHistorical ? 'text-amber-600/70' : 'text-green-600'}`}>
+                                        <p className={`text-[10px] font-bold mt-0.5 ${isHistorical ? 'text-amber-600/70' : 'text-green-600'} before-tax-amount`}>
                                             {(displayStat.cashTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </p>
                                     </div>
                                     <div className="bg-white/50 rounded-lg p-3 border border-blue-100/50 text-right">
                                         <p className={`text-[9px] uppercase font-black mb-0.5 ${isHistorical ? 'text-amber-500' : 'text-sky-500'}`}>Credit</p>
                                         <p className={`text-xl font-black leading-tight ${isHistorical ? 'text-amber-700' : 'text-sky-800'}`}>{displayStat.creditTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                        <p className={`text-[10px] font-bold mt-0.5 ${isHistorical ? 'text-amber-600/70' : 'text-green-600'}`}>
+                                        <p className={`text-[10px] font-bold mt-0.5 ${isHistorical ? 'text-amber-600/70' : 'text-green-600'} before-tax-amount`}>
                                             {(displayStat.creditTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </p>
                                     </div>
@@ -686,7 +714,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                             </p>
                                             <p className="text-[10px] font-black text-indigo-300">SAR</p>
                                         </div>
-                                        <p className="text-[10px] font-bold text-orange-500 mt-1">
+                                        <p className="text-[10px] font-bold text-orange-500 mt-1 before-tax-amount">
                                             {(day.total / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </p>
                                         <p className="text-[9px] font-bold text-indigo-400/70 mt-1 uppercase tracking-tighter">{day.count} Invoices</p>

@@ -94,3 +94,20 @@ body {
     word-break: break-all;
   }
 }
+
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  animation: ticker-scroll var(--ticker-duration, 30s) linear infinite;
+}
+
+.hide-before-tax .before-tax-amount {
+  display: none !important;
+}

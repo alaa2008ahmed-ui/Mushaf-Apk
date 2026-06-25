@@ -1005,7 +1005,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
                     <td className={`border p-1 font-bold align-middle ${isSelected ? 'bg-blue-200 group-hover:bg-blue-300' : 'bg-gray-100'}`}>
                       <div className="flex flex-col">
                           <span>{day.grandTotal.toFixed(2)}</span>
-                          <span className="text-[10px] text-orange-600 font-bold mt-0.5">
+                          <span className="text-[10px] text-orange-600 font-bold mt-0.5 before-tax-amount">
                               {(day.grandTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                       </div>
@@ -1033,7 +1033,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
                       <td className="border p-1 bg-blue-200 text-blue-950 font-black outline outline-1 outline-gray-200 align-middle">
                         <div className="flex flex-col">
                             <span>{totalCashPrice.toFixed(2)}</span>
-                            <span className="text-[10px] text-orange-600 font-bold mt-0.5">
+                            <span className="text-[10px] text-orange-600 font-bold mt-0.5 before-tax-amount">
                                 {(totalCashPrice / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                         </div>
@@ -1044,7 +1044,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
                       <td className="border p-1 bg-sky-200 text-sky-950 font-black outline outline-1 outline-gray-200 align-middle">
                         <div className="flex flex-col">
                             <span>{totalCreditPrice.toFixed(2)}</span>
-                            <span className="text-[10px] text-orange-600 font-bold mt-0.5">
+                            <span className="text-[10px] text-orange-600 font-bold mt-0.5 before-tax-amount">
                                 {(totalCreditPrice / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                         </div>
@@ -1052,7 +1052,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
                       <td className="border p-1 text-sm font-black whitespace-nowrap bg-gray-300 outline outline-1 outline-gray-300 align-middle">
                         <div className="flex flex-col">
                             <span>{monthlyTotal.grandTotal.toFixed(2)}</span>
-                            <span className="text-[10px] text-orange-600 font-bold mt-0.5">
+                            <span className="text-[10px] text-orange-600 font-bold mt-0.5 before-tax-amount">
                                 {(monthlyTotal.grandTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                         </div>
@@ -1081,7 +1081,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
                     return (
                       <React.Fragment key={`total-cash-${name}`}>
                         <td
-                          className={`border p-1 ${color} outline outline-1 outline-gray-200`}
+                          className={`border p-1 ${color} outline outline-1 outline-gray-200 before-tax-amount`}
                         >
                           {monthlyTotal.cash[name].qty.toFixed(2)}
                         </td>
@@ -1090,7 +1090,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
                         >
                           <div className="flex flex-col">
                               <span>{monthlyTotal.cash[name].price.toFixed(2)}</span>
-                              <span className="text-[10px] text-orange-600 font-bold mt-0.5">
+                              <span className="text-[10px] text-orange-600 font-bold mt-0.5 before-tax-amount">
                                   {(monthlyTotal.cash[name].price / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                           </div>
@@ -1114,7 +1114,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
                     return (
                       <React.Fragment key={`total-credit-${name}`}>
                         <td
-                          className={`border p-1 ${color} outline outline-1 outline-gray-200`}
+                          className={`border p-1 ${color} outline outline-1 outline-gray-200 before-tax-amount`}
                         >
                           {monthlyTotal.credit[name].qty.toFixed(2)}
                         </td>
@@ -1123,7 +1123,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
                         >
                           <div className="flex flex-col">
                               <span>{monthlyTotal.credit[name].price.toFixed(2)}</span>
-                              <span className="text-[10px] text-orange-600 font-bold mt-0.5">
+                              <span className="text-[10px] text-orange-600 font-bold mt-0.5 before-tax-amount">
                                   {(monthlyTotal.credit[name].price / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                           </div>
@@ -1147,7 +1147,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
                     return (
                       <React.Fragment key={`total-item-${name}`}>
                         <td
-                          className={`border p-1 ${color} outline outline-1 outline-gray-200`}
+                          className={`border p-1 ${color} outline outline-1 outline-gray-200 before-tax-amount`}
                         >
                           {monthlyTotal.dailyItemTotal[name].qty.toFixed(2)}
                         </td>
@@ -1156,7 +1156,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
                         >
                           <div className="flex flex-col">
                               <span>{monthlyTotal.dailyItemTotal[name].price.toFixed(2)}</span>
-                              <span className="text-[10px] text-orange-600 font-bold mt-0.5">
+                              <span className="text-[10px] text-orange-600 font-bold mt-0.5 before-tax-amount">
                                   {(monthlyTotal.dailyItemTotal[name].price / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                           </div>
@@ -1167,7 +1167,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
                   <td className="border p-1 text-sm whitespace-nowrap bg-gray-200 outline outline-1 outline-gray-300 align-middle">
                     <div className="flex flex-col">
                         <span>{monthlyTotal.grandTotal.toFixed(2)}</span>
-                        <span className="text-[10px] text-orange-600 font-bold mt-0.5">
+                        <span className="text-[10px] text-orange-600 font-bold mt-0.5 before-tax-amount">
                             {(monthlyTotal.grandTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                     </div>
