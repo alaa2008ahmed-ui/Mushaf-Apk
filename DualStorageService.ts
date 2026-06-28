@@ -116,23 +116,9 @@ class DualStorageService {
     });
 
     try {
-      const delayedCollections = [COLLECTIONS.RECORDS, COLLECTIONS.PO_CUSTOMERS];
-
-      Object.values(COLLECTIONS).forEach(collectionName => {
-        if (navigator.onLine) {
-          if (delayedCollections.includes(collectionName)) {
-             // Will be loaded after salesInvoices stage 2
-             return;
-          }
-          // For salesInvoices, enable background cleanup (so it runs once to verify deletions)
-          // For other collections, we just run staged fetch.
-          const isMainCollection = collectionName === COLLECTIONS.SALES_INVOICES;
-          this.runStagedFetchForCollection(collectionName, isMainCollection);
-        } else {
-          // If offline, still notify about existing local data
-          this.onDataUpdateCallback?.(collectionName, this.getLocalData(collectionName));
-        }
-      });
+      // PHASED LOADING STRATEGY
+      // Stage 1 & 2: Sales Invoices (3 days, then full month)
+      this.runPhasedSync();
     } finally {
       this.isInitializing = false;
     }
@@ -222,100 +208,91 @@ class DualStorageService {
     return d.toISOString();
   }
 
-  private async runStagedFetchForCollection(collectionName: string, enableBackgroundCleanup: boolean = false) {
+  private async runPhasedSync() {
+    if (!navigator.onLine) return;
+
     try {
-      if (collectionName === "salesInvoices") {
-          // 1. FAST BOOT: First fetch only the last 3 days for immediate UI load
-          const d3 = new Date();
-          d3.setDate(d3.getDate() - 2); // Today and 2 previous days
-          d3.setHours(0,0,0,0);
-          const threeDaysAgoStr = d3.toISOString();
-          
-          // // console.log(`DualStorage [${collectionName}]: Fast boot... fetching last 3 days >= ${threeDaysAgoStr}`);
+      // --- STAGE 1: Last 3 Days Invoices ---
+      const d3 = new Date();
+      d3.setDate(d3.getDate() - 2); 
+      d3.setHours(0,0,0,0);
+      const threeDaysAgoStr = d3.toISOString();
+      
+      const qStage1 = query(
+        collection(db, COLLECTIONS.SALES_INVOICES), 
+        where('date', '>=', threeDaysAgoStr)
+      );
+      const snap1 = await getDocs(qStage1);
+      const data1 = snap1.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+      this.processDataUpdate(COLLECTIONS.SALES_INVOICES, data1, true);
 
-          const qFast = query(
-            collection(db, collectionName), 
-            where('date', '>=', threeDaysAgoStr)
-          );
+      // --- STAGE 2: Current Month Invoices ---
+      const activeStartDateStr = this.getActivePeriodStartDate();
+      const qStage2 = query(
+        collection(db, COLLECTIONS.SALES_INVOICES), 
+        where('date', '>=', activeStartDateStr)
+      );
+      const snap2 = await getDocs(qStage2);
+      const data2 = snap2.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+      this.processDataUpdate(COLLECTIONS.SALES_INVOICES, data2, true);
 
-          // We use getDocs for the fast boot so it resolves immediately
-          getDocs(qFast).then(snapshot => {
-            const fastData = snapshot.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-            // console.log(`DualStorage [${collectionName}]: Fast boot loaded ${fastData.length} invoices.`);
-            this.processDataUpdate(collectionName, fastData, true); // Use partial=true to preserve existing cache during boot
-            
-            // 2. ACTIVE PERIOD: After fast boot, fetch the full active month
-            const activeStartDateStr = this.getActivePeriodStartDate();
-            // console.log(`DualStorage [${collectionName}]: Starting active period query >= ${activeStartDateStr}`);
+      // --- STAGE 3: PO and Time Sheets (RECORDS & PO_CUSTOMERS) ---
+      // Time Sheets and Orders are stored in RECORDS with specific types
+      await this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
+      await this.runStagedFetchForCollection(COLLECTIONS.PO_CUSTOMERS);
 
-            const qRecent = query(
-              collection(db, collectionName), 
-              where('date', '>=', activeStartDateStr)
-            );
-
-            getDocs(qRecent).then(snapshotRecent => {
-              const recentData = snapshotRecent.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-              // console.log(`DualStorage [${collectionName}]: Fetched ${recentData.length} active month invoices.`);
-              
-              // partial=true so we merge without deleting anything.
-              this.processDataUpdate(collectionName, recentData, true); 
-
-              // Trigger Stage 3: Time Sheet and PO Pages
-              setTimeout(() => {
-                  this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
-                  this.runStagedFetchForCollection(COLLECTIONS.PO_CUSTOMERS);
-              }, 100);
-
-              // 3. PREVIOUS MONTH: Fetch the preceding month for comparison stats in Dashboard/Ticker
-              const prevMonthStart = new Date(activeStartDateStr);
-              prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
-              const prevMonthStartStr = prevMonthStart.toISOString();
-              
-              // console.log(`DualStorage [${collectionName}]: Fetching previous month comparison data [${prevMonthStartStr} to ${activeStartDateStr}]`);
-              
-              const qPrev = query(
-                collection(db, collectionName),
-                where('date', '>=', prevMonthStartStr),
-                where('date', '<', activeStartDateStr)
-              );
-
-              getDocs(qPrev).then(snapshotPrev => {
-                const prevData = snapshotPrev.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-                // console.log(`DualStorage [${collectionName}]: Fetched ${prevData.length} previous month invoices.`);
-                this.processDataUpdate(collectionName, prevData, true);
-              }).catch(err => console.error(`DualStorage [${collectionName}]: Previous month fetch error:`, err));
-
-              // 4. LIVE UPDATES: Hook up a live listener for any changes happening CONCURRENTLY during session
-              const sessionStartTime = new Date().toISOString();
-              const qLive = query(
-                collection(db, collectionName), 
-                where('updatedAt', '>=', sessionStartTime)
-              );
-              const unsubscribeLive = onSnapshot(qLive, (snapshotLive) => {
-                const liveUpdates = snapshotLive.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-                if (liveUpdates.length > 0) {
-                  this.processDataUpdate(collectionName, liveUpdates, true); 
-                }
-              }, (error) => {
-                handleFirestoreError(error, OperationType.LIST, collectionName);
-              });
-              this.listeners.push(unsubscribeLive);
-
-            }).catch(err => {
-              console.error(`DualStorage [${collectionName}]: Active fetch error:`, err);
-              this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
-              this.runStagedFetchForCollection(COLLECTIONS.PO_CUSTOMERS);
-            });
-          }).catch(err => {
-            console.error(`DualStorage [${collectionName}]: Fast fetch error:`, err);
-            this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
-            this.runStagedFetchForCollection(COLLECTIONS.PO_CUSTOMERS);
-          });
-          
-          return;
+      // --- STAGE 4: All other collections (Except historical invoices) ---
+      const otherCollections = [
+        COLLECTIONS.CUSTOMERS,
+        COLLECTIONS.DELIVERY_NOTES,
+        COLLECTIONS.BOTTLE_TRANSACTIONS
+      ];
+      
+      for (const coll of otherCollections) {
+        await this.runStagedFetchForCollection(coll);
       }
 
-      // Default staged loading for other collections:
+      // --- STAGE 5 (Background): Previous month invoices for dashboard comparison ---
+      const prevMonthStart = new Date(activeStartDateStr);
+      prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
+      const prevMonthStartStr = prevMonthStart.toISOString();
+      
+      const qPrev = query(
+        collection(db, COLLECTIONS.SALES_INVOICES),
+        where('date', '>=', prevMonthStartStr),
+        where('date', '<', activeStartDateStr)
+      );
+
+      getDocs(qPrev).then(snapPrev => {
+        const prevData = snapPrev.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+        this.processDataUpdate(COLLECTIONS.SALES_INVOICES, prevData, true);
+      }).catch(err => console.error("Stage 5 fetch error:", err));
+
+      // --- LIVE UPDATES: Establish live listener for session updates ---
+      const sessionStartTime = new Date().toISOString();
+      const qLive = query(
+        collection(db, COLLECTIONS.SALES_INVOICES), 
+        where('updatedAt', '>=', sessionStartTime)
+      );
+      const unsubscribeLive = onSnapshot(qLive, (snapLive) => {
+        const liveUpdates = snapLive.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+        if (liveUpdates.length > 0) {
+          this.processDataUpdate(COLLECTIONS.SALES_INVOICES, liveUpdates, true); 
+        }
+      });
+      this.listeners.push(unsubscribeLive);
+
+    } catch (error) {
+      console.error("Phased sync failed:", error);
+      // Fallback to old behavior if phased sync fails
+      this.runStagedFetchForCollection(COLLECTIONS.SALES_INVOICES);
+      this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
+    }
+  }
+
+  private async runStagedFetchForCollection(collectionName: string, enableBackgroundCleanup: boolean = false) {
+    try {
+      // Default staged loading for collections:
       const cachedItems = this.getLocalData(collectionName);
       const sessionStartTime = new Date().toISOString();
 

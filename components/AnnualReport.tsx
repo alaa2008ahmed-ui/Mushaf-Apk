@@ -161,6 +161,15 @@ const AnnualReport: React.FC<AnnualReportProps> = ({
   const processedData: MonthlyData[] = useMemo(() => {
     const monthlyMap = new Map<string, MonthlyData>();
 
+    // Dynamically identify all unique item names present in the invoices to ensure they are all counted
+    const dynamicItemNames = new Set(allItemNames);
+    fetchedInvoices.forEach(inv => {
+        if (inv.itemName && inv.itemName !== "Cancel") {
+            dynamicItemNames.add(inv.itemName);
+        }
+    });
+    const currentItemNames = Array.from(dynamicItemNames);
+
     const getInitialData = (month: string): MonthlyData => {
       const data: any = {
         month,
@@ -169,7 +178,7 @@ const AnnualReport: React.FC<AnnualReportProps> = ({
         monthlyItemTotal: {},
         grandTotal: 0,
       };
-      allItemNames.forEach((name) => {
+      currentItemNames.forEach((name) => {
         data.cash[name] = { qty: 0, price: 0 };
         data.credit[name] = { qty: 0, price: 0 };
         data.monthlyItemTotal[name] = { qty: 0, price: 0 };
@@ -196,7 +205,7 @@ const AnnualReport: React.FC<AnnualReportProps> = ({
 
     filteredInvoices.forEach((invoice) => {
       if (invoice.itemName === "Cancel") return;
-      // FIXED: Manually construct YYYY-MM to avoid locale issues (e.g. en-CA possibly not being supported or behaving differently)
+      
       const d = typeof invoice.date === 'string' ? new Date(invoice.date) : invoice.date;
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -207,60 +216,72 @@ const AnnualReport: React.FC<AnnualReportProps> = ({
       }
 
       const monthData = monthlyMap.get(monthStr)!;
+      const invQty = Number(invoice.quantity) || 0;
+      const invTotal = Number(invoice.total) || 0;
 
       if (invoice.type === "cash") {
         if (monthData.cash[invoice.itemName]) {
-          monthData.cash[invoice.itemName].qty += Number(invoice.quantity) || 0;
-          monthData.cash[invoice.itemName].price += Number(invoice.total) || 0;
+          monthData.cash[invoice.itemName].qty += invQty;
+          monthData.cash[invoice.itemName].price += invTotal;
         }
       } else {
         if (monthData.credit[invoice.itemName]) {
-          monthData.credit[invoice.itemName].qty +=
-            Number(invoice.quantity) || 0;
-          monthData.credit[invoice.itemName].price +=
-            Number(invoice.total) || 0;
+          monthData.credit[invoice.itemName].qty += invQty;
+          monthData.credit[invoice.itemName].price += invTotal;
         }
       }
+      
+      // Always add to grand total for accuracy
+      monthData.grandTotal += invTotal;
     });
 
     const result = Array.from(monthlyMap.values());
     result.forEach((monthData) => {
-      let monthlyGrandTotal = 0;
-      allItemNames.forEach((name) => {
+      currentItemNames.forEach((name) => {
         monthData.monthlyItemTotal[name].qty =
           monthData.cash[name].qty + monthData.credit[name].qty;
         monthData.monthlyItemTotal[name].price =
           monthData.cash[name].price + monthData.credit[name].price;
-        monthlyGrandTotal += monthData.monthlyItemTotal[name].price;
       });
-      monthData.grandTotal = monthlyGrandTotal;
     });
 
     return result.sort((a, b) => a.month.localeCompare(b.month));
   }, [fetchedInvoices, allItemNames, selectedYear, reportBranchId, branches]);
 
   const annualTotal = useMemo(() => {
+    // Collect all dynamic names from processedData
+    const dynamicNamesSet = new Set(allItemNames);
+    processedData.forEach(month => {
+        Object.keys(month.monthlyItemTotal).forEach(name => dynamicNamesSet.add(name));
+    });
+    const currentItemNames = Array.from(dynamicNamesSet);
+
     const total: Omit<MonthlyData, "month"> = {
       cash: {},
       credit: {},
       monthlyItemTotal: {},
       grandTotal: 0,
     };
-    allItemNames.forEach((name) => {
+    currentItemNames.forEach((name) => {
       total.cash[name] = { qty: 0, price: 0 };
       total.credit[name] = { qty: 0, price: 0 };
       total.monthlyItemTotal[name] = { qty: 0, price: 0 };
     });
 
     processedData.forEach((month) => {
-      allItemNames.forEach((name) => {
-        total.cash[name].qty += month.cash[name].qty;
-        total.cash[name].price += month.cash[name].price;
-        total.credit[name].qty += month.credit[name].qty;
-        total.credit[name].price += month.credit[name].price;
-        total.monthlyItemTotal[name].qty += month.monthlyItemTotal[name].qty;
-        total.monthlyItemTotal[name].price +=
-          month.monthlyItemTotal[name].price;
+      currentItemNames.forEach((name) => {
+        if (month.cash[name]) {
+          total.cash[name].qty += month.cash[name].qty;
+          total.cash[name].price += month.cash[name].price;
+        }
+        if (month.credit[name]) {
+          total.credit[name].qty += month.credit[name].qty;
+          total.credit[name].price += month.credit[name].price;
+        }
+        if (month.monthlyItemTotal[name]) {
+          total.monthlyItemTotal[name].qty += month.monthlyItemTotal[name].qty;
+          total.monthlyItemTotal[name].price += month.monthlyItemTotal[name].price;
+        }
       });
       total.grandTotal += month.grandTotal;
     });
@@ -268,7 +289,14 @@ const AnnualReport: React.FC<AnnualReportProps> = ({
   }, [processedData, allItemNames]);
 
   const itemNames = useMemo(() => {
-    return allItemNames.filter((name) => {
+    // Collect all dynamic names from processedData
+    const dynamicNamesSet = new Set(allItemNames);
+    processedData.forEach(month => {
+        Object.keys(month.monthlyItemTotal).forEach(name => dynamicNamesSet.add(name));
+    });
+    const currentItemNames = Array.from(dynamicNamesSet);
+
+    return currentItemNames.filter((name) => {
       const qtyStr = Number(
         annualTotal.monthlyItemTotal[name]?.qty || 0,
       ).toFixed(2);
@@ -280,7 +308,7 @@ const AnnualReport: React.FC<AnnualReportProps> = ({
         (priceStr !== "0.00" && priceStr !== "-0.00")
       );
     });
-  }, [annualTotal, allItemNames]);
+  }, [annualTotal, allItemNames, processedData]);
 
   const handlePrint = () => {
     captureAndExport("printable-area-annual", (canvas) => {

@@ -61,6 +61,7 @@ const SalesTicker = ({ invoices, branches }: { invoices: Invoice[], branches: Br
 
             invoices.forEach(inv => {
                 if (inv.branchId !== branch.id) return;
+                if (inv.itemName === 'Cancel') return;
                 
                 const invDate = new Date(inv.date);
                 const invDateStr = formatDate(invDate);
@@ -70,12 +71,14 @@ const SalesTicker = ({ invoices, branches }: { invoices: Invoice[], branches: Br
 
                 const isBeforeOrAtSameTime = !hasTodaySales || (invDate.getHours() < currentHour || (invDate.getHours() === currentHour && invDate.getMinutes() <= currentMinute));
 
+                const invTotal = Number(inv.total) || 0;
+
                 // Daily Comparison
                 if (invDateStr === refStr) {
-                    refTotal += inv.total;
+                    refTotal += invTotal;
                 } else if (invDateStr === compStr) {
                     if (isBeforeOrAtSameTime) {
-                        lastMonthDayTotal += inv.total;
+                        lastMonthDayTotal += invTotal;
                     }
                 }
 
@@ -83,7 +86,7 @@ const SalesTicker = ({ invoices, branches }: { invoices: Invoice[], branches: Br
                 // Current Reference Month (MTD)
                 if (invMonth === refMonth && invYear === refYear) {
                     if (invDay < refDay || (invDay === refDay && isBeforeOrAtSameTime)) {
-                        mtdCurrentTotal += inv.total;
+                        mtdCurrentTotal += invTotal;
                     }
                 }
                 // Last Month (MTD - Same Period)
@@ -94,7 +97,7 @@ const SalesTicker = ({ invoices, branches }: { invoices: Invoice[], branches: Br
 
                 if (invMonth === lmMonth && invYear === lmYear) {
                     if (invDay < refDay || (invDay === refDay && isBeforeOrAtSameTime)) {
-                        mtdLastTotal += inv.total;
+                        mtdLastTotal += invTotal;
                     }
                 }
             });
@@ -338,6 +341,8 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
         const invoicesLength = invoices.length;
         for (let i = 0; i < invoicesLength; i++) {
             const inv = invoices[i];
+            if (inv.itemName === 'Cancel') continue;
+
             const d = inv.date instanceof Date ? inv.date : new Date(inv.date);
             const yr = d.getFullYear();
             const mo = d.getMonth() + 1;
@@ -346,21 +351,25 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
 
             const bId = inv.branchId || 'unassigned';
             const bData = branchMap.get(bId) || branchMap.get('unassigned');
+            
+            const invTotal = Number(inv.total) || 0;
+            const invQuantity = Number(inv.quantity) || 0;
+
             if (bData) {
                 bData.lifetimeCount++;
-                bData.lifetimeTotal += inv.total;
+                bData.lifetimeTotal += invTotal;
 
                 if (targetDatesSet.has(dateStr)) {
                     const dStats = bData.dailyStatsMap.get(dateStr);
                     if (dStats) {
-                        dStats.total += inv.total;
-                        dStats.quantity += inv.quantity;
+                        dStats.total += invTotal;
+                        dStats.quantity += invQuantity;
                         dStats.count++;
                         if (inv.type === 'cash') {
-                            dStats.cashTotal += inv.total;
+                            dStats.cashTotal += invTotal;
                             dStats.cashCount++;
                         } else if (inv.type === 'credit') {
-                            dStats.creditTotal += inv.total;
+                            dStats.creditTotal += invTotal;
                             dStats.creditCount++;
                         }
                     }
@@ -368,25 +377,25 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
             }
 
             if (dateStr === todayStr) {
-                today_total += inv.total;
-                today_quantity += inv.quantity;
+                today_total += invTotal;
+                today_quantity += invQuantity;
                 today_totalCount++;
                 if (inv.type === 'cash') {
-                    today_cashTotal += inv.total;
+                    today_cashTotal += invTotal;
                     today_cashCount++;
                 } else if (inv.type === 'credit') {
-                    today_creditTotal += inv.total;
+                    today_creditTotal += invTotal;
                     today_creditCount++;
                 }
             } else if (dateStr === yesterdayStr) {
-                yesterday_total += inv.total;
-                yesterday_quantity += inv.quantity;
+                yesterday_total += invTotal;
+                yesterday_quantity += invQuantity;
                 yesterday_totalCount++;
                 if (inv.type === 'cash') {
-                    yesterday_cashTotal += inv.total;
+                    yesterday_cashTotal += invTotal;
                     yesterday_cashCount++;
                 } else if (inv.type === 'credit') {
-                    yesterday_creditTotal += inv.total;
+                    yesterday_creditTotal += invTotal;
                     yesterday_creditCount++;
                 }
             }
@@ -497,11 +506,12 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
         const stats: { [key: string]: { name: string; quantity: number; total: number } } = {};
         
         invoices.forEach(inv => {
+            if (inv.itemName === 'Cancel') return;
             if (!stats[inv.itemName]) {
                 stats[inv.itemName] = { name: inv.itemName, quantity: 0, total: 0 };
             }
-            stats[inv.itemName].quantity += inv.quantity;
-            stats[inv.itemName].total += inv.total;
+            stats[inv.itemName].quantity += (Number(inv.quantity) || 0);
+            stats[inv.itemName].total += (Number(inv.total) || 0);
         });
 
         return Object.values(stats).sort((a, b) => b.total - a.total);

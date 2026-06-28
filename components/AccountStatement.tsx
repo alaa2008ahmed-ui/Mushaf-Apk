@@ -221,6 +221,9 @@ const AccountStatement: React.FC<AccountStatementProps> = ({
             const invDateStr = new Date(inv.date).toISOString().split('T')[0];
             if (invDateStr < fromDate || invDateStr > toDate) return false;
 
+            // Filter out canceled items
+            if (inv.itemName === 'Cancel') return false;
+
             // Filter by item
             if (selectedItemFilter !== 'all' && inv.itemName !== selectedItemFilter) return false;
 
@@ -241,10 +244,10 @@ const AccountStatement: React.FC<AccountStatementProps> = ({
         }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }, [invoices, fromDate, toDate, selectedItemFilter, salesType, statementBranchId, statementUserId]);
 
-    const totalQuantity = filteredInvoices.reduce((sum, inv) => sum + inv.quantity, 0);
-    const grandTotal = filteredInvoices.reduce((sum, inv) => sum + inv.total, 0);
-    const cashTotal = filteredInvoices.filter(inv => inv.type === 'cash').reduce((sum, inv) => sum + inv.total, 0);
-    const creditTotal = filteredInvoices.filter(inv => inv.type === 'credit').reduce((sum, inv) => sum + inv.total, 0);
+    const totalQuantity = filteredInvoices.reduce((sum, inv) => sum + (Number(inv.quantity) || 0), 0);
+    const grandTotal = filteredInvoices.reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
+    const cashTotal = filteredInvoices.filter(inv => inv.type === 'cash').reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
+    const creditTotal = filteredInvoices.filter(inv => inv.type === 'credit').reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
 
     return (
             <div id="printable-area-statement" className="min-h-screen print:min-w-fit print:overflow-visible">

@@ -163,6 +163,21 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
   const processedData: DailyData[] = useMemo(() => {
     const dailyMap = new Map<string, DailyData>();
 
+    // Security: Ensure invoice is from an allowed branch the user has access to
+    const allowedBranchIds = branches.map((b) => b.id);
+
+    // Determine the source of invoices
+    const sourceInvoices = isActiveMonth ? invoices : historicalInvoices;
+
+    // Dynamically identify all unique item names present in the invoices to ensure they are all counted
+    const dynamicItemNames = new Set(allItemNames);
+    sourceInvoices.forEach(inv => {
+        if (inv.itemName && inv.itemName !== "Cancel") {
+            dynamicItemNames.add(inv.itemName);
+        }
+    });
+    const currentItemNames = Array.from(dynamicItemNames);
+
     const getInitialData = (date: string): DailyData => {
       const data: any = {
         date,
@@ -171,19 +186,13 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
         dailyItemTotal: {},
         grandTotal: 0,
       };
-      allItemNames.forEach((name) => {
+      currentItemNames.forEach((name) => {
         data.cash[name] = { qty: 0, price: 0 };
         data.credit[name] = { qty: 0, price: 0 };
         data.dailyItemTotal[name] = { qty: 0, price: 0 };
       });
       return data;
     };
-
-    // Security: Ensure invoice is from an allowed branch the user has access to
-    const allowedBranchIds = branches.map((b) => b.id);
-
-    // Determine the source of invoices
-    const sourceInvoices = isActiveMonth ? invoices : historicalInvoices;
 
     // Filter invoices by selected month and branch
     const filteredInvoices = sourceInvoices.filter((invoice) => {
@@ -204,7 +213,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
 
     filteredInvoices.forEach((invoice) => {
       if (invoice.itemName === "Cancel") return;
-      // FIXED: Manually construct YYYY-MM-DD to avoid locale issues (e.g. en-CA possibly not being supported or behaving differently)
+      
       const d = typeof invoice.date === 'string' ? new Date(invoice.date) : invoice.date;
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -216,31 +225,33 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
       }
 
       const dayData = dailyMap.get(dateStr)!;
+      const invQty = Number(invoice.quantity) || 0;
+      const invTotal = Number(invoice.total) || 0;
 
       if (invoice.type === "cash") {
         if (dayData.cash[invoice.itemName]) {
-          dayData.cash[invoice.itemName].qty += Number(invoice.quantity) || 0;
-          dayData.cash[invoice.itemName].price += Number(invoice.total) || 0;
+          dayData.cash[invoice.itemName].qty += invQty;
+          dayData.cash[invoice.itemName].price += invTotal;
         }
       } else {
         if (dayData.credit[invoice.itemName]) {
-          dayData.credit[invoice.itemName].qty += Number(invoice.quantity) || 0;
-          dayData.credit[invoice.itemName].price += Number(invoice.total) || 0;
+          dayData.credit[invoice.itemName].qty += invQty;
+          dayData.credit[invoice.itemName].price += invTotal;
         }
       }
+      
+      // Always add to grand total to ensure accuracy
+      dayData.grandTotal += invTotal;
     });
 
     const result = Array.from(dailyMap.values());
     result.forEach((dayData) => {
-      let dailyGrandTotal = 0;
-      allItemNames.forEach((name) => {
+      currentItemNames.forEach((name) => {
         dayData.dailyItemTotal[name].qty =
           dayData.cash[name].qty + dayData.credit[name].qty;
         dayData.dailyItemTotal[name].price =
           dayData.cash[name].price + dayData.credit[name].price;
-        dailyGrandTotal += dayData.dailyItemTotal[name].price;
       });
-      dayData.grandTotal = dailyGrandTotal;
     });
 
     return result.sort(
@@ -249,26 +260,39 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
   }, [invoices, historicalInvoices, isActiveMonth, allItemNames, selectedMonth, reportBranchId, branches]);
 
   const monthlyTotal = useMemo(() => {
+    // Collect all dynamic names from processedData
+    const dynamicNamesSet = new Set(allItemNames);
+    processedData.forEach(day => {
+        Object.keys(day.dailyItemTotal).forEach(name => dynamicNamesSet.add(name));
+    });
+    const currentItemNames = Array.from(dynamicNamesSet);
+
     const total: Omit<DailyData, "date"> = {
       cash: {},
       credit: {},
       dailyItemTotal: {},
       grandTotal: 0,
     };
-    allItemNames.forEach((name) => {
+    currentItemNames.forEach((name) => {
       total.cash[name] = { qty: 0, price: 0 };
       total.credit[name] = { qty: 0, price: 0 };
       total.dailyItemTotal[name] = { qty: 0, price: 0 };
     });
 
     processedData.forEach((day) => {
-      allItemNames.forEach((name) => {
-        total.cash[name].qty += day.cash[name].qty;
-        total.cash[name].price += day.cash[name].price;
-        total.credit[name].qty += day.credit[name].qty;
-        total.credit[name].price += day.credit[name].price;
-        total.dailyItemTotal[name].qty += day.dailyItemTotal[name].qty;
-        total.dailyItemTotal[name].price += day.dailyItemTotal[name].price;
+      currentItemNames.forEach((name) => {
+        if (day.cash[name]) {
+          total.cash[name].qty += day.cash[name].qty;
+          total.cash[name].price += day.cash[name].price;
+        }
+        if (day.credit[name]) {
+          total.credit[name].qty += day.credit[name].qty;
+          total.credit[name].price += day.credit[name].price;
+        }
+        if (day.dailyItemTotal[name]) {
+          total.dailyItemTotal[name].qty += day.dailyItemTotal[name].qty;
+          total.dailyItemTotal[name].price += day.dailyItemTotal[name].price;
+        }
       });
       total.grandTotal += day.grandTotal;
     });
@@ -276,7 +300,14 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
   }, [processedData, allItemNames]);
 
   const itemNames = useMemo(() => {
-    return allItemNames.filter((name) => {
+    // Collect all dynamic names from processedData
+    const dynamicNamesSet = new Set(allItemNames);
+    processedData.forEach(day => {
+        Object.keys(day.dailyItemTotal).forEach(name => dynamicNamesSet.add(name));
+    });
+    const currentItemNames = Array.from(dynamicNamesSet);
+
+    return currentItemNames.filter((name) => {
       const qtyStr = Number(
         monthlyTotal.dailyItemTotal[name]?.qty || 0,
       ).toFixed(2);
@@ -288,7 +319,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
         (priceStr !== "0.00" && priceStr !== "-0.00")
       );
     });
-  }, [monthlyTotal, allItemNames]);
+  }, [monthlyTotal, allItemNames, processedData]);
 
   const handlePrint = () => {
     captureAndExport("printable-area-monthly", (canvas) => {
