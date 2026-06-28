@@ -280,6 +280,7 @@ const Settings: React.FC<SettingsProps> = ({
             role: tempUser.role || 'user',
             isActive: tempUser.isActive !== false, // Defaults to true
             permissions: {
+                ...tempUser.permissions,
                 allowedPages: tempUser.permissions?.allowedPages || ['Daily Sales'],
                 allowedBranches: tempUser.permissions?.allowedBranches || [],
                 allowedOrderCustomers: tempUser.permissions?.allowedOrderCustomers,

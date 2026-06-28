@@ -3,6 +3,7 @@ import { InvoiceLog, Branch } from '../types';
 import { downloadBlob } from '../downloadUtils';
 import { captureAndExport, printOrDownloadPdf } from '../captureUtils';
 import Header from './Header';
+import { Printer, FileSpreadsheet, FileText } from 'lucide-react';
 
 interface InvoiceTrackingProps {
     logs: InvoiceLog[];
@@ -179,36 +180,30 @@ const InvoiceTracking: React.FC<InvoiceTrackingProps> = ({
                     </div>
                     <div className="hidden md:block md:flex-1"></div>
                     <div className="flex flex-wrap items-center justify-center md:justify-end gap-1.5 w-full md:flex-1 no-print">
-                        <div id="tracking-actions" className="flex items-center gap-1.5 flex-wrap w-full md:w-auto justify-center md:justify-end">
+                        <div id="tracking-actions" className="flex items-center gap-2 flex-wrap w-full md:w-auto justify-center md:justify-end">
                             <button
                                 onClick={handlePrint}
-                                className="flex items-center justify-center gap-1.5 bg-fuchsia-600 text-white font-semibold py-1.5 px-3 text-sm rounded-md transition-colors hover:bg-fuchsia-700 h-[40px] min-w-[70px]"
-                                title="Print"
+                                className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-4 rounded-xl transition-all active:scale-95 shadow-md hover:shadow-lg h-[44px] min-w-[100px] group"
+                                title="Print Report / طباعة التقرير"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                </svg>
-                                <span className="hidden xs:inline">Print</span>
+                                <Printer className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                                <span className="hidden xs:inline">Print / طباعة</span>
                             </button>
                             <button
                                 onClick={handleExportExcel}
-                                className="flex items-center justify-center gap-1.5 bg-green-700 text-white font-semibold py-1.5 px-3 text-sm rounded-md transition-colors hover:bg-green-800 h-[40px] min-w-[70px]"
-                                title="Export to Excel"
+                                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl transition-all active:scale-95 shadow-md hover:shadow-lg h-[44px] min-w-[100px] group border-b-4 border-emerald-800"
+                                title="Export to Excel / تصدير إكسل"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                   <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                                </svg>
-                                <span className="hidden xs:inline">Excel</span>
+                                <FileSpreadsheet className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                                <span className="hidden xs:inline">Excel / إكسل</span>
                             </button>
                             <button
                                 onClick={handleExportPdf}
-                                className="flex items-center justify-center gap-1.5 bg-red-600 text-white font-semibold py-1.5 px-3 text-sm rounded-md transition-colors hover:bg-red-700 h-[40px] min-w-[70px]"
-                                title="Export to PDF"
+                                className="flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded-xl transition-all active:scale-95 shadow-md hover:shadow-lg h-[44px] min-w-[100px] group border-b-4 border-rose-800"
+                                title="Export to PDF / تصدير بي دي إف"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 100-2H7z" clipRule="evenodd" />
-                                </svg>
-                                <span className="hidden xs:inline">PDF</span>
+                                <FileText className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                                <span className="hidden xs:inline">PDF / بي دي إف</span>
                             </button>
                         </div>
                     </div>

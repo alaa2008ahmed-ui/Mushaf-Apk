@@ -136,25 +136,25 @@ const Orders: React.FC<OrdersProps> = ({ orders, customers, items, currentUser, 
     // Permissions check
     const canViewAllOrders = React.useMemo(() => {
         if (!currentUser) return false;
-        if (currentUser.role === 'admin' || currentUser.username.toLowerCase() === 'alaa') return true;
+        if (currentUser.username.toLowerCase() === 'alaa') return true;
         return !!currentUser.permissions?.canViewAllOrders;
     }, [currentUser]);
 
     const canDeleteOrder = React.useMemo(() => {
         if (!currentUser) return false;
-        if (currentUser.role === 'admin' || currentUser.username.toLowerCase() === 'alaa') return true;
+        if (currentUser.username.toLowerCase() === 'alaa') return true;
         return !!currentUser.permissions?.canDeleteOrder;
     }, [currentUser]);
 
     const hasReceiptPopupPermission = React.useMemo(() => {
         if (!currentUser) return false;
-        if (currentUser.role === 'admin' || currentUser.username.toLowerCase() === 'alaa') return true;
+        if (currentUser.username.toLowerCase() === 'alaa') return true;
         return currentUser.permissions?.showOrderReceiptPopup !== false;
     }, [currentUser]);
 
     const hasReceiptDetailsPermission = React.useMemo(() => {
         if (!currentUser) return false;
-        if (currentUser.role === 'admin' || currentUser.username.toLowerCase() === 'alaa') return true;
+        if (currentUser.username.toLowerCase() === 'alaa') return true;
         return currentUser.permissions?.showReceiptDetailsPopup !== false;
     }, [currentUser]);
 

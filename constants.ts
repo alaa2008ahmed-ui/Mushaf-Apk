@@ -7,7 +7,7 @@ export const defaultAdmin: User = {
     password: '123',
     role: 'admin',
     permissions: {
-        allowedPages: ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Account Statement', 'Invoices Tracking', 'Combined Summary', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Orders', 'Order Approvals', 'Settings'],
+        allowedPages: ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Account Statement', 'Invoices Tracking', 'Combined Summary', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Time Sheet', 'Customers', 'Orders', 'Order Approvals', 'Settings'],
         allowedBranches: ['all'],
         canAddInvoice: true,
         canEditInvoice: true,
@@ -37,7 +37,7 @@ export const alaaUser: User = {
     password: '0120301012',
     role: 'admin',
     permissions: {
-        allowedPages: ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Account Statement', 'Invoices Tracking', 'Combined Summary', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Orders', 'Order Approvals', 'Settings'],
+        allowedPages: ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Account Statement', 'Invoices Tracking', 'Combined Summary', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Time Sheet', 'Customers', 'Orders', 'Order Approvals', 'Settings'],
         allowedBranches: ['all'],
 
         canAddInvoice: true,

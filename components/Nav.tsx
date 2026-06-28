@@ -39,6 +39,7 @@ const itemIcons: Record<string, React.ReactNode> = {
     'PO': <ShoppingCart size={22} />,
     'Driver Work Log': <Truck size={22} />,
     'Drivers Timesheet': <Clock size={22} />,
+    'Time Sheet': <CalendarDays size={22} />,
     'Customers': <Users size={22} />,
     'Account Statement': <FileText size={22} />,
     'Orders': <ClipboardList size={22} />,
@@ -51,7 +52,7 @@ const Nav: React.FC<NavProps> = ({ currentPage, onNavigate, allowedPages, onLogo
     const [isHovered, setIsHovered] = useState(false);
     const fabRef = useRef(null);
     
-    const navItems = ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Invoices Tracking', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Orders', 'Order Approvals', 'Account Statement', 'Settings'];
+    const navItems = ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Invoices Tracking', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Time Sheet', 'Orders', 'Order Approvals', 'Account Statement', 'Settings'];
     const filteredItems = navItems.filter(item => {
         return allowedPages.includes(item);
     });
@@ -81,6 +82,7 @@ const Nav: React.FC<NavProps> = ({ currentPage, onNavigate, allowedPages, onLogo
             'PO': { bg: 'bg-gradient-to-r from-fuchsia-500 to-fuchsia-600', text: 'text-fuchsia-600', activeBg: 'bg-fuchsia-50' },
             'Driver Work Log': { bg: 'bg-gradient-to-r from-teal-500 to-teal-600', text: 'text-teal-600', activeBg: 'bg-teal-50' },
             'Drivers Timesheet': { bg: 'bg-gradient-to-r from-teal-500 to-teal-600', text: 'text-teal-600', activeBg: 'bg-teal-50' },
+            'Time Sheet': { bg: 'bg-gradient-to-r from-indigo-500 to-indigo-600', text: 'text-indigo-600', activeBg: 'bg-indigo-50' },
             'Customers': { bg: 'bg-gradient-to-r from-teal-500 to-teal-600', text: 'text-teal-600', activeBg: 'bg-teal-50' },
             'Orders': { bg: 'bg-gradient-to-r from-orange-500 to-orange-600', text: 'text-orange-600', activeBg: 'bg-orange-50' },
             'Order Approvals': { bg: 'bg-gradient-to-r from-orange-500 to-orange-600', text: 'text-orange-600', activeBg: 'bg-orange-50' },
@@ -185,7 +187,7 @@ const Nav: React.FC<NavProps> = ({ currentPage, onNavigate, allowedPages, onLogo
 
     return (
         <nav 
-            className="fixed top-0 left-0 bottom-0 z-[200] bg-white shadow-xl transition-all duration-300 ease-in-out flex flex-col overflow-x-hidden border-r border-slate-200"
+            className="fixed top-0 left-0 bottom-0 z-[200] bg-white shadow-xl transition-all duration-300 ease-in-out flex flex-col overflow-x-hidden border-r border-slate-200 print:hidden"
             style={{ width: isHovered ? '240px' : '64px' }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}

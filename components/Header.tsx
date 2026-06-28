@@ -101,8 +101,7 @@ const Header: React.FC<HeaderProps> = ({
             });
 
             // 5. Open delivery details modal if user has permission
-            const hasPopupPermission = currentUser?.role === 'admin' || 
-                                       currentUser?.username?.toLowerCase() === 'alaa' || 
+            const hasPopupPermission = currentUser?.username?.toLowerCase() === 'alaa' || 
                                        currentUser?.permissions?.showDeliveryConfirmationPopup !== false;
             
             if (hasPopupPermission) {
@@ -151,7 +150,7 @@ const Header: React.FC<HeaderProps> = ({
     return (
         <header className="shadow-lg font-sans">
             {/* Top Info Bar */}
-            <div className="bg-blue-950 text-blue-100 text-xs py-1 px-4 sm:px-8 flex justify-between items-center relative z-50">
+            <div className="bg-blue-950 text-blue-100 text-xs py-1 px-4 sm:px-8 flex justify-between items-center relative z-50 no-print">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -225,10 +224,8 @@ const Header: React.FC<HeaderProps> = ({
                     </div>
 
                     {/* Branch Selection Section */}
+                    {currentPage !== 'Time Sheet' && (
                     <div className="w-full md:w-auto flex flex-col items-start md:items-end">
-                        <label className="text-white/80 text-[10px] uppercase font-bold tracking-widest mb-1.5 ml-1 md:mr-1">
-                            Current Branch
-                        </label>
                         
                         <div className="flex items-center gap-2 w-full justify-end">
                             {/* Floating/Action Icon on the left side of Branch selector with extreme high-impact visual design */}
@@ -350,6 +347,7 @@ const Header: React.FC<HeaderProps> = ({
                             {/* Approved Orders action button has been relocated to the brand logo section on the left side */}
                         </div>
                     </div>
+                    )}
                 </div>
             </div>
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Driver, DriverWorkLog } from '../types';
 import { dualStorage, COLLECTIONS } from '../DualStorageService';
 import { captureAndExport, printOrDownloadPdf } from '../captureUtils';
+import { Printer, FileSpreadsheet } from 'lucide-react';
 
 interface Props {
     drivers: Driver[];
@@ -313,12 +314,24 @@ export default function DriverReport({ drivers, workLogs, canEdit = true, select
                     >
                         {hideEmptyDrivers ? 'Show Empty Drivers' : 'Hide Empty Drivers'}
                     </button>
-                    <button onClick={exportToExcel} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium text-sm transition-colors shadow-sm">
-                        Export Excel
-                    </button>
-                    <button onClick={handlePrint} className="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-md font-medium text-sm transition-colors shadow-sm">
-                        Print
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handlePrint}
+                            className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-4 rounded-xl transition-all active:scale-95 shadow-md hover:shadow-lg h-[44px] min-w-[100px] group"
+                            title="Print Report / طباعة التقرير"
+                        >
+                            <Printer className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                            <span className="hidden xs:inline">Print / طباعة</span>
+                        </button>
+                        <button
+                            onClick={exportToExcel}
+                            className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl transition-all active:scale-95 shadow-md hover:shadow-lg h-[44px] min-w-[100px] group border-b-4 border-emerald-800"
+                            title="Export to Excel / تصدير إكسل"
+                        >
+                            <FileSpreadsheet className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                            <span className="hidden xs:inline">Excel / إكسل</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 

@@ -20,9 +20,9 @@ const Customers: React.FC<CustomersProps> = ({ customers, onAdd, onUpdate, onDel
     const [newCustomer, setNewCustomer] = useState({ customerNumber: '', name: '', phone: '', address: '', type: 'credit' as 'cash' | 'credit' });
     const [editData, setEditData] = useState<Customer | null>(null);
 
-    const canAddCustomer = currentUser?.role === 'admin' || currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.canAddCustomer;
-    const canEditCustomer = currentUser?.role === 'admin' || currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.canEditCustomer;
-    const canDeleteCustomer = currentUser?.role === 'admin' || currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.canDeleteCustomer;
+    const canAddCustomer = currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.canAddCustomer;
+    const canEditCustomer = currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.canEditCustomer;
+    const canDeleteCustomer = currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.canDeleteCustomer;
 
     const filteredCustomers = useMemo(() => {
         return customers.filter(c => {

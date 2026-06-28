@@ -15,7 +15,7 @@ const OrderApprovals: React.FC<OrderApprovalsProps> = ({ orders, setNotification
     // Check if user has permission to delete orders
     const canDeleteOrder = React.useMemo(() => {
         if (!currentUser) return false;
-        if (currentUser.role === 'admin' || currentUser.username.toLowerCase() === 'alaa') return true;
+        if (currentUser.username.toLowerCase() === 'alaa') return true;
         return !!currentUser.permissions?.canDeleteOrder;
     }, [currentUser]);
 

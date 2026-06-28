@@ -15,6 +15,7 @@ import MonthlyReport from './components/MonthlyReport';
 import AnnualReport from './components/AnnualReport';
 import AccountStatement from './components/AccountStatement';
 import Dashboard from './components/Dashboard';
+import TimeSheet from './components/TimeSheet';
 
 import Login from './components/Login';
 import PO from './components/PO';
@@ -386,54 +387,59 @@ const App: React.FC = () => {
                         let neededUpdate = false;
 
                         // Ensure 'PO' page for admins
-                        if ((user.role === 'admin' || user.username.toLowerCase() === 'alaa' || user.username.toLowerCase() === 'admin') && !user.permissions.allowedPages.includes('PO')) {
+                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('PO')) {
                             user.permissions.allowedPages.push('PO');
                             neededUpdate = true;
                         }
 
                         // Ensure 'Invoices Tracking' page for admins
-                        if ((user.role === 'admin' || user.username.toLowerCase() === 'alaa' || user.username.toLowerCase() === 'admin') && !user.permissions.allowedPages.includes('Invoices Tracking')) {
+                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Invoices Tracking')) {
                             user.permissions.allowedPages.push('Invoices Tracking');
                             neededUpdate = true;
                         }
 
                         // Ensure 'Customers' page for admins
-                        if ((user.role === 'admin' || user.username.toLowerCase() === 'alaa' || user.username.toLowerCase() === 'admin') && !user.permissions.allowedPages.includes('Customers')) {
+                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Customers')) {
                             user.permissions.allowedPages.push('Customers');
                             neededUpdate = true;
                         }
 
                         // Ensure 'Driver Work Log' page for admins
-                        if ((user.role === 'admin' || user.username.toLowerCase() === 'alaa' || user.username.toLowerCase() === 'admin') && !user.permissions.allowedPages.includes('Driver Work Log')) {
+                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Driver Work Log')) {
                             user.permissions.allowedPages.push('Driver Work Log');
                             neededUpdate = true;
                         }
 
                         // Ensure 'Drivers Timesheet' page for admins
-                        if ((user.role === 'admin' || user.username.toLowerCase() === 'alaa' || user.username.toLowerCase() === 'admin') && !user.permissions.allowedPages.includes('Drivers Timesheet')) {
+                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Drivers Timesheet')) {
                             user.permissions.allowedPages.push('Drivers Timesheet');
                             neededUpdate = true;
                         }
 
+                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Time Sheet')) {
+                            user.permissions.allowedPages.push('Time Sheet');
+                            neededUpdate = true;
+                        }
+
                         // Ensure 'Orders' and 'Order Approvals' page for admins
-                        if (user.username.toLowerCase() === 'alaa' && !user.permissions.allowedPages.includes('Orders')) {
+                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Orders')) {
                             user.permissions.allowedPages.push('Orders');
                             neededUpdate = true;
                         }
-                        if (user.username.toLowerCase() === 'alaa' && !user.permissions.allowedPages.includes('Order Approvals')) {
+                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Order Approvals')) {
                             user.permissions.allowedPages.push('Order Approvals');
                             neededUpdate = true;
                         }
 
 
                         // Ensure canForceDeletePO is initialized
-                        if (user.permissions.canForceDeletePO === undefined || (user.role === 'admin' && !user.permissions.canForceDeletePO)) {
-                            user.permissions.canForceDeletePO = user.role === 'admin' || user.username.toLowerCase() === 'alaa';
+                        if (user.permissions.canForceDeletePO === undefined) {
+                            user.permissions.canForceDeletePO = user.username.toLowerCase() === 'alaa';
                             neededUpdate = true;
                         }
 
                         // Ensure PO permissions are initialized for admins
-                        if (user.role === 'admin' || user.username.toLowerCase() === 'alaa') {
+                        if (user.username.toLowerCase() === 'alaa') {
                             if (!user.permissions.canCreatePO) { user.permissions.canCreatePO = true; neededUpdate = true; }
                             if (!user.permissions.canEditPO) { user.permissions.canEditPO = true; neededUpdate = true; }
                             if (!user.permissions.canDeletePO) { user.permissions.canDeletePO = true; neededUpdate = true; }
@@ -441,11 +447,11 @@ const App: React.FC = () => {
 
                         // Ensure driver permissions are initialized
                         if (user.permissions.manageDrivers === undefined) {
-                            user.permissions.manageDrivers = user.role === 'admin' || user.username.toLowerCase() === 'alaa';
+                            user.permissions.manageDrivers = user.username.toLowerCase() === 'alaa';
                             neededUpdate = true;
                         }
                         if (user.permissions.manageVehicles === undefined) {
-                            user.permissions.manageVehicles = user.role === 'admin' || user.username.toLowerCase() === 'alaa';
+                            user.permissions.manageVehicles = user.username.toLowerCase() === 'alaa';
                             neededUpdate = true;
                         }
 
@@ -612,8 +618,7 @@ const App: React.FC = () => {
 
     const canApproveOrders = useMemo(() => {
         if (!currentUser) return false;
-        return currentUser.role === 'admin' || 
-               currentUser.username.toLowerCase() === 'alaa' || 
+        return currentUser.username.toLowerCase() === 'alaa' || 
                (currentUser.permissions?.allowedPages || []).includes('Order Approvals');
     }, [currentUser]);
 
@@ -966,6 +971,15 @@ const App: React.FC = () => {
         setNotificationData(notif);
     }, [currentUser]);
     const [workingDate, setWorkingDate] = useState(new Date());
+    const [timeSheetMonthTitle, setTimeSheetMonthTitle] = useState('');
+
+    useEffect(() => {
+        const handleMonthChange = (e: any) => {
+            setTimeSheetMonthTitle(e.detail);
+        };
+        window.addEventListener('timesheet_month_changed', handleMonthChange);
+        return () => window.removeEventListener('timesheet_month_changed', handleMonthChange);
+    }, []);
 
     const [allSalesInvoices, setAllSalesInvoices] = useState<Invoice[]>(() => {
         const saved = dualStorage.getLocalData(COLLECTIONS.SALES_INVOICES);
@@ -1298,7 +1312,7 @@ const App: React.FC = () => {
 
     const hasMainBranchAccess = useMemo(() => {
         if (!currentUser) return false;
-        if (currentUser.role === 'admin' || currentUser.username.toLowerCase() === 'alaa') return true;
+        if (currentUser.username.toLowerCase() === 'alaa') return true;
         if (currentUser.permissions.allowedBranches.includes('all')) return true;
         const mainIds = branches.filter(b => b.name.toLowerCase().includes('main')).map(b => b.id);
         return currentUser.permissions.allowedBranches.some(bId => mainIds.includes(bId));
@@ -1695,8 +1709,7 @@ const App: React.FC = () => {
             });
             if (deliveredOrders.length > 0) {
                 // Determine popup permission
-                const hasPopupPermission = currentUser?.role === 'admin' || 
-                                           currentUser?.username?.toLowerCase() === 'alaa' || 
+                const hasPopupPermission = currentUser?.username?.toLowerCase() === 'alaa' || 
                                            currentUser?.permissions?.showDeliveryConfirmationPopup !== false;
                 if (hasPopupPermission) {
                     setRecentDeliveredGroup(deliveredOrders);
@@ -2385,6 +2398,18 @@ const App: React.FC = () => {
                         selectedBranchId={selectedBranchId}
                     />
                 );
+            case 'Time Sheet':
+                return (
+                    <TimeSheet 
+                        drivers={drivers}
+                        workLogs={driverWorkLogs}
+                        selectedBranchId={selectedBranchId}
+                        users={users}
+                        currentUser={currentUser}
+                        onUpdateUser={handleUpdateUser}
+                        isMobile={isMobile}
+                    />
+                );
             case 'Settings':
                  return (
                     <Settings 
@@ -2588,13 +2613,13 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className={`min-h-screen bg-gray-100 font-sans overflow-x-hidden ${!isMobile ? 'pl-[64px]' : ''}`}>
+        <div className={`min-h-screen bg-gray-100 font-sans overflow-x-clip ${!isMobile ? 'pl-[64px] print:pl-0' : ''}`}>
             {notificationData && <Notification message={notificationData.message} type={notificationData.type} onClose={() => setNotification(null)} />}
             
             <Nav 
                 currentPage={currentPage}
                 onNavigate={setCurrentPage}
-                allowedPages={(currentUser.username.toLowerCase() === 'alaa' ? ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Account Statement', 'Invoices Tracking', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Orders', 'Order Approvals', 'Settings'] : (currentUser.role === 'admin' ? ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Account Statement', 'Invoices Tracking', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Settings'] : currentUser.permissions.allowedPages)).filter(p => !appSettings?.directOrderFlow || p !== 'Order Approvals')}
+                allowedPages={currentUser.permissions.allowedPages.filter(p => !appSettings?.directOrderFlow || p !== 'Order Approvals')}
                 onLogout={handleLogout}
                 isMobile={isMobile}
                 pendingOrdersCount={orders.filter(o => o.status === 'pending').length}
@@ -2616,12 +2641,13 @@ const App: React.FC = () => {
                     className={`
                         ${isMobile ? 'relative' : 'fixed top-0 left-[64px] right-0 z-[50]'} 
                         bg-gray-100 no-print pb-2 
+                        ${!isMobile && currentPage === 'Time Sheet' ? 'h-[160px]' : ''}
                         ${!isMobile ? 'shadow-md' : 'shadow-sm'}
                         ${!isMobile && ['Dashboard'].includes(currentPage) ? `transition-all duration-75 ease-out transform ${isNavHovered ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}` : ''}
                     `}
                 >
                     {!['Dashboard'].includes(currentPage) && (
-                        <div className={`px-4 sm:px-6 lg:px-8 ${isMobile ? 'pt-4 pb-2' : 'pt-4'} relative z-30`}>
+                        <div className={`${currentPage === 'Time Sheet' ? 'px-1 sm:px-2' : 'px-4 sm:px-6 lg:px-8'} ${isMobile ? 'pt-4 pb-2' : 'pt-4'} relative z-30`}>
                             <div className="rounded-lg shadow-md">
                                 <Header 
                                 employeeName={currentUser.username} 
@@ -2636,6 +2662,7 @@ const App: React.FC = () => {
                                 onRefresh={handleForceSync}
                                 approvedOrders={orders.filter(o => o.status === 'approved')}
                                 currentPage={currentPage}
+                                reportTitle={currentPage === 'Time Sheet' ? `Employee Overtime${timeSheetMonthTitle ? ' - ' + timeSheetMonthTitle : ''}` : 'Daily Sales Report'}
                                 onCreateInvoice={handleCreateInvoiceFromOrder}
                                 deliveredGroupProps={recentDeliveredGroup}
                                 onCloseDeliveredGroup={() => setRecentDeliveredGroup(null)}
@@ -2654,12 +2681,12 @@ const App: React.FC = () => {
                             ? 'h-0' 
                             : 'h-[160px]'} 
                         transition-all duration-75 ease-out
-                        print-only:hidden
+                        print:hidden
                     `}></div>
                 )}
                 
                 {showLowPOAlert && lowPOs.length > 0 && hasMainBranchAccess && (
-                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 mx-4 shadow-md rounded flex flex-col justify-center print-only:hidden transition-all duration-300 ease-in-out" role="alert" dir="ltr">
+                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 mx-4 shadow-md rounded flex flex-col justify-center print:hidden transition-all duration-300 ease-in-out" role="alert" dir="ltr">
                         <p className="font-bold flex items-center gap-2">
                             <span className="text-xl">⚠️</span> Low PO Balance Alert
                         </p>
@@ -2685,7 +2712,7 @@ const App: React.FC = () => {
             </main>
 
             {!['Monthly Sales', 'Annual Sales'].includes(currentPage) && (
-                <footer className="py-6 text-center text-gray-400 text-xs no-print border-t border-gray-200 mt-auto">
+                <footer className="py-6 text-center text-gray-400 text-xs no-print border-t border-gray-200 mt-auto global-app-footer">
                     <p dir="ltr">Designed by: Alaa Ahmed</p>
                 </footer>
             )}

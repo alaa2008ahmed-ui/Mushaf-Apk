@@ -5,6 +5,18 @@ export interface Item {
     code?: string;
 }
 
+export interface TimeSheetEmployee {
+    id: string;
+    serialNumber: number;
+    name: string;
+    englishName?: string;
+    jobTitle: string;
+    englishJobTitle?: string;
+    isActive: boolean;
+    showInOvertime1?: boolean;
+    showInOvertime2?: boolean;
+}
+
 export interface Employee {
     id: string;
     name: string;
@@ -77,6 +89,19 @@ export interface UserPermissions {
     showReceiptDetailsPopup?: boolean;
     receiveLowPOAlert?: boolean;
     receiveNewOrderAlert?: boolean;
+    // Time Sheet Permissions
+    tsCanViewEmployees?: boolean;
+    tsCanViewOvertime1?: boolean;
+    tsCanViewOvertime2?: boolean;
+    tsCanViewListOvertime?: boolean;
+    tsCanManageSettings?: boolean;
+    tsCanAddEmployee?: boolean;
+    tsCanEditEmployee?: boolean;
+    tsCanDeleteEmployee?: boolean;
+    tsCanUndoPost?: boolean;
+    tsCanDeletePost?: boolean;
+    tsCanViewArchiveO1?: boolean;
+    tsCanViewArchiveO2?: boolean;
     notifyAddCashInvoice?: boolean;
     notifyEditCashInvoice?: boolean;
     notifyDeleteCashInvoice?: boolean;

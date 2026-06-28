@@ -116,8 +116,14 @@ class DualStorageService {
     });
 
     try {
+      const delayedCollections = [COLLECTIONS.RECORDS, COLLECTIONS.PO_CUSTOMERS];
+
       Object.values(COLLECTIONS).forEach(collectionName => {
         if (navigator.onLine) {
+          if (delayedCollections.includes(collectionName)) {
+             // Will be loaded after salesInvoices stage 2
+             return;
+          }
           // For salesInvoices, enable background cleanup (so it runs once to verify deletions)
           // For other collections, we just run staged fetch.
           const isMainCollection = collectionName === COLLECTIONS.SALES_INVOICES;
@@ -225,7 +231,7 @@ class DualStorageService {
           d3.setHours(0,0,0,0);
           const threeDaysAgoStr = d3.toISOString();
           
-          console.log(`DualStorage [${collectionName}]: Fast boot... fetching last 3 days >= ${threeDaysAgoStr}`);
+          // // console.log(`DualStorage [${collectionName}]: Fast boot... fetching last 3 days >= ${threeDaysAgoStr}`);
 
           const qFast = query(
             collection(db, collectionName), 
@@ -235,12 +241,12 @@ class DualStorageService {
           // We use getDocs for the fast boot so it resolves immediately
           getDocs(qFast).then(snapshot => {
             const fastData = snapshot.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-            console.log(`DualStorage [${collectionName}]: Fast boot loaded ${fastData.length} invoices.`);
+            // console.log(`DualStorage [${collectionName}]: Fast boot loaded ${fastData.length} invoices.`);
             this.processDataUpdate(collectionName, fastData, true); // Use partial=true to preserve existing cache during boot
             
             // 2. ACTIVE PERIOD: After fast boot, fetch the full active month
             const activeStartDateStr = this.getActivePeriodStartDate();
-            console.log(`DualStorage [${collectionName}]: Starting active period query >= ${activeStartDateStr}`);
+            // console.log(`DualStorage [${collectionName}]: Starting active period query >= ${activeStartDateStr}`);
 
             const qRecent = query(
               collection(db, collectionName), 
@@ -249,17 +255,23 @@ class DualStorageService {
 
             getDocs(qRecent).then(snapshotRecent => {
               const recentData = snapshotRecent.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-              console.log(`DualStorage [${collectionName}]: Fetched ${recentData.length} active month invoices.`);
+              // console.log(`DualStorage [${collectionName}]: Fetched ${recentData.length} active month invoices.`);
               
               // partial=true so we merge without deleting anything.
               this.processDataUpdate(collectionName, recentData, true); 
+
+              // Trigger Stage 3: Time Sheet and PO Pages
+              setTimeout(() => {
+                  this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
+                  this.runStagedFetchForCollection(COLLECTIONS.PO_CUSTOMERS);
+              }, 100);
 
               // 3. PREVIOUS MONTH: Fetch the preceding month for comparison stats in Dashboard/Ticker
               const prevMonthStart = new Date(activeStartDateStr);
               prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
               const prevMonthStartStr = prevMonthStart.toISOString();
               
-              console.log(`DualStorage [${collectionName}]: Fetching previous month comparison data [${prevMonthStartStr} to ${activeStartDateStr}]`);
+              // console.log(`DualStorage [${collectionName}]: Fetching previous month comparison data [${prevMonthStartStr} to ${activeStartDateStr}]`);
               
               const qPrev = query(
                 collection(db, collectionName),
@@ -269,7 +281,7 @@ class DualStorageService {
 
               getDocs(qPrev).then(snapshotPrev => {
                 const prevData = snapshotPrev.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-                console.log(`DualStorage [${collectionName}]: Fetched ${prevData.length} previous month invoices.`);
+                // console.log(`DualStorage [${collectionName}]: Fetched ${prevData.length} previous month invoices.`);
                 this.processDataUpdate(collectionName, prevData, true);
               }).catch(err => console.error(`DualStorage [${collectionName}]: Previous month fetch error:`, err));
 
@@ -289,8 +301,16 @@ class DualStorageService {
               });
               this.listeners.push(unsubscribeLive);
 
-            }).catch(err => console.error(`DualStorage [${collectionName}]: Active fetch error:`, err));
-          }).catch(err => console.error(`DualStorage [${collectionName}]: Fast fetch error:`, err));
+            }).catch(err => {
+              console.error(`DualStorage [${collectionName}]: Active fetch error:`, err);
+              this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
+              this.runStagedFetchForCollection(COLLECTIONS.PO_CUSTOMERS);
+            });
+          }).catch(err => {
+            console.error(`DualStorage [${collectionName}]: Fast fetch error:`, err);
+            this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
+            this.runStagedFetchForCollection(COLLECTIONS.PO_CUSTOMERS);
+          });
           
           return;
       }
@@ -300,7 +320,7 @@ class DualStorageService {
       const sessionStartTime = new Date().toISOString();
 
       // Hook up a live lightweight realtime listener for any changes happening CONCURRENTLY during session
-      console.log(`DualStorage [${collectionName}]: Starting lightweight live listener for session updates >= ${sessionStartTime}`);
+      // console.log(`DualStorage [${collectionName}]: Starting lightweight live listener for session updates >= ${sessionStartTime}`);
       const qLive = query(
         collection(db, collectionName), 
         where('updatedAt', '>=', sessionStartTime)
@@ -310,7 +330,7 @@ class DualStorageService {
         // We received updates during the session. Process and merge them right away.
         const liveUpdates = snapshot.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
         if (liveUpdates.length > 0) {
-          console.log(`DualStorage [${collectionName}]: [Live Snapshot] Received ${liveUpdates.length} real-time session update(s).`);
+          // console.log(`DualStorage [${collectionName}]: [Live Snapshot] Received ${liveUpdates.length} real-time session update(s).`);
           this.processDataUpdate(collectionName, liveUpdates, true); // Partial=true so it merges nicely
         }
       }, (error) => {
@@ -336,7 +356,7 @@ class DualStorageService {
         }
       }
 
-      console.log(`DualStorage [${collectionName}]: Incremental fetch started. Highest local updatedAt threshold: ${lastUpdatedStr || 'None (Full Sync)'}`);
+      // console.log(`DualStorage [${collectionName}]: Incremental fetch started. Highest local updatedAt threshold: ${lastUpdatedStr || 'None (Full Sync)'}`);
 
       // Step 2: Fetch only items updated since our local threshold
       let fetchedItems: any[] = [];
@@ -348,7 +368,7 @@ class DualStorageService {
           );
           const snap = await getDocs(qIncremental);
           fetchedItems = snap.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-          console.log(`DualStorage [${collectionName}]: Incremental fetch found ${fetchedItems.length} items updated/created since ${lastUpdatedStr}.`);
+          // console.log(`DualStorage [${collectionName}]: Incremental fetch found ${fetchedItems.length} items updated/created since ${lastUpdatedStr}.`);
         } catch (err) {
           console.error(`DualStorage [${collectionName}]: Incremental query failed, falling back to full query`, err);
           const qFallback = query(collection(db, collectionName));
@@ -369,7 +389,7 @@ class DualStorageService {
       
       // Optional Step 4: Run a background cleanup (Removed fullSyncFromCloud to avoid performance hits)
       if (enableBackgroundCleanup) {
-        console.log(`DualStorage [${collectionName}]: Background cleanup flag checked, skipping full sync for performance.`);
+        // console.log(`DualStorage [${collectionName}]: Background cleanup flag checked, skipping full sync for performance.`);
       }
 
     } catch (error) {
@@ -470,7 +490,7 @@ class DualStorageService {
   }
 
   async delete(collectionName: string, id: string) {
-    console.log(`DualStorage: Deleting from ${collectionName}, ID: ${id}`);
+    // console.log(`DualStorage: Deleting from ${collectionName}, ID: ${id}`);
     const docRef = doc(db, collectionName, id);
 
     const originalLocalData = this.getLocalData(collectionName);
@@ -583,7 +603,7 @@ class DualStorageService {
     const queue = this.getPendingQueue();
     if (queue.length === 0) return;
 
-    console.log(`DualStorage: Syncing ${queue.length} pending changes to Firestore...`);
+    // console.log(`DualStorage: Syncing ${queue.length} pending changes to Firestore...`);
     
     const processedIds: string[] = [];
 
@@ -666,11 +686,11 @@ class DualStorageService {
    */
   async fullSyncFromCloud() {
     if (!navigator.onLine) {
-        console.log('DualStorage: Offline, skipping cloud sync.');
+        // console.log('DualStorage: Offline, skipping cloud sync.');
         return;
     }
 
-    console.log('DualStorage: Starting parallel cloud sync with recovery...');
+    // console.log('DualStorage: Starting parallel cloud sync with recovery...');
     const syncPromises = Object.values(COLLECTIONS).map(async (collectionName) => {
       try {
         let q = query(collection(db, collectionName));
@@ -687,7 +707,7 @@ class DualStorageService {
         );
         if (updatedQueue.length !== queue.length) {
             localStorage.setItem('fs_pending_queue', JSON.stringify(updatedQueue));
-            console.log(`DualStorage: Cleaned up ${queue.length - updatedQueue.length} items from queue that are already in cloud.`);
+            // console.log(`DualStorage: Cleaned up ${queue.length - updatedQueue.length} items from queue that are already in cloud.`);
         }
 
         // RECOVERY: Find items in local storage that ARE NOT in cloud
@@ -700,7 +720,7 @@ class DualStorageService {
         });
         
         if (localOnlyItems.length > 0) {
-            console.log(`DualStorage: Recovering ${localOnlyItems.length} local-only items for ${collectionName}`);
+            // console.log(`DualStorage: Recovering ${localOnlyItems.length} local-only items for ${collectionName}`);
             
             // Use batch for efficient recovery of multiple items
             const batchSize = 20;
@@ -715,7 +735,7 @@ class DualStorageService {
                 });
                 try {
                     await batch.commit();
-                    console.log(`DualStorage: Successfully recovered batch of ${chunk.length} items for ${collectionName}`);
+                    // console.log(`DualStorage: Successfully recovered batch of ${chunk.length} items for ${collectionName}`);
                 } catch (e) {
                     console.error(`DualStorage: Failed to recover batch`, e);
                     // On failure, ensure they are in pending queue
@@ -770,7 +790,7 @@ class DualStorageService {
 
     await Promise.all(syncPromises);
     localStorage.setItem('fs_last_sync_time', Date.now().toString());
-    console.log('DualStorage: Parallel sync and recovery complete.');
+    // console.log('DualStorage: Parallel sync and recovery complete.');
   }
 
   /**
@@ -782,7 +802,7 @@ class DualStorageService {
         throw new Error('Cannot force push while offline');
     }
 
-    console.log(`DualStorage: Force pushing data for branch ${branchId}...`);
+    // console.log(`DualStorage: Force pushing data for branch ${branchId}...`);
     
     // 1. First, try to sync the general pending queue to clear any easy stuff
     await this.syncPendingChanges();
@@ -817,7 +837,7 @@ class DualStorageService {
             });
             
             if (missingItems.length > 0) {
-                console.log(`DualStorage: Found ${missingItems.length} missing items for branch ${branchId} in ${collectionName}. Pushing now...`);
+                // console.log(`DualStorage: Found ${missingItems.length} missing items for branch ${branchId} in ${collectionName}. Pushing now...`);
                 
                 const batchSize = 50;
                 for (let i = 0; i < missingItems.length; i += batchSize) {
@@ -839,7 +859,7 @@ class DualStorageService {
 
     await Promise.all(syncPromises);
     localStorage.setItem('fs_last_sync_time', Date.now().toString());
-    console.log(`DualStorage: Force push for branch ${branchId} complete.`);
+    // console.log(`DualStorage: Force push for branch ${branchId} complete.`);
   }
 
   /**
@@ -858,7 +878,7 @@ class DualStorageService {
    * WARNING: This replaces local data and attempts to sync to Firestore.
    */
   async importAllData(backup: Record<string, any[]>) {
-    console.log("DualStorage: Importing full backup...");
+    // console.log("DualStorage: Importing full backup...");
     for (const [collectionName, data] of Object.entries(backup)) {
       if (!Object.values(COLLECTIONS).includes(collectionName)) continue;
       
@@ -884,7 +904,7 @@ class DualStorageService {
           });
           
           await batch.commit();
-          console.log(`DualStorage: Successfully synced ${collectionName} import to cloud.`);
+          // console.log(`DualStorage: Successfully synced ${collectionName} import to cloud.`);
         } catch (error) {
           console.error(`DualStorage: Failed to sync import for ${collectionName}`, error);
         }
