@@ -398,6 +398,31 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 setIsSubmitting(false);
                 return;
             }
+
+            // NEW VALIDATION LOGIC: Check against max invoice number
+            if (!isEditing) {
+                const source = allInvoices.length > 0 ? allInvoices : existingInvoices;
+                // Filter by current theme to ensure we compare with correct sequence
+                const sameTypeInvoices = source.filter(inv => inv.type === theme);
+                
+                if (sameTypeInvoices.length > 0) {
+                    const maxNum = Math.max(...sameTypeInvoices.map(inv => inv.invoiceNumber));
+                    
+                    // 1. Lower limit: reject if number is more than 50 below max
+                    if (currentInvoiceNumber < maxNum - 50) {
+                        setFormError(`Rejected: Invoice number ${currentInvoiceNumber} is too old. Min allowed: ${maxNum - 50} | مرفوض: رقم الفاتورة قديم جداً. الحد الأدنى المسموح: ${maxNum - 50}`);
+                        setIsSubmitting(false);
+                        return;
+                    }
+
+                    // 2. Upper limit: reject if number is more than 50 above max
+                    if (currentInvoiceNumber > maxNum + 50) {
+                        setFormError(`Rejected: Invoice number ${currentInvoiceNumber} is too high. Max allowed: ${maxNum + 50} | مرفوض: رقم الفاتورة يتخطى الحد المسموح. الحد الأقصى: ${maxNum + 50}`);
+                        setIsSubmitting(false);
+                        return;
+                    }
+                }
+            }
             
             /* Removed mandatory PO selection for credit invoices */
             
