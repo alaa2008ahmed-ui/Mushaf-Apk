@@ -216,24 +216,27 @@ export default function App() {
   };
 
   const handleExitPortal = () => {
-    // 1. Attempt Cordova/PhoneGap/Capacitor exit
+    // تحديث حالة الواجهة فوراً للرجوع إلى شاشة البرامج الرئيسية لضمان الاستجابة الكاملة في جميع المتصفحات
+    handleSelectApp(null);
+    setShowFloatingMenu(false);
+
+    const win = window as any;
     const nav = window.navigator as any;
+
+    // 1. محاولة الخروج عبر Cordova / PhoneGap
     if (nav && nav.app && typeof nav.app.exitApp === 'function') {
       try {
         nav.app.exitApp();
-        return;
       } catch (e) {
         console.error("Cordova exitApp failed:", e);
       }
     }
 
-    // 2. Attempt generic Android interface
-    const win = window as any;
+    // 2. محاولة الخروج عبر واجهة Android المخصصة
     if (win.Android) {
       if (typeof win.Android.exitApp === 'function') {
         try {
           win.Android.exitApp();
-          return;
         } catch (e) {
           console.error("Android.exitApp failed:", e);
         }
@@ -241,33 +244,27 @@ export default function App() {
       if (typeof win.Android.close === 'function') {
         try {
           win.Android.close();
-          return;
         } catch (e) {
           console.error("Android.close failed:", e);
         }
       }
     }
 
-    // 3. Attempt Capacitor standard JS Bridge if loaded (e.g. window.Capacitor)
+    // 3. محاولة الخروج عبر Capacitor
     if (win.Capacitor && win.Capacitor.Plugins && win.Capacitor.Plugins.App) {
       try {
         win.Capacitor.Plugins.App.exitApp();
-        return;
       } catch (e) {
         console.error("Capacitor App.exitApp failed:", e);
       }
     }
 
-    // 4. Attempt standard window.close
+    // 4. محاولة إغلاق النافذة القياسية
     try {
       win.close();
     } catch (e) {
       console.error("window.close failed:", e);
     }
-
-    // 5. Fallback for browser preview: Go back to portal screen so it acts as an exit inside the web browser
-    handleSelectApp(null);
-    setShowFloatingMenu(false);
   };
 
   // Render proper icon based on app identifier
