@@ -1,6 +1,6 @@
 {
-  "name": "App Daily Sales 2",
-  "description": "رابط مباشر لتطبيق مبيعات SWC اليومي",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
+  "name": "App Daily Sales 1",
+  "description": "بوابة موحدة للأنظمة والبرامج المشتركة وتشمل برنامج علاء المحاسبي، المبيعات اليومية، مبيعات الدليفري ومصحف أحمد وليلى",
+  "requestFramePermissions": ["camera", "microphone", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
