@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.delivrynote1.app',
-  appName: 'Delivry Note',
+  appName: 'All Apps', // تم التعديل هنا
   webDir: 'dist'
 };
 
