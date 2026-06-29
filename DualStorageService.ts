@@ -147,6 +147,14 @@ class DualStorageService {
    * @param cloudData The authoritative data from the cloud
    * @param isPartial If true, the cloudData is a subset (e.g. staged load) and shouldn't delete missing items.
    */
+  private safeSetLocalItem(key: string, value: string) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e: any) {
+      console.warn(`DualStorage: LocalStorage limit reached or error for key ${key}:`, e);
+    }
+  }
+
   private processDataUpdate(collectionName: string, cloudData: any[], isPartial: boolean = false) {
     const cloudIds = new Set(cloudData.map(d => d.id));
     const localData = this.getLocalData(collectionName);
@@ -180,7 +188,7 @@ class DualStorageService {
     });
     
     const finalData = Array.from(mergedMap.values());
-    localStorage.setItem(`fs_${collectionName}`, JSON.stringify(finalData));
+    this.safeSetLocalItem(`fs_${collectionName}`, JSON.stringify(finalData));
     
     if (this.onDataUpdateCallback) {
       this.onDataUpdateCallback(collectionName, finalData);
@@ -212,7 +220,12 @@ class DualStorageService {
     if (!navigator.onLine) return;
 
     try {
-      // --- STAGE 1: Last 3 Days Invoices ---
+      // --- STAGE 1: Core Structure (RECORDS & PO_CUSTOMERS) ---
+      // This loads Branches, Users, Settings, Items so that when invoices load, they map correctly.
+      await this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
+      await this.runStagedFetchForCollection(COLLECTIONS.PO_CUSTOMERS);
+
+      // --- STAGE 2: Last 3 Days Invoices ---
       const d3 = new Date();
       d3.setDate(d3.getDate() - 2); 
       d3.setHours(0,0,0,0);
@@ -226,7 +239,7 @@ class DualStorageService {
       const data1 = snap1.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
       this.processDataUpdate(COLLECTIONS.SALES_INVOICES, data1, true);
 
-      // --- STAGE 2: Current Month Invoices ---
+      // --- STAGE 3: Current Month Invoices ---
       const activeStartDateStr = this.getActivePeriodStartDate();
       const qStage2 = query(
         collection(db, COLLECTIONS.SALES_INVOICES), 
@@ -235,11 +248,6 @@ class DualStorageService {
       const snap2 = await getDocs(qStage2);
       const data2 = snap2.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
       this.processDataUpdate(COLLECTIONS.SALES_INVOICES, data2, true);
-
-      // --- STAGE 3: PO and Time Sheets (RECORDS & PO_CUSTOMERS) ---
-      // Time Sheets and Orders are stored in RECORDS with specific types
-      await this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
-      await this.runStagedFetchForCollection(COLLECTIONS.PO_CUSTOMERS);
 
       // --- STAGE 4: All other collections (Except historical invoices) ---
       const otherCollections = [
@@ -359,7 +367,7 @@ class DualStorageService {
       }
       
       // Mark the sync time so next time we know we did a full/incremental sync successfully
-      localStorage.setItem(`fs_sync_time_${collectionName}`, new Date().toISOString());
+      this.safeSetLocalItem(`fs_sync_time_${collectionName}`, new Date().toISOString());
 
       // Optional Step 4: Run a background cleanup (Removed fullSyncFromCloud to avoid performance hits)
       if (enableBackgroundCleanup) {
@@ -530,14 +538,14 @@ class DualStorageService {
     } else {
       localData.push({ ...data, id });
     }
-    localStorage.setItem(`fs_${collectionName}`, JSON.stringify(localData));
+    this.safeSetLocalItem(`fs_${collectionName}`, JSON.stringify(localData));
     return localData;
   }
 
   private removeFromLocalMirror(collectionName: string, id: string): any[] {
     const localData = this.getLocalData(collectionName);
     const filtered = localData.filter((item: any) => item.id !== id);
-    localStorage.setItem(`fs_${collectionName}`, JSON.stringify(filtered));
+    this.safeSetLocalItem(`fs_${collectionName}`, JSON.stringify(filtered));
     return filtered;
   }
 
@@ -557,7 +565,7 @@ class DualStorageService {
     } else {
         queue.push(newItem);
     }
-    localStorage.setItem('fs_pending_queue', JSON.stringify(queue));
+    this.safeSetLocalItem('fs_pending_queue', JSON.stringify(queue));
   }
 
   private removeFromPendingQueue(collectionName: string, id: string, action: 'save' | 'delete') {
@@ -565,7 +573,7 @@ class DualStorageService {
     const filtered = queue.filter(item => 
         !(item.collectionName === collectionName && item.id === id && item.action === action)
     );
-    localStorage.setItem('fs_pending_queue', JSON.stringify(filtered));
+    this.safeSetLocalItem('fs_pending_queue', JSON.stringify(filtered));
   }
 
   private getPendingQueue(): any[] {
@@ -609,7 +617,7 @@ class DualStorageService {
     if (remainingQueue.length === 0) {
         localStorage.removeItem('fs_pending_queue');
     } else {
-        localStorage.setItem('fs_pending_queue', JSON.stringify(remainingQueue));
+        this.safeSetLocalItem('fs_pending_queue', JSON.stringify(remainingQueue));
     }
   }
 
@@ -640,7 +648,7 @@ class DualStorageService {
     if (field && value !== undefined) {
       filtered = localData.filter((item: any) => item[field] !== value);
     } 
-    localStorage.setItem(`fs_${collectionName}`, JSON.stringify(filtered));
+    this.safeSetLocalItem(`fs_${collectionName}`, JSON.stringify(filtered));
     if (this.onDataUpdateCallback) {
       this.onDataUpdateCallback(collectionName, filtered);
     }
@@ -680,7 +688,7 @@ class DualStorageService {
           !(qItem.collectionName === collectionName && cloudIds.has(qItem.id))
         );
         if (updatedQueue.length !== queue.length) {
-            localStorage.setItem('fs_pending_queue', JSON.stringify(updatedQueue));
+            this.safeSetLocalItem('fs_pending_queue', JSON.stringify(updatedQueue));
             // console.log(`DualStorage: Cleaned up ${queue.length - updatedQueue.length} items from queue that are already in cloud.`);
         }
 
@@ -724,7 +732,7 @@ class DualStorageService {
 
         // Standard merge Cloud -> Local
         if (localData.length === 0 && cloudData.length > 0) {
-            localStorage.setItem(`fs_${collectionName}`, JSON.stringify(cloudData));
+            this.safeSetLocalItem(`fs_${collectionName}`, JSON.stringify(cloudData));
             if (this.onDataUpdateCallback) {
                 this.onDataUpdateCallback(collectionName, cloudData);
             }
@@ -750,7 +758,7 @@ class DualStorageService {
             });
 
             const mergedData = Array.from(mergedMap.values());
-            localStorage.setItem(`fs_${collectionName}`, JSON.stringify(mergedData));
+            this.safeSetLocalItem(`fs_${collectionName}`, JSON.stringify(mergedData));
             
             if (this.onDataUpdateCallback) {
                 this.onDataUpdateCallback(collectionName, mergedData);
@@ -763,7 +771,7 @@ class DualStorageService {
     });
 
     await Promise.all(syncPromises);
-    localStorage.setItem('fs_last_sync_time', Date.now().toString());
+    this.safeSetLocalItem('fs_last_sync_time', Date.now().toString());
     // console.log('DualStorage: Parallel sync and recovery complete.');
   }
 
@@ -832,7 +840,7 @@ class DualStorageService {
     });
 
     await Promise.all(syncPromises);
-    localStorage.setItem('fs_last_sync_time', Date.now().toString());
+    this.safeSetLocalItem('fs_last_sync_time', Date.now().toString());
     // console.log(`DualStorage: Force push for branch ${branchId} complete.`);
   }
 
@@ -857,7 +865,7 @@ class DualStorageService {
       if (!Object.values(COLLECTIONS).includes(collectionName)) continue;
       
       // Update local first
-      localStorage.setItem(`fs_${collectionName}`, JSON.stringify(data));
+      this.safeSetLocalItem(`fs_${collectionName}`, JSON.stringify(data));
       if (this.onDataUpdateCallback) {
         this.onDataUpdateCallback(collectionName, data);
       }

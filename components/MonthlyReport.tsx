@@ -170,13 +170,13 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
     const sourceInvoices = isActiveMonth ? invoices : historicalInvoices;
 
     // Dynamically identify all unique item names present in the invoices to ensure they are all counted
-    const dynamicItemNames = new Set(allItemNames);
+    const dynamicItemNames = new Set<string>(allItemNames);
     sourceInvoices.forEach(inv => {
         if (inv.itemName && inv.itemName !== "Cancel") {
             dynamicItemNames.add(inv.itemName);
         }
     });
-    const currentItemNames = Array.from(dynamicItemNames);
+    const currentItemNames: string[] = Array.from(dynamicItemNames);
 
     const getInitialData = (date: string): DailyData => {
       const data: any = {
