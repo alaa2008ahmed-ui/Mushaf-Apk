@@ -237,7 +237,7 @@ const AccountStatement: React.FC<AccountStatementProps> = ({
 
             // Filter by user
             if (statementUserId !== 'all') {
-                if (inv.createdBy !== statementUserId) return false;
+                if (!inv.createdBy || inv.createdBy.trim().toLowerCase() !== statementUserId.trim().toLowerCase()) return false;
             }
 
             return true;

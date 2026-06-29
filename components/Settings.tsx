@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { MapPin, AlertTriangle, ShieldCheck, Lock, Unlock, Download, Upload, Users, Box, Truck, Car, Calendar, Hash, Database, Activity, ArrowLeft, Search, ClipboardList, Bell } from 'lucide-react';
+import { MapPin, AlertTriangle, ShieldCheck, Lock, Unlock, Download, Upload, Users, Box, Truck, Car, Calendar, Hash, Database, Activity, ArrowLeft, Search, ClipboardList, Bell, Smartphone } from 'lucide-react';
 import CryptoJS from 'crypto-js';
 import LZString from 'lz-string';
 import { Capacitor } from '@capacitor/core';
@@ -673,6 +673,10 @@ const Settings: React.FC<SettingsProps> = ({
 
         if (currentUser?.id === 'admin' || currentUser?.id === 'alaa-hidden') {
             cats.push({ id: 'diagnostics', title: 'Diagnostics', icon: Activity, color: 'text-rose-600', bg: 'bg-rose-50', desc: 'Verify data integrity and sync status.' });
+        }
+
+        if (currentUser?.username.toLowerCase() === 'alaa') {
+            cats.push({ id: 'mobile_config', title: 'Mobile App Configuration', icon: Smartphone, color: 'text-cyan-600', bg: 'bg-cyan-50', desc: 'Select which pages are visible when running the mobile app.' });
         }
 
         return cats;
@@ -1787,6 +1791,59 @@ const Settings: React.FC<SettingsProps> = ({
                         </div>
                     </div>
                 )}
+
+                            {activeCategory === 'mobile_config' && (
+                                <div className="space-y-6">
+                                    <div className="bg-cyan-50 p-6 rounded-xl border border-cyan-200 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="bg-cyan-600 p-2 rounded-lg text-white">
+                                                <Smartphone className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-bold text-cyan-950">Mobile App Configuration</h3>
+                                                <p className="text-sm text-cyan-800 mt-1">Select which pages should be visible when the application is running on a mobile device. If unchecked, the page will be hidden on mobile devices regardless of user permissions.</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                            {[
+                                                'Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 
+                                                'Account Statement', 'Invoices Tracking', 'PO', 'Driver Work Log', 
+                                                'Drivers Timesheet', 'Customers', 'Time Sheet', 'Orders', 'Order Approvals', 'Settings'
+                                            ].map(pageName => {
+                                                const isHidden = (settings.mobileHiddenPages || []).includes(pageName);
+                                                return (
+                                                    <label key={pageName} className="flex items-center gap-3 p-3 bg-white border border-cyan-100 rounded-lg cursor-pointer hover:bg-cyan-50 transition-colors">
+                                                        <input 
+                                                            type="checkbox"
+                                                            checked={!isHidden}
+                                                            onChange={(e) => {
+                                                                const checked = e.target.checked;
+                                                                const currentHidden = settings.mobileHiddenPages || [];
+                                                                let newHidden = [...currentHidden];
+                                                                
+                                                                if (checked) {
+                                                                    // Show it -> remove from hidden
+                                                                    newHidden = newHidden.filter(p => p !== pageName);
+                                                                } else {
+                                                                    // Hide it -> add to hidden
+                                                                    if (!newHidden.includes(pageName)) {
+                                                                        newHidden.push(pageName);
+                                                                    }
+                                                                }
+                                                                
+                                                                onUpdateSettings({ ...settings, mobileHiddenPages: newHidden });
+                                                            }}
+                                                            className="w-5 h-5 text-cyan-600 rounded border-gray-300 focus:ring-cyan-500"
+                                                        />
+                                                        <span className="text-sm font-semibold text-gray-700 select-none">{pageName}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {activeCategory === 'data' && (
                                 <div className="space-y-6">

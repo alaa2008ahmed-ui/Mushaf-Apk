@@ -644,7 +644,7 @@ const App: React.FC = () => {
 
     useEffect(() => {
         if (currentUser) {
-            const latestUser = users.find(u => u.username === currentUser.username);
+            const latestUser = users.find(u => u.username.trim().toLowerCase() === currentUser.username.trim().toLowerCase());
             if (latestUser && JSON.stringify(latestUser.permissions) !== JSON.stringify(currentUser.permissions)) {
                 setCurrentUser(latestUser);
                 localStorage.setItem('currentUser', JSON.stringify(latestUser));
@@ -706,19 +706,20 @@ const App: React.FC = () => {
     }, [selectedBranchId]);
 
     useEffect(() => {
-        if (currentUser && !currentUser.permissions.allowedPages.includes(currentPage)) {
-            // Priority fallback: 'Daily Sales' if allowed, otherwise first allowed page
-            const hasDailySales = currentUser.permissions.allowedPages.includes('Daily Sales');
-            if (hasDailySales) {
-                setCurrentPage('Daily Sales');
-            } else {
-                const firstAllowed = currentUser.permissions.allowedPages[0];
-                if (firstAllowed) {
-                    setCurrentPage(firstAllowed);
+        if (currentUser) {
+            const isHiddenOnMobile = isMobile && currentUser.username.toLowerCase() !== 'alaa' && (appSettings?.mobileHiddenPages || []).includes(currentPage);
+            if (!currentUser.permissions.allowedPages.includes(currentPage) || isHiddenOnMobile) {
+                // Priority fallback: 'Daily Sales' if allowed and not hidden on mobile, otherwise first allowed and visible page
+                const availablePages = currentUser.permissions.allowedPages.filter(p => !isMobile || currentUser.username.toLowerCase() === 'alaa' || !(appSettings?.mobileHiddenPages || []).includes(p));
+                
+                if (availablePages.includes('Daily Sales')) {
+                    setCurrentPage('Daily Sales');
+                } else if (availablePages.length > 0) {
+                    setCurrentPage(availablePages[0]);
                 }
             }
         }
-    }, [currentUser, currentPage]);
+    }, [currentUser, currentPage, isMobile, appSettings?.mobileHiddenPages]);
 
     useEffect(() => {
         if (currentUser && filteredBranches.length > 0) {
@@ -1065,7 +1066,7 @@ const App: React.FC = () => {
             let correctBranchId = inv.branchId;
             let needsFix = false;
 
-            const creator = inv.createdBy ? users.find(u => u.username === inv.createdBy) : null;
+            const creator = inv.createdBy ? users.find(u => u.username.trim().toLowerCase() === inv.createdBy?.trim().toLowerCase()) : null;
             
             if (creator) {
                 const allowed = creator.permissions.allowedBranches;
@@ -2190,13 +2191,15 @@ const App: React.FC = () => {
     const renderPage = () => {
         if (!currentUser) return null;
 
+        const isHiddenOnMobile = isMobile && currentUser.username.toLowerCase() !== 'alaa' && (appSettings?.mobileHiddenPages || []).includes(currentPage);
+
         // Check if user has access to current page
-        if (!currentUser.permissions.allowedPages.includes(currentPage)) {
+        if (!currentUser.permissions.allowedPages.includes(currentPage) || isHiddenOnMobile) {
             return (
                 <div className="p-4 sm:p-6 lg:p-8">
                     <div className="mt-6 bg-white rounded-lg shadow-md p-6 text-center">
                         <h2 className="text-2xl font-bold text-red-600">Access Denied</h2>
-                        <p className="text-gray-500 mt-2">You do not have permission to view the {currentPage} page.</p>
+                        <p className="text-gray-500 mt-2">You do not have permission to view the {currentPage} page on this device.</p>
                     </div>
                 </div>
             );
@@ -2619,7 +2622,10 @@ const App: React.FC = () => {
             <Nav 
                 currentPage={currentPage}
                 onNavigate={setCurrentPage}
-                allowedPages={currentUser.permissions.allowedPages.filter(p => !appSettings?.directOrderFlow || p !== 'Order Approvals')}
+                allowedPages={currentUser.permissions.allowedPages
+                    .filter(p => !appSettings?.directOrderFlow || p !== 'Order Approvals')
+                    .filter(p => !isMobile || currentUser.username.toLowerCase() === 'alaa' || !(appSettings?.mobileHiddenPages || []).includes(p))
+                }
                 onLogout={handleLogout}
                 isMobile={isMobile}
                 pendingOrdersCount={orders.filter(o => o.status === 'pending').length}

@@ -251,6 +251,7 @@ export interface AppSettings {
     autoBackupDayOfMonth?: number;
     autoBackupPassword?: string;
     lastTriggeredBackupDate?: string;
+    mobileHiddenPages?: string[];
     nextInvoiceNumbers?: {
         [branchId: string]: {
             cash: number;

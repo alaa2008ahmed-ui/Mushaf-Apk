@@ -261,11 +261,11 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
 
   const monthlyTotal = useMemo(() => {
     // Collect all dynamic names from processedData
-    const dynamicNamesSet = new Set(allItemNames);
+    const dynamicNamesSet = new Set<string>(allItemNames);
     processedData.forEach(day => {
         Object.keys(day.dailyItemTotal).forEach(name => dynamicNamesSet.add(name));
     });
-    const currentItemNames = Array.from(dynamicNamesSet);
+    const currentItemNames: string[] = Array.from(dynamicNamesSet);
 
     const total: Omit<DailyData, "date"> = {
       cash: {},
@@ -301,11 +301,11 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({
 
   const itemNames = useMemo(() => {
     // Collect all dynamic names from processedData
-    const dynamicNamesSet = new Set(allItemNames);
+    const dynamicNamesSet = new Set<string>(allItemNames);
     processedData.forEach(day => {
         Object.keys(day.dailyItemTotal).forEach(name => dynamicNamesSet.add(name));
     });
-    const currentItemNames = Array.from(dynamicNamesSet);
+    const currentItemNames: string[] = Array.from(dynamicNamesSet);
 
     return currentItemNames.filter((name) => {
       const qtyStr = Number(
