@@ -155,7 +155,7 @@ class DualStorageService {
     }
   }
 
-  private processDataUpdate(collectionName: string, cloudData: any[], isPartial: boolean = false) {
+  private processDataUpdate(collectionName: string, cloudData: any[], isPartial: boolean = false, deletedIds: string[] = []) {
     const cloudIds = new Set(cloudData.map(d => d.id));
     const localData = this.getLocalData(collectionName);
     const queue = this.getPendingQueue();
@@ -163,11 +163,16 @@ class DualStorageService {
     
     if (isPartial) {
       // In partial mode (Phase 1 & 2), we preserve existing local data and update/add from cloud
-      localData.forEach(item => mergedMap.set(item.id, item));
+      localData.forEach((item: any) => mergedMap.set(item.id, item));
       cloudData.forEach(item => mergedMap.set(item.id, item));
     } else {
       // In full mode (onSnapshot), the cloudData is the complete truth
       cloudData.forEach(item => mergedMap.set(item.id, item));
+    }
+
+    // Process explicit deletions from real-time listeners
+    if (deletedIds && deletedIds.length > 0) {
+        deletedIds.forEach(id => mergedMap.delete(id));
     }
     
     // Always apply pending local changes regardless of mode
@@ -245,9 +250,22 @@ class DualStorageService {
         collection(db, COLLECTIONS.SALES_INVOICES), 
         where('date', '>=', activeStartDateStr)
       );
-      const snap2 = await getDocs(qStage2);
-      const data2 = snap2.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-      this.processDataUpdate(COLLECTIONS.SALES_INVOICES, data2, true);
+      
+      const unsubscribeStage2 = onSnapshot(qStage2, (snap) => {
+        const liveUpdates: any[] = [];
+        const deletedIds: string[] = [];
+        snap.docChanges().forEach(change => {
+            if (change.type === 'removed') {
+                deletedIds.push(change.doc.id);
+            } else {
+                liveUpdates.push({ ...this.convertTimestamps(change.doc.data()), id: change.doc.id });
+            }
+        });
+        if (liveUpdates.length > 0 || deletedIds.length > 0) {
+            this.processDataUpdate(COLLECTIONS.SALES_INVOICES, liveUpdates, true, deletedIds);
+        }
+      });
+      this.listeners.push(unsubscribeStage2);
 
       // --- STAGE 4: All other collections (Except historical invoices) ---
       const otherCollections = [
@@ -271,10 +289,22 @@ class DualStorageService {
         where('date', '<', activeStartDateStr)
       );
 
-      getDocs(qPrev).then(snapPrev => {
-        const prevData = snapPrev.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-        this.processDataUpdate(COLLECTIONS.SALES_INVOICES, prevData, true);
-      }).catch(err => console.error("Stage 5 fetch error:", err));
+      const unsubscribeStage5 = onSnapshot(qPrev, (snapPrev) => {
+        const liveUpdates: any[] = [];
+        const deletedIds: string[] = [];
+        snapPrev.docChanges().forEach(change => {
+            if (change.type === 'removed') {
+                deletedIds.push(change.doc.id);
+            } else {
+                liveUpdates.push({ ...this.convertTimestamps(change.doc.data()), id: change.doc.id });
+            }
+        });
+        if (liveUpdates.length > 0 || deletedIds.length > 0) {
+            this.processDataUpdate(COLLECTIONS.SALES_INVOICES, liveUpdates, true, deletedIds);
+        }
+      }, err => console.error("Stage 5 fetch error:", err));
+      
+      this.listeners.push(unsubscribeStage5);
 
       // --- LIVE UPDATES: Establish live listener for session updates ---
       const sessionStartTime = new Date().toISOString();
@@ -283,9 +313,17 @@ class DualStorageService {
         where('updatedAt', '>=', sessionStartTime)
       );
       const unsubscribeLive = onSnapshot(qLive, (snapLive) => {
-        const liveUpdates = snapLive.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-        if (liveUpdates.length > 0) {
-          this.processDataUpdate(COLLECTIONS.SALES_INVOICES, liveUpdates, true); 
+        const liveUpdates: any[] = [];
+        const deletedIds: string[] = [];
+        snapLive.docChanges().forEach(change => {
+            if (change.type === 'removed') {
+                deletedIds.push(change.doc.id);
+            } else {
+                liveUpdates.push({ ...this.convertTimestamps(change.doc.data()), id: change.doc.id });
+            }
+        });
+        if (liveUpdates.length > 0 || deletedIds.length > 0) {
+          this.processDataUpdate(COLLECTIONS.SALES_INVOICES, liveUpdates, true, deletedIds); 
         }
       });
       this.listeners.push(unsubscribeLive);
@@ -300,89 +338,35 @@ class DualStorageService {
 
   private async runStagedFetchForCollection(collectionName: string, enableBackgroundCleanup: boolean = false) {
     try {
-      // Default staged loading for collections:
-      const cachedItems = this.getLocalData(collectionName);
-      const sessionStartTime = new Date().toISOString();
-
-      // Hook up a live lightweight realtime listener for any changes happening CONCURRENTLY during session
-      // console.log(`DualStorage [${collectionName}]: Starting lightweight live listener for session updates >= ${sessionStartTime}`);
-      const qLive = query(
-        collection(db, collectionName), 
-        where('updatedAt', '>=', sessionStartTime)
-      );
-
-      const unsubscribeLive = onSnapshot(qLive, (snapshot) => {
-        // We received updates during the session. Process and merge them right away.
-        const liveUpdates = snapshot.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-        if (liveUpdates.length > 0) {
-          // console.log(`DualStorage [${collectionName}]: [Live Snapshot] Received ${liveUpdates.length} real-time session update(s).`);
-          this.processDataUpdate(collectionName, liveUpdates, true); // Partial=true so it merges nicely
-        }
-      }, (error) => {
-        console.error(`DualStorage [${collectionName}]: Live session listener error:`, error);
-        handleFirestoreError(error, OperationType.LIST, collectionName);
-      });
-
-      this.listeners.push(unsubscribeLive);
-
-      // Step 1: Get the threshold timestamp from our sync history, NOT by scanning local items which might just be seeded defaults.
-      let lastUpdatedStr = localStorage.getItem(`fs_sync_time_${collectionName}`) || '';
-      
-      if (lastUpdatedStr) {
-        // Subtract a 2-hour buffer for clock safety/drift
-        const syncTime = new Date(lastUpdatedStr).getTime();
-        lastUpdatedStr = new Date(syncTime - 2 * 60 * 60 * 1000).toISOString();
-      }
-
-      // console.log(`DualStorage [${collectionName}]: Incremental fetch started. Highest local updatedAt threshold: ${lastUpdatedStr || 'None (Full Sync)'}`);
-
-
-      // Step 2: Fetch only items updated since our local threshold
-      let fetchedItems: any[] = [];
-      if (lastUpdatedStr) {
-        try {
-          const qIncremental = query(
-            collection(db, collectionName), 
-            where('updatedAt', '>=', lastUpdatedStr)
-          );
-          const snap = await getDocs(qIncremental);
-          fetchedItems = snap.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-          // console.log(`DualStorage [${collectionName}]: Incremental fetch found ${fetchedItems.length} items updated/created since ${lastUpdatedStr}.`);
-        } catch (err) {
-          console.error(`DualStorage [${collectionName}]: Incremental query failed, falling back to full query`, err);
-          const qFallback = query(collection(db, collectionName));
-          const snap = await getDocs(qFallback);
-          fetchedItems = snap.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-        }
-      } else {
-        // No cached records found, fetch all
-        const qFull = query(collection(db, collectionName));
-        const snap = await getDocs(qFull);
-        fetchedItems = snap.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-      }
-
-      // Step 3: Merge fetched data with cached list and instantly update UI!
-      if (fetchedItems.length > 0) {
-         this.processDataUpdate(collectionName, fetchedItems, true);
-      }
-      
-      // Mark the sync time so next time we know we did a full/incremental sync successfully
-      this.safeSetLocalItem(`fs_sync_time_${collectionName}`, new Date().toISOString());
-
-      // Optional Step 4: Run a background cleanup (Removed fullSyncFromCloud to avoid performance hits)
-      if (enableBackgroundCleanup) {
-        // console.log(`DualStorage [${collectionName}]: Background cleanup flag checked, skipping full sync for performance.`);
-      }
-
-    } catch (error) {
-      console.error(`DualStorage [${collectionName}]: Error during staged loading:`, error);
-      // Fallback
       const qFull = query(collection(db, collectionName));
       const unsubscribeDefault = onSnapshot(qFull, (snap) => {
-        const data = snap.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-        this.processDataUpdate(collectionName, data);
+        const liveUpdates: any[] = [];
+        const deletedIds: string[] = [];
+        snap.docChanges().forEach(change => {
+            if (change.type === 'removed') {
+                deletedIds.push(change.doc.id);
+            } else {
+                liveUpdates.push({ ...this.convertTimestamps(change.doc.data()), id: change.doc.id });
+            }
+        });
+        
+        // Always push data on first load to trigger UI update, even if no changes
+        if (liveUpdates.length > 0 || deletedIds.length > 0) {
+            this.processDataUpdate(collectionName, liveUpdates, true, deletedIds);
+        } else if (snap.docs.length === 0) {
+            // Edge case: collection is empty on first load, we should clear it
+            this.processDataUpdate(collectionName, [], false, []);
+        }
+      }, (error) => {
+        console.error(`DualStorage [${collectionName}]: Error during sync:`, error);
+        handleFirestoreError(error, OperationType.LIST, collectionName);
       });
       this.listeners.push(unsubscribeDefault);
+      
+      // Mark the sync time
+      this.safeSetLocalItem(`fs_sync_time_${collectionName}`, new Date().toISOString());
+    } catch (error) {
+      console.error(`DualStorage [${collectionName}]: Error setting up snapshot:`, error);
     }
   }
 

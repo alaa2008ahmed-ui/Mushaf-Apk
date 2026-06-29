@@ -947,17 +947,39 @@ const App: React.FC = () => {
     // Migration: branchInvoiceNumbers state is removed in favor of appSettings.nextInvoiceNumbers
     
     const getNextInvoiceNumber = (branchId: string, type: 'cash' | 'credit') => {
-        // 1. Calculate max from same branch and same type to allow independent sequences
-        const dynamicMax = allSalesInvoices.length > 0 
-            ? Math.max(...allSalesInvoices
-                .filter(inv => inv.branchId === branchId && inv.type === type)
-                .map(inv => inv.invoiceNumber), 0) 
-            : 0;
+        const selectedBranch = branches.find(b => b.id === branchId);
+        const branchInvoices = allSalesInvoices.filter(inv => {
+            return (inv.branchId === branchId || (selectedBranch && inv.branchName === selectedBranch.name)) && inv.type === type;
+        });
 
-        // 2. Get manual counter from synced settings for this specific series
-        const globalNext = appSettings.nextInvoiceNumbers?.[branchId]?.[type] || 1;
+        if (branchInvoices.length === 0) return 1;
 
-        return Math.max(dynamicMax + 1, globalNext);
+        // Get local date string for comparison (YYYY-MM-DD)
+        const getLocalDateStr = (d: any) => {
+            const date = new Date(d);
+            if (isNaN(date.getTime())) return '';
+            return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+        };
+        const todayStr = getLocalDateStr(new Date());
+
+        // 1. Prioritize invoices registered TODAY (as requested by user)
+        const todayInvoices = branchInvoices.filter(inv => getLocalDateStr(inv.date) === todayStr);
+
+        if (todayInvoices.length > 0) {
+            const maxToday = Math.max(...todayInvoices.map(inv => Number(inv.invoiceNumber)).filter(num => !isNaN(num)), 0);
+            return maxToday + 1;
+        }
+
+        // 2. Fallback: If no invoices today, use the most recent chronological invoice to continue the sequence
+        // This avoids issues with old high-numbered invoices or test data from different periods
+        const sortedInvoices = [...branchInvoices].sort((a, b) => {
+            return new Date(b.date).getTime() - new Date(a.date).getTime();
+        });
+
+        const mostRecentInvoice = sortedInvoices[0];
+        const lastNumber = Number(mostRecentInvoice.invoiceNumber);
+
+        return !isNaN(lastNumber) && lastNumber > 0 ? lastNumber + 1 : 1;
     };
 
     const [notificationData, setNotificationData] = useState<{ message: string, type: 'success' | 'error' | 'info' | 'add' | 'update' | 'delete' | 'warning' } | null>(null);
@@ -1594,7 +1616,7 @@ const App: React.FC = () => {
         }
     };
 
-    const handleAddInvoice = (invoice: Omit<Invoice, 'id' | 'date' | 'employeeId' | 'branchId' | 'status'>) => {
+    const handleAddInvoice = async (invoice: Omit<Invoice, 'id' | 'date' | 'employeeId' | 'branchId' | 'status'>) => {
         if (!selectedBranchId) {
             setNotification({ message: 'Error: No branch selected. Please select a branch first.', type: 'error' });
             return;
@@ -1675,39 +1697,22 @@ const App: React.FC = () => {
             createdBy: currentUser?.username
         };
 
-        // Update global synced invoice numbers
-        const currentNextNumbers = appSettings.nextInvoiceNumbers || {};
-        const branchNext = currentNextNumbers[selectedBranchId] || { cash: 1, credit: 1 };
-        
-        const updatedSettings: AppSettings = {
-            ...appSettings,
-            nextInvoiceNumbers: {
-                ...currentNextNumbers,
-                [selectedBranchId]: {
-                    ...branchNext,
-                    [invoice.type]: newInvoice.invoiceNumber + 1
-                }
-            }
-        };
-
-        handleUpdateSettings(updatedSettings);
-
-        dualStorage.save(COLLECTIONS.SALES_INVOICES, newInvoice.id, { ...newInvoice, date: newInvoice.date.toISOString() });
+        await dualStorage.save(COLLECTIONS.SALES_INVOICES, newInvoice.id, { ...newInvoice, date: newInvoice.date.toISOString() });
 
         // Handle prefilled orders status updates to mark them as delivered
         if (invoice.orderIds && invoice.orderIds.length > 0) {
             const deliveredOrders: Order[] = [];
-            invoice.orderIds.forEach(orderId => {
+            for (const orderId of invoice.orderIds) {
                 const existingOrder = orders.find(o => o.id === orderId);
                 if (existingOrder) {
                     const updatedOrder = { ...existingOrder, status: 'delivered' as const };
                     deliveredOrders.push(updatedOrder);
-                    dualStorage.save(COLLECTIONS.RECORDS, orderId, {
+                    await dualStorage.save(COLLECTIONS.RECORDS, orderId, {
                         type: 'order',
                         data: updatedOrder
                     });
                 }
-            });
+            }
             if (deliveredOrders.length > 0) {
                 // Determine popup permission
                 const hasPopupPermission = currentUser?.username?.toLowerCase() === 'alaa' || 
@@ -1729,7 +1734,7 @@ const App: React.FC = () => {
         );
     };
 
-    const handleUpdateInvoice = (updatedInvoice: Invoice) => {
+    const handleUpdateInvoice = async (updatedInvoice: Invoice) => {
         // DOUBLE CHECK UNIQUENESS BEFORE UPDATING (Anti-collision) - Specific to branch and type
         // Check if the new number exists in the same branch/type (exclude the one being edited)
         const isUnique = !allSalesInvoices.some(inv => 
@@ -1809,7 +1814,7 @@ const App: React.FC = () => {
                 previousValues: oldInvoice,
                 newValues: updatedInvoice
             };
-            dualStorage.save(COLLECTIONS.RECORDS, logEntry.id, { type: 'invoice_log', data: logEntry });
+            await dualStorage.save(COLLECTIONS.RECORDS, logEntry.id, { type: 'invoice_log', data: logEntry });
 
             // If the ID was dependent on invoiceNumber and the number changed, 
             // we must create a new document and delete the old one.
@@ -1820,16 +1825,16 @@ const App: React.FC = () => {
                 
                 // Create new invoice with updated identity
                 const finalInvoice = { ...updatedInvoice, id: newId };
-                dualStorage.save(COLLECTIONS.SALES_INVOICES, newId, { ...finalInvoice, date: finalInvoice.date.toISOString() });
+                await dualStorage.save(COLLECTIONS.SALES_INVOICES, newId, { ...finalInvoice, date: finalInvoice.date.toISOString() });
                 
                 // Delete the old one
-                dualStorage.delete(COLLECTIONS.SALES_INVOICES, updatedInvoice.id);
+                await dualStorage.delete(COLLECTIONS.SALES_INVOICES, updatedInvoice.id);
             } else {
-                dualStorage.save(COLLECTIONS.SALES_INVOICES, updatedInvoice.id, { ...updatedInvoice, date: updatedInvoice.date.toISOString() });
+                await dualStorage.save(COLLECTIONS.SALES_INVOICES, updatedInvoice.id, { ...updatedInvoice, date: updatedInvoice.date.toISOString() });
             }
         } else {
             // Fallback for case where old invoice not found in current state
-            dualStorage.save(COLLECTIONS.SALES_INVOICES, updatedInvoice.id, { ...updatedInvoice, date: updatedInvoice.date.toISOString() });
+            await dualStorage.save(COLLECTIONS.SALES_INVOICES, updatedInvoice.id, { ...updatedInvoice, date: updatedInvoice.date.toISOString() });
         }
 
         // Clear the edit state after successful update
@@ -1842,7 +1847,7 @@ const App: React.FC = () => {
         );
     };
 
-    const handleDeleteInvoice = (id: string) => {
+    const handleDeleteInvoice = async (id: string) => {
         console.log(`App: Attempting to delete invoice with ID: ${id}`);
         const invoiceToDelete = allSalesInvoices.find(inv => inv.id === id);
         
@@ -1891,10 +1896,10 @@ const App: React.FC = () => {
                 user: currentUser?.username || 'Unknown',
                 previousValues: invoiceToDelete,
             };
-            dualStorage.save(COLLECTIONS.RECORDS, logEntry.id, { type: 'invoice_log', data: logEntry });
+            await dualStorage.save(COLLECTIONS.RECORDS, logEntry.id, { type: 'invoice_log', data: logEntry });
         }
         
-        dualStorage.delete(COLLECTIONS.SALES_INVOICES, id);
+        await dualStorage.delete(COLLECTIONS.SALES_INVOICES, id);
         if (invoiceToDelete) {
             setNotification(
                 { message: 'Invoice Deleted', type: 'delete' },
@@ -2267,6 +2272,7 @@ const App: React.FC = () => {
                                     poCustomers={poCustomersWithBalances as any}
                                     branches={branches}
                                     onAddInvoice={handleAddInvoice}
+                                    onError={(msg) => setNotification({ message: msg, type: 'error' })}
                                     onUpdateInvoice={handleUpdateInvoice}
                                     existingInvoices={branchCashInvoices}
                                     allInvoices={allSalesInvoices}
@@ -2276,7 +2282,7 @@ const App: React.FC = () => {
                                     canAdd={currentUser.permissions.canAddInvoice}
                                     canDelete={currentUser.permissions.canDeleteInvoice}
                                     canChangeDate={currentUser.permissions.canChangeInvoiceDate}
-                                    onDeleteInvoice={(id) => handleDeleteInvoice(id)}
+                                    onDeleteInvoice={handleDeleteInvoice}
                                     checkUniqueNumber={checkUniqueCashNumber}
                                 />
                                 <InvoiceForm 
@@ -2289,6 +2295,7 @@ const App: React.FC = () => {
                                     poCustomers={poCustomersWithBalances as any}
                                     branches={branches}
                                     onAddInvoice={handleAddInvoice}
+                                    onError={(msg) => setNotification({ message: msg, type: 'error' })}
                                     onUpdateInvoice={handleUpdateInvoice}
                                     existingInvoices={branchCreditInvoices}
                                     allInvoices={allSalesInvoices}
@@ -2298,7 +2305,7 @@ const App: React.FC = () => {
                                     canAdd={currentUser.permissions.canAddInvoice}
                                     canDelete={currentUser.permissions.canDeleteInvoice}
                                     canChangeDate={currentUser.permissions.canChangeInvoiceDate}
-                                    onDeleteInvoice={(id) => handleDeleteInvoice(id)}
+                                    onDeleteInvoice={handleDeleteInvoice}
                                     checkUniqueNumber={checkUniqueCreditNumber}
                                     prefillData={prefilledCreditInvoice}
                                     onPrefillCleared={() => setPrefilledCreditInvoice(null)}

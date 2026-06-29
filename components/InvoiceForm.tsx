@@ -12,9 +12,10 @@ interface InvoiceFormProps {
     poCustomers?: POCustomer[];
     branches?: Branch[];
     branchName?: string;
-    onAddInvoice: (invoice: Omit<Invoice, 'id' | 'date' | 'employeeId'>) => void;
+    onAddInvoice: (invoice: Omit<Invoice, 'id' | 'date' | 'employeeId'>) => void | Promise<void>;
+    onError?: (message: string) => void;
     // New props for editing
-    onUpdateInvoice?: (invoice: Invoice) => void;
+    onUpdateInvoice?: (invoice: Invoice) => void | Promise<void>;
     existingInvoices?: Invoice[];
     allInvoices?: Invoice[];
     editInvoice?: Invoice | null;
@@ -22,7 +23,7 @@ interface InvoiceFormProps {
     canAdd?: boolean;
     canDelete?: boolean;
     canChangeDate?: boolean;
-    onDeleteInvoice?: (id: string) => void;
+    onDeleteInvoice?: (id: string) => void | Promise<void>;
     checkUniqueNumber?: (num: number, currentId?: string) => boolean;
     manualInvoiceNumber?: boolean;
     prefillData?: {
@@ -44,6 +45,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     branches = [],
     branchName = '',
     onAddInvoice,
+    onError,
     onUpdateInvoice,
     existingInvoices = [],
     allInvoices = [],
@@ -75,14 +77,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }, [manualInvoiceNumber, theme]);
 
     const [currentInvoiceNumber, setCurrentInvoiceNumber] = useState<number>(() => {
-        let isAuto = true;
-        if (theme === 'cash') {
-            isAuto = !manualInvoiceNumber;
-        } else {
-            const savedAuto = localStorage.getItem(`isAutoNumber_${theme}`);
-            isAuto = savedAuto !== null ? JSON.parse(savedAuto) : true;
-        }
-        return isAuto ? invoiceNumber : NaN as any;
+        return invoiceNumber;
     });
 
     useEffect(() => {
@@ -160,10 +155,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }, [selectedItemId, items]);
 
     useEffect(() => {
-        if (!isEditing) {
+        if (!isEditing && isAutoNumber) {
             setCurrentInvoiceNumber(invoiceNumber);
         }
-    }, [invoiceNumber, isEditing]);
+    }, [invoiceNumber, isEditing, isAutoNumber]);
 
     // Handle external edit trigger
     useEffect(() => {
@@ -340,7 +335,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         setSelectedPOCustomerId('');
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         console.log(`InvoiceForm: handleDelete triggered. canDelete: ${canDelete}, editingInvoiceId: ${editingInvoiceId}, hasOnDelete: ${!!onDeleteInvoice}`);
         if (!canDelete || !editingInvoiceId || !onDeleteInvoice) {
             console.warn("InvoiceForm: Delete aborted due to missing permissions or ID.");
@@ -353,8 +348,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
         
         console.log(`InvoiceForm: Deleting invoice ${editingInvoiceId}`);
-        onDeleteInvoice(editingInvoiceId);
-        cancelEdit();
+        setIsSubmitting(true);
+        try {
+            await onDeleteInvoice(editingInvoiceId);
+            cancelEdit();
+        } finally {
+            setIsSubmitting(false);
+            setIsConfirmingDelete(false);
+        }
     };
 
     const handleQuantityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -401,23 +402,26 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
             // NEW VALIDATION LOGIC: Check against max invoice number
             if (!isEditing) {
-                const source = allInvoices.length > 0 ? allInvoices : existingInvoices;
-                // Filter by current theme to ensure we compare with correct sequence
-                const sameTypeInvoices = source.filter(inv => inv.type === theme);
+                // Use existingInvoices which is already filtered by the current branch
+                const sameTypeInvoices = existingInvoices.filter(inv => inv.type === theme);
                 
                 if (sameTypeInvoices.length > 0) {
                     const maxNum = Math.max(...sameTypeInvoices.map(inv => inv.invoiceNumber));
                     
                     // 1. Lower limit: reject if number is more than 50 below max
                     if (currentInvoiceNumber < maxNum - 50) {
-                        setFormError(`Rejected: Invoice number ${currentInvoiceNumber} is too old. Min allowed: ${maxNum - 50} | مرفوض: رقم الفاتورة قديم جداً. الحد الأدنى المسموح: ${maxNum - 50}`);
+                        const msg = `Rejected: Invoice number ${currentInvoiceNumber} is out of range. Min allowed: ${maxNum - 50}`;
+                        if (onError) onError(msg);
+                        else setFormError(msg);
                         setIsSubmitting(false);
                         return;
                     }
 
                     // 2. Upper limit: reject if number is more than 50 above max
                     if (currentInvoiceNumber > maxNum + 50) {
-                        setFormError(`Rejected: Invoice number ${currentInvoiceNumber} is too high. Max allowed: ${maxNum + 50} | مرفوض: رقم الفاتورة يتخطى الحد المسموح. الحد الأقصى: ${maxNum + 50}`);
+                        const msg = `Rejected: Invoice number ${currentInvoiceNumber} is out of range. Max allowed: ${maxNum + 50}`;
+                        if (onError) onError(msg);
+                        else setFormError(msg);
                         setIsSubmitting(false);
                         return;
                     }
@@ -460,7 +464,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             if (checkUniqueNumber) {
                 const isUnique = checkUniqueNumber(currentInvoiceNumber, editingInvoiceId || undefined);
                 if (!isUnique) {
-                    setFormError(`Invoice number ${currentInvoiceNumber} is already registered.`);
+                    const msg = `Rejected: Invoice number ${currentInvoiceNumber} is already registered and cannot be duplicated.`;
+                    if (onError) onError(msg);
+                    else setFormError(msg);
                     setIsSubmitting(false);
                     return;
                 }
@@ -475,7 +481,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 }
 
                 const poCust = poCustomers.find(pc => pc.id === selectedPOCustomerId);
-                onUpdateInvoice({
+                await onUpdateInvoice({
                     ...originalInvoiceData,
                     invoiceNumber: currentInvoiceNumber,
                     itemName: selectedItem.name,
@@ -491,7 +497,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             } else {
                 // Add logic
                 const poCust = poCustomers.find(pc => pc.id === selectedPOCustomerId);
-                onAddInvoice({
+                await onAddInvoice({
                     invoiceNumber: currentInvoiceNumber,
                     type: theme,
                     itemName: selectedItem.name,
@@ -521,7 +527,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         }
     };
 
-    const handleItemSelect = (itemId: string) => {
+    const handleItemSelect = async (itemId: string) => {
         setFormError(null);
         if (itemId === 'cancel') {
             if (isNaN(currentInvoiceNumber) || currentInvoiceNumber < 1) {
@@ -551,7 +557,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             }
 
             if (isEditing && onUpdateInvoice && originalInvoiceData) {
-                 onUpdateInvoice({
+                 await onUpdateInvoice({
                      ...originalInvoiceData,
                      invoiceNumber: currentInvoiceNumber,
                      ...payload,
@@ -559,7 +565,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                  });
                  cancelEdit();
             } else {
-                onAddInvoice({
+                await onAddInvoice({
                     invoiceNumber: currentInvoiceNumber,
                     type: theme,
                     ...payload
