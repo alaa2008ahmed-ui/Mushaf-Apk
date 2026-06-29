@@ -542,12 +542,12 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                 const isHistorical = !hasTodaySales;
 
                 return (
-                    <div className={`bg-gradient-to-br rounded-3xl shadow-2xl p-5 sm:p-6 text-white relative overflow-hidden transition-all duration-500 ${isHistorical ? 'from-slate-700 via-slate-800 to-slate-900 border-2 border-yellow-500/20' : 'from-blue-700 via-blue-800 to-indigo-900'}`}>
+                    <div className={`bg-gradient-to-br rounded-3xl shadow-2xl p-4 sm:p-6 text-white relative overflow-hidden transition-all duration-500 ${isHistorical ? 'from-slate-700 via-slate-800 to-slate-900 border-2 border-yellow-500/20' : 'from-blue-700 via-blue-800 to-indigo-900'}`}>
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
                         <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-400/10 rounded-full -ml-10 -mb-10 blur-2xl"></div>
                         
                         <div className="relative z-10">
-                            <div className="flex justify-between items-start mb-3">
+                            <div className="flex justify-between items-start mb-2 sm:mb-3">
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2 shrink-0">
                                         <TrendingUp className={`w-5 h-5 ${isHistorical ? 'text-yellow-400' : 'text-blue-200'}`} />
@@ -568,23 +568,23 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                 </div>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
                                 <div className="flex items-end gap-3">
                                     <div className="flex flex-col">
                                         <div className="flex items-end gap-3">
-                                            <p className={`text-5xl sm:text-6xl lg:text-7xl font-black leading-none drop-shadow-lg tracking-tighter transition-colors ${isHistorical ? 'text-yellow-400' : 'text-white'}`}>
+                                            <p className={`text-4xl sm:text-6xl lg:text-7xl font-black leading-none drop-shadow-lg tracking-tighter transition-colors ${isHistorical ? 'text-yellow-400' : 'text-white'}`}>
                                                 {displayStats.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </p>
                                             <p className="text-xl sm:text-2xl font-black opacity-60 mb-1 lg:mb-3 uppercase">SAR</p>
                                         </div>
-                                        <p className={`text-sm sm:text-base font-bold mt-2 opacity-90 drop-shadow ${isHistorical ? 'text-yellow-200/80' : 'text-yellow-300'} before-tax-amount`}>
+                                        <p className={`text-xs sm:text-base font-bold mt-1 sm:mt-2 opacity-90 drop-shadow ${isHistorical ? 'text-yellow-200/80' : 'text-yellow-300'} before-tax-amount`}>
                                             {(displayStats.total / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4 sm:gap-6 min-w-[280px]">
-                                    <div className={`bg-white/10 backdrop-blur-md rounded-2xl py-1.5 px-4 border border-white/5 hover:bg-white/15 transition-all`}>
+                                <div className="grid grid-cols-2 gap-3 sm:gap-6 min-w-[280px]">
+                                    <div className={`bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl py-1 sm:py-1.5 px-3 sm:px-4 border border-white/5 hover:bg-white/15 transition-all`}>
                                         <div className="flex justify-between items-center mb-1">
                                             <p className="text-[10px] uppercase font-black text-blue-100/70 tracking-widest">Cash</p>
                                             <span className={`text-[13px] font-black ${isHistorical ? 'bg-yellow-400/30 border-yellow-400/20' : 'bg-blue-400/30 border-blue-400/20'} px-2 py-0.5 rounded-lg border text-blue-50`}>{displayStats.cashCount}</span>
@@ -594,7 +594,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                             {(displayStats.cashTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </p>
                                     </div>
-                                    <div className={`bg-white/10 backdrop-blur-md rounded-2xl py-1.5 px-4 border border-white/5 hover:bg-white/15 transition-all`}>
+                                    <div className={`bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl py-1 sm:py-1.5 px-3 sm:px-4 border border-white/5 hover:bg-white/15 transition-all`}>
                                         <div className="flex justify-between items-center mb-1">
                                             <p className="text-[10px] uppercase font-black text-sky-100/70 tracking-widest">Credit</p>
                                             <span className={`text-[13px] font-black ${isHistorical ? 'bg-yellow-400/30 border-yellow-400/20' : 'bg-sky-400/30 border-sky-400/20'} px-2 py-0.5 rounded-lg border text-sky-50`}>{displayStats.creditCount}</span>
@@ -620,7 +620,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
 
                     return (
                     <div key={branch.branchId} className={`bg-white rounded-2xl shadow-lg border overflow-hidden flex flex-col ${branch.branchId === 'unassigned' ? 'border-red-200' : (isHistorical ? 'border-amber-200' : 'border-slate-200')}`}>
-                        <div className={`p-3 px-5 flex justify-between items-center text-white ${branch.branchId === 'unassigned' ? 'bg-red-600' : (isHistorical ? 'bg-gradient-to-r from-amber-500 to-yellow-600' : 'bg-blue-600')}`}>
+                        <div className={`p-2 sm:p-3 px-4 sm:px-5 flex justify-between items-center text-white ${branch.branchId === 'unassigned' ? 'bg-red-600' : (isHistorical ? 'bg-gradient-to-r from-amber-500 to-yellow-600' : 'bg-blue-600')}`}>
                             <div className="flex flex-col">
                                 <h3 className="font-black text-base sm:text-lg">{branch.branchName}</h3>
                                 {isHistorical && <span className="text-[9px] font-black text-yellow-300 uppercase tracking-tighter -mt-1 opacity-90">Yesterday's Data (Prev)</span>}
@@ -631,25 +631,25 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                             </div>
                         </div>
                         
-                        <div className="p-4 sm:p-5 space-y-4 flex-grow">
+                        <div className="p-3 sm:p-5 space-y-3 sm:space-y-4 flex-grow">
                             {branch.branchId === 'unassigned' && (
-                                <div className="bg-red-50 p-3 rounded-xl border border-red-100 mb-2">
+                                <div className="bg-red-50 p-2 sm:p-3 rounded-xl border border-red-100 mb-2">
                                     <p className="text-[10px] text-red-600 font-bold leading-tight">These invoices are missing a branch assignment or belong to a deleted branch. They will appear in the Main Branch lists by default.</p>
                                 </div>
                             )}
 
                             {/* Today Highlight */}
-                            <div className={`rounded-xl p-4 flex flex-col gap-3 border ${branch.branchId === 'unassigned' ? 'bg-red-50/30 border-red-100' : 'bg-blue-50 border-blue-100'}`}>
+                            <div className={`rounded-xl p-3 sm:p-4 flex flex-col gap-2 sm:gap-3 border ${branch.branchId === 'unassigned' ? 'bg-red-50/30 border-red-100' : 'bg-blue-50 border-blue-100'}`}>
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <p className={`text-[10px] sm:text-xs uppercase font-black mb-0.5 ${branch.branchId === 'unassigned' ? 'text-red-500' : 'text-blue-600'}`}>
                                             {isHistorical ? "Yesterday Sales" : "Today Sales"}
                                         </p>
-                                        <p className={`text-2xl sm:text-3xl font-black leading-tight ${isHistorical ? (branch.branchId === 'unassigned' ? 'text-red-400' : 'text-sky-500') : (branch.branchId === 'unassigned' ? 'text-red-900' : 'text-blue-900')}`}>
+                                        <p className={`text-xl sm:text-3xl font-black leading-tight ${isHistorical ? (branch.branchId === 'unassigned' ? 'text-red-400' : 'text-sky-500') : (branch.branchId === 'unassigned' ? 'text-red-900' : 'text-blue-900')}`}>
                                             {displayStat.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
                                             <span className="text-xs sm:text-sm font-normal opacity-70 ml-1">SAR</span>
                                         </p>
-                                        <p className={`text-xs font-bold mt-1 ${branch.branchId === 'unassigned' ? 'text-red-600' : 'text-orange-500'} before-tax-amount`}>
+                                        <p className={`text-[10px] sm:text-xs font-bold mt-1 ${branch.branchId === 'unassigned' ? 'text-red-600' : 'text-orange-500'} before-tax-amount`}>
                                             {(displayStat.total / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </p>
                                     </div>
@@ -659,17 +659,17 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                     </div>
                                 </div>
                                 
-                                <div className={`grid grid-cols-2 gap-3 pt-3 border-t ${branch.branchId === 'unassigned' ? 'border-red-200/50' : 'border-blue-200/50'}`}>
-                                    <div className="bg-white/50 rounded-lg p-3 border border-blue-100/50">
+                                <div className={`grid grid-cols-2 gap-2 sm:gap-3 pt-2 sm:pt-3 border-t ${branch.branchId === 'unassigned' ? 'border-red-200/50' : 'border-blue-200/50'}`}>
+                                    <div className="bg-white/50 rounded-lg p-2 sm:p-3 border border-blue-100/50">
                                         <p className={`text-[9px] uppercase font-black mb-0.5 ${isHistorical ? 'text-amber-500' : 'text-blue-500'}`}>Cash</p>
-                                        <p className={`text-xl font-black leading-tight ${isHistorical ? 'text-amber-700' : 'text-blue-800'}`}>{displayStat.cashTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                        <p className={`text-lg sm:text-xl font-black leading-tight ${isHistorical ? 'text-amber-700' : 'text-blue-800'}`}>{displayStat.cashTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                                         <p className={`text-[10px] font-bold mt-0.5 ${isHistorical ? 'text-amber-600/70' : 'text-green-600'} before-tax-amount`}>
                                             {(displayStat.cashTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </p>
                                     </div>
-                                    <div className="bg-white/50 rounded-lg p-3 border border-blue-100/50 text-right">
+                                    <div className="bg-white/50 rounded-lg p-2 sm:p-3 border border-blue-100/50 text-right">
                                         <p className={`text-[9px] uppercase font-black mb-0.5 ${isHistorical ? 'text-amber-500' : 'text-sky-500'}`}>Credit</p>
-                                        <p className={`text-xl font-black leading-tight ${isHistorical ? 'text-amber-700' : 'text-sky-800'}`}>{displayStat.creditTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                        <p className={`text-lg sm:text-xl font-black leading-tight ${isHistorical ? 'text-amber-700' : 'text-sky-800'}`}>{displayStat.creditTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                                         <p className={`text-[10px] font-bold mt-0.5 ${isHistorical ? 'text-amber-600/70' : 'text-green-600'} before-tax-amount`}>
                                             {(displayStat.creditTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </p>
@@ -677,7 +677,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                 </div>
  
                                 <div 
-                                    className={`pt-3 border-t flex justify-between items-center cursor-pointer hover:bg-blue-100/50 rounded-lg p-1 px-2 -mx-2 transition-colors group ${branch.branchId === 'unassigned' ? 'border-red-200/50' : 'border-blue-200/50'}`}
+                                    className={`pt-2 sm:pt-3 border-t flex justify-between items-center cursor-pointer hover:bg-blue-100/50 rounded-lg p-1 px-2 -mx-2 transition-colors group ${branch.branchId === 'unassigned' ? 'border-red-200/50' : 'border-blue-200/50'}`}
                                     onClick={() => {
                                         const displayDateStr = displayStat.dateStr;
                                         const displayInvoices = invoices.filter(inv => {
@@ -698,7 +698,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                             </div>
  
                             {/* Previous Days */}
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-2 sm:gap-3">
                                 {branch.dailyStats.slice(1).map(day => (
                                     <motion.div 
                                         key={day.dateStr} 
@@ -714,20 +714,20 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                             total: day.total,
                                             quantity: day.quantity
                                         })}
-                                        className="bg-indigo-50/40 border border-indigo-100 rounded-2xl p-4 cursor-pointer hover:bg-indigo-100/50 hover:shadow-lg transition-all group relative overflow-hidden"
+                                        className="bg-indigo-50/40 border border-indigo-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 cursor-pointer hover:bg-indigo-100/50 hover:shadow-lg transition-all group relative overflow-hidden"
                                     >
                                         <div className="absolute top-0 right-0 w-12 h-12 bg-indigo-500/5 rounded-full -mr-4 -mt-4"></div>
-                                        <p className="text-[10px] font-black text-indigo-400 mb-1.5 truncate group-hover:text-indigo-600 uppercase tracking-tighter">{formatDate(day.date)}</p>
+                                        <p className="text-[10px] font-black text-indigo-400 mb-1 sm:mb-1.5 truncate group-hover:text-indigo-600 uppercase tracking-tighter">{formatDate(day.date)}</p>
                                         <div className="flex justify-between items-baseline">
-                                            <p className="text-xl sm:text-2xl font-black text-indigo-900 leading-none tracking-tighter">
+                                            <p className="text-lg sm:text-2xl font-black text-indigo-900 leading-none tracking-tighter">
                                                 {day.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </p>
-                                            <p className="text-[10px] font-black text-indigo-300">SAR</p>
+                                            <p className="text-[9px] sm:text-[10px] font-black text-indigo-300">SAR</p>
                                         </div>
-                                        <p className="text-[10px] font-bold text-orange-500 mt-1 before-tax-amount">
+                                        <p className="text-[9px] sm:text-[10px] font-bold text-orange-500 mt-1 before-tax-amount">
                                             {(day.total / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </p>
-                                        <p className="text-[9px] font-bold text-indigo-400/70 mt-1 uppercase tracking-tighter">{day.count} Invoices</p>
+                                        <p className="text-[8px] sm:text-[9px] font-bold text-indigo-400/70 mt-1 uppercase tracking-tighter">{day.count} Invoices</p>
                                     </motion.div>
                                 ))}
                             </div>
