@@ -66,7 +66,7 @@ const t = {
     closeBtn: "إغلاق",
     chooseApp: "اختر النظام المطلوب تشغيله:",
     activeApp: "التطبيق النشط حالياً:",
-    exitPortal: "خروج من التطبيق",
+    exitPortal: "الخروج",
     floatingMenuTitle: "التحكم السريع"
   },
   en: {
@@ -100,7 +100,7 @@ const t = {
     closeBtn: "Close",
     chooseApp: "Choose system to launch:",
     activeApp: "Currently active app:",
-    exitPortal: "Exit App",
+    exitPortal: "Exit",
     floatingMenuTitle: "Quick Control"
   }
 };
@@ -132,7 +132,16 @@ export default function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showQuickSwitcher, setShowQuickSwitcher] = useState(false);
   const [showFloatingMenu, setShowFloatingMenu] = useState(false);
+  const [menuAlign, setMenuAlign] = useState<'left' | 'right'>('right');
+  const [menuValign, setMenuValign] = useState<'top' | 'bottom'>('bottom');
+  const [loadedApps, setLoadedApps] = useState<Record<string, boolean>>({});
   const dragAreaRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedAppId) {
+      setLoadedApps(prev => ({ ...prev, [selectedAppId]: true }));
+    }
+  }, [selectedAppId]);
 
   useEffect(() => {
     // Load language preference
@@ -203,6 +212,61 @@ export default function App() {
   const handleSelectApp = (id: string | null) => {
     setSelectedAppId(id);
     setShowQuickSwitcher(false);
+    setShowFloatingMenu(false);
+  };
+
+  const handleExitPortal = () => {
+    // 1. Attempt Cordova/PhoneGap/Capacitor exit
+    const nav = window.navigator as any;
+    if (nav && nav.app && typeof nav.app.exitApp === 'function') {
+      try {
+        nav.app.exitApp();
+        return;
+      } catch (e) {
+        console.error("Cordova exitApp failed:", e);
+      }
+    }
+
+    // 2. Attempt generic Android interface
+    const win = window as any;
+    if (win.Android) {
+      if (typeof win.Android.exitApp === 'function') {
+        try {
+          win.Android.exitApp();
+          return;
+        } catch (e) {
+          console.error("Android.exitApp failed:", e);
+        }
+      }
+      if (typeof win.Android.close === 'function') {
+        try {
+          win.Android.close();
+          return;
+        } catch (e) {
+          console.error("Android.close failed:", e);
+        }
+      }
+    }
+
+    // 3. Attempt Capacitor standard JS Bridge if loaded (e.g. window.Capacitor)
+    if (win.Capacitor && win.Capacitor.Plugins && win.Capacitor.Plugins.App) {
+      try {
+        win.Capacitor.Plugins.App.exitApp();
+        return;
+      } catch (e) {
+        console.error("Capacitor App.exitApp failed:", e);
+      }
+    }
+
+    // 4. Attempt standard window.close
+    try {
+      win.close();
+    } catch (e) {
+      console.error("window.close failed:", e);
+    }
+
+    // 5. Fallback for browser preview: Go back to portal screen so it acts as an exit inside the web browser
+    handleSelectApp(null);
     setShowFloatingMenu(false);
   };
 
@@ -321,13 +385,19 @@ export default function App() {
             {selectedAppId ? (
               // Active application screen with direct iframe and a draggable circular floating switcher menu
               <div className="w-full h-full flex flex-col relative bg-[#010101]">
-                <iframe
-                  src={urls[selectedAppId as keyof typeof urls]}
-                  className="w-full h-full flex-1 border-none"
-                  title={appsList.find(a => a.id === selectedAppId)?.title}
-                  referrerPolicy="no-referrer"
-                  allow="camera; microphone; geolocation"
-                />
+                {appsList.map((app) => (
+                  loadedApps[app.id] && (
+                    <iframe
+                      key={app.id}
+                      src={urls[app.id as keyof typeof urls]}
+                      style={{ display: selectedAppId === app.id ? 'block' : 'none' }}
+                      className="w-full h-full flex-1 border-none"
+                      title={app.title}
+                      referrerPolicy="no-referrer"
+                      allow="camera; microphone; geolocation"
+                    />
+                  )
+                ))}
 
                 {/* Draggable Circular Floating Menu Area */}
                 <div ref={dragAreaRef} className="fixed inset-0 pointer-events-none z-50">
@@ -336,6 +406,20 @@ export default function App() {
                     dragConstraints={dragAreaRef}
                     dragElastic={0.05}
                     dragMomentum={false}
+                    onDrag={(event, info) => {
+                      const screenWidth = window.innerWidth;
+                      const screenHeight = window.innerHeight;
+                      if (info.point.x < screenWidth / 2) {
+                        setMenuAlign('left');
+                      } else {
+                        setMenuAlign('right');
+                      }
+                      if (info.point.y < screenHeight / 2) {
+                        setMenuValign('top');
+                      } else {
+                        setMenuValign('bottom');
+                      }
+                    }}
                     className="absolute bottom-10 right-10 pointer-events-auto"
                   >
                     <div className="relative">
@@ -354,24 +438,9 @@ export default function App() {
                             initial={{ opacity: 0, scale: 0.9, y: 15 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 15 }}
-                            className={`absolute bottom-16 ${isRTL ? 'left-0' : 'right-0'} w-64 bg-zinc-950/95 backdrop-blur-xl border border-zinc-800/80 rounded-[2rem] p-4 shadow-2xl space-y-4`}
+                            className={`absolute ${menuValign === 'top' ? 'top-16' : 'bottom-16'} ${menuAlign === 'left' ? 'left-0' : 'right-0'} w-64 bg-zinc-950/95 backdrop-blur-xl border border-zinc-800/80 rounded-[2rem] p-4 shadow-2xl space-y-4`}
                           >
-                            <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
-                              <span className="text-xs font-bold text-zinc-400">
-                                {currentT.floatingMenuTitle}
-                              </span>
-                              <button 
-                                onClick={() => setShowFloatingMenu(false)}
-                                className="text-zinc-500 hover:text-white transition-colors"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-
                             <div className="space-y-1.5">
-                              <div className="text-[10px] text-zinc-500 font-bold tracking-wider mb-1">
-                                {currentT.chooseApp}
-                              </div>
                               {appsList.map((app) => (
                                 <button
                                   key={app.id}
@@ -394,24 +463,10 @@ export default function App() {
                               ))}
                             </div>
 
-                            <div className="pt-2 border-t border-zinc-900 flex flex-col gap-2">
-                              {/* Quick switch language */}
-                              <button
-                                onClick={toggleLanguage}
-                                className="w-full flex items-center justify-between px-3.5 py-2 text-xs text-zinc-400 hover:text-white rounded-xl hover:bg-zinc-900/60 transition-all"
-                              >
-                                <span className="flex items-center gap-2">
-                                  <Globe className="w-3.5 h-3.5 text-blue-500" />
-                                  <span>{currentT.language}</span>
-                                </span>
-                              </button>
-
+                            <div className="pt-2 border-t border-zinc-900">
                               {/* Exit button */}
                               <button
-                                onClick={() => {
-                                  handleSelectApp(null);
-                                  setShowFloatingMenu(false);
-                                }}
+                                onClick={handleExitPortal}
                                 className="w-full flex items-center justify-center gap-2 bg-red-600/15 hover:bg-red-600/25 border border-red-500/20 text-red-400 text-xs font-bold py-3 rounded-xl transition-all active:scale-95 cursor-pointer"
                               >
                                 <LogOut className="w-4 h-4" />
@@ -427,19 +482,19 @@ export default function App() {
               </div>
             ) : (
               // Landing dashboard displaying the 4 applications
-              <div className="w-full h-full flex flex-col justify-between overflow-y-auto px-6 py-8 relative">
+              <div className="w-full h-full flex flex-col justify-between overflow-hidden px-4 md:px-6 py-4 md:py-8 relative">
                 {/* Background ambient lighting effects */}
                 <div className="absolute top-[-10%] left-[10%] w-[30vw] h-[30vw] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
                 <div className="absolute bottom-[-10%] right-[10%] w-[30vw] h-[30vw] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
 
                 {/* Dashboard Header */}
-                <header className="max-w-4xl w-full mx-auto flex items-center justify-between mb-8">
+                <header className="max-w-4xl w-full mx-auto flex items-center justify-between mb-4 md:mb-8">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/10">
                       <Zap className="w-5 h-5 text-white fill-current" />
                     </div>
                     <div>
-                      <h1 className="text-lg font-bold text-white tracking-tight">{currentT.portalTitle}</h1>
+                      <h1 className="text-base md:text-lg font-bold text-white tracking-tight">{currentT.portalTitle}</h1>
                     </div>
                   </div>
 
@@ -464,8 +519,8 @@ export default function App() {
                   </div>
                 </header>
 
-                {/* Welcome Hero Panel */}
-                <div className="max-w-4xl w-full mx-auto text-center my-6">
+                {/* Welcome Hero Panel - Hidden on mobile to fit screen completely */}
+                <div className="hidden md:block max-w-4xl w-full mx-auto text-center my-6">
                   <motion.h2 
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -475,8 +530,8 @@ export default function App() {
                   </motion.h2>
                 </div>
 
-                {/* Applications grid */}
-                <main className="max-w-4xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 my-8">
+                {/* Applications grid - 2x2 layout by default for mobile and desktop */}
+                <main className="max-w-4xl w-full mx-auto grid grid-cols-2 gap-3 md:gap-5 my-2 md:my-8 flex-1 items-center content-center">
                   {appsList.map((app, index) => (
                     <motion.div
                       key={app.id}
@@ -485,24 +540,24 @@ export default function App() {
                       transition={{ delay: 0.1 * index + 0.2 }}
                       whileHover={{ scale: 1.02, y: -2 }}
                       onClick={() => handleSelectApp(app.id)}
-                      className={`glass-panel p-8 rounded-[2rem] border bg-zinc-900/20 backdrop-blur-md flex flex-col items-center justify-center text-center gap-4 cursor-pointer transition-all ${app.color} group relative overflow-hidden h-[180px]`}
+                      className={`glass-panel p-4 md:p-8 rounded-2xl md:rounded-[2rem] border bg-zinc-900/20 backdrop-blur-md flex flex-col items-center justify-center text-center gap-2 md:gap-4 cursor-pointer transition-all ${app.color} group relative overflow-hidden h-28 sm:h-32 md:h-[180px]`}
                     >
                       {/* Subtle app card background glow */}
                       <div className="absolute inset-0 bg-gradient-to-b from-white/2 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-                      <div className="p-4 bg-zinc-900/80 border border-zinc-800/60 rounded-2xl group-hover:scale-110 transition-transform duration-300 shadow-md">
-                        {renderAppIcon(app.id, "w-8 h-8")}
+                      <div className="p-2 md:p-4 bg-zinc-900/80 border border-zinc-800/60 rounded-xl md:rounded-2xl group-hover:scale-105 md:group-hover:scale-110 transition-transform duration-300 shadow-md">
+                        {renderAppIcon(app.id, "w-6 h-6 md:w-8 md:h-8")}
                       </div>
 
-                      <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors tracking-tight">
+                      <h3 className="text-xs md:text-lg font-bold text-white group-hover:text-blue-400 transition-colors tracking-tight line-clamp-2">
                         {app.title}
                       </h3>
                     </motion.div>
                   ))}
                 </main>
 
-                {/* Portal Footer */}
-                <footer className="max-w-4xl w-full mx-auto text-center border-t border-zinc-900 pt-6 mt-8">
+                {/* Portal Footer - Compacted */}
+                <footer className="max-w-4xl w-full mx-auto text-center border-t border-zinc-900 pt-4 mt-4">
                   <p className="text-[10px] text-zinc-600">
                     &copy; 2026 {currentT.portalTitle}. All rights reserved.
                   </p>
