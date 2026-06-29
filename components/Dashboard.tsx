@@ -547,22 +547,22 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                         <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-400/10 rounded-full -ml-10 -mb-10 blur-2xl"></div>
                         
                         <div className="relative z-10">
-                            <div className="flex justify-between items-center mb-3">
+                            <div className="flex justify-between items-start mb-3">
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2 shrink-0">
                                         <TrendingUp className={`w-5 h-5 ${isHistorical ? 'text-yellow-400' : 'text-blue-200'}`} />
-                                        <h3 className="text-sm sm:text-base font-black opacity-90 uppercase tracking-widest">Total branch sales</h3>
+                                        <h3 className="text-sm sm:text-base font-black opacity-90 uppercase tracking-widest leading-tight">Total branch sales</h3>
                                     </div>
                                     {isHistorical && <span className="text-[9px] font-black text-yellow-300 uppercase tracking-tighter mt-1 opacity-90">Yesterday's Data (Prev)</span>}
                                 </div>
 
                                 <SalesTicker invoices={invoices} branches={branches} />
 
-                                <div className="flex gap-2 shrink-0">
-                                    <span className={`text-[13px] sm:text-xs font-black bg-white/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-white/10 uppercase`}>
+                                <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2 shrink-0 items-end sm:items-center">
+                                    <span className={`text-[11px] sm:text-xs font-black bg-white/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl flex items-center gap-1.5 border border-white/10 uppercase whitespace-nowrap`}>
                                         <HardDrive className="w-3 h-3" /> {displayStats.quantity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Items
                                     </span>
-                                    <span className={`text-[13px] font-black ${isHistorical ? 'bg-yellow-500/30 border-yellow-400/20 text-yellow-100' : 'bg-green-500/30 border-green-400/20 text-green-100'} px-3 py-1.5 rounded-xl flex items-center gap-1.5 border uppercase`}>
+                                    <span className={`text-[11px] font-black ${isHistorical ? 'bg-yellow-500/30 border-yellow-400/20 text-yellow-100' : 'bg-green-500/30 border-green-400/20 text-green-100'} px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl flex items-center gap-1.5 border uppercase whitespace-nowrap`}>
                                         <Receipt className="w-3 h-3" /> {displayStats.totalCount} Invoices
                                     </span>
                                 </div>

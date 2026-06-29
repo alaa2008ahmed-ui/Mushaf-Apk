@@ -317,23 +317,17 @@ class DualStorageService {
 
       this.listeners.push(unsubscribeLive);
 
-      // Step 1: Find the threshold timestamp (highest updatedAt in cache)
-      let lastUpdatedStr = '';
-      if (cachedItems && cachedItems.length > 0) {
-        let maxTime = 0;
-        cachedItems.forEach(item => {
-          if (item.updatedAt) {
-            const t = new Date(item.updatedAt).getTime();
-            if (t > maxTime) maxTime = t;
-          }
-        });
-        if (maxTime > 0) {
-          // Subtract a 2-hour buffer for clock safety/drift
-          lastUpdatedStr = new Date(maxTime - 2 * 60 * 60 * 1000).toISOString();
-        }
+      // Step 1: Get the threshold timestamp from our sync history, NOT by scanning local items which might just be seeded defaults.
+      let lastUpdatedStr = localStorage.getItem(`fs_sync_time_${collectionName}`) || '';
+      
+      if (lastUpdatedStr) {
+        // Subtract a 2-hour buffer for clock safety/drift
+        const syncTime = new Date(lastUpdatedStr).getTime();
+        lastUpdatedStr = new Date(syncTime - 2 * 60 * 60 * 1000).toISOString();
       }
 
       // console.log(`DualStorage [${collectionName}]: Incremental fetch started. Highest local updatedAt threshold: ${lastUpdatedStr || 'None (Full Sync)'}`);
+
 
       // Step 2: Fetch only items updated since our local threshold
       let fetchedItems: any[] = [];
@@ -364,6 +358,9 @@ class DualStorageService {
          this.processDataUpdate(collectionName, fetchedItems, true);
       }
       
+      // Mark the sync time so next time we know we did a full/incremental sync successfully
+      localStorage.setItem(`fs_sync_time_${collectionName}`, new Date().toISOString());
+
       // Optional Step 4: Run a background cleanup (Removed fullSyncFromCloud to avoid performance hits)
       if (enableBackgroundCleanup) {
         // console.log(`DualStorage [${collectionName}]: Background cleanup flag checked, skipping full sync for performance.`);
