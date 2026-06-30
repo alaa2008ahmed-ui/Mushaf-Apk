@@ -230,15 +230,17 @@ class DualStorageService {
       await this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
       await this.runStagedFetchForCollection(COLLECTIONS.PO_CUSTOMERS);
 
-      // --- STAGE 2: Last 3 Days Invoices ---
+      // --- STAGE 2: Today's Invoices (Fast Load) ---
+      // Fetch only today's data to speed up loading. Previous days are loaded from local cache
+      // and will be updated in the background via Stage 3's onSnapshot.
       const d3 = new Date();
-      d3.setDate(d3.getDate() - 2); 
+      d3.setDate(d3.getDate() - 0); // Today only
       d3.setHours(0,0,0,0);
-      const threeDaysAgoStr = d3.toISOString();
+      const todayStr = d3.toISOString();
       
       const qStage1 = query(
         collection(db, COLLECTIONS.SALES_INVOICES), 
-        where('date', '>=', threeDaysAgoStr)
+        where('date', '>=', todayStr)
       );
       const snap1 = await getDocs(qStage1);
       const data1 = snap1.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
