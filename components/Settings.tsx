@@ -8,10 +8,11 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Item, Employee, Branch, User, UserPermissions, AppSettings, Driver, Vehicle, Invoice, Customer } from '../types';
 
-type SettingsCategory = 'users' | 'branches' | 'items' | 'drivers' | 'vehicles' | 'restrictions' | 'numbering' | 'data' | 'diagnostics' | null;
+type SettingsCategory = 'users' | 'branches' | 'items' | 'drivers' | 'vehicles' | 'restrictions' | 'data' | null;
 import { dualStorage, COLLECTIONS } from '../DualStorageService';
 import { downloadBlob } from '../downloadUtils';
 import CustomDatePicker from './ui/CustomDatePicker';
+import { saveFolderHandle, getFolderHandle, deleteFolderHandle, verifyPermission } from '../IndexedDBService';
 
 interface SettingsProps {
     customers: Customer[];
@@ -89,6 +90,11 @@ const Settings: React.FC<SettingsProps> = ({
     const [branchName, setBranchName] = useState('');
     const [editingBranchId, setEditingBranchId] = useState<string | null>(null);
 
+    const [showAddBranchForm, setShowAddBranchForm] = useState(false);
+    const [showAddItemForm, setShowAddItemForm] = useState(false);
+    const [showAddDriverForm, setShowAddDriverForm] = useState(false);
+    const [showAddVehicleForm, setShowAddVehicleForm] = useState(false);
+
     // User Management State
     const [editUsername, setEditUsername] = useState('');
     const [editPassword, setEditPassword] = useState('');
@@ -105,11 +111,6 @@ const Settings: React.FC<SettingsProps> = ({
     const [clearError, setClearError] = useState('');
     const [clearBranchId, setClearBranchId] = useState<string>('all');
 
-    const [showMigrationConfirm, setShowMigrationConfirm] = useState(false);
-    const [migrationCount, setMigrationCount] = useState({ current: 0, total: 0 });
-    const [isMigrating, setIsMigrating] = useState(false);
-    const [migrationTargetBranch, setMigrationTargetBranch] = useState('');
-
     // Backup/Restore Encryption State
     const [showBackupModal, setShowBackupModal] = useState(false);
     const [backupPass, setBackupPass] = useState('');
@@ -117,82 +118,86 @@ const Settings: React.FC<SettingsProps> = ({
     const [restoreFileContent, setRestoreFileContent] = useState<string | null>(null);
     const [backupError, setBackupError] = useState<string | null>(null);
 
+    // Folder selection state
+    const [lang, setLang] = useState<'ar' | 'en'>(() => (localStorage.getItem('timesheet_names_language') as 'ar' | 'en') || 'en');
+    const [folderName, setFolderName] = useState<string>('');
+    const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
+
+    useEffect(() => {
+        async function loadFolder() {
+            try {
+                const handle = await getFolderHandle();
+                if (handle) {
+                    setFolderName(handle.name);
+                    const perm = await (handle as any).queryPermission({ mode: 'readwrite' });
+                    setPermissionGranted(perm === 'granted');
+                }
+            } catch (e) {
+                console.error("Error loading folder handle in Settings:", e);
+            }
+        }
+        loadFolder();
+    }, []);
+
+    const handleSelectFolder = async () => {
+        try {
+            if (!(window as any).showDirectoryPicker) {
+                alert(lang === 'en' 
+                    ? "Your browser does not support direct saving. Fallback programmatic download will be used." 
+                    : "متصفحك لا يدعم ميزة حفظ الملفات المباشر. سيتم استخدام التحميل التلقائي كبديل.");
+                return;
+            }
+            const handle = await (window as any).showDirectoryPicker({
+                mode: 'readwrite'
+            });
+            await saveFolderHandle(handle);
+            setFolderName(handle.name);
+            setPermissionGranted(true);
+            alert(lang === 'en'
+                ? `Successfully connected to backup folder: ${handle.name}`
+                : `تم الاتصال بنجاح بمجلد النسخ الاحتياطي: ${handle.name}`);
+        } catch (e: any) {
+            if (e.name !== 'AbortError') {
+                console.error("Error picking directory:", e);
+                alert(lang === 'en' ? "Failed to select folder." : "فشل في اختيار المجلد.");
+            }
+        }
+    };
+
+    const handleClearFolder = async () => {
+        try {
+            await deleteFolderHandle();
+            setFolderName('');
+            setPermissionGranted(false);
+            alert(lang === 'en'
+                ? "Backup folder disconnected. Fallback programmatic download will be used."
+                : "تم إلغاء ربط مجلد النسخ الاحتياطي. سيتم استخدام التحميل التلقائي كبديل.");
+        } catch (e) {
+            console.error("Error clearing directory:", e);
+        }
+    };
+
+    const handleAuthorizeFolder = async () => {
+        try {
+            const handle = await getFolderHandle();
+            if (handle) {
+                const granted = await verifyPermission(handle, true);
+                setPermissionGranted(granted);
+                if (granted) {
+                    alert(lang === 'en' ? "Permission granted successfully!" : "تم منح الصلاحية بنجاح!");
+                } else {
+                    alert(lang === 'en' ? "Permission denied." : "تم رفض منح الصلاحية.");
+                }
+            }
+        } catch (e) {
+            console.error("Error authorising folder:", e);
+        }
+    };
+
     // Driver State
     const [newDriverName, setNewDriverName] = useState('');
     const [editingDriverId, setEditingDriverId] = useState<string | null>(null);
     const [tempDriverName, setTempDriverName] = useState('');
-
-    const unassignedInvoices = useMemo(() => {
-        return allSalesInvoices.filter(i => !i.branchId || !branches.find(b => b.id === i.branchId));
-    }, [allSalesInvoices, branches]);
-
-    const getLocalDateStr = (date: any) => {
-        const d = date instanceof Date ? date : new Date(date);
-        if (isNaN(d.getTime())) return 'Invalid Date';
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    };
-
-    const unassignedByDay = useMemo(() => {
-        const groups: Record<string, { date: Date, count: number, total: number }> = {};
-        unassignedInvoices.forEach(inv => {
-            const dateStr = getLocalDateStr(inv.date);
-            if (!groups[dateStr]) {
-                groups[dateStr] = { 
-                    date: inv.date instanceof Date ? inv.date : new Date(inv.date), 
-                    count: 0, 
-                    total: 0 
-                };
-            }
-            groups[dateStr].count += 1;
-            groups[dateStr].total += inv.total;
-        });
-        return Object.entries(groups)
-            .map(([dateStr, stats]) => ({ dateStr, ...stats }))
-            .sort((a, b) => b.dateStr.localeCompare(a.dateStr));
-    }, [unassignedInvoices]);
-
-    const handleStartMigration = async () => {
-        if (!migrationTargetBranch) {
-            alert('Please select a target branch first.');
-            return;
-        }
-
-        if (unassignedInvoices.length === 0) {
-            alert('No unclassified invoices found for transfer.');
-            return;
-        }
-
-        setIsMigrating(true);
-        setShowMigrationConfirm(false);
-        setMigrationCount({ current: 0, total: unassignedInvoices.length });
-
-        let successCount = 0;
-        try {
-            // Migrate invoice by invoice to ensure each one reaches the server
-            for (let i = 0; i < unassignedInvoices.length; i++) {
-                const inv = unassignedInvoices[i];
-                // Ensure the new branchId is added
-                const updatedInvoice = { 
-                    ...inv, 
-                    branchId: migrationTargetBranch,
-                    updatedAt: new Date() // Update timestamp
-                };
-                
-                await dualStorage.save(COLLECTIONS.SALES_INVOICES, inv.id, updatedInvoice);
-                successCount++;
-                setMigrationCount({ current: successCount, total: unassignedInvoices.length });
-            }
-            
-            alert(`${successCount} invoices migrated successfully. Page will refresh now.`);
-            // Final sync before reload
-            await dualStorage.fullSyncFromCloud();
-            window.location.reload();
-        } catch (err) {
-            console.error("Migration failed:", err);
-            alert('Migration failed. Please check internet connection and try again.');
-            setIsMigrating(false);
-        }
-    };
 
     // Vehicle State
     const [newVehicleNumber, setNewVehicleNumber] = useState('');
@@ -375,6 +380,7 @@ const Settings: React.FC<SettingsProps> = ({
             onAddItem(newItemName.trim(), newItemCode.trim() || undefined);
             setNewItemName('');
             setNewItemCode('');
+            setShowAddItemForm(false);
         }
     };
 
@@ -410,6 +416,7 @@ const Settings: React.FC<SettingsProps> = ({
                 onAddBranch(branchName.trim());
             }
             setBranchName('');
+            setShowAddBranchForm(false);
         }
     };
 
@@ -434,7 +441,7 @@ const Settings: React.FC<SettingsProps> = ({
             const compressed = LZString.compressToBase64(jsonString);
             
             // Get backup password from settings or fallback to default
-            const backupPass = settings.autoBackupPassword || 'swc_backup';
+            const backupPass = 'swc_backup_secure_key_123';
             
             // Then, encrypt the compressed string
             const encrypted = CryptoJS.AES.encrypt(compressed, backupPass).toString();
@@ -452,7 +459,7 @@ const Settings: React.FC<SettingsProps> = ({
                 timestamp: new Date().toISOString()
             });
 
-            const blob = new Blob([finalPayload], { type: 'application/json' });
+            const blob = new Blob([finalPayload], { type: 'application/octet-stream' });
             
             const now = new Date();
             const yr = now.getFullYear();
@@ -460,11 +467,11 @@ const Settings: React.FC<SettingsProps> = ({
             const dy = String(now.getDate()).padStart(2, '0');
             const hr = String(now.getHours()).padStart(2, '0');
             const min = String(now.getMinutes()).padStart(2, '0');
-            const filename = `DailySales-${yr}-${mo}-${dy}-${hr}-${min}.json`;
+            const filename = `DailySales-${yr}-${mo}-${dy}-${hr}-${min}.bak`;
 
             await downloadBlob(blob, filename, {
-                description: 'Secure Compressed JSON Backup File',
-                accept: { 'application/json': ['.json'] },
+                description: 'Secure Compressed Backup File',
+                accept: { 'application/octet-stream': ['.bak'] },
             });
         } catch (error) {
             console.error("Backup failed:", error);
@@ -667,16 +674,11 @@ const Settings: React.FC<SettingsProps> = ({
             { id: 'drivers', title: 'Drivers List', icon: Truck, color: 'text-indigo-600', bg: 'bg-indigo-50', desc: 'Maintain driver records and IDs.' },
             { id: 'vehicles', title: 'Vehicles List', icon: Car, color: 'text-teal-600', bg: 'bg-teal-50', desc: 'Manage vehicle numbers and identification.' },
             { id: 'restrictions', title: 'System Restrictions', icon: Calendar, color: 'text-red-600', bg: 'bg-red-50', desc: 'Control registration ranges and archive periods.' },
-            { id: 'numbering', title: 'Invoice Numbering', icon: Hash, color: 'text-amber-600', bg: 'bg-amber-50', desc: 'Set starting numbers and auto-counter logic.' },
             { id: 'data', title: 'Data Management', icon: Database, color: 'text-purple-600', bg: 'bg-purple-50', desc: 'Backup, restore, or clear system databases.' },
         ];
 
-        if (currentUser?.id === 'admin' || currentUser?.id === 'alaa-hidden') {
-            cats.push({ id: 'diagnostics', title: 'Diagnostics', icon: Activity, color: 'text-rose-600', bg: 'bg-rose-50', desc: 'Verify data integrity and sync status.' });
-        }
-
         if (currentUser?.username.toLowerCase() === 'alaa') {
-            cats.push({ id: 'mobile_config', title: 'Mobile App Configuration', icon: Smartphone, color: 'text-cyan-600', bg: 'bg-cyan-50', desc: 'Select which pages are visible when running the mobile app.' });
+            cats.push({ id: 'mobile_config', title: 'Mobile App', icon: Smartphone, color: 'text-cyan-600', bg: 'bg-cyan-50' });
         }
 
         return cats;
@@ -796,7 +798,7 @@ const Settings: React.FC<SettingsProps> = ({
         <div className="px-2 pt-2 pb-8 sm:px-6 lg:px-8 overflow-hidden">
             <div className="bg-white rounded-xl shadow-xl p-0 overflow-hidden border border-gray-100 h-full min-h-[600px]">
                 {/* Header */}
-                <div className="bg-gray-50 border-b border-gray-200 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className={`bg-gray-50 border-b border-gray-200 ${activeCategory ? 'py-3 px-6' : 'py-4 px-6'} flex flex-row items-center justify-between gap-4`}>
                     <div className="flex items-center gap-4">
                         {activeCategory && (
                             <button 
@@ -808,85 +810,149 @@ const Settings: React.FC<SettingsProps> = ({
                             </button>
                         )}
                         <div>
-                            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
                                 {activeCategory ? categories.find(c => c.id === activeCategory)?.title : 'System Settings'}
                             </h2>
-                            <p className="text-sm text-gray-500 mt-0.5">
-                                {activeCategory 
-                                    ? categories.find(c => c.id === activeCategory)?.desc 
-                                    : 'Configure and manage your application systems.'}
-                            </p>
                         </div>
                     </div>
+
+                    {/* Header Action Button */}
+                    {activeCategory && (
+                        <div className="flex items-center gap-2">
+                            {activeCategory === 'users' && (
+                                <button 
+                                    onClick={openAddUserModal}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors flex items-center gap-1 shadow-sm"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                                    </svg>
+                                    {lang === 'en' ? 'New User' : 'مستخدم جديد'}
+                                </button>
+                            )}
+                            {activeCategory === 'branches' && (
+                                <button 
+                                    onClick={() => setShowAddBranchForm(!showAddBranchForm)}
+                                    className={`${showAddBranchForm ? 'bg-gray-500 hover:bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors flex items-center gap-1 shadow-sm`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        {showAddBranchForm ? (
+                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        ) : (
+                                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                                        )}
+                                    </svg>
+                                    {showAddBranchForm ? (lang === 'en' ? 'Close' : 'إغلاق') : (lang === 'en' ? 'New Branch' : 'فرع جديد')}
+                                </button>
+                            )}
+                            {activeCategory === 'items' && (
+                                <button 
+                                    onClick={() => setShowAddItemForm(!showAddItemForm)}
+                                    className={`${showAddItemForm ? 'bg-gray-500 hover:bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors flex items-center gap-1 shadow-sm`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        {showAddItemForm ? (
+                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        ) : (
+                                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                                        )}
+                                    </svg>
+                                    {showAddItemForm ? (lang === 'en' ? 'Close' : 'إغلاق') : (lang === 'en' ? 'New Item' : 'صنف جديد')}
+                                </button>
+                            )}
+                            {activeCategory === 'drivers' && (
+                                <button 
+                                    onClick={() => setShowAddDriverForm(!showAddDriverForm)}
+                                    className={`${showAddDriverForm ? 'bg-gray-500 hover:bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors flex items-center gap-1 shadow-sm`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        {showAddDriverForm ? (
+                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        ) : (
+                                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                                        )}
+                                    </svg>
+                                    {showAddDriverForm ? (lang === 'en' ? 'Close' : 'إغلاق') : (lang === 'en' ? 'New Driver' : 'سائق جديد')}
+                                </button>
+                            )}
+                            {activeCategory === 'vehicles' && (
+                                <button 
+                                    onClick={() => setShowAddVehicleForm(!showAddVehicleForm)}
+                                    className={`${showAddVehicleForm ? 'bg-gray-500 hover:bg-gray-600' : 'bg-teal-600 hover:bg-teal-700'} text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors flex items-center gap-1 shadow-sm`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        {showAddVehicleForm ? (
+                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        ) : (
+                                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                                        )}
+                                    </svg>
+                                    {showAddVehicleForm ? (lang === 'en' ? 'Close' : 'إغلاق') : (lang === 'en' ? 'New Vehicle' : 'مركبة جديدة')}
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             
                 <div className="p-6">
                     {!activeCategory ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {categories.map((cat) => (
                                 <motion.button
                                     key={cat.id}
-                                    whileHover={{ y: -4, scale: 1.02 }}
+                                    whileHover={{ y: -3, scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => setActiveCategory(cat.id as SettingsCategory)}
-                                    className="flex flex-col items-start p-6 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all text-left h-full"
+                                    className="flex flex-col items-start p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all text-left h-full"
                                 >
-                                    <div className={`${cat.bg} p-4 rounded-2xl mb-4`}>
-                                        <cat.icon className={`w-8 h-8 ${cat.color}`} />
+                                    <div className={`${cat.bg} p-2.5 rounded-xl mb-3`}>
+                                        <cat.icon className={`w-5 h-5 ${cat.color}`} />
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2">{cat.title}</h3>
-                                    <p className="text-sm text-gray-500 leading-relaxed">{cat.desc}</p>
+                                    <h3 className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">{cat.title}</h3>
                                 </motion.button>
                             ))}
                         </div>
                     ) : (
                         <div className="max-w-4xl mx-auto">
-                            {/* Navigation Header */}
-                            <button 
-                                onClick={() => setActiveCategory(null)}
-                                className="mb-8 flex items-center gap-2 text-gray-500 hover:text-blue-600 font-bold transition-colors group"
-                            >
-                                <div className="p-1.5 rounded-lg bg-gray-100 group-hover:bg-blue-100 transition-colors">
-                                    <ArrowLeft className="w-5 h-5" />
-                                </div>
-                                <span>Back to Categories</span>
-                            </button>
+                            {/* Navigation Header Removed */}
 
                             {/* Categories rendering */}
                             {activeCategory === 'branches' && (
                                 <div className="space-y-6">
-                    <h3 className="text-xl font-semibold text-gray-700 mb-3">Branches</h3>
+                                    {/* Category Title Removed */}
                     
                     {/* Add/Edit Branch Form */}
-                    <form onSubmit={handleBranchSubmit} className="flex gap-2 mb-4">
-                        <div className="flex-1 flex gap-1">
-                            <input
-                                type="text"
-                                value={branchName}
-                                onChange={(e) => setBranchName(e.target.value)}
-                                placeholder={editingBranchId ? "Edit Branch Name" : "New Branch Name"}
-                                className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            />
-                            {editingBranchId && (
-                                <button
-                                    type="button"
-                                    onClick={cancelEditBranch}
-                                    className="bg-gray-400 text-white px-2 rounded-md text-xs hover:bg-gray-500"
-                                >
-                                    ✕
-                                </button>
-                            )}
-                        </div>
-                        <button 
-                            type="submit"
-                            disabled={!branchName.trim()}
-                            className={`px-4 py-2 rounded-md text-sm font-semibold text-white disabled:bg-gray-400 ${editingBranchId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'}`}
-                        >
-                            {editingBranchId ? 'Save' : 'Add'}
-                        </button>
-                    </form>
+                    {(showAddBranchForm || editingBranchId) && (
+                        <form onSubmit={handleBranchSubmit} className="flex gap-2 mb-4">
+                            <div className="flex-1 flex gap-1">
+                                <input
+                                    type="text"
+                                    value={branchName}
+                                    onChange={(e) => setBranchName(e.target.value)}
+                                    placeholder={editingBranchId ? "Edit Branch Name" : "New Branch Name"}
+                                    className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                />
+                                {editingBranchId && (
+                                    <button
+                                        type="button"
+                                        onClick={cancelEditBranch}
+                                        className="bg-gray-400 text-white px-2 rounded-md text-xs hover:bg-gray-500"
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+                            <button 
+                                type="submit"
+                                disabled={!branchName.trim()}
+                                className={`px-4 py-2 rounded-md text-sm font-semibold text-white disabled:bg-gray-400 ${editingBranchId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                            >
+                                {editingBranchId ? 'Save' : 'Add'}
+                            </button>
+                        </form>
+                    )}
 
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-[600px] overflow-y-auto">
                         {sortedBranches.length > 0 ? (
                             <ul className="space-y-2">
                                 {sortedBranches.map(branch => (
@@ -924,34 +990,36 @@ const Settings: React.FC<SettingsProps> = ({
 
                             {activeCategory === 'items' && (
                                 <div className="space-y-6">
-                    <h3 className="text-xl font-semibold text-gray-700 mb-3">Items / Categories</h3>
+                                    {/* Category Title Removed */}
                     
                     {/* Add Item Form */}
-                    <form onSubmit={handleAddItem} className="flex gap-2 mb-4">
-                        <input
-                            type="text"
-                            value={newItemCode}
-                            onChange={(e) => setNewItemCode(e.target.value)}
-                            placeholder="Code"
-                            className="w-20 border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        />
-                        <input
-                            type="text"
-                            value={newItemName}
-                            onChange={(e) => setNewItemName(e.target.value)}
-                            placeholder="New Item Name"
-                            className="flex-1 border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        />
-                        <button 
-                            type="submit"
-                            disabled={!newItemName.trim()}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 disabled:bg-gray-400"
-                        >
-                            Add
-                        </button>
-                    </form>
+                    {(showAddItemForm || editingItemId) && (
+                        <form onSubmit={handleAddItem} className="flex gap-2 mb-4">
+                            <input
+                                type="text"
+                                value={newItemCode}
+                                onChange={(e) => setNewItemCode(e.target.value)}
+                                placeholder="Code"
+                                className="w-20 border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            />
+                            <input
+                                type="text"
+                                value={newItemName}
+                                onChange={(e) => setNewItemName(e.target.value)}
+                                placeholder="New Item Name"
+                                className="flex-1 border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            />
+                            <button 
+                                type="submit"
+                                disabled={!newItemName.trim()}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 disabled:bg-gray-400"
+                            >
+                                Add
+                            </button>
+                        </form>
+                    )}
 
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-[600px] overflow-y-auto">
                         {items.length > 0 ? (
                             <ul className="space-y-2">
                                 {items.map(item => (
@@ -1035,18 +1103,9 @@ const Settings: React.FC<SettingsProps> = ({
 
                             {activeCategory === 'users' && (
                                 <div className="space-y-6">
-                                    <h3 className="text-xl font-semibold text-gray-700 mb-3">Users & Permissions</h3>
-                                    <button 
-                                        onClick={openAddUserModal}
-                                        className="w-full mb-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                                        </svg>
-                                        Add New User
-                                    </button>
+                                    {/* Category Title Removed */}
 
-                                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-96 overflow-y-auto">
+                                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-[600px] overflow-y-auto mt-2">
                                         {users.filter(u => u.username.toLowerCase() !== 'alaa').length > 0 ? (
                                             <ul className="space-y-2">
                                                 {users.filter(u => u.username.toLowerCase() !== 'alaa').map(user => (
@@ -1105,139 +1164,207 @@ const Settings: React.FC<SettingsProps> = ({
 
                             {activeCategory === 'restrictions' && (
                                 <div className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {/* Invoice Registration Restriction Section */}
-                                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <div className="bg-blue-600 p-1.5 rounded-lg text-white">
-                                                    <Calendar className="h-5 w-5" />
+                                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="bg-blue-600 p-1.5 rounded-lg text-white">
+                                                        <Calendar className="h-5 w-5" />
+                                                    </div>
+                                                    <h3 className="text-sm font-bold text-blue-900">
+                                                        {lang === 'en' ? 'Registration Range' : 'فترة التسجيل'}
+                                                    </h3>
                                                 </div>
-                                                <h3 className="text-lg font-bold text-blue-900">Registration Range</h3>
-                                            </div>
-                                            
-                                            <div className="space-y-3">
-                                                <label className="flex items-center gap-2 cursor-pointer p-2 bg-white rounded-lg border border-blue-100 hover:bg-blue-50 transition-colors">
-                                                    <input 
-                                                        type="checkbox"
-                                                        checked={settings.restrictRegistration}
-                                                        onChange={(e) => onUpdateSettings({...settings, restrictRegistration: e.target.checked})}
-                                                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                                                    />
-                                                    <span className="text-sm font-semibold text-gray-700">Enable Restriction</span>
-                                                </label>
+                                                
+                                                <div className="space-y-3">
+                                                    <label className="flex items-center gap-2 cursor-pointer p-2 bg-white rounded-lg border border-blue-100 hover:bg-blue-50 transition-colors">
+                                                        <input 
+                                                            type="checkbox"
+                                                            checked={settings.restrictRegistration}
+                                                            onChange={(e) => onUpdateSettings({...settings, restrictRegistration: e.target.checked})}
+                                                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                                        />
+                                                        <span className="text-xs font-semibold text-gray-700">
+                                                            {lang === 'en' ? 'Enable Restriction' : 'تفعيل القيد'}
+                                                        </span>
+                                                    </label>
 
-                                                <div className={`grid grid-cols-2 gap-2 transition-opacity duration-300 ${!settings.restrictRegistration ? 'opacity-50 pointer-events-none' : ''}`}>
-                                                    <div>
-                                                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">From</label>
-                                                        <CustomDatePicker
-                                                            value={formatDateForInput(settings.registrationStartDate)}
-                                                            onChange={(val) => handleDateChange(val, 'registrationStartDate')}
-                                                            themeColor="#2563eb"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">To</label>
-                                                        <CustomDatePicker
-                                                            value={formatDateForInput(settings.registrationEndDate)}
-                                                            onChange={(val) => handleDateChange(val, 'registrationEndDate')}
-                                                            themeColor="#2563eb"
-                                                            align="right"
-                                                        />
+                                                    <div className={`grid grid-cols-2 gap-2 transition-opacity duration-300 ${!settings.restrictRegistration ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                        <div>
+                                                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">
+                                                                {lang === 'en' ? 'From' : 'من'}
+                                                            </label>
+                                                            <CustomDatePicker
+                                                                value={formatDateForInput(settings.registrationStartDate)}
+                                                                onChange={(val) => handleDateChange(val, 'registrationStartDate')}
+                                                                themeColor="#2563eb"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">
+                                                                {lang === 'en' ? 'To' : 'إلى'}
+                                                            </label>
+                                                            <CustomDatePicker
+                                                                value={formatDateForInput(settings.registrationEndDate)}
+                                                                onChange={(val) => handleDateChange(val, 'registrationEndDate')}
+                                                                themeColor="#2563eb"
+                                                                align="right"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <p className="text-[10px] text-blue-600 mt-1 italic">
-                                                    * Prevents adding invoices outside this range.
-                                                </p>
                                             </div>
                                         </div>
 
                                         {/* Invoice Modification Restriction Section */}
-                                        <div className="bg-red-50 p-4 rounded-xl border border-red-200 shadow-sm">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <div className="bg-red-600 p-1.5 rounded-lg text-white">
-                                                    <Lock className="h-5 w-5" />
+                                        <div className="bg-red-50 p-4 rounded-xl border border-red-200 shadow-sm flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="bg-red-600 p-1.5 rounded-lg text-white">
+                                                        <Lock className="h-5 w-5" />
+                                                    </div>
+                                                    <h3 className="text-sm font-bold text-red-900">
+                                                        {lang === 'en' ? 'Archive Protection' : 'حماية الأرشيف'}
+                                                    </h3>
                                                 </div>
-                                                <h3 className="text-lg font-bold text-red-900">Archive Protection</h3>
-                                            </div>
-                                            
-                                            <div className="space-y-3">
-                                                <label className="flex items-center gap-2 cursor-pointer p-2 bg-white rounded-lg border border-red-100 hover:bg-red-50 transition-colors">
-                                                    <input 
-                                                        type="checkbox"
-                                                        checked={settings.restrictModification}
-                                                        onChange={(e) => onUpdateSettings({...settings, restrictModification: e.target.checked})}
-                                                        className="w-4 h-4 text-red-600 rounded focus:ring-red-500"
-                                                    />
-                                                    <span className="text-sm font-semibold text-gray-700">Restrict Edit/Delete</span>
-                                                </label>
+                                                
+                                                <div className="space-y-3">
+                                                    <label className="flex items-center gap-2 cursor-pointer p-2 bg-white rounded-lg border border-red-100 hover:bg-red-50 transition-colors">
+                                                        <input 
+                                                            type="checkbox"
+                                                            checked={settings.restrictModification}
+                                                            onChange={(e) => onUpdateSettings({...settings, restrictModification: e.target.checked})}
+                                                            className="w-4 h-4 text-red-600 rounded focus:ring-red-500"
+                                                        />
+                                                        <span className="text-xs font-semibold text-gray-700">
+                                                            {lang === 'en' ? 'Restrict Edit/Delete' : 'تقييد التعديل/الحذف'}
+                                                        </span>
+                                                    </label>
 
-                                                <div className={`grid grid-cols-2 gap-2 transition-opacity duration-300 ${!settings.restrictModification ? 'opacity-50 pointer-events-none' : ''}`}>
-                                                    <div>
-                                                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">From</label>
-                                                        <CustomDatePicker
-                                                            value={formatDateForInput(settings.modificationStartDate)}
-                                                            onChange={(val) => handleDateChange(val, 'modificationStartDate')}
-                                                            themeColor="#dc2626"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">To</label>
-                                                        <CustomDatePicker
-                                                            value={formatDateForInput(settings.modificationEndDate)}
-                                                            onChange={(val) => handleDateChange(val, 'modificationEndDate')}
-                                                            themeColor="#dc2626"
-                                                            align="right"
-                                                        />
+                                                    <div className={`grid grid-cols-2 gap-2 transition-opacity duration-300 ${!settings.restrictModification ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                        <div>
+                                                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">
+                                                                {lang === 'en' ? 'From' : 'من'}
+                                                            </label>
+                                                            <CustomDatePicker
+                                                                value={formatDateForInput(settings.modificationStartDate)}
+                                                                onChange={(val) => handleDateChange(val, 'modificationStartDate')}
+                                                                themeColor="#dc2626"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">
+                                                                {lang === 'en' ? 'To' : 'إلى'}
+                                                            </label>
+                                                            <CustomDatePicker
+                                                                value={formatDateForInput(settings.modificationEndDate)}
+                                                                onChange={(val) => handleDateChange(val, 'modificationEndDate')}
+                                                                themeColor="#dc2626"
+                                                                align="right"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <p className="text-[10px] text-red-600 mt-1 italic">
-                                                    * Prevents modifying invoices within this range.
-                                                </p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Order Flow System Section */}
-                                    {currentUser?.username.toLowerCase() === 'alaa' && (
-                                    <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-200 shadow-sm">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <div className="bg-emerald-600 p-1.5 rounded-lg text-white">
-                                                <ClipboardList className="h-5 w-5" />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Order Flow System Section */}
+                                        {currentUser?.username.toLowerCase() === 'alaa' && (
+                                            <div className="bg-emerald-50 p-3.5 rounded-xl border border-emerald-200 shadow-sm flex flex-col justify-between">
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <div className="bg-emerald-600 p-1 rounded-lg text-white">
+                                                            <ClipboardList className="h-4 w-4" />
+                                                        </div>
+                                                        <h3 className="text-sm font-bold text-emerald-950">
+                                                            {lang === 'en' ? 'Order System' : 'نظام الطلبات'}
+                                                        </h3>
+                                                    </div>
+                                                    
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onUpdateSettings({...settings, directOrderFlow: false})}
+                                                            className={`p-2.5 px-3 rounded-lg text-left flex items-center justify-between border transition-all shadow-sm cursor-pointer ${!settings.directOrderFlow ? 'bg-emerald-600 text-white border-emerald-600 shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                                                        >
+                                                            <span className="text-xs font-bold">
+                                                                {lang === 'en' ? 'Approval Mode' : 'وضع الموافقة'}
+                                                            </span>
+                                                            {!settings.directOrderFlow && (
+                                                                <span className="bg-white text-emerald-700 text-[9px] px-2 py-0.5 rounded-full font-bold">
+                                                                    {lang === 'en' ? 'Active' : 'نشط'}
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onUpdateSettings({...settings, directOrderFlow: true})}
+                                                            className={`p-2.5 px-3 rounded-lg text-left flex items-center justify-between border transition-all shadow-sm cursor-pointer ${settings.directOrderFlow ? 'bg-emerald-600 text-white border-emerald-600 shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                                                        >
+                                                            <span className="text-xs font-bold">
+                                                                {lang === 'en' ? 'Direct Mode' : 'الوضع المباشر'}
+                                                            </span>
+                                                            {settings.directOrderFlow && (
+                                                                <span className="bg-white text-emerald-700 text-[9px] px-2 py-0.5 rounded-full font-bold">
+                                                                    {lang === 'en' ? 'Active' : 'نشط'}
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <h3 className="text-lg font-bold text-emerald-950">Order System</h3>
-                                        </div>
-                                        
-                                        <div className="space-y-4">
-                                            <p className="text-sm text-emerald-900 font-semibold">
-                                                Select how user orders are processed:
-                                            </p>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => onUpdateSettings({...settings, directOrderFlow: false})}
-                                                    className={`p-4 rounded-xl text-xs font-bold transition-all border text-left flex items-center justify-between shadow-sm cursor-pointer ${!settings.directOrderFlow ? 'bg-emerald-600 text-white border-emerald-600 shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
-                                                >
-                                                    <div className="flex flex-col items-start gap-1">
-                                                        <span className="text-sm font-bold">Approval Mode</span>
-                                                        <span className="text-[11px] opacity-90 font-medium">Requires admin approval in "Order Approvals"</span>
+                                        )}
+
+                                        {/* Invoice Numbering Control Section */}
+                                        <div className="bg-amber-50 p-3.5 rounded-xl border border-amber-200 shadow-sm flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className="bg-amber-600 p-1.5 rounded-lg text-white">
+                                                        <Hash className="h-4 w-4" />
                                                     </div>
-                                                    {!settings.directOrderFlow && <span className="bg-white text-emerald-700 text-[10px] px-2.5 py-1 rounded-full font-bold">Active</span>}
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => onUpdateSettings({...settings, directOrderFlow: true})}
-                                                    className={`p-4 rounded-xl text-xs font-bold transition-all border text-left flex items-center justify-between shadow-sm cursor-pointer ${settings.directOrderFlow ? 'bg-emerald-600 text-white border-emerald-600 shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
-                                                >
-                                                    <div className="flex flex-col items-start gap-1">
-                                                        <span className="text-sm font-bold">Direct Mode</span>
-                                                        <span className="text-[11px] opacity-90 font-medium">Orders bypass approval directly to Daily Sales</span>
-                                                    </div>
-                                                    {settings.directOrderFlow && <span className="bg-white text-emerald-700 text-[10px] px-2.5 py-1 rounded-full font-bold">Active</span>}
-                                                </button>
+                                                    <h3 className="text-sm font-bold text-amber-900">
+                                                        {lang === 'en' ? 'Invoice Numbering' : 'ترقيم الفواتير'}
+                                                    </h3>
+                                                </div>
+                                                
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onUpdateSettings({...settings, manualInvoiceNumber: true})}
+                                                        className={`p-2.5 px-3 rounded-lg text-left flex items-center justify-between border transition-all shadow-sm cursor-pointer ${settings.manualInvoiceNumber ? 'bg-amber-600 text-white border-amber-600 shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                                                    >
+                                                        <span className="text-xs font-bold">
+                                                            {lang === 'en' ? 'Manual Entry' : 'إدخال يدوي'}
+                                                        </span>
+                                                        {settings.manualInvoiceNumber && (
+                                                            <span className="bg-white text-amber-700 text-[9px] px-2 py-0.5 rounded-full font-bold">
+                                                                {lang === 'en' ? 'Active' : 'نشط'}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onUpdateSettings({...settings, manualInvoiceNumber: false})}
+                                                        className={`p-2.5 px-3 rounded-lg text-left flex items-center justify-between border transition-all shadow-sm cursor-pointer ${!settings.manualInvoiceNumber ? 'bg-amber-600 text-white border-amber-600 shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                                                    >
+                                                        <span className="text-xs font-bold">
+                                                            {lang === 'en' ? 'Automatic' : 'تلقائي'}
+                                                        </span>
+                                                        {!settings.manualInvoiceNumber && (
+                                                            <span className="bg-white text-amber-700 text-[9px] px-2 py-0.5 rounded-full font-bold">
+                                                                {lang === 'en' ? 'Active' : 'نشط'}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    )}
+
+
 
                                     {/* Daily Sales Notification System Section */}
                                     <div className="bg-orange-50 p-5 rounded-xl border border-orange-200 shadow-sm">
@@ -1312,307 +1439,41 @@ const Settings: React.FC<SettingsProps> = ({
                                 </div>
                             )}
 
-                            {activeCategory === 'numbering' && (
-                                <div className="space-y-6">
-                                    <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 shadow-sm">
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <div className="bg-amber-600 p-1.5 rounded-lg text-white">
-                                                <Hash className="h-5 w-5" />
-                                            </div>
-                                            <h3 className="text-lg font-bold text-amber-900">Invoice Numbering Control</h3>
-                                        </div>
-                                        
-                                        <div className="space-y-4">
-                                            {/* Manual Entry Selection Buttons */}
-                                            <div className="bg-white p-4 rounded-lg border border-amber-200 shadow-sm mb-4">
-                                                <h4 className="text-sm font-bold text-gray-700 mb-3">Cash Invoice Numbering Mode</h4>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => onUpdateSettings({...settings, manualInvoiceNumber: true})}
-                                                        className={`py-2 px-3 rounded-lg text-xs font-bold transition-all border ${settings.manualInvoiceNumber ? 'bg-amber-600 text-white border-amber-600 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
-                                                    >
-                                                        Manual Entry
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => onUpdateSettings({...settings, manualInvoiceNumber: false})}
-                                                        className={`py-2 px-3 rounded-lg text-xs font-bold transition-all border ${!settings.manualInvoiceNumber ? 'bg-amber-600 text-white border-amber-600 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
-                                                    >
-                                                        Automatic
-                                                    </button>
-                                                </div>
-                                                <p className="text-[10px] text-gray-500 mt-2 italic">
-                                                    * Manual: Allow editing the cash invoice number field.<br/>
-                                                    * Automatic: Logic handles numbering based on branch counters.
-                                                </p>
-                                            </div>
 
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                {branches.map(branch => {
-                                                    const branchNext = settings.nextInvoiceNumbers?.[branch.id] || { cash: 1, credit: 1 };
-                                                    return (
-                                                        <div key={branch.id} className="bg-white p-3 rounded-lg border border-amber-100 shadow-sm">
-                                                            <h4 className="text-sm font-bold text-gray-700 mb-2 truncate" title={branch.name}>{branch.name}</h4>
-                                                            <div className="grid grid-cols-2 gap-3">
-                                                                <div>
-                                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Cash Next No.</label>
-                                                                    <input 
-                                                                        type="number"
-                                                                        value={branchNext.cash ?? 1}
-                                                                        onChange={(e) => {
-                                                                            const val = parseInt(e.target.value, 10) || 1;
-                                                                            const updatedNext = { ...(settings.nextInvoiceNumbers || {}) };
-                                                                            updatedNext[branch.id] = { ...branchNext, cash: val };
-                                                                            onUpdateSettings({ ...settings, nextInvoiceNumbers: updatedNext });
-                                                                        }}
-                                                                        className="w-full border border-gray-300 rounded p-1.5 text-sm font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                                                                        min="1"
-                                                                    />
-                                                                </div>
-                                                                <div>
-                                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Credit Next No.</label>
-                                                                    <input 
-                                                                        type="number"
-                                                                        value={branchNext.credit ?? 1}
-                                                                        onChange={(e) => {
-                                                                            const val = parseInt(e.target.value, 10) || 1;
-                                                                            const updatedNext = { ...(settings.nextInvoiceNumbers || {}) };
-                                                                            updatedNext[branch.id] = { ...branchNext, credit: val };
-                                                                            onUpdateSettings({ ...settings, nextInvoiceNumbers: updatedNext });
-                                                                        }}
-                                                                        className="w-full border border-gray-300 rounded p-1.5 text-sm font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                                                                        min="1"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
-                            {activeCategory === 'diagnostics' && (
-                                <div className="space-y-6">
-                                    <p className="text-xs text-red-800 font-bold mb-3 uppercase tracking-wider">Branch Data Verification</p>
-                                    <table className="min-w-full text-left text-xs">
-                                        <thead>
-                                            <tr className="border-b border-red-200">
-                                                <th className="py-2 font-black text-red-900">Branch Name</th>
-                                                <th className="py-2 font-black text-red-900">ID</th>
-                                                <th className="py-2 font-black text-red-900">Inv Count</th>
-                                                <th className="py-2 font-black text-red-900">Total SAR</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-red-100">
-                                            {branches.map(b => {
-                                                const invs = allSalesInvoices.filter(i => i.branchId === b.id);
-                                                return (
-                                                    <tr key={b.id}>
-                                                        <td className="py-2 font-bold text-red-800">{b.name}</td>
-                                                        <td className="py-2 font-mono text-gray-500">{b.id}</td>
-                                                        <td className="py-2 font-black text-red-900">{invs.length}</td>
-                                                        <td className="py-2 font-black text-red-900">{invs.reduce((s, i) => s + i.total, 0).toLocaleString()}</td>
-                                                    </tr>
-                                                );
-                                            })}
-                                            {/* Catch unassigned */}
-                                            {(() => {
-                                                const unassigned = allSalesInvoices.filter(i => !i.branchId || !branches.find(b => b.id === i.branchId));
-                                                if (unassigned.length > 0) {
-                                                    return (
-                                                        <tr className="bg-red-200/50">
-                                                            <td className="py-2 font-black text-red-700 italic">Unassigned/Lost</td>
-                                                            <td className="py-2 font-mono text-gray-400">null/none</td>
-                                                            <td className="py-2 font-black text-red-900">{unassigned.length}</td>
-                                                            <td className="py-2 font-black text-red-900">{unassigned.reduce((s, i) => s + i.total, 0).toLocaleString()}</td>
-                                                        </tr>
-                                                    );
-                                                }
-                                                return null;
-                                            })()}
-                                        </tbody>
-                                    </table>
-                                    <div className="mt-4 flex flex-col gap-3 p-4 bg-white rounded-xl border border-red-200 shadow-inner">
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-[10px] text-red-700 font-black uppercase tracking-widest flex items-center gap-1">
-                                                <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
-                                                Data Migration Tool
-                                            </p>
-                                            <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded">ALPHA TOOL</span>
-                                        </div>
 
-                                        {/* Daily Breakdown for Unassigned */}
-                                        <div className="max-h-52 overflow-y-auto border border-red-50 rounded-xl bg-red-50/20 p-2 space-y-1">
-                                            <p className="text-[9px] font-black text-red-400 uppercase mb-1 px-1 tracking-tighter">Unassigned Records Daily Distribution</p>
-                                            {unassignedByDay.length > 0 ? (
-                                                unassignedByDay.map(day => (
-                                                    <div key={day.dateStr} className="flex justify-between items-center bg-white p-2 rounded-lg border border-red-100 shadow-sm transition-all hover:bg-red-50/30">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-[11px] font-black text-red-900">{day.dateStr}</span>
-                                                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">{day.date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <span className="text-[11px] font-black text-red-900 block">{day.total.toLocaleString('en-US', { minimumFractionDigits: 2 })} SAR</span>
-                                                            <span className="text-[10px] font-bold text-red-500 uppercase">{day.count} Invoices</span>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div className="py-4 text-center">
-                                                    <p className="text-[10px] font-black text-gray-400 uppercase italic">NO UNASSIGNED INVOICES FOUND</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                        
-                                        {!isMigrating ? (
-                                            <div className="flex flex-col gap-3">
-                                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                                                    <select 
-                                                        value={migrationTargetBranch}
-                                                        onChange={(e) => setMigrationTargetBranch(e.target.value)}
-                                                        className="text-xs border-2 border-red-100 rounded-lg px-3 py-2 bg-white font-black text-red-900 focus:outline-none focus:border-red-400 transition-colors"
-                                                    >
-                                                        <option value="">Move selected data to...</option>
-                                                        {branches.map(b => (
-                                                            <option key={b.id} value={b.id}>{b.name}</option>
-                                                        ))}
-                                                    </select>
-                                                    <div className="flex gap-2">
-                                                        <button 
-                                                            type="button"
-                                                            onClick={() => unassignedInvoices.length > 0 && migrationTargetBranch && setShowMigrationConfirm(true)}
-                                                            disabled={!migrationTargetBranch || unassignedInvoices.length === 0}
-                                                            className="flex-1 sm:flex-none bg-red-700 text-white px-6 py-2 rounded-lg text-xs font-black uppercase hover:bg-red-800 shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:grayscale disabled:scale-100"
-                                                        >
-                                                            Process Transfer
-                                                        </button>
-                                                        <button 
-                                                            type="button"
-                                                            onClick={() => {
-                                                                const dammam = branches.find(b => b.name.toLowerCase().includes('dammam') || b.id === 'b1');
-                                                                if (dammam) {
-                                                                    setMigrationTargetBranch(dammam.id);
-                                                                    setShowMigrationConfirm(true);
-                                                                }
-                                                            }}
-                                                            disabled={unassignedInvoices.length === 0}
-                                                            className="flex-1 sm:flex-none bg-blue-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-blue-700 shadow-md"
-                                                        >
-                                                            Quick Move to Dammam
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {showMigrationConfirm && (
-                                                    <motion.div 
-                                                        initial={{ opacity: 0, y: -10 }} 
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        className="bg-white p-4 rounded-xl border-2 border-red-200 shadow-xl"
-                                                    >
-                                                        <div className="flex items-center gap-3 mb-3">
-                                                            <div className="bg-red-100 p-2 rounded-full">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
-                                                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                                                </svg>
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-xs font-black text-red-900">Transfer Confirmation</p>
-                                                                <p className="text-[10px] text-red-600">You are about to re-assign {unassignedInvoices.length} invoices to <b>{branches.find(b => b.id === migrationTargetBranch)?.name}</b>.</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex gap-2">
-                                                            <button 
-                                                                onClick={handleStartMigration}
-                                                                className="bg-red-600 text-white px-6 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-red-700 shadow-lg"
-                                                            >
-                                                                CONFIRM & TRANSFER
-                                                            </button>
-                                                            <button 
-                                                                onClick={() => setShowMigrationConfirm(false)}
-                                                                className="bg-gray-200 text-gray-600 px-6 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-gray-300"
-                                                            >
-                                                                CANCEL
-                                                            </button>
-                                                        </div>
-                                                    </motion.div>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-3 py-2">
-                                                <div className="flex justify-between items-center text-xs font-black text-red-900">
-                                                    <span>MIGRATING DATA...</span>
-                                                    <span>{migrationCount.current} / {migrationCount.total}</span>
-                                                </div>
-                                                <div className="w-full bg-red-100 rounded-full h-3 overflow-hidden border border-red-200">
-                                                    <div 
-                                                        className="bg-red-600 h-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(220,38,38,0.5)]"
-                                                        style={{ width: `${(migrationCount.current / migrationCount.total) * 100}%` }}
-                                                    ></div>
-                                                </div>
-                                                <p className="text-[10px] text-red-600 font-bold animate-pulse text-center">DO NOT CLOSE OR REFRESH THIS PAGE</p>
-                                            </div>
-                                        )}
-                                        
-                                        <div className="bg-red-50 p-2 rounded-lg border border-red-100/50">
-                                            <p className="text-[9px] text-red-700 font-bold leading-tight flex items-start gap-2">
-                                                <span className="shrink-0 mt-0.5">⚠️</span>
-                                                <span>This will permanently assign the selected branch ID to all invoices currently showing as "Unassigned" (missing Branch ID). Use with caution.</span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="mt-4 flex gap-2">
-                                         <button 
-                                            type="button"
-                                            onClick={() => {
-                                                alert(`Diagnostics: \nDammam (b1): ${allSalesInvoices.filter(i => i.branchId === 'b1').length} invoices \nTotal: ${allSalesInvoices.length}`);
-                                            }}
-                                            className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-black uppercase hover:bg-red-700 shadow-sm"
-                                        >
-                                            Show Summary Info
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
 
                             {activeCategory === 'drivers' && (
                                 <div className="space-y-6">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="bg-blue-600 p-1.5 rounded-lg text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                            </div>
-                            <h3 className="text-lg font-bold text-blue-900">Drivers Management</h3>
-                        </div>
+                                    {/* Category Title Removed */}
                         
-                        <form onSubmit={(e) => {
-                            e.preventDefault();
-                            if (newDriverName.trim()) {
-                                onAddDriver(newDriverName.trim());
-                                setNewDriverName('');
-                            }
-                        }} className="flex gap-2 mb-4">
-                            <input
-                                type="text"
-                                value={newDriverName}
-                                onChange={(e) => setNewDriverName(e.target.value)}
-                                placeholder="New Driver Name"
-                                className="flex-1 border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            />
-                            <button 
-                                type="submit"
-                                disabled={!newDriverName.trim()}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 disabled:bg-gray-400"
-                            >
-                                Add
-                            </button>
-                        </form>
+                        {(showAddDriverForm || editingDriverId) && (
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                if (newDriverName.trim()) {
+                                    onAddDriver(newDriverName.trim());
+                                    setNewDriverName('');
+                                    setShowAddDriverForm(false);
+                                }
+                            }} className="flex gap-2 mb-4">
+                                <input
+                                    type="text"
+                                    value={newDriverName}
+                                    onChange={(e) => setNewDriverName(e.target.value)}
+                                    placeholder="New Driver Name"
+                                    className="flex-1 border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                />
+                                <button 
+                                    type="submit"
+                                    disabled={!newDriverName.trim()}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 disabled:bg-gray-400"
+                                >
+                                    Add
+                                </button>
+                            </form>
+                        )}
 
-                        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
                             {drivers.length > 0 ? (
                                 drivers.map(driver => (
                                     <div key={driver.id} className="p-2 bg-gray-50 border rounded-md shadow-sm text-gray-800 flex justify-between items-center gap-2">
@@ -1687,39 +1548,35 @@ const Settings: React.FC<SettingsProps> = ({
 
                             {activeCategory === 'vehicles' && (
                                 <div className="space-y-6">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="bg-teal-600 p-1.5 rounded-lg text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                </svg>
-                            </div>
-                            <h3 className="text-lg font-bold text-teal-900">Vehicles Management</h3>
-                        </div>
+                                    {/* Category Title Removed */}
                         
-                        <form onSubmit={(e) => {
-                            e.preventDefault();
-                            if (newVehicleNumber.trim()) {
-                                onAddVehicle(newVehicleNumber.trim());
-                                setNewVehicleNumber('');
-                            }
-                        }} className="flex gap-2 mb-4">
-                            <input
-                                type="text"
-                                value={newVehicleNumber}
-                                onChange={(e) => setNewVehicleNumber(e.target.value)}
-                                placeholder="New Vehicle Number"
-                                className="flex-1 border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                            />
-                            <button 
-                                type="submit"
-                                disabled={!newVehicleNumber.trim()}
-                                className="bg-teal-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-teal-700 disabled:bg-gray-400"
-                            >
-                                Add
-                            </button>
-                        </form>
+                        {(showAddVehicleForm || editingVehicleId) && (
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                if (newVehicleNumber.trim()) {
+                                    onAddVehicle(newVehicleNumber.trim());
+                                    setNewVehicleNumber('');
+                                    setShowAddVehicleForm(false);
+                                }
+                            }} className="flex gap-2 mb-4">
+                                <input
+                                    type="text"
+                                    value={newVehicleNumber}
+                                    onChange={(e) => setNewVehicleNumber(e.target.value)}
+                                    placeholder="New Vehicle Number"
+                                    className="flex-1 border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                                />
+                                <button 
+                                    type="submit"
+                                    disabled={!newVehicleNumber.trim()}
+                                    className="bg-teal-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-teal-700 disabled:bg-gray-400"
+                                >
+                                    Add
+                                </button>
+                            </form>
+                        )}
 
-                        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
                             {vehicles.length > 0 ? (
                                 vehicles.map(vehicle => (
                                     <div key={vehicle.id} className="p-2 bg-gray-50 border rounded-md shadow-sm text-gray-800 flex justify-between items-center gap-2">
@@ -1795,15 +1652,7 @@ const Settings: React.FC<SettingsProps> = ({
                             {activeCategory === 'mobile_config' && (
                                 <div className="space-y-6">
                                     <div className="bg-cyan-50 p-6 rounded-xl border border-cyan-200 shadow-sm">
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <div className="bg-cyan-600 p-2 rounded-lg text-white">
-                                                <Smartphone className="h-6 w-6" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-xl font-bold text-cyan-950">Mobile App Configuration</h3>
-                                                <p className="text-sm text-cyan-800 mt-1">Select which pages should be visible when the application is running on a mobile device. If unchecked, the page will be hidden on mobile devices regardless of user permissions.</p>
-                                            </div>
-                                        </div>
+
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                             {[
@@ -1847,7 +1696,7 @@ const Settings: React.FC<SettingsProps> = ({
 
                             {activeCategory === 'data' && (
                                 <div className="space-y-6">
-                                    <h3 className="text-xl font-semibold text-gray-700 mb-3">Data Management</h3>
+                                    {/* Data Management Title Removed */}
 
                                     {/* Automatic Backup Section */}
                                     <div className="bg-purple-50 p-5 rounded-xl border border-purple-200 shadow-sm mb-6">
@@ -1954,9 +1803,10 @@ const Settings: React.FC<SettingsProps> = ({
                                                              </div>
                                                          )}
 
+                                                         {/* Local Auto-Backup Folder Section Removed - Direct Downloads folder used automatically */}
                                                          {/* Backup Encryption Password */}
-                                                         <div className="flex flex-col gap-1 col-span-1 md:col-span-2 lg:col-span-3 text-left">
-                                                             <span className="text-xs font-bold text-gray-500 mb-1">Backup Security Password:</span>
+                                                         <div className="hidden">
+                                                             <span className="text-xs font-bold text-gray-500 mb-1 hidden">Backup Security Password:</span>
                                                              <input 
                                                                  type="text"
                                                                  placeholder="Enter password to secure the file"
@@ -1973,64 +1823,54 @@ const Settings: React.FC<SettingsProps> = ({
                                              </div>
                                          </div>
                                      </div>
-                                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 flex flex-col gap-4">
-                                        <p className="text-sm text-gray-600 mb-2">
+                                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 flex flex-col gap-4">
+                                         <p className="text-sm text-gray-600 mb-2">
                                             Backup your data to a safe location or restore from a previous backup.
                                         </p>
                                         
-                                        <button 
-                                            onClick={handleBackup}
-                                            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition-colors"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                                            </svg>
-                                            Backup Data
-                                        </button>
-
-                                        <div className="relative">
-                                            <input 
-                                                type="file" 
-                                                accept=".json"
-                                                ref={fileInputRef}
-                                                onChange={handleRestore}
-                                                className="hidden" 
-                                            />
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
                                             <button 
-                                                onClick={triggerRestore}
-                                                className="w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded transition-colors"
+                                                onClick={handleBackup}
+                                                className="flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-2 rounded text-xs md:text-sm transition-colors w-full"
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v3.25a1 1 0 11-2 0V13.003a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                                                 </svg>
-                                                Restore Data
+                                                Backup Data
+                                            </button>
+
+                                            <div className="relative w-full">
+                                                <input 
+                                                    type="file" 
+                                                    accept=".json,.bak"
+                                                    ref={fileInputRef}
+                                                    onChange={handleRestore}
+                                                    className="hidden" 
+                                                />
+                                                <button 
+                                                    onClick={triggerRestore}
+                                                    className="w-full flex items-center justify-center gap-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold py-1.5 px-2 rounded text-xs md:text-sm transition-colors"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v3.25a1 1 0 11-2 0V13.003a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                                                    </svg>
+                                                    Restore Data
+                                                </button>
+                                            </div>
+
+                                            <button 
+                                                onClick={handleClearInvoicesStart}
+                                                className="w-full flex items-center justify-center gap-1.5 bg-red-700 hover:bg-red-800 text-white font-bold py-1.5 px-2 rounded text-xs md:text-sm transition-colors"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                </svg>
+                                                Clear All Data
                                             </button>
                                         </div>
-
-                                        <button 
-                                            onClick={handleClearInvoicesStart}
-                                            className="w-full flex items-center justify-center gap-2 bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded transition-colors"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                            </svg>
-                                            Clear All Data
-                                        </button>
                                         <p className="text-xs text-red-500 mt-2 text-center">
                                             Note: You will be able to select which branch to clear.
                                         </p>
-
-                                        {onRestoreDefaults && (
-                                            <button 
-                                                onClick={onRestoreDefaults}
-                                                className="mt-4 w-full flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded transition-colors"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v3.25a1 1 0 11-2 0V13.003a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-                                                </svg>
-                                                Restore Default Data
-                                            </button>
-                                        )}
                                     </div>
                                 </div>
                             )}

@@ -4,7 +4,7 @@ import { dualStorage, COLLECTIONS } from '../DualStorageService';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { captureAndExport, printOrDownloadPdf } from '../captureUtils';
-import { Printer, FileSpreadsheet, Copy, ClipboardPaste, Calendar, ChevronLeft, ChevronRight, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Printer, FileSpreadsheet, Copy, ClipboardPaste, Calendar, ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Eraser } from 'lucide-react';
 
 const getContrastColor = (hexColor: string) => {
     let r = 0, g = 0, b = 0;
@@ -107,6 +107,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
     });
 
     const [showPostConfirm, setShowPostConfirm] = useState(false);
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
     const [isPosting, setIsPosting] = useState(false);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
     const [showCopyMenu, setShowCopyMenu] = useState(false);
@@ -755,6 +756,47 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         }
     };
 
+    const handleClearAllData = () => {
+        if (!gridData || !isEditableMonth) return;
+        setShowClearConfirm(true);
+    };
+
+    const handleConfirmClear = () => {
+        if (!gridData || !isEditableMonth) return;
+
+        const newEmployeesData = { ...gridData.employeesData };
+        
+        employees.forEach(emp => {
+            const showInTab = typeKey === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
+            if (emp.isActive && showInTab) {
+                newEmployeesData[emp.id] = {
+                    bonus: '',
+                    otTrips: '',
+                    rate: '',
+                    days: {},
+                    statuses: {}
+                };
+            }
+        });
+
+        const newData = {
+            ...gridData,
+            employeesData: newEmployeesData
+        };
+
+        setGridData(newData);
+        
+        dualStorage.save(COLLECTIONS.RECORDS, newData.id, {
+            type: `timesheet_grid_${typeKey}`,
+            data: newData
+        }).catch(err => {
+            console.error("Error clearing grid:", err);
+        });
+        
+        syncArchive(newData);
+        setShowClearConfirm(false);
+    };
+
     const handlePasteData = () => {
         if (!gridData || !isEditableMonth) return;
         try {
@@ -937,6 +979,15 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                         >
                             <ClipboardPaste className={`h-5 w-5 ${isEditableMonth ? 'group-hover:scale-110 transition-transform' : ''}`} />
                             <span className="hidden xs:inline">Paste</span>
+                        </button>
+                        <button
+                            onClick={handleClearAllData}
+                            disabled={!isEditableMonth}
+                            className={`flex items-center justify-center gap-2 ${isEditableMonth ? 'bg-red-600 hover:bg-red-700 border-red-800 cursor-pointer' : 'bg-gray-400 border-gray-500 cursor-not-allowed opacity-70'} text-white font-bold py-2 px-3 rounded-xl transition-all shadow-md h-[44px] group border-b-4`}
+                            title={namesLanguage === 'en' ? 'Clear Data' : 'مسح البيانات'}
+                        >
+                            <Eraser className={`h-5 w-5 ${isEditableMonth ? 'group-hover:scale-110 transition-transform' : ''}`} />
+                            <span className="hidden xs:inline">{namesLanguage === 'en' ? 'Clear' : 'مسح'}</span>
                         </button>
                         <button
                             onClick={handlePrint}
@@ -1312,6 +1363,40 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
                             >
                                 {isPosting ? 'Posting...' : 'Confirm & Post'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Clear Confirmation Modal */}
+            {showClearConfirm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[400] no-print">
+                    <div 
+                        dir={namesLanguage === 'en' ? 'ltr' : 'rtl'} 
+                        className={`bg-white rounded-lg shadow-xl w-full max-w-md p-6 border border-gray-100 ${namesLanguage === 'ar' ? 'text-right' : 'text-left'}`}
+                    >
+                        <h3 className="text-lg font-bold text-gray-900 mb-2 p-6 pb-0">
+                            {namesLanguage === 'en' ? 'Clear Table Data' : 'مسح بيانات الجدول'}
+                        </h3>
+                        <p className="text-sm text-gray-600 leading-relaxed mb-6 px-6">
+                            {namesLanguage === 'en' 
+                                ? 'Are you sure you want to clear all cells, values, and colors in this monthly overtime grid? This action is permanent and cannot be undone.' 
+                                : 'هل أنت متأكد من رغبتك في مسح كافة الخانات والقيم والألوان في جدول العمل الإضافي لشهرنا الحالي؟ هذا الإجراء نهائي ولا يمكن التراجع عنه.'
+                            }
+                        </p>
+                        <div className={`flex justify-end gap-3 px-6 pb-6 ${namesLanguage === 'ar' ? 'flex-row-reverse' : ''}`}>
+                            <button
+                                onClick={() => setShowClearConfirm(false)}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                            >
+                                {namesLanguage === 'en' ? 'Cancel' : 'إلغاء'}
+                            </button>
+                            <button
+                                onClick={handleConfirmClear}
+                                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors shadow-sm"
+                            >
+                                {namesLanguage === 'en' ? 'Clear All Data' : 'مسح كافة البيانات'}
                             </button>
                         </div>
                     </div>

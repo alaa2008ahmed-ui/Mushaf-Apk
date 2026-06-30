@@ -30,11 +30,12 @@ import { mockItems, mockEmployees, mockBranches, mockDrivers, mockVehicles, defa
 import { dualStorage, COLLECTIONS } from './DualStorageService';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { downloadBlob } from './downloadUtils';
 import { captureAndExport, printOrDownloadPdf } from './captureUtils';
 import CryptoJS from 'crypto-js';
 import LZString from 'lz-string';
+import { getFolderHandle } from './IndexedDBService';
 
 // Declare jsPDF and html2canvas types for TypeScript
 declare global {
@@ -1488,33 +1489,37 @@ const App: React.FC = () => {
         return () => clearInterval(intervalId);
     }, [appSettings, allSalesInvoices, branches]);
 
-    // Background timer to check and trigger automatic backup of all system databases
+    // Background timer to check and trigger automatic backup of all system databases (AutoBackupManager)
     useEffect(() => {
         if (!appSettings || !appSettings.autoBackupEnabled || !appSettings.autoBackupTime) {
             return;
         }
 
-        const handleInteraction = () => {
-            const now = new Date();
-            
-            const getLocalDateString = (d: Date) => {
-                const yr = d.getFullYear();
-                const mo = d.getMonth() + 1;
-                const dy = d.getDate();
-                return `${yr}-${mo < 10 ? '0' + mo : mo}-${dy < 10 ? '0' + dy : dy}`;
-            };
-
-            const todayStr = getLocalDateString(now);
-            const currentHour = String(now.getHours()).padStart(2, '0');
-            const currentMin = String(now.getMinutes()).padStart(2, '0');
-            const currentTimeStr = `${currentHour}:${currentMin}`;
-
-            const targetTimeStr = appSettings.autoBackupTime!;
-            const localLastBackup = localStorage.getItem('localLastTriggeredBackupDate');
-
-            // Verify if we are at or past the target time and have not triggered backup today yet on THIS device
-            if (currentTimeStr >= targetTimeStr && localLastBackup !== todayStr) {
+        const runAutoBackupCheck = async () => {
+            try {
+                const now = new Date();
                 
+                const getLocalDateString = (d: Date) => {
+                    const yr = d.getFullYear();
+                    const mo = d.getMonth() + 1;
+                    const dy = d.getDate();
+                    return `${yr}-${mo < 10 ? '0' + mo : mo}-${dy < 10 ? '0' + dy : dy}`;
+                };
+
+                const todayStr = getLocalDateString(now);
+                const currentHour = now.getHours();
+                const currentMin = now.getMinutes();
+                const currentMinutes = currentHour * 60 + currentMin;
+
+                const [targetHour, targetMin] = appSettings.autoBackupTime!.split(':').map(Number);
+                const targetMinutes = targetHour * 60 + targetMin;
+
+                // 1. Check Run Time: "إذا كان الوقت الحالي أقل من الوقت المحدد، يتوقف الكود ولا ينفذ شيئاً."
+                if (currentMinutes < targetMinutes) {
+                    return;
+                }
+
+                // 2. Frequency Match Check
                 let frequencyMatch = false;
                 const freq = appSettings.autoBackupFrequency || 'daily';
 
@@ -1534,74 +1539,107 @@ const App: React.FC = () => {
                     }
                 }
 
-                if (frequencyMatch) {
-                    try {
-                        // Log triggered date locally before async operation to prevent double triggering
-                        localStorage.setItem('localLastTriggeredBackupDate', todayStr);
-                        
-                        const dataToBackup = dualStorage.exportAllData();
-                        const jsonString = JSON.stringify(dataToBackup);
-                        
-                        // First, compress the JSON string using LZ-String
-                        const compressed = LZString.compressToBase64(jsonString);
-                        
-                        const backupPass = appSettings.autoBackupPassword || 'swc_backup';
-                        // Then, encrypt the compressed string
-                        const encrypted = CryptoJS.AES.encrypt(compressed, backupPass).toString();
-                        
-                        // Generate recovery code (Base64 obfuscated password)
-                        const recoveryCode = btoa(unescape(encodeURIComponent(backupPass)));
+                if (!frequencyMatch) {
+                    return;
+                }
 
-                        // Wrap in structure with compression metadata and recovery code
-                        const finalPayload = JSON.stringify({
-                            version: '2.5',
-                            encrypted: true,
-                            compressed: true,
-                            recoveryCode: recoveryCode,
-                            data: encrypted,
+                // 3. Prevent duplicate backup on the same day
+                const localLastBackup = localStorage.getItem('localLastTriggeredBackupDate');
+                if (localLastBackup === todayStr) {
+                    return;
+                }
+
+                // Log triggered date locally before async operation to prevent double triggering
+                localStorage.setItem('localLastTriggeredBackupDate', todayStr);
+
+                // Export all databases
+                const dataToBackup = dualStorage.exportAllData();
+                const jsonString = JSON.stringify(dataToBackup);
+                
+                // Compress using LZ-String
+                const compressed = LZString.compressToBase64(jsonString);
+                
+                const backupPass = 'swc_backup_secure_key_123';
+                // Encrypt the compressed string
+                const encrypted = CryptoJS.AES.encrypt(compressed, backupPass).toString();
+                
+                // Generate recovery code (Base64 obfuscated password)
+                const recoveryCode = btoa(unescape(encodeURIComponent(backupPass)));
+
+                // Wrap in structure with compression metadata and recovery code
+                const finalPayload = JSON.stringify({
+                    version: '2.5',
+                    encrypted: true,
+                    compressed: true,
+                    recoveryCode: recoveryCode,
+                    data: encrypted,
+                    timestamp: new Date().toISOString()
+                });
+
+                // A. Local and Cloud Internal Backup (النسخ المحلي والسحابي الداخلي)
+                try {
+                    localStorage.setItem('auto_local', finalPayload);
+                } catch (e) {
+                    console.error("Local auto_local backup failed:", e);
+                }
+
+                if (auth.currentUser) {
+                    try {
+                        const cloudRef = doc(db, 'auto_cloud', auth.currentUser.uid);
+                        await setDoc(cloudRef, {
+                            data: finalPayload,
                             timestamp: new Date().toISOString()
                         });
-
-                        const blob = new Blob([finalPayload], { type: 'application/json' });
-
-                        const nowTime = new Date();
-                        const yr = nowTime.getFullYear();
-                        const mo = String(nowTime.getMonth() + 1).padStart(2, '0');
-                        const dy = String(nowTime.getDate()).padStart(2, '0');
-                        const hr = String(nowTime.getHours()).padStart(2, '0');
-                        const min = String(nowTime.getMinutes()).padStart(2, '0');
-                        const filename = `DailySales-${yr}-${mo}-${dy}-${hr}-${min}.json`;
-
-                        downloadBlob(blob, filename, {
-                            description: 'Automatic Secure Compressed JSON Backup File',
-                            accept: { 'application/json': ['.json'] },
-                        });
-                        
-                        setNotification({ 
-                            message: `تم أخذ نسخة احتياطية تلقائية من جميع البيانات وحفظها باسم ${filename}`, 
-                            type: 'success' 
-                        });
-                        console.log(`Automatic Backup triggered successfully for ${todayStr} on this device.`);
-                    } catch (error) {
-                        console.error("Auto Backup timer failed:", error);
-                        localStorage.removeItem('localLastTriggeredBackupDate');
+                        console.log("Cloud auto_cloud backup saved successfully.");
+                    } catch (e) {
+                        console.error("Cloud auto_cloud backup failed:", e);
                     }
                 }
+
+                // Format filename: Alaa Accounting System Auto-DD-MM-YYYY_HH-MM-SS.bak
+                const formatDigits = (n: number) => String(n).padStart(2, '0');
+                const yrStr = now.getFullYear();
+                const moStr = formatDigits(now.getMonth() + 1);
+                const dyStr = formatDigits(now.getDate());
+                const hrStr = formatDigits(now.getHours());
+                const minStr = formatDigits(now.getMinutes());
+                const secStr = formatDigits(now.getSeconds());
+                const filename = `Alaa Accounting System Auto-${dyStr}-${moStr}-${yrStr}_${hrStr}-${minStr}-${secStr}.bak`;
+
+                // Direct Automatic Backup Download (Downloads folder)
+                const blob = new Blob([finalPayload], { type: 'application/octet-stream' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }, 200);
+
+                setNotification({ 
+                    message: `Automatic backup downloaded successfully: ${filename}`, 
+                    type: 'success' 
+                });
+                console.log(`Auto Backup triggered and downloaded successfully: ${filename}`);
+            } catch (error) {
+                console.error("Auto Backup check failed:", error);
+                localStorage.removeItem('localLastTriggeredBackupDate');
             }
         };
 
-        // Trigger backup during normal user interactions to bypass browser download blocking
-        window.addEventListener('click', handleInteraction);
-        window.addEventListener('keydown', handleInteraction);
-        
-        // Check once initially just in case they are already in an allowed context or using PWA
-        handleInteraction();
+        // Run check immediately on load
+        runAutoBackupCheck();
+
+        // Start interval of 60 seconds
+        const backupInterval = setInterval(runAutoBackupCheck, 60000);
 
         return () => {
-            window.removeEventListener('click', handleInteraction);
-            window.removeEventListener('keydown', handleInteraction);
+            clearInterval(backupInterval);
         };
-    }, [appSettings, handleUpdateSettings]);
+    }, [appSettings]);
 
     const handleCreateInvoiceFromOrder = (group: Order[]) => {
         if (group.length === 0) return;
@@ -2686,7 +2724,7 @@ const App: React.FC = () => {
                                 onRefresh={handleForceSync}
                                 approvedOrders={orders.filter(o => o.status === 'approved')}
                                 currentPage={currentPage}
-                                reportTitle={currentPage === 'Time Sheet' ? `Employee Overtime${timeSheetMonthTitle ? ' - ' + timeSheetMonthTitle : ''}` : 'Daily Sales Report'}
+                                reportTitle={currentPage === 'Time Sheet' ? `Employee Overtime${timeSheetMonthTitle ? ' - ' + timeSheetMonthTitle : ''}` : currentPage}
                                 onCreateInvoice={handleCreateInvoiceFromOrder}
                                 deliveredGroupProps={recentDeliveredGroup}
                                 onCloseDeliveredGroup={() => setRecentDeliveredGroup(null)}
@@ -2734,12 +2772,6 @@ const App: React.FC = () => {
                     {renderPage()}
                 </div>
             </main>
-
-            {!['Monthly Sales', 'Annual Sales'].includes(currentPage) && (
-                <footer className="py-6 text-center text-gray-400 text-xs no-print border-t border-gray-200 mt-auto global-app-footer">
-                    <p dir="ltr">Designed by: Alaa Ahmed</p>
-                </footer>
-            )}
 
             {/* Center-screen alert modal for Pending Approvals */}
             {showPendingOrdersModal && canApproveOrders && (

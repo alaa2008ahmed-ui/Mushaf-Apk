@@ -72,9 +72,8 @@ const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
                         Sign In
                     </button>
                     
-                    <div className="text-center text-[10px] sm:text-xs text-gray-500 mt-3 sm:mt-4 space-y-1">
+                    <div className="text-center text-[10px] sm:text-xs text-gray-500 mt-3 sm:mt-4">
                         <p>&copy; 2026 Sweet Water Company LTD. All rights reserved.</p>
-                        <p dir="ltr" className="text-gray-400 font-medium">Designed by: Alaa Ahmed</p>
                     </div>
                 </form>
             </div>
