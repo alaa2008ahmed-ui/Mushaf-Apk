@@ -1596,7 +1596,7 @@ const App: React.FC = () => {
                     }
                 }
 
-                // Format filename: Alaa Accounting System Auto-DD-MM-YYYY_HH-MM-SS.bak
+                // Format filename: Daily Sales Auto-DD-MM-YYYY_HH-MM-SS.bak
                 const formatDigits = (n: number) => String(n).padStart(2, '0');
                 const yrStr = now.getFullYear();
                 const moStr = formatDigits(now.getMonth() + 1);
@@ -1604,7 +1604,7 @@ const App: React.FC = () => {
                 const hrStr = formatDigits(now.getHours());
                 const minStr = formatDigits(now.getMinutes());
                 const secStr = formatDigits(now.getSeconds());
-                const filename = `Alaa Accounting System Auto-${dyStr}-${moStr}-${yrStr}_${hrStr}-${minStr}-${secStr}.bak`;
+                const filename = `Daily Sales Auto-${dyStr}-${moStr}-${yrStr}_${hrStr}-${minStr}-${secStr}.bak`;
 
                 // Direct Automatic Backup Download (Downloads folder)
                 const blob = new Blob([finalPayload], { type: 'application/octet-stream' });

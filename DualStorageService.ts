@@ -225,51 +225,78 @@ class DualStorageService {
     if (!navigator.onLine) return;
 
     try {
-      // --- STAGE 1: Core Structure (RECORDS & PO_CUSTOMERS) ---
-      // This loads Branches, Users, Settings, Items so that when invoices load, they map correctly.
-      await this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
+      // --- STAGE 1: Only Branches (for Dashboard initial render) ---
+      const qBranches = query(collection(db, COLLECTIONS.RECORDS), where('type', '==', 'branch'));
+      const snapBranches = await getDocs(qBranches);
+      const branchesData = snapBranches.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+      this.processDataUpdate(COLLECTIONS.RECORDS, branchesData, true);
+
+      // Allow UI to render the branches
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // --- STAGE 2: Recent Invoices (Fast Load) ---
+      // If we have local data, we only need today's invoices.
+      // If we don't have local data (first load), we need 3 days for the dashboard.
+      const localInvoices = this.getLocalData(COLLECTIONS.SALES_INVOICES);
+      const hasLocalInvoices = localInvoices && localInvoices.length > 0;
+      
+      const d3 = new Date();
+      if (hasLocalInvoices) {
+        // Just today
+        d3.setHours(0,0,0,0);
+      } else {
+        // Last 3 days
+        d3.setDate(d3.getDate() - 2);
+        d3.setHours(0,0,0,0);
+      }
+      const targetDateStr = d3.toISOString();
+      
+      const qStage2 = query(
+        collection(db, COLLECTIONS.SALES_INVOICES), 
+        where('date', '>=', targetDateStr)
+      );
+      const snapInvoices = await getDocs(qStage2);
+      const invoicesData = snapInvoices.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+      this.processDataUpdate(COLLECTIONS.SALES_INVOICES, invoicesData, true);
+
+      // Allow UI to render the dashboard charts
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // --- STAGE 3: Rest of Records (Items, Settings, Users) & PO Customers ---
+      const qRecords = query(collection(db, COLLECTIONS.RECORDS));
+      const snapRecords = await getDocs(qRecords);
+      const allRecordsData = snapRecords.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+      this.processDataUpdate(COLLECTIONS.RECORDS, allRecordsData, true);
+
       await this.runStagedFetchForCollection(COLLECTIONS.PO_CUSTOMERS);
 
-      // --- STAGE 2: Today's Invoices (Fast Load) ---
-      // Fetch only today's data to speed up loading. Previous days are loaded from local cache
-      // and will be updated in the background via Stage 3's onSnapshot.
-      const d3 = new Date();
-      d3.setDate(d3.getDate() - 0); // Today only
-      d3.setHours(0,0,0,0);
-      const todayStr = d3.toISOString();
-      
-      const qStage1 = query(
-        collection(db, COLLECTIONS.SALES_INVOICES), 
-        where('date', '>=', todayStr)
-      );
-      const snap1 = await getDocs(qStage1);
-      const data1 = snap1.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-      this.processDataUpdate(COLLECTIONS.SALES_INVOICES, data1, true);
+      // Allow UI to apply settings and users
+      await new Promise(resolve => setTimeout(resolve, 50));
 
-      // --- STAGE 3: Current Month Invoices ---
+      // --- STAGE 4: Current Month Invoices (Full Fetch) ---
       const activeStartDateStr = this.getActivePeriodStartDate();
-      const qStage2 = query(
+      const qMonthInvoices = query(
         collection(db, COLLECTIONS.SALES_INVOICES), 
         where('date', '>=', activeStartDateStr)
       );
       
-      const unsubscribeStage2 = onSnapshot(qStage2, (snap) => {
-        const liveUpdates: any[] = [];
-        const deletedIds: string[] = [];
-        snap.docChanges().forEach(change => {
-            if (change.type === 'removed') {
-                deletedIds.push(change.doc.id);
-            } else {
-                liveUpdates.push({ ...this.convertTimestamps(change.doc.data()), id: change.doc.id });
-            }
-        });
-        if (liveUpdates.length > 0 || deletedIds.length > 0) {
-            this.processDataUpdate(COLLECTIONS.SALES_INVOICES, liveUpdates, true, deletedIds);
-        }
-      });
-      this.listeners.push(unsubscribeStage2);
+      const snapMonthInvoices = await getDocs(qMonthInvoices);
+      const monthInvoicesData = snapMonthInvoices.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+      
+      // Check for any invoices that were deleted on the server
+      const serverMonthIds = new Set(monthInvoicesData.map(inv => inv.id));
+      const localInvoicesCache = this.getLocalData(COLLECTIONS.SALES_INVOICES);
+      const deletedMonthIds = localInvoicesCache
+          .filter((inv: any) => inv.date >= activeStartDateStr)
+          .filter((inv: any) => !serverMonthIds.has(inv.id))
+          .map((inv: any) => inv.id);
 
-      // --- STAGE 4: All other collections (Except historical invoices) ---
+      this.processDataUpdate(COLLECTIONS.SALES_INVOICES, monthInvoicesData, true, deletedMonthIds);
+
+      // Allow UI to process month invoices
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Other Collections
       const otherCollections = [
         COLLECTIONS.CUSTOMERS,
         COLLECTIONS.DELIVERY_NOTES,
@@ -280,7 +307,7 @@ class DualStorageService {
         await this.runStagedFetchForCollection(coll);
       }
 
-      // --- STAGE 5 (Background): Previous month invoices for dashboard comparison ---
+      // Previous month invoices (Background comparison)
       const prevMonthStart = new Date(activeStartDateStr);
       prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
       const prevMonthStartStr = prevMonthStart.toISOString();
@@ -290,14 +317,44 @@ class DualStorageService {
         where('date', '>=', prevMonthStartStr),
         where('date', '<', activeStartDateStr)
       );
+      const snapPrev = await getDocs(qPrev);
+      const prevInvoicesData = snapPrev.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+      
+      const serverPrevIds = new Set(prevInvoicesData.map(inv => inv.id));
+      const deletedPrevIds = localInvoicesCache
+          .filter((inv: any) => inv.date >= prevMonthStartStr && inv.date < activeStartDateStr)
+          .filter((inv: any) => !serverPrevIds.has(inv.id))
+          .map((inv: any) => inv.id);
 
+      this.processDataUpdate(COLLECTIONS.SALES_INVOICES, prevInvoicesData, true, deletedPrevIds);
+
+      // --- STAGE 5: Continuous Listening ---
+      
+      // Listen to Current Month Invoices for live updates
+      const unsubscribeMonthInvoices = onSnapshot(qMonthInvoices, (snap) => {
+        const liveUpdates: any[] = [];
+        const deletedIds: string[] = [];
+        snap.docChanges().forEach(change => {
+            if (change.type === 'removed') {
+                deletedIds.push(change.doc.id);
+            } else if (change.type === 'added' || change.type === 'modified') {
+                liveUpdates.push({ ...this.convertTimestamps(change.doc.data()), id: change.doc.id });
+            }
+        });
+        if (liveUpdates.length > 0 || deletedIds.length > 0) {
+            this.processDataUpdate(COLLECTIONS.SALES_INVOICES, liveUpdates, true, deletedIds);
+        }
+      });
+      this.listeners.push(unsubscribeMonthInvoices);
+
+      // Listen to Previous month invoices
       const unsubscribeStage5 = onSnapshot(qPrev, (snapPrev) => {
         const liveUpdates: any[] = [];
         const deletedIds: string[] = [];
         snapPrev.docChanges().forEach(change => {
             if (change.type === 'removed') {
                 deletedIds.push(change.doc.id);
-            } else {
+            } else if (change.type === 'added' || change.type === 'modified') {
                 liveUpdates.push({ ...this.convertTimestamps(change.doc.data()), id: change.doc.id });
             }
         });
@@ -308,7 +365,7 @@ class DualStorageService {
       
       this.listeners.push(unsubscribeStage5);
 
-      // --- LIVE UPDATES: Establish live listener for session updates ---
+      // Listen to General Live Updates for anything updated in this session
       const sessionStartTime = new Date().toISOString();
       const qLive = query(
         collection(db, COLLECTIONS.SALES_INVOICES), 
