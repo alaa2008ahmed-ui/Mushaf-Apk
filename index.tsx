@@ -29,9 +29,12 @@ const RootApp = () => {
             autoPlay
             muted
             playsInline
+            controls={false}
+            disablePictureInPicture
+            disableRemotePlayback
             onEnded={() => setShowVideoIntro(false)}
             onError={() => setShowVideoIntro(false)}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', outline: 'none', border: 'none' }}
           >
             <source src="/Vedios.mp4" type="video/mp4" />
           </video>
