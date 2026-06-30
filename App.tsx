@@ -1494,7 +1494,7 @@ const App: React.FC = () => {
             return;
         }
 
-        const intervalId = setInterval(() => {
+        const handleInteraction = () => {
             const now = new Date();
             
             const getLocalDateString = (d: Date) => {
@@ -1536,6 +1536,9 @@ const App: React.FC = () => {
 
                 if (frequencyMatch) {
                     try {
+                        // Log triggered date locally before async operation to prevent double triggering
+                        localStorage.setItem('localLastTriggeredBackupDate', todayStr);
+                        
                         const dataToBackup = dualStorage.exportAllData();
                         const jsonString = JSON.stringify(dataToBackup);
                         
@@ -1573,9 +1576,6 @@ const App: React.FC = () => {
                             description: 'Automatic Secure Compressed JSON Backup File',
                             accept: { 'application/json': ['.json'] },
                         });
-
-                        // Log triggered date locally
-                        localStorage.setItem('localLastTriggeredBackupDate', todayStr);
                         
                         setNotification({ 
                             message: `تم أخذ نسخة احتياطية تلقائية من جميع البيانات وحفظها باسم ${filename}`, 
@@ -1584,12 +1584,23 @@ const App: React.FC = () => {
                         console.log(`Automatic Backup triggered successfully for ${todayStr} on this device.`);
                     } catch (error) {
                         console.error("Auto Backup timer failed:", error);
+                        localStorage.removeItem('localLastTriggeredBackupDate');
                     }
                 }
             }
-        }, 30000); // Check every 30 seconds
+        };
 
-        return () => clearInterval(intervalId);
+        // Trigger backup during normal user interactions to bypass browser download blocking
+        window.addEventListener('click', handleInteraction);
+        window.addEventListener('keydown', handleInteraction);
+        
+        // Check once initially just in case they are already in an allowed context or using PWA
+        handleInteraction();
+
+        return () => {
+            window.removeEventListener('click', handleInteraction);
+            window.removeEventListener('keydown', handleInteraction);
+        };
     }, [appSettings, handleUpdateSettings]);
 
     const handleCreateInvoiceFromOrder = (group: Order[]) => {

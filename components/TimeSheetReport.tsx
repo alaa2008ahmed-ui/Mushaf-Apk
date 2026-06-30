@@ -4,9 +4,24 @@ import { dualStorage, COLLECTIONS } from '../DualStorageService';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { captureAndExport, printOrDownloadPdf } from '../captureUtils';
-import { Printer, FileSpreadsheet, Copy, ClipboardPaste, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Printer, FileSpreadsheet, Copy, ClipboardPaste, Calendar, ChevronLeft, ChevronRight, Plus, Edit2, Trash2 } from 'lucide-react';
 
-const STATUS_OPTIONS = [
+const getContrastColor = (hexColor: string) => {
+    let r = 0, g = 0, b = 0;
+    if (hexColor.length === 4) {
+        r = parseInt(hexColor[1] + hexColor[1], 16);
+        g = parseInt(hexColor[2] + hexColor[2], 16);
+        b = parseInt(hexColor[3] + hexColor[3], 16);
+    } else if (hexColor.length === 7) {
+        r = parseInt(hexColor.slice(1, 3), 16);
+        g = parseInt(hexColor.slice(3, 5), 16);
+        b = parseInt(hexColor.slice(5, 7), 16);
+    }
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? '#000000' : '#ffffff';
+};
+
+const DEFAULT_STATUS_OPTIONS = [
     {
         key: 'sic_leave',
         en: 'Sic Leave',
@@ -125,40 +140,162 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         y: number;
     } | null>(null);
 
+    const [statusOptions, setStatusOptions] = useState<any[]>(() => {
+        try {
+            const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+            const record = local.find((r: any) => r && r.type === 'timesheet_status_options');
+            if (record && record.data) {
+                return record.data;
+            }
+            const stored = localStorage.getItem('timesheetStatusOptions');
+            if (stored) return JSON.parse(stored);
+            
+            const oldStored = localStorage.getItem('timesheetCustomStatuses');
+            if (oldStored) {
+                const parsedOld = JSON.parse(oldStored);
+                return [...DEFAULT_STATUS_OPTIONS, ...parsedOld];
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        return DEFAULT_STATUS_OPTIONS;
+    });
+
+    useEffect(() => {
+        const q = query(
+            collection(db, COLLECTIONS.RECORDS),
+            where('type', '==', 'timesheet_status_options')
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (!snapshot.empty) {
+                const loaded = snapshot.docs[0].data();
+                if (loaded && loaded.data) {
+                    setStatusOptions(loaded.data);
+                    localStorage.setItem('timesheetStatusOptions', JSON.stringify(loaded.data));
+                }
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    const [showAddStatusMenu, setShowAddStatusMenu] = useState(false);
+    const [showStatusForm, setShowStatusForm] = useState(false);
+    const [editingStatusKey, setEditingStatusKey] = useState<string | null>(null);
+    const [newStatusNameEn, setNewStatusNameEn] = useState('');
+    const [newStatusNameAr, setNewStatusNameAr] = useState('');
+    const [newStatusColor, setNewStatusColor] = useState('#000000');
+    const menuRef = React.useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setShowAddStatusMenu(false);
+                setShowStatusForm(false);
+            }
+        };
+        if (showAddStatusMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showAddStatusMenu]);
+
+    const handleSaveCustomStatus = () => {
+        if (!newStatusNameEn && !newStatusNameAr) return;
+        const textColor = getContrastColor(newStatusColor);
+        
+        let updated;
+        if (editingStatusKey) {
+            updated = statusOptions.map(s => 
+                s.key === editingStatusKey 
+                    ? { ...s, en: newStatusNameEn || newStatusNameAr, ar: newStatusNameAr || newStatusNameEn, color: newStatusColor, textColor }
+                    : s
+            );
+        } else {
+            const newStatus = {
+                key: `custom_${Date.now()}`,
+                en: newStatusNameEn || newStatusNameAr,
+                ar: newStatusNameAr || newStatusNameEn,
+                color: newStatusColor,
+                textColor
+            };
+            updated = [...statusOptions, newStatus];
+        }
+        
+        setStatusOptions(updated);
+        localStorage.setItem('timesheetStatusOptions', JSON.stringify(updated));
+        dualStorage.save(COLLECTIONS.RECORDS, 'timesheet_status_options', { type: 'timesheet_status_options', data: updated });
+        
+        setEditingStatusKey(null);
+        setNewStatusNameEn('');
+        setNewStatusNameAr('');
+        setNewStatusColor('#000000');
+        setShowStatusForm(false);
+    };
+
+    const handleEditStatus = (status: any) => {
+        setEditingStatusKey(status.key);
+        setNewStatusNameEn(status.en);
+        setNewStatusNameAr(status.ar);
+        setNewStatusColor(status.color);
+        setShowStatusForm(true);
+    };
+
+    const handleDeleteStatus = (key: string) => {
+        const updated = statusOptions.filter(s => s.key !== key);
+        setStatusOptions(updated);
+        localStorage.setItem('timesheetStatusOptions', JSON.stringify(updated));
+        dualStorage.save(COLLECTIONS.RECORDS, 'timesheet_status_options', { type: 'timesheet_status_options', data: updated });
+        if (editingStatusKey === key) {
+            setEditingStatusKey(null);
+            setNewStatusNameEn('');
+            setNewStatusNameAr('');
+            setNewStatusColor('#000000');
+        }
+    };
+
     useEffect(() => {
         const q = query(
             collection(db, COLLECTIONS.RECORDS),
             where('type', '==', 'timesheet_posted_month'),
-            where('data.month', '==', selectedMonth),
             where('data.overtimeType', '==', typeKey)
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            setIsPosted(!snapshot.empty);
+            let isCurrentMonthPosted = false;
+            
+            snapshot.docs.forEach(doc => {
+                const data = doc.data().data;
+                if (data.month === selectedMonth) {
+                    isCurrentMonthPosted = true;
+                }
+            });
+            
+            setIsPosted(isCurrentMonthPosted);
         });
 
         return () => unsubscribe();
     }, [selectedMonth, typeKey]);
 
     const isEditableMonth = useMemo(() => {
-        const now = new Date();
-        const currentMonthStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
-        
-        // If it's current month or future, it's always editable
-        if (selectedMonth >= currentMonthStr) return true;
-        
-        return !isPosted; // Editable if NOT posted
-    }, [selectedMonth, isPosted]);
+        if (isPosted) {
+            return false;
+        }
+        return true;
+    }, [isPosted]);
 
     const getCellStyle = (empId: string, day: number, displayVal: string, isFriday: boolean) => {
         // 1. Check statuses field first
         const statusKey = gridData?.employeesData[empId]?.statuses?.[day];
         if (statusKey) {
-            const matched = STATUS_OPTIONS.find(opt => opt.key === statusKey);
+            const matched = statusOptions.find(opt => opt.key === statusKey);
             if (matched) {
                 return {
                     backgroundColor: matched.color,
-                    color: '#000000',
+                    color: (matched as any).textColor || getContrastColor(matched.color),
                     fontWeight: 'bold' as const
                 };
             }
@@ -167,15 +304,14 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         // 2. Fallback to display text value matching for backward compatibility
         const valClean = (displayVal || '').trim().toLowerCase();
         if (valClean) {
-            const matched = STATUS_OPTIONS.find(opt => 
+            const matched = statusOptions.find(opt => 
                 opt.en.toLowerCase() === valClean || 
                 opt.ar.toLowerCase() === valClean
             );
-
             if (matched) {
                 return {
                     backgroundColor: matched.color,
-                    color: '#000000',
+                    color: (matched as any).textColor || getContrastColor(matched.color),
                     fontWeight: 'bold' as const
                 };
             }
@@ -232,16 +368,6 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                     data: archiveRecord
                 });
 
-                const emptyO1 = {
-                    id: o1Data.id,
-                    month: selectedMonth,
-                    employeesData: {}
-                };
-
-                await dualStorage.save(COLLECTIONS.RECORDS, emptyO1.id, {
-                    type: 'timesheet_grid_overtime1',
-                    data: emptyO1
-                });
             } else {
                 const ot2Record = records.find(r => r.type === 'timesheet_grid_overtime2' && r.data.month === selectedMonth);
                 const o2Data = ot2Record ? ot2Record.data : { id: `ts-grid-overtime2-${selectedMonth}`, month: selectedMonth, employeesData: {} };
@@ -259,29 +385,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                     type: 'timesheet_posted_month',
                     data: archiveRecord
                 });
-
-                const emptyO2 = {
-                    id: o2Data.id,
-                    month: selectedMonth,
-                    employeesData: {}
-                };
-
-                await dualStorage.save(COLLECTIONS.RECORDS, emptyO2.id, {
-                    type: 'timesheet_grid_overtime2',
-                    data: emptyO2
-                });
             }
-
-            const [yearStr, monthStr] = selectedMonth.split('-');
-            let year = parseInt(yearStr);
-            let month = parseInt(monthStr);
-            month += 1;
-            if (month > 12) {
-                month = 1;
-                year += 1;
-            }
-            const nextMonth = `${year}-${month.toString().padStart(2, '0')}`;
-            setSelectedMonth(nextMonth);
 
             window.dispatchEvent(new Event('timesheet_grid_updated'));
             window.dispatchEvent(new Event('timesheet_grid_updated_remote'));
@@ -338,9 +442,45 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
     }, [selectedMonth, typeKey]);
 
 
+    const syncArchive = (newData: any) => {
+        if (isPosted) {
+            const archiveId = `ts-archive-${typeKey}-${selectedMonth}`;
+            const records = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+            const archiveRecord = records.find((r: any) => r.id === archiveId);
+            if (archiveRecord && archiveRecord.data) {
+                const updatedArchiveData = { ...archiveRecord.data };
+                if (typeKey === 'overtime1') {
+                    updatedArchiveData.overtime1 = newData;
+                } else {
+                    updatedArchiveData.overtime2 = newData;
+                }
+                dualStorage.save(COLLECTIONS.RECORDS, archiveId, {
+                    type: 'timesheet_posted_month',
+                    data: updatedArchiveData
+                }).catch(err => {
+                    console.error("Error updating archive:", err);
+                });
+            }
+        }
+    };
+
     const updateCell = (empId: string, field: 'bonus' | 'otTrips' | 'rate' | 'day', val: string, day?: number) => {
         if (!gridData) return;
         
+        let finalVal = val;
+        let matchedStatusKey: string | undefined = undefined;
+
+        if (field === 'day' && day) {
+            const lastChar = val.slice(-1).toLowerCase();
+            if (lastChar && /^[a-z]$/.test(lastChar)) {
+                const matched = statusOptions.find(opt => opt.en.toLowerCase().startsWith(lastChar));
+                if (matched) {
+                    matchedStatusKey = matched.key;
+                    finalVal = val.slice(0, -1);
+                }
+            }
+        }
+
         // Deep copy employeesData so we don't mutate state directly
         const newEmployeesData = { ...gridData.employeesData };
         if (!newEmployeesData[empId]) {
@@ -354,9 +494,12 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         }
         
         if (field === 'day' && day) {
-            newEmployeesData[empId].days[day] = val;
+            newEmployeesData[empId].days[day] = finalVal;
+            if (matchedStatusKey !== undefined) {
+                newEmployeesData[empId].statuses[day] = matchedStatusKey;
+            }
         } else if (field !== 'day') {
-            newEmployeesData[empId][field] = val;
+            newEmployeesData[empId][field] = finalVal;
         }
 
         const newData = {
@@ -374,6 +517,8 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         }).catch(err => {
             console.error("Error saving grid cell:", err);
         });
+        
+        syncArchive(newData);
     };
 
     const updateCellStatus = (empId: string, day: number, statusKey: string) => {
@@ -412,6 +557,8 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         }).catch(err => {
             console.error("Error saving grid cell status:", err);
         });
+        
+        syncArchive(newData);
     };
 
     const getCellValue = (empId: string, day: number) => {
@@ -632,7 +779,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                             const val = copiedEmpData.days[parseInt(dayKey)];
                             if (val) {
                                 const valClean = val.trim().toLowerCase();
-                                const isStatusText = STATUS_OPTIONS.some(opt => 
+                                const isStatusText = statusOptions.some(opt => 
                                     opt.en.toLowerCase() === valClean || 
                                     opt.ar.toLowerCase() === valClean
                                 );
@@ -673,6 +820,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                 console.error("Error saving pasted data:", err);
             });
             
+            syncArchive(newData);
             alert(`Pasted data for ${pastedCount} employees.`);
 
         } catch (err) {
@@ -969,20 +1117,148 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                 </table>
 
                 {/* Miniature status legend */}
-                <div className="mt-4 flex justify-start px-1 print:mt-4">
-                    <div className="flex border border-black overflow-hidden print:w-[350px] w-full max-w-[500px]">
-                        {STATUS_OPTIONS.map((opt, oIdx) => {
+                <div className="mt-4 flex justify-start px-1 print:mt-4 items-center">
+                    <div className="flex border border-black overflow-hidden print:w-[350px] w-full max-w-[700px]">
+                        {statusOptions.map((opt, oIdx) => {
                             const label = namesLanguage === 'en' ? opt.en : opt.ar;
                             return (
                                 <div 
                                     key={opt.key}
-                                    className={`flex-1 px-1 py-1 text-[10px] sm:text-xs font-bold text-black text-center whitespace-nowrap ${oIdx < STATUS_OPTIONS.length - 1 ? 'border-r border-black' : ''}`}
-                                    style={{ backgroundColor: opt.color }}
+                                    className={`flex-1 px-1 py-1 text-[10px] sm:text-xs font-bold text-center whitespace-nowrap ${oIdx < statusOptions.length - 1 ? 'border-r border-black' : ''}`}
+                                    style={{ backgroundColor: opt.color, color: (opt as any).textColor || getContrastColor(opt.color) }}
                                 >
                                     {label}
                                 </div>
                             );
                         })}
+                    </div>
+                    
+                    <div className="relative ml-2 no-print" ref={menuRef}>
+                        <button
+                            onClick={() => setShowAddStatusMenu(!showAddStatusMenu)}
+                            className="flex items-center justify-center p-1 bg-gray-200 hover:bg-gray-300 rounded border border-gray-400"
+                            title="Add"
+                        >
+                            <Plus size={16} />
+                            <span className="text-xs font-bold ml-1 mr-1">Add</span>
+                        </button>
+
+                        {showAddStatusMenu && (
+                            <div className="absolute bottom-full left-0 mb-1 bg-white border shadow-lg p-3 z-50 w-72 rounded-md max-h-[80vh] overflow-y-auto">
+                                {showStatusForm ? (
+                                    /* Form for adding/editing */
+                                    <div className="mb-4 pb-4 border-b border-gray-200">
+                                        <div className="mb-2">
+                                            <label className="block text-xs font-bold mb-1">{namesLanguage === 'en' ? 'Name (English)' : 'الاسم (إنجليزي)'}</label>
+                                            <input 
+                                                type="text"
+                                                value={newStatusNameEn}
+                                                onChange={(e) => setNewStatusNameEn(e.target.value)}
+                                                className="w-full border rounded px-2 py-1 text-sm"
+                                            />
+                                        </div>
+                                        <div className="mb-2">
+                                            <label className="block text-xs font-bold mb-1">{namesLanguage === 'en' ? 'Name (Arabic)' : 'الاسم (عربي)'}</label>
+                                            <input 
+                                                type="text"
+                                                dir="rtl"
+                                                value={newStatusNameAr}
+                                                onChange={(e) => setNewStatusNameAr(e.target.value)}
+                                                className="w-full border rounded px-2 py-1 text-sm text-right"
+                                            />
+                                        </div>
+                                        <div className="mb-3">
+                                            <label className="block text-xs font-bold mb-1">{namesLanguage === 'en' ? 'Color' : 'اللون'}</label>
+                                            <input 
+                                                type="color"
+                                                value={newStatusColor}
+                                                onChange={(e) => setNewStatusColor(e.target.value)}
+                                                className="w-full h-8 cursor-pointer"
+                                            />
+                                        </div>
+                                        <div className="flex justify-end gap-2">
+                                            <button 
+                                                onClick={() => {
+                                                    setEditingStatusKey(null);
+                                                    setNewStatusNameEn('');
+                                                    setNewStatusNameAr('');
+                                                    setNewStatusColor('#000000');
+                                                    setShowStatusForm(false);
+                                                }}
+                                                className="px-3 py-1 bg-gray-200 text-xs rounded hover:bg-gray-300"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button 
+                                                onClick={handleSaveCustomStatus}
+                                                className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                                            >
+                                                Save
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="mb-3 border-b border-gray-200 pb-3 flex justify-between items-center">
+                                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            Statuses
+                                        </h4>
+                                        <button 
+                                            onClick={() => {
+                                                setEditingStatusKey(null);
+                                                setNewStatusNameEn('');
+                                                setNewStatusNameAr('');
+                                                setNewStatusColor('#000000');
+                                                setShowStatusForm(true);
+                                            }}
+                                            className="px-3 py-1 bg-gray-200 text-xs rounded hover:bg-gray-300 font-bold"
+                                        >
+                                            Add
+                                        </button>
+                                    </div>
+                                )}
+                                
+                                {/* List of Statuses */}
+                                {!showStatusForm && (
+                                    <div>
+                                        {statusOptions.length === 0 ? (
+                                            <p className="text-xs text-gray-400 italic">
+                                                No statuses yet.
+                                            </p>
+                                        ) : (
+                                        <div className="space-y-2">
+                                            {statusOptions.map((status) => (
+                                                <div key={status.key} className="flex items-center justify-between p-1 hover:bg-gray-50 rounded">
+                                                    <div className="flex items-center gap-2 overflow-hidden">
+                                                        <div 
+                                                            className="w-4 h-4 rounded-full border border-gray-300 shrink-0" 
+                                                            style={{ backgroundColor: status.color }} 
+                                                        />
+                                                        <span className="text-xs truncate" title={namesLanguage === 'en' ? status.en : status.ar}>
+                                                            {namesLanguage === 'en' ? status.en : status.ar}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        <button 
+                                                            onClick={() => handleEditStatus(status)}
+                                                            className="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDeleteStatus(status.key)}
+                                                            className="p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -997,15 +1273,17 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
             </div>
 
             {/* Post button */}
-            <div className="flex justify-end pt-4 no-print border-t border-gray-100">
-                <button
-                    onClick={() => setShowPostConfirm(true)}
-                    disabled={!isEditableMonth}
-                    className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-lg shadow-sm transition-all disabled:bg-gray-300 disabled:cursor-not-allowed"
-                >
-                    <span>Post Current Month Overtime</span>
-                </button>
-            </div>
+            {!isPosted && (
+                <div className="flex justify-end pt-4 no-print border-t border-gray-100">
+                    <button
+                        onClick={() => setShowPostConfirm(true)}
+                        disabled={!isEditableMonth}
+                        className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-lg shadow-sm transition-all disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    >
+                        <span>Post Current Month Overtime</span>
+                    </button>
+                </div>
+            )}
 
             {/* Confirmation Modal */}
             {showPostConfirm && (
@@ -1018,7 +1296,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                             Post Current Month Overtime
                         </h3>
                         <p className="text-sm text-gray-600 leading-relaxed mb-6">
-                            Are you sure you want to post the overtime of <span className="font-bold text-indigo-600">{new Date(currentYear, currentMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>? This will save current data, clear inputs, and advance the month.
+                            Are you sure you want to post the overtime of <span className="font-bold text-indigo-600">{new Date(currentYear, currentMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>? This will transfer the month to the List Overtime tab and immediately lock the data from further edits.
                         </p>
                         <div className={`flex justify-end space-x-3`}>
                             <button
@@ -1054,7 +1332,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                             top: `${doubleClickMenu.y}px` 
                         }}
                     >
-                        {STATUS_OPTIONS.map(opt => {
+                        {statusOptions.map(opt => {
                             const label = namesLanguage === 'en' ? opt.en : opt.ar;
                             return (
                                 <button
@@ -1064,7 +1342,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                                         setDoubleClickMenu(null);
                                     }}
                                     className="w-full text-center py-1.5 px-1 text-xs font-bold border-b-2 border-black last:border-b-0 cursor-pointer hover:opacity-90 select-none"
-                                    style={{ backgroundColor: opt.color, color: '#000000' }}
+                                    style={{ backgroundColor: opt.color, color: (opt as any).textColor || getContrastColor(opt.color) }}
                                 >
                                     {label}
                                 </button>
