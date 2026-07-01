@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Invoice, Branch } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -18,6 +18,8 @@ interface DashboardProps {
     invoices: Invoice[];
     branches: Branch[];
     globalStats?: any;
+    appSettings?: import('../types').AppSettings | null;
+    onUpdateSettings?: (settings: import('../types').AppSettings) => void;
 }
 
 const SalesTicker = ({ invoices, branches }: { invoices: Invoice[], branches: Branch[] }) => {
@@ -189,7 +191,7 @@ const SalesTicker = ({ invoices, branches }: { invoices: Invoice[], branches: Br
     );
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }) => {
+const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats, appSettings, onUpdateSettings }) => {
     const [showItemStatsModal, setShowItemStatsModal] = useState<{ branchName: string; invoices: Invoice[] } | null>(null);
     const [selectedDayDetails, setSelectedDayDetails] = useState<{
         branchId: string;
@@ -209,6 +211,37 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
     const [hideTax, setHideTax] = useState(() => {
         return localStorage.getItem(`hideBeforeTax_${currentUsername}`) === 'true';
     });
+
+    const pressTimer = useRef<NodeJS.Timeout | null>(null);
+    const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+    const [passwordInput, setPasswordInput] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [showPagesConfig, setShowPagesConfig] = useState(false);
+
+    const handlePointerDown = () => {
+        pressTimer.current = setTimeout(() => {
+            setShowPasswordPrompt(true);
+        }, 2000); // 2 seconds
+    };
+
+    const handlePointerUp = () => {
+        if (pressTimer.current) {
+            clearTimeout(pressTimer.current);
+            pressTimer.current = null;
+        }
+    };
+
+    const handlePasswordSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (passwordInput === '0120301012') {
+            setShowPasswordPrompt(false);
+            setPasswordInput('');
+            setPasswordError('');
+            setShowPagesConfig(true);
+        } else {
+            setPasswordError('كلمة المرور غير صحيحة');
+        }
+    };
 
     const toggleBeforeTax = () => {
         const newVal = !hideTax;
@@ -549,7 +582,12 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                         <div className="relative z-10">
                             <div className="flex justify-between items-start mb-2 sm:mb-3">
                                 <div className="flex flex-col">
-                                    <div className="flex items-center gap-2 shrink-0">
+                                    <div 
+                                        className="flex items-center gap-2 shrink-0 cursor-pointer select-none"
+                                        onPointerDown={handlePointerDown}
+                                        onPointerUp={handlePointerUp}
+                                        onPointerLeave={handlePointerUp}
+                                    >
                                         <TrendingUp className={`w-5 h-5 ${isHistorical ? 'text-yellow-400' : 'text-blue-200'}`} />
                                         <h3 className="text-sm sm:text-base font-black opacity-90 uppercase tracking-widest leading-tight">Total branch sales</h3>
                                     </div>
@@ -1040,6 +1078,103 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats }
                                     className="w-full py-3 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 font-black text-xs transition-colors uppercase tracking-widest shadow-sm shadow-slate-200/50"
                                 >
                                     Close
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {/* Password Modal */}
+                {showPasswordPrompt && (
+                    <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl p-6 shadow-2xl max-w-sm w-full"
+                        >
+                            <h3 className="text-xl font-black text-slate-800 mb-4 text-center">أدخل كلمة المرور</h3>
+                            <form onSubmit={handlePasswordSubmit}>
+                                <input 
+                                    type="password"
+                                    value={passwordInput}
+                                    onChange={e => setPasswordInput(e.target.value)}
+                                    className="w-full p-3 border-2 border-slate-200 rounded-xl mb-2 text-center text-xl font-bold focus:border-blue-500 focus:outline-none"
+                                    placeholder="••••••••"
+                                    autoFocus
+                                />
+                                {passwordError && <p className="text-red-500 text-xs font-bold text-center mb-4">{passwordError}</p>}
+                                <div className="flex gap-3 mt-6">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => { setShowPasswordPrompt(false); setPasswordInput(''); setPasswordError(''); }}
+                                        className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold"
+                                    >
+                                        إلغاء
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold"
+                                    >
+                                        تأكيد
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+
+                {/* Pages Configuration Modal */}
+                {showPagesConfig && (
+                    <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] flex flex-col"
+                        >
+                            <div className="p-4 border-b">
+                                <h3 className="text-xl font-black text-slate-800 text-center">إدارة الصفحات</h3>
+                                <p className="text-xs text-slate-500 text-center mt-1">تفعيل أو تعطيل ظهور الصفحات لجميع المستخدمين</p>
+                            </div>
+                            <div className="p-4 overflow-y-auto flex-1 space-y-2" dir="ltr">
+                                {[
+                                    'Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 
+                                    'Account Statement', 'Invoices Tracking', 'PO', 'Orders', 'Order Approvals',
+                                    'Driver Work Log', 'Drivers Timesheet', 'Time Sheet', 'Customers', 'Settings'
+                                ].map(pageName => {
+                                    const disabledList = appSettings?.globallyDisabledPages || [];
+                                    const isEnabled = !disabledList.includes(pageName);
+                                    return (
+                                        <div key={pageName} className="flex justify-between items-center p-3 border rounded-xl hover:bg-slate-50">
+                                            <span className="font-bold text-slate-700">{pageName}</span>
+                                            <button
+                                                onClick={() => {
+                                                    if (!onUpdateSettings || !appSettings) return;
+                                                    let newList = [...disabledList];
+                                                    if (isEnabled) {
+                                                        newList.push(pageName);
+                                                    } else {
+                                                        newList = newList.filter(p => p !== pageName);
+                                                    }
+                                                    onUpdateSettings({ ...appSettings, globallyDisabledPages: newList });
+                                                }}
+                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isEnabled ? 'bg-blue-600' : 'bg-slate-300'}`}
+                                            >
+                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="p-4 border-t shrink-0">
+                                <button 
+                                    onClick={() => setShowPagesConfig(false)}
+                                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold"
+                                >
+                                    إغلاق
                                 </button>
                             </div>
                         </motion.div>

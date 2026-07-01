@@ -38,6 +38,9 @@ const AccountStatement: React.FC<AccountStatementProps> = ({
 
     const branchOptions = [{ id: 'all', name: 'All Branches' }, ...branches];
     const itemFilterOptions = [{ id: 'all', name: 'All Items' }, ...items.map(i => ({ id: i.name, name: i.name }))];
+    if (!itemFilterOptions.find(o => o.id === 'Cancel')) {
+        itemFilterOptions.push({ id: 'Cancel', name: 'Cancel' });
+    }
     const userOptions = useMemo(() => {
         const _users = users.filter((u) => u.username.toLowerCase() !== 'alaa');
         return [{ id: 'all', name: 'All Users' }, ..._users.map(u => ({ id: u.username, name: u.username }))];
@@ -110,14 +113,14 @@ const AccountStatement: React.FC<AccountStatementProps> = ({
         const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3182CE' } };
         const whiteFont = { size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
         
-        sheet.mergeCells('A1:G2');
+        sheet.mergeCells('A1:H2');
         const headerCell = sheet.getCell('A1');
         headerCell.value = 'Account Statement\nSweet Water Company LTD';
         headerCell.font = { size: 20, bold: true, color: { argb: 'FFFFFFFF' } };
         headerCell.fill = mainFill;
         headerCell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
         
-        sheet.mergeCells('A3:G3');
+        sheet.mergeCells('A3:H3');
         const infoCell = sheet.getCell('A3');
         infoCell.value = `Branch: ${branchName} | ${dateRange}`;
         infoCell.font = { size: 10, color: { argb: 'FFFFFFFF' }, bold: true };
@@ -153,7 +156,7 @@ const AccountStatement: React.FC<AccountStatementProps> = ({
         currentRow += 2;
 
         // Invoices Table
-        const tableHeaders = ['Invoice No.', 'Date/Time', 'User', 'Branch', 'Item', 'Qty', 'Total'];
+        const tableHeaders = ['Invoice No.', 'Date/Time', 'User', 'Branch', 'Item', 'Qty', 'Before Tax', 'Total'];
         const headRow = sheet.getRow(currentRow);
         tableHeaders.forEach((h, i) => {
             const cell = headRow.getCell(i + 1);
@@ -171,9 +174,11 @@ const AccountStatement: React.FC<AccountStatementProps> = ({
             row.getCell(4).value = branches.find(b => b.id === inv.branchId)?.name || 'Main';
             row.getCell(5).value = inv.itemName;
             row.getCell(6).value = inv.quantity;
-            row.getCell(7).value = inv.total;
+            row.getCell(7).value = inv.total / 1.15;
+            row.getCell(8).value = inv.total;
             row.getCell(6).numFmt = '#,##0.00';
             row.getCell(7).numFmt = '#,##0.00';
+            row.getCell(8).numFmt = '#,##0.00';
             currentRow++;
         });
 
@@ -221,9 +226,6 @@ const AccountStatement: React.FC<AccountStatementProps> = ({
             const invDateStr = new Date(inv.date).toISOString().split('T')[0];
             if (invDateStr < fromDate || invDateStr > toDate) return false;
 
-            // Filter out canceled items
-            if (inv.itemName === 'Cancel') return false;
-
             // Filter by item
             if (selectedItemFilter !== 'all' && inv.itemName !== selectedItemFilter) return false;
 
@@ -241,7 +243,14 @@ const AccountStatement: React.FC<AccountStatementProps> = ({
             }
 
             return true;
-        }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        }).sort((a, b) => {
+            const dateA = new Date(a.date).toISOString().split('T')[0];
+            const dateB = new Date(b.date).toISOString().split('T')[0];
+            if (dateA !== dateB) {
+                return dateA.localeCompare(dateB);
+            }
+            return a.invoiceNumber - b.invoiceNumber;
+        });
     }, [invoices, fromDate, toDate, selectedItemFilter, salesType, statementBranchId, statementUserId]);
 
     const totalQuantity = filteredInvoices.reduce((sum, inv) => sum + (Number(inv.quantity) || 0), 0);
@@ -422,6 +431,7 @@ const AccountStatement: React.FC<AccountStatementProps> = ({
                             theme={salesType === 'credit' ? 'credit' : 'cash'} 
                             branches={branches}
                             poCustomers={poCustomers}
+                            showBeforeTaxColumn={true}
                         />
                     ) : (
                         <p className="text-gray-500 text-center py-8">No invoices found for the selected criteria.</p>

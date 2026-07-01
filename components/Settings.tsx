@@ -678,7 +678,7 @@ const Settings: React.FC<SettingsProps> = ({
         ];
 
         if (currentUser?.username.toLowerCase() === 'alaa') {
-            cats.push({ id: 'mobile_config', title: 'Mobile App', icon: Smartphone, color: 'text-cyan-600', bg: 'bg-cyan-50', desc: 'Configure mobile app settings and features.' });
+            cats.push({ id: 'mobile_config', title: 'Mobile App', icon: Smartphone, color: 'text-cyan-600', bg: 'bg-cyan-50', desc: 'Configure mobile app settings.' });
         }
 
         return cats;
@@ -2030,6 +2030,7 @@ const Settings: React.FC<SettingsProps> = ({
                                         </div>
 
                                         {/* PO Management */}
+                                        {!(settings?.globallyDisabledPages || []).includes('PO') && (
                                         <div className="p-3 border rounded-lg bg-white shadow-sm border-purple-100 hover:border-purple-300 transition-all">
                                             <div className="flex items-center justify-between mb-2">
                                                 <label className="flex items-center gap-2 cursor-pointer font-bold font-bold">
@@ -2066,8 +2067,10 @@ const Settings: React.FC<SettingsProps> = ({
                                                 </div>
                                             )}
                                         </div>
+                                        )}
 
                                         {/* Driver Work Log */}
+                                        {!(settings?.globallyDisabledPages || []).includes('Driver Work Log') && (
                                         <div className="p-3 border rounded-lg bg-white shadow-sm border-indigo-100 hover:border-indigo-300 transition-all">
                                             <div className="flex items-center justify-between mb-2">
                                                 <label className="flex items-center gap-2 cursor-pointer font-bold">
@@ -2104,8 +2107,10 @@ const Settings: React.FC<SettingsProps> = ({
                                                 </div>
                                             )}
                                         </div>
+                                        )}
 
                                         {/* Drivers Timesheet */}
+                                        {!(settings?.globallyDisabledPages || []).includes('Drivers Timesheet') && (
                                         <div className="p-3 border rounded-lg bg-white shadow-sm border-sky-100 hover:border-sky-300 transition-all">
                                             <div className="flex items-center justify-between mb-2">
                                                 <label className="flex items-center gap-2 cursor-pointer font-bold">
@@ -2119,9 +2124,11 @@ const Settings: React.FC<SettingsProps> = ({
                                                 </label>
                                             </div>
                                         </div>
+                                        )}
 
                                         {/* High Priority Report Pages */}
                                         <div className="grid grid-cols-1 gap-3">
+                                            {!(settings?.globallyDisabledPages || []).includes('Customers') && (
                                             <div className="p-3 border rounded-lg bg-white shadow-sm border-amber-100 hover:border-amber-300 transition-all">
                                                 <div className="flex items-center justify-between">
                                                     <label className="flex items-center gap-2 cursor-pointer font-bold">
@@ -2157,10 +2164,11 @@ const Settings: React.FC<SettingsProps> = ({
                                                     </div>
                                                 )}
                                             </div>
+                                            )}
                                         </div>
 
                                         {/* Orders Page */}
-                                        {currentUser?.username.toLowerCase() === 'alaa' && (
+                                        {currentUser?.username.toLowerCase() === 'alaa' && !(settings?.globallyDisabledPages || []).includes('Orders') && (
                                         <div className="grid grid-cols-1 gap-3">
                                             <div className="p-3 border rounded-lg bg-white shadow-sm border-orange-100 hover:border-orange-300 transition-all">
                                                 <div className="flex items-center justify-between">
@@ -2261,7 +2269,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                 <div className="grid grid-cols-1 gap-3">
                                                     
                                                     {/* 1. استقبال الطلبات */}
-                                                    {currentUser?.username.toLowerCase() === 'alaa' && (
+                                                    {currentUser?.username.toLowerCase() === 'alaa' && !(settings?.globallyDisabledPages || []).includes('Orders') && (
                                                     <div className="p-3 bg-white rounded-md border border-teal-100 shadow-sm">
                                                         <label className="flex items-center gap-2 cursor-pointer font-bold text-teal-900 border-b border-teal-50 pb-2 mb-2">
                                                             <input 
@@ -2277,7 +2285,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                     )}
 
                                                     {/* 2. الموافقة على الطلبات */}
-                                                    {currentUser?.username.toLowerCase() === 'alaa' && (
+                                                    {currentUser?.username.toLowerCase() === 'alaa' && !(settings?.globallyDisabledPages || []).includes('Order Approvals') && (
                                                     <div className="p-3 bg-white rounded-md border border-teal-100 shadow-sm">
                                                         <label className="flex items-center gap-2 cursor-pointer font-bold text-teal-900">
                                                             <input 
@@ -2502,7 +2510,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                     'Monthly Sales', 
                                                     'Annual Sales',
                                                     
-                                                ].map(page => (
+                                                ].filter(page => !(settings?.globallyDisabledPages || []).includes(page)).map(page => (
                                                     <label key={page} className="flex items-center gap-2 cursor-pointer p-1">
                                                         <input 
                                                             type="checkbox"

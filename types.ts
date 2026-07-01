@@ -58,7 +58,6 @@ export interface Invoice {
     poNumber?: string;
     poItemName?: string;
     orderIds?: string[];
-    branchName?: string;
 }
 
 export interface UserPermissions {
@@ -253,6 +252,7 @@ export interface AppSettings {
     autoBackupPassword?: string;
     lastTriggeredBackupDate?: string;
     mobileHiddenPages?: string[];
+    globallyDisabledPages?: string[];
     nextInvoiceNumbers?: {
         [branchId: string]: {
             cash: number;

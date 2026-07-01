@@ -58,25 +58,7 @@ const PO: React.FC<POProps> = ({ poCustomers, customers, items, invoices, onAddP
         }
     }, [poCustomers.length]);
 
-    // Auto-deletion on unmount for incomplete/unsaved cards
-    const poRef = useRef(poCustomers);
-    const delRef = useRef(onDeletePOCustomer);
-    
-    useEffect(() => {
-        poRef.current = poCustomers;
-        delRef.current = onDeletePOCustomer;
-    }, [poCustomers, onDeletePOCustomer]);
 
-    useEffect(() => {
-        return () => {
-            // Find records that were never saved and delete them from DB
-            poRef.current.forEach(customer => {
-                if (customer.isUnsaved) {
-                    delRef.current(customer.id);
-                }
-            });
-        };
-    }, []);
 
     const handleAddClick = async () => {
         if (isAdding) return;
@@ -278,13 +260,22 @@ const PO: React.FC<POProps> = ({ poCustomers, customers, items, invoices, onAddP
     };
 
     const toggleEditMode = (id: string) => {
+        const customer = poCustomers.find(c => c.id === id);
+        if (editingRowIds.has(id)) {
+            if (customer && customer.isUnsaved) {
+                onDeletePOCustomer(id);
+            }
+        }
         setEditingRowIds(prev => {
             const next = new Set(prev);
             if (next.has(id)) {
                 next.delete(id);
-                // Also clear local edits if canceling?
-                // The current design keeps them in editStates until saved.
-                // For simplicity, we just toggle UI enabled/disabled.
+                // Also clear local edits if canceling
+                setEditStates(prevEdits => {
+                    const nextEdits = { ...prevEdits };
+                    delete nextEdits[id];
+                    return nextEdits;
+                });
             } else {
                 next.add(id);
                 // Focus the first field - detect if mobile or desktop

@@ -49,15 +49,24 @@ const TotalSummary: React.FC<TotalSummaryProps> = ({ totalCash, totalCredit, tot
             </div>
             <div className="flex sm:flex-col justify-between sm:justify-center items-center sm:text-center px-2 sm:px-0">
                 <h3 className="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Cash</h3>
-                <p className="text-lg sm:text-2xl font-bold text-blue-600 sm:mt-1">{totalCash.toFixed(2)}</p>
+                <div className="flex flex-col items-end sm:items-center">
+                    <p className="text-lg sm:text-2xl font-bold text-blue-600 sm:mt-1">{totalCash.toFixed(2)}</p>
+                    <p className="text-xs font-bold text-orange-500 before-tax-amount">{(totalCash / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
             </div>
             <div className="flex sm:flex-col justify-between sm:justify-center items-center sm:text-center px-2 sm:px-0 sm:border-l sm:border-r border-gray-200 py-1 sm:py-0">
                 <h3 className="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Credit</h3>
-                <p className="text-lg sm:text-2xl font-bold text-sky-600 sm:mt-1">{totalCredit.toFixed(2)}</p>
+                <div className="flex flex-col items-end sm:items-center">
+                    <p className="text-lg sm:text-2xl font-bold text-sky-600 sm:mt-1">{totalCredit.toFixed(2)}</p>
+                    <p className="text-xs font-bold text-orange-500 before-tax-amount">{(totalCredit / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
             </div>
             <div className="flex sm:flex-col justify-between sm:justify-center items-center sm:text-center px-2 sm:px-0">
                 <h3 className="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Day Sales</h3>
-                <p className="text-lg sm:text-2xl font-bold text-gray-800 sm:mt-1">{totalDaySales.toFixed(2)}</p>
+                <div className="flex flex-col items-end sm:items-center">
+                    <p className="text-lg sm:text-2xl font-bold text-gray-800 sm:mt-1">{totalDaySales.toFixed(2)}</p>
+                    <p className="text-xs font-bold text-orange-500 before-tax-amount">{(totalDaySales / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
             </div>
 
             {showOrders && (

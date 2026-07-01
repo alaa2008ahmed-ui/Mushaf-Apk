@@ -12,6 +12,7 @@ interface InvoiceListProps {
     canEdit?: boolean;
     onEdit?: (invoice: Invoice) => void;
     poCustomers?: POCustomer[];
+    showBeforeTaxColumn?: boolean;
 }
 
 interface SummaryData {
@@ -21,7 +22,7 @@ interface SummaryData {
     };
 }
 
-const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branches, canDelete, onDelete, canEdit, onEdit, poCustomers = [] }) => {
+const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branches, canDelete, onDelete, canEdit, onEdit, poCustomers = [], showBeforeTaxColumn = false }) => {
     const themeClasses = {
         cash: {
             headerBg: 'bg-blue-600',
@@ -73,7 +74,9 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
     };
 
     const formatTime = (date: Date) => {
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const dateStr = date.toLocaleDateString('en-GB'); // DD/MM/YYYY
+        return `${dateStr} ${timeStr}`;
     };
 
     return (
@@ -167,9 +170,12 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
 
                                 {/* Right Side: Total */}
                                 <div className="flex items-center gap-3">
-                                    <div className="shrink-0 text-right">
+                                    <div className="shrink-0 text-right flex flex-col items-end">
                                         <span className="font-black text-gray-900 text-[17px]">
                                             {invoice.total.toFixed(2)}
+                                        </span>
+                                        <span className="text-[10px] font-bold text-orange-500 before-tax-amount">
+                                            {(invoice.total / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </span>
                                     </div>
                                 </div>
@@ -215,7 +221,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                                     PO No.
                                 </th>
                                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                    Time
+                                    Date & Time
                                 </th>
                                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                                     User
@@ -231,6 +237,11 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                                     Qty
                                 </th>
+                                {showBeforeTaxColumn && (
+                                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider before-tax-amount">
+                                        Before Tax
+                                    </th>
+                                )}
                                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                                     Total
                                 </th>
@@ -264,6 +275,9 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                                         {invoice.itemName}
                                     </td>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{invoice.quantity.toFixed(2)}</td>
+                                    {showBeforeTaxColumn && (
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-orange-600 before-tax-amount">{(invoice.total / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                    )}
                                     <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-800">{invoice.total.toFixed(2)}</td>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm">
                                         {poCust ? (
@@ -304,12 +318,15 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                                 <td className={`px-4 py-3 text-left text-sm font-bold ${currentTheme.textColor}`}>
                                     {overallQuantity.toFixed(2)}
                                 </td>
+                                {showBeforeTaxColumn && (
+                                    <td className={`px-4 py-3 text-left text-sm font-bold text-orange-600 before-tax-amount`}>
+                                        {(overallTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </td>
+                                )}
                                 <td className={`px-4 py-3 text-left text-sm font-bold ${currentTheme.textColor} align-middle`}>
-                                    <div className="flex flex-col">
-                                        <span>{overallTotal.toFixed(2)}</span>
-                                        <span className="text-[10px] font-bold text-orange-600 mt-1 before-tax-amount">{(overallTotal / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                    </div>
+                                    {overallTotal.toFixed(2)}
                                 </td>
+                                <td></td>
                             </tr>
                         </tfoot>
                     </table>
