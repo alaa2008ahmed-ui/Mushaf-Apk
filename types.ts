@@ -58,6 +58,7 @@ export interface Invoice {
     poNumber?: string;
     poItemName?: string;
     orderIds?: string[];
+    branchName?: string;
 }
 
 export interface UserPermissions {

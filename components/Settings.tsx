@@ -678,7 +678,7 @@ const Settings: React.FC<SettingsProps> = ({
         ];
 
         if (currentUser?.username.toLowerCase() === 'alaa') {
-            cats.push({ id: 'mobile_config', title: 'Mobile App', icon: Smartphone, color: 'text-cyan-600', bg: 'bg-cyan-50' });
+            cats.push({ id: 'mobile_config', title: 'Mobile App', icon: Smartphone, color: 'text-cyan-600', bg: 'bg-cyan-50', desc: 'Configure mobile app settings and features.' });
         }
 
         return cats;
