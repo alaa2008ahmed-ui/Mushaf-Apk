@@ -66,7 +66,7 @@ const t = {
     closeBtn: "إغلاق",
     chooseApp: "اختر النظام المطلوب تشغيله:",
     activeApp: "التطبيق النشط حالياً:",
-    exitPortal: "الخروج",
+    exitPortal: "العودة",
     floatingMenuTitle: "التحكم السريع"
   },
   en: {
@@ -100,7 +100,7 @@ const t = {
     closeBtn: "Close",
     chooseApp: "Choose system to launch:",
     activeApp: "Currently active app:",
-    exitPortal: "Exit",
+    exitPortal: "Return",
     floatingMenuTitle: "Quick Control"
   }
 };
@@ -216,55 +216,8 @@ export default function App() {
   };
 
   const handleExitPortal = () => {
-    // إخفاء القائمة عند محاولة الخروج
+    handleSelectApp(null);
     setShowFloatingMenu(false);
-
-    const win = window as any;
-    const nav = window.navigator as any;
-
-    // 1. محاولة الخروج عبر Cordova / PhoneGap
-    try {
-      if (nav && nav.app && typeof nav.app.exitApp === 'function') {
-        nav.app.exitApp();
-      }
-    } catch (e) {}
-
-    // 2. محاولة الخروج عبر واجهة Android المخصصة
-    try {
-      if (win.Android) {
-        if (typeof win.Android.exitApp === 'function') win.Android.exitApp();
-        if (typeof win.Android.finish === 'function') win.Android.finish();
-        if (typeof win.Android.close === 'function') win.Android.close();
-      }
-    } catch (e) {}
-
-    // 3. محاولة الخروج عبر Capacitor
-    try {
-      if (win.Capacitor && win.Capacitor.Plugins && win.Capacitor.Plugins.App) {
-        win.Capacitor.Plugins.App.exitApp();
-      }
-    } catch (e) {}
-
-    // 4. إغلاق النافذة باستخدام تقنيات المتصفح المختلفة
-    try {
-      win.open('', '_self', '');
-      win.close();
-    } catch (e) {}
-
-    // 5. محاولة إرجاع السجل للخلف لإغلاق التطبيق في حال كان يعتمد على Webview
-    try {
-      if (win.history.length > 1) {
-        win.history.go(-win.history.length);
-      } else {
-        win.history.back();
-      }
-    } catch (e) {}
-
-    // 6. كحل بديل (Fallback) بعد إرسال أوامر الإغلاق، إذا لم يُغلق التطبيق بسبب قيود الـ WebView
-    // سيتم العودة للشاشة الرئيسية للبرنامج بعد نصف ثانية حتى لا يتعطل الزر تماماً
-    setTimeout(() => {
-      handleSelectApp(null);
-    }, 500);
   };
 
   // Render proper icon based on app identifier
@@ -435,7 +388,7 @@ export default function App() {
                             initial={{ opacity: 0, scale: 0.9, y: 15 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 15 }}
-                            className={`absolute ${menuValign === 'top' ? 'top-16' : 'bottom-16'} ${menuAlign === 'left' ? 'left-0' : 'right-0'} w-64 bg-white/95 backdrop-blur-xl border border-gray-200/80 rounded-[2rem] p-4 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] space-y-4`}
+                            className={`absolute ${menuValign === 'top' ? 'top-16' : 'bottom-16'} ${menuAlign === 'left' ? 'left-0' : 'right-0'} w-64 bg-white backdrop-blur-xl border border-gray-200 rounded-[2rem] p-4 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] space-y-4`}
                           >
                             <div className="space-y-1.5">
                               {appsList.map((app) => (
@@ -466,7 +419,7 @@ export default function App() {
                                 onClick={handleExitPortal}
                                 className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 text-xs font-bold py-3 rounded-xl transition-all active:scale-95 cursor-pointer"
                               >
-                                <LogOut className="w-4 h-4" />
+                                <Home className="w-4 h-4" />
                                 <span>{currentT.exitPortal}</span>
                               </button>
                             </div>
