@@ -225,173 +225,233 @@ class DualStorageService {
     if (!navigator.onLine) return;
 
     try {
-      // --- STAGE 1: Only Branches (for Dashboard initial render) ---
-      const qBranches = query(collection(db, COLLECTIONS.RECORDS), where('type', '==', 'branch'));
-      const snapBranches = await getDocs(qBranches);
-      const branchesData = snapBranches.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-      this.processDataUpdate(COLLECTIONS.RECORDS, branchesData, true);
-
-      // Allow UI to render the branches
-      await new Promise(resolve => setTimeout(resolve, 50));
-
-      // --- STAGE 2: Recent Invoices (Fast Load) ---
-      // If we have local data, we only need today's invoices.
-      // If we don't have local data (first load), we need 3 days for the dashboard.
       const localInvoices = this.getLocalData(COLLECTIONS.SALES_INVOICES);
       const hasLocalInvoices = localInvoices && localInvoices.length > 0;
-      
-      const d3 = new Date();
-      if (hasLocalInvoices) {
-        // Just today
-        d3.setHours(0,0,0,0);
+
+      if (!hasLocalInvoices) {
+        await this.runFirstTimeSync();
       } else {
-        // Last 3 days
-        d3.setDate(d3.getDate() - 2);
-        d3.setHours(0,0,0,0);
+        await this.runSubsequentSync();
       }
-      const targetDateStr = d3.toISOString();
-      
-      const qStage2 = query(
-        collection(db, COLLECTIONS.SALES_INVOICES), 
-        where('date', '>=', targetDateStr)
-      );
-      const snapInvoices = await getDocs(qStage2);
-      const invoicesData = snapInvoices.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-      this.processDataUpdate(COLLECTIONS.SALES_INVOICES, invoicesData, true);
-
-      // Allow UI to render the dashboard charts
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // --- STAGE 3: Rest of Records (Items, Settings, Users) & PO Customers ---
-      const qRecords = query(collection(db, COLLECTIONS.RECORDS));
-      const snapRecords = await getDocs(qRecords);
-      const allRecordsData = snapRecords.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-      this.processDataUpdate(COLLECTIONS.RECORDS, allRecordsData, true);
-
-      await this.runStagedFetchForCollection(COLLECTIONS.PO_CUSTOMERS);
-
-      // Allow UI to apply settings and users
-      await new Promise(resolve => setTimeout(resolve, 50));
-
-      // --- STAGE 4: Current Month Invoices (Full Fetch) ---
-      const activeStartDateStr = this.getActivePeriodStartDate();
-      const qMonthInvoices = query(
-        collection(db, COLLECTIONS.SALES_INVOICES), 
-        where('date', '>=', activeStartDateStr)
-      );
-      
-      const snapMonthInvoices = await getDocs(qMonthInvoices);
-      const monthInvoicesData = snapMonthInvoices.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-      
-      // Check for any invoices that were deleted on the server
-      const serverMonthIds = new Set(monthInvoicesData.map(inv => inv.id));
-      const localInvoicesCache = this.getLocalData(COLLECTIONS.SALES_INVOICES);
-      const deletedMonthIds = localInvoicesCache
-          .filter((inv: any) => inv.date >= activeStartDateStr)
-          .filter((inv: any) => !serverMonthIds.has(inv.id))
-          .map((inv: any) => inv.id);
-
-      this.processDataUpdate(COLLECTIONS.SALES_INVOICES, monthInvoicesData, true, deletedMonthIds);
-
-      // Allow UI to process month invoices
-      await new Promise(resolve => setTimeout(resolve, 50));
-
-      // Other Collections
-      const otherCollections = [
-        COLLECTIONS.CUSTOMERS,
-        COLLECTIONS.DELIVERY_NOTES,
-        COLLECTIONS.BOTTLE_TRANSACTIONS
-      ];
-      
-      for (const coll of otherCollections) {
-        await this.runStagedFetchForCollection(coll);
-      }
-
-      // Previous month invoices (Background comparison)
-      const prevMonthStart = new Date(activeStartDateStr);
-      prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
-      const prevMonthStartStr = prevMonthStart.toISOString();
-      
-      const qPrev = query(
-        collection(db, COLLECTIONS.SALES_INVOICES),
-        where('date', '>=', prevMonthStartStr),
-        where('date', '<', activeStartDateStr)
-      );
-      const snapPrev = await getDocs(qPrev);
-      const prevInvoicesData = snapPrev.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
-      
-      const serverPrevIds = new Set(prevInvoicesData.map(inv => inv.id));
-      const deletedPrevIds = localInvoicesCache
-          .filter((inv: any) => inv.date >= prevMonthStartStr && inv.date < activeStartDateStr)
-          .filter((inv: any) => !serverPrevIds.has(inv.id))
-          .map((inv: any) => inv.id);
-
-      this.processDataUpdate(COLLECTIONS.SALES_INVOICES, prevInvoicesData, true, deletedPrevIds);
-
-      // --- STAGE 5: Continuous Listening ---
-      
-      // Listen to Current Month Invoices for live updates
-      const unsubscribeMonthInvoices = onSnapshot(qMonthInvoices, (snap) => {
-        const liveUpdates: any[] = [];
-        const deletedIds: string[] = [];
-        snap.docChanges().forEach(change => {
-            if (change.type === 'removed') {
-                deletedIds.push(change.doc.id);
-            } else if (change.type === 'added' || change.type === 'modified') {
-                liveUpdates.push({ ...this.convertTimestamps(change.doc.data()), id: change.doc.id });
-            }
-        });
-        if (liveUpdates.length > 0 || deletedIds.length > 0) {
-            this.processDataUpdate(COLLECTIONS.SALES_INVOICES, liveUpdates, true, deletedIds);
-        }
-      });
-      this.listeners.push(unsubscribeMonthInvoices);
-
-      // Listen to Previous month invoices
-      const unsubscribeStage5 = onSnapshot(qPrev, (snapPrev) => {
-        const liveUpdates: any[] = [];
-        const deletedIds: string[] = [];
-        snapPrev.docChanges().forEach(change => {
-            if (change.type === 'removed') {
-                deletedIds.push(change.doc.id);
-            } else if (change.type === 'added' || change.type === 'modified') {
-                liveUpdates.push({ ...this.convertTimestamps(change.doc.data()), id: change.doc.id });
-            }
-        });
-        if (liveUpdates.length > 0 || deletedIds.length > 0) {
-            this.processDataUpdate(COLLECTIONS.SALES_INVOICES, liveUpdates, true, deletedIds);
-        }
-      }, err => console.error("Stage 5 fetch error:", err));
-      
-      this.listeners.push(unsubscribeStage5);
-
-      // Listen to General Live Updates for anything updated in this session
-      const sessionStartTime = new Date().toISOString();
-      const qLive = query(
-        collection(db, COLLECTIONS.SALES_INVOICES), 
-        where('updatedAt', '>=', sessionStartTime)
-      );
-      const unsubscribeLive = onSnapshot(qLive, (snapLive) => {
-        const liveUpdates: any[] = [];
-        const deletedIds: string[] = [];
-        snapLive.docChanges().forEach(change => {
-            if (change.type === 'removed') {
-                deletedIds.push(change.doc.id);
-            } else {
-                liveUpdates.push({ ...this.convertTimestamps(change.doc.data()), id: change.doc.id });
-            }
-        });
-        if (liveUpdates.length > 0 || deletedIds.length > 0) {
-          this.processDataUpdate(COLLECTIONS.SALES_INVOICES, liveUpdates, true, deletedIds); 
-        }
-      });
-      this.listeners.push(unsubscribeLive);
-
     } catch (error) {
       console.error("Phased sync failed:", error);
       // Fallback to old behavior if phased sync fails
       this.runStagedFetchForCollection(COLLECTIONS.SALES_INVOICES);
       this.runStagedFetchForCollection(COLLECTIONS.RECORDS);
+    }
+  }
+
+  private async runFirstTimeSync() {
+    // المرحلة الأولى: جلب بيانات "الفروع" فقط لكي تظهر لوحة التحكم بسرعة
+    const qBranches = query(collection(db, COLLECTIONS.RECORDS), where('type', '==', 'branch'));
+    const snapBranches = await getDocs(qBranches);
+    const branchesData = snapBranches.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+    this.processDataUpdate(COLLECTIONS.RECORDS, branchesData, true);
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // المرحلة الثانية: جلب "آخر فواتير" (آخر 3 أيام فقط) لكي تكتمل الرسوم البيانية الأولية
+    const d3 = new Date();
+    d3.setDate(d3.getDate() - 2);
+    d3.setHours(0,0,0,0);
+    const targetDateStr = d3.toISOString();
+    
+    const qStage2 = query(collection(db, COLLECTIONS.SALES_INVOICES), where('date', '>=', targetDateStr));
+    const snapInvoices = await getDocs(qStage2);
+    const invoicesData = snapInvoices.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+    this.processDataUpdate(COLLECTIONS.SALES_INVOICES, invoicesData, true);
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // المرحلة الثالثة: جلب السجلات الأساسية (الأصناف، المستخدمين، الإعدادات، العملاء)
+    const qRecords = query(collection(db, COLLECTIONS.RECORDS));
+    const snapRecords = await getDocs(qRecords);
+    const allRecordsData = snapRecords.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+    this.processDataUpdate(COLLECTIONS.RECORDS, allRecordsData, true);
+
+    const qCustomers = query(collection(db, COLLECTIONS.CUSTOMERS));
+    const snapCustomers = await getDocs(qCustomers);
+    const customersData = snapCustomers.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+    this.processDataUpdate(COLLECTIONS.CUSTOMERS, customersData, true);
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // المرحلة الرابعة: جلب كامل فواتير الشهر الحالي وأي بيانات متبقية
+    const currentMonthStart = new Date();
+    currentMonthStart.setDate(1);
+    currentMonthStart.setHours(0,0,0,0);
+    const currentMonthStr = currentMonthStart.toISOString();
+    
+    const qMonthInvoices = query(collection(db, COLLECTIONS.SALES_INVOICES), where('date', '>=', currentMonthStr));
+    const snapMonthInvoices = await getDocs(qMonthInvoices);
+    const monthInvoicesData = snapMonthInvoices.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+    this.processDataUpdate(COLLECTIONS.SALES_INVOICES, monthInvoicesData, true);
+
+    const remainingCollections = [COLLECTIONS.DELIVERY_NOTES, COLLECTIONS.BOTTLE_TRANSACTIONS, COLLECTIONS.PO_CUSTOMERS];
+    for (const coll of remainingCollections) {
+      const qRem = query(collection(db, coll));
+      const snapRem = await getDocs(qRem);
+      const remData = snapRem.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+      this.processDataUpdate(coll, remData, true);
+    }
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // المرحله الخامسه : جلب كامل فواتير الشهر السابق
+    const prevMonthStart = new Date(currentMonthStart);
+    prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
+    const prevMonthStr = prevMonthStart.toISOString();
+    
+    const qPrev = query(
+      collection(db, COLLECTIONS.SALES_INVOICES),
+      where('date', '>=', prevMonthStr),
+      where('date', '<', currentMonthStr)
+    );
+    const snapPrev = await getDocs(qPrev);
+    const prevInvoicesData = snapPrev.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+    this.processDataUpdate(COLLECTIONS.SALES_INVOICES, prevInvoicesData, true);
+
+    // المرحله السادسه : مرحلة الاستماع 
+    this.setupListeners();
+  }
+
+  private async runSubsequentSync() {
+    // المرحله الاولى : جلب "آخر فواتير" اليوم الحالى لكي تكتمل الرسوم البيانية الأولية
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const todayStr = today.toISOString();
+    
+    const qStage1 = query(collection(db, COLLECTIONS.SALES_INVOICES), where('date', '>=', todayStr));
+    const snapInvoices = await getDocs(qStage1);
+    const invoicesData = snapInvoices.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+    this.processDataUpdate(COLLECTIONS.SALES_INVOICES, invoicesData, true);
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // المرحله الثالثه التاكد من ان بيانات اليومين السابقين لم يتم بهما اى تعديل او حذف
+    const twoDaysAgo = new Date(today);
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const twoDaysAgoStr = twoDaysAgo.toISOString();
+    
+    const qStage3 = query(
+      collection(db, COLLECTIONS.SALES_INVOICES),
+      where('date', '>=', twoDaysAgoStr),
+      where('date', '<', todayStr)
+    );
+    const snapStage3 = await getDocs(qStage3);
+    const stage3Data = snapStage3.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+    
+    const serverStage3Ids = new Set(stage3Data.map(inv => inv.id));
+    const localInvoicesCache = this.getLocalData(COLLECTIONS.SALES_INVOICES);
+    const deletedStage3Ids = localInvoicesCache
+        .filter((inv: any) => inv.date >= twoDaysAgoStr && inv.date < todayStr)
+        .filter((inv: any) => !serverStage3Ids.has(inv.id))
+        .map((inv: any) => inv.id);
+    this.processDataUpdate(COLLECTIONS.SALES_INVOICES, stage3Data, true, deletedStage3Ids);
+
+    // المرحلة الثانيه : جلب بيانات "الفروع" فقط لكي تظهر لوحة التحكم
+    const qBranches = query(collection(db, COLLECTIONS.RECORDS), where('type', '==', 'branch'));
+    const snapBranches = await getDocs(qBranches);
+    const branchesData = snapBranches.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+    this.processDataUpdate(COLLECTIONS.RECORDS, branchesData, true);
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // المرحلة الرابعه : جلب السجلات الأساسية (الأصناف، المستخدمين، الإعدادات، العملاء)
+    const qRecords = query(collection(db, COLLECTIONS.RECORDS));
+    const snapRecords = await getDocs(qRecords);
+    const allRecordsData = snapRecords.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+    this.processDataUpdate(COLLECTIONS.RECORDS, allRecordsData, true);
+
+    const qCustomers = query(collection(db, COLLECTIONS.CUSTOMERS));
+    const snapCustomers = await getDocs(qCustomers);
+    const customersData = snapCustomers.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+    this.processDataUpdate(COLLECTIONS.CUSTOMERS, customersData, true);
+
+    const remainingCollections = [COLLECTIONS.DELIVERY_NOTES, COLLECTIONS.BOTTLE_TRANSACTIONS, COLLECTIONS.PO_CUSTOMERS];
+    for (const coll of remainingCollections) {
+      const qRem = query(collection(db, coll));
+      const snapRem = await getDocs(qRem);
+      const remData = snapRem.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+      this.processDataUpdate(coll, remData, true);
+    }
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // المرحله الخامسه : سيتم التاكد من ان بيانات الشهر الحالى والسابق لم تم بهما اى تعديل او حذف واذا تم التعديل او الحذف يتم تعديل البيانات
+    const currentMonthStart = new Date();
+    currentMonthStart.setDate(1);
+    currentMonthStart.setHours(0,0,0,0);
+    const prevMonthStart = new Date(currentMonthStart);
+    prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
+    const prevMonthStr = prevMonthStart.toISOString();
+
+    const qMonthVerify = query(collection(db, COLLECTIONS.SALES_INVOICES), where('date', '>=', prevMonthStr));
+    const snapMonthVerify = await getDocs(qMonthVerify);
+    const monthVerifyData = snapMonthVerify.docs.map(doc => ({ ...this.convertTimestamps(doc.data()), id: doc.id }));
+    
+    const serverMonthIds = new Set(monthVerifyData.map(inv => inv.id));
+    const deletedMonthIds = localInvoicesCache
+        .filter((inv: any) => inv.date >= prevMonthStr)
+        .filter((inv: any) => !serverMonthIds.has(inv.id))
+        .map((inv: any) => inv.id);
+    this.processDataUpdate(COLLECTIONS.SALES_INVOICES, monthVerifyData, true, deletedMonthIds);
+
+    // مرحلة الاستماع 
+    this.setupListeners();
+  }
+
+  private setupListeners() {
+    const activeStartDateStr = this.getActivePeriodStartDate();
+    
+    // Listen to current and previous month invoices
+    const prevMonthStart = new Date(activeStartDateStr);
+    prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
+    const prevMonthStr = prevMonthStart.toISOString();
+
+    const qMonthInvoices = query(collection(db, COLLECTIONS.SALES_INVOICES), where('date', '>=', prevMonthStr));
+    const unsubscribeMonthInvoices = onSnapshot(qMonthInvoices, (snap) => {
+      const liveUpdates: any[] = [];
+      const deletedIds: string[] = [];
+      snap.docChanges().forEach(change => {
+          if (change.type === 'removed') {
+              deletedIds.push(change.doc.id);
+          } else if (change.type === 'added' || change.type === 'modified') {
+              liveUpdates.push({ ...this.convertTimestamps(change.doc.data()), id: change.doc.id });
+          }
+      });
+      if (liveUpdates.length > 0 || deletedIds.length > 0) {
+          this.processDataUpdate(COLLECTIONS.SALES_INVOICES, liveUpdates, true, deletedIds);
+      }
+    });
+    this.listeners.push(unsubscribeMonthInvoices);
+
+    // Listen to General Live Updates for anything updated in this session
+    const sessionStartTime = new Date().toISOString();
+    const qLive = query(
+      collection(db, COLLECTIONS.SALES_INVOICES), 
+      where('updatedAt', '>=', sessionStartTime)
+    );
+    const unsubscribeLive = onSnapshot(qLive, (snapLive) => {
+      const liveUpdates: any[] = [];
+      const deletedIds: string[] = [];
+      snapLive.docChanges().forEach(change => {
+          if (change.type === 'removed') {
+              deletedIds.push(change.doc.id);
+          } else {
+              liveUpdates.push({ ...this.convertTimestamps(change.doc.data()), id: change.doc.id });
+          }
+      });
+      if (liveUpdates.length > 0 || deletedIds.length > 0) {
+        this.processDataUpdate(COLLECTIONS.SALES_INVOICES, liveUpdates, true, deletedIds); 
+      }
+    });
+    this.listeners.push(unsubscribeLive);
+
+    // Listen to other collections for live updates
+    const otherCollections = [
+      COLLECTIONS.RECORDS,
+      COLLECTIONS.CUSTOMERS,
+      COLLECTIONS.DELIVERY_NOTES,
+      COLLECTIONS.BOTTLE_TRANSACTIONS,
+      COLLECTIONS.PO_CUSTOMERS
+    ];
+    
+    for (const coll of otherCollections) {
+      this.runStagedFetchForCollection(coll, true);
     }
   }
 
