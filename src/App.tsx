@@ -221,59 +221,50 @@ export default function App() {
 
     const win = window as any;
     const nav = window.navigator as any;
-    let isMobileApp = false;
 
     // 1. محاولة الخروج عبر Cordova / PhoneGap
-    if (nav && nav.app && typeof nav.app.exitApp === 'function') {
-      isMobileApp = true;
-      try { nav.app.exitApp(); } catch (e) { console.error("Cordova exitApp failed:", e); }
-    }
+    try {
+      if (nav && nav.app && typeof nav.app.exitApp === 'function') {
+        nav.app.exitApp();
+      }
+    } catch (e) {}
 
     // 2. محاولة الخروج عبر واجهة Android المخصصة
-    if (win.Android) {
-      isMobileApp = true;
-      if (typeof win.Android.exitApp === 'function') {
-        try { win.Android.exitApp(); } catch (e) {}
+    try {
+      if (win.Android) {
+        if (typeof win.Android.exitApp === 'function') win.Android.exitApp();
+        if (typeof win.Android.finish === 'function') win.Android.finish();
+        if (typeof win.Android.close === 'function') win.Android.close();
       }
-      if (typeof win.Android.finish === 'function') {
-        try { win.Android.finish(); } catch (e) {}
-      }
-      if (typeof win.Android.close === 'function') {
-        try { win.Android.close(); } catch (e) {}
-      }
-    }
+    } catch (e) {}
 
     // 3. محاولة الخروج عبر Capacitor
-    if (win.Capacitor && win.Capacitor.Plugins && win.Capacitor.Plugins.App) {
-      isMobileApp = true;
-      try {
+    try {
+      if (win.Capacitor && win.Capacitor.Plugins && win.Capacitor.Plugins.App) {
         win.Capacitor.Plugins.App.exitApp();
-      } catch (e) {
-        console.error("Capacitor App.exitApp failed:", e);
       }
-    }
+    } catch (e) {}
 
-    // إذا لم يكن تطبيقاً يعمل على الهاتف، قم بالعودة لشاشة البرامج
-    if (!isMobileApp) {
+    // 4. إغلاق النافذة باستخدام تقنيات المتصفح المختلفة
+    try {
+      win.open('', '_self', '');
+      win.close();
+    } catch (e) {}
+
+    // 5. محاولة إرجاع السجل للخلف لإغلاق التطبيق في حال كان يعتمد على Webview
+    try {
+      if (win.history.length > 1) {
+        win.history.go(-win.history.length);
+      } else {
+        win.history.back();
+      }
+    } catch (e) {}
+
+    // 6. كحل بديل (Fallback) بعد إرسال أوامر الإغلاق، إذا لم يُغلق التطبيق بسبب قيود الـ WebView
+    // سيتم العودة للشاشة الرئيسية للبرنامج بعد نصف ثانية حتى لا يتعطل الزر تماماً
+    setTimeout(() => {
       handleSelectApp(null);
-    } else {
-      // 4. محاولة إغلاق النافذة القياسية في حال كان تطبيقاً
-      try {
-        win.open('', '_self', '');
-        win.close();
-      } catch (e) {
-        console.error("window.close failed:", e);
-      }
-
-      // 5. محاولة إرجاع السجل للخلف لإغلاق التطبيق في حال كان يعتمد على Webview
-      try {
-        if (win.history.length > 1) {
-          win.history.go(-win.history.length);
-        } else {
-          win.history.back();
-        }
-      } catch (e) {}
-    }
+    }, 500);
   };
 
   // Render proper icon based on app identifier
