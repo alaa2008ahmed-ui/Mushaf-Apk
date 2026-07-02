@@ -107,7 +107,7 @@ const t = {
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(false);
-  const [lang, setLang] = useState<'ar' | 'en'>('ar');
+  const [lang, setLang] = useState<'ar' | 'en'>('en');
   
   // URLs configuration
   const [urls, setUrls] = useState({
@@ -216,42 +216,36 @@ export default function App() {
   };
 
   const handleExitPortal = () => {
-    // تحديث حالة الواجهة فوراً للرجوع إلى شاشة البرامج الرئيسية لضمان الاستجابة الكاملة في جميع المتصفحات
-    handleSelectApp(null);
+    // إخفاء القائمة عند محاولة الخروج
     setShowFloatingMenu(false);
 
     const win = window as any;
     const nav = window.navigator as any;
+    let isMobileApp = false;
 
     // 1. محاولة الخروج عبر Cordova / PhoneGap
     if (nav && nav.app && typeof nav.app.exitApp === 'function') {
-      try {
-        nav.app.exitApp();
-      } catch (e) {
-        console.error("Cordova exitApp failed:", e);
-      }
+      isMobileApp = true;
+      try { nav.app.exitApp(); } catch (e) { console.error("Cordova exitApp failed:", e); }
     }
 
     // 2. محاولة الخروج عبر واجهة Android المخصصة
     if (win.Android) {
+      isMobileApp = true;
       if (typeof win.Android.exitApp === 'function') {
-        try {
-          win.Android.exitApp();
-        } catch (e) {
-          console.error("Android.exitApp failed:", e);
-        }
+        try { win.Android.exitApp(); } catch (e) {}
+      }
+      if (typeof win.Android.finish === 'function') {
+        try { win.Android.finish(); } catch (e) {}
       }
       if (typeof win.Android.close === 'function') {
-        try {
-          win.Android.close();
-        } catch (e) {
-          console.error("Android.close failed:", e);
-        }
+        try { win.Android.close(); } catch (e) {}
       }
     }
 
     // 3. محاولة الخروج عبر Capacitor
     if (win.Capacitor && win.Capacitor.Plugins && win.Capacitor.Plugins.App) {
+      isMobileApp = true;
       try {
         win.Capacitor.Plugins.App.exitApp();
       } catch (e) {
@@ -259,11 +253,26 @@ export default function App() {
       }
     }
 
-    // 4. محاولة إغلاق النافذة القياسية
-    try {
-      win.close();
-    } catch (e) {
-      console.error("window.close failed:", e);
+    // إذا لم يكن تطبيقاً يعمل على الهاتف، قم بالعودة لشاشة البرامج
+    if (!isMobileApp) {
+      handleSelectApp(null);
+    } else {
+      // 4. محاولة إغلاق النافذة القياسية في حال كان تطبيقاً
+      try {
+        win.open('', '_self', '');
+        win.close();
+      } catch (e) {
+        console.error("window.close failed:", e);
+      }
+
+      // 5. محاولة إرجاع السجل للخلف لإغلاق التطبيق في حال كان يعتمد على Webview
+      try {
+        if (win.history.length > 1) {
+          win.history.go(-win.history.length);
+        } else {
+          win.history.back();
+        }
+      } catch (e) {}
     }
   };
 
@@ -292,34 +301,34 @@ export default function App() {
       title: currentT.accounting,
       desc: currentT.accountingDesc,
       url: urls.accounting,
-      color: "from-blue-500/10 to-blue-600/5 text-blue-400 border-blue-500/20 hover:border-blue-500/40 hover:shadow-blue-500/5"
+      color: "from-blue-50 to-blue-100/50 text-blue-700 border-blue-200 hover:border-blue-300 hover:shadow-blue-500/10"
     },
     {
       id: 'dailySales',
       title: currentT.dailySales,
       desc: currentT.dailySalesDesc,
       url: urls.dailySales,
-      color: "from-emerald-500/10 to-emerald-600/5 text-emerald-400 border-emerald-500/20 hover:border-emerald-500/40 hover:shadow-emerald-500/5"
+      color: "from-emerald-50 to-emerald-100/50 text-emerald-700 border-emerald-200 hover:border-emerald-300 hover:shadow-emerald-500/10"
     },
     {
       id: 'deliverySales',
       title: currentT.deliverySales,
       desc: currentT.deliverySalesDesc,
       url: urls.deliverySales,
-      color: "from-amber-500/10 to-amber-600/5 text-amber-400 border-amber-500/20 hover:border-amber-500/40 hover:shadow-amber-500/5"
+      color: "from-amber-50 to-amber-100/50 text-amber-700 border-amber-200 hover:border-amber-300 hover:shadow-amber-500/10"
     },
     {
       id: 'quran',
       title: currentT.quran,
       desc: currentT.quranDesc,
       url: urls.quran,
-      color: "from-purple-500/10 to-purple-600/5 text-purple-400 border-purple-500/20 hover:border-purple-500/40 hover:shadow-purple-500/5"
+      color: "from-purple-50 to-purple-100/50 text-purple-700 border-purple-200 hover:border-purple-300 hover:shadow-purple-500/10"
     }
   ];
 
   return (
     <div 
-      className="fixed inset-0 w-full h-full bg-[#050505] overflow-hidden flex flex-col font-sans select-none text-zinc-300"
+      className="fixed inset-0 w-full h-full bg-slate-50 overflow-hidden flex flex-col font-sans select-none text-slate-800"
       dir={isRTL ? 'rtl' : 'ltr'}
     >
       <AnimatePresence mode="wait">
@@ -381,7 +390,7 @@ export default function App() {
           >
             {selectedAppId ? (
               // Active application screen with direct iframe and a draggable circular floating switcher menu
-              <div className="w-full h-full flex flex-col relative bg-[#010101]">
+              <div className="w-full h-full flex flex-col relative bg-white">
                 {appsList.map((app) => (
                   loadedApps[app.id] && (
                     <iframe
@@ -435,7 +444,7 @@ export default function App() {
                             initial={{ opacity: 0, scale: 0.9, y: 15 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 15 }}
-                            className={`absolute ${menuValign === 'top' ? 'top-16' : 'bottom-16'} ${menuAlign === 'left' ? 'left-0' : 'right-0'} w-64 bg-zinc-950/95 backdrop-blur-xl border border-zinc-800/80 rounded-[2rem] p-4 shadow-2xl space-y-4`}
+                            className={`absolute ${menuValign === 'top' ? 'top-16' : 'bottom-16'} ${menuAlign === 'left' ? 'left-0' : 'right-0'} w-64 bg-white/95 backdrop-blur-xl border border-gray-200/80 rounded-[2rem] p-4 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] space-y-4`}
                           >
                             <div className="space-y-1.5">
                               {appsList.map((app) => (
@@ -447,8 +456,8 @@ export default function App() {
                                   }}
                                   className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs rounded-xl transition-all ${
                                     selectedAppId === app.id 
-                                      ? 'bg-blue-600/15 text-blue-400 font-bold border border-blue-500/20' 
-                                      : 'hover:bg-zinc-900/80 text-zinc-400 hover:text-white border border-transparent'
+                                      ? 'bg-blue-50 text-blue-600 font-bold border border-blue-200' 
+                                      : 'hover:bg-gray-50 text-slate-600 hover:text-slate-900 border border-transparent'
                                   }`}
                                 >
                                   <div className="flex items-center gap-2.5">
@@ -460,11 +469,11 @@ export default function App() {
                               ))}
                             </div>
 
-                            <div className="pt-2 border-t border-zinc-900">
+                            <div className="pt-2 border-t border-gray-100">
                               {/* Exit button */}
                               <button
                                 onClick={handleExitPortal}
-                                className="w-full flex items-center justify-center gap-2 bg-red-600/15 hover:bg-red-600/25 border border-red-500/20 text-red-400 text-xs font-bold py-3 rounded-xl transition-all active:scale-95 cursor-pointer"
+                                className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 text-xs font-bold py-3 rounded-xl transition-all active:scale-95 cursor-pointer"
                               >
                                 <LogOut className="w-4 h-4" />
                                 <span>{currentT.exitPortal}</span>
@@ -487,11 +496,11 @@ export default function App() {
                 {/* Dashboard Header */}
                 <header className="max-w-4xl w-full mx-auto flex items-center justify-between mb-4 md:mb-8">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/10">
+                    <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20">
                       <Zap className="w-5 h-5 text-white fill-current" />
                     </div>
                     <div>
-                      <h1 className="text-base md:text-lg font-bold text-white tracking-tight">{currentT.portalTitle}</h1>
+                      <h1 className="text-base md:text-lg font-bold text-slate-800 tracking-tight">{currentT.portalTitle}</h1>
                     </div>
                   </div>
 
@@ -499,7 +508,7 @@ export default function App() {
                     {/* Language Switcher */}
                     <button
                       onClick={toggleLanguage}
-                      className="px-3 py-1.5 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 text-xs text-zinc-300 rounded-xl transition-all flex items-center gap-2 active:scale-95"
+                      className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-xs text-slate-600 rounded-xl transition-all flex items-center gap-2 shadow-sm active:scale-95"
                     >
                       <Globe className="w-3.5 h-3.5 text-blue-500" />
                       <span>{currentT.language}</span>
@@ -508,24 +517,13 @@ export default function App() {
                     {/* Admin Settings Link */}
                     <button
                       onClick={() => setShowAdminLogin(true)}
-                      className="p-2 bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 text-zinc-400 hover:text-white rounded-xl transition-all active:scale-95"
+                      className="p-2 bg-white hover:bg-gray-50 border border-gray-200 text-slate-400 hover:text-slate-600 rounded-xl transition-all shadow-sm active:scale-95"
                       title={currentT.adminPortal}
                     >
                       <Settings className="w-4 h-4" />
                     </button>
                   </div>
                 </header>
-
-                {/* Welcome Hero Panel - Hidden on mobile to fit screen completely */}
-                <div className="hidden md:block max-w-4xl w-full mx-auto text-center my-6">
-                  <motion.h2 
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-3"
-                  >
-                    {currentT.portalTitle}
-                  </motion.h2>
-                </div>
 
                 {/* Applications grid - 2x2 layout by default for mobile and desktop */}
                 <main className="max-w-4xl w-full mx-auto grid grid-cols-2 gap-3 md:gap-5 my-2 md:my-8 flex-1 items-center content-center">
@@ -537,16 +535,16 @@ export default function App() {
                       transition={{ delay: 0.1 * index + 0.2 }}
                       whileHover={{ scale: 1.02, y: -2 }}
                       onClick={() => handleSelectApp(app.id)}
-                      className={`glass-panel p-4 md:p-8 rounded-2xl md:rounded-[2rem] border bg-zinc-900/20 backdrop-blur-md flex flex-col items-center justify-center text-center gap-2 md:gap-4 cursor-pointer transition-all ${app.color} group relative overflow-hidden h-28 sm:h-32 md:h-[180px]`}
+                      className={`glass-panel p-4 md:p-8 rounded-2xl md:rounded-[2rem] border bg-white flex flex-col items-center justify-center text-center gap-2 md:gap-4 cursor-pointer transition-all ${app.color} group relative overflow-hidden h-28 sm:h-32 md:h-[180px] shadow-sm hover:shadow-md`}
                     >
                       {/* Subtle app card background glow */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-white/2 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-                      <div className="p-2 md:p-4 bg-zinc-900/80 border border-zinc-800/60 rounded-xl md:rounded-2xl group-hover:scale-105 md:group-hover:scale-110 transition-transform duration-300 shadow-md">
+                      <div className="p-2 md:p-4 bg-white border border-gray-100 rounded-xl md:rounded-2xl group-hover:scale-105 md:group-hover:scale-110 transition-transform duration-300 shadow-sm">
                         {renderAppIcon(app.id, "w-6 h-6 md:w-8 md:h-8")}
                       </div>
 
-                      <h3 className="text-xs md:text-lg font-bold text-white group-hover:text-blue-400 transition-colors tracking-tight line-clamp-2">
+                      <h3 className="text-xs md:text-lg font-bold text-slate-800 group-hover:text-current transition-colors tracking-tight line-clamp-2">
                         {app.title}
                       </h3>
                     </motion.div>
@@ -554,8 +552,8 @@ export default function App() {
                 </main>
 
                 {/* Portal Footer - Compacted */}
-                <footer className="max-w-4xl w-full mx-auto text-center border-t border-zinc-900 pt-4 mt-4">
-                  <p className="text-[10px] text-zinc-600">
+                <footer className="max-w-4xl w-full mx-auto text-center border-t border-gray-200 pt-4 mt-4">
+                  <p className="text-[10px] text-gray-400">
                     &copy; 2026 {currentT.portalTitle}. All rights reserved.
                   </p>
                 </footer>
