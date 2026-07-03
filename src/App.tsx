@@ -24,14 +24,16 @@ import {
   Minimize2,
   X,
   Menu,
-  LogOut
+  LogOut,
+  Users
 } from 'lucide-react';
 
 const DEFAULT_URLS = {
   accounting: "https://alaa-accounting-system.vercel.app",
   dailySales: "https://daily-sales-rose.vercel.app/",
   deliverySales: "https://dilevry-note.vercel.app/",
-  quran: "https://mushaf-ahmed-laila.vercel.app/"
+  quran: "https://mushaf-ahmed-laila.vercel.app/",
+  allowances: "https://allowances-for-employees.vercel.app/"
 };
 
 const t = {
@@ -46,6 +48,8 @@ const t = {
     deliverySalesDesc: "نظام إدارة مبيعات التوصيل، تتبع الطلبات وحسابات مناديب الدليفري.",
     quran: "مصحف أحمد وليلى",
     quranDesc: "المصحف الشريف الميسر للقراءة والتدبر برسم المصحف وتلاوات متعددة.",
+    allowances: "مخصصات الموظفين",
+    allowancesDesc: "إدارة مخصصات الموظفين",
     adminPortal: "بوابة الإدارة",
     adminLogin: "تسجيل دخول المشرف",
     username: "اسم المستخدم",
@@ -80,6 +84,8 @@ const t = {
     deliverySalesDesc: "System for managing delivery sales, tracking orders, and delivery agents' accounts.",
     quran: "Mushaf Ahmed & Laila",
     quranDesc: "The Holy Quran for reading, listening, and contemplation with multiple recitations.",
+    allowances: "Allowances For Employees",
+    allowancesDesc: "Manage employee allowances",
     adminPortal: "Admin Portal",
     adminLogin: "Administrator Login",
     username: "Username",
@@ -155,12 +161,14 @@ export default function App() {
     const savedDailySales = localStorage.getItem('swc_url_dailySales');
     const savedDeliverySales = localStorage.getItem('swc_url_deliverySales');
     const savedQuran = localStorage.getItem('swc_url_quran');
+    const savedAllowances = localStorage.getItem('swc_url_allowances');
 
     const loadedUrls = {
       accounting: savedAccounting || DEFAULT_URLS.accounting,
       dailySales: savedDailySales || DEFAULT_URLS.dailySales,
       deliverySales: savedDeliverySales || DEFAULT_URLS.deliverySales,
       quran: savedQuran || DEFAULT_URLS.quran,
+      allowances: savedAllowances || DEFAULT_URLS.allowances,
     };
 
     setUrls(loadedUrls);
@@ -189,6 +197,7 @@ export default function App() {
     localStorage.setItem('swc_url_dailySales', editUrls.dailySales);
     localStorage.setItem('swc_url_deliverySales', editUrls.deliverySales);
     localStorage.setItem('swc_url_quran', editUrls.quran);
+    localStorage.setItem('swc_url_allowances', editUrls.allowances);
     
     setUrls({ ...editUrls });
     setSaveSuccess(true);
@@ -231,6 +240,8 @@ export default function App() {
         return <Truck className={className} />;
       case 'quran':
         return <BookOpen className={className} />;
+      case 'allowances':
+        return <Users className={className} />;
       default:
         return <Zap className={className} />;
     }
@@ -267,6 +278,13 @@ export default function App() {
       desc: currentT.quranDesc,
       url: urls.quran,
       color: "from-purple-50 to-purple-100/50 text-purple-700 border-purple-200 hover:border-purple-300 hover:shadow-purple-500/10"
+    },
+    {
+      id: 'allowances',
+      title: currentT.allowances,
+      desc: currentT.allowancesDesc,
+      url: urls.allowances,
+      color: "from-sky-50 to-sky-100/50 text-sky-700 border-sky-200 hover:border-sky-300 hover:shadow-sky-500/10"
     }
   ];
 
@@ -647,6 +665,21 @@ export default function App() {
                                   type="text"
                                   value={editUrls.quran}
                                   onChange={(e) => setEditUrls({ ...editUrls, quran: e.target.value })}
+                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
+                                  placeholder="https://..."
+                                />
+                              </div>
+
+                              {/* Link 5 */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
+                                  {renderAppIcon('allowances', 'w-3.5 h-3.5')}
+                                  <span>{currentT.allowances}</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editUrls.allowances}
+                                  onChange={(e) => setEditUrls({ ...editUrls, allowances: e.target.value })}
                                   className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
                                   placeholder="https://..."
                                 />
