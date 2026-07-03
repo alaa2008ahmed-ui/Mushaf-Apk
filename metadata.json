@@ -1,6 +1,8 @@
 {
-  "name": "App Daily Sales 1",
-  "description": "بوابة موحدة للأنظمة والبرامج المشتركة وتشمل برنامج علاء المحاسبي، المبيعات اليومية، مبيعات الدليفري ومصحف أحمد وليلى",
-  "requestFramePermissions": ["camera", "microphone", "geolocation"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "name": "Allowances For Employees 1.00",
+  "description": "تطبيق لادارة وحساب مخصصات نهاية الخدمة والاجازات للموظفين مع امكانية الطباعة والتصدير",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
