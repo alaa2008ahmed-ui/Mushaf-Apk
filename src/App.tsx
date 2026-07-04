@@ -52,7 +52,7 @@ const t = {
     quranDesc: "المصحف الشريف الميسر للقراءة والتدبر برسم المصحف وتلاوات متعددة.",
     allowances: "مخصصات الموظفين",
     allowancesDesc: "إدارة مخصصات الموظفين",
-    depreciation: "الاهلاكات",
+    depreciation: "الاصول الثابته",
     depreciationDesc: "نظام إدارة واحتساب الاهـلاكات للأصول الثابتة",
     adminPortal: "بوابة الإدارة",
     adminLogin: "تسجيل دخول المشرف",
