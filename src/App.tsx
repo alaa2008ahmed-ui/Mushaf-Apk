@@ -35,7 +35,7 @@ const DEFAULT_URLS = {
   deliverySales: "https://dilevry-note.vercel.app/",
   quran: "https://mushaf-ahmed-laila.vercel.app/",
   allowances: "https://allowances-for-employees.vercel.app/",
-  depreciation: "https://depreciation-pi.vercel.app/"
+  fixedassets: "https://fixed-assets-alpha.vercel.app/"
 };
 
 const t = {
@@ -52,8 +52,8 @@ const t = {
     quranDesc: "المصحف الشريف الميسر للقراءة والتدبر برسم المصحف وتلاوات متعددة.",
     allowances: "مخصصات الموظفين",
     allowancesDesc: "إدارة مخصصات الموظفين",
-    depreciation: "الاصول الثابته",
-    depreciationDesc: "نظام إدارة واحتساب الاهـلاكات للأصول الثابتة",
+    fixedassets: "الاصول الثابته",
+    fixedassetsDesc: "نظام إدارة واحتساب الاهـلاكات للأصول الثابتة",
     adminPortal: "بوابة الإدارة",
     adminLogin: "تسجيل دخول المشرف",
     username: "اسم المستخدم",
@@ -90,8 +90,8 @@ const t = {
     quranDesc: "The Holy Quran for reading, listening, and contemplation with multiple recitations.",
     allowances: "Allowances For Employees",
     allowancesDesc: "Manage employee allowances",
-    depreciation: "Fixed assets",
-    depreciationDesc: "Manage fixed assets and depreciation rules",
+    fixedassets: "Fixed assets",
+    fixedassetsDesc: "Manage fixed assets and depreciation rules",
     adminPortal: "Admin Portal",
     adminLogin: "Administrator Login",
     username: "Username",
@@ -128,7 +128,7 @@ export default function App() {
     deliverySales: DEFAULT_URLS.deliverySales,
     quran: DEFAULT_URLS.quran,
     allowances: DEFAULT_URLS.allowances,
-    depreciation: DEFAULT_URLS.depreciation,
+    fixedassets: DEFAULT_URLS.fixedassets,
   });
 
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
@@ -170,7 +170,7 @@ export default function App() {
     const savedDeliverySales = localStorage.getItem('swc_url_deliverySales');
     const savedQuran = localStorage.getItem('swc_url_quran');
     const savedAllowances = localStorage.getItem('swc_url_allowances');
-    const savedDepreciation = localStorage.getItem('swc_url_depreciation');
+    const savedFixedAssets = localStorage.getItem('swc_url_fixedassets') || localStorage.getItem('swc_url_depreciation');
 
     const loadedUrls = {
       accounting: savedAccounting || DEFAULT_URLS.accounting,
@@ -178,7 +178,7 @@ export default function App() {
       deliverySales: savedDeliverySales || DEFAULT_URLS.deliverySales,
       quran: savedQuran || DEFAULT_URLS.quran,
       allowances: savedAllowances || DEFAULT_URLS.allowances,
-      depreciation: savedDepreciation || DEFAULT_URLS.depreciation,
+      fixedassets: savedFixedAssets || DEFAULT_URLS.fixedassets,
     };
 
     setUrls(loadedUrls);
@@ -208,7 +208,7 @@ export default function App() {
     localStorage.setItem('swc_url_deliverySales', editUrls.deliverySales);
     localStorage.setItem('swc_url_quran', editUrls.quran);
     localStorage.setItem('swc_url_allowances', editUrls.allowances);
-    localStorage.setItem('swc_url_depreciation', editUrls.depreciation);
+    localStorage.setItem('swc_url_fixedassets', editUrls.fixedassets);
     
     setUrls({ ...editUrls });
     setSaveSuccess(true);
@@ -253,7 +253,7 @@ export default function App() {
         return <BookOpen className={className} />;
       case 'allowances':
         return <Users className={className} />;
-      case 'depreciation':
+      case 'fixedassets':
         return <Calculator className={className} />;
       default:
         return <Zap className={className} />;
@@ -300,10 +300,10 @@ export default function App() {
       color: "from-sky-50 to-sky-100/50 text-sky-700 border-sky-200 hover:border-sky-300 hover:shadow-sky-500/10"
     },
     {
-      id: 'depreciation',
-      title: currentT.depreciation,
-      desc: currentT.depreciationDesc,
-      url: urls.depreciation,
+      id: 'fixedassets',
+      title: currentT.fixedassets,
+      desc: currentT.fixedassetsDesc,
+      url: urls.fixedassets,
       color: "from-indigo-50 to-indigo-100/50 text-indigo-700 border-indigo-200 hover:border-indigo-300 hover:shadow-indigo-500/10"
     }
   ];
