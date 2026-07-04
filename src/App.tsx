@@ -3,860 +3,749 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, FileSpreadsheet, Smartphone, Monitor, FileText } from 'lucide-react';
-import { useIsMobile } from './hooks/useIsMobile';
-import { Employee, CalculatedEmployee, ArchivedRecord } from './types';
-import { calculateEmployeeAllowances, triggerSafePrint, formatNumber } from './utils';
-import { useFormulaSettings } from './utils/formulaSettings';
-import { exportEmployeesToExcel } from './utils/exportToExcel';
-import EmployeeTable from './components/EmployeeTable';
-import EmployeeModal from './components/EmployeeModal';
-import PrintEmployeeStatement from './components/PrintEmployeeStatement';
-import PrintTable from './components/PrintTable';
-import VacationAllowanceView from './components/VacationAllowanceView';
-import LoanRequestView from './components/LoanRequestView';
-import VacationRequestView from './components/VacationRequestView';
-import EndOfServiceView from './components/EndOfServiceView';
-import ArchiveView from './components/ArchiveView';
-import SettingsView from './components/SettingsView';
-import { INITIAL_DATA } from './data';
-import { fetchEmployeesFromFirestore, saveEmployeeToFirestore, deleteEmployeeFromFirestore, isFirebaseConfigured, subscribeToEmployees, subscribeToArchivedRecords, saveArchivedRecordToFirestore, deleteArchivedRecordFromFirestore } from './firebase';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Zap, 
+  User, 
+  Lock, 
+  ArrowRight, 
+  Globe, 
+  Home, 
+  ExternalLink, 
+  Settings, 
+  ChevronDown, 
+  Check, 
+  BookOpen, 
+  Receipt, 
+  TrendingUp, 
+  Truck, 
+  Maximize2, 
+  Minimize2,
+  X,
+  Menu,
+  LogOut,
+  Users,
+  Calculator
+} from 'lucide-react';
 
-const BRANCHES = ['الكل', 'الادارة', 'المركز الرئيسي', 'فرع المعباه', 'فرع الدمام', 'فرع الاحساء'];
-
-const isTargetAhsaEmployee = (emp?: Partial<Employee>): boolean => {
-  if (!emp || !emp.name) return false;
-  const name = emp.name
-    .replace(/[أإآ]/g, 'ا')
-    .replace(/[ى]/g, 'ي')
-    .replace(/[ة]/g, 'ه')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return (
-    name.includes('التراب') ||
-    name.includes('نعمان') ||
-    name.includes('ادريس') ||
-    name.includes('كبير')
-  );
+const DEFAULT_URLS = {
+  accounting: "https://alaa-accounting-system.vercel.app",
+  dailySales: "https://daily-sales-rose.vercel.app/",
+  deliverySales: "https://dilevry-note.vercel.app/",
+  quran: "https://mushaf-ahmed-laila.vercel.app/",
+  allowances: "https://allowances-for-employees.vercel.app/",
+  depreciation: "https://depreciation-pi.vercel.app/"
 };
 
-const applyBranchCorrections = (list: Employee[]): Employee[] => {
-  return list.map(emp => {
-    let branch = emp.branch;
-    let ticketPrice = emp.ticketPrice;
-
-    if (branch === 'المركز الرئيسي 1') branch = 'المركز الرئيسي';
-    else if (branch === 'فرع المعبيلة' || branch === 'فرع المعبيله') branch = 'فرع المعباه';
-
-    if (isTargetAhsaEmployee(emp)) {
-      branch = 'فرع الاحساء';
-    }
-
-    let transferAllowance = emp.transferAllowance;
-    let calculationDate = emp.calculationDate;
-    let code = emp.code;
-    let isActive = emp.isActive;
-
-    if (emp.id === '11' || (emp.name && emp.name.includes('اماني إبراهيم يحي الفيفي'))) {
-      if (code === '11' || !code) code = '1177';
-      if (emp.code === '11' || isActive === undefined) isActive = false;
-    }
-
-    if (emp.id === '31' || code === '31' || code === '1168' || (emp.name && emp.name.includes('سوريش كومار'))) {
-      if (code === '31' || !code) code = '1168';
-      if (calculationDate === '2026-07-02') {
-        calculationDate = '2026-12-31';
-      }
-    }
-
-    if (emp.id === '36' || code === '36' || (emp.name && emp.name.includes('عبد الصمد عبد السلام'))) {
-      if (code === '36' || !code) code = '1178';
-    }
-
-    if (emp.id === '37' || code === '37' || (emp.name && emp.name.includes('صاحب جود'))) {
-      if (code === '37' || !code) code = '1179';
-    }
-
-    if ((code === '1078' || (emp.name && emp.name.includes('التراب')))) {
-      if (!ticketPrice || ticketPrice === 0) ticketPrice = 1350;
-      if (transferAllowance !== 0) transferAllowance = 0;
-    } else if ((code === '1147' || (emp.name && emp.name.includes('نعمان')))) {
-      if (!ticketPrice || ticketPrice === 0) ticketPrice = 2000;
-      if (transferAllowance !== 0) transferAllowance = 0;
-    }
-
-    if (branch !== emp.branch || ticketPrice !== emp.ticketPrice || transferAllowance !== emp.transferAllowance || calculationDate !== emp.calculationDate || code !== emp.code || isActive !== emp.isActive) {
-      return { ...emp, branch, ticketPrice, transferAllowance, calculationDate, code, isActive };
-    }
-    return emp;
-  });
+const t = {
+  ar: {
+    portalTitle: "مجموعة تطبيقات علاء",
+    portalSubtitle: "",
+    accounting: "برنامج علاء المحاسبي",
+    accountingDesc: "منظومة متكاملة لإدارة الحسابات العامة، القيود المالية، ومراقبة الميزانية بدقة عالية.",
+    dailySales: "المبيعات اليومية",
+    dailySalesDesc: "تقرير المبيعات اليومي المباشر لمتابعة حركة الفروع والإيرادات لحظة بلحظة.",
+    deliverySales: "مبيعات الدليفري",
+    deliverySalesDesc: "نظام إدارة مبيعات التوصيل، تتبع الطلبات وحسابات مناديب الدليفري.",
+    quran: "مصحف أحمد وليلى",
+    quranDesc: "المصحف الشريف الميسر للقراءة والتدبر برسم المصحف وتلاوات متعددة.",
+    allowances: "مخصصات الموظفين",
+    allowancesDesc: "إدارة مخصصات الموظفين",
+    depreciation: "الاهلاكات",
+    depreciationDesc: "نظام إدارة واحتساب الاهـلاكات للأصول الثابتة",
+    adminPortal: "بوابة الإدارة",
+    adminLogin: "تسجيل دخول المشرف",
+    username: "اسم المستخدم",
+    password: "كلمة المرور",
+    loginError: "اسم المستخدم أو كلمة المرور غير صحيحة",
+    loginBtn: "دخول",
+    configMode: "تهيئة وإعداد روابط الأنظمة",
+    saveBtn: "حفظ وتحديث الروابط",
+    backBtn: "رجوع",
+    homeBtn: "الرئيسية",
+    fullscreenBtn: "ملء الشاشة",
+    exitFullscreenBtn: "استعادة الواجهة",
+    language: "English",
+    loading: "جارٍ تهيئة الأنظمة والروابط...",
+    successSave: "تم تحديث روابط الأنظمة وحفظها بنجاح!",
+    openNewTab: "فتح في علامة تبويب جديدة",
+    switchApp: "الانتقال السريع",
+    closeBtn: "إغلاق",
+    chooseApp: "اختر النظام المطلوب تشغيله:",
+    activeApp: "التطبيق النشط حالياً:",
+    exitPortal: "العودة",
+    floatingMenuTitle: "التحكم السريع"
+  },
+  en: {
+    portalTitle: "Alaa Applications Suite",
+    portalSubtitle: "",
+    accounting: "Alaa Accounting System",
+    accountingDesc: "An integrated system to manage general ledger, financial entries, and budget control.",
+    dailySales: "Daily Sales",
+    dailySalesDesc: "Direct daily sales report to monitor branches' movements and revenues in real-time.",
+    deliverySales: "Delivery Note",
+    deliverySalesDesc: "System for managing delivery sales, tracking orders, and delivery agents' accounts.",
+    quran: "Mushaf Ahmed & Laila",
+    quranDesc: "The Holy Quran for reading, listening, and contemplation with multiple recitations.",
+    allowances: "Allowances For Employees",
+    allowancesDesc: "Manage employee allowances",
+    depreciation: "Fixed assets",
+    depreciationDesc: "Manage fixed assets and depreciation rules",
+    adminPortal: "Admin Portal",
+    adminLogin: "Administrator Login",
+    username: "Username",
+    password: "Password",
+    loginError: "Incorrect username or password",
+    loginBtn: "Login",
+    configMode: "Configure System URLs",
+    saveBtn: "Save & Update URLs",
+    backBtn: "Back",
+    homeBtn: "Home",
+    fullscreenBtn: "Fullscreen",
+    exitFullscreenBtn: "Exit Fullscreen",
+    language: "العربية",
+    loading: "Initializing systems and links...",
+    successSave: "System links updated and saved successfully!",
+    openNewTab: "Open in new tab",
+    switchApp: "Quick Switch",
+    closeBtn: "Close",
+    chooseApp: "Choose system to launch:",
+    activeApp: "Currently active app:",
+    exitPortal: "Return",
+    floatingMenuTitle: "Quick Control"
+  }
 };
 
 export default function App() {
-  const isMobile = useIsMobile(768);
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>(isMobile ? 'cards' : 'table');
-
-  useEffect(() => {
-    setViewMode(isMobile ? 'cards' : 'table');
-  }, [isMobile]);
-
-  const [employees, setEmployees] = useState<Employee[]>(() => applyBranchCorrections(INITIAL_DATA));
-  const [selectedBranch, setSelectedBranch] = useState<string>('الكل');
-  const [vacationDurationFilter, setVacationDurationFilter] = useState<number>(0);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [globalCalcDate, setGlobalCalcDate] = useState<string>(() => `${new Date().getFullYear()}-12-31`);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
-  const [employeeToPrint, setEmployeeToPrint] = useState<CalculatedEmployee | null>(null);
-  const [printMode, setPrintMode] = useState<'none' | 'employee' | 'table'>('none');
-  const [currentView, setCurrentView] = useState<'end-of-service' | 'end-of-service-print' | 'vacation-allowance' | 'vacation-request' | 'loan-request' | 'archive' | 'settings'>('end-of-service');
-  const [archivedRecords, setArchivedRecords] = useState<ArchivedRecord[]>(() => {
-    try {
-      const local = localStorage.getItem('app_archived_records_v1');
-      if (local) return JSON.parse(local);
-    } catch {}
-    return [];
+  const [isLoading, setIsLoading] = useState(false);
+  const [lang, setLang] = useState<'ar' | 'en'>('en');
+  
+  // URLs configuration
+  const [urls, setUrls] = useState({
+    accounting: DEFAULT_URLS.accounting,
+    dailySales: DEFAULT_URLS.dailySales,
+    deliverySales: DEFAULT_URLS.deliverySales,
+    quran: DEFAULT_URLS.quran,
+    allowances: DEFAULT_URLS.allowances,
+    depreciation: DEFAULT_URLS.depreciation,
   });
 
-  const [isPasswordUnlocked, setIsPasswordUnlocked] = useState<boolean>(false);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false);
-  const [enteredPassword, setEnteredPassword] = useState<string>('');
-  const [passwordError, setPasswordError] = useState<string>('');
-  const [pendingCallback, setPendingCallback] = useState<(() => void) | null>(null);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  
+  // Editing state
+  const [editUrls, setEditUrls] = useState({ ...urls });
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const { settings: formulaSettings } = useFormulaSettings();
-
-  const [confirmDialog, setConfirmDialog] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    confirmText: string;
-    onConfirm: () => void;
-    isDestructive?: boolean;
-  } | null>(null);
-
-  const [notification, setNotification] = useState<string | null>(null);
+  // Layout controls
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showQuickSwitcher, setShowQuickSwitcher] = useState(false);
+  const [showFloatingMenu, setShowFloatingMenu] = useState(false);
+  const [menuAlign, setMenuAlign] = useState<'left' | 'right'>('right');
+  const [menuValign, setMenuValign] = useState<'top' | 'bottom'>('bottom');
+  const [loadedApps, setLoadedApps] = useState<Record<string, boolean>>({});
+  const dragAreaRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => setNotification(null), 4000);
-      return () => clearTimeout(timer);
+    if (selectedAppId) {
+      setLoadedApps(prev => ({ ...prev, [selectedAppId]: true }));
     }
-  }, [notification]);
-
-  const requirePasswordAuth = (callback: () => void) => {
-    if (isPasswordUnlocked) {
-      callback();
-    } else {
-      setPendingCallback(() => callback);
-      setEnteredPassword('');
-      setPasswordError('');
-      setIsPasswordModalOpen(true);
-    }
-  };
+  }, [selectedAppId]);
 
   useEffect(() => {
-    const handleAfterPrint = () => setPrintMode('none');
-    window.addEventListener('afterprint', handleAfterPrint);
-    return () => window.removeEventListener('afterprint', handleAfterPrint);
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('app_archived_records_v1', JSON.stringify(archivedRecords));
-    } catch {}
-  }, [archivedRecords]);
-
-  useEffect(() => {
-    if (!isFirebaseConfigured()) return;
-    let initialSnapshotReceived = false;
-
-    const unsub = subscribeToArchivedRecords((firestoreRecords) => {
-      if (!firestoreRecords) return;
-      const localData = localStorage.getItem('app_archived_records_v1');
-      let localRecords: ArchivedRecord[] = [];
-      if (localData) {
-        try {
-          const parsed = JSON.parse(localData);
-          if (Array.isArray(parsed)) localRecords = parsed;
-        } catch {}
-      }
-
-      if (!initialSnapshotReceived) {
-        initialSnapshotReceived = true;
-        if (firestoreRecords.length === 0 && localRecords.length > 0) {
-          localRecords.forEach(rec => saveArchivedRecordToFirestore(rec));
-          setArchivedRecords(localRecords);
-          return;
-        }
-      }
-
-      const sorted = [...firestoreRecords].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setArchivedRecords(sorted);
-    });
-    return () => { if (unsub) unsub(); };
-  }, []);
-
-  useEffect(() => {
-    if (employees && employees.length > 0) {
-      try {
-        localStorage.setItem('app_employees_data_v1', JSON.stringify(employees));
-      } catch (e) {
-        // ignore storage errors
-      }
-    }
-  }, [employees]);
-
-  useEffect(() => {
-    const localData = localStorage.getItem('app_employees_data_v1');
-    let loadedFromLocal = false;
-    if (localData) {
-      try {
-        const parsed = JSON.parse(localData);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setEmployees(applyBranchCorrections(parsed));
-          loadedFromLocal = true;
-        }
-      } catch (e) {
-        // ignore parse error
-      }
+    // Load language preference
+    const savedLang = localStorage.getItem('swc_portal_lang');
+    if (savedLang === 'ar' || savedLang === 'en') {
+      setLang(savedLang);
     }
 
-    if (!isFirebaseConfigured()) {
-      if (!loadedFromLocal) {
-        setEmployees(applyBranchCorrections(INITIAL_DATA));
-      }
-      return;
-    }
+    // Load URLs configuration from localStorage
+    const savedAccounting = localStorage.getItem('swc_url_accounting');
+    const savedDailySales = localStorage.getItem('swc_url_dailySales');
+    const savedDeliverySales = localStorage.getItem('swc_url_deliverySales');
+    const savedQuran = localStorage.getItem('swc_url_quran');
+    const savedAllowances = localStorage.getItem('swc_url_allowances');
+    const savedDepreciation = localStorage.getItem('swc_url_depreciation');
 
-    // Real-time synchronization from Firestore
-    const unsubscribe = subscribeToEmployees((data) => {
-      if (data && data.length > 0) {
-        const corrected = applyBranchCorrections(data);
-        corrected.forEach((emp, idx) => {
-          if (JSON.stringify(emp) !== JSON.stringify(data[idx])) {
-            saveEmployeeToFirestore(emp);
-          }
-        });
-        corrected.sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
-        setEmployees(corrected);
-      } else if (data && data.length === 0) {
-        const initialCorrected = loadedFromLocal && localData ? applyBranchCorrections(JSON.parse(localData)) : applyBranchCorrections(INITIAL_DATA);
-        setEmployees(initialCorrected);
-        for (const emp of initialCorrected) {
-          saveEmployeeToFirestore(emp);
-        }
-      }
-    });
-
-    return () => {
-      if (unsubscribe) unsubscribe();
+    const loadedUrls = {
+      accounting: savedAccounting || DEFAULT_URLS.accounting,
+      dailySales: savedDailySales || DEFAULT_URLS.dailySales,
+      deliverySales: savedDeliverySales || DEFAULT_URLS.deliverySales,
+      quran: savedQuran || DEFAULT_URLS.quran,
+      allowances: savedAllowances || DEFAULT_URLS.allowances,
+      depreciation: savedDepreciation || DEFAULT_URLS.depreciation,
     };
+
+    setUrls(loadedUrls);
+    setEditUrls(loadedUrls);
   }, []);
 
-  const handleUpdateEmployeeField = (id: string, field: keyof Employee, value: any) => {
-    requirePasswordAuth(() => {
-      setEmployees(prev => {
-        const updated = prev.map(emp => emp.id === id ? { ...emp, [field]: value } : emp);
-        const corrected = applyBranchCorrections(updated);
-        const empToSave = corrected.find(e => e.id === id);
-        if (empToSave) saveEmployeeToFirestore(empToSave);
-        return corrected;
-      });
-    });
+  const toggleLanguage = () => {
+    const nextLang = lang === 'ar' ? 'en' : 'ar';
+    setLang(nextLang);
+    localStorage.setItem('swc_portal_lang', nextLang);
   };
 
-  const calculatedEmployees = useMemo(() => {
-    return applyBranchCorrections(employees).map(emp => {
-      const targetDate = globalCalcDate || emp.calculationDate;
-      return calculateEmployeeAllowances({
-        ...emp,
-        calculationDate: targetDate
-      });
-    });
-  }, [employees, globalCalcDate, formulaSettings]);
-
-  const filteredEmployees = useMemo(() => {
-    let list = calculatedEmployees;
-    if (selectedBranch !== 'الكل') {
-      list = list.filter(emp => emp.branch === selectedBranch);
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (username === 'alaa' && password === '0120301012') {
+      setIsAdminAuthenticated(true);
+      setEditUrls({ ...urls });
+      setLoginError('');
+    } else {
+      setLoginError(t[lang].loginError);
     }
-    if (vacationDurationFilter > 0) {
-      list = list.filter(emp => emp.durationSinceLastVacationYears >= vacationDurationFilter - 0.005);
+  };
+
+  const handleSaveUrls = () => {
+    localStorage.setItem('swc_url_accounting', editUrls.accounting);
+    localStorage.setItem('swc_url_dailySales', editUrls.dailySales);
+    localStorage.setItem('swc_url_deliverySales', editUrls.deliverySales);
+    localStorage.setItem('swc_url_quran', editUrls.quran);
+    localStorage.setItem('swc_url_allowances', editUrls.allowances);
+    localStorage.setItem('swc_url_depreciation', editUrls.depreciation);
+    
+    setUrls({ ...editUrls });
+    setSaveSuccess(true);
+    setTimeout(() => {
+      setSaveSuccess(false);
+      setIsAdminAuthenticated(false);
+      setShowAdminLogin(false);
+      setUsername('');
+      setPassword('');
+    }, 1500);
+  };
+
+  const closeAdminMenu = () => {
+    setShowAdminLogin(false);
+    setIsAdminAuthenticated(false);
+    setUsername('');
+    setPassword('');
+    setLoginError('');
+  };
+
+  const handleSelectApp = (id: string | null) => {
+    setSelectedAppId(id);
+    setShowQuickSwitcher(false);
+    setShowFloatingMenu(false);
+  };
+
+  const handleExitPortal = () => {
+    handleSelectApp(null);
+    setShowFloatingMenu(false);
+  };
+
+  // Render proper icon based on app identifier
+  const renderAppIcon = (id: string, className: string = "w-6 h-6") => {
+    switch (id) {
+      case 'accounting':
+        return <Receipt className={className} />;
+      case 'dailySales':
+        return <TrendingUp className={className} />;
+      case 'deliverySales':
+        return <Truck className={className} />;
+      case 'quran':
+        return <BookOpen className={className} />;
+      case 'allowances':
+        return <Users className={className} />;
+      case 'depreciation':
+        return <Calculator className={className} />;
+      default:
+        return <Zap className={className} />;
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
-      list = list.filter(emp =>
-        (emp.name && emp.name.toLowerCase().includes(q)) ||
-        (emp.code && emp.code.toString().toLowerCase().includes(q)) ||
-        (emp.jobTitle && emp.jobTitle.toLowerCase().includes(q))
-      );
+  };
+
+  const currentT = t[lang];
+  const isRTL = lang === 'ar';
+
+  const appsList = [
+    {
+      id: 'accounting',
+      title: currentT.accounting,
+      desc: currentT.accountingDesc,
+      url: urls.accounting,
+      color: "from-blue-50 to-blue-100/50 text-blue-700 border-blue-200 hover:border-blue-300 hover:shadow-blue-500/10"
+    },
+    {
+      id: 'dailySales',
+      title: currentT.dailySales,
+      desc: currentT.dailySalesDesc,
+      url: urls.dailySales,
+      color: "from-emerald-50 to-emerald-100/50 text-emerald-700 border-emerald-200 hover:border-emerald-300 hover:shadow-emerald-500/10"
+    },
+    {
+      id: 'deliverySales',
+      title: currentT.deliverySales,
+      desc: currentT.deliverySalesDesc,
+      url: urls.deliverySales,
+      color: "from-amber-50 to-amber-100/50 text-amber-700 border-amber-200 hover:border-amber-300 hover:shadow-amber-500/10"
+    },
+    {
+      id: 'quran',
+      title: currentT.quran,
+      desc: currentT.quranDesc,
+      url: urls.quran,
+      color: "from-purple-50 to-purple-100/50 text-purple-700 border-purple-200 hover:border-purple-300 hover:shadow-purple-500/10"
+    },
+    {
+      id: 'allowances',
+      title: currentT.allowances,
+      desc: currentT.allowancesDesc,
+      url: urls.allowances,
+      color: "from-sky-50 to-sky-100/50 text-sky-700 border-sky-200 hover:border-sky-300 hover:shadow-sky-500/10"
+    },
+    {
+      id: 'depreciation',
+      title: currentT.depreciation,
+      desc: currentT.depreciationDesc,
+      url: urls.depreciation,
+      color: "from-indigo-50 to-indigo-100/50 text-indigo-700 border-indigo-200 hover:border-indigo-300 hover:shadow-indigo-500/10"
     }
-    return list;
-  }, [calculatedEmployees, selectedBranch, vacationDurationFilter, searchQuery]);
-
-  const activeFilteredEmployees = useMemo(() => {
-    return filteredEmployees.filter(emp => emp.isActive !== false);
-  }, [filteredEmployees]);
-
-  const handleSaveEmployee = async (empData: Employee | Omit<Employee, 'id' | 'sequenceNumber'>) => {
-    requirePasswordAuth(async () => {
-      let savedEmp: Employee;
-      const isAhsaEmployee = isTargetAhsaEmployee(empData);
-      const branch = isAhsaEmployee ? 'فرع الاحساء' : empData.branch;
-
-      if ('id' in empData) {
-        savedEmp = { ...(empData as Employee), branch };
-        setEmployees(prev => applyBranchCorrections(prev.map(emp => emp.id === savedEmp.id ? savedEmp : emp)));
-      } else {
-        savedEmp = {
-          ...empData,
-          branch,
-          id: crypto.randomUUID(),
-          sequenceNumber: employees.length > 0 ? Math.max(...employees.map(e => e.sequenceNumber)) + 1 : 1,
-        };
-        setEmployees(prev => applyBranchCorrections([...prev, savedEmp]));
-      }
-      await saveEmployeeToFirestore(savedEmp);
-    });
-  };
-
-  const openAddModal = () => {
-    requirePasswordAuth(() => {
-      setEmployeeToEdit(null);
-      setIsModalOpen(true);
-    });
-  };
-
-  const handleEdit = (employee: Employee) => {
-    requirePasswordAuth(() => {
-      setEmployeeToEdit(employee);
-      setIsModalOpen(true);
-    });
-  };
-
-  const handleDelete = (id: string) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'تأكيد حذف الموظف',
-      message: 'هل أنت متأكد من رغبتك في حذف بيانات هذا الموظف؟',
-      confirmText: 'نعم، تأكيد الحذف',
-      isDestructive: true,
-      onConfirm: () => {
-        requirePasswordAuth(async () => {
-          setEmployees(prev => prev.filter(emp => emp.id !== id));
-          await deleteEmployeeFromFirestore(id);
-          setNotification('تم حذف بيانات الموظف بنجاح');
-        });
-      }
-    });
-  };
-
-  const handlePrint = (employee: CalculatedEmployee) => {
-    setEmployeeToPrint(employee);
-    setPrintMode('employee');
-    triggerSafePrint();
-  };
-
-  const handlePrintTable = () => {
-    setPrintMode('table');
-    triggerSafePrint();
-  };
-
-  const handleExportExcel = () => {
-    exportEmployeesToExcel(filteredEmployees, selectedBranch);
-  };
-
-  const handleExportPDF = async () => {
-    setPrintMode('table');
-    setTimeout(async () => {
-      const element = document.getElementById('pdf-table-container');
-      if (element) {
-        const originalClass = element.className;
-        const originalStyle = element.getAttribute('style') || '';
-        
-        // Make it visible temporarily for html2canvas with fixed A4 landscape width
-        element.className = 'bg-white text-black';
-        element.setAttribute('style', 'display: block !important; width: 280mm; padding: 2mm; font-size: 8px; box-sizing: border-box; background: white;');
-        
-        const opt = {
-          margin: 5,
-          filename: 'مخصصات_الموظفين.pdf',
-          image: { type: 'jpeg', quality: 1 },
-          html2canvas: { scale: 2, useCORS: true, windowWidth: 1122 },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-        };
-        
-        try {
-          const html2pdfModule = await import('html2pdf.js');
-          const html2pdf = (html2pdfModule.default || html2pdfModule) as any;
-          await html2pdf().from(element).set(opt).save();
-        } catch (error) {
-          console.error("PDF generation failed:", error);
-        } finally {
-          element.className = originalClass;
-          element.setAttribute('style', originalStyle);
-          setPrintMode('none');
-        }
-      }
-    }, 100);
-  };
-
-  const handleArchiveRecord = (record: Omit<ArchivedRecord, 'id' | 'date'>) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'تأكيد أرشفة النموذج',
-      message: 'هل ترغب في أرشفة وحفظ نسخة من هذا النموذج في صفحة الأرشيف؟',
-      confirmText: 'نعم، تأكيد الأرشفة',
-      isDestructive: false,
-      onConfirm: () => {
-        const newRecord: ArchivedRecord = {
-          ...record,
-          id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 4),
-          date: new Date().toISOString()
-        };
-        setArchivedRecords(prev => [newRecord, ...prev]);
-        saveArchivedRecordToFirestore(newRecord);
-        setNotification('تم أرشفة وحفظ النموذج بنجاح في صفحة الأرشيف!');
-      }
-    });
-  };
-
-  const handleDeleteArchivedRecord = (id: string) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'تأكيد حذف النموذج من الأرشيف',
-      message: 'هل أنت متأكد من رغبتك في حذف هذا النموذج من الأرشيف نهائياً؟',
-      confirmText: 'نعم، تأكيد الحذف',
-      isDestructive: true,
-      onConfirm: () => {
-        requirePasswordAuth(() => {
-          setArchivedRecords(prev => prev.filter(r => r.id !== id));
-          deleteArchivedRecordFromFirestore(id);
-          setNotification('تم حذف النموذج من الأرشيف بنجاح');
-        });
-      }
-    });
-  };
+  ];
 
   return (
-    <div dir="rtl" className={`min-h-screen ${['end-of-service-print', 'vacation-allowance', 'vacation-request', 'loan-request'].includes(currentView) ? 'bg-white' : 'bg-slate-50'} flex flex-col font-sans`}>
-      {printMode === 'employee' && <PrintEmployeeStatement employee={employeeToPrint} />}
-      {printMode === 'table' && <PrintTable employees={activeFilteredEmployees} branchName={selectedBranch} calcDate={globalCalcDate} />}
+    <div 
+      className="fixed inset-0 w-full h-full bg-slate-50 overflow-hidden flex flex-col font-sans select-none text-slate-800"
+      dir={isRTL ? 'rtl' : 'ltr'}
+    >
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <motion.div
+            key="splash"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]"
+          >
+            <div className="relative flex flex-col items-center max-w-sm px-6 text-center">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center mb-6 shadow-lg shadow-blue-900/20"
+              >
+                <Zap className="w-10 h-10 text-white fill-current" />
+              </motion.div>
 
-      <div className={`${printMode !== 'none' ? 'no-print' : ''} flex-grow flex flex-col min-h-screen`}>
-        <header className="no-print sticky top-0 z-40 bg-white shadow-sm shrink-0">
-          <div className="bg-white border-b border-slate-200 px-3 sm:px-8 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 sm:gap-6 overflow-x-auto scrollbar-none py-1 sm:py-0">
-            <div className="flex items-center gap-3 sm:gap-6 shrink-0">
-              <button
-                onClick={() => setCurrentView('end-of-service')}
-                className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'end-of-service' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+              <motion.h1
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-white font-semibold text-2xl mb-2 tracking-tight font-sans"
               >
-                المخصصات
-              </button>
-              <button
-                onClick={() => setCurrentView('end-of-service-print')}
-                className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'end-of-service-print' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                مخصص نهاية الخدمة
-              </button>
-              <button
-                onClick={() => setCurrentView('vacation-allowance')}
-                className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'vacation-allowance' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                مخصص الإجازة
-              </button>
-              <button
-                onClick={() => setCurrentView('vacation-request')}
-                className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'vacation-request' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                طلب إجازة
-              </button>
-              <button
-                onClick={() => setCurrentView('loan-request')}
-                className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'loan-request' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                طلب سلفة
-              </button>
-              <button
-                onClick={() => setCurrentView('archive')}
-                className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'archive' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                الأرشيف
-              </button>
-              <button
-                onClick={() => setCurrentView('settings')}
-                className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'settings' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-              >
-                الإعدادات
-              </button>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 py-1.5 sm:py-0 my-auto">
-              <button 
-                onClick={openAddModal}
-                className="bg-indigo-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 hover:bg-indigo-700 transition-colors shadow-sm shrink-0"
-              >
-                <span className="text-base font-bold leading-none">+</span>
-                <span>إضافة موظف</span>
-              </button>
-              <button
-                onClick={() => {
-                  if (isPasswordUnlocked) {
-                    setIsPasswordUnlocked(false);
-                  } else {
-                    requirePasswordAuth(() => {});
-                  }
-                }}
-                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border ${
-                  isPasswordUnlocked 
-                    ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100' 
-                    : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
-                }`}
-                title={isPasswordUnlocked ? 'انقر لقفل التعديلات بكلمة سر' : 'التعديل محمي بكلمة سر'}
-              >
-                <span>{isPasswordUnlocked ? 'التعديل مفتوح 🔓 (قفل)' : 'حماية التعديل 🔒'}</span>
-              </button>
-            </div>
-          </div>
-        </header>
+                {currentT.portalTitle}
+              </motion.h1>
 
-        <main className={`flex-grow flex flex-col w-full mx-auto ${currentView === 'end-of-service' ? 'p-1.5 sm:p-2 gap-2 max-w-full' : ['end-of-service-print', 'vacation-allowance', 'vacation-request', 'loan-request'].includes(currentView) ? 'p-0 gap-0 w-full max-w-full' : 'p-3 sm:p-6 gap-4 sm:gap-6 max-w-[1920px]'}`}>
-          {currentView === 'end-of-service' ? (
-            <>
-              <div className="no-print grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5 shrink-0 w-full">
-            <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-              <p className="text-slate-500 text-xs sm:text-sm mb-1 font-semibold">إجمالي الموظفين</p>
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-800">{activeFilteredEmployees.length} <span className="text-slate-400 text-xs sm:text-sm font-normal">موظف</span></h3>
-            </div>
-            <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-              <p className="text-indigo-600 text-xs sm:text-sm mb-1 font-bold">إجمالي الراتب</p>
-              <h3 className="text-lg sm:text-2xl font-bold text-slate-800 underline decoration-indigo-200">
-                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + emp.totalSalary, 0))} <span className="text-slate-400 text-xs sm:text-sm font-normal">ر.س</span>
-              </h3>
-            </div>
-            <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-              <p className="text-indigo-600 text-xs sm:text-sm mb-1 font-bold">مخصص الإجازات</p>
-              <h3 className="text-lg sm:text-2xl font-bold text-slate-800 underline decoration-indigo-200">
-                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + emp.vacationAllowance, 0))} <span className="text-slate-400 text-xs sm:text-sm font-normal">ر.س</span>
-              </h3>
-            </div>
-            <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-              <p className="text-amber-600 text-xs sm:text-sm mb-1 font-bold">مخصص التذاكر</p>
-              <h3 className="text-lg sm:text-2xl font-bold text-slate-800 underline decoration-amber-200">
-                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + emp.ticketAllowance, 0))} <span className="text-slate-400 text-xs sm:text-sm font-normal">ر.س</span>
-              </h3>
-            </div>
-            <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-              <p className="text-emerald-600 text-xs sm:text-sm mb-1 font-bold">المدفوع من نهاية الخدمة</p>
-              <h3 className="text-lg sm:text-2xl font-bold text-slate-800 underline decoration-emerald-200">
-                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + emp.paidEndOfService, 0))} <span className="text-slate-400 text-xs sm:text-sm font-normal">ر.س</span>
-              </h3>
-            </div>
-            <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-              <p className="text-rose-600 text-xs sm:text-sm mb-1 font-bold">نهاية الخدمة المستحقة</p>
-              <h3 className="text-lg sm:text-2xl font-bold text-slate-800 underline decoration-rose-200">
-                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + emp.dueEndOfService, 0))} <span className="text-slate-400 text-xs sm:text-sm font-normal">ر.س</span>
-              </h3>
-            </div>
-          </div>
+              <motion.p
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-zinc-500 text-sm mb-12 leading-relaxed"
+              >
+                {currentT.loading}
+              </motion.p>
 
-          <div className="no-print bg-white p-2 sm:p-2.5 rounded-xl border border-slate-200 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2 shadow-sm shrink-0 w-full">
-            <div className="flex-1 w-full flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 sm:gap-4">
-              <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 w-full xl:w-auto">
-                {BRANCHES.map(branch => (
-                  <button
-                    key={branch}
-                    onClick={() => setSelectedBranch(branch)}
-                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                      selectedBranch === branch 
-                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' 
-                        : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    {branch}
-                  </button>
-                ))}
-              </div>
-              <div className="flex flex-wrap items-center justify-between sm:justify-center gap-2 sm:gap-3 w-full xl:w-auto">
-                <div className="flex items-center gap-1.5 sm:gap-2 bg-indigo-50/80 border border-indigo-200 px-2.5 sm:px-3 py-1.5 rounded-lg shrink-0 shadow-sm">
-                  <span className="text-[11px] sm:text-xs font-bold text-indigo-900 whitespace-nowrap">تاريخ الاحتساب:</span>
-                  <input
-                    type="date" lang="en-GB"
-                    value={globalCalcDate}
-                    onChange={(e) => setGlobalCalcDate(e.target.value)}
-                    onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}
-                    className="bg-transparent text-xs sm:text-sm font-extrabold text-indigo-600 outline-none cursor-pointer"
-                  />
-                </div>
-                <div className="flex items-center bg-amber-50/80 border border-amber-200 px-2.5 sm:px-3 py-1.5 rounded-lg shrink-0 shadow-sm">
-                  <select
-                    value={vacationDurationFilter}
-                    onChange={(e) => setVacationDurationFilter(Number(e.target.value))}
-                    className="bg-transparent text-xs sm:text-sm font-extrabold text-amber-900 outline-none cursor-pointer"
-                  >
-                    <option value={0}>الكل</option>
-                    <option value={1}>اكثر من سنه</option>
-                    <option value={2}>اكثر من سنتين</option>
-                    <option value={3}>اكثر من 3 سنوات</option>
-                    <option value={4}>اكثر من 4 سنوات</option>
-                    <option value={5}>اكثر من 5 سنوات</option>
-                  </select>
-                </div>
-                <div className="relative w-full sm:w-56 flex-1 shrink-0">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="بحث باسم الموظف أو الكود..."
-                    className="w-full pr-9 pl-8 py-2 border border-slate-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50 placeholder-slate-400"
-                  />
-                  <svg className="w-4 h-4 text-slate-400 absolute right-3 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                  </svg>
-                  {searchQuery && (
-                    <button 
-                      onClick={() => setSearchQuery('')}
-                      className="absolute left-2.5 top-2.5 text-slate-400 hover:text-slate-600 font-bold text-xs bg-slate-200 hover:bg-slate-300 rounded-full w-5 h-5 flex items-center justify-center"
-                      title="مسح البحث"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 shadow-sm shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setViewMode('cards')}
-                      title="بطاقات الهاتف"
-                      className={`p-1.5 sm:p-2 rounded-md transition-all flex items-center justify-center ${
-                        viewMode === 'cards'
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'text-slate-600 hover:bg-slate-200/60'
-                      }`}
-                    >
-                      <Smartphone className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setViewMode('table')}
-                      title="جدول التفاصيل"
-                      className={`p-1.5 sm:p-2 rounded-md transition-all flex items-center justify-center ${
-                        viewMode === 'table'
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'text-slate-600 hover:bg-slate-200/60'
-                      }`}
-                    >
-                      <Monitor className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={handleExportPDF}
-                    title="تصدير إلى PDF"
-                    className="bg-red-600 text-white p-2 sm:p-2.5 rounded-lg flex items-center justify-center hover:bg-red-700 transition-colors shadow-sm shrink-0"
-                  >
-                    <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-                  <button
-                    onClick={handleExportExcel}
-                    title="تصدير للإكسيل"
-                    className="bg-emerald-700 text-white p-2 sm:p-2.5 rounded-lg flex items-center justify-center hover:bg-emerald-800 transition-colors shadow-sm shrink-0"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-                  <button
-                    onClick={handlePrintTable}
-                    title="طباعة الجدول"
-                    className="bg-emerald-600 text-white p-2 sm:p-2.5 rounded-lg flex items-center justify-center hover:bg-emerald-700 transition-colors shadow-sm shrink-0"
-                  >
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-              <div className="flex flex-col flex-grow w-full relative">
-                <EmployeeTable 
-                  employees={filteredEmployees} 
-                  viewMode={viewMode}
-                  onPrint={handlePrint}
-                  onUpdateEmployee={handleUpdateEmployeeField}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
+              <div className="w-24 h-1 rounded-full bg-zinc-800 overflow-hidden">
+                <motion.div
+                  initial={{ x: "-100%" }}
+                  animate={{ x: "0%" }}
+                  transition={{
+                    duration: 1.5,
+                    ease: "easeInOut",
+                    repeat: Infinity,
+                  }}
+                  className="w-full h-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
                 />
               </div>
-            </>
-          ) : currentView === 'end-of-service-print' ? (
-            <EndOfServiceView employees={activeFilteredEmployees} onArchive={handleArchiveRecord} />
-          ) : currentView === 'vacation-allowance' ? (
-            <VacationAllowanceView employees={activeFilteredEmployees} onArchive={handleArchiveRecord} />
-          ) : currentView === 'loan-request' ? (
-            <LoanRequestView employees={activeFilteredEmployees} onArchive={handleArchiveRecord} />
-          ) : currentView === 'vacation-request' ? (
-            <VacationRequestView employees={activeFilteredEmployees} onArchive={handleArchiveRecord} />
-          ) : currentView === 'archive' ? (
-            <ArchiveView records={archivedRecords} employees={employees} onDeleteRecord={handleDeleteArchivedRecord} />
-          ) : currentView === 'settings' ? (
-            <SettingsView
-              employees={employees}
-              onRestoreBackup={(restored) => {
-                requirePasswordAuth(async () => {
-                  const corrected = applyBranchCorrections(restored);
-                  setEmployees(corrected);
-                  for (const emp of corrected) {
-                    await saveEmployeeToFirestore(emp);
-                  }
-                });
-              }}
-            />
-          ) : null}
-        </main>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="app-portal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="w-full h-full flex flex-col"
+          >
+            {selectedAppId ? (
+              // Active application screen with direct iframe and a draggable circular floating switcher menu
+              <div className="w-full h-full flex flex-col relative bg-white">
+                {appsList.map((app) => (
+                  loadedApps[app.id] && (
+                    <iframe
+                      key={app.id}
+                      src={urls[app.id as keyof typeof urls]}
+                      style={{ display: selectedAppId === app.id ? 'block' : 'none' }}
+                      className="w-full h-full flex-1 border-none"
+                      title={app.title}
+                      referrerPolicy="no-referrer"
+                      allow="camera; microphone; geolocation"
+                    />
+                  )
+                ))}
 
-        <EmployeeModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-          onSave={handleSaveEmployee}
-          branches={BRANCHES.filter(b => b !== 'الكل')}
-          employeeToEdit={employeeToEdit}
-        />
-
-        {isPasswordModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-200">
-              <div className="bg-slate-800 text-white p-5 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xl">🔒</span>
-                  <h3 className="font-bold text-base">مصادقة أمنية للتعديل</h3>
-                </div>
-                <button 
-                  onClick={() => setIsPasswordModalOpen(false)}
-                  className="text-slate-400 hover:text-white transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <form 
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (enteredPassword.trim() === '0120301012') {
-                    setIsPasswordUnlocked(true);
-                    setIsPasswordModalOpen(false);
-                    setPasswordError('');
-                    if (pendingCallback) {
-                      pendingCallback();
-                      setPendingCallback(null);
-                    }
-                  } else {
-                    setPasswordError('كلمة السر غير صحيحة، يرجى إدخال 0120301012 للمتابعة.');
-                  }
-                }}
-                className="p-6 space-y-4"
-              >
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  يُمنع منعاً باتاً تعديل أو إضافة أو حذف بيانات أي موظف إلا بعد إدخال كلمة السر المصرح بها.
-                </p>
-                
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">كلمة السر الصلاحية:</label>
-                  <input 
-                    type="password"
-                    autoFocus
-                    value={enteredPassword}
-                    onChange={(e) => {
-                      setEnteredPassword(e.target.value);
-                      setPasswordError('');
+                {/* Draggable Circular Floating Menu Area */}
+                <div ref={dragAreaRef} className="fixed inset-0 pointer-events-none z-50">
+                  <motion.div
+                    drag
+                    dragConstraints={dragAreaRef}
+                    dragElastic={0.05}
+                    dragMomentum={false}
+                    onDrag={(event, info) => {
+                      const screenWidth = window.innerWidth;
+                      const screenHeight = window.innerHeight;
+                      if (info.point.x < screenWidth / 2) {
+                        setMenuAlign('left');
+                      } else {
+                        setMenuAlign('right');
+                      }
+                      if (info.point.y < screenHeight / 2) {
+                        setMenuValign('top');
+                      } else {
+                        setMenuValign('bottom');
+                      }
                     }}
-                    placeholder="أدخل كلمة السر..."
-                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-center tracking-widest text-lg bg-slate-50"
-                  />
-                  {passwordError && (
-                    <p className="text-xs text-rose-600 font-semibold mt-2 flex items-center gap-1">
-                      <span>⚠️</span> {passwordError}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-bold text-sm transition-colors shadow-sm"
+                    className="absolute bottom-10 right-10 pointer-events-auto"
                   >
-                    تأكيد ومتابعة
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsPasswordModalOpen(false)}
-                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-sm transition-colors"
-                  >
-                    إلغاء
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+                    <div className="relative">
+                      {/* Floating Trigger Button */}
+                      <button
+                        onClick={() => setShowFloatingMenu(!showFloatingMenu)}
+                        className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.5)] border border-blue-400/20 active:scale-95 transition-all select-none cursor-grab active:cursor-grabbing"
+                      >
+                        <Menu className="w-6 h-6" />
+                      </button>
 
-        {confirmDialog && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-200">
-              <div className={`p-5 flex items-center justify-between text-white ${confirmDialog.isDestructive ? 'bg-rose-600' : 'bg-indigo-600'}`}>
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xl">{confirmDialog.isDestructive ? '⚠️' : 'ℹ️'}</span>
-                  <h3 className="font-bold text-base">{confirmDialog.title}</h3>
+                      {/* Floating Menu Popover */}
+                      <AnimatePresence>
+                        {showFloatingMenu && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 15 }}
+                            className={`absolute ${menuValign === 'top' ? 'top-16' : 'bottom-16'} ${menuAlign === 'left' ? 'left-0' : 'right-0'} w-64 bg-white backdrop-blur-xl border border-gray-200 rounded-[2rem] p-4 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] space-y-4`}
+                          >
+                            <div className="space-y-1.5">
+                              {appsList.map((app) => (
+                                <button
+                                  key={app.id}
+                                  onClick={() => {
+                                    handleSelectApp(app.id);
+                                    setShowFloatingMenu(false);
+                                  }}
+                                  className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs rounded-xl transition-all ${
+                                    selectedAppId === app.id 
+                                      ? 'bg-blue-50 text-blue-600 font-bold border border-blue-200' 
+                                      : 'hover:bg-gray-50 text-slate-600 hover:text-slate-900 border border-transparent'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2.5">
+                                    {renderAppIcon(app.id, "w-4 h-4")}
+                                    <span>{app.title}</span>
+                                  </div>
+                                  {selectedAppId === app.id && <Check className="w-3.5 h-3.5 text-blue-400" />}
+                                </button>
+                              ))}
+                            </div>
+
+                            <div className="pt-2 border-t border-gray-100">
+                              {/* Exit button */}
+                              <button
+                                onClick={handleExitPortal}
+                                className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 text-xs font-bold py-3 rounded-xl transition-all active:scale-95 cursor-pointer"
+                              >
+                                <Home className="w-4 h-4" />
+                                <span>{currentT.exitPortal}</span>
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
                 </div>
-                <button 
-                  onClick={() => setConfirmDialog(null)}
-                  className="text-white/80 hover:text-white transition-colors"
+              </div>
+            ) : (
+              // Landing dashboard displaying the 4 applications
+              <div className="w-full h-full flex flex-col justify-between overflow-y-auto px-4 md:px-6 py-4 md:py-8 relative">
+                {/* Background ambient lighting effects */}
+                <div className="absolute top-[-10%] left-[10%] w-[30vw] h-[30vw] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-[-10%] right-[10%] w-[30vw] h-[30vw] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
+
+                {/* Dashboard Header */}
+                <header className="max-w-4xl w-full mx-auto flex items-center justify-between mb-4 md:mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+                      <Zap className="w-5 h-5 text-white fill-current" />
+                    </div>
+                    <div>
+                      <h1 className="text-base md:text-lg font-bold text-slate-800 tracking-tight">{currentT.portalTitle}</h1>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* Language Switcher */}
+                    <button
+                      onClick={toggleLanguage}
+                      className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-xs text-slate-600 rounded-xl transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                    >
+                      <Globe className="w-3.5 h-3.5 text-blue-500" />
+                      <span>{currentT.language}</span>
+                    </button>
+
+                    {/* Admin Settings Link */}
+                    <button
+                      onClick={() => setShowAdminLogin(true)}
+                      className="p-2 bg-white hover:bg-gray-50 border border-gray-200 text-slate-400 hover:text-slate-600 rounded-xl transition-all shadow-sm active:scale-95"
+                      title={currentT.adminPortal}
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                  </div>
+                </header>
+
+                {/* Applications grid - 2x2 layout by default for mobile and desktop */}
+                <main className="max-w-4xl w-full mx-auto grid grid-cols-2 gap-3 md:gap-5 my-2 md:my-8 flex-1 items-center content-center">
+                  {appsList.map((app, index) => (
+                    <motion.div
+                      key={app.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 * index + 0.2 }}
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      onClick={() => handleSelectApp(app.id)}
+                      className={`glass-panel p-4 md:p-8 rounded-2xl md:rounded-[2rem] border bg-white flex flex-col items-center justify-center text-center gap-2 md:gap-4 cursor-pointer transition-all ${app.color} group relative overflow-hidden h-28 sm:h-32 md:h-[180px] shadow-sm hover:shadow-md`}
+                    >
+                      {/* Subtle app card background glow */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+                      <div className="p-2 md:p-4 bg-white border border-gray-100 rounded-xl md:rounded-2xl group-hover:scale-105 md:group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                        {renderAppIcon(app.id, "w-6 h-6 md:w-8 md:h-8")}
+                      </div>
+
+                      <h3 className="text-xs md:text-lg font-bold text-slate-800 group-hover:text-current transition-colors tracking-tight line-clamp-2">
+                        {app.title}
+                      </h3>
+                    </motion.div>
+                  ))}
+                </main>
+
+                {/* Portal Footer - Compacted */}
+                <footer className="max-w-4xl w-full mx-auto text-center border-t border-gray-200 pt-4 mt-4">
+                  <p className="text-[10px] text-gray-400">
+                    &copy; 2026 {currentT.portalTitle}. All rights reserved.
+                  </p>
+                </footer>
+              </div>
+            )}
+
+            {/* Admin Portal Modal */}
+            <AnimatePresence>
+              {showAdminLogin && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/75 backdrop-blur-md"
                 >
-                  ✕
-                </button>
-              </div>
-              <div className="p-6 space-y-5">
-                <p className="text-slate-700 text-base font-medium leading-relaxed">
-                  {confirmDialog.message}
-                </p>
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => {
-                      const cb = confirmDialog.onConfirm;
-                      setConfirmDialog(null);
-                      cb();
-                    }}
-                    className={`flex-1 text-white py-2.5 rounded-lg font-bold text-sm transition-colors shadow-sm ${confirmDialog.isDestructive ? 'bg-rose-600 hover:bg-rose-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                    className="w-full max-w-md bg-zinc-950 border border-zinc-800 p-8 rounded-[2.5rem] relative overflow-hidden shadow-2xl"
                   >
-                    {confirmDialog.confirmText}
-                  </button>
-                  <button
-                    onClick={() => setConfirmDialog(null)}
-                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-sm transition-colors"
-                  >
-                    إلغاء
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+                    <button 
+                      onClick={closeAdminMenu}
+                      className={`absolute top-6 ${isRTL ? 'left-6' : 'right-6'} text-zinc-500 hover:text-white transition-colors`}
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
 
-        {notification && (
-          <div className="fixed bottom-6 left-6 z-50 animate-in slide-in-from-bottom duration-300">
-            <div className="bg-slate-800 text-white px-5 py-3.5 rounded-xl shadow-xl border border-slate-700 flex items-center gap-3">
-              <span className="text-emerald-400 text-lg">✅</span>
-              <span className="text-sm font-semibold">{notification}</span>
-              <button 
-                onClick={() => setNotification(null)}
-                className="text-slate-400 hover:text-white mr-2 text-xs"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
+                    {!isAdminAuthenticated ? (
+                      <form onSubmit={handleAdminLogin} className="space-y-6 pt-4">
+                        <div className="text-center mb-6">
+                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-[10px] font-bold tracking-wider uppercase mb-3">
+                            {currentT.adminPortal}
+                          </div>
+                          <h2 className="text-xl font-bold text-white">{currentT.adminLogin}</h2>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold block">
+                              {currentT.username}
+                            </label>
+                            <input
+                              type="text"
+                              value={username}
+                              onChange={(e) => setUsername(e.target.value)}
+                              className="w-full bg-zinc-900/60 border border-zinc-800/80 rounded-2xl py-3.5 px-4 text-white text-xs focus:outline-none focus:border-blue-500/40 transition-all font-mono"
+                              placeholder="alaa"
+                            />
+                          </div>
+                          
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold block">
+                              {currentT.password}
+                            </label>
+                            <input
+                              type="password"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              className="w-full bg-zinc-900/60 border border-zinc-800/80 rounded-2xl py-3.5 px-4 text-white text-xs focus:outline-none focus:border-blue-500/40 transition-all"
+                              placeholder="••••••••"
+                            />
+                          </div>
+                        </div>
+
+                        {loginError && <p className="text-xs text-red-400 text-center font-medium">{loginError}</p>}
+
+                        <button
+                          type="submit"
+                          className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95"
+                        >
+                          {currentT.loginBtn}
+                        </button>
+                      </form>
+                    ) : (
+                      // Admin configuration for all 4 links individually!
+                      <div className="space-y-6 pt-4">
+                        <div className="text-center mb-4">
+                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold tracking-wider uppercase mb-3">
+                            {currentT.configMode}
+                          </div>
+                          <h2 className="text-xl font-bold text-white">{currentT.configMode}</h2>
+                        </div>
+
+                        {saveSuccess ? (
+                          <div className="py-8 flex flex-col items-center justify-center space-y-3">
+                            <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                              <Check className="w-6 h-6 animate-bounce" />
+                            </div>
+                            <p className="text-xs font-medium text-emerald-400 text-center">{currentT.successSave}</p>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+                              {/* Link 1 */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
+                                  {renderAppIcon('accounting', 'w-3.5 h-3.5')}
+                                  <span>{currentT.accounting}</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editUrls.accounting}
+                                  onChange={(e) => setEditUrls({ ...editUrls, accounting: e.target.value })}
+                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
+                                  placeholder="https://..."
+                                />
+                              </div>
+
+                              {/* Link 2 */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
+                                  {renderAppIcon('dailySales', 'w-3.5 h-3.5')}
+                                  <span>{currentT.dailySales}</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editUrls.dailySales}
+                                  onChange={(e) => setEditUrls({ ...editUrls, dailySales: e.target.value })}
+                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
+                                  placeholder="https://..."
+                                />
+                              </div>
+
+                              {/* Link 3 */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
+                                  {renderAppIcon('deliverySales', 'w-3.5 h-3.5')}
+                                  <span>{currentT.deliverySales}</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editUrls.deliverySales}
+                                  onChange={(e) => setEditUrls({ ...editUrls, deliverySales: e.target.value })}
+                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
+                                  placeholder="https://..."
+                                />
+                              </div>
+
+                              {/* Link 4 */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
+                                  {renderAppIcon('quran', 'w-3.5 h-3.5')}
+                                  <span>{currentT.quran}</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editUrls.quran}
+                                  onChange={(e) => setEditUrls({ ...editUrls, quran: e.target.value })}
+                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
+                                  placeholder="https://..."
+                                />
+                              </div>
+
+                              {/* Link 5 */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
+                                  {renderAppIcon('allowances', 'w-3.5 h-3.5')}
+                                  <span>{currentT.allowances}</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editUrls.allowances}
+                                  onChange={(e) => setEditUrls({ ...editUrls, allowances: e.target.value })}
+                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
+                                  placeholder="https://..."
+                                />
+                              </div>
+
+                              {/* Link 6 */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
+                                  {renderAppIcon('depreciation', 'w-3.5 h-3.5')}
+                                  <span>{currentT.depreciation}</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editUrls.depreciation}
+                                  onChange={(e) => setEditUrls({ ...editUrls, depreciation: e.target.value })}
+                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
+                                  placeholder="https://..."
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2 pt-2 border-t border-zinc-900">
+                              <button
+                                onClick={handleSaveUrls}
+                                className="w-full bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold py-3 rounded-2xl transition-all shadow-lg active:scale-95"
+                              >
+                                {currentT.saveBtn}
+                              </button>
+                              <button
+                                onClick={() => setIsAdminAuthenticated(false)}
+                                className="w-full py-2 text-zinc-500 hover:text-zinc-400 text-[10px] uppercase font-bold tracking-wider"
+                              >
+                                {currentT.backBtn}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }
