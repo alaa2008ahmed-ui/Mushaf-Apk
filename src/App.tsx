@@ -26,7 +26,8 @@ import {
   Menu,
   LogOut,
   Users,
-  Calculator
+  Calculator,
+  CreditCard
 } from 'lucide-react';
 
 const DEFAULT_URLS = {
@@ -35,7 +36,8 @@ const DEFAULT_URLS = {
   deliverySales: "https://dilevry-note.vercel.app/",
   quran: "https://mushaf-ahmed-laila.vercel.app/",
   allowances: "https://allowances-for-employees.vercel.app/",
-  fixedassets: "https://fixed-assets-alpha.vercel.app/"
+  fixedassets: "https://fixed-assets-alpha.vercel.app/",
+  payroll: "https://payroll-management-vert.vercel.app/"
 };
 
 const t = {
@@ -54,6 +56,8 @@ const t = {
     allowancesDesc: "إدارة مخصصات الموظفين",
     fixedassets: "الاصول الثابته",
     fixedassetsDesc: "نظام إدارة واحتساب الاهـلاكات للأصول الثابتة",
+    payroll: "إدارة الرواتب",
+    payrollDesc: "نظام إدارة الرواتب ومسيرات رواتب الموظفين والمدفوعات.",
     adminPortal: "بوابة الإدارة",
     adminLogin: "تسجيل دخول المشرف",
     username: "اسم المستخدم",
@@ -92,6 +96,8 @@ const t = {
     allowancesDesc: "Manage employee allowances",
     fixedassets: "Fixed assets",
     fixedassetsDesc: "Manage fixed assets and depreciation rules",
+    payroll: "Payroll Management",
+    payrollDesc: "Manage payroll, employee salaries, and disbursements.",
     adminPortal: "Admin Portal",
     adminLogin: "Administrator Login",
     username: "Username",
@@ -129,6 +135,7 @@ export default function App() {
     quran: DEFAULT_URLS.quran,
     allowances: DEFAULT_URLS.allowances,
     fixedassets: DEFAULT_URLS.fixedassets,
+    payroll: DEFAULT_URLS.payroll,
   });
 
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
@@ -171,6 +178,7 @@ export default function App() {
     const savedQuran = localStorage.getItem('swc_url_quran');
     const savedAllowances = localStorage.getItem('swc_url_allowances');
     const savedFixedAssets = localStorage.getItem('swc_url_fixedassets') || localStorage.getItem('swc_url_depreciation');
+    const savedPayroll = localStorage.getItem('swc_url_payroll');
 
     const loadedUrls = {
       accounting: savedAccounting || DEFAULT_URLS.accounting,
@@ -179,6 +187,7 @@ export default function App() {
       quran: savedQuran || DEFAULT_URLS.quran,
       allowances: savedAllowances || DEFAULT_URLS.allowances,
       fixedassets: savedFixedAssets || DEFAULT_URLS.fixedassets,
+      payroll: savedPayroll || DEFAULT_URLS.payroll,
     };
 
     setUrls(loadedUrls);
@@ -209,6 +218,7 @@ export default function App() {
     localStorage.setItem('swc_url_quran', editUrls.quran);
     localStorage.setItem('swc_url_allowances', editUrls.allowances);
     localStorage.setItem('swc_url_fixedassets', editUrls.fixedassets);
+    localStorage.setItem('swc_url_payroll', editUrls.payroll);
     
     setUrls({ ...editUrls });
     setSaveSuccess(true);
@@ -255,6 +265,8 @@ export default function App() {
         return <Users className={className} />;
       case 'fixedassets':
         return <Calculator className={className} />;
+      case 'payroll':
+        return <CreditCard className={className} />;
       default:
         return <Zap className={className} />;
     }
@@ -262,6 +274,10 @@ export default function App() {
 
   const currentT = t[lang];
   const isRTL = lang === 'ar';
+
+  useEffect(() => {
+    document.title = currentT.portalTitle;
+  }, [lang, currentT.portalTitle]);
 
   const appsList = [
     {
@@ -305,6 +321,13 @@ export default function App() {
       desc: currentT.fixedassetsDesc,
       url: urls.fixedassets,
       color: "from-indigo-50 to-indigo-100/50 text-indigo-700 border-indigo-200 hover:border-indigo-300 hover:shadow-indigo-500/10"
+    },
+    {
+      id: 'payroll',
+      title: currentT.payroll,
+      desc: currentT.payrollDesc,
+      url: urls.payroll,
+      color: "from-rose-50 to-rose-100/50 text-rose-700 border-rose-200 hover:border-rose-300 hover:shadow-rose-500/10"
     }
   ];
 
@@ -708,13 +731,28 @@ export default function App() {
                               {/* Link 6 */}
                               <div className="space-y-1.5">
                                 <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
-                                  {renderAppIcon('depreciation', 'w-3.5 h-3.5')}
-                                  <span>{currentT.depreciation}</span>
+                                  {renderAppIcon('fixedassets', 'w-3.5 h-3.5')}
+                                  <span>{currentT.fixedassets}</span>
                                 </label>
                                 <input
                                   type="text"
-                                  value={editUrls.depreciation}
-                                  onChange={(e) => setEditUrls({ ...editUrls, depreciation: e.target.value })}
+                                  value={editUrls.fixedassets}
+                                  onChange={(e) => setEditUrls({ ...editUrls, fixedassets: e.target.value })}
+                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
+                                  placeholder="https://..."
+                                />
+                              </div>
+
+                              {/* Link 7 */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
+                                  {renderAppIcon('payroll', 'w-3.5 h-3.5')}
+                                  <span>{currentT.payroll}</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editUrls.payroll}
+                                  onChange={(e) => setEditUrls({ ...editUrls, payroll: e.target.value })}
                                   className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
                                   placeholder="https://..."
                                 />
