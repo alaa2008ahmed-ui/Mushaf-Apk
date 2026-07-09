@@ -25,12 +25,14 @@ import DriverReport from './components/DriverReport';
 import Customers from './components/Customers';
 import Orders from './components/Orders';
 import OrderApprovals from './components/OrderApprovals';
+import PayrollApp from "./payroll/PayrollApp";
+import AllowancesApp from "./allowances/App";
 import { Item, Employee, Invoice, Branch, User, UserPermissions, Customer, DeliveryNote, BottleTransaction, AppSettings, POCustomer, InvoiceLog, Driver, Vehicle, DriverWorkLog as IDriverWorkLog, DriverMonthlySummary, Order } from './types';
 import { mockItems, mockEmployees, mockBranches, mockDrivers, mockVehicles, defaultAdmin, alaaUser, mockPOCustomers, mockCustomers } from './constants';
 import { dualStorage, COLLECTIONS } from './DualStorageService';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDocs, query, collection } from 'firebase/firestore';
 import { downloadBlob } from './downloadUtils';
 import { captureAndExport, printOrDownloadPdf } from './captureUtils';
 import CryptoJS from 'crypto-js';
@@ -112,6 +114,7 @@ const App: React.FC = () => {
                             ...u,
                             permissions: {
                                 ...u.permissions,
+                                // Core Defaults
                                 canCreatePO: u.permissions?.canCreatePO ?? true,
                                 canEditPO: u.permissions?.canEditPO ?? false,
                                 canDeletePO: u.permissions?.canDeletePO ?? false,
@@ -122,6 +125,29 @@ const App: React.FC = () => {
                                 showDeliveryConfirmationPopup: u.permissions?.showDeliveryConfirmationPopup ?? false,
                                 showOrderReceiptPopup: u.permissions?.showOrderReceiptPopup ?? false,
                                 showReceiptDetailsPopup: u.permissions?.showReceiptDetailsPopup ?? false,
+                                // Payroll
+                                canViewPayroll: u.permissions?.canViewPayroll ?? false,
+                                // Allowances
+                                canViewAllowancesEndOfService: u.permissions?.canViewAllowancesEndOfService ?? false,
+                                canViewAllowancesEndOfServicePrint: u.permissions?.canViewAllowancesEndOfServicePrint ?? false,
+                                canViewAllowancesVacationAllowance: u.permissions?.canViewAllowancesVacationAllowance ?? false,
+                                canViewAllowancesVacationRequest: u.permissions?.canViewAllowancesVacationRequest ?? false,
+                                canViewAllowancesLoanRequest: u.permissions?.canViewAllowancesLoanRequest ?? false,
+                                canViewAllowancesArchive: u.permissions?.canViewAllowancesArchive ?? false,
+                                canViewAllowancesSettings: u.permissions?.canViewAllowancesSettings ?? false,
+                                // Time Sheet
+                                tsCanViewEmployees: u.permissions?.tsCanViewEmployees ?? false,
+                                tsCanViewOvertime1: u.permissions?.tsCanViewOvertime1 ?? false,
+                                tsCanViewOvertime2: u.permissions?.tsCanViewOvertime2 ?? false,
+                                tsCanViewListOvertime: u.permissions?.tsCanViewListOvertime ?? false,
+                                tsCanManageSettings: u.permissions?.tsCanManageSettings ?? false,
+                                tsCanAddEmployee: u.permissions?.tsCanAddEmployee ?? false,
+                                tsCanEditEmployee: u.permissions?.tsCanEditEmployee ?? false,
+                                tsCanDeleteEmployee: u.permissions?.tsCanDeleteEmployee ?? false,
+                                tsCanUndoPost: u.permissions?.tsCanUndoPost ?? false,
+                                tsCanDeletePost: u.permissions?.tsCanDeletePost ?? false,
+                                tsCanViewArchiveO1: u.permissions?.tsCanViewArchiveO1 ?? false,
+                                tsCanViewArchiveO2: u.permissions?.tsCanViewArchiveO2 ?? false,
                             }
                         } as User;
                     });
@@ -135,6 +161,124 @@ const App: React.FC = () => {
                         ...(r.data as Order),
                         id: r.id
                     }));
+
+                    // Real-time synchronization for payroll employees
+                    const payrollEmployeesRec = data.find(r => r.id === 'payroll_employees_data' || r.type === 'payroll_employees_list');
+                    if (payrollEmployeesRec && payrollEmployeesRec.data) {
+                        const employeesList = payrollEmployeesRec.data;
+                        const currentSaved = localStorage.getItem('payroll_employees_2026');
+                        
+                        // Check if there is a pending local write for payroll_employees_data to prevent race conditions
+                        const pendingQueueSaved = localStorage.getItem('fs_pending_queue');
+                        const pendingQueue = pendingQueueSaved ? JSON.parse(pendingQueueSaved) : [];
+                        const isPending = pendingQueue.some((q: any) => q.collectionName === 'records' && q.id === 'payroll_employees_data');
+
+                        if (!isPending && JSON.stringify(employeesList) !== currentSaved) {
+                            localStorage.setItem('payroll_employees_2026', JSON.stringify(employeesList));
+                            window.dispatchEvent(new Event('payroll_employees_updated'));
+                        }
+                    }
+
+                    // Real-time synchronization for payroll employees
+                    const empRec = data.find(r => r.id === 'payroll_employees_data');
+                    if (empRec && empRec.data) {
+                        const currentSaved = localStorage.getItem('payroll_employees_2026');
+                        if (JSON.stringify(empRec.data) !== currentSaved) {
+                            // Only sync if local isn't currently in a 'protected' migration state
+                            const lastMigration = localStorage.getItem('payroll_last_migration_time');
+                            const isRecentlyMigrated = lastMigration && (Date.now() - parseInt(lastMigration)) < 5000;
+                            
+                            if (!isRecentlyMigrated) {
+                                localStorage.setItem('payroll_employees_2026', JSON.stringify(empRec.data));
+                                window.dispatchEvent(new Event('payroll_employees_synced'));
+                            }
+                        }
+                    }
+
+                    // Real-time synchronization for payroll archives
+                    const archivesRec = data.find(r => r.id === 'payroll_archives_data');
+                    if (archivesRec && archivesRec.data) {
+                        const archivesList = archivesRec.data;
+                        const currentSaved = localStorage.getItem('payroll_archives_2026');
+                        
+                        // Safety: Only update if cloud data is valid and local isn't recently updated
+                        const isIncomingEmpty = !Array.isArray(archivesList) || archivesList.length === 0;
+                        const isLocalNotEmpty = currentSaved && currentSaved !== '[]';
+                        const localLength = isLocalNotEmpty ? JSON.parse(currentSaved).length : 0;
+                        const incomingLength = Array.isArray(archivesList) ? archivesList.length : 0;
+                        
+                        const lastMigration = localStorage.getItem('payroll_last_migration_time');
+                        const isRecentlyMigrated = lastMigration && (Date.now() - parseInt(lastMigration)) < 5000;
+
+                        if (!isRecentlyMigrated && !isIncomingEmpty && (incomingLength >= localLength || !isLocalNotEmpty)) {
+                            if (JSON.stringify(archivesList) !== currentSaved) {
+                                localStorage.setItem('payroll_archives_2026', JSON.stringify(archivesList));
+                                window.dispatchEvent(new Event('payroll_archives_updated'));
+                            }
+                        }
+                    }
+
+                    // Real-time synchronization for Allowances Employees
+                    const allowancesEmployeesRec = data.find(r => r.id === 'allowances_employees_data');
+                    if (allowancesEmployeesRec && allowancesEmployeesRec.data) {
+                        const currentSaved = localStorage.getItem('app_employees_data_v1');
+                        if (JSON.stringify(allowancesEmployeesRec.data) !== currentSaved) {
+                            localStorage.setItem('app_employees_data_v1', JSON.stringify(allowancesEmployeesRec.data));
+                            window.dispatchEvent(new Event('allowances_employees_synced'));
+                        }
+                    }
+
+                    // Real-time synchronization for Allowances Archives
+                    const allowancesArchivesRec = data.find(r => r.id === 'allowances_archives_data');
+                    if (allowancesArchivesRec && allowancesArchivesRec.data) {
+                        const currentSaved = localStorage.getItem('app_archived_records_v1');
+                        if (JSON.stringify(allowancesArchivesRec.data) !== currentSaved) {
+                            localStorage.setItem('app_archived_records_v1', JSON.stringify(allowancesArchivesRec.data));
+                            window.dispatchEvent(new Event('allowances_archives_synced'));
+                        }
+                    }
+
+                    // Real-time synchronization for payroll settings (signatures, insurance, month)
+                    const payrollSettingsRec = data.find(r => r.id === 'payroll_global_settings');
+                    if (payrollSettingsRec && payrollSettingsRec.data) {
+                        const settings = payrollSettingsRec.data;
+                        
+                        // Safety: Avoid forcing month synchronization if it would override a user's manual selection of an older archived month
+                        const cloudMonth = settings.selectedMonth;
+                        const localMonth = localStorage.getItem('payroll_selected_month_iso');
+                        
+                        // Check if we are currently in the middle of a local month change to avoid race conditions
+                        const isSyncing = localStorage.getItem('payroll_sync_in_progress') === 'true';
+
+                        if (!isSyncing && cloudMonth && cloudMonth !== localMonth) {
+                            localStorage.setItem('payroll_selected_month_iso', cloudMonth);
+                            window.dispatchEvent(new CustomEvent('payroll_selected_month_synced', { detail: cloudMonth }));
+                        }
+                        
+                        if (settings.insurancePercentage !== undefined && settings.insurancePercentage.toString() !== localStorage.getItem('payroll_insurance_percentage')) {
+                            localStorage.setItem('payroll_insurance_percentage', settings.insurancePercentage.toString());
+                            window.dispatchEvent(new Event('payroll_insurance_updated'));
+                        }
+
+                        if (settings.signatures && JSON.stringify(settings.signatures) !== localStorage.getItem('payroll_signatures')) {
+                            localStorage.setItem('payroll_signatures', JSON.stringify(settings.signatures));
+                            window.dispatchEvent(new Event('payroll_signatures_updated'));
+                        }
+                        
+                        if (settings.sheetTitle && settings.sheetTitle !== localStorage.getItem('payroll_sheet_title')) {
+                            localStorage.setItem('payroll_sheet_title', settings.sheetTitle);
+                            window.dispatchEvent(new Event('payroll_title_updated'));
+                        }
+                    }
+
+                    // Dispatch timesheet_updated only when timesheet records change
+                    const tsData = data.filter(r => r.type === 'timesheet_grid_overtime1' || r.type === 'timesheet_grid_overtime2' || r.type === 'timesheet_employee');
+                    const tsDataStr = JSON.stringify(tsData);
+                    const prevTsData = localStorage.getItem('last_ts_data_hash');
+                    if (tsDataStr !== prevTsData) {
+                        localStorage.setItem('last_ts_data_hash', tsDataStr);
+                        window.dispatchEvent(new Event('timesheet_updated'));
+                    }
 
                     setItems(itemsData);
                     setBranches(sortedBranches);
@@ -215,10 +359,34 @@ const App: React.FC = () => {
             }
 
             // Seeding and Migrations (Wait until after initial sync attempt)
-            const currentRecords = dualStorage.getLocalData(COLLECTIONS.RECORDS);
-            const currentPOCustomers = dualStorage.getLocalData(COLLECTIONS.PO_CUSTOMERS);
-            const currentCustomers = dualStorage.getLocalData(COLLECTIONS.CUSTOMERS);
+            let currentRecords = dualStorage.getLocalData(COLLECTIONS.RECORDS);
+            let currentPOCustomers = dualStorage.getLocalData(COLLECTIONS.PO_CUSTOMERS);
+            let currentCustomers = dualStorage.getLocalData(COLLECTIONS.CUSTOMERS);
             
+            // PREVENT ACCIDENTAL CLOUD OVERWRITE ON NEW DEVICES
+            // If local storage is empty, we must ensure the cloud is truly empty before seeding defaults.
+            if (currentRecords.length === 0 && navigator.onLine) {
+                try {
+                    // Check if cloud has ANY records
+                    const cloudSnap = await getDocs(query(collection(db, COLLECTIONS.RECORDS)));
+                    if (!cloudSnap.empty) {
+                        console.log("Cloud has data, but local is empty. Waiting for initial sync...");
+                        // Wait for sync to populate local storage
+                        let attempts = 0;
+                        while (currentRecords.length === 0 && attempts < 20) {
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                            currentRecords = dualStorage.getLocalData(COLLECTIONS.RECORDS);
+                            attempts++;
+                        }
+                        // Refresh other collections too
+                        currentPOCustomers = dualStorage.getLocalData(COLLECTIONS.PO_CUSTOMERS);
+                        currentCustomers = dualStorage.getLocalData(COLLECTIONS.CUSTOMERS);
+                    }
+                } catch(e) {
+                    console.error("Error checking cloud data:", e);
+                }
+            }
+
             // Re-seed IF AND ONLY IF cloud AND local are both empty for these types
             const hasItems = currentRecords.some((r: any) => r.type === 'item');
             const hasBranches = currentRecords.some((r: any) => r.type === 'branch');
@@ -387,6 +555,12 @@ const App: React.FC = () => {
                         const user = r.data as User;
                         let neededUpdate = false;
 
+                        // Initialize allowedPages if missing
+                        if (!Array.isArray(user.permissions.allowedPages)) {
+                            user.permissions.allowedPages = [];
+                            neededUpdate = true;
+                        }
+
                         // Ensure 'PO' page for admins
                         if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('PO')) {
                             user.permissions.allowedPages.push('PO');
@@ -419,6 +593,16 @@ const App: React.FC = () => {
 
                         if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Time Sheet')) {
                             user.permissions.allowedPages.push('Time Sheet');
+                            neededUpdate = true;
+                        }
+
+                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Payroll')) {
+                            user.permissions.allowedPages.push('Payroll');
+                            neededUpdate = true;
+                        }
+
+                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Allowances For Employees')) {
+                            user.permissions.allowedPages.push('Allowances For Employees');
                             neededUpdate = true;
                         }
 
@@ -643,12 +827,27 @@ const App: React.FC = () => {
         lastPendingIdsRef.current = currentPendingIds;
     }, [pendingOrdersList, canApproveOrders]);
 
+    // Real-time synchronization of currentUser details and permissions when the users list changes
     useEffect(() => {
         if (currentUser) {
-            const latestUser = users.find(u => u.username.trim().toLowerCase() === currentUser.username.trim().toLowerCase());
-            if (latestUser && JSON.stringify(latestUser.permissions) !== JSON.stringify(currentUser.permissions)) {
-                setCurrentUser(latestUser);
-                localStorage.setItem('currentUser', JSON.stringify(latestUser));
+            const latestUser = users.find(u => 
+                u.id === currentUser.id || 
+                u.username.trim().toLowerCase() === currentUser.username.trim().toLowerCase()
+            );
+            if (latestUser) {
+                // Check if any critical property has changed
+                const permsChanged = JSON.stringify(latestUser.permissions || {}) !== JSON.stringify(currentUser.permissions || {});
+                const detailsChanged = 
+                    latestUser.isActive !== currentUser.isActive || 
+                    latestUser.password !== currentUser.password ||
+                    latestUser.role !== currentUser.role ||
+                    latestUser.username !== currentUser.username;
+
+                if (permsChanged || detailsChanged) {
+                    console.log("Real-time Sync: Updating currentUser permissions/details instantly.");
+                    setCurrentUser(latestUser);
+                    localStorage.setItem('currentUser', JSON.stringify(latestUser));
+                }
             }
         }
     }, [users, currentUser]);
@@ -697,7 +896,7 @@ const App: React.FC = () => {
     }, [selectedBranchId]);
 
     const filteredBranches = useMemo(() => {
-        if (!currentUser) return [];
+        if (!currentUser || !currentUser.permissions || !Array.isArray(currentUser.permissions.allowedBranches)) return [];
         if (currentUser.permissions.allowedBranches.includes('all')) return branches;
         return branches.filter(b => currentUser.permissions.allowedBranches.includes(b.id));
     }, [branches, currentUser]);
@@ -708,11 +907,12 @@ const App: React.FC = () => {
 
     useEffect(() => {
         if (currentUser) {
+            const allowedPages = Array.isArray(currentUser.permissions?.allowedPages) ? currentUser.permissions.allowedPages : [];
             const isHiddenOnMobile = isMobile && currentUser.username.toLowerCase() !== 'alaa' && (appSettings?.mobileHiddenPages || []).includes(currentPage);
             const isGloballyDisabled = (appSettings?.globallyDisabledPages || []).includes(currentPage);
-            if (!currentUser.permissions.allowedPages.includes(currentPage) || isHiddenOnMobile || isGloballyDisabled) {
+            if (!allowedPages.includes(currentPage) || isHiddenOnMobile || isGloballyDisabled) {
                 // Priority fallback: 'Daily Sales' if allowed and not hidden on mobile, otherwise first allowed and visible page
-                const availablePages = currentUser.permissions.allowedPages
+                const availablePages = allowedPages
                     .filter(p => !(appSettings?.globallyDisabledPages || []).includes(p))
                     .filter(p => !isMobile || currentUser.username.toLowerCase() === 'alaa' || !(appSettings?.mobileHiddenPages || []).includes(p));
                 
@@ -797,13 +997,14 @@ const App: React.FC = () => {
         setCurrentUser(user);
         localStorage.setItem('currentUser', JSON.stringify(user));
         setHasShownLoginPOAlert(false);
-        if (user.permissions.allowedPages.includes('Dashboard')) {
+        const allowedPages = Array.isArray(user.permissions?.allowedPages) ? user.permissions.allowedPages : [];
+        if (allowedPages.includes('Dashboard')) {
             setCurrentPage('Dashboard');
         } else {
             setCurrentPage('Daily Sales');
         }
         
-        const allowed = user.permissions.allowedBranches;
+        const allowed = Array.isArray(user.permissions?.allowedBranches) ? user.permissions.allowedBranches : [];
         const hasAll = allowed.includes('all');
         const hasMain = hasAll || allowed.includes('b3');
         const hasDammam = hasAll || allowed.includes('b1');
@@ -1144,17 +1345,7 @@ const App: React.FC = () => {
         }
     }, [isAuthReady, allSalesInvoices, users, branches]);
     
-    // Update currentUser whenever users array changes (e.g., from Firestore sync)
-    // to ensure permissions and details stay up-to-date real-time.
-    useEffect(() => {
-        if (currentUser) {
-            const upToDateUser = users.find(u => u.id === currentUser.id);
-            if (upToDateUser && JSON.stringify(upToDateUser) !== JSON.stringify(currentUser)) {
-                setCurrentUser(upToDateUser);
-                localStorage.setItem('currentUser', JSON.stringify(upToDateUser));
-            }
-        }
-    }, [users, currentUser]);
+
 
     // Derived values for backward compatibility and simpler logic
     const cashInvoices = useMemo(() => allSalesInvoices.filter(inv => inv.type === 'cash'), [allSalesInvoices]);
@@ -1338,9 +1529,10 @@ const App: React.FC = () => {
     const hasMainBranchAccess = useMemo(() => {
         if (!currentUser) return false;
         if (currentUser.username.toLowerCase() === 'alaa') return true;
-        if (currentUser.permissions.allowedBranches.includes('all')) return true;
+        const allowed = Array.isArray(currentUser.permissions?.allowedBranches) ? currentUser.permissions.allowedBranches : [];
+        if (allowed.includes('all')) return true;
         const mainIds = branches.filter(b => b.name.toLowerCase().includes('main')).map(b => b.id);
-        return currentUser.permissions.allowedBranches.some(bId => mainIds.includes(bId));
+        return allowed.some(bId => mainIds.includes(bId));
     }, [currentUser, branches]);
 
     const triggerPOAlert = React.useCallback(() => {
@@ -1554,7 +1746,7 @@ const App: React.FC = () => {
                 localStorage.setItem('localLastTriggeredBackupDate', todayStr);
 
                 // Export all databases
-                const dataToBackup = dualStorage.exportAllData();
+                const dataToBackup = await dualStorage.exportAllDataFromServer();
                 const jsonString = JSON.stringify(dataToBackup);
                 
                 // Compress using LZ-String
@@ -2248,9 +2440,10 @@ const App: React.FC = () => {
 
         const isHiddenOnMobile = isMobile && currentUser.username.toLowerCase() !== 'alaa' && (appSettings?.mobileHiddenPages || []).includes(currentPage);
         const isGloballyDisabled = (appSettings?.globallyDisabledPages || []).includes(currentPage);
+        const allowedPages = Array.isArray(currentUser.permissions?.allowedPages) ? currentUser.permissions.allowedPages : [];
 
         // Check if user has access to current page
-        if (!currentUser.permissions.allowedPages.includes(currentPage) || isHiddenOnMobile || isGloballyDisabled) {
+        if (!allowedPages.includes(currentPage) || isHiddenOnMobile || isGloballyDisabled) {
             return (
                 <div className="p-4 sm:p-6 lg:p-8">
                     <div className="mt-6 bg-white rounded-lg shadow-md p-6 text-center">
@@ -2477,6 +2670,12 @@ const App: React.FC = () => {
                         isMobile={isMobile}
                     />
                 );
+            case 'Payroll':
+                return <PayrollApp currentUser={currentUser} />;
+                
+            case 'Allowances For Employees':
+                return <AllowancesApp currentUser={currentUser} />;
+
             case 'Settings':
                  return (
                     <Settings 
@@ -2686,7 +2885,7 @@ const App: React.FC = () => {
             <Nav 
                 currentPage={currentPage}
                 onNavigate={setCurrentPage}
-                allowedPages={currentUser.permissions.allowedPages
+                allowedPages={(Array.isArray(currentUser.permissions?.allowedPages) ? currentUser.permissions.allowedPages : [])
                     .filter(p => !appSettings?.directOrderFlow || p !== 'Order Approvals')
                     .filter(p => !(appSettings?.globallyDisabledPages || []).includes(p))
                     .filter(p => !isMobile || currentUser.username.toLowerCase() === 'alaa' || !(appSettings?.mobileHiddenPages || []).includes(p))
@@ -2705,7 +2904,7 @@ const App: React.FC = () => {
             )}
 
             {/* Fixed Header and Navigation Wrapper */}
-            {!['Monthly Sales', 'Annual Sales'].includes(currentPage) && (
+            {!['Monthly Sales', 'Annual Sales', 'Payroll'].includes(currentPage) && (
                 <div 
                     onMouseEnter={() => setIsNavHovered(true)}
                     onMouseLeave={() => setIsNavHovered(false)}
@@ -2717,7 +2916,7 @@ const App: React.FC = () => {
                         ${!isMobile && ['Dashboard'].includes(currentPage) ? `transition-all duration-75 ease-out transform ${isNavHovered ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}` : ''}
                     `}
                 >
-                    {!['Dashboard'].includes(currentPage) && (
+                    {!['Dashboard', 'Payroll', 'Allowances For Employees'].includes(currentPage) && (
                         <div className={`${currentPage === 'Time Sheet' ? 'px-1 sm:px-2' : 'px-4 sm:px-6 lg:px-8'} ${isMobile ? 'pt-4 pb-2' : 'pt-4'} relative z-30`}>
                             <div className="rounded-lg shadow-md">
                                 <Header 
@@ -2748,7 +2947,7 @@ const App: React.FC = () => {
                 {/* Spacer div to prevent content from hiding behind fixed header ONLY on Desktop */}
                 {!isMobile && (
                     <div className={`
-                        ${['Dashboard', 'Monthly Sales', 'Annual Sales'].includes(currentPage) 
+                        ${['Dashboard', 'Monthly Sales', 'Annual Sales', 'Payroll', 'Allowances For Employees'].includes(currentPage) 
                             ? 'h-0' 
                             : 'h-[160px]'} 
                         transition-all duration-75 ease-out

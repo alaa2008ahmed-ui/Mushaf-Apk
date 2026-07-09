@@ -308,7 +308,28 @@ const Settings: React.FC<SettingsProps> = ({
                 canViewAllOrders: !!tempUser.permissions?.canViewAllOrders,
                 showDeliveryConfirmationPopup: tempUser.permissions?.showDeliveryConfirmationPopup !== false,
                 showOrderReceiptPopup: tempUser.permissions?.showOrderReceiptPopup !== false,
-                showReceiptDetailsPopup: tempUser.permissions?.showReceiptDetailsPopup !== false
+                showReceiptDetailsPopup: tempUser.permissions?.showReceiptDetailsPopup !== false,
+                // Time Sheet Permissions
+                tsCanViewEmployees: !!tempUser.permissions?.tsCanViewEmployees,
+                tsCanViewOvertime1: !!tempUser.permissions?.tsCanViewOvertime1,
+                tsCanViewOvertime2: !!tempUser.permissions?.tsCanViewOvertime2,
+                tsCanViewListOvertime: !!tempUser.permissions?.tsCanViewListOvertime,
+                tsCanManageSettings: !!tempUser.permissions?.tsCanManageSettings,
+                tsCanAddEmployee: !!tempUser.permissions?.tsCanAddEmployee,
+                tsCanEditEmployee: !!tempUser.permissions?.tsCanEditEmployee,
+                tsCanDeleteEmployee: !!tempUser.permissions?.tsCanDeleteEmployee,
+                tsCanUndoPost: !!tempUser.permissions?.tsCanUndoPost,
+                tsCanDeletePost: !!tempUser.permissions?.tsCanDeletePost,
+                tsCanViewArchiveO1: !!tempUser.permissions?.tsCanViewArchiveO1,
+                tsCanViewArchiveO2: !!tempUser.permissions?.tsCanViewArchiveO2,
+                // Allowances Permissions
+                canViewAllowancesEndOfService: !!tempUser.permissions?.canViewAllowancesEndOfService,
+                canViewAllowancesEndOfServicePrint: !!tempUser.permissions?.canViewAllowancesEndOfServicePrint,
+                canViewAllowancesVacationAllowance: !!tempUser.permissions?.canViewAllowancesVacationAllowance,
+                canViewAllowancesVacationRequest: !!tempUser.permissions?.canViewAllowancesVacationRequest,
+                canViewAllowancesLoanRequest: !!tempUser.permissions?.canViewAllowancesLoanRequest,
+                canViewAllowancesArchive: !!tempUser.permissions?.canViewAllowancesArchive,
+                canViewAllowancesSettings: !!tempUser.permissions?.canViewAllowancesSettings
             }
         };
 
@@ -434,7 +455,7 @@ const Settings: React.FC<SettingsProps> = ({
 
     const handleBackup = async () => {
         try {
-            const dataToBackup = dualStorage.exportAllData();
+            const dataToBackup = await dualStorage.exportAllDataFromServer();
             const jsonString = JSON.stringify(dataToBackup);
             
             // First, compress the JSON string to extremely small size
@@ -486,7 +507,7 @@ const Settings: React.FC<SettingsProps> = ({
         }
 
         try {
-            const dataToBackup = dualStorage.exportAllData();
+            const dataToBackup = await dualStorage.exportAllDataFromServer();
             const jsonString = JSON.stringify(dataToBackup);
             
             // First, compress the JSON string to extremely small size
@@ -1920,6 +1941,7 @@ const Settings: React.FC<SettingsProps> = ({
                                     <h4 className="font-bold text-gray-800 mb-3 border-b pb-1">Page Access & Detailed Permissions</h4>
                                     <div className="space-y-4">
                                         {/* Dashboard */}
+                                        {(currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.allowedPages.includes('Dashboard')) && (
                                         <div className="p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                                             <label className="flex items-center gap-2 cursor-pointer font-bold">
                                                 <input 
@@ -1931,6 +1953,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                 <span>Dashboard</span>
                                             </label>
                                         </div>
+                                        )}
 
                                         {/* Branch Access Section */}
                                         <div className="p-4 border rounded-lg bg-blue-50 border-blue-200 shadow-inner">
@@ -1992,6 +2015,7 @@ const Settings: React.FC<SettingsProps> = ({
                                         </div>
 
                                         {/* Daily Sales */}
+                                        {(currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.allowedPages.includes('Daily Sales')) && (
                                         <div className="p-3 border rounded-lg bg-white shadow-sm border-blue-100 hover:border-blue-300 transition-all">
                                             <div className="flex items-center justify-between mb-2">
                                                 <label className="flex items-center gap-2 cursor-pointer font-bold">
@@ -2011,7 +2035,11 @@ const Settings: React.FC<SettingsProps> = ({
                                                         { key: 'canEditInvoice', label: 'Edit Invoices' },
                                                         { key: 'canDeleteInvoice', label: 'Delete Invoices' },
                                                         { key: 'canChangeInvoiceDate', label: 'Change Invoice Date' },
-                                                    ].map(perm => (
+                                                    ].filter(perm => {
+                                                        const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
+                                                        if (isAlaa) return true;
+                                                        return !!(currentUser?.permissions as any)?.[perm.key];
+                                                    }).map(perm => (
                                                         <label key={perm.key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-blue-600 transition-colors">
                                                             <input 
                                                                 type="checkbox"
@@ -2028,12 +2056,13 @@ const Settings: React.FC<SettingsProps> = ({
                                                 </div>
                                             )}
                                         </div>
+                                        )}
 
                                         {/* PO Management */}
-                                        {!(settings?.globallyDisabledPages || []).includes('PO') && (
+                                        {(currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.allowedPages.includes('PO')) && !(settings?.globallyDisabledPages || []).includes('PO') && (
                                         <div className="p-3 border rounded-lg bg-white shadow-sm border-purple-100 hover:border-purple-300 transition-all">
                                             <div className="flex items-center justify-between mb-2">
-                                                <label className="flex items-center gap-2 cursor-pointer font-bold font-bold">
+                                                <label className="flex items-center gap-2 cursor-pointer font-bold">
                                                     <input 
                                                         type="checkbox"
                                                         checked={tempUser.permissions?.allowedPages.includes('PO') || false}
@@ -2050,7 +2079,11 @@ const Settings: React.FC<SettingsProps> = ({
                                                         { key: 'canEditPO', label: 'Edit PO' },
                                                         { key: 'canDeletePO', label: 'Delete PO' },
                                                         { key: 'canForceDeletePO', label: 'Force Delete PO' },
-                                                    ].map(perm => (
+                                                    ].filter(perm => {
+                                                        const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
+                                                        if (isAlaa) return true;
+                                                        return !!(currentUser?.permissions as any)?.[perm.key];
+                                                    }).map(perm => (
                                                         <label key={perm.key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-purple-600 transition-colors">
                                                             <input 
                                                                 type="checkbox"
@@ -2070,7 +2103,7 @@ const Settings: React.FC<SettingsProps> = ({
                                         )}
 
                                         {/* Driver Work Log */}
-                                        {!(settings?.globallyDisabledPages || []).includes('Driver Work Log') && (
+                                        {(currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.allowedPages.includes('Driver Work Log')) && !(settings?.globallyDisabledPages || []).includes('Driver Work Log') && (
                                         <div className="p-3 border rounded-lg bg-white shadow-sm border-indigo-100 hover:border-indigo-300 transition-all">
                                             <div className="flex items-center justify-between mb-2">
                                                 <label className="flex items-center gap-2 cursor-pointer font-bold">
@@ -2090,7 +2123,11 @@ const Settings: React.FC<SettingsProps> = ({
                                                         { key: 'canDeleteDriverLog', label: 'Delete Work Log' },
                                                         { key: 'manageDrivers', label: 'Manage Drivers List' },
                                                         { key: 'manageVehicles', label: 'Manage Vehicles List' },
-                                                    ].map(perm => (
+                                                    ].filter(perm => {
+                                                        const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
+                                                        if (isAlaa) return true;
+                                                        return !!(currentUser?.permissions as any)?.[perm.key];
+                                                    }).map(perm => (
                                                         <label key={perm.key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-indigo-600 transition-colors">
                                                             <input 
                                                                 type="checkbox"
@@ -2110,7 +2147,7 @@ const Settings: React.FC<SettingsProps> = ({
                                         )}
 
                                         {/* Drivers Timesheet */}
-                                        {!(settings?.globallyDisabledPages || []).includes('Drivers Timesheet') && (
+                                        {(currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.allowedPages.includes('Drivers Timesheet')) && !(settings?.globallyDisabledPages || []).includes('Drivers Timesheet') && (
                                         <div className="p-3 border rounded-lg bg-white shadow-sm border-sky-100 hover:border-sky-300 transition-all">
                                             <div className="flex items-center justify-between mb-2">
                                                 <label className="flex items-center gap-2 cursor-pointer font-bold">
@@ -2126,9 +2163,61 @@ const Settings: React.FC<SettingsProps> = ({
                                         </div>
                                         )}
 
+                                        {/* Time Sheet */}
+                                        {(currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.allowedPages.includes('Time Sheet')) && !(settings?.globallyDisabledPages || []).includes('Time Sheet') && (
+                                        <div className="p-3 border rounded-lg bg-white shadow-sm border-indigo-100 hover:border-indigo-300 transition-all">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <label className="flex items-center gap-2 cursor-pointer font-bold">
+                                                    <input 
+                                                        type="checkbox"
+                                                        checked={tempUser.permissions?.allowedPages.includes('Time Sheet') || false}
+                                                        onChange={() => togglePagePermission('Time Sheet')}
+                                                        className="w-4 h-4 text-indigo-600 rounded"
+                                                    />
+                                                    <span>Employee Overtime (Time Sheet)</span>
+                                                </label>
+                                            </div>
+                                            {tempUser.permissions?.allowedPages.includes('Time Sheet') && (
+                                                <div className="ml-6 grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 pt-2 border-t border-indigo-50">
+                                                    {[
+                                                        { key: 'tsCanViewEmployees', label: 'View Employees' },
+                                                        { key: 'tsCanViewOvertime1', label: 'View Overtime (O1)' },
+                                                        { key: 'tsCanViewOvertime2', label: 'View Overtime (O2)' },
+                                                        { key: 'tsCanViewListOvertime', label: 'View Overtime List' },
+                                                        { key: 'tsCanManageSettings', label: 'Manage Settings' },
+                                                        { key: 'tsCanAddEmployee', label: 'Add Employee' },
+                                                        { key: 'tsCanEditEmployee', label: 'Edit Employee' },
+                                                        { key: 'tsCanDeleteEmployee', label: 'Delete Employee' },
+                                                        { key: 'tsCanUndoPost', label: 'Undo Post' },
+                                                        { key: 'tsCanDeletePost', label: 'Delete Post' },
+                                                        { key: 'tsCanViewArchiveO1', label: 'View Archive (O1)' },
+                                                        { key: 'tsCanViewArchiveO2', label: 'View Archive (O2)' },
+                                                    ].filter(perm => {
+                                                        const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
+                                                        if (isAlaa) return true;
+                                                        return !!(currentUser?.permissions as any)?.[perm.key];
+                                                    }).map(perm => (
+                                                        <label key={perm.key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-indigo-600 transition-colors">
+                                                            <input 
+                                                                type="checkbox"
+                                                                checked={(tempUser.permissions as any)?.[perm.key] || false}
+                                                                onChange={(e) => setTempUser({
+                                                                    ...tempUser,
+                                                                    permissions: { ...tempUser.permissions!, [perm.key]: e.target.checked }
+                                                                })}
+                                                                className="w-3.5 h-3.5 text-indigo-500 rounded"
+                                                            />
+                                                            {perm.label}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        )}
+
                                         {/* High Priority Report Pages */}
                                         <div className="grid grid-cols-1 gap-3">
-                                            {!(settings?.globallyDisabledPages || []).includes('Customers') && (
+                                            {(currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.allowedPages.includes('Customers')) && !(settings?.globallyDisabledPages || []).includes('Customers') && (
                                             <div className="p-3 border rounded-lg bg-white shadow-sm border-amber-100 hover:border-amber-300 transition-all">
                                                 <div className="flex items-center justify-between">
                                                     <label className="flex items-center gap-2 cursor-pointer font-bold">
@@ -2147,11 +2236,15 @@ const Settings: React.FC<SettingsProps> = ({
                                                             { key: 'canAddCustomer', label: 'Add Customer' },
                                                             { key: 'canEditCustomer', label: 'Edit Customer' },
                                                             { key: 'canDeleteCustomer', label: 'Delete Customer' },
-                                                        ].map(perm => (
+                                                        ].filter(perm => {
+                                                            const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
+                                                            if (isAlaa) return true;
+                                                            return !!(currentUser?.permissions as any)?.[perm.key];
+                                                        }).map(perm => (
                                                             <label key={perm.key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-amber-600 transition-colors">
                                                                 <input 
                                                                     type="checkbox"
-                                                                    checked={tempUser.permissions?.[perm.key as keyof typeof tempUser.permissions] as boolean || false}
+                                                                    checked={(tempUser.permissions as any)?.[perm.key] || false}
                                                                     onChange={(e) => setTempUser({
                                                                         ...tempUser,
                                                                         permissions: { ...tempUser.permissions!, [perm.key]: e.target.checked }
@@ -2168,7 +2261,7 @@ const Settings: React.FC<SettingsProps> = ({
                                         </div>
 
                                         {/* Orders Page */}
-                                        {currentUser?.username.toLowerCase() === 'alaa' && !(settings?.globallyDisabledPages || []).includes('Orders') && (
+                                        {(currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.allowedPages.includes('Orders')) && !(settings?.globallyDisabledPages || []).includes('Orders') && (
                                         <div className="grid grid-cols-1 gap-3">
                                             <div className="p-3 border rounded-lg bg-white shadow-sm border-orange-100 hover:border-orange-300 transition-all">
                                                 <div className="flex items-center justify-between">
@@ -2505,12 +2598,29 @@ const Settings: React.FC<SettingsProps> = ({
                                             <h5 className="text-[10px] uppercase font-bold text-gray-400 mb-2">Other Reports & Modules</h5>
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                                 {[
+                                                    'Dashboard',
                                                     'Account Statement', 
                                                     'Invoices Tracking', 
                                                     'Monthly Sales', 
                                                     'Annual Sales',
+                                                    'Payroll',
+                                                    'PO',
+                                                    'Driver Work Log',
+                                                    'Drivers Timesheet',
+                                                    'Time Sheet',
+                                                    'Customers',
+                                                    'Orders',
+                                                    'Order Approvals'
+                                                ].filter(page => {
+                                                    const isGloballyDisabled = (settings?.globallyDisabledPages || []).includes(page);
+                                                    if (isGloballyDisabled) return false;
                                                     
-                                                ].filter(page => !(settings?.globallyDisabledPages || []).includes(page)).map(page => (
+                                                    // Admin restriction: Only show pages the CURRENT user has access to
+                                                    const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
+                                                    if (isAlaa) return true;
+                                                    
+                                                    return currentUser?.permissions?.allowedPages.includes(page);
+                                                }).map(page => (
                                                     <label key={page} className="flex items-center gap-2 cursor-pointer p-1">
                                                         <input 
                                                             type="checkbox"
@@ -2523,6 +2633,51 @@ const Settings: React.FC<SettingsProps> = ({
                                                 ))}
                                             </div>
                                         </div>
+
+                                        {/* Allowances For Employees */}
+                                        {(currentUser?.username.toLowerCase() === 'alaa' || currentUser?.permissions?.allowedPages.includes('Allowances For Employees')) && (
+                                            <div className="p-3 border rounded-lg border-blue-100 bg-blue-50">
+                                                <label className="flex items-center gap-2 cursor-pointer font-bold text-blue-800">
+                                                    <input 
+                                                        type="checkbox"
+                                                        checked={tempUser.permissions?.allowedPages.includes('Allowances For Employees') || false}
+                                                        onChange={() => togglePagePermission('Allowances For Employees')}
+                                                        className="w-4 h-4 text-blue-600 rounded"
+                                                    />
+                                                    <span>Allowances For Employees</span>
+                                                </label>
+                                                {tempUser.permissions?.allowedPages.includes('Allowances For Employees') && (
+                                                    <div className="ml-6 grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 pt-2 border-t border-blue-100">
+                                                        {[
+                                                            { key: 'canViewAllowancesEndOfService', label: 'المخصصات' },
+                                                            { key: 'canViewAllowancesEndOfServicePrint', label: 'مخصص نهاية الخدمة' },
+                                                            { key: 'canViewAllowancesVacationAllowance', label: 'مخصص الإجازة' },
+                                                            { key: 'canViewAllowancesVacationRequest', label: 'طلب إجازة' },
+                                                            { key: 'canViewAllowancesLoanRequest', label: 'طلب سلفة' },
+                                                            { key: 'canViewAllowancesArchive', label: 'الأرشيف' },
+                                                            { key: 'canViewAllowancesSettings', label: 'الإعدادات' },
+                                                        ].filter(perm => {
+                                                            const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
+                                                            if (isAlaa) return true;
+                                                            return !!(currentUser?.permissions as any)?.[perm.key];
+                                                        }).map(perm => (
+                                                            <label key={perm.key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:text-blue-700 transition-colors">
+                                                                <input 
+                                                                    type="checkbox"
+                                                                    checked={tempUser.permissions?.[perm.key as keyof typeof tempUser.permissions] as boolean || false}
+                                                                    onChange={(e) => setTempUser({
+                                                                        ...tempUser,
+                                                                        permissions: { ...tempUser.permissions!, [perm.key]: e.target.checked }
+                                                                    })}
+                                                                    className="w-3.5 h-3.5 text-blue-600 rounded"
+                                                                />
+                                                                {perm.label}
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
 
                                         {/* Settings */}
                                         <div className="p-3 border rounded-lg border-red-100 bg-red-50">

@@ -1,5 +1,5 @@
 
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { doc, getDocFromServer, initializeFirestore, setLogLevel } from 'firebase/firestore';
 import { getAnalytics } from "firebase/analytics";
@@ -8,14 +8,33 @@ import firebaseConfig from './firebase-config.json';
 // Silence Firestore client warnings
 setLogLevel('silent');
 
-// Initialize Firebase SDK
-const app = initializeApp(firebaseConfig);
+// Define global keys to prevent multiple instances during Vite HMR or React StrictMode
+const GLOBAL_APP_KEY = '_custom_firebase_app_instance';
+const GLOBAL_FIRESTORE_KEY = '_custom_firestore_instance';
 
-// Use experimentalForceLongPolling to avoid stream-related assertion crashes in some environments
+// Initialize or reuse Firebase App instance
+const app = typeof window !== 'undefined' && (window as any)[GLOBAL_APP_KEY]
+  ? (window as any)[GLOBAL_APP_KEY]
+  : (getApps().length > 0 ? getApp() : initializeApp(firebaseConfig));
+
+if (typeof window !== 'undefined' && !(window as any)[GLOBAL_APP_KEY]) {
+  (window as any)[GLOBAL_APP_KEY] = app;
+}
+
+// Initialize or reuse Firestore instance with auto long polling detection
 const dbId = (firebaseConfig as any).firestoreDatabaseId;
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-}, dbId === "(default)" ? undefined : dbId);
+let dbInstance;
+
+if (typeof window !== 'undefined' && (window as any)[GLOBAL_FIRESTORE_KEY]) {
+  dbInstance = (window as any)[GLOBAL_FIRESTORE_KEY];
+} else {
+  dbInstance = initializeFirestore(app, {}, dbId === "(default)" ? undefined : dbId);
+  if (typeof window !== 'undefined') {
+    (window as any)[GLOBAL_FIRESTORE_KEY] = dbInstance;
+  }
+}
+
+export { dbInstance as db };
 export const auth = getAuth();
 export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 

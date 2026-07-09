@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -51,11 +52,12 @@ body {
 @media print {
   @page {
     size: landscape;
-    margin: 10mm;
+    margin: 0 !important;
   }
 
   body {
     background-color: white !important;
+    padding: 5mm !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -110,4 +112,102 @@ body {
 
 .hide-before-tax .before-tax-amount {
   display: none !important;
+}
+
+
+.payroll-wrapper {
+  font-family: 'Cairo', system-ui, -apple-system, sans-serif !important;
+}
+
+/* إخفاء أسهم الزيادة والنقصان من جميع حقول الأرقام بشكل نهائي في جميع المتصفحات */
+.payroll-wrapper input[type="number"]::-webkit-inner-spin-button,
+.payroll-wrapper input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  margin: 0 !important;
+}
+
+.payroll-wrapper input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
+@media print {
+  .payroll-wrapper {
+    background-color: white !important;
+    color: black !important;
+    font-size: 6.2pt !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 5mm !important;
+    zoom: 78% !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .payroll-wrapper .print\:hidden {
+    display: none !important;
+  }
+
+  .payroll-wrapper .min-w-\[1250px\] {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .payroll-wrapper table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 2px !important;
+  }
+
+  .payroll-wrapper thead tr {
+    height: 13px !important;
+  }
+
+  .payroll-wrapper tbody tr {
+    height: 9.5px !important;
+    max-height: 9.5px !important;
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  .payroll-wrapper tfoot tr {
+    height: 13px !important;
+  }
+
+  .payroll-wrapper th, .payroll-wrapper td {
+    border: 0.5px solid #64748b !important;
+    padding: 0.5px 1.5px !important;
+    font-size: 5.8pt !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    height: 9.5px !important;
+  }
+
+  .payroll-wrapper th {
+    font-size: 6pt !important;
+    font-weight: 800 !important;
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+  }
+
+  /* Compact signatures for print */
+  .payroll-wrapper .grid.grid-cols-2.md\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    margin-top: 4px !important;
+    padding-top: 2px !important;
+  }
+
+  .payroll-wrapper .grid.grid-cols-2.md\:grid-cols-4 > div {
+    padding: 1px !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .payroll-wrapper .grid.grid-cols-2.md\:grid-cols-4 p {
+    margin-bottom: 2px !important;
+    font-size: 6.5pt !important;
+  }
 }

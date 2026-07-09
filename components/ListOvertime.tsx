@@ -233,7 +233,7 @@ export default function ListOvertime({ currentUser }: Props) {
         let grandTotal = 0;
         employees.forEach(emp => {
             const showInTab = typeKey === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
-            if (emp.isActive && showInTab) {
+            if (emp.isActive !== false && showInTab) {
                 grandTotal += calculateArchivedHours(grid, emp.id, daysCount);
             }
         });
@@ -297,7 +297,7 @@ export default function ListOvertime({ currentUser }: Props) {
 
         const filteredEmployees = archive.employees.filter(emp => {
             const showInTab = typeKey === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
-            return emp.isActive && showInTab;
+            return emp.isActive !== false && showInTab;
         });
 
         filteredEmployees.forEach((emp, idx) => {
@@ -624,7 +624,7 @@ export default function ListOvertime({ currentUser }: Props) {
                                             const grid = archiveTab === 'overtime1' ? selectedArchive.overtime1 : selectedArchive.overtime2;
                                             const filteredEmployees = selectedArchive.employees.filter(emp => {
                                                 const showInTab = archiveTab === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
-                                                return emp.isActive && showInTab;
+                                                return emp.isActive !== false && showInTab;
                                             });
 
                                             if (filteredEmployees.length === 0) {

@@ -118,7 +118,9 @@ class DualStorageService {
     try {
       // PHASED LOADING STRATEGY
       // Stage 1 & 2: Sales Invoices (3 days, then full month)
-      this.runPhasedSync();
+      await this.runPhasedSync();
+    } catch (error) {
+      console.error("DualStorage: Initial sync failed:", error);
     } finally {
       this.isInitializing = false;
     }
@@ -404,6 +406,7 @@ class DualStorageService {
 
     const qMonthInvoices = query(collection(db, COLLECTIONS.SALES_INVOICES), where('date', '>=', prevMonthStr));
     const unsubscribeMonthInvoices = onSnapshot(qMonthInvoices, (snap) => {
+
       const liveUpdates: any[] = [];
       const deletedIds: string[] = [];
       snap.docChanges().forEach(change => {
@@ -426,6 +429,7 @@ class DualStorageService {
       where('updatedAt', '>=', sessionStartTime)
     );
     const unsubscribeLive = onSnapshot(qLive, (snapLive) => {
+
       const liveUpdates: any[] = [];
       const deletedIds: string[] = [];
       snapLive.docChanges().forEach(change => {
@@ -459,6 +463,7 @@ class DualStorageService {
     try {
       const qFull = query(collection(db, collectionName));
       const unsubscribeDefault = onSnapshot(qFull, (snap) => {
+
         const liveUpdates: any[] = [];
         const deletedIds: string[] = [];
         snap.docChanges().forEach(change => {
@@ -472,7 +477,7 @@ class DualStorageService {
         // Always push data on first load to trigger UI update, even if no changes
         if (liveUpdates.length > 0 || deletedIds.length > 0) {
             this.processDataUpdate(collectionName, liveUpdates, true, deletedIds);
-        } else if (snap.docs.length === 0) {
+        } else if (snap.docs.length === 0 && !snap.metadata.fromCache) {
             // Edge case: collection is empty on first load, we should clear it
             this.processDataUpdate(collectionName, [], false, []);
         }
@@ -948,13 +953,74 @@ class DualStorageService {
   }
 
   /**
+   * Export all collections data directly from the server for full backup.
+   */
+  async exportAllDataFromServer(): Promise<Record<string, any>> {
+    const backup: Record<string, any> = {};
+    for (const collectionName of Object.values(COLLECTIONS)) {
+      try {
+        const q = collection(db, collectionName);
+        const querySnapshot = await getDocs(q);
+        const data = querySnapshot.docs.map(doc => {
+          const docData = doc.data();
+          return this.convertTimestamps({ id: doc.id, ...docData });
+        });
+        backup[collectionName] = data;
+      } catch (err) {
+        console.error(`Error fetching collection ${collectionName} for backup:`, err);
+        // Fallback to local data if server fetch fails for this collection
+        backup[collectionName] = this.getLocalData(collectionName);
+      }
+    }
+
+    // Include localStorage keys for payroll, allowances, settings, etc.
+    const localKeys: Record<string, string> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (
+        key.startsWith('payroll_') || 
+        key.startsWith('app_') || 
+        key.startsWith('adba_') || 
+        key.startsWith('swc_')
+      )) {
+        const val = localStorage.getItem(key);
+        if (val !== null) {
+          localKeys[key] = val;
+        }
+      }
+    }
+    backup['_localStorageData'] = localKeys;
+
+    return backup;
+  }
+
+  /**
    * Export all collections data for backup.
    */
   exportAllData() {
-    const backup: Record<string, any[]> = {};
+    const backup: Record<string, any> = {};
     Object.values(COLLECTIONS).forEach(collectionName => {
       backup[collectionName] = this.getLocalData(collectionName);
     });
+
+    // Include localStorage keys for payroll, allowances, settings, etc.
+    const localKeys: Record<string, string> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (
+        key.startsWith('payroll_') || 
+        key.startsWith('app_') || 
+        key.startsWith('adba_') || 
+        key.startsWith('swc_')
+      )) {
+        const val = localStorage.getItem(key);
+        if (val !== null) {
+          localKeys[key] = val;
+        }
+      }
+    }
+    backup['_localStorageData'] = localKeys;
+
     return backup;
   }
 
@@ -962,7 +1028,29 @@ class DualStorageService {
    * Import data into all collections.
    * WARNING: This replaces local data and attempts to sync to Firestore.
    */
-  async importAllData(backup: Record<string, any[]>) {
+  async importAllData(backup: Record<string, any>) {
+    // First, restore localStorage keys if present
+    if (backup && backup['_localStorageData']) {
+      const localKeys = backup['_localStorageData'];
+      for (const [key, val] of Object.entries(localKeys)) {
+        if (typeof val === 'string') {
+          localStorage.setItem(key, val);
+        }
+      }
+      
+      // Dispatch events to reload real-time contexts on active pages
+      try {
+        window.dispatchEvent(new Event('payroll_employees_synced'));
+        window.dispatchEvent(new Event('allowances_employees_synced'));
+        window.dispatchEvent(new Event('allowances_archives_synced'));
+        window.dispatchEvent(new Event('companySettingsChanged'));
+        window.dispatchEvent(new Event('formulaSettingsChanged'));
+        window.dispatchEvent(new Event('printTemplatesChanged'));
+      } catch (e) {
+        console.error("Failed to dispatch sync events during restore:", e);
+      }
+    }
+
     // console.log("DualStorage: Importing full backup...");
     for (const [collectionName, data] of Object.entries(backup)) {
       if (!Object.values(COLLECTIONS).includes(collectionName)) continue;

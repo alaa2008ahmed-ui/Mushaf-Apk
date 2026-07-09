@@ -89,6 +89,7 @@ export interface UserPermissions {
     showReceiptDetailsPopup?: boolean;
     receiveLowPOAlert?: boolean;
     receiveNewOrderAlert?: boolean;
+    canViewPayroll?: boolean;
     // Time Sheet Permissions
     tsCanViewEmployees?: boolean;
     tsCanViewOvertime1?: boolean;
@@ -136,6 +137,15 @@ export interface UserPermissions {
     notifyDeleteDriverLog?: boolean;
     notifySync?: boolean;
     notifyErrors?: boolean;
+
+    // Allowances Permissions
+    canViewAllowancesEndOfService?: boolean;
+    canViewAllowancesEndOfServicePrint?: boolean;
+    canViewAllowancesVacationAllowance?: boolean;
+    canViewAllowancesVacationRequest?: boolean;
+    canViewAllowancesLoanRequest?: boolean;
+    canViewAllowancesArchive?: boolean;
+    canViewAllowancesSettings?: boolean;
 }
 
 export interface Driver {

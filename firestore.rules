@@ -77,13 +77,20 @@ service cloud.firestore {
       allow delete: if isSignedIn();
     }
 
-    // Existing Collections (Keeping them open for now as they were, but better to harden them too)
+    // Existing Collections
     match /customers/{customerId} { allow read, write: if true; }
     match /salesInvoices/{invoiceId} { allow read, write: if true; }
     match /deliveryNotes/{noteId} { allow read, write: if true; }
     match /bottleTransactions/{transactionId} { allow read, write: if true; }
     match /records/{recordId} { allow read, write: if true; }
     match /poCustomers/{poCustomerId} { allow read, write: if true; }
+    match /invoice_log/{logId} { allow read, write: if true; }
+    match /orders/{orderId} { allow read, write: if true; }
+    
+    // Allowances App Collections
+    match /employees/{employeeId} { allow read, write: if true; }
+    match /archived_records/{recordId} { allow read, write: if true; }
+    match /app_settings/{settingId} { allow read, write: if true; }
     
   }
 }

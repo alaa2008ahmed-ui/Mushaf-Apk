@@ -6,6 +6,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import TimeSheetReport from './TimeSheetReport';
 import ListOvertime from './ListOvertime';
+import { initialEmployees } from '../payroll/data/initialEmployees';
 
 interface Props {
     drivers: Driver[];
@@ -19,22 +20,22 @@ interface Props {
 
 const DEFAULT_EMPLOYEES = [
     { name: "نايف محمد عبد الله الخفره", jobTitle: "العضو المنتدب", englishName: "Nayef Mohamed Abdullah Al-Khafrah" },
-    { name: "علي محمد منصور الخلف", jobTitle: "شئون موظفين", englishName: "Ali Mohamed Mansour Al-Khalaf" },
+    { name: "على محمد منصور الخلف", jobTitle: "شئون موظفين", englishName: "Ali Mohamed Mansour Al-Khalaf" },
     { name: "محمد احمد محمد البدرى", jobTitle: "نائب المدير العام", englishName: "Mohamed Ahmed Mohamed Al-Badri" },
-    { name: "معتز حامد صالح الشوربجي", jobTitle: "مدير المبيعات", englishName: "Moataz Hamed Saleh Al-Shorbagy" },
+    { name: "معتز حامد صالح الشوربجى", jobTitle: "مدير المبيعات", englishName: "Moataz Hamed Saleh Al-Shorbagy" },
     { name: "علاء احمد المرشدى", jobTitle: "محاسب عام", englishName: "Alaa Ahmed Al-Murshidi" },
     { name: "إبراهيم إسماعيل الحمادي", jobTitle: "امين صندوق", englishName: "Ibrahim Ismail Al-Hammadi" },
     { name: "فضيله محمد منصور الخلف", jobTitle: "محاسبة مبيعات", englishName: "Fadhilah Mohamed Mansour Al-Khalaf" },
     { name: "عبير محمد الدوسري", jobTitle: "محاسبة مبيعات", englishName: "Abeer Mohamed Al-Dousari" },
-    { name: "أروي إبراهيم الشامسي", jobTitle: "مندوبة مشتريات", englishName: "Arwa Ibrahim Al-Shamsi" },
-    { name: "عهد تركي فهد الدوسري", jobTitle: "محاسبة", englishName: "Ahd Turki Fahd Al-Dousari" },
-    { name: "مشاعل موسى بكاري", jobTitle: "محاسبة", englishName: "Mashael Mousa Bakari" },
+    { name: "أروى إبراهيم الشامسي", jobTitle: "مندوبة مشتريات", englishName: "Arwa Ibrahim Al-Shamsi" },
+    { name: "عهد تركى فهد الدوسري", jobTitle: "محاسبة", englishName: "Ahd Turki Fahd Al-Dousari" },
+    { name: "مشاعل موسى بكارى", jobTitle: "محاسبة", englishName: "Mashael Mousa Bakari" },
     { name: "صغير احمد بحر خان", jobTitle: "ميكانيكي", englishName: "Saghir Ahmed Bahar Khan" },
     { name: "عبدالرحمن شهاب الدين", jobTitle: "مراقب حركة سيارات", englishName: "Abdulrahman Shihabuddin" },
     { name: "ماني فانيلو سلونا", jobTitle: "سائق شاحنه", englishName: "Manny Vanilo Slona" },
-    { name: "سنتاج كاتورا ياداف", jobTitle: "سائق نقل", englishName: "Santaj Katura Yadav" },
-    { name: "جومبر جاراسيا", jobTitle: "سائق شاحنة ثقيلة", englishName: "Jomber Garasia" },
-    { name: "جيمي هاو قرفايو", jobTitle: "مشغل محطة", englishName: "Jimmy Hao Garfayo" },
+    { name: "سنتراج كاتورا ياداف", jobTitle: "سائق نقل", englishName: "Santaj Katura Yadav" },
+    { name: "جومير جاراسيا", jobTitle: "سائق شاحنة ثقيلة", englishName: "Jomber Garasia" },
+    { name: "جيمى هاو قرقايو", jobTitle: "مشغل محطة", englishName: "Jimmy Hao Garfayo" },
     { name: "نزرور الحسين", jobTitle: "سائق شاحنه", englishName: "Nazrul Al-Hussein" },
     { name: "كمال الدين شمس الحق", jobTitle: "عامل شحن وتفريغ", englishName: "Kamaluddin Shamsul Haq" },
     { name: "كاجي بهادور غالي كمال", jobTitle: "سائق شاحنه", englishName: "Kaji Bahadur Ghali Kamal" },
@@ -50,14 +51,14 @@ const DEFAULT_EMPLOYEES = [
     { name: "سوريش كومار", jobTitle: "سائق شاحنة ثقيلة", englishName: "Suresh Kumar" },
     { name: "مشرف حسين", jobTitle: "سائق شاحنة ثقيلة", englishName: "Musharraf Hussein" },
     { name: "سلمان مومين", jobTitle: "سائق شاحنة ثقيلة", englishName: "Salman Momin" },
-    { name: "ماجومادار سويكوت", jobTitle: "مشغل محطة", englishName: "Majumadar Suikot" },
+    { name: "ماجوما دار سوبكوت", jobTitle: "مشغل محطة", englishName: "Majumadar Suikot" },
     { name: "مصيد الرحمان عبد الرحمن", jobTitle: "مشغل محطة", englishName: "Mosaid Al-Rahman Abdul Rahman" },
     { name: "محمد رياض", jobTitle: "ميكانيكي", englishName: "Mohamed Riad" },
     { name: "ياسين عبدالجبار البكري", jobTitle: "مراقب حركة سيارات", englishName: "Yaseen Abdul Jabbar Al-Bakri" },
     { name: "محمد طارق انس احمد", jobTitle: "مشغل محطة", englishName: "Mohamed Tariq Anas Ahmed" },
     { name: "الترابى احمد ادريس على", jobTitle: "مراقب حركة سيارات", englishName: "Al-Torabi Ahmed Idris Ali" },
     { name: "نعمان كبير حسين", jobTitle: "مشغل محطة", englishName: "Numan Kabeer Hussein" },
-    { name: "صفرى ياداف دهر مارج", jobTitle: "سائق شاحنه", englishName: "Safri Yadav Dhar Marg" }
+    { name: "صغرى ياداف دهر مارج", jobTitle: "سائق شاحنه", englishName: "Safri Yadav Dhar Marg" }
 ];
 
 const getEnglishNameForArabic = (arabicName: string): string => {
@@ -90,6 +91,33 @@ const getEnglishJobTitleForArabic = (arabicTitle: string): string => {
         "مندوبة مشتريات": "Purchasing Representative"
     };
     return map[arabicTitle.trim()] || arabicTitle;
+};
+
+const normalizeArabicName = (name: string) => {
+    if (!name) return '';
+    let n = name
+        .replace(/أ|إ|آ/g, 'ا')
+        .replace(/ة/g, 'ه')
+        .replace(/ى/g, 'ي')
+        .replace(/\s+/g, '')
+        .trim();
+    const aliases: Record<string, string> = {
+        'جيميهاوقرفايو': 'جيميهاوقرقايو',
+        'سنتاجكاتوراياداف': 'سنتراجكاتوراياداف',
+        'جومبرجاراسيا': 'جوميرجاراسيا',
+        'ماجومادارسويكوت': 'ماجومادارسوبكوت',
+        'صفرييادافدهرمارج': 'صغرييادافدهرمارج',
+        'نعمانكبيرحسين': 'نعمانحسين'
+    };
+    return aliases[n] || n;
+};
+
+const normalizeEnglishName = (name: string) => {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .trim();
 };
 
 export default function TimeSheet({ drivers, workLogs, selectedBranchId, users = [], currentUser, onUpdateUser, isMobile }: Props) {
@@ -270,32 +298,54 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                 return;
             }
 
-            // Check if any loaded employees are missing englishName or englishJobTitle, and auto-backfill them!
-            let hasMissingEnglish = false;
-            for (const emp of emps) {
-                if (!emp.englishName || !emp.englishJobTitle) {
-                    hasMissingEnglish = true;
-                    break;
-                }
-            }
+            // Check if any loaded employees are missing englishName or englishJobTitle, or have misspelled names, and auto-backfill/correct them!
+            const spellingCorrections: Record<string, string> = {
+                "علي محمد منصور الخلف": "على محمد منصور الخلف",
+                "معتز حامد صالح الشوربجي": "معتز حامد صالح الشوربجى",
+                "أروي إبراهيم الشامسي": "أروى إبراهيم الشامسي",
+                "عهد تركي فهد الدوسري": "عهد تركى فهد الدوسري",
+                "مشاعل موسى بكاري": "مشاعل موسى بكارى",
+                "سنتاج كاتورا ياداف": "سنتراج كاتورا ياداف",
+                "جومبر جاراسيا": "جومير جاراسيا",
+                "جيمي هاو قرفايو": "جيمى هاو قرقايو",
+                "ماجومادار سويكوت": "ماجوما دار سوبكوت",
+                "صفرى ياداف دهر مارج": "صغرى ياداف دهر مارج"
+            };
 
-            if (hasMissingEnglish) {
-                const backfillPromises = emps.map(async (emp) => {
-                    let updated = { ...emp };
-                    let changed = false;
-                    if (!emp.englishName) {
-                        updated.englishName = getEnglishNameForArabic(emp.name);
+            let hasActualCorrections = false;
+            const backfillPromises = emps.map(async (emp) => {
+                let updated = { ...emp };
+                let changed = false;
+                
+                const trimmedName = emp.name ? emp.name.trim() : '';
+                if (trimmedName && spellingCorrections[trimmedName]) {
+                    updated.name = spellingCorrections[trimmedName];
+                    changed = true;
+                }
+                if (!emp.englishName && trimmedName) {
+                    const newEn = getEnglishNameForArabic(updated.name);
+                    if (newEn && newEn !== emp.englishName) {
+                        updated.englishName = newEn;
                         changed = true;
                     }
-                    if (!emp.englishJobTitle) {
-                        updated.englishJobTitle = getEnglishJobTitleForArabic(emp.jobTitle);
+                }
+                if (!emp.englishJobTitle && emp.jobTitle) {
+                    const newJobTitle = getEnglishJobTitleForArabic(updated.jobTitle);
+                    if (newJobTitle && newJobTitle !== emp.englishJobTitle) {
+                        updated.englishJobTitle = newJobTitle;
                         changed = true;
                     }
-                    if (changed) {
-                        return dualStorage.save(COLLECTIONS.RECORDS, emp.id, { type: 'timesheet_employee', data: updated });
-                    }
-                    return Promise.resolve();
-                });
+                }
+                if (changed) {
+                    hasActualCorrections = true;
+                    return dualStorage.save(COLLECTIONS.RECORDS, emp.id, { type: 'timesheet_employee', data: updated });
+                }
+                return Promise.resolve();
+            });
+
+            // If we queued actual saves, wait for them and skip setting UI state this frame
+            // The next onSnapshot will bring the corrected data
+            if (hasActualCorrections) {
                 await Promise.all(backfillPromises);
                 return;
             }
@@ -358,6 +408,88 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
         setEmpJobTitle('');
         setEmpEnglishJobTitle('');
 
+        // Sync name changes/additions from Overtime tab (TimeSheet) to Payroll employees list
+        try {
+            let payrollEmps = [];
+            const payrollSaved = localStorage.getItem('payroll_employees_2026');
+            if (payrollSaved) {
+                payrollEmps = JSON.parse(payrollSaved);
+            } else {
+                const localRecords = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+                const payrollRec = localRecords.find((r: any) => r.id === 'payroll_employees_data' || r.type === 'payroll_employees_list');
+                if (payrollRec && payrollRec.data) {
+                    payrollEmps = payrollRec.data;
+                } else {
+                    payrollEmps = initialEmployees;
+                }
+            }
+
+            if (payrollEmps && payrollEmps.length > 0) {
+                const oldName = editEmployee ? editEmployee.name : empName;
+                
+                // Let's check if the employee already exists in Payroll
+                const exists = payrollEmps.some((emp: any) => normalizeArabicName(emp.name) === normalizeArabicName(oldName));
+                
+                let updatedPayrollEmps;
+                if (exists) {
+                    updatedPayrollEmps = payrollEmps.map((emp: any) => {
+                        const normPayrollAr = normalizeArabicName(emp.name);
+                        const normOldAr = normalizeArabicName(oldName);
+                        if (normPayrollAr === normOldAr) {
+                            return {
+                                ...emp,
+                                name: empName,
+                                nameEn: empEnglishName,
+                                jobTitle: empJobTitle
+                            };
+                        }
+                        return emp;
+                    });
+                } else {
+                    // Create a new Employee for Payroll
+                    const newPayrollId = payrollEmps.length > 0 ? Math.max(...payrollEmps.map((e: any) => e.id)) + 1 : 1;
+                    const newEmp = {
+                        id: newPayrollId,
+                        code: `EMP-${newPayrollId}`,
+                        name: empName,
+                        nameEn: empEnglishName,
+                        nationalId: '',
+                        iban: '',
+                        jobTitle: empJobTitle,
+                        branch: 'الكل',
+                        hireDate: '',
+                        nationality: '',
+                        hasInsurance: false,
+                        basicSalary: 0,
+                        housingAllowance: 0,
+                        transportationAllowance: 0,
+                        communicationAllowance: 0,
+                        foodAllowance: 0,
+                        bonus: 0,
+                        overtime: 0,
+                        commission: 0,
+                        insuranceDeduction: 0,
+                        generalDeduction: 0,
+                        loan: 0,
+                        absenceDeduction: 0,
+                        isActive: true
+                    };
+                    updatedPayrollEmps = [...payrollEmps, newEmp];
+                }
+                localStorage.setItem('payroll_employees_2026', JSON.stringify(updatedPayrollEmps));
+                
+                // Save to dualStorage to keep it synced in DB!
+                await dualStorage.save(COLLECTIONS.RECORDS, 'payroll_employees_data', {
+                    type: 'payroll_employees_list',
+                    data: updatedPayrollEmps
+                });
+
+                window.dispatchEvent(new Event('payroll_employees_updated'));
+            }
+        } catch (err) {
+            console.error("Error syncing to payroll employees:", err);
+        }
+
         // Perform DB write in background
         try {
             await dualStorage.save(COLLECTIONS.RECORDS, targetEmp.id, { type: 'timesheet_employee', data: targetEmp });
@@ -374,6 +506,38 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
         const updatedEmployees = employees
             .filter(emp => emp.id !== deleteId)
             .map((emp, idx) => ({ ...emp, serialNumber: idx + 1 }));
+
+        // Sync deletion to payroll employees list
+        try {
+            let payrollEmps = [];
+            const payrollSaved = localStorage.getItem('payroll_employees_2026');
+            if (payrollSaved) {
+                payrollEmps = JSON.parse(payrollSaved);
+            } else {
+                const localRecords = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+                const payrollRec = localRecords.find((r: any) => r.id === 'payroll_employees_data' || r.type === 'payroll_employees_list');
+                if (payrollRec && payrollRec.data) {
+                    payrollEmps = payrollRec.data;
+                } else {
+                    payrollEmps = initialEmployees;
+                }
+            }
+
+            if (payrollEmps && payrollEmps.length > 0) {
+                const updatedPayrollEmps = payrollEmps.filter((emp: any) => normalizeArabicName(emp.name) !== normalizeArabicName(employeeToDelete.name));
+                localStorage.setItem('payroll_employees_2026', JSON.stringify(updatedPayrollEmps));
+                
+                // Save to DB!
+                await dualStorage.save(COLLECTIONS.RECORDS, 'payroll_employees_data', {
+                    type: 'payroll_employees_list',
+                    data: updatedPayrollEmps
+                });
+
+                window.dispatchEvent(new Event('payroll_employees_updated'));
+            }
+        } catch (err) {
+            console.error("Error deleting from payroll employees list:", err);
+        }
 
         // Optimistic UI update
         setEmployees(updatedEmployees);
@@ -397,7 +561,7 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
     };
 
     const handleToggleStatus = async (emp: TimeSheetEmployee) => {
-        const updated = { ...emp, isActive: !emp.isActive };
+        const updated = { ...emp, isActive: emp.isActive === false ? true : false };
         
         // Optimistic UI update
         setEmployees(prev => prev.map(e => e.id === emp.id ? updated : e));
@@ -593,9 +757,9 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {employees
-                                        .filter(emp => employeeFilter === 'all' ? true : employeeFilter === 'active' ? emp.isActive : !emp.isActive)
+                                        .filter(emp => employeeFilter === 'all' ? true : employeeFilter === 'active' ? emp.isActive !== false : emp.isActive === false)
                                         .map((emp, idx) => (
-                                        <tr key={emp.id} className={!emp.isActive ? 'bg-gray-50 opacity-75' : ''}>
+                                        <tr key={emp.id} className={emp.isActive === false ? 'bg-gray-50 opacity-75' : ''}>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{emp.serialNumber}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{emp.name}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{emp.englishName || ''}</td>
@@ -623,10 +787,10 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                                                 {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanEditEmployee === true) && (
                                                     <button
                                                         onClick={() => handleToggleStatus(emp)}
-                                                        className={`${emp.isActive ? 'text-green-600 hover:text-green-900' : 'text-gray-400 hover:text-gray-600'} transition-colors`}
-                                                        title={emp.isActive ? 'Deactivate' : 'Activate'}
+                                                        className={`${emp.isActive !== false ? 'text-green-600 hover:text-green-900' : 'text-gray-400 hover:text-gray-600'} transition-colors`}
+                                                        title={emp.isActive !== false ? 'Deactivate' : 'Activate'}
                                                     >
-                                                        {emp.isActive ? <CheckCircle size={18} /> : <XCircle size={18} />}
+                                                        {emp.isActive !== false ? <CheckCircle size={18} /> : <XCircle size={18} />}
                                                     </button>
                                                 )}
 
@@ -676,7 +840,7 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                 {activeTab === 'overtime1' && (
                     <div className="block">
                         <TimeSheetReport 
-                            employees={employees.filter(emp => emp.isActive && emp.showInOvertime1 !== false).map(emp => ({
+                            employees={employees.filter(emp => emp.isActive !== false && emp.showInOvertime1 !== false).map(emp => ({
                                 ...emp,
                                 name: namesLanguage === 'en' && emp.englishName ? emp.englishName : emp.name,
                                 jobTitle: namesLanguage === 'en' && emp.englishJobTitle ? emp.englishJobTitle : emp.jobTitle
@@ -692,7 +856,7 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                 {activeTab === 'overtime2' && (
                     <div className="block">
                         <TimeSheetReport 
-                            employees={employees.filter(emp => emp.isActive && emp.showInOvertime2 !== false).map(emp => ({
+                            employees={employees.filter(emp => emp.isActive !== false && emp.showInOvertime2 !== false).map(emp => ({
                                 ...emp,
                                 name: namesLanguage === 'en' && emp.englishName ? emp.englishName : emp.name,
                                 jobTitle: namesLanguage === 'en' && emp.englishJobTitle ? emp.englishJobTitle : emp.jobTitle

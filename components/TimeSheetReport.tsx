@@ -91,7 +91,28 @@ interface MonthlyGrid {
 export default function TimeSheetReport({ employees, title = "Employee Overtime", typeKey, namesLanguage = 'ar', currentUser }: Props) {
     const containerRef = React.useRef<HTMLDivElement>(null);
     const copyMenuRef = React.useRef<HTMLDivElement>(null);
-    const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const saved = localStorage.getItem('payroll_selected_month_iso');
+        if (saved && /^\d{4}-\d{2}$/.test(saved)) {
+            return saved;
+        }
+        return new Date().toISOString().slice(0, 7);
+    });
+
+    useEffect(() => {
+        const handlePayrollMonthChanged = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            if (customEvent.detail && customEvent.detail !== selectedMonth) {
+                setSelectedMonth(customEvent.detail);
+            }
+        };
+        window.addEventListener('payroll_selected_month_changed', handlePayrollMonthChanged);
+        return () => window.removeEventListener('payroll_selected_month_changed', handlePayrollMonthChanged);
+    }, [selectedMonth]);
+
+    useEffect(() => {
+        window.dispatchEvent(new CustomEvent('timesheet_selected_month_changed', { detail: selectedMonth }));
+    }, [selectedMonth]);
     
     const [gridData, setGridData] = useState<MonthlyGrid | null>(() => {
         const currentMonth = new Date().toISOString().slice(0, 7);
@@ -259,10 +280,10 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
     };
 
     useEffect(() => {
+        // Query only by type to avoid requiring a composite index
         const q = query(
             collection(db, COLLECTIONS.RECORDS),
-            where('type', '==', 'timesheet_posted_month'),
-            where('data.overtimeType', '==', typeKey)
+            where('type', '==', 'timesheet_posted_month')
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -270,7 +291,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
             
             snapshot.docs.forEach(doc => {
                 const data = doc.data().data;
-                if (data.month === selectedMonth) {
+                if (data.month === selectedMonth && data.overtimeType === typeKey) {
                     isCurrentMonthPosted = true;
                 }
             });
@@ -409,16 +430,44 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
 
     // Load data when month changes - Real-time sync
     useEffect(() => {
+        // Query only by type to avoid requiring a composite index!
         const q = query(
             collection(db, COLLECTIONS.RECORDS),
-            where('type', '==', `timesheet_grid_${typeKey}`),
-            where('data.month', '==', selectedMonth)
+            where('type', '==', `timesheet_grid_${typeKey}`)
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             if (!snapshot.empty) {
-                const loaded = snapshot.docs[0].data();
-                setGridData(loaded.data);
+                const loadedDocs = snapshot.docs.map(doc => doc.data().data).filter(d => d.month === selectedMonth);
+                if (loadedDocs.length > 0) {
+                    // If multiple exist (due to previous bug creating new IDs), merge them or pick the one with most employees
+                    let bestDoc = loadedDocs[0];
+                    if (loadedDocs.length > 1) {
+                        for (let i = 1; i < loadedDocs.length; i++) {
+                            if (Object.keys(loadedDocs[i].employeesData || {}).length > Object.keys(bestDoc.employeesData || {}).length) {
+                                bestDoc = loadedDocs[i];
+                            }
+                        }
+                        
+                        // Merge all into the bestDoc just to be safe
+                        loadedDocs.forEach(doc => {
+                            if (doc !== bestDoc && doc.employeesData) {
+                                Object.keys(doc.employeesData).forEach(empId => {
+                                    if (!bestDoc.employeesData[empId] || Object.keys(bestDoc.employeesData[empId].days || {}).length === 0) {
+                                        bestDoc.employeesData[empId] = doc.employeesData[empId];
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    setGridData(bestDoc);
+                } else {
+                    setGridData({
+                        id: `ts-grid-${typeKey}-${selectedMonth}`,
+                        month: selectedMonth,
+                        employeesData: {}
+                    });
+                }
             } else {
                 setGridData({
                     id: `ts-grid-${typeKey}-${selectedMonth}`,
@@ -458,7 +507,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                 dualStorage.save(COLLECTIONS.RECORDS, archiveId, {
                     type: 'timesheet_posted_month',
                     data: updatedArchiveData
-                }).catch(err => {
+                }).finally(() => window.dispatchEvent(new Event('timesheet_updated'))).catch(err => {
                     console.error("Error updating archive:", err);
                 });
             }
@@ -515,7 +564,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         dualStorage.save(COLLECTIONS.RECORDS, newData.id, {
             type: `timesheet_grid_${typeKey}`,
             data: newData
-        }).catch(err => {
+        }).finally(() => window.dispatchEvent(new Event('timesheet_updated'))).catch(err => {
             console.error("Error saving grid cell:", err);
         });
         
@@ -555,7 +604,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         dualStorage.save(COLLECTIONS.RECORDS, newData.id, {
             type: `timesheet_grid_${typeKey}`,
             data: newData
-        }).catch(err => {
+        }).finally(() => window.dispatchEvent(new Event('timesheet_updated'))).catch(err => {
             console.error("Error saving grid cell status:", err);
         });
         
@@ -710,6 +759,36 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
             currentRow++;
         });
 
+        // Add Grand Total row to Excel
+        const excelGrandTotal = employees.reduce((sum, emp) => sum + calculateTotalHours(emp.id), 0);
+        const totalRowValues = [
+            '',
+            'Total Hours',
+            '',
+            '',
+            '',
+            excelGrandTotal
+        ];
+        daysArray.forEach(() => totalRowValues.push(''));
+        totalRowValues.push('');
+
+        totalRowValues.forEach((val, cIdx) => {
+            const cell = sheet.getCell(currentRow, cIdx + 1);
+            cell.value = val;
+            cell.font = fontBold;
+            cell.border = borderStyle as any;
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F6FC' } };
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            if (cIdx === 1) {
+                cell.alignment = { horizontal: 'left', vertical: 'middle' };
+            }
+            if (cIdx === 5) {
+                cell.font = { bold: true, color: { argb: 'FFDC2626' } };
+            }
+        });
+        sheet.getRow(currentRow).height = 22;
+        currentRow++;
+
         sheet.getColumn(1).width = 5;
         sheet.getColumn(2).width = 25;
         sheet.getColumn(3).width = 15;
@@ -768,7 +847,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         
         employees.forEach(emp => {
             const showInTab = typeKey === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
-            if (emp.isActive && showInTab) {
+            if (emp.isActive !== false && showInTab) {
                 newEmployeesData[emp.id] = {
                     bonus: '',
                     otTrips: '',
@@ -789,7 +868,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         dualStorage.save(COLLECTIONS.RECORDS, newData.id, {
             type: `timesheet_grid_${typeKey}`,
             data: newData
-        }).catch(err => {
+        }).finally(() => window.dispatchEvent(new Event('timesheet_updated'))).catch(err => {
             console.error("Error clearing grid:", err);
         });
         
@@ -812,7 +891,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
             let pastedCount = 0;
             employees.forEach(emp => {
                 const showInTab = typeKey === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
-                if (emp.isActive && showInTab && copiedEmployeesData[emp.id]) {
+                if (emp.isActive !== false && showInTab && copiedEmployeesData[emp.id]) {
                     const copiedEmpData = copiedEmployeesData[emp.id];
                     
                     const filteredDays: Record<number, string> = {};
@@ -858,7 +937,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
             dualStorage.save(COLLECTIONS.RECORDS, newData.id, {
                 type: `timesheet_grid_${typeKey}`,
                 data: newData
-            }).catch(err => {
+            }).finally(() => window.dispatchEvent(new Event('timesheet_updated'))).catch(err => {
                 console.error("Error saving pasted data:", err);
             });
             
@@ -868,6 +947,86 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         } catch (err) {
             console.error("Error pasting data:", err);
             alert("Failed to paste data.");
+        }
+    };
+
+    const handleExcelPaste = (e: React.ClipboardEvent<HTMLTableElement>) => {
+        if (!isEditableMonth) return;
+
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT') return;
+        
+        const rowAttr = target.getAttribute('data-row');
+        const colAttr = target.getAttribute('data-col');
+        if (rowAttr === null || colAttr === null) return;
+
+        const clipboardData = e.clipboardData;
+        if (!clipboardData) return;
+
+        const pastedText = clipboardData.getData('text/plain');
+        if (!pastedText) return;
+
+        e.preventDefault();
+
+        const rows = pastedText.split(/\r?\n/).filter(row => row.trim().length > 0);
+        if (rows.length === 0) return;
+
+        const newEmployeesData = { ...gridData?.employeesData } as Record<string, any>;
+        let hasChanges = false;
+
+        const visibleEmployees = employees.filter(emp => typeKey === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false).filter(e => e.isActive);
+        const startRow = parseInt(rowAttr, 10);
+        const startCol = parseInt(colAttr, 10);
+
+        rows.forEach((rowText, rIndex) => {
+            const targetRow = startRow + rIndex;
+            if (targetRow >= visibleEmployees.length) return;
+
+            const emp = visibleEmployees[targetRow];
+            const empData = newEmployeesData[emp.id] || { bonus: '', otTrips: '', rate: '', days: {}, statuses: {} };
+            const newEmpData = { ...empData, days: { ...empData.days } };
+
+            const cells = rowText.split('\t');
+            cells.forEach((cellText, cIndex) => {
+                const targetCol = startCol + cIndex;
+                const value = cellText.trim();
+
+                if (targetCol === 0) {
+                    newEmpData.bonus = value;
+                    hasChanges = true;
+                } else if (targetCol === 1) {
+                    newEmpData.otTrips = value;
+                    hasChanges = true;
+                } else if (targetCol >= 2 && targetCol <= 32) {
+                    const day = targetCol - 1;
+                    if (day <= daysInMonth) {
+                        newEmpData.days[day] = value;
+                        hasChanges = true;
+                    }
+                } else if (targetCol === 33) {
+                    newEmpData.rate = value;
+                    hasChanges = true;
+                }
+            });
+
+            newEmployeesData[emp.id] = newEmpData;
+        });
+
+        if (hasChanges && gridData) {
+            const newData = {
+                ...gridData,
+                employeesData: newEmployeesData
+            };
+            setGridData(newData);
+            
+            dualStorage.save(COLLECTIONS.RECORDS, newData.id, {
+                type: `timesheet_grid_${typeKey}`,
+                data: newData
+            }).finally(() => window.dispatchEvent(new Event('timesheet_updated'))).catch(err => {
+                console.error("Error saving Excel pasted data:", err);
+            });
+            
+            syncArchive(newData);
         }
     };
 
@@ -1040,7 +1199,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                         {`Overtime - ${new Date(currentYear, currentMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`}
                     </h2>
                 </div>
-                <table id={`printable-table-ts-${typeKey}`} className="min-w-full divide-y divide-gray-300 text-center print:w-full print:text-xs">
+                <table id={`printable-table-ts-${typeKey}`} className="min-w-full divide-y divide-gray-300 text-center print:w-full print:text-xs" onPaste={handleExcelPaste}>
                     <thead className="bg-[#b4c6e7] print:bg-gray-200">
                         <tr>
                             <th className="px-1 py-2 text-xs font-bold text-gray-900 border border-gray-400 w-10">No</th>
@@ -1165,6 +1324,22 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                             );
                         })}
                     </tbody>
+                    <tfoot className="bg-[#f8fafc] print:bg-slate-50 border-t-2 border-gray-400 font-bold">
+                        <tr>
+                            <td className="px-2 py-1.5 text-xs font-bold text-gray-900 border border-gray-300 text-left" colSpan={3}>
+                                Total Hours
+                            </td>
+                            <td className="px-1 py-1.5 border border-gray-300"></td>
+                            <td className="px-1 py-1.5 border border-gray-300"></td>
+                            <td className="px-2 py-1.5 text-xs font-extrabold text-red-600 border border-gray-300 font-mono">
+                                {employees.reduce((sum, emp) => sum + calculateTotalHours(emp.id), 0)}
+                            </td>
+                            {daysArray.map(day => (
+                                <td key={day} className="px-1 py-1.5 border border-gray-300"></td>
+                            ))}
+                            <td className="px-1 py-1.5 border border-gray-300"></td>
+                        </tr>
+                    </tfoot>
                 </table>
 
                 {/* Miniature status legend */}

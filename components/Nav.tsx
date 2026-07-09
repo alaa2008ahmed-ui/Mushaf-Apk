@@ -17,7 +17,7 @@ import {
     Menu,
     ClipboardList,
     CheckSquare,
-    Archive
+    Archive, Wallet, FilePlus
 } from 'lucide-react';
 
 interface NavProps {
@@ -44,6 +44,8 @@ const itemIcons: Record<string, React.ReactNode> = {
     'Account Statement': <FileText size={22} />,
     'Orders': <ClipboardList size={22} />,
     'Order Approvals': <CheckSquare size={22} />,
+    'Payroll': <Wallet size={22} />,
+    'Allowances For Employees': <FilePlus size={22} />,
     'Settings': <Settings size={22} />
 };
 
@@ -52,7 +54,7 @@ const Nav: React.FC<NavProps> = ({ currentPage, onNavigate, allowedPages, onLogo
     const [isHovered, setIsHovered] = useState(false);
     const fabRef = useRef(null);
     
-    const navItems = ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Invoices Tracking', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Time Sheet', 'Orders', 'Order Approvals', 'Account Statement', 'Settings'];
+    const navItems = ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Invoices Tracking', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Time Sheet', 'Orders', 'Order Approvals', 'Account Statement', 'Payroll', 'Allowances For Employees', 'Settings'];
     const filteredItems = navItems.filter(item => {
         return allowedPages.includes(item);
     });
