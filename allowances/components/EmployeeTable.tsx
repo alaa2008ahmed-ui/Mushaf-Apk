@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CalculatedEmployee } from '../types';
+import { User } from '../../types';
 import { formatCurrency, formatNumber, formatDateGB } from '../utils';
 import { Printer, Edit, Trash2, UserCheck, UserX, Calendar, Briefcase, Building2 } from 'lucide-react';
 
@@ -10,11 +11,13 @@ interface Props {
   onUpdateEmployee: (id: string, field: keyof CalculatedEmployee, value: any) => void;
   onEdit: (employee: CalculatedEmployee) => void;
   onDelete: (id: string) => void;
+  currentUser?: User;
 }
 
-export default function EmployeeTable({ employees, viewMode, onPrint, onUpdateEmployee, onEdit, onDelete }: Props) {
+export default function EmployeeTable({ employees, viewMode, onPrint, onUpdateEmployee, onEdit, onDelete, currentUser }: Props) {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const activeEmployees = employees.filter(e => e.isActive !== false);
+  const isAlaa = currentUser?.username?.toLowerCase() === 'alaa';
 
   return (
     <div className="flex flex-col flex-grow w-full h-full gap-2">
@@ -197,17 +200,19 @@ export default function EmployeeTable({ employees, viewMode, onPrint, onUpdateEm
                     
                     <td className="py-2.5 px-4 text-center print:hidden" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={() => onUpdateEmployee(emp.id, 'isActive', isDisabled ? true : false)}
-                          className={`p-1.5 border rounded-lg transition-colors shadow-sm ${
-                            isDisabled
-                              ? 'border-rose-300 text-rose-600 bg-rose-100 hover:bg-rose-200'
-                              : 'border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
-                          }`}
-                          title={isDisabled ? 'الموظف معطل - انقر لتفعيله' : 'الموظف مفعل - انقر لتعطيله'}
-                        >
-                          {isDisabled ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
-                        </button>
+                        {isAlaa && (
+                          <button
+                            onClick={() => onUpdateEmployee(emp.id, 'isActive', isDisabled ? true : false)}
+                            className={`p-1.5 border rounded-lg transition-colors shadow-sm ${
+                              isDisabled
+                                ? 'border-rose-300 text-rose-600 bg-rose-100 hover:bg-rose-200'
+                                : 'border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100'
+                            }`}
+                            title={isDisabled ? 'الموظف معطل - انقر لتفعيله' : 'الموظف مفعل - انقر لتعطيله'}
+                          >
+                            {isDisabled ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
+                          </button>
+                        )}
                         <button 
                           onClick={() => !isDisabled && onPrint(emp)}
                           disabled={isDisabled}
@@ -216,20 +221,24 @@ export default function EmployeeTable({ employees, viewMode, onPrint, onUpdateEm
                         >
                           <Printer className="w-3.5 h-3.5" />
                         </button>
-                        <button 
-                          onClick={() => onEdit(emp)}
-                          className="p-1.5 border border-blue-200 text-blue-600 rounded-lg bg-white hover:bg-blue-50 transition-colors shadow-sm"
-                          title="تعديل"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
-                        <button 
-                          onClick={() => onDelete(emp.id)}
-                          className="p-1.5 border border-rose-200 text-rose-600 rounded-lg bg-white hover:bg-rose-50 transition-colors shadow-sm"
-                          title="حذف"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {isAlaa && (
+                          <>
+                            <button 
+                              onClick={() => onEdit(emp)}
+                              className="p-1.5 border border-blue-200 text-blue-600 rounded-lg bg-white hover:bg-blue-50 transition-colors shadow-sm"
+                              title="تعديل"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button 
+                              onClick={() => onDelete(emp.id)}
+                              className="p-1.5 border border-rose-200 text-rose-600 rounded-lg bg-white hover:bg-rose-50 transition-colors shadow-sm"
+                              title="حذف"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

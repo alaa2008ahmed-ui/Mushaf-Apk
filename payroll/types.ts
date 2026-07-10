@@ -51,6 +51,19 @@ export interface Employee {
     absenceDeduction?: '1' | '2';
     [key: string]: '1' | '2' | undefined;
   };
+  monthlyValues?: {
+    [monthIso: string]: {
+      overtimeHours?: number;
+      overtime?: number;
+      commission?: number;
+      bonus?: number;
+      generalDeduction?: number;
+      loan?: number;
+      absenceDays?: number;
+      absenceDeduction?: number;
+      [key: string]: number | undefined;
+    };
+  };
 }
 
 export interface PayrollTotals {
@@ -93,4 +106,4 @@ export interface ArchivedMonth {
   monthIso?: string;
 }
 
-export type ViewMode = 'table' | 'analytics' | 'payslips' | 'archive' | 'settings' | 'bank' | 'account-statement';
+export type ViewMode = 'table' | 'analytics' | 'payslips' | 'archive' | 'settings' | 'bank' | 'account-statement' | 'edit-archive';

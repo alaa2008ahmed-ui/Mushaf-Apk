@@ -9,6 +9,7 @@ interface PaySlipModalProps {
   signatures: Signatures;
   sheetTitle: string;
   payrollPhase: 'full' | 'phase1' | 'phase2';
+  selectedMonth: string;
 }
 
 export const PaySlipModal: React.FC<PaySlipModalProps> = ({
@@ -16,7 +17,8 @@ export const PaySlipModal: React.FC<PaySlipModalProps> = ({
   onClose,
   signatures,
   sheetTitle,
-  payrollPhase
+  payrollPhase,
+  selectedMonth
 }) => {
   if (!employee) return null;
 
@@ -32,6 +34,16 @@ export const PaySlipModal: React.FC<PaySlipModalProps> = ({
     if (payrollPhase === 'phase1') return ' - المرحلة الأولى (Phase 1)';
     if (payrollPhase === 'phase2') return ' - المرحلة الثانية (Phase 2)';
     return '';
+  };
+
+  const getFormattedMonth = () => {
+    if (!selectedMonth || !/^\d{4}-\d{2}$/.test(selectedMonth)) return selectedMonth;
+    const [y, m] = selectedMonth.split('-').map(Number);
+    const months = [
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    ];
+    return `${months[m - 1]} ${y}`;
   };
 
   const handlePrint = () => {
@@ -89,7 +101,7 @@ export const PaySlipModal: React.FC<PaySlipModalProps> = ({
               <p className="text-slate-900 font-black text-xl mt-1">{employee.name}</p>
             </div>
             <div>
-              <p className="text-slate-500 font-black text-[10px] uppercase tracking-widest">الوظيفة / المسمى</p>
+              <p className="text-slate-500 font-black text-[10px] uppercase tracking-widest">الوظيفة</p>
               <p className="text-slate-800 font-black text-lg mt-1">{employee.jobTitle}</p>
             </div>
             <div>
@@ -97,19 +109,19 @@ export const PaySlipModal: React.FC<PaySlipModalProps> = ({
               <p className="text-slate-800 font-black text-lg mt-1">{employee.branch}</p>
             </div>
             <div>
-              <p className="text-slate-500 font-black text-[10px] uppercase tracking-widest">الهوية / National ID</p>
+              <p className="text-slate-500 font-black text-[10px] uppercase tracking-widest">رقم الهوية</p>
               <p className="text-slate-800 font-mono font-black text-lg mt-1">{employee.nationalId || '-'}</p>
             </div>
             <div>
-              <p className="text-slate-500 font-black text-[10px] uppercase tracking-widest">تاريخ التعيين / Hire Date</p>
+              <p className="text-slate-500 font-black text-[10px] uppercase tracking-widest">تاريخ التعيين</p>
               <p className="text-slate-800 font-mono font-black text-lg mt-1">{employee.hireDate || '-'}</p>
             </div>
             <div>
-              <p className="text-slate-500 font-black text-[10px] uppercase tracking-widest">الجنسية / Nationality</p>
+              <p className="text-slate-500 font-black text-[10px] uppercase tracking-widest">الجنسية</p>
               <p className="text-slate-800 font-black text-lg mt-1">{employee.nationality || '-'}</p>
             </div>
             <div>
-              <p className="text-slate-500 font-black text-[10px] uppercase tracking-widest">نهاية الخدمة / End of Service</p>
+              <p className="text-slate-500 font-black text-[10px] uppercase tracking-widest">نهاية الخدمة</p>
               <p className="text-slate-800 font-mono font-black text-lg mt-1">{employee.endOfServicePaid ? formatCurrency(employee.endOfServicePaid) + ' ر.س' : '0 ر.س'}</p>
             </div>
           </div>
@@ -183,7 +195,7 @@ export const PaySlipModal: React.FC<PaySlipModalProps> = ({
               </div>
               <div>
                 <p className="text-sm text-slate-500 font-black uppercase tracking-widest mb-1">
-                  الصافي لشهر (يوليو 2026){getPhaseText()} / <span className="text-slate-400">Net Salary for July 2026</span>
+                  الصافي لشهر ({getFormattedMonth()}){getPhaseText()}
                 </p>
                 <p className="text-5xl font-black text-slate-900 font-mono tracking-tight">
                   {formatCurrency(totals.netSalary)}
@@ -192,7 +204,7 @@ export const PaySlipModal: React.FC<PaySlipModalProps> = ({
             </div>
             <div className="text-left hidden sm:block">
               <div className="bg-blue-50 text-blue-700 border-2 border-blue-200 px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-sm">
-                كشف الراتب المعتمد / <span className="opacity-70">Approved Slip</span>
+                كشف الراتب المعتمد
               </div>
             </div>
           </div>

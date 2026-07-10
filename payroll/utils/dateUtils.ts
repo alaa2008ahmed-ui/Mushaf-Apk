@@ -32,20 +32,34 @@ export const getArabicMonthName = (input: Date | number | string = new Date()): 
  * Automatically generates the standard Arabic payroll sheet title.
  */
 export const getDynamicSheetTitle = (input: Date | string = new Date()): string => {
-  let monthName = '';
-  let year = 2026;
+  let monthIndex: number;
+  let year: number;
 
   if (typeof input === 'string' && /^\d{4}-\d{2}$/.test(input)) {
     const [y, m] = input.split('-').map(Number);
-    monthName = getArabicMonthName(m);
+    monthIndex = m - 1;
     year = y;
   } else {
     const date = typeof input === 'string' ? new Date() : input;
-    monthName = getArabicMonthName(date);
-    year = date.getFullYear();
+    const day = date.getDate();
+    if (day <= 5) {
+      const prevDate = new Date(date);
+      prevDate.setMonth(date.getMonth() - 1);
+      monthIndex = prevDate.getMonth();
+      year = prevDate.getFullYear();
+    } else {
+      monthIndex = date.getMonth();
+      year = date.getFullYear();
+    }
   }
   
-  return `اجمالي الراتب والبدلات والاضافي للعاملين عن شهر ${monthName} ${year} م`;
+  const monthsAr = [
+    'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+  ];
+  
+  const monthName = monthsAr[monthIndex];
+  return `اجمالي رواتب شهر ${monthName} ${year} م.`;
 };
 
 /**
@@ -55,57 +69,41 @@ export const getFormattedTitle = (title: string, phase: 'full' | 'phase1' | 'pha
   let monthName = '';
   let yearStr = '';
 
-  if (selectedMonthIso) {
+  if (selectedMonthIso && /^\d{4}-\d{2}$/.test(selectedMonthIso)) {
     const [y, m] = selectedMonthIso.split('-').map(Number);
-    if (y && m) {
-      const months = [
-        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
-      ];
-      monthName = months[m - 1] || 'يوليو';
-      yearStr = y.toString();
-    }
+    const months = [
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    ];
+    monthName = months[m - 1] || 'يوليو';
+    yearStr = y.toString();
   }
 
   if (!monthName || !yearStr) {
-    // Try to find the month and year from the title
+    // Try to find the month and year from the title if selectedMonthIso is not provided
+    const monthsAr = [
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    ];
     const monthMatch = title.match(/(يناير|فبراير|مارس|أبريل|مايو|يونيو|يوليو|أغسطس|سبتمبر|أكتوبر|نوفمبر|ديسمبر)/);
     const yearMatch = title.match(/\b(20\d{2})\b/);
     if (monthMatch && yearMatch) {
       monthName = monthMatch[1];
       yearStr = yearMatch[1];
     } else {
-      // fallback extraction after 'عن شهر' or 'عن'
-      const match = title.match(/(?:عن شهر|عن)\s+(.+)$/);
-      let monthPart = match && match[1] ? match[1].trim() : title;
-      monthPart = monthPart.replace(/\s*م\.?$/, '').trim();
-      
-      const prefixes = [
-        "اجمالي الراتب والبدلات والاضافي للعاملين عن شهر",
-        "اجمالي الراتب والبدلات للعاملين عن شهر",
-        "اجمالي الاضافي للعاملين عن شهر",
-        "اجمالي الراتب والبدلات والاضافي للعاملين عن",
-        "اجمالي الراتب والبدلات للعاملين عن",
-        "اجمالي الاضافي للعاملين عن"
-      ];
-      for (const prefix of prefixes) {
-        if (monthPart.startsWith(prefix)) {
-          monthPart = monthPart.substring(prefix.length).trim();
-        }
-      }
-      monthName = monthPart;
-      yearStr = '';
+      monthName = 'يوليو';
+      yearStr = '2026';
     }
   }
 
-  const suffix = yearStr ? ` ${yearStr} م.` : ' م.';
+  const suffix = ` ${yearStr} ${yearStr === '' ? '' : 'م.'}`;
 
   if (phase === 'full') {
-    return `اجمالي الراتب والبدلات والاضافي للعاملين عن شهر ${monthName}${suffix}`;
+    return `اجمالي رواتب شهر ${monthName} ${yearStr} م.`;
   } else if (phase === 'phase1') {
-    return `اجمالي الراتب والبدلات للعاملين عن شهر ${monthName}${suffix}`;
+    return `اجمالي الراتب والبدلات للعاملين عن شهر ${monthName} ${yearStr} م.`;
   } else {
-    return `اجمالي الاضافي للعاملين عن شهر ${monthName}${suffix}`;
+    return `اجمالي الاضافي للعاملين عن شهر ${monthName} ${yearStr} م.`;
   }
 };
 

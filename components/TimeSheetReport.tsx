@@ -21,6 +21,32 @@ const getContrastColor = (hexColor: string) => {
     return luminance > 0.5 ? '#000000' : '#ffffff';
 };
 
+const normalizeArabicName = (name: string) => {
+    if (!name) return '';
+    let n = name
+        .replace(/أ|إ|آ/g, 'ا')
+        .replace(/ة/g, 'ه')
+        .replace(/ى/g, 'ي')
+        .replace(/\s+/g, '')
+        .trim();
+    const aliases: Record<string, string> = {
+        'جيميهاوقرفايو': 'جيميهاوقرقايو',
+        'سنتاجكاتوراياداف': 'سنتراجكاتوراياداف',
+        'جومبرجاراسيا': 'جوميرجاراسيا',
+        'ماجومادارسويكوت': 'ماجومادارسوبكوت',
+        'نعمانكبيرحسين': 'نعمانحسين'
+    };
+    return aliases[n] || n;
+};
+
+const normalizeEnglishName = (name: string) => {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+        .trim();
+};
+
 const DEFAULT_STATUS_OPTIONS = [
     {
         key: 'sic_leave',
@@ -460,6 +486,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                             }
                         });
                     }
+
                     setGridData(bestDoc);
                 } else {
                     setGridData({

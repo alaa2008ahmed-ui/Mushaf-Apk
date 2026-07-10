@@ -6,7 +6,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import './index.css';
 import EnglishDateInput from './components/EnglishDateInput';
-import { Plus, FileSpreadsheet, Smartphone, Monitor, FileText } from 'lucide-react';
+import { Plus, FileSpreadsheet, Smartphone, Monitor, FileText, Lock, Unlock } from 'lucide-react';
 import { useIsMobile } from './hooks/useIsMobile';
 import { Employee, CalculatedEmployee, ArchivedRecord } from './types';
 import { calculateEmployeeAllowances, triggerSafePrint, formatNumber } from './utils';
@@ -69,6 +69,18 @@ const applyBranchCorrections = (list: Employee[]): Employee[] => {
     let calculationDate = emp.calculationDate;
     let code = emp.code;
     let isActive = emp.isActive;
+    let hireDate = emp.hireDate;
+    let lastVacationReturnDate = emp.lastVacationReturnDate;
+
+    if (emp.id === '13' || (emp.name && emp.name.includes('باسمه'))) {
+      if (hireDate === '2021-01-01') hireDate = '2026-05-11';
+      if (lastVacationReturnDate === '2025-12-31') lastVacationReturnDate = '2026-05-11';
+    }
+
+    if (emp.id === '14' || (emp.name && emp.name.includes('لولوه'))) {
+      if (hireDate === '2021-01-01') hireDate = '2026-05-10';
+      if (lastVacationReturnDate === '2025-12-31') lastVacationReturnDate = '2026-05-10';
+    }
 
     if (emp.id === '11' || (emp.name && emp.name.includes('اماني إبراهيم يحي الفيفي'))) {
       if (code === '11' || !code) code = '1177';
@@ -98,8 +110,8 @@ const applyBranchCorrections = (list: Employee[]): Employee[] => {
       if (transferAllowance !== 0) transferAllowance = 0;
     }
 
-    if (branch !== emp.branch || ticketPrice !== emp.ticketPrice || transferAllowance !== emp.transferAllowance || calculationDate !== emp.calculationDate || code !== emp.code || isActive !== emp.isActive) {
-      return { ...emp, branch, ticketPrice, transferAllowance, calculationDate, code, isActive };
+    if (branch !== emp.branch || ticketPrice !== emp.ticketPrice || transferAllowance !== emp.transferAllowance || calculationDate !== emp.calculationDate || code !== emp.code || isActive !== emp.isActive || hireDate !== emp.hireDate || lastVacationReturnDate !== emp.lastVacationReturnDate) {
+      return { ...emp, branch, ticketPrice, transferAllowance, calculationDate, code, isActive, hireDate, lastVacationReturnDate };
     }
     return emp;
   });
@@ -403,13 +415,51 @@ export default function App({ currentUser }: { currentUser: User }) {
         };
         setEmployees(prev => applyBranchCorrections([...prev, savedEmp]));
       }
-      setNotification('تم حفظ بيانات الموظف ومزامنتها بنجاح');
+      setEmployeeToEdit(savedEmp);
     });
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    // Cleanup empty name employees
+    setEmployees(prev => prev.filter(emp => emp.name && emp.name.trim() !== ''));
+    setEmployeeToEdit(null);
   };
 
   const openAddModal = () => {
     requirePasswordAuth(() => {
-      setEmployeeToEdit(null);
+      const newId = generateUUID();
+      const newSeq = employees.length > 0 ? Math.max(...employees.map(e => e.sequenceNumber)) + 1 : 1;
+      const defaultBranch = BRANCHES.find(b => b !== 'الكل' && b !== 'All') || 'الادارة';
+      const newEmp: Employee = {
+        id: newId,
+        sequenceNumber: newSeq,
+        code: String(newSeq),
+        jobTitle: 'مبيعات',
+        name: '',
+        branch: defaultBranch,
+        hireDate: new Date().toISOString().split('T')[0],
+        lastVacationReturnDate: new Date().toISOString().split('T')[0],
+        calculationDate: new Date().toISOString().split('T')[0],
+        basicSalary: 3000,
+        housingAllowance: 500,
+        transferAllowance: 200,
+        phoneAllowance: 0,
+        foodAllowance: 0,
+        fixedAllowances: 700,
+        ticketPrice: 0,
+        paidEndOfService: 0,
+        socialSecurity: 0,
+        includeSocialSecurity: true,
+        loans: 0,
+        absence: 0,
+        withdrawals: 0,
+        notes: '',
+        isActive: true
+      };
+
+      setEmployees(prev => applyBranchCorrections([...prev, newEmp]));
+      setEmployeeToEdit(newEmp);
       setIsModalOpen(true);
     });
   };
@@ -593,10 +643,10 @@ export default function App({ currentUser }: { currentUser: User }) {
             <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 py-1.5 sm:py-0 my-auto">
               <button 
                 onClick={openAddModal}
-                className="bg-indigo-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2 hover:bg-indigo-700 transition-colors shadow-sm shrink-0"
+                className="bg-indigo-600 text-white p-2 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors shadow-sm shrink-0"
+                title="إضافة موظف / Add Employee"
               >
-                <span className="text-base font-bold leading-none">+</span>
-                <span>إضافة موظف</span>
+                <Plus className="w-5 h-5" />
               </button>
               <button
                 onClick={() => {
@@ -606,14 +656,14 @@ export default function App({ currentUser }: { currentUser: User }) {
                     requirePasswordAuth(() => {});
                   }
                 }}
-                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 border ${
+                className={`p-2 rounded-lg transition-all flex items-center justify-center border ${
                   isPasswordUnlocked 
                     ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100' 
                     : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
                 }`}
-                title={isPasswordUnlocked ? 'انقر لقفل التعديلات بكلمة سر' : 'التعديل محمي بكلمة سر'}
+                title={isPasswordUnlocked ? 'التعديل مفتوح (انقر لقفل التعديلات) / Edit Unlocked (Click to Lock)' : 'التعديل محمي بكلمة سر / Edit Protected with Password'}
               >
-                <span>{isPasswordUnlocked ? 'التعديل مفتوح 🔓 (قفل)' : 'حماية التعديل 🔒'}</span>
+                {isPasswordUnlocked ? <Unlock className="w-5 h-5 text-amber-600" /> : <Lock className="w-5 h-5 text-slate-600" />}
               </button>
             </div>
           </div>
@@ -753,23 +803,23 @@ export default function App({ currentUser }: { currentUser: User }) {
                   <button
                     onClick={handleExportPDF}
                     title="تصدير إلى PDF"
-                    className="bg-red-600 text-white p-2 sm:p-2.5 rounded-lg flex items-center justify-center hover:bg-red-700 transition-colors shadow-sm shrink-0"
+                    className="bg-white border border-gray-200 text-red-600 p-2 sm:p-2.5 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors shadow-sm shrink-0"
                   >
-                    <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
                   </button>
                   <button
                     onClick={handleExportExcel}
                     title="تصدير للإكسيل"
-                    className="bg-emerald-700 text-white p-2 sm:p-2.5 rounded-lg flex items-center justify-center hover:bg-emerald-800 transition-colors shadow-sm shrink-0"
+                    className="bg-white border border-gray-200 text-emerald-700 p-2 sm:p-2.5 rounded-lg flex items-center justify-center hover:bg-emerald-50 transition-colors shadow-sm shrink-0"
                   >
-                    <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-700" />
                   </button>
                   <button
                     onClick={handlePrintTable}
                     title="طباعة الجدول"
-                    className="bg-emerald-600 text-white p-2 sm:p-2.5 rounded-lg flex items-center justify-center hover:bg-emerald-700 transition-colors shadow-sm shrink-0"
+                    className="bg-white border border-gray-200 text-emerald-600 p-2 sm:p-2.5 rounded-lg flex items-center justify-center hover:bg-emerald-50 transition-colors shadow-sm shrink-0"
                   >
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                   </button>
                 </div>
               </div>
@@ -784,6 +834,7 @@ export default function App({ currentUser }: { currentUser: User }) {
                   onUpdateEmployee={handleUpdateEmployeeField}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  currentUser={currentUser}
                 />
               </div>
             </>
@@ -806,7 +857,7 @@ export default function App({ currentUser }: { currentUser: User }) {
 
         <EmployeeModal 
           isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
+          onClose={handleCloseModal} 
           onSave={handleSaveEmployee}
           branches={BRANCHES.filter(b => b !== 'الكل')}
           employeeToEdit={employeeToEdit}
@@ -814,7 +865,7 @@ export default function App({ currentUser }: { currentUser: User }) {
 
         {isPasswordModalOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-200">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-xs w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in duration-200">
               <div className="bg-slate-800 text-white p-5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="text-xl">🔒</span>
@@ -843,12 +894,8 @@ export default function App({ currentUser }: { currentUser: User }) {
                     setPasswordError('كلمة السر غير صحيحة، يرجى إدخال 0120301012 للمتابعة.');
                   }
                 }}
-                className="p-6 space-y-4"
+                className="p-5 space-y-4"
               >
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  يُمنع منعاً باتاً تعديل أو إضافة أو حذف بيانات أي موظف إلا بعد إدخال كلمة السر المصرح بها.
-                </p>
-                
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">كلمة السر الصلاحية:</label>
                   <input 

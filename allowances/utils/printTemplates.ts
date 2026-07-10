@@ -14,21 +14,7 @@ export interface PrintTemplateOption {
 }
 
 export const PRINT_TEMPLATE_OPTIONS: PrintTemplateOption[] = [
-  { id: '1', name: 'التصميم القياسي', label: 'التصميم القياسي', description: '', badge: 'الافتراضي' },
-  { id: '2', name: 'رسمي كلاسيك', label: 'رسمي كلاسيك', description: '', badge: 'رسمي' },
-  { id: '3', name: 'تنفيذي راقي', label: 'تنفيذي راقي', description: '', badge: 'تنفيذي' },
-  { id: '4', name: 'اقتصادي مدمج', label: 'اقتصادي مدمج', description: '', badge: 'اقتصادي' },
-  { id: '5', name: 'مؤسسي حكومي', label: 'مؤسسي حكومي', description: '', badge: 'مؤسسي' },
-  { id: '6', name: 'حديث ومبسط', label: 'حديث ومبسط', description: '', badge: 'حديث' },
-  { id: '7', name: 'هندسي دقيق', label: 'هندسي دقيق', description: '', badge: 'هندسي' },
-  { id: '8', name: 'إبداعي ملون', label: 'إبداعي ملون', description: '', badge: 'إبداعي' },
-  { id: '9', name: 'شامل تفصيلي', label: 'شامل تفصيلي', description: '', badge: 'شامل' },
-  { id: '10', name: 'مدمج مضغوط', label: 'مدمج مضغوط', description: '', badge: 'مضغوط' },
-  { id: '11', name: 'أنيق وفاخر', label: 'أنيق وفاخر', description: '', badge: 'أنيق' },
-  { id: '12', name: 'تقني متطور', label: 'تقني متطور', description: '', badge: 'تقني' },
-  { id: '13', name: 'أكاديمي موثق', label: 'أكاديمي موثق', description: '', badge: 'أكاديمي' },
-  { id: '14', name: 'سريع ومباشر', label: 'سريع ومباشر', description: '', badge: 'مباشر' },
-  { id: '15', name: 'عصري متوازن', label: 'عصري متوازن', description: '', badge: 'عصري' }
+  { id: '1', name: 'التصميم القياسي', label: 'التصميم القياسي', description: '', badge: 'الافتراضي' }
 ];
 
 export const PRINT_SECTIONS: { key: PrintSectionKey; label: string }[] = [
@@ -44,11 +30,6 @@ const STORAGE_PREFIX = 'adba_print_template_v2_';
 const VALID_TEMPLATE_IDS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15'];
 
 export const getPrintTemplate = (section: PrintSectionKey): PrintTemplateId => {
-  const actualSection = section === 'eos' ? 'endOfService' : section;
-  const val = localStorage.getItem(`${STORAGE_PREFIX}${actualSection}`) || localStorage.getItem(`${STORAGE_PREFIX}eos`);
-  if (val && VALID_TEMPLATE_IDS.includes(val)) {
-    return val as PrintTemplateId;
-  }
   return '1';
 };
 

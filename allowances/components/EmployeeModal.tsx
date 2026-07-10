@@ -93,22 +93,23 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'number' ? Number(value) : value
-    }));
-  };
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        [name]: type === 'number' ? Number(value) : value
+      };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const computedFixedAllowances = Number(formData.housingAllowance || 0) + Number(formData.transferAllowance || 0) + Number(formData.phoneAllowance || 0) + Number(formData.foodAllowance || 0);
-    const dataToSave = { ...formData, fixedAllowances: computedFixedAllowances };
-    if (employeeToEdit) {
-      onSave({ ...employeeToEdit, ...dataToSave, id: employeeToEdit.id, sequenceNumber: employeeToEdit.sequenceNumber });
-    } else {
-      onSave({ ...dataToSave, isActive: true });
-    }
-    onClose();
+      const computedFixedAllowances = Number(updated.housingAllowance || 0) + Number(updated.transferAllowance || 0) + Number(updated.phoneAllowance || 0) + Number(updated.foodAllowance || 0);
+      const dataToSave = { ...updated, fixedAllowances: computedFixedAllowances };
+
+      if (employeeToEdit) {
+        onSave({ ...employeeToEdit, ...dataToSave, id: employeeToEdit.id, sequenceNumber: employeeToEdit.sequenceNumber });
+      } else {
+        onSave({ ...dataToSave, isActive: true });
+      }
+
+      return updated;
+    });
   };
 
   return (
@@ -118,7 +119,7 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
           <div className="flex items-center gap-3">
             <div className="w-3 h-8 bg-blue-600 rounded-full"></div>
             <h2 className="text-2xl font-black text-slate-800">
-              {employeeToEdit ? `تعديل بيانات الموظف: ${employeeToEdit.name}` : 'إضافة موظف جديد'}
+              {!employeeToEdit || !employeeToEdit.name ? 'إضافة موظف جديد' : `تعديل بيانات الموظف: ${employeeToEdit.name}`}
             </h2>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:bg-slate-200 p-2 rounded-full transition-colors">
@@ -126,7 +127,7 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
           </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-grow space-y-6">
+        <form onSubmit={(e) => e.preventDefault()} className="p-6 overflow-y-auto flex-grow space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-5">
             <div className="space-y-1.5">
               <label className="block text-sm font-bold text-slate-700">كود الموظف</label>
@@ -227,7 +228,17 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
                 <label className="block text-sm font-bold text-slate-700">التأمينات الاجتماعية</label>
                 <button
                   type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, includeSocialSecurity: !prev.includeSocialSecurity }))}
+                  onClick={() => setFormData(prev => {
+                    const updated = { ...prev, includeSocialSecurity: !prev.includeSocialSecurity };
+                    const computedFixedAllowances = Number(updated.housingAllowance || 0) + Number(updated.transferAllowance || 0) + Number(updated.phoneAllowance || 0) + Number(updated.foodAllowance || 0);
+                    const dataToSave = { ...updated, fixedAllowances: computedFixedAllowances };
+                    if (employeeToEdit) {
+                      onSave({ ...employeeToEdit, ...dataToSave, id: employeeToEdit.id, sequenceNumber: employeeToEdit.sequenceNumber });
+                    } else {
+                      onSave({ ...dataToSave, isActive: true });
+                    }
+                    return updated;
+                  })}
                   className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all border ${
                     formData.includeSocialSecurity !== false
                       ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
@@ -266,11 +277,8 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
         </form>
 
         <div className="p-5 bg-slate-50 border-t flex justify-end gap-3 shrink-0">
-          <button type="button" onClick={onClose} className="px-6 py-2.5 border border-slate-300 rounded-xl text-slate-700 font-bold hover:bg-slate-200 transition-colors">
-            إلغاء
-          </button>
-          <button onClick={handleSubmit} type="button" className="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-md transition-all">
-            {employeeToEdit ? 'حفظ التعديلات' : 'حفظ الموظف'}
+          <button type="button" onClick={onClose} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-slate-700 font-bold transition-all">
+            إغلاق
           </button>
         </div>
       </div>

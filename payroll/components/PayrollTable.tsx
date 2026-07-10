@@ -174,12 +174,12 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
       {/* Title only visible in Print or above table */}
       <div className="text-center mb-2 hidden print:block">
         <h2 className="text-sm sm:text-base print:text-[11pt] font-extrabold border-b border-black pb-0.5 inline-block text-black">
-          {isAllBranches ? sheetTitle : `${sheetTitle} - ${selectedBranch}`}
+          شركة المياه العذبة المحدوده - {isAllBranches ? sheetTitle : `${sheetTitle} - ${selectedBranch}`}
         </h2>
       </div>
 
       {/* Spreadsheet Table Container */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 print:!shadow-none print:!border-none print:!rounded-none print:!overflow-visible print:!max-h-none print:!h-auto print:!block print:!w-full w-full overflow-auto max-h-[75vh]">
+      <div className="hidden md:block print:!block bg-white rounded-xl shadow-sm border border-slate-200 print:!shadow-none print:!border-none print:!rounded-none print:!overflow-visible print:!max-h-none print:!h-auto print:!w-full w-full overflow-auto max-h-[75vh]">
         <table className="w-full text-center border-collapse text-[13px] sm:text-sm font-sans dir-rtl min-w-[1250px] print:min-w-0" dir="rtl">
           
           {/* Table Headers (Exact 2-tier design from image) */}
@@ -212,11 +212,9 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                 الصافي المستحق
               </th>
               
-              {isAlaa && !readOnly && (
-                <th rowSpan={2} className="p-2.5 border border-slate-300  bg-slate-100 text-slate-800 font-bold print:hidden">
-                  إجراءات / Actions
-                </th>
-              )}
+              <th rowSpan={2} className="p-2.5 border border-slate-300  bg-slate-100 text-slate-800 font-bold print:hidden w-24">
+                إجراءات
+              </th>
             </tr>
 
             {/* Top Tier - Print version (dynamic colspans) */}
@@ -243,15 +241,15 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
             {/* Bottom Tier */}
             <tr className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200 print:bg-slate-50 print:border-slate-800 uppercase tracking-wider text-xs print:static shadow-sm">
               {/* Entitlements sub-columns */}
-              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 font-bold bg-slate-100 print:bg-slate-50 ${!colVisibility.basicSalary ? 'print:hidden' : ''}`}>الأساسي</th>
+              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 font-bold bg-slate-100 print:bg-slate-50 ${!colVisibility.basicSalary ? 'print:hidden' : ''}`}>الاساسى</th>
               <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 font-bold print:hidden`} title="عدد ساعات العمل / الإضافي (تتحول لمبلغ الإضافي تلقائياً)">ساعات العمل</th>
-              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.overtime ? 'print:hidden' : ''}`}>إضافي</th>
-              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.communicationAllowance ? 'print:hidden' : ''}`}>اتصال</th>
-              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.housingAllowance ? 'print:hidden' : ''}`}>سكن</th>
-              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.foodAllowance ? 'print:hidden' : ''}`}>طعام</th>
-              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.transportationAllowance ? 'print:hidden' : ''}`}>مواصلات</th>
-              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.commission ? 'print:hidden' : ''}`}>عمولة</th>
-              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.bonus ? 'print:hidden' : ''}`}>مكافأة</th>
+              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.overtime ? 'print:hidden' : ''}`}>الاضافى</th>
+              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.housingAllowance ? 'print:hidden' : ''}`}>بدل السكن</th>
+              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.transportationAllowance ? 'print:hidden' : ''}`}>بدل انتقال</th>
+              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.communicationAllowance ? 'print:hidden' : ''}`}>بدل اتصال</th>
+              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.foodAllowance ? 'print:hidden' : ''}`}>بدل طعام</th>
+              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.commission ? 'print:hidden' : ''}`}>العموله</th>
+              <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 ${!colVisibility.bonus ? 'print:hidden' : ''}`}>المكافأه</th>
               <th className="p-2 border border-slate-200 print:border-slate-800 bg-slate-200 text-amber-700 font-extrabold print-col-total">إجمالي</th>
               
               {/* Deductions sub-columns */}
@@ -371,9 +369,9 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                 <tr 
                   key={emp.id} 
                   onClick={() => setSelectedRowId(isSelected ? null : emp.id)}
-                  className={`cursor-pointer transition-all ${
+                  className={`cursor-pointer transition-all h-[42px] min-h-[42px] max-h-[42px] overflow-hidden ${
                     isSelected 
-                      ? 'bg-yello0 text-yellow-950 shadow-xs' 
+                      ? 'bg-yellow-100 text-yellow-950 shadow-xs' 
                       : emp.isActive === false 
                         ? 'bg-slate-100/70 text-slate-400 opacity-70 hover:bg-slate-200/50' 
                         : isEven 
@@ -411,10 +409,10 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                   {renderEditableCell('basicSalary', 'font-semibold text-slate-900', false)}
                   {renderEditableCell('overtimeHours', 'text-amber-700')}
                   {renderEditableCell('overtime', 'text-blue-700', false)}
-                  {renderEditableCell('communicationAllowance', '', false)}
                   {renderEditableCell('housingAllowance')}
-                  {renderEditableCell('foodAllowance', '', false)}
                   {renderEditableCell('transportationAllowance', '', false)}
+                  {renderEditableCell('communicationAllowance', '', false)}
+                  {renderEditableCell('foodAllowance', '', false)}
                   {renderEditableCell('commission', 'text-blue-700')}
                   {renderEditableCell('bonus', 'text-blue-700')}
                   
@@ -436,37 +434,44 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                   </td>
                   
                   {/* Net Employee Salary */}
-                  <td className={`p-2 border border-slate-100 print:border-slate-800 font-bold font-mono text-sm bg-white ${isSelected ? 'text-yellow-950 bg-yello0' : 'text-blue-700'} print-col-net`}>
+                  <td className={`p-2 border border-slate-100 print:border-slate-800 font-bold font-mono text-sm bg-white ${isSelected ? 'text-yellow-950 bg-yellow-200' : 'text-blue-700'} print-col-net`}>
                     {formatCurrency(empTotals.netSalary)}
                   </td>
                   
-                  {isAlaa && !readOnly && (
-                    <td className="p-1 border border-slate-300 print:hidden text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onPrintEmployee(emp); }}
-                          className="p-1 text-blue-700 hover:bg-blue-200 rounded transition-colors"
-                          title="طباعة قسيمة الراتب"
-                        >
-                          <Printer className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onEditEmployee(emp); }}
-                          className="p-1 text-emerald-600 hover:bg-emerald-100 rounded transition-colors"
-                          title="تعديل بيانات وراتب الموظف"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onDeleteEmployee(emp.id); }}
-                          className="p-1 text-rose-600 hover:bg-rose-100 rounded transition-colors"
-                          title="حذف الموظف"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  )}
+                  <td className="p-1 border border-slate-300 print:hidden text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onPrintEmployee(emp); }}
+                        className="p-1 text-blue-700 hover:bg-blue-200 rounded transition-colors"
+                        title="طباعة قسيمة الراتب"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                      </button>
+                      {(!readOnly && isAlaa) && (
+                        <>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onEditEmployee(emp); }}
+                            className="p-1 text-emerald-600 hover:bg-emerald-100 rounded transition-colors"
+                            title="تعديل بيانات وراتب الموظف"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm(`Are you sure you want to delete employee "${emp.name}"?`)) {
+                                onDeleteEmployee(emp.id);
+                              }
+                            }}
+                            className="p-1 text-rose-600 hover:bg-rose-100 rounded transition-colors"
+                            title="حذف الموظف"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               );
             })}
@@ -494,10 +499,10 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                 <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm ${!colVisibility.basicSalary ? 'print:hidden' : ''}`}>{formatCurrency(totals.basicSalary)}</td>
                 <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-amber-700 font-bold print:hidden`}>{totals.overtimeHours ? totals.overtimeHours.toLocaleString('en-US') : '0'}</td>
                 <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-blue-700 ${!colVisibility.overtime ? 'print:hidden' : ''}`}>{formatCurrency(totals.overtime)}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm ${!colVisibility.communicationAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.communicationAllowance)}</td>
                 <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm ${!colVisibility.housingAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.housingAllowance)}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm ${!colVisibility.foodAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.foodAllowance)}</td>
                 <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm ${!colVisibility.transportationAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.transportationAllowance)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm ${!colVisibility.communicationAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.communicationAllowance)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm ${!colVisibility.foodAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.foodAllowance)}</td>
                 <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-blue-700 ${!colVisibility.commission ? 'print:hidden' : ''}`}>{formatCurrency(totals.commission)}</td>
                 <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-blue-700 ${!colVisibility.bonus ? 'print:hidden' : ''}`}>{formatCurrency(totals.bonus)}</td>
                 <td className="p-2 border border-slate-300 print:border-slate-800 bg-slate-200 font-mono text-[13px] sm:text-sm text-slate-900 font-extrabold print-col-total">{formatCurrency(totals.totalEntitlements)}</td>
@@ -510,12 +515,162 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                 <td className="p-2 border border-slate-300 print:border-slate-800 bg-rose-100 font-mono text-[13px] sm:text-sm text-rose-800 font-extrabold print-col-total">{formatCurrency(totals.totalDeductions)}</td>
                 
                 <td className="p-2 border border-slate-300 print:border-slate-800 bg-blue-600 print:!bg-[#dbeafe] font-mono text-sm sm:text-base text-white font-extrabold print-col-net">{formatCurrency(totals.netSalary)}</td>
-                {isAlaa && <td className="border border-slate-300 print:hidden"></td>}
+                <td className="border border-slate-300 print:hidden bg-slate-200"></td>
               </tr>
             </tfoot>
           )}
 
         </table>
+      </div>
+
+      {/* Mobile Card Layout */}
+      <div className="block md:hidden print:hidden space-y-4 w-full">
+        {employees.map((emp, index) => {
+          const empTotals = calculateEmployeeTotals(emp, payrollPhase);
+          const isSelected = selectedRowId === emp.id;
+          
+          return (
+            <div 
+              key={emp.id} 
+              onClick={() => setSelectedRowId(isSelected ? null : emp.id)}
+              className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                isSelected 
+                  ? 'bg-yellow-50/80 border-yellow-300 shadow-sm' 
+                  : emp.isActive === false 
+                    ? 'bg-slate-50 border-slate-200 opacity-70' 
+                    : 'bg-white border-slate-200 shadow-xs hover:border-slate-300'
+              }`}
+            >
+              {/* Header: Name, Code, Status */}
+              <div className="flex justify-between items-start gap-2 mb-3 pb-2.5 border-b border-slate-100">
+                <div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`font-bold text-sm ${emp.isActive === false ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                      {emp.name || 'موظف جديد'}
+                    </span>
+                    {emp.isActive === false && (
+                      <span className="bg-rose-100 text-rose-700 text-[9px] px-1.5 py-0.5 rounded font-extrabold select-none">معطل</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1 flex flex-wrap gap-x-1.5 gap-y-0.5">
+                    <span>كود: {emp.code}</span>
+                    <span>•</span>
+                    <span>{emp.branch || 'أخرى'}</span>
+                    <span>•</span>
+                    <span>{emp.jobTitle}</span>
+                  </div>
+                </div>
+                <div className="text-left shrink-0">
+                  <span className="text-[10px] text-slate-400 block font-semibold text-left">الصافي المستحق</span>
+                  <span className="text-sm font-black text-blue-700 font-mono">{formatCurrency(empTotals.netSalary)}</span>
+                </div>
+              </div>
+
+              {/* Grid of basic information & salary components */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                {/* Entitlements block */}
+                <div className="space-y-1.5 border-l border-slate-100 pl-2">
+                  <div className="font-bold text-amber-700 border-b border-slate-100 pb-1 mb-1 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                    <span>الاستحقاقات</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600">
+                    <span>الأساسي:</span>
+                    <span className="font-semibold font-mono text-slate-800">{formatCurrency(emp.basicSalary || 0)}</span>
+                  </div>
+                  {(emp.overtime > 0) && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>إضافي:</span>
+                      <span className="font-semibold font-mono text-slate-800">{formatCurrency(emp.overtime)}</span>
+                    </div>
+                  )}
+                  {(emp.communicationAllowance > 0) && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>اتصال:</span>
+                      <span className="font-semibold font-mono text-slate-800">{formatCurrency(emp.communicationAllowance)}</span>
+                    </div>
+                  )}
+                  {(emp.housingAllowance > 0) && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>سكن:</span>
+                      <span className="font-semibold font-mono text-slate-800">{formatCurrency(emp.housingAllowance)}</span>
+                    </div>
+                  )}
+                  {(emp.foodAllowance > 0) && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>طعام:</span>
+                      <span className="font-semibold font-mono text-slate-800">{formatCurrency(emp.foodAllowance)}</span>
+                    </div>
+                  )}
+                  {(emp.transportationAllowance > 0) && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>مواصلات:</span>
+                      <span className="font-semibold font-mono text-slate-800">{formatCurrency(emp.transportationAllowance)}</span>
+                    </div>
+                  )}
+                  {(emp.commission > 0) && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>عمولة:</span>
+                      <span className="font-semibold font-mono text-slate-800">{formatCurrency(emp.commission)}</span>
+                    </div>
+                  )}
+                  {(emp.bonus > 0) && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>مكافأة:</span>
+                      <span className="font-semibold font-mono text-slate-800">{formatCurrency(emp.bonus)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-amber-700 font-bold border-t border-slate-100 pt-1 mt-1">
+                    <span>إجمالي الاستحقاق:</span>
+                    <span className="font-mono">{formatCurrency(empTotals.totalEntitlements)}</span>
+                  </div>
+                </div>
+
+                {/* Deductions block */}
+                <div className="space-y-1.5">
+                  <div className="font-bold text-rose-800 border-b border-slate-100 pb-1 mb-1 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
+                    <span>الاستقطاعات</span>
+                  </div>
+                  {(emp.hasInsurance !== false && emp.insuranceDeduction > 0) && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>تأمينات:</span>
+                      <span className="font-semibold font-mono text-rose-600">{formatCurrency(emp.insuranceDeduction)}</span>
+                    </div>
+                  )}
+                  {(emp.generalDeduction > 0) && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>خصومات:</span>
+                      <span className="font-semibold font-mono text-rose-600">{formatCurrency(emp.generalDeduction)}</span>
+                    </div>
+                  )}
+                  {(emp.loan > 0) && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>سلفة:</span>
+                      <span className="font-semibold font-mono text-rose-600">{formatCurrency(emp.loan)}</span>
+                    </div>
+                  )}
+                  {(emp.absenceDeduction > 0) && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>غيابات:</span>
+                      <span className="font-semibold font-mono text-rose-600">{formatCurrency(emp.absenceDeduction)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-rose-700 font-bold border-t border-slate-100 pt-1 mt-1">
+                    <span>إجمالي الخصم:</span>
+                    <span className="font-mono">{formatCurrency(empTotals.totalDeductions)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {employees.length === 0 && (
+          <div className="py-8 text-center text-slate-500 font-medium bg-white rounded-xl border border-slate-200">
+            لا توجد بيانات موظفين تطابق البحث أو الفلتر المختار
+          </div>
+        )}
       </div>
 
       {/* Signatures Footer (Mirrors Excel image bottom lines) */}

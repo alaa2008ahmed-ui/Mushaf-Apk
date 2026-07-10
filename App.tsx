@@ -163,9 +163,8 @@ const App: React.FC = () => {
                     }));
 
                     // Real-time synchronization for payroll employees
-                    const payrollEmployeesRec = data.find(r => r.id === 'payroll_employees_data' || r.type === 'payroll_employees_list');
-                    if (payrollEmployeesRec && payrollEmployeesRec.data) {
-                        const employeesList = payrollEmployeesRec.data;
+                    const empRec = data.find(r => r.id === 'payroll_employees_data');
+                    if (empRec && empRec.data) {
                         const currentSaved = localStorage.getItem('payroll_employees_2026');
                         
                         // Check if there is a pending local write for payroll_employees_data to prevent race conditions
@@ -173,17 +172,7 @@ const App: React.FC = () => {
                         const pendingQueue = pendingQueueSaved ? JSON.parse(pendingQueueSaved) : [];
                         const isPending = pendingQueue.some((q: any) => q.collectionName === 'records' && q.id === 'payroll_employees_data');
 
-                        if (!isPending && JSON.stringify(employeesList) !== currentSaved) {
-                            localStorage.setItem('payroll_employees_2026', JSON.stringify(employeesList));
-                            window.dispatchEvent(new Event('payroll_employees_updated'));
-                        }
-                    }
-
-                    // Real-time synchronization for payroll employees
-                    const empRec = data.find(r => r.id === 'payroll_employees_data');
-                    if (empRec && empRec.data) {
-                        const currentSaved = localStorage.getItem('payroll_employees_2026');
-                        if (JSON.stringify(empRec.data) !== currentSaved) {
+                        if (!isPending && JSON.stringify(empRec.data) !== currentSaved) {
                             // Only sync if local isn't currently in a 'protected' migration state
                             const lastMigration = localStorage.getItem('payroll_last_migration_time');
                             const isRecentlyMigrated = lastMigration && (Date.now() - parseInt(lastMigration)) < 5000;
@@ -199,7 +188,13 @@ const App: React.FC = () => {
                     const archivesRec = data.find(r => r.id === 'payroll_archives_data');
                     if (archivesRec && archivesRec.data) {
                         const archivesList = archivesRec.data;
-                        const currentSaved = localStorage.getItem('payroll_archives_2026');
+                        const currentSaved = (() => {
+                            const saved2026 = localStorage.getItem('payroll_archives_2026');
+                            if (saved2026 && saved2026 !== '[]') return saved2026;
+                            const saved = localStorage.getItem('payroll_archives');
+                            if (saved && saved !== '[]') return saved;
+                            return saved2026 || saved || '[]';
+                        })();
                         
                         // Safety: Only update if cloud data is valid and local isn't recently updated
                         const isIncomingEmpty = !Array.isArray(archivesList) || archivesList.length === 0;
@@ -213,6 +208,7 @@ const App: React.FC = () => {
                         if (!isRecentlyMigrated && !isIncomingEmpty && (incomingLength >= localLength || !isLocalNotEmpty)) {
                             if (JSON.stringify(archivesList) !== currentSaved) {
                                 localStorage.setItem('payroll_archives_2026', JSON.stringify(archivesList));
+                                localStorage.setItem('payroll_archives', JSON.stringify(archivesList));
                                 window.dispatchEvent(new Event('payroll_archives_updated'));
                             }
                         }
@@ -243,14 +239,25 @@ const App: React.FC = () => {
                     if (payrollSettingsRec && payrollSettingsRec.data) {
                         const settings = payrollSettingsRec.data;
                         
-                        // Safety: Avoid forcing month synchronization if it would override a user's manual selection of an older archived month
+                        // Safety: To prevent race conditions and endless month flickering/oscillations for 'alaa' (who must always default to the current month),
+                        // we bypass forcing month synchronization from the cloud. Alaa's local state is the single source of truth for their active month.
                         const cloudMonth = settings.selectedMonth;
                         const localMonth = localStorage.getItem('payroll_selected_month_iso');
-                        
-                        // Check if we are currently in the middle of a local month change to avoid race conditions
                         const isSyncing = localStorage.getItem('payroll_sync_in_progress') === 'true';
 
-                        if (!isSyncing && cloudMonth && cloudMonth !== localMonth) {
+                        // Check if current user is Alaa from localStorage synchronously
+                        const savedUser = localStorage.getItem('currentUser');
+                        let isCurrentUserAlaa = false;
+                        if (savedUser) {
+                            try {
+                                const u = JSON.parse(savedUser);
+                                if (u && u.username && u.username.toLowerCase() === 'alaa') {
+                                    isCurrentUserAlaa = true;
+                                }
+                            } catch (e) {}
+                        }
+
+                        if (!isSyncing && !isCurrentUserAlaa && cloudMonth && cloudMonth !== localMonth) {
                             localStorage.setItem('payroll_selected_month_iso', cloudMonth);
                             window.dispatchEvent(new CustomEvent('payroll_selected_month_synced', { detail: cloudMonth }));
                         }

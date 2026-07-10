@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Printer, Calendar, Users, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { ArchivedMonth } from '../types';
+import { ArchivedMonth, Employee } from '../types';
 import { formatCurrency } from '../utils/calculations';
+import { PaySlipModal } from './PaySlipModal';
 
 interface ArchivedSheetModalProps {
   isOpen: boolean;
   onClose: () => void;
   archive: ArchivedMonth | null;
   onPrint: (archive: ArchivedMonth) => void;
+  signatures: any;
 }
 
 export const ArchivedSheetModal: React.FC<ArchivedSheetModalProps> = ({
@@ -15,8 +17,34 @@ export const ArchivedSheetModal: React.FC<ArchivedSheetModalProps> = ({
   onClose,
   archive,
   onPrint,
+  signatures
 }) => {
+  const [selectedEmployeeForSlip, setSelectedEmployeeForSlip] = useState<Employee | null>(null);
+
   if (!isOpen || !archive) return null;
+
+  // Sums for totals row
+  const sumBasic = archive.employees.reduce((acc, emp) => acc + (Number(emp.basicSalary) || 0), 0);
+  const sumOvertime = archive.employees.reduce((acc, emp) => acc + (Number(emp.overtime) || 0), 0);
+  const sumCommBonus = archive.employees.reduce((acc, emp) => acc + (Number(emp.commission) || 0) + (Number(emp.bonus) || 0), 0);
+  const sumTotalEnt = archive.employees.reduce((acc, emp) => {
+    const basic = Number(emp.basicSalary) || 0;
+    const ovt = Number(emp.overtime) || 0;
+    const comm = Number(emp.commission) || 0;
+    const bon = Number(emp.bonus) || 0;
+    const allow = (Number(emp.housingAllowance)||0)+(Number(emp.transportationAllowance)||0)+(Number(emp.foodAllowance)||0)+(Number(emp.communicationAllowance)||0);
+    return acc + (basic + ovt + comm + bon + allow);
+  }, 0);
+  const sumInsGen = archive.employees.reduce((acc, emp) => acc + (Number(emp.insuranceDeduction) || 0) + (Number(emp.generalDeduction) || 0), 0);
+  const sumLoanAbs = archive.employees.reduce((acc, emp) => acc + (Number(emp.loan) || 0) + (Number(emp.absenceDeduction) || 0), 0);
+  const sumTotalDed = archive.employees.reduce((acc, emp) => {
+    const ins = Number(emp.insuranceDeduction) || 0;
+    const gen = Number(emp.generalDeduction) || 0;
+    const ln = Number(emp.loan) || 0;
+    const abs = Number(emp.absenceDeduction) || 0;
+    return acc + (ins + gen + ln + abs);
+  }, 0);
+  const sumNet = sumTotalEnt - sumTotalDed;
 
   return (
     <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto font-sans" dir="rtl">
@@ -111,6 +139,7 @@ export const ArchivedSheetModal: React.FC<ArchivedSheetModalProps> = ({
                   <th className="p-2.5 border border-slate-700 bg-slate-700 text-rose-300">سلفة وغيابات</th>
                   <th className="p-2.5 border border-slate-700 bg-rose-950/60 text-rose-300 font-extrabold">إجمالي خصم</th>
                   <th className="p-2.5 border border-slate-700 bg-blue-600 text-white font-extrabold">الصافي المستحق</th>
+                  <th className="p-2.5 border border-slate-700 w-16 no-print">إجراء</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 text-slate-800 font-medium">
@@ -144,10 +173,32 @@ export const ArchivedSheetModal: React.FC<ArchivedSheetModalProps> = ({
                       <td className="p-2 border border-slate-200 font-mono text-rose-600">{(ln + abs) > 0 ? formatCurrency(ln + abs) : '-'}</td>
                       <td className="p-2 border border-slate-200 font-mono font-extrabold bg-rose-50/50 text-rose-800">{formatCurrency(totalDed)}</td>
                       <td className="p-2 border border-slate-200 font-mono font-extrabold bg-blue-50/50 text-blue-700 text-sm">{formatCurrency(net)}</td>
+                      <td className="p-2 border border-slate-200 no-print">
+                        <button
+                          onClick={() => setSelectedEmployeeForSlip(emp as Employee)}
+                          className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition-all shadow-xs border border-blue-100"
+                          title="طباعة قسيمة الراتب للموظف"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
+              <tfoot>
+                <tr className="bg-slate-200 text-slate-900 font-extrabold border-t-2 border-slate-700">
+                  <td colSpan={5} className="p-3 border border-slate-300 text-center text-sm font-bold bg-slate-200">الإجمالي العام</td>
+                  <td className="p-3 border border-slate-300 font-mono text-sm">{formatCurrency(sumBasic)}</td>
+                  <td className="p-3 border border-slate-300 font-mono text-sm text-blue-800">{formatCurrency(sumOvertime)}</td>
+                  <td className="p-3 border border-slate-300 font-mono text-sm text-blue-800">{formatCurrency(sumCommBonus)}</td>
+                  <td className="p-3 border border-slate-300 font-mono text-sm text-emerald-800 bg-emerald-100">{formatCurrency(sumTotalEnt)}</td>
+                  <td className="p-3 border border-slate-300 font-mono text-sm text-rose-800">{formatCurrency(sumInsGen)}</td>
+                  <td className="p-3 border border-slate-300 font-mono text-sm text-rose-800">{formatCurrency(sumLoanAbs)}</td>
+                  <td className="p-3 border border-slate-300 font-mono text-sm text-rose-800 bg-rose-100">{formatCurrency(sumTotalDed)}</td>
+                  <td className="p-3 border border-slate-300 font-mono text-sm text-blue-900 bg-blue-100" colSpan={2}>{formatCurrency(sumNet)}</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
@@ -161,6 +212,17 @@ export const ArchivedSheetModal: React.FC<ArchivedSheetModalProps> = ({
             إغلاق النافذة
           </button>
         </div>
+
+        {/* Individual Pay Slip Modal */}
+        {selectedEmployeeForSlip && (
+          <PaySlipModal
+            employee={selectedEmployeeForSlip}
+            onClose={() => setSelectedEmployeeForSlip(null)}
+            signatures={signatures}
+            sheetTitle={archive.sheetTitle}
+            payrollPhase="full"
+          />
+        )}
 
       </div>
     </div>

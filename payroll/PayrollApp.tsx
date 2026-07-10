@@ -1,52 +1,59 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Employee, ViewMode, Signatures, ArchivedMonth } from './types';
-import { initialEmployees } from './data/initialEmployees';
-import { calculateGrandTotals, calculateEmployeeTotals } from './utils/calculations';
-import { exportPayrollToExcel } from './utils/excelExport';
-import { getDynamicSheetTitle, getFormattedTitle, getArabicMonthName } from './utils/dateUtils';
-import { generateSmartPrintCSS } from './utils/printConfig';
-import { Header } from './components/Header';
-import { StatsCards } from './components/StatsCards';
-import { PayrollTable } from './components/PayrollTable';
-import { EmployeeModal } from './components/EmployeeModal';
-import { PaySlipModal } from './components/PaySlipModal';
-import { AnalyticsDashboard } from './components/AnalyticsDashboard';
-import { AIAssistantModal } from './components/AIAssistantModal';
-import { SettingsPage } from './components/SettingsPage';
-import { ArchivePage } from './components/ArchivePage';
-import { AccountStatementPage } from './components/AccountStatementPage';
-import { MigrateMonthModal } from './components/MigrateMonthModal';
-import { BankPayrollFile } from './components/BankPayrollFile';
-import { BulkPrintCards } from './components/BulkPrintCards';
-import { dualStorage, COLLECTIONS } from '../DualStorageService';
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Employee, ViewMode, Signatures, ArchivedMonth } from "./types";
+import { initialEmployees } from "./data/initialEmployees";
+import {
+  calculateGrandTotals,
+  calculateEmployeeTotals,
+} from "./utils/calculations";
+import { exportPayrollToExcel } from "./utils/excelExport";
+import {
+  getDynamicSheetTitle,
+  getFormattedTitle,
+  getArabicMonthName,
+} from "./utils/dateUtils";
+import { generateSmartPrintCSS } from "./utils/printConfig";
+import { Header } from "./components/Header";
+import { StatsCards } from "./components/StatsCards";
+import { PayrollTable } from "./components/PayrollTable";
+import { EmployeeModal } from "./components/EmployeeModal";
+import { PaySlipModal } from "./components/PaySlipModal";
+import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
+import { AIAssistantModal } from "./components/AIAssistantModal";
+import { SettingsPage } from "./components/SettingsPage";
+import { ArchivePage } from "./components/ArchivePage";
+import { AccountStatementPage } from "./components/AccountStatementPage";
+import { MigrateMonthModal } from "./components/MigrateMonthModal";
+import { ArchivedSheetEditor } from "./components/ArchivedSheetEditor";
+import { BankPayrollFile } from "./components/BankPayrollFile";
+import { BulkPrintCards } from "./components/BulkPrintCards";
+import { dualStorage, COLLECTIONS } from "../DualStorageService";
 
-import { User } from '../types';
+import { User } from "../types";
 
 const normalizeArabicName = (name: string) => {
-    if (!name) return '';
-    let n = name
-        .replace(/أ|إ|آ/g, 'ا')
-        .replace(/ة/g, 'ه')
-        .replace(/ى/g, 'ي')
-        .replace(/\s+/g, '')
-        .trim();
-    const aliases: Record<string, string> = {
-        'جيميهاوقرفايو': 'جيميهاوقرقايو',
-        'سنتاجكاتوراياداف': 'سنتراجكاتوراياداف',
-        'جومبرجاراسيا': 'جوميرجاراسيا',
-        'ماجومادارسويكوت': 'ماجومادارسوبكوت',
-        'صفرييادافدهرمارج': 'صغرييادافدهرمارج',
-        'نعمانكبيرحسين': 'نعمانحسين'
-    };
-    return aliases[n] || n;
+  if (!name) return "";
+  let n = name
+    .replace(/أ|إ|آ/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .replace(/\s+/g, "")
+    .trim();
+  const aliases: Record<string, string> = {
+    جيميهاوقرفايو: "جيميهاوقرقايو",
+    سنتاجكاتوراياداف: "سنتراجكاتوراياداف",
+    جومبرجاراسيا: "جوميرجاراسيا",
+    ماجومادارسويكوت: "ماجومادارسوبكوت",
+    نعمانكبيرحسين: "نعمانحسين",
+  };
+  return aliases[n] || n;
 };
 
 const normalizeEnglishName = (name: string) => {
-    if (!name) return '';
-    return name
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '')
-        .trim();
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
 };
 
 const ensureUniqueIdsAndDeduplicate = (list: Employee[]): Employee[] => {
@@ -59,8 +66,8 @@ const ensureUniqueIdsAndDeduplicate = (list: Employee[]): Employee[] => {
 
   for (const emp of list) {
     if (!emp) continue;
-    const normName = normalizeArabicName(emp.name || '');
-    const code = emp.code ? emp.code.trim() : '';
+    const normName = normalizeArabicName(emp.name || "");
+    const code = emp.code ? emp.code.trim() : "";
 
     let isDuplicate = false;
     if (normName && seenNames.has(normName)) {
@@ -87,7 +94,7 @@ const ensureUniqueIdsAndDeduplicate = (list: Employee[]): Employee[] => {
       takenIds.add(emp.id);
       finalRecords.push(emp);
     } else {
-      finalRecords.push({ ...emp, id: 0 }); 
+      finalRecords.push({ ...emp, id: 0 });
     }
   }
 
@@ -106,462 +113,534 @@ const ensureUniqueIdsAndDeduplicate = (list: Employee[]): Employee[] => {
   return finalRecords;
 };
 
-export default function PayrollApp({ currentUser }: { currentUser?: User | null }) {
+const getSafeSavedArchives = () => {
+  const saved2026 = localStorage.getItem("payroll_archives_2026");
+  if (saved2026 && saved2026 !== "[]") return saved2026;
+  const saved = localStorage.getItem("payroll_archives");
+  if (saved && saved !== "[]") return saved;
+  return saved2026 || saved || "[]";
+};
+
+const getLatestArchivedMonth = (archivesList: any[]) => {
+  if (!archivesList || archivesList.length === 0) return null;
+  const sorted = [...archivesList].sort((a, b) => (b.monthIso || "").localeCompare(a.monthIso || ""));
+  return sorted[0].monthIso;
+};
+
+const getNextMonthIso = (monthIso: string) => {
+  const [year, month] = monthIso.split("-").map(Number);
+  let nextYear = year;
+  let nextMonth = month + 1;
+  if (nextMonth > 12) {
+    nextMonth = 1;
+    nextYear += 1;
+  }
+  return `${nextYear}-${String(nextMonth).padStart(2, "0")}`;
+};
+
+const syncMonthlyValuesForEmployee = (emp: Employee, month: string): Employee => {
+  const variableFields = [
+    "overtimeHours",
+    "overtime",
+    "commission",
+    "bonus",
+    "generalDeduction",
+    "loan",
+    "absenceDays",
+    "absenceDeduction"
+  ] as const;
+
+  const currentMonthValues = {
+    ...(emp.monthlyValues?.[month] || {})
+  };
+  variableFields.forEach(f => {
+    currentMonthValues[f] = emp[f] as any;
+  });
+
+  return {
+    ...emp,
+    monthlyValues: {
+      ...(emp.monthlyValues || {}),
+      [month]: currentMonthValues
+    }
+  };
+};
+
+export default function PayrollApp({
+  currentUser,
+}: {
+  currentUser?: User | null;
+}) {
   const isAlaa = useMemo(() => {
-    return currentUser?.username?.toLowerCase() === 'alaa';
+    const username = currentUser?.username?.toLowerCase();
+    return (
+      username === "alaa" ||
+      currentUser?.role === "admin" ||
+      currentUser?.permissions?.canViewPayroll === true
+    );
+  }, [currentUser]);
+
+  const isExactlyAlaa = useMemo(() => {
+    return currentUser?.username?.toLowerCase() === "alaa";
   }, [currentUser]);
 
   // Load initial employees from localStorage or fallback to initialEmployees
   const [employees, setEmployees] = useState<Employee[]>(() => {
-    const saved = localStorage.getItem('payroll_employees_2026');
+    const saved = localStorage.getItem("payroll_employees_2026");
     if (saved) {
       try {
         const parsed: Employee[] = JSON.parse(saved);
-        const filtered = parsed.filter(emp => emp && emp.name && emp.name.trim() !== '');
-        const currentInsPercent = Number(localStorage.getItem('payroll_insurance_percentage') || '10');
-        const migrated = filtered.map(emp => {
+        const filtered = parsed.filter(
+          (emp) => emp && emp.name && emp.name.trim() !== "",
+        );
+        const currentInsPercent = Number(
+          localStorage.getItem("payroll_insurance_percentage") || "10",
+        );
+        const migrated = filtered.map((emp) => {
           let updated = { ...emp };
           let changed = false;
-          if (emp.code === '1175' || emp.name === 'محمد سليم' || emp.name === 'محمد سليم ') {
-            updated.name = 'محمد تسليم';
-            updated.nameEn = 'Mohamed Tasleem';
+          if (
+            emp.code === "1175" ||
+            emp.name === "محمد سليم" ||
+            emp.name === "محمد سليم "
+          ) {
+            updated.name = "محمد تسليم";
+            updated.nameEn = "Mohamed Tasleem";
             changed = true;
           }
-          if (updated.jobTitle === 'ميكانيكى') {
-            updated.jobTitle = 'ميكانيكي';
+
+          if (updated.jobTitle === "ميكانيكى") {
+            updated.jobTitle = "ميكانيكي";
             changed = true;
           }
-          
+
           // Recalculate overtime to ensure correct 2 decimal places (correcting any past Math.round values)
           if (updated.overtimeHours && updated.overtimeHours > 0) {
             const basic = updated.basicSalary || 0;
             const hourlyRate = (basic / 240) * 1.5;
-            const calculatedOvertime = Number((updated.overtimeHours * hourlyRate).toFixed(2));
+            const calculatedOvertime = Number(
+              (updated.overtimeHours * hourlyRate).toFixed(2),
+            );
             if (updated.overtime !== calculatedOvertime) {
               updated.overtime = calculatedOvertime;
               changed = true;
             }
           }
-          
+
           // Recalculate absence deduction to ensure correct 2 decimal places
           if (updated.absenceDays && updated.absenceDays > 0) {
             const basic = updated.basicSalary || 0;
             const dailyRate = basic / 30;
-            const calculatedAbsence = Number((updated.absenceDays * dailyRate).toFixed(2));
+            const calculatedAbsence = Number(
+              (updated.absenceDays * dailyRate).toFixed(2),
+            );
             if (updated.absenceDeduction !== calculatedAbsence) {
               updated.absenceDeduction = calculatedAbsence;
               changed = true;
             }
           }
-          
+
           // Recalculate insurance deduction to ensure correct 2 decimal places
-          if (updated.hasInsurance !== false && updated.insuranceDeduction && updated.insuranceDeduction > 0) {
+          if (
+            updated.hasInsurance !== false &&
+            updated.insuranceDeduction &&
+            updated.insuranceDeduction > 0
+          ) {
             const basic = updated.basicSalary || 0;
             const housing = updated.housingAllowance || 0;
-            const calculatedInsurance = Number(((basic + housing) * (currentInsPercent / 100)).toFixed(2));
+            const calculatedInsurance = Number(
+              ((basic + housing) * (currentInsPercent / 100)).toFixed(2),
+            );
             if (updated.insuranceDeduction !== calculatedInsurance) {
               updated.insuranceDeduction = calculatedInsurance;
               changed = true;
             }
           }
-          
+
           return updated;
         });
-        if (migrated.length > 0) {
-          // Programmatically backfill missing employees 1078 and 1147
-          const has1078 = migrated.some(emp => emp && (emp.code === '1078' || normalizeArabicName(emp.name) === normalizeArabicName('الترابي أحمد أدريس علي')));
-          const has1147 = migrated.some(emp => emp && (emp.code === '1147' || normalizeArabicName(emp.name) === normalizeArabicName('نعمان حسين')));
-          
-          let changed = false;
-          if (!has1078) {
-            const emp1078 = initialEmployees.find(emp => emp.code === '1078');
-            if (emp1078) {
-              migrated.push(emp1078);
-              changed = true;
-            }
-          }
-          if (!has1147) {
-            const emp1147 = initialEmployees.find(emp => emp.code === '1147');
-            if (emp1147) {
-              migrated.push(emp1147);
-              changed = true;
-            }
-          }
-          const sanitized = ensureUniqueIdsAndDeduplicate(migrated);
-          if (changed || JSON.stringify(sanitized) !== JSON.stringify(migrated)) {
-            localStorage.setItem('payroll_employees_2026', JSON.stringify(sanitized));
-          }
-          return sanitized;
-        }
-      } catch (e) {
-        console.error("Failed to parse saved employees", e);
+
+        let finalMigrated = migrated;
+        return finalMigrated;
+      } catch (err) {
+        console.error("Error parsing employees", err);
       }
     }
-    return ensureUniqueIdsAndDeduplicate(initialEmployees);
+    return initialEmployees;
   });
 
-  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
-    const isUserAlaa = currentUser?.username?.toLowerCase() === 'alaa';
-    if (!isUserAlaa) {
-      const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
-      const arcRec = local.find((r: any) => r.id === 'payroll_archives_data');
-      const localArchives = arcRec && arcRec.data ? (arcRec.data as ArchivedMonth[]) : [];
-      if (localArchives.length > 0) {
-        const sorted = [...localArchives].sort((a, b) => {
-          const m1 = a.monthIso || '';
-          const m2 = b.monthIso || '';
-          return m2.localeCompare(m1);
-        });
-        const latest = sorted[0].monthIso;
-        if (latest) return latest;
-      }
-    }
-
-    const saved = localStorage.getItem('payroll_selected_month_iso');
-    if (saved && /^\d{4}-\d{2}$/.test(saved)) {
-      return saved;
-    }
-    return new Date().toISOString().slice(0, 7);
+  const [archives, setArchives] = useState<any[]>(() => {
+    const saved = getSafeSavedArchives();
+    return saved ? JSON.parse(saved) : [];
   });
 
-  const [sheetTitle, setSheetTitle] = useState<string>(() => {
-    const savedTitle = localStorage.getItem('payroll_sheet_title');
-    if (savedTitle) return savedTitle;
-    return getDynamicSheetTitle(selectedMonth);
-  });
-
-  const [signatures, setSignatures] = useState<Signatures>(() => {
-    const savedSigs = localStorage.getItem('payroll_signatures');
-    if (savedSigs) {
-      try {
-        return JSON.parse(savedSigs);
-      } catch (e) {
-        console.error("Failed to parse signatures", e);
-      }
-    }
-    return {
-      preparedBy: "",
-      accountsManager: "علاء أحمد عنتر المرشدي",
-      deputyGeneralManager: "محمد أحمد محمد البدري",
-      managingDirector: "نايف محمد عبدالله الخضره"
-    };
-  });
-
-  const [insurancePercentage, setInsurancePercentage] = useState<number>(() => {
-    const saved = localStorage.getItem('payroll_insurance_percentage');
-    return saved ? Number(saved) : 10;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('payroll_insurance_percentage', insurancePercentage.toString());
-  }, [insurancePercentage]);
-
-  const [archives, setArchives] = useState<ArchivedMonth[]>(() => {
-    // Try to get from dualStorage cache first for better consistency
-    const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
-    const arcRec = local.find((r: any) => r.id === 'payroll_archives_data');
-    if (arcRec && arcRec.data) return arcRec.data;
-
-    const saved = localStorage.getItem('payroll_archives_2026');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Failed to parse archives", e);
-      }
-    }
-    return [];
-  });
-
-  const [viewMode, setViewMode] = useState<ViewMode>('table');
-  const [restoredArchiveId, setRestoredArchiveId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedBranch, setSelectedBranch] = useState<string>('الكل');
-  const [showInactive, setShowInactive] = useState<boolean>(false);
-  const [payrollPhase, setPayrollPhase] = useState<'full' | 'phase1' | 'phase2'>('full');
-
-  const activePayrollPhase = useMemo(() => {
-    const isCurrentMonthArchived = archives.some(arc => arc.monthIso === selectedMonth);
-    if (isCurrentMonthArchived) return 'full';
-    return isAlaa ? payrollPhase : 'full';
-  }, [isAlaa, payrollPhase, archives, selectedMonth]);
-
-  const activeShowInactive = useMemo(() => {
-    const isCurrentMonthArchived = archives.some(arc => arc.monthIso === selectedMonth);
-    if (isCurrentMonthArchived) return true;
-    return isAlaa ? showInactive : false;
-  }, [isAlaa, showInactive, archives, selectedMonth]);
-
-  // Modals state
-  const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState<boolean>(false);
-  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
-  const [employeeForSlip, setEmployeeForSlip] = useState<Employee | null>(null);
-  const [isAIModalOpen, setIsAIModalOpen] = useState<boolean>(false);
-  const [isMigrateModalOpen, setIsMigrateModalOpen] = useState<boolean>(false);
-
-  // Selection for bulk printing
-  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<number[]>([]);
-  const [isBulkPrintOpen, setIsBulkPrintOpen] = useState<boolean>(false);
-  const [bulkEmployees, setBulkEmployees] = useState<Employee[]>([]);
-
-  // Save changes to localStorage
-  useEffect(() => {
-    document.title = "Alaa_Payroll Management";
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('payroll_selected_month_iso', selectedMonth);
-    const title = getDynamicSheetTitle(selectedMonth);
-    const finalTitle = getFormattedTitle(title, activePayrollPhase, selectedMonth);
-    setSheetTitle(finalTitle);
-    localStorage.setItem('payroll_sheet_title', finalTitle);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const saved = getSafeSavedArchives();
+    const localArchives = saved ? JSON.parse(saved) : [];
+    const latest = getLatestArchivedMonth(localArchives);
+    const isUsernameAlaa = currentUser?.username?.toLowerCase() === "alaa";
     
-    // Sync to Overtime (TimeSheet) page
-    window.dispatchEvent(new CustomEvent('payroll_selected_month_changed', { detail: selectedMonth }));
-  }, [selectedMonth, activePayrollPhase]);
-
-  // Listen for month selection changes in Overtime page
-  useEffect(() => {
-    const handleTimesheetMonthChanged = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (customEvent.detail && customEvent.detail !== selectedMonth) {
-        setSelectedMonth(customEvent.detail);
+    if (isUsernameAlaa) {
+      if (latest) {
+        return getNextMonthIso(latest);
       }
-    };
-    window.addEventListener('timesheet_selected_month_changed', handleTimesheetMonthChanged);
-    return () => window.removeEventListener('timesheet_selected_month_changed', handleTimesheetMonthChanged);
-  }, [selectedMonth]);
+      return new Date().toISOString().substring(0, 7);
+    } else {
+      if (latest) {
+        return latest;
+      }
+      return new Date().toISOString().substring(0, 7);
+    }
+  });
 
-  const lastSavedJsonRef = useRef<string>('');
-  const lastSavedArchivesRef = useRef<string>(localStorage.getItem('payroll_archives_2026') || '');
-  const lastSavedSettingsRef = useRef<string>('');
-  const isMigratingRef = useRef<boolean>(false);
-  const hasDefaultedMonthRef = useRef<boolean>(false);
+  const isInitialMonthSetRef = useRef(false);
 
-  // Default non-Alaa users to the latest archived month on first load once archives are ready
   useEffect(() => {
-    if (!isAlaa && archives.length > 0 && !hasDefaultedMonthRef.current) {
-      const sorted = [...archives].sort((a, b) => {
-        const m1 = a.monthIso || '';
-        const m2 = b.monthIso || '';
-        return m2.localeCompare(m1);
-      });
-      const latest = sorted[0]?.monthIso;
+    if (isInitialMonthSetRef.current) return;
+    
+    const latest = getLatestArchivedMonth(archives);
+    const isUsernameAlaa = currentUser?.username?.toLowerCase() === "alaa";
+    
+    if (isUsernameAlaa) {
+      if (latest) {
+        setSelectedMonth(getNextMonthIso(latest));
+        isInitialMonthSetRef.current = true;
+      }
+    } else {
       if (latest) {
         setSelectedMonth(latest);
-        hasDefaultedMonthRef.current = true;
+        isInitialMonthSetRef.current = true;
       }
     }
-  }, [isAlaa, archives]);
+  }, [archives, currentUser]);
 
-  // Listen for sync events from App.tsx
+  const handleSelectedMonthChange = (newMonth: string) => {
+    isInitialMonthSetRef.current = true;
+    localStorage.setItem("payroll_sync_in_progress", "true");
+    setSelectedMonth(newMonth);
+    setTimeout(
+      () => localStorage.removeItem("payroll_sync_in_progress"),
+      2000,
+    );
+  };
+
+  const [viewMode, setViewMode] = useState<string>("table");
+
+  const [signatures, setSignatures] = useState<any>(() => {
+    const saved = localStorage.getItem("payroll_signatures");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          preparedBy: "",
+          accountsManager: "علاء أحمد عنتر المرشدي",
+          deputyGeneralManager: "محمد أحمد محمد البدري",
+          managingDirector: "نايف محمد عبدالله الخضره",
+        };
+  });
+
+  const [activePayrollPhase, setPayrollPhase] = useState<
+    "full" | "phase1" | "phase2"
+  >("full");
+  const [activeShowInactive, setShowInactive] = useState(false);
+
+  // Missing States and Refs
+  const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
+  const [insurancePercentage, setInsurancePercentage] = useState<number>(() =>
+    Number(localStorage.getItem("payroll_insurance_percentage") || "10"),
+  );
+  const isMigratingRef = useRef(false);
+  const lastSavedArchivesRef = useRef(getSafeSavedArchives());
+  const lastSavedJsonRef = useRef(
+    localStorage.getItem("payroll_employees_2026") || "[]"
+  );
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<any[]>([]);
+  const [isBulkPrintOpen, setIsBulkPrintOpen] = useState(false);
+  const [bulkEmployees, setBulkEmployees] = useState<Employee[]>([]);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [isMigrateModalOpen, setIsMigrateModalOpen] = useState(false);
+  const [employeeForSlip, setEmployeeForSlip] = useState<Employee | null>(null);
+  const [editingArchiveData, setEditingArchiveData] = useState<ArchivedMonth | null>(null);
+
+  const archivedMonthData = useMemo(() => {
+    return archives.find((arc) => arc.monthIso === selectedMonth);
+  }, [archives, selectedMonth]);
+
+  const isCurrentMonthArchived = !!archivedMonthData;
+
+  const [sheetTitle, setSheetTitle] = useState(() => {
+    const saved = localStorage.getItem("payroll_sheetTitle");
+    if (saved) return saved;
+    return getDynamicSheetTitle(new Date());
+  });
+
+  const displayedSheetTitle = useMemo(() => {
+    if (isCurrentMonthArchived && archivedMonthData) {
+      return archivedMonthData.sheetTitle;
+    }
+    if (!isAlaa) return "شهر غير مؤرشف";
+    return getFormattedTitle(sheetTitle, activePayrollPhase, selectedMonth);
+  }, [
+    sheetTitle,
+    activePayrollPhase,
+    selectedMonth,
+    isAlaa,
+    isCurrentMonthArchived,
+    archivedMonthData,
+  ]);
+
+  // Sync isActive changes to TimeSheet documents
   useEffect(() => {
+    if (!employees || employees.length === 0) return;
+
+    // We only want to sync if it's a real user action, but since we don't have a direct hook for that,
+    // we'll check against a ref to see if statuses changed.
+    const syncStatus = async () => {
+      for (const emp of employees) {
+        // Find existing timesheet doc to avoid unnecessary saves if already synced
+        const tsRecords = dualStorage.getLocalData(COLLECTIONS.RECORDS);
+        const existingTs = tsRecords.find(
+          (r: any) =>
+            r &&
+            r.type === "timesheet_employee" &&
+            r.data &&
+            normalizeArabicName(r.data.name) === normalizeArabicName(emp.name),
+        );
+
+        if (existingTs) {
+          const tsData = existingTs.data;
+          if (tsData.isActive !== emp.isActive) {
+            const updatedTs = { ...tsData, isActive: emp.isActive !== false };
+            await dualStorage.save(COLLECTIONS.RECORDS, existingTs.id, {
+              type: "timesheet_employee",
+              data: updatedTs,
+            });
+          }
+        }
+      }
+    };
+
+    syncStatus();
+  }, [employees]);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedBranch, setSelectedBranch] = useState("الكل");
+  const [employeeToEdit, setEmployeeToEdit] = useState<any>(null);
+
+  // Save/Sync employees to localStorage and Firestore
+  useEffect(() => {
+    if (!employees || employees.length === 0) return;
+
+    // Prevent saving if we are in the middle of a migration reset
+    if (isMigratingRef.current) return;
+
+    const employeesJson = JSON.stringify(employees);
+    if (employeesJson === lastSavedJsonRef.current) return;
+    lastSavedJsonRef.current = employeesJson;
+
+    // Save to localStorage
+    localStorage.setItem("payroll_employees_2026", employeesJson);
+
+    // Save to Firestore (dualStorage)
+    dualStorage
+      .save(COLLECTIONS.RECORDS, "payroll_employees_data", {
+        type: "payroll_employees_list",
+        data: employees,
+      })
+      .catch((err) => {
+        console.error("Error saving payroll employees to Firestore:", err);
+      });
+  }, [employees]);
+
+  // Save/Sync archives to localStorage and Firestore
+  useEffect(() => {
+    if (!archives) return;
+
+    const archivesJson = JSON.stringify(archives);
+    if (archivesJson === lastSavedArchivesRef.current) return;
+    lastSavedArchivesRef.current = archivesJson;
+
+    // Save to localStorage
+    localStorage.setItem("payroll_archives", archivesJson);
+    localStorage.setItem("payroll_archives_2026", archivesJson);
+
+    // Save to Firestore (dualStorage)
+    dualStorage
+      .save(COLLECTIONS.RECORDS, "payroll_archives_data", {
+        type: "payroll_archives_list",
+        data: archives,
+      })
+      .catch((err) => {
+        console.error("Error saving archives to Firestore:", err);
+      });
+  }, [archives]);
+
+  // Load month-specific variables when the selected month or employees list changes
+  useEffect(() => {
+    if (!employees || employees.length === 0) return;
+    if (isCurrentMonthArchived) return;
+
+    let needsUpdate = false;
+    const updatedEmployees = employees.map((emp) => {
+      const monthData = emp.monthlyValues?.[selectedMonth];
+      const variableFields = [
+        "overtimeHours",
+        "overtime",
+        "commission",
+        "bonus",
+        "generalDeduction",
+        "loan",
+        "absenceDays",
+        "absenceDeduction"
+      ] as const;
+
+      let changedForEmp = false;
+      const updatedEmp = { ...emp };
+
+      variableFields.forEach((field) => {
+        const expectedValue = monthData && monthData[field] !== undefined ? monthData[field] : 0;
+        if (updatedEmp[field] !== expectedValue) {
+          updatedEmp[field] = expectedValue as any;
+          changedForEmp = true;
+        }
+      });
+
+      if (changedForEmp) {
+        needsUpdate = true;
+        // Make sure monthlyValues has selectedMonth set
+        updatedEmp.monthlyValues = {
+          ...(updatedEmp.monthlyValues || {}),
+          [selectedMonth]: {
+            ...(updatedEmp.monthlyValues?.[selectedMonth] || {})
+          }
+        };
+        variableFields.forEach((field) => {
+          updatedEmp.monthlyValues![selectedMonth][field] = updatedEmp[field] as any;
+        });
+      }
+
+      return updatedEmp;
+    });
+
+    if (needsUpdate) {
+      setEmployees(updatedEmployees);
+    }
+  }, [selectedMonth, isCurrentMonthArchived, employees]);
+
+  // Save sheet title and signatures
+  useEffect(() => {
+    if (sheetTitle) {
+      localStorage.setItem("payroll_sheetTitle", sheetTitle);
+      localStorage.setItem("payroll_sheet_title", sheetTitle);
+    }
+  }, [sheetTitle]);
+
+  useEffect(() => {
+    if (signatures) {
+      localStorage.setItem("payroll_signatures", JSON.stringify(signatures));
+    }
+  }, [signatures]);
+
+  // Listen for external real-time sync events from Firestore
+  useEffect(() => {
+    const syncFromDualStorage = () => {
+      try {
+        const records = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+        
+        // Sync Employees
+        const empRecord = records.find((r: any) => r.id === "payroll_employees_data");
+        if (empRecord && empRecord.data && Array.isArray(empRecord.data) && empRecord.data.length > 0) {
+          setEmployees(prev => {
+            const currentStr = JSON.stringify(prev);
+            const newStr = JSON.stringify(empRecord.data);
+            if (currentStr !== newStr) {
+              lastSavedJsonRef.current = newStr;
+              localStorage.setItem("payroll_employees_2026", newStr);
+              return empRecord.data;
+            }
+            return prev;
+          });
+        }
+
+        // Sync Archives
+        const arcRecord = records.find((r: any) => r.id === "payroll_archives_data");
+        if (arcRecord && arcRecord.data && Array.isArray(arcRecord.data)) {
+          setArchives(prev => {
+            const currentStr = JSON.stringify(prev);
+            const newStr = JSON.stringify(arcRecord.data);
+            if (currentStr !== newStr) {
+              lastSavedArchivesRef.current = newStr;
+              localStorage.setItem("payroll_archives", newStr);
+              localStorage.setItem("payroll_archives_2026", newStr);
+              return arcRecord.data;
+            }
+            return prev;
+          });
+        }
+      } catch (err) {
+        console.error("Error syncing from dual storage:", err);
+      }
+    };
+
     const handleEmployeesSynced = () => {
-      if (isMigratingRef.current) return;
-      const saved = localStorage.getItem('payroll_employees_2026');
-      if (saved && saved !== lastSavedJsonRef.current) {
+      syncFromDualStorage();
+      
+      // Fallback for localStorage updates from other tabs
+      const saved = localStorage.getItem("payroll_employees_2026");
+      if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          const sanitized = ensureUniqueIdsAndDeduplicate(parsed);
-          const sanitizedJson = JSON.stringify(sanitized);
-          lastSavedJsonRef.current = sanitizedJson;
-          setEmployees(sanitized);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setEmployees(prev => {
+              const currentStr = JSON.stringify(prev);
+              if (JSON.stringify(parsed) !== currentStr) {
+                lastSavedJsonRef.current = saved;
+                return parsed;
+              }
+              return prev;
+            });
+          }
         } catch (e) {
-          console.error("Failed to sync employees", e);
+          console.error("Error parsing synced employees", e);
         }
       }
     };
 
     const handleArchivesUpdated = () => {
-      if (isMigratingRef.current) return;
-      const saved = localStorage.getItem('payroll_archives_2026');
-      if (saved && saved !== lastSavedArchivesRef.current) {
-        try {
-          lastSavedArchivesRef.current = saved;
-          setArchives(JSON.parse(saved));
-        } catch (e) {
-          console.error("Failed to sync archives", e);
-        }
-      }
-    };
-    const handleMonthSynced = (e: Event) => {
-      if (!isAlaa) return; // Non-Alaa users maintain independent selection of archived months
-      const detail = (e as CustomEvent).detail;
-      if (detail && detail !== selectedMonth) {
-        setSelectedMonth(detail);
-      }
-    };
-    const handleInsuranceUpdated = () => {
-      const val = localStorage.getItem('payroll_insurance_percentage');
-      if (val && Number(val) !== insurancePercentage) {
-        setInsurancePercentage(Number(val));
-      }
-    };
-    const handleSignaturesUpdated = () => {
-      const val = localStorage.getItem('payroll_signatures');
-      const currentSignaturesJson = JSON.stringify(signatures);
-      if (val && val !== currentSignaturesJson) {
-        try {
-          setSignatures(JSON.parse(val));
-        } catch (e) {
-          console.error("Failed to sync signatures", e);
-        }
-      }
-    };
-    const handleTitleUpdated = () => {
-      const val = localStorage.getItem('payroll_sheet_title');
-      if (val && val !== sheetTitle) {
-        setSheetTitle(val);
-      }
-    };
+      syncFromDualStorage();
 
-    window.addEventListener('payroll_archives_updated', handleArchivesUpdated);
-    window.addEventListener('payroll_selected_month_synced', handleMonthSynced);
-    window.addEventListener('payroll_insurance_updated', handleInsuranceUpdated);
-    window.addEventListener('payroll_signatures_updated', handleSignaturesUpdated);
-    window.addEventListener('payroll_title_updated', handleTitleUpdated);
-    window.addEventListener('payroll_employees_synced', handleEmployeesSynced);
-
-    return () => {
-      window.removeEventListener('payroll_archives_updated', handleArchivesUpdated);
-      window.removeEventListener('payroll_selected_month_synced', handleMonthSynced);
-      window.removeEventListener('payroll_insurance_updated', handleInsuranceUpdated);
-      window.removeEventListener('payroll_signatures_updated', handleSignaturesUpdated);
-      window.removeEventListener('payroll_title_updated', handleTitleUpdated);
-      window.removeEventListener('payroll_employees_synced', handleEmployeesSynced);
-    };
-  }, [selectedMonth, insurancePercentage, signatures, sheetTitle, employees, archives]);
-
-  // Listen for employee updates in Overtime page (localStorage sync)
-  useEffect(() => {
-    const handlePayrollEmployeesUpdated = () => {
-      const saved = localStorage.getItem('payroll_employees_2026');
+      const saved = getSafeSavedArchives();
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          const filtered = parsed.filter((emp: any) => emp && emp.name && emp.name.trim() !== '');
-          const sanitized = ensureUniqueIdsAndDeduplicate(filtered);
-          if (sanitized.length > 0) {
-            const json = JSON.stringify(sanitized);
-            if (json !== JSON.stringify(employees)) {
-              lastSavedJsonRef.current = json;
-              setEmployees(sanitized);
-            }
+          if (Array.isArray(parsed)) {
+            setArchives(prev => {
+              const currentStr = JSON.stringify(prev);
+              if (JSON.stringify(parsed) !== currentStr) {
+                lastSavedArchivesRef.current = saved;
+                return parsed;
+              }
+              return prev;
+            });
           }
         } catch (e) {
-          console.error(e);
+          console.error("Error parsing synced archives", e);
         }
       }
     };
-    window.addEventListener('payroll_employees_updated', handlePayrollEmployeesUpdated);
-    return () => window.removeEventListener('payroll_employees_updated', handlePayrollEmployeesUpdated);
-  }, [employees]);
 
-  useEffect(() => {
-    const json = JSON.stringify(employees);
-    localStorage.setItem('payroll_employees_2026', json);
-    
-    if (json !== lastSavedJsonRef.current) {
-      lastSavedJsonRef.current = json;
-      // Save to dualStorage
-      dualStorage.save(COLLECTIONS.RECORDS, 'payroll_employees_data', {
-        type: 'payroll_employees_list',
-        data: employees
-      }).catch(err => console.error('Error saving payroll employees to dualStorage', err));
-    }
-  }, [employees]);
+    // Run once on mount
+    syncFromDualStorage();
 
-  useEffect(() => {
-    localStorage.setItem('payroll_sheet_title', sheetTitle);
-  }, [sheetTitle]);
+    window.addEventListener("payroll_employees_updated", handleEmployeesSynced);
+    window.addEventListener("payroll_employees_synced", handleEmployeesSynced);
+    window.addEventListener("payroll_archives_updated", handleArchivesUpdated);
 
-  useEffect(() => {
-    localStorage.setItem('payroll_signatures', JSON.stringify(signatures));
-  }, [signatures]);
-
-  useEffect(() => {
-    const json = JSON.stringify(archives);
-    localStorage.setItem('payroll_archives_2026', json);
-    
-    if (json !== lastSavedArchivesRef.current) {
-      lastSavedArchivesRef.current = json;
-      dualStorage.save(COLLECTIONS.RECORDS, 'payroll_archives_data', {
-        type: 'payroll_archives',
-        data: archives
-      }).catch(err => console.error('Error saving payroll archives to dualStorage', err));
-    }
-  }, [archives]);
-
-  // Auto-correct employee 'محيبر الرحمن الرحمن محيبر' branch from "الكل" to "المركز الرئيسي"
-  useEffect(() => {
-    let employeesChanged = false;
-    const updatedEmployees = employees.map(emp => {
-      if (
-        emp && 
-        (emp.code === '1184' || (emp.name && emp.name.trim() === 'محيبر الرحمن الرحمن محيبر')) && 
-        emp.branch === 'الكل'
-      ) {
-        employeesChanged = true;
-        return { ...emp, branch: 'المركز الرئيسي' };
-      }
-      return emp;
-    });
-
-    if (employeesChanged) {
-      setEmployees(updatedEmployees);
-    }
-
-    let archivesChanged = false;
-    const updatedArchives = archives.map(arc => {
-      let archiveEmployeesChanged = false;
-      const arcEmps = arc.employees.map(emp => {
-        if (
-          emp && 
-          (emp.code === '1184' || (emp.name && emp.name.trim() === 'محيبر الرحمن الرحمن محيبر')) && 
-          emp.branch === 'الكل'
-        ) {
-          archiveEmployeesChanged = true;
-          return { ...emp, branch: 'المركز الرئيسي' };
-        }
-        return emp;
-      });
-
-      if (archiveEmployeesChanged) {
-        archivesChanged = true;
-        return { ...arc, employees: arcEmps };
-      }
-      return arc;
-    });
-
-    if (archivesChanged) {
-      setArchives(updatedArchives);
-    }
-  }, [employees, archives]);
-
-  // Sync global settings to dualStorage
-  useEffect(() => {
-    const settings = {
-      selectedMonth,
-      insurancePercentage,
-      signatures,
-      sheetTitle
+    return () => {
+      window.removeEventListener("payroll_employees_updated", handleEmployeesSynced);
+      window.removeEventListener("payroll_employees_synced", handleEmployeesSynced);
+      window.removeEventListener("payroll_archives_updated", handleArchivesUpdated);
     };
-    const json = JSON.stringify(settings);
-    if (json !== lastSavedSettingsRef.current) {
-      lastSavedSettingsRef.current = json;
-      dualStorage.save(COLLECTIONS.RECORDS, 'payroll_global_settings', {
-        type: 'payroll_settings',
-        data: settings
-      }).catch(err => console.error('Error saving payroll settings to dualStorage', err));
-    }
-  }, [selectedMonth, insurancePercentage, signatures, sheetTitle]);
-
-  // Determine if we are currently viewing an archived month
-  const archivedMonthData = useMemo(() => {
-    return archives.find(arc => arc.monthIso === selectedMonth);
-  }, [archives, selectedMonth]);
-
-  const isCurrentMonthArchived = !!archivedMonthData;
+  }, []);
 
   // Use archived snapshot if archived, otherwise active state
   const displayedEmployees = useMemo(() => {
@@ -570,28 +649,23 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
         return archivedMonthData.employees;
       } else if (archives.length > 0) {
         // Fallback to latest archived if current selected is not archived
-        const sorted = [...archives].sort((a, b) => (b.monthIso || '').localeCompare(a.monthIso || ''));
+        const sorted = [...archives].sort((a, b) =>
+          (b.monthIso || "").localeCompare(a.monthIso || ""),
+        );
         return sorted[0].employees;
       }
       return [];
     }
-    return isCurrentMonthArchived && archivedMonthData ? archivedMonthData.employees : employees;
+    return isCurrentMonthArchived && archivedMonthData
+      ? archivedMonthData.employees
+      : employees;
   }, [isAlaa, isCurrentMonthArchived, archivedMonthData, employees, archives]);
-
-  const displayedSheetTitle = useMemo(() => {
-    if (!isAlaa) {
-      return isCurrentMonthArchived && archivedMonthData 
-        ? archivedMonthData.sheetTitle 
-        : "شهر غير مؤرشف / Unarchived Month";
-    }
-    return isCurrentMonthArchived && archivedMonthData ? archivedMonthData.sheetTitle : sheetTitle;
-  }, [isAlaa, isCurrentMonthArchived, archivedMonthData, sheetTitle]);
 
   // Derive unique branches
   const branches = useMemo(() => {
     const set = new Set<string>();
-    set.add('الكل');
-    displayedEmployees.forEach(emp => {
+    set.add("الكل");
+    displayedEmployees.forEach((emp) => {
       if (emp.branch) set.add(emp.branch);
     });
     return Array.from(set);
@@ -599,31 +673,90 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
 
   // Filter employees based on search & branch
   const filteredEmployees = useMemo(() => {
-    return displayedEmployees.filter(emp => {
+    const list = displayedEmployees.filter((emp) => {
       if (!activeShowInactive && emp.isActive === false) return false;
-      const matchBranch = selectedBranch === 'الكل' || emp.branch === selectedBranch;
-      const matchSearch = 
+      const matchBranch =
+        selectedBranch === "الكل" || emp.branch === selectedBranch;
+      const matchSearch =
         !searchTerm.trim() ||
         emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (emp.jobTitle && emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()));
+        (emp.jobTitle &&
+          emp.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()));
       return matchBranch && matchSearch;
+    });
+
+    const branchOrder = [
+      "الادارة",
+      "المركز الرئيسي",
+      "فرع الدمام",
+      "فرع الاحساء",
+      "فرع المعباه",
+    ];
+
+    return [...list].sort((a, b) => {
+      const idxA = a.branch ? branchOrder.indexOf(a.branch.trim()) : -1;
+      const idxB = b.branch ? branchOrder.indexOf(b.branch.trim()) : -1;
+      const valA = idxA !== -1 ? idxA : 999;
+      const valB = idxB !== -1 ? idxB : 999;
+      return valA - valB;
     });
   }, [displayedEmployees, selectedBranch, searchTerm, activeShowInactive]);
 
   // Compute Grand Totals across filtered employees
   const totals = useMemo(() => {
-    const isFiltered = selectedBranch !== 'الكل' || searchTerm.trim() !== '';
-    if (isCurrentMonthArchived && archivedMonthData?.totals && !isFiltered) {
-      return archivedMonthData.totals;
-    }
     return calculateGrandTotals(filteredEmployees, activePayrollPhase);
-  }, [isCurrentMonthArchived, archivedMonthData, filteredEmployees, activePayrollPhase, selectedBranch, searchTerm]);
+  }, [filteredEmployees, activePayrollPhase]);
 
   // Handlers
   const handleAddEmployeeClick = () => {
-    setEmployeeToEdit(null);
+    const newId =
+      employees.length > 0 ? Math.max(...employees.map((i) => i.id)) + 1 : 1;
+    const newCode = Math.floor(1000 + Math.random() * 9000).toString();
+    const defaultBranch =
+      branches.find((b) => b !== "الكل" && b !== "All") || "الادارة";
+    const newEmp: Employee = {
+      id: newId,
+      code: newCode,
+      name: "",
+      nameEn: "",
+      nationalId: "",
+      jobTitle: "مبيعات",
+      branch: defaultBranch,
+      hireDate: new Date().toISOString().split("T")[0],
+      iban: "",
+      nationality: "سعودي",
+      hasInsurance: true,
+      isActive: true,
+      basicSalary: 3000,
+      overtimeHours: 0,
+      overtime: 0,
+      communicationAllowance: 0,
+      housingAllowance: 500,
+      foodAllowance: 200,
+      transportationAllowance: 0,
+      commission: 0,
+      bonus: 0,
+      insuranceDeduction: 300,
+      generalDeduction: 0,
+      loan: 0,
+      absenceDeduction: 0,
+      endOfServicePaid: 0,
+      paymentStage: "1",
+    };
+
+    setEmployees((prev) => [...prev, newEmp]);
+    setEmployeeToEdit(newEmp);
     setIsEmployeeModalOpen(true);
+  };
+
+  const handleCloseEmployeeModal = () => {
+    setIsEmployeeModalOpen(false);
+    // Cleanup any employee with an empty or whitespace name
+    setEmployees((prev) =>
+      prev.filter((emp) => emp.name && emp.name.trim() !== ""),
+    );
+    setEmployeeToEdit(null);
   };
 
   const handleEditEmployeeClick = (emp: Employee) => {
@@ -633,7 +766,9 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
 
   const handleNextEmployee = () => {
     if (!employeeToEdit || filteredEmployees.length === 0) return;
-    const currentIndex = filteredEmployees.findIndex(e => e.id === employeeToEdit.id);
+    const currentIndex = filteredEmployees.findIndex(
+      (e) => e.id === employeeToEdit.id,
+    );
     if (currentIndex >= 0 && currentIndex < filteredEmployees.length - 1) {
       setEmployeeToEdit(filteredEmployees[currentIndex + 1]);
     }
@@ -641,7 +776,9 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
 
   const handlePrevEmployee = () => {
     if (!employeeToEdit || filteredEmployees.length === 0) return;
-    const currentIndex = filteredEmployees.findIndex(e => e.id === employeeToEdit.id);
+    const currentIndex = filteredEmployees.findIndex(
+      (e) => e.id === employeeToEdit.id,
+    );
     if (currentIndex > 0) {
       setEmployeeToEdit(filteredEmployees[currentIndex - 1]);
     }
@@ -651,420 +788,562 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
     const syncOvertime = () => {
       try {
         const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
-        
+
         // Get TimeSheet employees
         const tsEmployees = local
-          .filter((r: any) => r && r.type === 'timesheet_employee' && r.data)
+          .filter((r: any) => r && r.type === "timesheet_employee" && r.data)
           .map((r: any) => r.data);
-          
+
         if (tsEmployees.length === 0) {
           return;
         }
-          
+
         // Get current selected month
         const currentMonth = selectedMonth;
-        
+
         // Get overtime 1 and 2 grids
-        const ot1Record = local.find((r: any) => r && r.type === 'timesheet_grid_overtime1' && r.data && r.data.month === currentMonth);
+        const ot1Record = local.find(
+          (r: any) =>
+            r &&
+            r.type === "timesheet_grid_overtime1" &&
+            r.data &&
+            r.data.month === currentMonth,
+        );
         const ot1Grid = ot1Record ? ot1Record.data : null;
-        
-        const ot2Record = local.find((r: any) => r && r.type === 'timesheet_grid_overtime2' && r.data && r.data.month === currentMonth);
+
+        const ot2Record = local.find(
+          (r: any) =>
+            r &&
+            r.type === "timesheet_grid_overtime2" &&
+            r.data &&
+            r.data.month === currentMonth,
+        );
         const ot2Grid = ot2Record ? ot2Record.data : null;
-        
-        if (!ot1Record && !ot2Record) {
-          // If no overtime is posted/saved for this selected month in Timesheet, reset the hours to 0
-          let hasChanges = false;
-          setEmployees(prev => {
-            const newEmps = prev.map(emp => {
-              const tsEmp = tsEmployees.find((t: any) => {
-                const normTsAr = normalizeArabicName(t.name);
-                const normEmpAr = normalizeArabicName(emp.name);
-                if (normTsAr && normEmpAr && normTsAr === normEmpAr) return true;
-                
-                const normTsEn = normalizeEnglishName(t.englishName || '');
-                const normEmpEn = normalizeEnglishName(emp.nameEn || '');
-                if (normTsEn && normEmpEn && normTsEn === normEmpEn) return true;
-                
-                return false;
-              });
 
-              let updatedEmp = { ...emp };
-              let changedForThisEmp = false;
-
-              if (emp.overtimeHours !== 0 || emp.overtime !== 0) {
-                updatedEmp.overtimeHours = 0;
-                updatedEmp.overtime = 0;
-                changedForThisEmp = true;
-              }
-
-              if (emp.bonus !== 0) {
-                updatedEmp.bonus = 0;
-                changedForThisEmp = true;
-              }
-
-              if (tsEmp && tsEmp.jobTitle && emp.jobTitle !== tsEmp.jobTitle) {
-                updatedEmp.jobTitle = tsEmp.jobTitle;
-                changedForThisEmp = true;
-              }
-
-              if (changedForThisEmp) {
-                hasChanges = true;
-                return updatedEmp;
-              }
-              return emp;
-            });
-            return hasChanges ? newEmps : prev;
-          });
-          return;
-        }
-        
         const getEmployeeTotalHours = (empId: string, grid: any) => {
-          if (!grid || !grid.employeesData || !grid.employeesData[empId]) return 0;
-          const dData = grid.employeesData[empId];
+          if (!grid || !grid.employeesData) return 0;
+
+          let dData = grid.employeesData[empId];
+          const targetTsEmp = tsEmployees.find((e: any) => e.id === empId);
+
+          if (
+            (!dData || !dData.days || Object.keys(dData.days).length === 0) &&
+            targetTsEmp
+          ) {
+            const targetNormAr = normalizeArabicName(targetTsEmp.name);
+            for (const key of Object.keys(grid.employeesData)) {
+              const otherTsEmp = tsEmployees.find((e: any) => e.id === key);
+              if (
+                otherTsEmp &&
+                normalizeArabicName(otherTsEmp.name) === targetNormAr
+              ) {
+                dData = grid.employeesData[key];
+                break;
+              }
+            }
+          }
+
+          if (!dData) return 0;
           let sum = 0;
           for (let i = 1; i <= 31; i++) {
-            const val = parseFloat(dData.days[i] || '0');
+            const val = parseFloat(dData.days[i] || "0");
             if (!isNaN(val)) sum += val;
           }
           return sum;
         };
-        
-        let hasChanges = false;
-        
-        setEmployees(prev => {
-          const newEmps = prev.map(emp => {
+
+        const getEmployeeBonus = (empId: string, grid: any) => {
+          if (!grid || !grid.employeesData) return 0;
+
+          let dData = grid.employeesData[empId];
+          const targetTsEmp = tsEmployees.find((e: any) => e.id === empId);
+
+          if ((!dData || !dData.bonus) && targetTsEmp) {
+            const targetNormAr = normalizeArabicName(targetTsEmp.name);
+            for (const key of Object.keys(grid.employeesData)) {
+              const otherTsEmp = tsEmployees.find((e: any) => e.id === key);
+              if (
+                otherTsEmp &&
+                normalizeArabicName(otherTsEmp.name) === targetNormAr
+              ) {
+                dData = grid.employeesData[key];
+                break;
+              }
+            }
+          }
+
+          return dData && dData.bonus
+            ? parseFloat(String(dData.bonus).replace(/,/g, "").trim()) || 0
+            : 0;
+        };
+
+        const updateEmps = (
+          emps: Employee[],
+        ): { changed: boolean; emps: Employee[] } => {
+          let changed = false;
+          const updated = emps.map((emp) => {
             const tsEmp = tsEmployees.find((t: any) => {
               const normTsAr = normalizeArabicName(t.name);
               const normEmpAr = normalizeArabicName(emp.name);
               if (normTsAr && normEmpAr && normTsAr === normEmpAr) return true;
-              
-              const normTsEn = normalizeEnglishName(t.englishName || '');
-              const normEmpEn = normalizeEnglishName(emp.nameEn || '');
+              const normTsEn = normalizeEnglishName(t.englishName || "");
+              const normEmpEn = normalizeEnglishName(emp.nameEn || "");
               if (normTsEn && normEmpEn && normTsEn === normEmpEn) return true;
-              
               return false;
             });
-
             let updatedEmp = { ...emp };
             let changedForThisEmp = false;
-
             if (tsEmp) {
               const ot1Hours = getEmployeeTotalHours(tsEmp.id, ot1Grid);
               const ot2Hours = getEmployeeTotalHours(tsEmp.id, ot2Grid);
               const totalOtHours = ot1Hours + ot2Hours;
-              
-              // Correctly sync even if it is 0, to ensure new months are empty
               if (emp.overtimeHours !== totalOtHours) {
                 const basic = emp.basicSalary || 0;
                 const hourlyRate = (basic / 240) * 1.5;
-                const calculatedOvertime = Number((totalOtHours * hourlyRate).toFixed(2));
                 updatedEmp.overtimeHours = totalOtHours;
-                updatedEmp.overtime = calculatedOvertime;
+                updatedEmp.overtime = Number(
+                  (totalOtHours * hourlyRate).toFixed(2),
+                );
                 changedForThisEmp = true;
               }
-
-              // Sync bonuses from Overtime 1 and Overtime 2 grids automatically
-              const ot1BonusRaw = String(ot1Grid?.employeesData?.[tsEmp.id]?.bonus || '0').replace(/,/g, '').trim();
-              const ot2BonusRaw = String(ot2Grid?.employeesData?.[tsEmp.id]?.bonus || '0').replace(/,/g, '').trim();
-              const ot1Bonus = parseFloat(ot1BonusRaw) || 0;
-              const ot2Bonus = parseFloat(ot2BonusRaw) || 0;
-              const totalBonus = ot1Bonus + ot2Bonus;
-
+              const totalBonus =
+                getEmployeeBonus(tsEmp.id, ot1Grid) +
+                getEmployeeBonus(tsEmp.id, ot2Grid);
               if (emp.bonus !== totalBonus) {
                 updatedEmp.bonus = totalBonus;
                 changedForThisEmp = true;
               }
-
-              if (tsEmp.jobTitle && emp.jobTitle !== tsEmp.jobTitle) {
-                updatedEmp.jobTitle = tsEmp.jobTitle;
-                changedForThisEmp = true;
-              }
             }
-
             if (changedForThisEmp) {
-              hasChanges = true;
-              return updatedEmp;
+              changed = true;
+              return syncMonthlyValuesForEmployee(updatedEmp, currentMonth);
             }
             return emp;
           });
-          return hasChanges ? newEmps : prev;
+          return { changed, emps: updated };
+        };
+        setEmployees((prev) => {
+          const res = updateEmps(prev);
+          return res.changed ? res.emps : prev;
+        });
+        setArchives((prev) => {
+          let arcsChanged = false;
+          const newArcs = prev.map((arc) => {
+            if (arc.monthIso === currentMonth) {
+              const res = updateEmps(arc.employees);
+              if (res.changed) {
+                arcsChanged = true;
+                return { ...arc, employees: res.emps };
+              }
+            }
+            return arc;
+          });
+          return arcsChanged ? newArcs : prev;
         });
       } catch (err) {
-        console.error('Error syncing overtime from TimeSheet', err);
+        console.error("Error syncing overtime from TimeSheet", err);
       }
     };
-    
+
     syncOvertime();
-    
+
     // Listen for custom event from TimeSheet
-    window.addEventListener('timesheet_updated', syncOvertime);
-    window.addEventListener('timesheet_grid_updated', syncOvertime);
+    window.addEventListener("timesheet_updated", syncOvertime);
+    window.addEventListener("timesheet_grid_updated", syncOvertime);
     return () => {
-      window.removeEventListener('timesheet_updated', syncOvertime);
-      window.removeEventListener('timesheet_grid_updated', syncOvertime);
+      window.removeEventListener("timesheet_updated", syncOvertime);
+      window.removeEventListener("timesheet_grid_updated", syncOvertime);
     };
   }, [selectedMonth]);
 
   const handleSaveEmployee = async (emp: Employee) => {
     if (isCurrentMonthArchived || !isAlaa) return;
-    let savedEmp = emp;
-    if (employeeToEdit) {
+    let savedEmp = syncMonthlyValuesForEmployee(emp, selectedMonth);
+    const oldEmp = employees.find((item) => item.id === emp.id);
+
+    let newEmployees: Employee[];
+    if (oldEmp) {
       // Update existing
-      setEmployees(prev => prev.map(item => item.id === emp.id ? emp : item));
+      newEmployees = employees.map((item) => (item.id === emp.id ? savedEmp : item));
+      setEmployees(newEmployees);
     } else {
       // Add new
-      const newId = employees.length > 0 ? Math.max(...employees.map(i => i.id)) + 1 : 1;
-      savedEmp = { ...emp, id: newId };
-      setEmployees(prev => [...prev, savedEmp]);
+      const newId = emp.id
+        ? emp.id
+        : employees.length > 0
+          ? Math.max(...employees.map((i) => i.id)) + 1
+          : 1;
+      savedEmp = { ...savedEmp, id: newId };
+      newEmployees = [...employees, savedEmp];
+      setEmployees(newEmployees);
     }
+    setEmployeeToEdit(savedEmp);
+
+    // Synchronously save to dual storage to prevent race condition with incoming snapshot from tsEmp
+    const employeesJson = JSON.stringify(newEmployees);
+    lastSavedJsonRef.current = employeesJson;
+    localStorage.setItem("payroll_employees_2026", employeesJson);
+    dualStorage
+      .save(COLLECTIONS.RECORDS, "payroll_employees_data", {
+        type: "payroll_employees_list",
+        data: newEmployees,
+      })
+      .catch((err) => {
+        console.error("Error saving payroll employees to Firestore:", err);
+      });
 
     // Sync to TimeSheet
     try {
       const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
       const tsEmployees = local
-          .filter((r: any) => r && r.type === 'timesheet_employee' && r.data)
-          .map((r: any) => r.data as any);
-      
-      const oldName = employeeToEdit ? employeeToEdit.name : savedEmp.name;
-      let tsEmp = tsEmployees.find((e: any) => normalizeArabicName(e.name) === normalizeArabicName(oldName) || normalizeArabicName(e.name) === normalizeArabicName(savedEmp.name));
+        .filter((r: any) => r && r.type === "timesheet_employee" && r.data)
+        .map((r: any) => r.data as any);
+
+      const oldName = oldEmp ? oldEmp.name : savedEmp.name;
+      let tsEmp = tsEmployees.find(
+        (e: any) =>
+          normalizeArabicName(e.name) === normalizeArabicName(oldName) ||
+          normalizeArabicName(e.name) === normalizeArabicName(savedEmp.name),
+      );
+
+      const getEnglishJobTitleForArabic = (arabicTitle: string): string => {
+        if (!arabicTitle) return "";
+        const map: Record<string, string> = {
+          "العضو المنتدب": "Managing Director",
+          "شئون موظفين": "Personnel Affairs",
+          "نائب المدير العام": "Deputy General Manager",
+          "مدير المبيعات": "Sales Manager",
+          "محاسب عام": "General Accountant",
+          "امين صندوق": "Treasurer",
+          "محاسبة مبيعات": "Sales Accountant",
+          محاسبة: "Accountant",
+          ميكانيكي: "Mechanic",
+          "مراقب حركة سيارات": "Car Movement Controller",
+          "سائق شاحنه": "Truck Driver",
+          "سائق نقل": "Transport Driver",
+          "سائق شاحنة ثقيلة": "Heavy Truck Driver",
+          "مشغل محطة": "Station Operator",
+          "عامل شحن وتفريغ": "Loading and Unloading Worker",
+          "عامل ورشه": "Workshop Worker",
+          "مندوبة مشتريات": "Purchasing Representative",
+        };
+        return map[arabicTitle.trim()] || arabicTitle;
+      };
+
       if (!tsEmp) {
-          tsEmp = {
-              id: crypto.randomUUID(),
-              serialNumber: tsEmployees.length + 1,
-              name: savedEmp.name,
-              englishName: savedEmp.nameEn || '',
-              jobTitle: savedEmp.jobTitle,
-              englishJobTitle: '',
-              isActive: savedEmp.isActive !== false,
-              showInOvertime1: true,
-              showInOvertime2: true
-          };
+        tsEmp = {
+          id: crypto.randomUUID(),
+          serialNumber: tsEmployees.length + 1,
+          name: savedEmp.name,
+          englishName: savedEmp.nameEn || "",
+          jobTitle: savedEmp.jobTitle,
+          englishJobTitle: getEnglishJobTitleForArabic(savedEmp.jobTitle),
+          isActive: savedEmp.isActive !== false,
+          showInOvertime1: true,
+          showInOvertime2: true,
+        };
       } else {
-          tsEmp.name = savedEmp.name;
-          if (savedEmp.nameEn) tsEmp.englishName = savedEmp.nameEn;
-          tsEmp.jobTitle = savedEmp.jobTitle;
-          tsEmp.isActive = savedEmp.isActive !== false;
+        tsEmp.name = savedEmp.name;
+        if (savedEmp.nameEn) tsEmp.englishName = savedEmp.nameEn;
+        tsEmp.jobTitle = savedEmp.jobTitle;
+        tsEmp.englishJobTitle = getEnglishJobTitleForArabic(savedEmp.jobTitle);
+        tsEmp.isActive = savedEmp.isActive !== false;
       }
-      await dualStorage.save(COLLECTIONS.RECORDS, tsEmp.id, { type: 'timesheet_employee', data: tsEmp });
-      window.dispatchEvent(new Event('timesheet_updated'));
-    } catch(err) {
-      console.error('Error syncing to TimeSheet', err);
+      await dualStorage.save(COLLECTIONS.RECORDS, tsEmp.id, {
+        type: "timesheet_employee",
+        data: tsEmp,
+      });
+      window.dispatchEvent(new Event("timesheet_updated"));
+    } catch (err) {
+      console.error("Error syncing to TimeSheet", err);
     }
   };
 
   const handleDeleteEmployee = async (id: number) => {
     if (isCurrentMonthArchived || !isAlaa) return;
-    const employeeToDelete = employees.find(emp => emp.id === id);
+    const employeeToDelete = employees.find((emp) => emp.id === id);
     if (!employeeToDelete) return;
 
-    setEmployees(prev => prev.filter(emp => emp.id !== id));
+    const newEmployees = employees.filter((emp) => emp.id !== id);
+    setEmployees(newEmployees);
+
+    // Synchronously save to dual storage to prevent race condition
+    const employeesJson = JSON.stringify(newEmployees);
+    lastSavedJsonRef.current = employeesJson;
+    localStorage.setItem("payroll_employees_2026", employeesJson);
+    dualStorage
+      .save(COLLECTIONS.RECORDS, "payroll_employees_data", {
+        type: "payroll_employees_list",
+        data: newEmployees,
+      })
+      .catch(console.error);
 
     // Also delete from Overtime (TimeSheet) page automatically!
     try {
       const records = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
       const timesheetEmps = records
-        .filter((r: any) => r && r.type === 'timesheet_employee' && r.data)
+        .filter((r: any) => r && r.type === "timesheet_employee" && r.data)
         .map((r: any) => r.data);
-      
-      const matchedTsEmp = timesheetEmps.find((emp: any) => normalizeArabicName(emp.name) === normalizeArabicName(employeeToDelete.name));
+
+      const matchedTsEmp = timesheetEmps.find(
+        (emp: any) =>
+          normalizeArabicName(emp.name) ===
+          normalizeArabicName(employeeToDelete.name),
+      );
       if (matchedTsEmp) {
         await dualStorage.delete(COLLECTIONS.RECORDS, matchedTsEmp.id);
-        
+
         // Re-sequence remaining timesheet employees
         const remainingTsEmps = timesheetEmps
           .filter((emp: any) => emp.id !== matchedTsEmp.id)
-          .sort((a: any, b: any) => (a.serialNumber || 0) - (b.serialNumber || 0))
+          .sort(
+            (a: any, b: any) => (a.serialNumber || 0) - (b.serialNumber || 0),
+          )
           .map((emp: any, idx: number) => ({ ...emp, serialNumber: idx + 1 }));
 
-        await Promise.all(remainingTsEmps.map((emp: any) => 
-          dualStorage.save(COLLECTIONS.RECORDS, emp.id, { type: 'timesheet_employee', data: emp })
-        ));
+        await Promise.all(
+          remainingTsEmps.map((emp: any) =>
+            dualStorage.save(COLLECTIONS.RECORDS, emp.id, {
+              type: "timesheet_employee",
+              data: emp,
+            }),
+          ),
+        );
       }
     } catch (err) {
       console.error("Error deleting matching timesheet employee:", err);
     }
   };
 
-  const handleUpdateEmployeeField = (id: number, field: keyof Employee, value: number) => {
+  const handleUpdateEmployeeField = (
+    id: number,
+    field: keyof Employee,
+    value: number,
+  ) => {
     if (isCurrentMonthArchived || !isAlaa) return;
-    setEmployees(prev => prev.map(emp => {
-      if (emp.id === id) {
-        if (field === 'overtimeHours') {
-          const basic = emp.basicSalary || 0;
-          // حساب أجر الساعة = (الراتب الأساسي ÷ 240) × 1.5 حسب نظام العمل
-          const hourlyRate = (basic / 240) * 1.5;
-          const calculatedOvertime = Number((value * hourlyRate).toFixed(2));
-          return { ...emp, overtimeHours: value, overtime: calculatedOvertime };
-        }
-        if (field === 'basicSalary') {
-          const newBasic = value;
-          const housing = emp.housingAllowance || 0;
-          let updatedEmp = { ...emp, basicSalary: newBasic };
-          
-          if (emp.hasInsurance !== false) {
-            updatedEmp.insuranceDeduction = Number(((newBasic + housing) * (insurancePercentage / 100)).toFixed(2));
-          }
+    setEmployees((prev) =>
+      prev.map((emp) => {
+        if (emp.id === id) {
+          let updatedEmp = emp;
+          if (field === "overtimeHours") {
+            const basic = emp.basicSalary || 0;
+            // حساب أجر الساعة = (الراتب الأساسي ÷ 240) × 1.5 حسب نظام العمل
+            const hourlyRate = (basic / 240) * 1.5;
+            const calculatedOvertime = Number((value * hourlyRate).toFixed(2));
+            updatedEmp = {
+              ...emp,
+              overtimeHours: value,
+              overtime: calculatedOvertime,
+            };
+          } else if (field === "basicSalary") {
+            const newBasic = value;
+            const housing = emp.housingAllowance || 0;
+            let tmpEmp = { ...emp, basicSalary: newBasic };
 
-          if (emp.overtimeHours && emp.overtimeHours > 0) {
-            const hourlyRate = (newBasic / 240) * 1.5;
-            updatedEmp.overtime = Number((emp.overtimeHours * hourlyRate).toFixed(2));
+            if (emp.hasInsurance !== false) {
+              tmpEmp.insuranceDeduction = Number(
+                ((newBasic + housing) * (insurancePercentage / 100)).toFixed(2),
+              );
+            }
+
+            if (emp.overtimeHours && emp.overtimeHours > 0) {
+              const hourlyRate = (newBasic / 240) * 1.5;
+              tmpEmp.overtime = Number(
+                (emp.overtimeHours * hourlyRate).toFixed(2),
+              );
+            }
+            if (emp.absenceDays && emp.absenceDays > 0) {
+              const dailyRate = newBasic / 30;
+              tmpEmp.absenceDeduction = Number(
+                (emp.absenceDays * dailyRate).toFixed(2),
+              );
+            }
+            updatedEmp = tmpEmp;
+          } else if (field === "housingAllowance") {
+            const newHousing = value;
+            const basic = emp.basicSalary || 0;
+            let tmpEmp = { ...emp, housingAllowance: newHousing };
+
+            if (emp.hasInsurance !== false) {
+              tmpEmp.insuranceDeduction = Number(
+                ((basic + newHousing) * (insurancePercentage / 100)).toFixed(2),
+              );
+            }
+            updatedEmp = tmpEmp;
+          } else if (field === "overtime") {
+            const basic = emp.basicSalary || 0;
+            const hourlyRate = (basic / 240) * 1.5;
+            let calculatedHours = emp.overtimeHours || 0;
+            if (hourlyRate > 0) {
+              calculatedHours = Number((value / hourlyRate).toFixed(2));
+            }
+            updatedEmp = { ...emp, overtime: value, overtimeHours: calculatedHours };
+          } else if (field === "absenceDays") {
+            const basic = emp.basicSalary || 0;
+            const dailyRate = basic / 30;
+            const calculatedDeduction = Number((value * dailyRate).toFixed(2));
+            updatedEmp = {
+              ...emp,
+              absenceDays: value,
+              absenceDeduction: calculatedDeduction,
+            };
+          } else if (field === "absenceDeduction") {
+            const basic = emp.basicSalary || 0;
+            const dailyRate = basic / 30;
+            let calculatedDays = emp.absenceDays || 0;
+            if (dailyRate > 0) {
+              calculatedDays = Number((value / dailyRate).toFixed(2));
+            }
+            updatedEmp = {
+              ...emp,
+              absenceDeduction: value,
+              absenceDays: calculatedDays,
+            };
+          } else {
+            updatedEmp = { ...emp, [field]: value };
           }
-          if (emp.absenceDays && emp.absenceDays > 0) {
-            const dailyRate = newBasic / 30;
-            updatedEmp.absenceDeduction = Number((emp.absenceDays * dailyRate).toFixed(2));
-          }
-          return updatedEmp;
+          return syncMonthlyValuesForEmployee(updatedEmp, selectedMonth);
         }
-        if (field === 'housingAllowance') {
-          const newHousing = value;
-          const basic = emp.basicSalary || 0;
-          let updatedEmp = { ...emp, housingAllowance: newHousing };
-          
-          if (emp.hasInsurance !== false) {
-            updatedEmp.insuranceDeduction = Number(((basic + newHousing) * (insurancePercentage / 100)).toFixed(2));
-          }
-          return updatedEmp;
-        }
-        if (field === 'overtime') {
-          const basic = emp.basicSalary || 0;
-          const hourlyRate = (basic / 240) * 1.5;
-          let calculatedHours = emp.overtimeHours || 0;
-          if (hourlyRate > 0) {
-            calculatedHours = Number((value / hourlyRate).toFixed(2));
-          }
-          return { ...emp, overtime: value, overtimeHours: calculatedHours };
-        }
-        if (field === 'absenceDays') {
-          const basic = emp.basicSalary || 0;
-          const dailyRate = basic / 30;
-          const calculatedDeduction = Number((value * dailyRate).toFixed(2));
-          return { ...emp, absenceDays: value, absenceDeduction: calculatedDeduction };
-        }
-        if (field === 'absenceDeduction') {
-          const basic = emp.basicSalary || 0;
-          const dailyRate = basic / 30;
-          let calculatedDays = emp.absenceDays || 0;
-          if (dailyRate > 0) {
-            calculatedDays = Number((value / dailyRate).toFixed(2));
-          }
-          return { ...emp, absenceDeduction: value, absenceDays: calculatedDays };
-        }
-        return { ...emp, [field]: value };
-      }
-      return emp;
-    }));
+        return emp;
+      }),
+    );
   };
 
   const handleConfirmMigration = (newTitle: string) => {
     if (isMigratingRef.current) return;
-    
+
     // Set migration protection flag
     isMigratingRef.current = true;
-    localStorage.setItem('payroll_last_migration_time', Date.now().toString());
+    localStorage.setItem("payroll_last_migration_time", Date.now().toString());
 
-    // 1. Create Archive Entry
-    const currentTotals = calculateGrandTotals(employees);
-    const [y, m] = selectedMonth.split('-').map(Number);
+    // 1. Create Archive Entry (Only active employees)
+    const activeEmployeesToArchive = employees.filter((emp) => emp.isActive !== false);
+    const currentTotals = calculateGrandTotals(activeEmployeesToArchive);
+    const [y, m] = selectedMonth.split("-").map(Number);
     const monthName = getArabicMonthName(m);
     const newArchive: ArchivedMonth = {
       id: Date.now().toString(),
       monthName: monthName,
-      archivedAt: new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }),
+      archivedAt: new Date().toLocaleDateString("ar-EG", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
       sheetTitle: sheetTitle,
-      employees: JSON.parse(JSON.stringify(employees)),
+      employees: JSON.parse(JSON.stringify(activeEmployeesToArchive)),
       totals: currentTotals,
-      employeeCount: employees.length,
+      employeeCount: activeEmployeesToArchive.length,
       monthIso: selectedMonth,
     };
 
     const updatedArchives = [newArchive, ...archives];
     lastSavedArchivesRef.current = JSON.stringify(updatedArchives);
     setArchives(updatedArchives);
-    
-    // 2. Reset Variable Data for New Month
-    const resettedEmployees = employees.map(emp => ({
+
+    // 2. Reset Variable Data for New Month (Keep deductions, advances, bonuses, etc. only in the archived month where they were recorded)
+    // 2. إعادة تصفير المتغيرات للشهر الجديد (الاحتفاظ بالخصومات والسلف والمكافآت وغيرها فقط في الشهر المؤرشف الذي سجلت فيه، والبدء بصفحة نظيفة للشهر الجديد)
+    const resettedEmployees = employees.map((emp) => ({
       ...emp,
       workingDays: 30,
       overtimeHours: 0,
       overtime: 0,
       salesCommission: 0,
-      commission: 0, 
+      commission: 0,
       incentives: 0,
       bonuses: 0,
-      bonus: 0, 
+      bonus: 0,
       lateDeduction: 0,
       absenceDays: 0,
       absenceDeduction: 0,
       loans: 0,
-      loan: 0, 
+      loan: 0,
       otherDeductions: 0,
-      generalDeduction: 0, 
+      generalDeduction: 0,
     }));
     lastSavedJsonRef.current = JSON.stringify(resettedEmployees);
     setEmployees(resettedEmployees);
 
     // 3. Calculate Next Month
-    const [year, month] = selectedMonth.split('-').map(Number);
+    const [year, month] = selectedMonth.split("-").map(Number);
     let nextYear = year;
     let nextMonth = month + 1;
     if (nextMonth > 12) {
       nextMonth = 1;
       nextYear += 1;
     }
-    const nextMonthIso = `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
-    
+    const nextMonthIso = `${nextYear}-${String(nextMonth).padStart(2, "0")}`;
+
     // Update month and view
-    localStorage.setItem('payroll_sync_in_progress', 'true');
-    localStorage.setItem('payroll_selected_month_iso', nextMonthIso);
+    localStorage.setItem("payroll_sync_in_progress", "true");
+    localStorage.setItem("payroll_selected_month_iso", nextMonthIso);
     setSelectedMonth(nextMonthIso);
-    setViewMode('table');
-    
+    setViewMode("table");
+
     // Force a custom event to notify other parts of the app
-    window.dispatchEvent(new CustomEvent('payroll_selected_month_changed', { detail: nextMonthIso }));
+    window.dispatchEvent(
+      new CustomEvent("payroll_selected_month_changed", {
+        detail: nextMonthIso,
+      }),
+    );
 
     // Release protection after a delay to allow cloud sync to stabilize
     setTimeout(() => {
       isMigratingRef.current = false;
-      localStorage.removeItem('payroll_sync_in_progress');
-      alert(`تم ترحيل الشهر بنجاح. الشهر الحالي الجديد هو: ${nextMonthIso}`);
+      localStorage.removeItem("payroll_sync_in_progress");
+      alert(`تم ترحيل الشهر بنجاح. الشهر الحالي الجديد هو: ${nextMonthIso}\nMonth migrated successfully. The new current month is: ${nextMonthIso}`);
     }, 2000);
   };
 
   const handleDeleteArchive = (id: string) => {
     if (!isAlaa) return;
-    setArchives(prev => prev.filter(a => a.id !== id));
+    setArchives((prev) => prev.filter((a) => a.id !== id));
   };
 
   const handleRestoreArchive = (archive: ArchivedMonth) => {
     if (!isAlaa) return;
-    if (window.confirm(`هل أنت متأكد من استبدال كشف الرواتب الحالي ببيانات شهر (${archive.sheetTitle}) الأرشيفي وجعله الكشف النشط للتعديل؟`)) {
+    if (
+      window.confirm(
+        `هل أنت متأكد من استبدال كشف الرواتب الحالي ببيانات شهر (${archive.sheetTitle}) الأرشيفي وجعله الكشف النشط للتعديل؟\n\nAre you sure you want to replace the current payroll sheet with the archived data of month (${archive.sheetTitle}) and make it the active editable sheet?`,
+      )
+    ) {
       setEmployees(archive.employees);
       setSheetTitle(archive.sheetTitle);
       if (archive.monthIso) {
         setSelectedMonth(archive.monthIso);
       }
       // Remove from archives so it becomes the editable, active month!
-      setArchives(prev => prev.filter(arc => arc.id !== archive.id));
-      setViewMode('table');
+      setArchives((prev) => prev.filter((arc) => arc.id !== archive.id));
+      setViewMode("table");
     }
   };
 
   const handleUpdateArchive = (updatedArchive: ArchivedMonth) => {
-    setArchives(prev => prev.map(arc => arc.id === updatedArchive.id ? updatedArchive : arc));
+    setArchives((prev) =>
+      prev.map((arc) => (arc.id === updatedArchive.id ? updatedArchive : arc)),
+    );
     setTimeout(() => {
-      alert("تم تحديث بيانات الشهر المؤرشف بنجاح");
+      alert("تم تحديث بيانات الشهر المؤرشف بنجاح\nArchived month data updated successfully");
     }, 100);
+  };
+
+  const handleOpenArchiveEditor = (archive: ArchivedMonth) => {
+    setEditingArchiveData(archive);
+    setViewMode("edit-archive");
   };
 
   const handlePrintArchive = (archive: ArchivedMonth) => {
     if (archive.monthIso) {
       setSelectedMonth(archive.monthIso);
-      setViewMode('table');
+      setViewMode("table");
     } else {
-      if (window.confirm(`هل ترغب في عرض وطباعة كشف شهر (${archive.sheetTitle})؟ سيتم تحميل الكشف في الجدول الرئيسي للطباعة.`)) {
+      if (
+        window.confirm(
+          `هل ترغب في عرض وطباعة كشف شهر (${archive.sheetTitle})؟ سيتم تحميل الكشف في الجدول الرئيسي للطباعة.`,
+        )
+      ) {
         setEmployees(archive.employees);
         setSheetTitle(archive.sheetTitle);
-        setViewMode('table');
+        setViewMode("table");
       }
     }
   };
@@ -1080,7 +1359,11 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
 
   const handleResetData = () => {
     if (isCurrentMonthArchived || !isAlaa) return;
-    if (window.confirm("هل ترغب في إعادة ضبط جميع البيانات والرواتب إلى الـ 41 موظفاً الأصليين بالملف البنكي؟ (سيتم مسح التعديلات والإضافات)")) {
+    if (
+      window.confirm(
+        "هل ترغب في إعادة ضبط جميع البيانات والرواتب إلى الـ 41 موظفاً الأصليين بالملف البنكي؟ (سيتم مسح التعديلات والإضافات)",
+      )
+    ) {
       setEmployees(initialEmployees);
       const dynamicTitle = getDynamicSheetTitle();
       setSheetTitle(dynamicTitle);
@@ -1088,38 +1371,49 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
         preparedBy: "",
         accountsManager: "علاء أحمد عنتر المرشدي",
         deputyGeneralManager: "محمد أحمد محمد البدري",
-        managingDirector: "نايف محمد عبدالله الخضره"
+        managingDirector: "نايف محمد عبدالله الخضره",
       });
-      localStorage.removeItem('payroll_employees_2026');
-      localStorage.setItem('payroll_sheet_title', dynamicTitle);
-      localStorage.removeItem('payroll_signatures');
+      localStorage.removeItem("payroll_employees_2026");
+      localStorage.setItem("payroll_sheet_title", dynamicTitle);
+      localStorage.removeItem("payroll_signatures");
     }
   };
 
   const handleExportExcel = () => {
-    exportPayrollToExcel(filteredEmployees, sheetTitle, signatures, activePayrollPhase);
+    exportPayrollToExcel(
+      filteredEmployees,
+      sheetTitle,
+      signatures,
+      activePayrollPhase,
+    );
   };
 
   const handleStandalonePrint = () => {
     try {
-      const el = document.getElementById('printable-payroll-section');
+      const el = document.getElementById("printable-payroll-section");
       if (!el) {
         alert("لم يتم العثور على جدول الرواتب للطباعة");
         return;
       }
 
-      const count = filteredEmployees.filter(emp => {
-        const t = calculateEmployeeTotals(emp, activePayrollPhase);
-        return t.netSalary > 0;
-      }).length || 1;
-      const isAllBranches = !selectedBranch || selectedBranch === 'الكل' || selectedBranch === 'All';
+      const count =
+        filteredEmployees.filter((emp) => {
+          const t = calculateEmployeeTotals(emp, activePayrollPhase);
+          return t.netSalary > 0;
+        }).length || 1;
+      const isAllBranches =
+        !selectedBranch ||
+        selectedBranch === "الكل" ||
+        selectedBranch === "All";
       const smartCSS = generateSmartPrintCSS(count, isAllBranches);
-      
-      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-        .map(s => s.outerHTML)
-        .join('\n');
 
-      const printWin = window.open('', '_blank', 'width=1200,height=850');
+      const styles = Array.from(
+        document.querySelectorAll('style, link[rel="stylesheet"]'),
+      )
+        .map((s) => s.outerHTML)
+        .join("\n");
+
+      const printWin = window.open("", "_blank", "width=1200,height=850");
       if (printWin) {
         printWin.document.open();
         printWin.document.write(`
@@ -1156,12 +1450,12 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
           </html>
         `);
         printWin.document.close();
-        
+
         setTimeout(() => {
           try {
             printWin.focus();
             // Removed redundant printWin.print() that was causing duplicate dialogs
-          } catch(e) {}
+          } catch (e) {}
         }, 500);
       } else {
         handleOpenInNewTab();
@@ -1174,21 +1468,24 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
 
   const handleOpenInNewTab = () => {
     try {
-      const el = document.getElementById('printable-payroll-section');
+      const el = document.getElementById("printable-payroll-section");
       if (!el) {
         alert("لم يتم العثور على جدول الرواتب للطباعة");
         return;
       }
 
-      const count = filteredEmployees.filter(emp => {
-        const t = calculateEmployeeTotals(emp, activePayrollPhase);
-        return t.netSalary > 0;
-      }).length || 1;
+      const count =
+        filteredEmployees.filter((emp) => {
+          const t = calculateEmployeeTotals(emp, activePayrollPhase);
+          return t.netSalary > 0;
+        }).length || 1;
       const smartCSS = generateSmartPrintCSS(count);
-      
-      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-        .map(s => s.outerHTML)
-        .join('\n');
+
+      const styles = Array.from(
+        document.querySelectorAll('style, link[rel="stylesheet"]'),
+      )
+        .map((s) => s.outerHTML)
+        .join("\n");
 
       const htmlContent = `
         <!DOCTYPE html>
@@ -1224,15 +1521,15 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
         </html>
       `;
 
-      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
       const blobUrl = URL.createObjectURL(blob);
-      
-      const newTab = window.open(blobUrl, '_blank');
+
+      const newTab = window.open(blobUrl, "_blank");
       if (!newTab) {
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = blobUrl;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1244,13 +1541,15 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
   };
 
   const handleSelectEmployee = (id: number) => {
-    setSelectedEmployeeIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    setSelectedEmployeeIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
   const handleBulkPrint = () => {
-    const selected = employees.filter(emp => selectedEmployeeIds.includes(emp.id));
+    const selected = employees.filter((emp) =>
+      selectedEmployeeIds.includes(emp.id),
+    );
     if (selected.length === 0) return;
     setBulkEmployees(selected);
     setIsBulkPrintOpen(true);
@@ -1262,8 +1561,10 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
   };
 
   return (
-    <div className="payroll-wrapper min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-blue-600 selection:text-white" dir="rtl">
-      
+    <div
+      className="payroll-wrapper min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-blue-600 selection:text-white"
+      dir="rtl"
+    >
       {/* Application Navbar / Header */}
       <Header
         sheetTitle={displayedSheetTitle}
@@ -1287,32 +1588,32 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
         payrollPhase={activePayrollPhase}
         onPayrollPhaseChange={(phase) => {
           setPayrollPhase(phase);
-          setSheetTitle(prevTitle => getFormattedTitle(prevTitle, phase, selectedMonth));
+          setSheetTitle((prevTitle) =>
+            getFormattedTitle(prevTitle, phase, selectedMonth),
+          );
         }}
         selectedMonth={selectedMonth}
-        onSelectedMonthChange={(newMonth) => {
-          localStorage.setItem('payroll_sync_in_progress', 'true');
-          setSelectedMonth(newMonth);
-          // Auto-release after 2 seconds to allow local write to propagate
-          setTimeout(() => localStorage.removeItem('payroll_sync_in_progress'), 2000);
-        }}
+        onSelectedMonthChange={handleSelectedMonthChange}
         selectedCount={selectedEmployeeIds.length}
         onBulkPrint={handleBulkPrint}
         isAlaa={isAlaa}
         isArchivedView={isCurrentMonthArchived}
         archives={archives}
+        isExactlyAlaa={isExactlyAlaa}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 pb-16">
-        
         {/* KPI Statistics Cards */}
-        {viewMode === 'table' && (
-          <StatsCards totals={totals} employeeCount={filteredEmployees.length} />
+        {viewMode === "table" && (
+          <StatsCards
+            totals={totals}
+            employeeCount={filteredEmployees.length}
+          />
         )}
 
         {/* View Mode Switcher */}
-        {viewMode === 'table' ? (
+        {viewMode === "table" ? (
           <PayrollTable
             employees={filteredEmployees}
             totals={totals}
@@ -1332,20 +1633,23 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
             readOnly={isCurrentMonthArchived || !isAlaa}
             selectedBranch={selectedBranch}
           />
-        ) : viewMode === 'analytics' ? (
+        ) : viewMode === "analytics" ? (
           <AnalyticsDashboard
             employees={filteredEmployees}
             totals={totals}
             payrollPhase={activePayrollPhase}
           />
-        ) : viewMode === 'bank' ? (
+        ) : viewMode === "bank" ? (
           <BankPayrollFile
-            employees={filteredEmployees.filter(emp => emp.isActive !== false)}
+            employees={filteredEmployees.filter(
+              (emp) => emp.isActive !== false,
+            )}
             sheetTitle={sheetTitle}
             signatures={signatures}
             payrollPhase={activePayrollPhase}
+            selectedMonth={selectedMonth}
           />
-        ) : viewMode === 'account-statement' ? (
+        ) : viewMode === "account-statement" ? (
           <AccountStatementPage
             archives={archives}
             currentEmployees={employees}
@@ -1353,7 +1657,7 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
             signatures={signatures}
             onViewChange={setViewMode}
           />
-        ) : viewMode === 'archive' ? (
+        ) : viewMode === "archive" ? (
           <ArchivePage
             archives={archives}
             onDeleteArchive={handleDeleteArchive}
@@ -1361,8 +1665,20 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
             onUpdateArchive={handleUpdateArchive}
             onPrintArchive={handlePrintArchive}
             onViewChange={setViewMode}
+            onEditArchive={handleOpenArchiveEditor}
+            payrollPhase={activePayrollPhase}
           />
-        ) : viewMode === 'settings' ? (
+        ) : viewMode === "edit-archive" ? (
+          <ArchivedSheetEditor
+            archive={editingArchiveData}
+            payrollPhase={activePayrollPhase}
+            onSave={(updated) => {
+              handleUpdateArchive(updated);
+              setViewMode("archive");
+            }}
+            onClose={() => setViewMode("archive")}
+          />
+        ) : viewMode === "settings" ? (
           <SettingsPage
             employees={employees}
             sheetTitle={sheetTitle}
@@ -1374,26 +1690,40 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
             onUpdateSignatures={setSignatures}
             onResetData={handleResetData}
             onClearArchives={() => {
-              if (window.confirm("هل أنت متأكد من مسح جميع أرشيف الرواتب السابقة؟")) {
+              if (
+                window.confirm(
+                  "هل أنت متأكد من مسح جميع أرشيف الرواتب السابقة؟",
+                )
+              ) {
                 setArchives([]);
               }
             }}
             onViewChange={setViewMode}
           />
         ) : null}
-
       </main>
 
       {/* Modals */}
       <EmployeeModal
         isOpen={isEmployeeModalOpen}
-        onClose={() => setIsEmployeeModalOpen(false)}
+        onClose={handleCloseEmployeeModal}
         onSave={handleSaveEmployee}
         employeeToEdit={employeeToEdit}
-        branches={branches.filter(b => b !== 'الكل')}
+        branches={branches.filter((b) => b !== "الكل")}
         insurancePercentage={insurancePercentage}
-        onNext={employeeToEdit && filteredEmployees.findIndex(e => e.id === employeeToEdit.id) < filteredEmployees.length - 1 ? handleNextEmployee : undefined}
-        onPrev={employeeToEdit && filteredEmployees.findIndex(e => e.id === employeeToEdit.id) > 0 ? handlePrevEmployee : undefined}
+        onNext={
+          employeeToEdit &&
+          filteredEmployees.findIndex((e) => e.id === employeeToEdit.id) <
+            filteredEmployees.length - 1
+            ? handleNextEmployee
+            : undefined
+        }
+        onPrev={
+          employeeToEdit &&
+          filteredEmployees.findIndex((e) => e.id === employeeToEdit.id) > 0
+            ? handlePrevEmployee
+            : undefined
+        }
       />
 
       <PaySlipModal
@@ -1401,6 +1731,8 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
         onClose={() => setEmployeeForSlip(null)}
         signatures={signatures}
         sheetTitle={sheetTitle}
+        payrollPhase={activePayrollPhase}
+        selectedMonth={selectedMonth}
       />
 
       <AIAssistantModal
@@ -1410,13 +1742,12 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
         totals={totals}
       />
 
-
       <MigrateMonthModal
         isOpen={isMigrateModalOpen}
         onClose={() => setIsMigrateModalOpen(false)}
         onConfirmMigration={handleConfirmMigration}
         currentTitle={sheetTitle}
-        totals={calculateGrandTotals(filteredEmployees, 'full')}
+        totals={calculateGrandTotals(filteredEmployees, "full")}
         employeeCount={employees.length}
       />
 
@@ -1429,7 +1760,6 @@ export default function PayrollApp({ currentUser }: { currentUser?: User | null 
           payrollPhase={activePayrollPhase}
         />
       )}
-
     </div>
   );
 }

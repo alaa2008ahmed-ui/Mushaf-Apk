@@ -51,48 +51,75 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     paymentStage: '1'
   });
 
+  const onSaveRef = React.useRef(onSave);
+  useEffect(() => {
+    onSaveRef.current = onSave;
+  }, [onSave]);
+
   useEffect(() => {
     if (employeeToEdit) {
-      setFormData({
-        ...employeeToEdit,
-        nameEn: employeeToEdit.nameEn || '',
-        nationalId: employeeToEdit.nationalId || '',
-        iban: employeeToEdit.iban || '',
-        nationality: employeeToEdit.nationality || 'سعودي',
-        hasInsurance: employeeToEdit.hasInsurance !== false,
-        isActive: employeeToEdit.isActive !== false,
+      setFormData(prev => {
+        // Prevent overwriting current edits if it's the same employee and the modal is already open
+        if (prev.id === employeeToEdit.id && prev.name !== undefined) {
+           return prev;
+        }
+        return {
+          ...employeeToEdit,
+          nameEn: employeeToEdit.nameEn || '',
+          nationalId: employeeToEdit.nationalId || '',
+          iban: employeeToEdit.iban || '',
+          nationality: employeeToEdit.nationality || 'سعودي',
+          hasInsurance: employeeToEdit.hasInsurance !== false,
+          isActive: employeeToEdit.isActive !== false,
+        };
       });
     } else {
       setFormData({
-        code: Math.floor(1000 + Math.random() * 9000).toString(),
+        id: Date.now(),
+        code: '',
         name: '',
         nameEn: '',
         nationalId: '',
-        jobTitle: 'مبيعات',
-        branch: branches.length > 1 ? branches[1] : 'الادارة',
-        hireDate: new Date().toISOString().split('T')[0],
+        jobTitle: '',
+        branch: '',
+        hireDate: '',
         iban: '',
-        nationality: 'سعودي',
-        hasInsurance: true,
+        nationality: '',
+        hasInsurance: false,
         isActive: true,
-        basicSalary: 3000,
-        overtimeHours: 0,
-        overtime: 0,
-        communicationAllowance: 0,
-        housingAllowance: 500,
-        foodAllowance: 200,
-        transportationAllowance: 0,
-        commission: 0,
-        bonus: 0,
-        insuranceDeduction: 300,
-        generalDeduction: 0,
-        loan: 0,
-        absenceDeduction: 0,
-        endOfServicePaid: 0,
+        basicSalary: '' as unknown as number,
+        overtimeHours: '' as unknown as number,
+        overtime: '' as unknown as number,
+        communicationAllowance: '' as unknown as number,
+        housingAllowance: '' as unknown as number,
+        foodAllowance: '' as unknown as number,
+        transportationAllowance: '' as unknown as number,
+        commission: '' as unknown as number,
+        bonus: '' as unknown as number,
+        insuranceDeduction: '' as unknown as number,
+        generalDeduction: '' as unknown as number,
+        loan: '' as unknown as number,
+        absenceDeduction: '' as unknown as number,
+        endOfServicePaid: '' as unknown as number,
         paymentStage: '1'
       });
     }
   }, [employeeToEdit, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const hasAnyInput = Object.entries(formData).some(([key, val]) => {
+      if (key === 'id' || key === 'isActive' || key === 'hasInsurance' || key === 'paymentStage') return false;
+      return val !== '' && val !== 0 && val !== undefined;
+    });
+
+    if (hasAnyInput || employeeToEdit) {
+       const timeoutId = setTimeout(() => {
+          onSaveRef.current(formData as Employee);
+       }, 400);
+       return () => clearTimeout(timeoutId);
+    }
+  }, [formData, isOpen, employeeToEdit]);
 
   if (!isOpen) return null;
 
@@ -100,7 +127,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     setFormData(prev => {
       let numVal: any = value;
       if (typeof value === 'string' && !['name', 'nameEn', 'nationalId', 'code', 'jobTitle', 'branch', 'hireDate', 'notes', 'iban', 'nationality'].includes(field)) {
-        numVal = parseFloat(value) || 0;
+        numVal = value === '' ? '' : (parseFloat(value) || 0);
       }
       
       let updated: any = { ...prev, [field]: numVal };
@@ -113,43 +140,49 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
       if (field === 'basicSalary' || field === 'housingAllowance' || field === 'hasInsurance') {
         const isInsured = field === 'hasInsurance' ? (numVal as boolean) : (updated.hasInsurance !== false);
         if (isInsured) {
-          const basic = updated.basicSalary || 0;
-          const housing = updated.housingAllowance || 0;
+          const basic = Number(updated.basicSalary) || 0;
+          const housing = Number(updated.housingAllowance) || 0;
           updated.insuranceDeduction = Number(((basic + housing) * (insurancePercentage / 100)).toFixed(2));
         } else {
-          updated.insuranceDeduction = 0;
+          updated.insuranceDeduction = '' as unknown as number;
         }
       }
 
       if (field === 'overtimeHours') {
-        const basic = prev.basicSalary || 0;
+        const basic = Number(prev.basicSalary) || 0;
         const hourlyRate = (basic / 240) * 1.5;
-        updated.overtime = Number(((numVal as number) * hourlyRate).toFixed(2));
+        const hrs = numVal === '' ? 0 : Number(numVal);
+        updated.overtime = hrs > 0 ? Number((hrs * hourlyRate).toFixed(2)) : ('' as unknown as number);
       }
-      if (field === 'basicSalary' && prev.overtimeHours && prev.overtimeHours > 0) {
-        const hourlyRate = ((numVal as number) / 240) * 1.5;
-        updated.overtime = Number((prev.overtimeHours * hourlyRate).toFixed(2));
+      if (field === 'basicSalary' && prev.overtimeHours && Number(prev.overtimeHours) > 0) {
+        const numBasic = numVal === '' ? 0 : Number(numVal);
+        const hourlyRate = (numBasic / 240) * 1.5;
+        updated.overtime = hourlyRate > 0 ? Number((Number(prev.overtimeHours) * hourlyRate).toFixed(2)) : ('' as unknown as number);
       }
-      if (field === 'overtime' && prev.basicSalary && prev.basicSalary > 0) {
-        const hourlyRate = (prev.basicSalary / 240) * 1.5;
+      if (field === 'overtime' && prev.basicSalary && Number(prev.basicSalary) > 0) {
+        const hourlyRate = (Number(prev.basicSalary) / 240) * 1.5;
+        const ovt = numVal === '' ? 0 : Number(numVal);
         if (hourlyRate > 0) {
-          updated.overtimeHours = Number(((numVal as number) / hourlyRate).toFixed(2));
+          updated.overtimeHours = ovt > 0 ? Number((ovt / hourlyRate).toFixed(2)) : ('' as unknown as number);
         }
       }
 
       if (field === 'absenceDays') {
-        const basic = updated.basicSalary || 0;
+        const basic = Number(updated.basicSalary) || 0;
         const dailyRate = basic / 30;
-        updated.absenceDeduction = Number(((numVal as number) * dailyRate).toFixed(2));
+        const days = numVal === '' ? 0 : Number(numVal);
+        updated.absenceDeduction = days > 0 ? Number((days * dailyRate).toFixed(2)) : ('' as unknown as number);
       }
-      if (field === 'basicSalary' && prev.absenceDays && prev.absenceDays > 0) {
-        const dailyRate = (numVal as number) / 30;
-        updated.absenceDeduction = Number((prev.absenceDays * dailyRate).toFixed(2));
+      if (field === 'basicSalary' && prev.absenceDays && Number(prev.absenceDays) > 0) {
+        const numBasic = numVal === '' ? 0 : Number(numVal);
+        const dailyRate = numBasic / 30;
+        updated.absenceDeduction = dailyRate > 0 ? Number((Number(prev.absenceDays) * dailyRate).toFixed(2)) : ('' as unknown as number);
       }
-      if (field === 'absenceDeduction' && prev.basicSalary && prev.basicSalary > 0) {
-        const dailyRate = prev.basicSalary / 30;
+      if (field === 'absenceDeduction' && prev.basicSalary && Number(prev.basicSalary) > 0) {
+        const dailyRate = Number(prev.basicSalary) / 30;
+        const absDed = numVal === '' ? 0 : Number(numVal);
         if (dailyRate > 0) {
-          updated.absenceDays = Number(((numVal as number) / dailyRate).toFixed(2));
+          updated.absenceDays = absDed > 0 ? Number((absDed / dailyRate).toFixed(2)) : ('' as unknown as number);
         }
       }
 
@@ -167,10 +200,12 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
       if (field === 'absenceDeduction') currentPhases.absenceDays = phase;
       if (field === 'absenceDays') currentPhases.absenceDeduction = phase;
 
-      return {
+      const updated = {
         ...prev,
         fieldPhases: currentPhases
       };
+
+      return updated;
     });
   };
 
@@ -206,16 +241,6 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.code) {
-      alert("يرجى إدخال اسم الموظف والكود");
-      return;
-    }
-    onSave(formData as Employee);
-    onClose();
-  };
-
   // Live calculation preview
   const totals = calculateEmployeeTotals(formData as Employee);
 
@@ -229,7 +254,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
             <div className="flex items-center gap-2">
               <User className="w-5 h-5 text-blue-600" />
               <h3 className="text-lg font-bold">
-                {employeeToEdit ? `تعديل بيانات وراتب: ${employeeToEdit.name}` : 'إضافة موظف'}
+                {!employeeToEdit || !employeeToEdit.name ? 'إضافة موظف' : `تعديل بيانات وراتب: ${employeeToEdit.name}`}
               </h3>
             </div>
             {employeeToEdit && (
@@ -260,23 +285,15 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+              className="px-5 py-2.5 text-sm font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer"
             >
-              إلغاء
-            </button>
-            <button
-              onClick={handleSubmit}
-              type="submit"
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-md transition-all cursor-pointer"
-            >
-              <Save className="w-4 h-4" />
-              <span>حفظ بيانات الموظف</span>
+              إغلاق
             </button>
           </div>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6">
+        <form onSubmit={(e) => e.preventDefault()} className="p-6 overflow-y-auto space-y-6">
           
           {/* Section 1: Basic Information */}
           <div>
@@ -437,7 +454,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 <input
                   type="number"
                   min="0"
-                  value={formData.basicSalary || 0}
+                  value={formData.basicSalary !== undefined ? formData.basicSalary : ''}
                   onChange={(e) => handleChange('basicSalary', e.target.value)}
                   onFocus={(e) => e.target.select()}
                   className="w-full bg-white border border-emerald-300 rounded-lg px-3 py-1.5 text-sm font-mono font-bold text-slate-800 focus:outline-none focus:border-emerald-600"
@@ -453,7 +470,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                   type="number"
                   min="0"
                   step="any"
-                  value={formData.overtimeHours || 0}
+                  value={formData.overtimeHours !== undefined ? formData.overtimeHours : ''}
                   onChange={(e) => handleChange('overtimeHours', e.target.value)}
                   onFocus={(e) => e.target.select()}
                   className="w-full bg-white border border-emerald-300 rounded-lg px-3 py-1.5 text-sm font-mono text-amber-700 font-bold focus:outline-none focus:border-emerald-600"
@@ -469,7 +486,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                   type="number"
                   min="0"
                   disabled
-                  value={formData.overtime || 0}
+                  value={formData.overtime !== undefined ? formData.overtime : ''}
                   onChange={(e) => handleChange('overtime', e.target.value)}
                   onFocus={(e) => e.target.select()}
                   className="w-full bg-slate-100 border border-emerald-300 rounded-lg px-3 py-1.5 text-sm font-mono text-blue-700 font-bold cursor-not-allowed focus:outline-none focus:border-emerald-600"
@@ -485,7 +502,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 <input
                   type="number"
                   min="0"
-                  value={formData.communicationAllowance || 0}
+                  value={formData.communicationAllowance !== undefined ? formData.communicationAllowance : ''}
                   onChange={(e) => handleChange('communicationAllowance', e.target.value)}
                   className="w-full bg-white border border-emerald-300 rounded-lg px-3 py-1.5 text-sm font-mono text-slate-800 focus:outline-none focus:border-emerald-600"
                 />
@@ -499,7 +516,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 <input
                   type="number"
                   min="0"
-                  value={formData.housingAllowance || 0}
+                  value={formData.housingAllowance !== undefined ? formData.housingAllowance : ''}
                   onChange={(e) => handleChange('housingAllowance', e.target.value)}
                   className="w-full bg-white border border-emerald-300 rounded-lg px-3 py-1.5 text-sm font-mono text-slate-800 focus:outline-none focus:border-emerald-600"
                 />
@@ -513,7 +530,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 <input
                   type="number"
                   min="0"
-                  value={formData.foodAllowance || 0}
+                  value={formData.foodAllowance !== undefined ? formData.foodAllowance : ''}
                   onChange={(e) => handleChange('foodAllowance', e.target.value)}
                   className="w-full bg-white border border-emerald-300 rounded-lg px-3 py-1.5 text-sm font-mono text-slate-800 focus:outline-none focus:border-emerald-600"
                 />
@@ -527,7 +544,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 <input
                   type="number"
                   min="0"
-                  value={formData.transportationAllowance || 0}
+                  value={formData.transportationAllowance !== undefined ? formData.transportationAllowance : ''}
                   onChange={(e) => handleChange('transportationAllowance', e.target.value)}
                   className="w-full bg-white border border-emerald-300 rounded-lg px-3 py-1.5 text-sm font-mono text-slate-800 focus:outline-none focus:border-emerald-600"
                 />
@@ -541,7 +558,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 <input
                   type="number"
                   min="0"
-                  value={formData.commission || 0}
+                  value={formData.commission !== undefined ? formData.commission : ''}
                   onChange={(e) => handleChange('commission', e.target.value)}
                   className="w-full bg-white border border-emerald-300 rounded-lg px-3 py-1.5 text-sm font-mono text-blue-700 font-bold focus:outline-none focus:border-emerald-600"
                 />
@@ -555,7 +572,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 <input
                   type="number"
                   min="0"
-                  value={formData.bonus || 0}
+                  value={formData.bonus !== undefined ? formData.bonus : ''}
                   onChange={(e) => handleChange('bonus', e.target.value)}
                   className="w-full bg-white border border-emerald-300 rounded-lg px-3 py-1.5 text-sm font-mono text-blue-700 font-bold focus:outline-none focus:border-emerald-600"
                 />
@@ -597,7 +614,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                   type="number"
                   min="0"
                   disabled={formData.hasInsurance === false}
-                  value={formData.hasInsurance !== false ? (formData.insuranceDeduction || 0) : 0}
+                  value={formData.insuranceDeduction !== undefined ? formData.insuranceDeduction : ''}
                   onChange={(e) => handleChange('insuranceDeduction', e.target.value)}
                   className={`w-full border rounded-lg px-2 py-1.5 text-xs font-mono font-bold focus:outline-none h-[38px] ${
                     formData.hasInsurance !== false
@@ -615,7 +632,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 <input
                   type="number"
                   min="0"
-                  value={formData.generalDeduction || 0}
+                  value={formData.generalDeduction !== undefined ? formData.generalDeduction : ''}
                   onChange={(e) => handleChange('generalDeduction', e.target.value)}
                   className="w-full bg-white border border-rose-300 rounded-lg px-2 py-1.5 text-xs font-mono text-rose-800 font-bold focus:outline-none focus:border-rose-600 h-[38px]"
                 />
@@ -629,7 +646,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 <input
                   type="number"
                   min="0"
-                  value={formData.loan || 0}
+                  value={formData.loan !== undefined ? formData.loan : ''}
                   onChange={(e) => handleChange('loan', e.target.value)}
                   className="w-full bg-white border border-rose-300 rounded-lg px-2 py-1.5 text-xs font-mono text-rose-800 font-bold focus:outline-none focus:border-rose-600 h-[38px]"
                 />
@@ -644,7 +661,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                   type="number"
                   min="0"
                   step="0.5"
-                  value={formData.absenceDays || 0}
+                  value={formData.absenceDays !== undefined ? formData.absenceDays : ''}
                   onChange={(e) => handleChange('absenceDays', e.target.value)}
                   className="w-full bg-white border border-rose-300 rounded-lg px-2 py-1.5 text-xs font-mono text-rose-800 font-bold focus:outline-none focus:border-rose-600 h-[38px]"
                 />
@@ -658,7 +675,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                 <input
                   type="number"
                   min="0"
-                  value={formData.absenceDeduction || 0}
+                  value={formData.absenceDeduction !== undefined ? formData.absenceDeduction : ''}
                   onChange={(e) => handleChange('absenceDeduction', e.target.value)}
                   className="w-full bg-white border border-rose-300 rounded-lg px-2 py-1.5 text-xs font-mono text-rose-800 font-bold focus:outline-none focus:border-rose-600 h-[38px]"
                 />

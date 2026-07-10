@@ -16,7 +16,9 @@ import {
   Clock,
   Layers,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Download,
+  Save
 } from 'lucide-react';
 import { ViewMode, ArchivedMonth } from '../types';
 import { getDynamicSheetTitle } from '../utils/dateUtils';
@@ -49,6 +51,7 @@ interface HeaderProps {
   isAlaa?: boolean;
   isArchivedView?: boolean;
   archives?: ArchivedMonth[];
+  isExactlyAlaa?: boolean;
 }
 
 const getFormattedMonthLabel = (monthIso: string) => {
@@ -56,16 +59,12 @@ const getFormattedMonthLabel = (monthIso: string) => {
   const parts = monthIso.split('-');
   if (parts.length !== 2) return monthIso;
   const [y, m] = parts.map(Number);
-  const monthsAr = [
-    'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
-  ];
   const monthsEn = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
   if (m >= 1 && m <= 12) {
-    return `${monthsAr[m - 1]} ${y} / ${monthsEn[m - 1]} ${y}`;
+    return `${y} (${monthsEn[m - 1]})`;
   }
   return monthIso;
 };
@@ -97,7 +96,8 @@ export const Header: React.FC<HeaderProps> = ({
   onBulkPrint,
   isAlaa = false,
   isArchivedView = false,
-  archives = []
+  archives = [],
+  isExactlyAlaa = false
 }) => {
   const headerRef = useRef<HTMLElement>(null);
   const datePickerRef = useRef<HTMLDivElement>(null);
@@ -148,8 +148,24 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Action Buttons */}
         <div className="flex items-center flex-wrap gap-2 sm:gap-2.5">
+          {/* Payroll Table Button */}
+          {isExactlyAlaa && viewMode !== 'table' && (
+            <button
+              onClick={() => onViewChange('table')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm border cursor-pointer shrink-0 ${
+                viewMode === 'table'
+                  ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border-slate-200'
+              }`}
+              title="العودة إلى جدول الرواتب الرئيسي"
+            >
+              <TableIcon className="w-3.5 h-3.5" />
+              <span>جدول الرواتب</span>
+            </button>
+          )}
+
           {/* Payroll Phase Switcher */}
-          {isAlaa && (
+          {isExactlyAlaa && (
             <div className="flex items-center bg-blue-50/50 p-0.5 rounded-lg border border-blue-100 shrink-0">
               <button
                 onClick={() => onPayrollPhaseChange('full')}
@@ -187,7 +203,30 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          {isAlaa && (
+          {/* Save and Cancel buttons during Archive Edit */}
+          {viewMode === 'edit-archive' && (
+            <>
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('save-archived-sheet'));
+                }}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-emerald-500 shrink-0"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>حفظ التعديلات</span>
+              </button>
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('close-archived-sheet'));
+                }}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-slate-200 cursor-pointer shrink-0"
+              >
+                إلغاء التعديل
+              </button>
+            </>
+          )}
+
+          {isExactlyAlaa && (
             <button
               onClick={() => onViewChange('archive')}
               className={`flex items-center justify-center p-2 rounded-md transition-colors shadow-xs cursor-pointer ${
@@ -195,13 +234,13 @@ export const Header: React.FC<HeaderProps> = ({
                   ? 'bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-500' 
                   : 'bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 hover:text-slate-900 border border-slate-200'
               }`}
-              title="أرشيف الرواتب السابقة / Archives"
+              title="أرشيف الرواتب السابقة"
             >
               <Archive className={`w-5 h-5 ${viewMode === 'archive' ? 'text-white' : 'text-indigo-600'}`} />
             </button>
           )}
 
-          {isAlaa && (
+          {isExactlyAlaa && viewMode !== 'edit-archive' && (
             <button
               onClick={() => onViewChange('settings')}
               className={`flex items-center justify-center p-2 rounded-md transition-colors shadow-xs cursor-pointer ${
@@ -215,17 +254,17 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {isAlaa && !isArchivedView && onMigrateMonth && (
+          {isExactlyAlaa && !isArchivedView && viewMode !== 'edit-archive' && onMigrateMonth && (
             <button
               onClick={onMigrateMonth}
-              className="flex items-center justify-center bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white p-2 rounded-md shadow-sm transition-all animate-pulse hover:animate-none cursor-pointer"
+              className="flex items-center justify-center bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 p-2 rounded-md shadow-xs border border-slate-200 transition-colors cursor-pointer"
               title="ترحيل رواتب الشهر الحالي وحفظها في الأرشيف وتفريغ الجدول لشهر جديد"
             >
-              <CalendarCheck className="w-5 h-5 text-amber-300" />
+              <CalendarCheck className="w-5 h-5 text-emerald-600" />
             </button>
           )}
 
-          {isAlaa && !isArchivedView && (
+          {isExactlyAlaa && !isArchivedView && viewMode !== 'edit-archive' && (
             <button
               onClick={onAddEmployee}
               className="flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-md shadow-xs transition-colors cursor-pointer"
@@ -243,10 +282,10 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="w-full flex flex-wrap items-center justify-between gap-4">
             
              {/* Right side: Sheet Title & View Mode Switcher */}
-            <div className="flex flex-wrap items-center gap-4 flex-1 min-w-[300px]">
+            <div className="flex flex-wrap items-center gap-4 min-w-[300px]">
               {(viewMode === 'table' || viewMode === 'bank') && (
                 <>
-          {isAlaa ? (
+          {isExactlyAlaa ? (
             <div className="relative inline-block text-right" ref={datePickerRef}>
               <div className="flex items-center gap-1.5 bg-white border border-slate-300 hover:border-slate-400 focus-within:border-blue-500 rounded-md px-2.5 py-1.5 text-xs text-slate-700 shadow-2xs font-medium shrink-0 transition-all">
                 <input
@@ -278,7 +317,7 @@ export const Header: React.FC<HeaderProps> = ({
                   }}
                   className="bg-transparent text-slate-900 font-bold focus:outline-none w-16 font-sans text-center ml-1"
                   placeholder="YYYY-MM"
-                  title="أدخل التاريخ يدوياً بصيغة YYYY-MM"
+                  title="أدخل التاريخ يدوياً بصيغة YYYY-MM / Enter date manually as YYYY-MM"
                 />
                 <button
                   type="button"
@@ -289,7 +328,7 @@ export const Header: React.FC<HeaderProps> = ({
                     setShowDatePicker(!showDatePicker);
                   }}
                   className="text-blue-600 hover:text-blue-800 focus:outline-none p-0.5 rounded cursor-pointer"
-                  title="اختر من قائمة التاريخ"
+                  title="اختر من قائمة التاريخ / Choose from Date List"
                 >
                   <Calendar className="w-4 h-4" />
                 </button>
@@ -344,87 +383,76 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
           ) : (
-            <div className="relative inline-block text-right" ref={datePickerRef}>
+            <div className="relative inline-block text-right">
               <div 
-                onClick={() => setShowDatePicker(!showDatePicker)}
-                className="flex items-center gap-1.5 bg-white border border-slate-300 hover:border-slate-400 focus-within:border-blue-500 rounded-md px-2.5 py-1.5 text-xs text-slate-700 shadow-2xs font-bold shrink-0 transition-all cursor-pointer select-none"
-                title="اختر من قائمة التاريخ / Select Month"
+                className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-md px-2.5 py-1.5 text-xs text-slate-700 shadow-2xs font-bold shrink-0 transition-all select-none"
+                title="Choose from archived months list"
               >
-                <span className="text-slate-900 font-bold font-sans">
-                  {selectedMonth}
-                </span>
-                <Calendar className="w-4 h-4 text-blue-600" />
-              </div>
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    onSelectedMonthChange(val);
+                  }}
+                  className="bg-transparent text-slate-900 font-bold focus:outline-none cursor-pointer font-sans"
+                >
+                  {(() => {
+                    const years = Array.from(new Set(archives.map(a => {
+                      const parts = (a.monthIso || '').split('-');
+                      return parts[0] ? parseInt(parts[0]) : 2026;
+                    })));
+                    if (years.length === 0) {
+                      years.push(2026);
+                    }
+                    years.sort((a, b) => b - a);
 
-              {showDatePicker && (
-                <div className="absolute z-50 mt-1 right-0 bg-white border border-slate-300 rounded-md shadow-lg p-3 w-64 no-print select-none">
-                  <div className="flex justify-between items-center mb-3">
-                    <button
-                      type="button"
-                      onClick={() => setPickerYear(y => y - 1)}
-                      className="p-1 hover:bg-slate-100 rounded text-slate-600 cursor-pointer"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <span className="font-bold text-sm text-slate-800 font-mono">{pickerYear}</span>
-                    <button
-                      type="button"
-                      onClick={() => setPickerYear(y => y + 1)}
-                      className="p-1 hover:bg-slate-100 rounded text-slate-600 cursor-pointer"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, i) => {
-                      const mm = String(i + 1).padStart(2, '0');
-                      const monthIso = `${pickerYear}-${mm}`;
-                      const isSelected = monthIso === selectedMonth;
-                      const isArchived = archives?.some(a => a.monthIso === monthIso);
-                      
-                      return (
-                        <button
-                          key={m}
-                          type="button"
-                          disabled={!isArchived}
-                          onClick={() => {
-                            if (isArchived) {
-                              onSelectedMonthChange(monthIso);
-                              setLocalTypedMonth(monthIso);
-                              setShowDatePicker(false);
-                            }
-                          }}
-                          className={`py-1.5 text-xs rounded transition-colors ${
-                            isSelected
-                              ? 'bg-blue-600 text-white font-bold shadow-xs cursor-pointer'
-                              : isArchived
-                                ? 'hover:bg-blue-50 text-slate-700 font-medium cursor-pointer'
-                                : 'text-slate-300 cursor-not-allowed'
-                          }`}
-                        >
-                          {m}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                    const options: React.ReactElement[] = [];
+                    years.forEach(yr => {
+                      // Generate months descending (from December down to January)
+                      for (let m = 12; m >= 1; m--) {
+                        const mm = String(m).padStart(2, '0');
+                        const monthIso = `${yr}-${mm}`;
+                        const isArchived = archives.some(a => a.monthIso === monthIso);
+                        
+                        options.push(
+                          <option 
+                            key={monthIso} 
+                            value={monthIso} 
+                            disabled={!isArchived}
+                            className={`font-sans ${isArchived ? 'text-slate-900 font-bold' : 'text-slate-400'}`}
+                          >
+                            {getFormattedMonthLabel(monthIso)}
+                          </option>
+                        );
+                      }
+                    });
+
+                    return options;
+                  })()}
+                </select>
+                <Calendar className="w-4 h-4 text-blue-600 shrink-0" />
+              </div>
             </div>
           )}
                   <div className="flex items-center gap-2 shrink-0">
-                    <input
-                      type="text"
-                      value={sheetTitle}
-                      onChange={(e) => onTitleChange(e.target.value)}
-                      disabled={isArchivedView || !isAlaa}
-                      className="bg-white border border-slate-300 hover:border-slate-400 focus:border-blue-500 rounded-md px-3 py-1.5 text-sm font-bold text-slate-900 focus:outline-none transition-all shadow-2xs disabled:bg-slate-50 disabled:text-slate-500 disabled:border-slate-200 disabled:cursor-not-allowed"
-                      style={{ width: `${Math.max((sheetTitle || '').length + 3, 12)}ch`, minWidth: '120px', maxWidth: '100%' }}
-                      title={isArchivedView || !isAlaa ? "عنوان الكشف (قراءة فقط)" : "اضغط لتعديل عنوان الشهر والسنة"}
-                    />
+                    <div className="relative flex items-center">
+                      {/* Hidden mirror span to auto-size the input container based on sheetTitle length */}
+                      <span className="invisible whitespace-pre px-3 py-1.5 text-sm font-bold border border-transparent select-none min-w-[200px] max-w-[650px] inline-block">
+                        {sheetTitle || ' '}
+                      </span>
+                      <input
+                        type="text"
+                        value={sheetTitle}
+                        onChange={(e) => onTitleChange(e.target.value)}
+                        disabled={isArchivedView || !isAlaa}
+                        className="absolute inset-0 w-full bg-white border border-slate-300 hover:border-slate-400 focus:border-blue-500 rounded-md px-3 py-1.5 text-sm font-bold text-slate-900 focus:outline-none transition-all shadow-2xs disabled:bg-slate-50 disabled:text-slate-500 disabled:border-slate-200 disabled:cursor-not-allowed text-center"
+                        title={isArchivedView || !isAlaa ? "عنوان الكشف (قراءة فقط)" : "اضغط لتعديل عنوان الشهر والسنة"}
+                      />
+                    </div>
                     {isArchivedView && isAlaa && (
                       <span className="bg-amber-100 text-amber-800 border border-amber-300 rounded-md px-2.5 py-1.5 text-xs font-bold shrink-0 flex items-center gap-1 shadow-2xs">
                         <Archive className="w-3.5 h-3.5" />
-                        <span>كشف مؤرشف / Archived</span>
+                        <span>كشف مؤرشف</span>
                       </span>
                     )}
                   </div>
@@ -446,17 +474,19 @@ export const Header: React.FC<HeaderProps> = ({
                     <span>جدول الرواتب</span>
                   </button>
 
-                  <button
-                    onClick={() => onViewChange('bank')}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                      viewMode === 'bank'
-                        ? 'bg-white text-emerald-700 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>ملف البنك (WPS)</span>
-                  </button>
+                  {isExactlyAlaa && (
+                    <button
+                      onClick={() => onViewChange('bank')}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                        viewMode === 'bank'
+                          ? 'bg-white text-emerald-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>ملف البنك</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -507,8 +537,28 @@ export const Header: React.FC<HeaderProps> = ({
                         onChange={(e) => onShowInactiveChange(e.target.checked)}
                         className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 cursor-pointer ml-1"
                       />
-                      <span>عرض الموظفين المعطلين</span>
+                      <span>{showInactive ? 'إخفاء الموظف' : 'إظهار الموظف'}</span>
                     </label>
+                  )}
+
+                  {viewMode === 'bank' && (
+                    <div className="flex items-center gap-1.5 animate-in fade-in zoom-in duration-200">
+                      <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('trigger-bank-export-excel'))}
+                        className="flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white rounded-md p-2 shadow-2xs cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                        title="تصدير ملف البنك (إكسل)"
+                      >
+                        <FileSpreadsheet className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('trigger-bank-download-wps'))}
+                        className="flex items-center justify-center bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-md p-2 shadow-2xs cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                        title="تحميل ملف حماية الأجور (نصي)"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    </div>
                   )}
                 </>
               )}
@@ -534,11 +584,10 @@ export const Header: React.FC<HeaderProps> = ({
 
                   <button
                     onClick={onSmartPrint}
-                    className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-md text-xs font-bold shadow-sm transition-all cursor-pointer"
+                    className="flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white rounded-md p-2 transition-all shadow-sm cursor-pointer"
                     title="الطباعة الذكية المستقلة (الموصى بها)"
                   >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>الطباعة الذكية</span>
+                    <Printer className="w-4 h-4" />
                   </button>
                 </div>
               )}

@@ -21,14 +21,19 @@ if (typeof window !== 'undefined' && !(window as any)[GLOBAL_APP_KEY]) {
   (window as any)[GLOBAL_APP_KEY] = app;
 }
 
-// Initialize or reuse Firestore instance with auto long polling detection
+// Initialize or reuse Firestore instance
 const dbId = (firebaseConfig as any).firestoreDatabaseId;
 let dbInstance;
 
 if (typeof window !== 'undefined' && (window as any)[GLOBAL_FIRESTORE_KEY]) {
   dbInstance = (window as any)[GLOBAL_FIRESTORE_KEY];
 } else {
-  dbInstance = initializeFirestore(app, {}, dbId === "(default)" ? undefined : dbId);
+  // Use standard getFirestore for stability. 
+  // experimentalForceLongPolling is known to cause ID: ca9 assertion failures in 12.x
+  dbInstance = initializeFirestore(app, {
+    // Standard configuration for web environment
+  }, dbId === "(default)" ? undefined : dbId);
+  
   if (typeof window !== 'undefined') {
     (window as any)[GLOBAL_FIRESTORE_KEY] = dbInstance;
   }

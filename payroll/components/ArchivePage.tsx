@@ -17,6 +17,7 @@ import { ArchivedMonth, ViewMode } from '../types';
 import { formatCurrency } from '../utils/calculations';
 import { ArchivedSheetModal } from './ArchivedSheetModal';
 import { ArchivedSheetEditor } from './ArchivedSheetEditor';
+import { ArchivedSheetView } from './ArchivedSheetView';
 
 interface ArchivePageProps {
   archives: ArchivedMonth[];
@@ -24,7 +25,9 @@ interface ArchivePageProps {
   onRestoreArchive: (archive: ArchivedMonth) => void;
   onPrintArchive: (archive: ArchivedMonth) => void;
   onUpdateArchive: (updatedArchive: ArchivedMonth) => void;
+  onEditArchive: (archive: ArchivedMonth) => void;
   onViewChange: (mode: ViewMode) => void;
+  payrollPhase?: 'full' | 'phase1' | 'phase2';
 }
 
 export const ArchivePage: React.FC<ArchivePageProps> = ({
@@ -33,22 +36,27 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({
   onRestoreArchive,
   onPrintArchive,
   onUpdateArchive,
+  onEditArchive,
   onViewChange,
+  payrollPhase = 'full',
 }) => {
+  const [viewingArchive, setViewingArchive] = useState<ArchivedMonth | null>(null);
   const [selectedArchive, setSelectedArchive] = useState<ArchivedMonth | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [editArchiveData, setEditArchiveData] = useState<ArchivedMonth | null>(null);
 
   const handleOpenView = (archive: ArchivedMonth) => {
-    setSelectedArchive(archive);
-    setIsModalOpen(true);
+    setViewingArchive(archive);
   };
 
-  const handleOpenEditor = (archive: ArchivedMonth) => {
-    setEditArchiveData(archive);
-    setIsEditorOpen(true);
-  };
+  if (viewingArchive) {
+    return (
+      <ArchivedSheetView
+        archive={viewingArchive}
+        onBack={() => setViewingArchive(null)}
+        payrollPhase={payrollPhase}
+      />
+    );
+  }
 
   return (
     <div className="w-full px-1 sm:px-2 py-8 space-y-8 font-sans" dir="rtl">
@@ -168,7 +176,7 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({
                     </button>
 
                     <button
-                      onClick={() => handleOpenEditor(archive)}
+                      onClick={() => onEditArchive(archive)}
                       className="bg-amber-50 hover:bg-amber-100 text-amber-700 font-extrabold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-amber-200/60"
                       title="تعديل بيانات هذا الشهر المؤرشف مباشرة"
                     >
@@ -213,17 +221,6 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({
         onPrint={(arch) => {
           setIsModalOpen(false);
           onPrintArchive(arch);
-        }}
-      />
-
-      {/* Direct Archive Editor Modal */}
-      <ArchivedSheetEditor
-        isOpen={isEditorOpen}
-        onClose={() => setIsEditorOpen(false)}
-        archive={editArchiveData}
-        onSave={(updated) => {
-          onUpdateArchive(updated);
-          setIsEditorOpen(false);
         }}
       />
 

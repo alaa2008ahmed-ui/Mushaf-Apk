@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Download, 
   Info, 
@@ -21,13 +21,15 @@ interface BankPayrollFileProps {
   sheetTitle: string;
   signatures: Signatures;
   payrollPhase: 'full' | 'phase1' | 'phase2';
+  selectedMonth?: string;
 }
 
 export const BankPayrollFile: React.FC<BankPayrollFileProps> = ({
   employees,
   sheetTitle,
   signatures,
-  payrollPhase
+  payrollPhase,
+  selectedMonth
 }) => {
   // Configurable state parameters with default values mirroring the image
   const [bankCode, setBankCode] = useState<string>('ARNB'); // Al Rajhi Bank (ARNB)
@@ -56,21 +58,38 @@ export const BankPayrollFile: React.FC<BankPayrollFileProps> = ({
     return `SALARY OF ${monthsEn[today.getMonth()]} ${today.getFullYear()}`;
   });
 
+  // Dynamic automatic update when selectedMonth changes
+  useEffect(() => {
+    if (!selectedMonth) return;
+    const parts = selectedMonth.split('-');
+    if (parts.length === 2) {
+      const year = parseInt(parts[0], 10);
+      const monthZeroBased = parseInt(parts[1], 10) - 1;
+      
+      const monthsEn = [
+        'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 
+        'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+      ];
+      const monthName = monthsEn[monthZeroBased] || 'JULY';
+      setPaymentDesc(`SALARY OF ${monthName} ${year}`);
+      
+      // Also auto-update payment date to the last day of that selected month
+      const lastDay = new Date(year, monthZeroBased + 1, 0);
+      const dd = String(lastDay.getDate()).padStart(2, '0');
+      const mm = String(lastDay.getMonth() + 1).padStart(2, '0');
+      const yyyy = lastDay.getFullYear();
+      setPaymentDate(`${dd}${mm}${yyyy}`);
+    }
+  }, [selectedMonth]);
+
   // Calculate row records
   const processedRecords = useMemo(() => {
     return employees
       .filter(emp => {
         const name = (emp.name || '').trim();
-        const nameEn = (emp.nameEn || '').trim();
-        const iban = (emp.iban || '').trim();
-        const nationalId = (emp.nationalId || '').trim();
-
         const hasValidName = name !== '';
-        const hasValidNameEn = nameEn !== '';
-        const hasValidIban = iban !== '' && iban !== 'SA0000000000000000000000';
-        const hasValidNationalId = nationalId !== '' && nationalId !== '1000000000' && nationalId !== '100000000' && nationalId !== '0000000000';
 
-        if (!(hasValidName && hasValidNameEn && hasValidIban && hasValidNationalId)) return false;
+        if (!hasValidName) return false;
 
         // Only include if net salary in this phase is > 0
         const t = calculateEmployeeTotals(emp, payrollPhase);
@@ -105,7 +124,7 @@ export const BankPayrollFile: React.FC<BankPayrollFileProps> = ({
         recordType: 'D',
         netSalary: net,
         iban: emp.iban || 'SA0000000000000000000000',
-        englishName: emp.nameEn || '',
+        englishName: emp.nameEn || emp.name || '',
         bankIdentifier: bankCode,
         paymentDesc: paymentDesc,
         basicSalary: basic,
@@ -245,6 +264,23 @@ export const BankPayrollFile: React.FC<BankPayrollFileProps> = ({
     XLSX.writeFile(wb, `WPS_Payroll_${bankCode}_${paymentDate}.xlsx`);
   };
 
+  useEffect(() => {
+    const handleExport = () => {
+      handleExportToExcel();
+    };
+    const handleDownload = () => {
+      handleDownloadWPS();
+    };
+
+    window.addEventListener('trigger-bank-export-excel', handleExport);
+    window.addEventListener('trigger-bank-download-wps', handleDownload);
+
+    return () => {
+      window.removeEventListener('trigger-bank-export-excel', handleExport);
+      window.removeEventListener('trigger-bank-download-wps', handleDownload);
+    };
+  }, [processedRecords, bankCode, paymentDate, fileSequence, employerAccount, employerId, paymentDesc]);
+
   return (
     <div className="px-4 sm:px-6 py-6 font-sans space-y-6" dir="ltr">
       
@@ -360,25 +396,6 @@ export const BankPayrollFile: React.FC<BankPayrollFileProps> = ({
                 عدد الموظفين: <span className="font-mono text-blue-700 text-sm">{processedRecords.length}</span> موظف
               </div>
             </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleExportToExcel}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer text-xs"
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span>تصدير ملف البنك (إكسل)</span>
-              </button>
-
-              <button
-                onClick={handleDownloadWPS}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-extrabold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer text-xs"
-              >
-                <Download className="w-4 h-4" />
-                <span>تحميل ملف حماية الأجور (نصي)</span>
-              </button>
-            </div>
           </div>
         </div>
 
@@ -440,8 +457,12 @@ export const BankPayrollFile: React.FC<BankPayrollFileProps> = ({
                     </td>
 
                     {/* C: IBAN */}
-                    <td className="px-3 py-2.5 border-l border-slate-300 font-mono text-slate-800 text-left" dir="ltr">
-                      {rec.iban}
+                    <td className="px-3 py-2.5 border-l border-slate-300 font-mono text-left" dir="ltr">
+                      {rec.iban === 'SA0000000000000000000000' || !rec.iban || rec.iban.trim() === '' ? (
+                        <span className="text-rose-600 font-extrabold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 text-[10px]">SA0000000000000000000000 (ناقص)</span>
+                      ) : (
+                        <span className="text-slate-800">{rec.iban}</span>
+                      )}
                     </td>
 
                     {/* D: English Name */}
@@ -480,8 +501,12 @@ export const BankPayrollFile: React.FC<BankPayrollFileProps> = ({
                     </td>
 
                     {/* K: National ID / Iqama */}
-                    <td className="px-3 py-2.5 border-slate-300 font-mono font-medium text-slate-800 text-left" dir="ltr">
-                      {rec.nationalId}
+                    <td className="px-3 py-2.5 border-slate-300 font-mono font-medium text-left" dir="ltr">
+                      {rec.nationalId === '1000000000' || !rec.nationalId || rec.nationalId.trim() === '' || rec.nationalId.length < 9 ? (
+                        <span className="text-rose-600 font-extrabold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 text-[10px]">{rec.nationalId || '1000000000'} (ناقص)</span>
+                      ) : (
+                        <span className="text-slate-800">{rec.nationalId}</span>
+                      )}
                     </td>
                   </tr>
                 );

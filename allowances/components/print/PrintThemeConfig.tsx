@@ -44,7 +44,7 @@ export const getThemeConfig = (templateId: PrintTemplateId): ThemeConfig => {
       return { wrapper: "border border-teal-500 rounded p-2 sm:p-4 bg-white print:border-none font-sans", headerType: 'balanced', tableHeadClass: "bg-teal-50 text-teal-900 font-bold border-t-2 border-teal-500", subHeadClass: "font-bold text-sm mb-1 text-right text-teal-800 px-2 bg-teal-50 rounded-full inline-block" };
     case '1': // المعاصر النظيف (القالب الأساسي)
     default:
-      return { wrapper: "border border-slate-200 shadow-sm p-3 sm:p-6 bg-white print:border-none print:shadow-none", headerType: 'swc', tableHeadClass: "bg-gray-300 text-black font-bold", subHeadClass: "font-bold text-sm sm:text-base mb-1 text-right text-black" };
+      return { wrapper: "border border-slate-200 shadow-sm p-3 sm:p-6 bg-white print:border-none print:shadow-none print:p-0", headerType: 'swc', tableHeadClass: "bg-gray-300 text-black font-bold", subHeadClass: "font-bold text-sm sm:text-base mb-1 text-right text-black" };
   }
 };
 
@@ -216,18 +216,18 @@ export const PrintHeader: React.FC<PrintHeaderProps> = ({ theme, companyNameAr, 
     case 'swc':
     default:
       return (
-        <div className="flex justify-between items-center border-b-[3px] border-black pb-2 mb-2 print:pb-1 print:mb-2">
+        <div className="flex justify-between items-center border-b-[3px] border-black pb-2 mb-2 print:pb-0.5 print:mb-1">
           <div className="flex flex-col items-center text-[#4a148c]">
-            <span className="text-sm print:text-xs font-bold -mb-2">مياه</span>
-            <span className="text-5xl print:text-3xl font-black tracking-tighter">عذبة</span>
-            <span className="text-lg print:text-xs font-bold -mt-1">adba water</span>
+            <span className="text-sm print:text-[10px] font-bold -mb-1 print:-mb-2">مياه</span>
+            <span className="text-5xl print:text-2xl font-black tracking-tighter">عذبة</span>
+            <span className="text-lg print:text-[10px] font-bold -mt-1 print:-mt-1.5">adba water</span>
           </div>
           <div className="text-center font-bold">
-            <h1 className="text-2xl print:text-base mb-1 print:mb-0.5">{companyNameAr}</h1>
-            <h2 className="text-xl print:text-xs mb-2 print:mb-1 uppercase">{companyNameEn}</h2>
-            <h3 className="text-2xl print:text-base">{docTitle}</h3>
+            <h1 className="text-2xl print:text-sm mb-1 print:mb-0">{companyNameAr}</h1>
+            <h2 className="text-xl print:text-[10px] mb-2 print:mb-0.5 uppercase">{companyNameEn}</h2>
+            <h3 className="text-2xl print:text-sm font-black">{docTitle}</h3>
           </div>
-          <div className="text-[#e53935] font-black italic tracking-tighter text-7xl print:text-4xl leading-none">
+          <div className="text-[#e53935] font-black italic tracking-tighter text-7xl print:text-3xl leading-none">
             SWC
           </div>
         </div>

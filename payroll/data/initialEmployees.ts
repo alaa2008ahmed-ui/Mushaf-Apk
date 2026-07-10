@@ -937,32 +937,7 @@ export const initialEmployees: Employee[] = [
     "absenceDeduction": 0,
     "endOfServicePaid": 6500
   },
-  {
-    "id": 37,
-    "code": "1067",
-    "name": "صغرى ياداف دهر مارج",
-    "nameEn": "Safri Yadav Dhar Marg",
-    "nationalId": "2379031707",
-    "iban": "SA853040108085201480012",
-    "jobTitle": "سائق شاحنه",
-    "branch": "فرع الدمام",
-    "hireDate": "2019-02-12",
-    "nationality": "هندي",
-    "hasInsurance": false,
-    "basicSalary": 1400,
-    "housingAllowance": 0,
-    "transportationAllowance": 0,
-    "communicationAllowance": 0,
-    "foodAllowance": 300,
-    "bonus": 0,
-    "overtime": 0,
-    "commission": 0,
-    "insuranceDeduction": 0,
-    "generalDeduction": 0,
-    "loan": 0,
-    "absenceDeduction": 0,
-    "endOfServicePaid": 7000
-  },
+
   {
     "id": 38,
     "code": "1057",

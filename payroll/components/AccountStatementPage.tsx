@@ -1,7 +1,192 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { ArchivedMonth, Employee, ViewMode } from '../types';
-import { ArrowRight, Layers, FileText, Calendar, Filter, Printer, Download, User } from 'lucide-react';
+import { ArrowRight, Layers, FileText, Calendar, Filter, Printer, User, Search, ChevronDown, X } from 'lucide-react';
 import { formatCurrency } from '../utils/calculations';
+import { useCompanySettings } from '../../allowances/utils/companySettings';
+
+interface SearchableEmployeeDropdownProps {
+  employees: Employee[];
+  value: string;
+  onChange: (val: string) => void;
+}
+
+const SearchableEmployeeDropdown: React.FC<SearchableEmployeeDropdownProps> = ({
+  employees,
+  value,
+  onChange,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSearchTerm('');
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    }
+  }, [isOpen]);
+
+  const selectedEmp = employees.find(e => e.id.toString() === value);
+  const isAllSelected = value === 'all';
+
+  const filteredEmployees = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return employees;
+    return employees.filter(e => 
+      (e.name && e.name.toLowerCase().includes(term)) ||
+      (e.code && e.code.toString().toLowerCase().includes(term)) ||
+      (e.jobTitle && e.jobTitle.toLowerCase().includes(term))
+    );
+  }, [employees, searchTerm]);
+
+  return (
+    <div ref={containerRef} className="relative w-full mt-1">
+      {/* Trigger Button */}
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full border border-slate-200 rounded-lg p-2.5 bg-white hover:border-indigo-500 cursor-pointer flex items-center justify-between gap-2 shadow-sm transition-colors min-h-[42px] select-none"
+      >
+        <div className="flex items-center gap-2 truncate">
+          <User className="w-4 h-4 text-slate-400 shrink-0" />
+          <span className={`truncate text-sm font-semibold ${value ? 'text-slate-800' : 'text-slate-400'}`}>
+            {isAllSelected 
+              ? 'الكل (جميع الموظفين)' 
+              : selectedEmp 
+                ? selectedEmp.name 
+                : 'اختر الموظف...'}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {value && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange('');
+              }}
+              title="إلغاء التحديد"
+              className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-rose-600 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </div>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in duration-150">
+          {/* Search Box */}
+          <div className="p-2 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="ابحث باسم الموظف أو الكود..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setIsOpen(false);
+                } else if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (filteredEmployees.length > 0) {
+                    onChange(filteredEmployees[0].id.toString());
+                    setIsOpen(false);
+                  }
+                }
+              }}
+              className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400 font-medium"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="text-slate-400 hover:text-slate-600 p-0.5"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Employee List */}
+          <div className="max-h-60 overflow-y-auto divide-y divide-slate-50 font-sans">
+            {/* option for empty / select employee */}
+            <div
+              onClick={() => {
+                onChange('');
+                setIsOpen(false);
+              }}
+              className={`p-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between ${
+                !value ? 'bg-indigo-50/80 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-500 font-medium'
+              }`}
+            >
+              <span>اختر الموظف...</span>
+            </div>
+
+            {/* option for all */}
+            {(!searchTerm || 'الكل'.includes(searchTerm.toLowerCase()) || 'all'.includes(searchTerm.toLowerCase()) || 'جميع الموظفين'.includes(searchTerm.toLowerCase())) && (
+              <div
+                onClick={() => {
+                  onChange('all');
+                  setIsOpen(false);
+                }}
+                className={`p-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between ${
+                  isAllSelected ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-800'
+                }`}
+              >
+                <span>الكل (جميع الموظفين)</span>
+              </div>
+            )}
+
+            {filteredEmployees.length === 0 ? (
+              <div className="p-4 text-center text-sm text-slate-400">
+                لا توجد نتائج مطابقة لبحثك
+              </div>
+            ) : (
+              filteredEmployees.map((e) => {
+                const isSelected = e.id.toString() === value;
+                return (
+                  <div
+                    key={e.id}
+                    onClick={() => {
+                      onChange(e.id.toString());
+                      setIsOpen(false);
+                    }}
+                    className={`p-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between ${
+                      isSelected ? 'bg-indigo-50 text-indigo-700 font-bold' : 'hover:bg-slate-50 text-slate-800'
+                    }`}
+                  >
+                    <div className="flex flex-col truncate">
+                      <span className="truncate font-semibold">{e.name}</span>
+                      <span className="text-xs text-slate-400 font-normal">
+                        {e.code ? `كود: ${e.code}` : ''} {e.jobTitle ? `• ${e.jobTitle}` : ''} {e.branch ? `• ${e.branch}` : ''}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface AccountStatementPageProps {
   archives: ArchivedMonth[];
@@ -18,19 +203,77 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
   onViewChange,
   signatures
 }) => {
+  const { companyNameAr, companyNameEn } = useCompanySettings();
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
-  const [selectedItems, setSelectedItems] = useState<string[]>(['netSalary']);
+  const [selectedItems, setSelectedItems] = useState<string[]>([
+    'basicSalary',
+    'communicationAllowance',
+    'housingAllowance',
+    'foodAllowance',
+    'transportationAllowance',
+    'commission',
+    'bonus',
+    'insuranceDeduction',
+    'netSalary'
+  ]);
   const [dateRange, setDateRange] = useState<{ start: string, end: string }>({ start: '', end: '' });
+
+  const ORIGINAL_COLUMN_ORDER = useMemo(() => [
+    'basicSalary',
+    'overtime',
+    'housingAllowance',
+    'transportationAllowance',
+    'communicationAllowance',
+    'foodAllowance',
+    'commission',
+    'bonus',
+    'insuranceDeduction',
+    'generalDeduction',
+    'loan',
+    'absenceDeduction',
+    'netSalary'
+  ], []);
+
+  const orderedSelectedItems = useMemo(() => {
+    return [...selectedItems].sort((a, b) => {
+      return ORIGINAL_COLUMN_ORDER.indexOf(a) - ORIGINAL_COLUMN_ORDER.indexOf(b);
+    });
+  }, [selectedItems, ORIGINAL_COLUMN_ORDER]);
+
+  const getMonthAndYearBilingual = (monthIso?: string, archivedAt?: string) => {
+    let year = '2026';
+    let monthIdx = 5; // default June
+    if (monthIso && /^\d{4}-\d{2}$/.test(monthIso)) {
+      const [y, m] = monthIso.split('-');
+      year = y;
+      monthIdx = parseInt(m, 10) - 1;
+    } else if (archivedAt) {
+       const date = new Date(archivedAt);
+       if (!isNaN(date.getTime())) {
+          year = date.getFullYear().toString();
+          monthIdx = date.getMonth();
+       }
+    }
+    const monthsAr = [
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    ];
+    const monthsEn = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const arStr = `${monthsAr[monthIdx] || 'يونيو'} ${year}`;
+    const enStr = `${monthsEn[monthIdx] || 'June'} ${year}`;
+    return { ar: arStr, en: enStr, combined: `${arStr} (${enStr})` };
+  };
 
   // Get all available months (archives only as requested)
   const allMonths = useMemo(() => {
     const months = archives.map(a => {
-      const originalName = a.monthName || '';
-      // Shorten month name if it contains the long phrase
-      const shortenedName = originalName.replace(/اجمالي\s+الراتب\s+والبدلات\s+والاضافي\s+للعاملين\s+عن\s+شهر/gi, 'راتب شهر');
+      const displayTitle = getMonthAndYearBilingual(a.monthIso, a.archivedAt).en;
       return {
         id: a.id,
-        name: shortenedName,
+        name: displayTitle,
         date: new Date(a.monthIso || a.archivedAt),
         employees: a.employees,
         isCurrent: false
@@ -56,14 +299,14 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
   const itemsList = [
     { id: 'basicSalary', label: 'الراتب الأساسي', type: 'entitlement' },
     { id: 'overtime', label: 'الإضافي', type: 'entitlement' },
-    { id: 'communicationAllowance', label: 'بدل الاتصال', type: 'entitlement' },
     { id: 'housingAllowance', label: 'بدل السكن', type: 'entitlement' },
-    { id: 'foodAllowance', label: 'بدل الطعام', type: 'entitlement' },
     { id: 'transportationAllowance', label: 'بدل الانتقال', type: 'entitlement' },
+    { id: 'communicationAllowance', label: 'بدل الاتصال', type: 'entitlement' },
+    { id: 'foodAllowance', label: 'بدل الطعام', type: 'entitlement' },
     { id: 'commission', label: 'العمولة', type: 'entitlement' },
-    { id: 'bonus', label: 'المكافأة (بدلات أخرى)', type: 'entitlement' },
+    { id: 'bonus', label: 'المكافأة', type: 'entitlement' },
     { id: 'insuranceDeduction', label: 'خصم التأمينات', type: 'deduction' },
-    { id: 'generalDeduction', label: 'خصم عام / جزاءات', type: 'deduction' },
+    { id: 'generalDeduction', label: 'جزاءات', type: 'deduction' },
     { id: 'loan', label: 'سلفة', type: 'deduction' },
     { id: 'absenceDeduction', label: 'خصم الغياب', type: 'deduction' },
     { id: 'netSalary', label: 'صافي الراتب', type: 'net' }
@@ -112,7 +355,6 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
         const monthEmp = m.employees.find(e => e.id === emp.id);
         if (monthEmp) {
           const rowData: any = { month: m.name };
-          let rowTotal = 0;
 
           selectedItems.forEach(itemId => {
              let val = 0;
@@ -136,12 +378,17 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
                 val = (monthEmp as any)[itemId] || 0;
              }
              rowData[itemId] = val;
-             rowTotal += val;
           });
           
           if (selectedItems.length > 0) {
              empRows.push(rowData);
-             totalValue += rowTotal;
+             if (selectedItems.includes('netSalary')) {
+                totalValue += rowData['netSalary'] || 0;
+             } else {
+                selectedItems.forEach(itemId => {
+                   totalValue += rowData[itemId] || 0;
+                });
+             }
           }
         }
       });
@@ -236,17 +483,11 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
                   <User className="w-4 h-4 text-indigo-500" />
                   تحديد الموظف
                </label>
-               <select 
-                  className="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none h-[42px] mt-5"
+               <SearchableEmployeeDropdown
+                  employees={allEmployeesList}
                   value={selectedEmployee}
-                  onChange={(e) => setSelectedEmployee(e.target.value)}
-               >
-                  <option value="">اختر الموظف...</option>
-                  <option value="all">الكل (جميع الموظفين)</option>
-                  {allEmployeesList.map(emp => (
-                     <option key={emp.id} value={emp.id.toString()}>{emp.name}</option>
-                  ))}
-               </select>
+                  onChange={setSelectedEmployee}
+               />
             </div>
          </div>
 
@@ -274,7 +515,7 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
       </div>
 
       {/* Results */}
-      <div className="space-y-8">
+      <div className="space-y-8 print-statement-container">
          {!isFormComplete ? (
             <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 border-dashed">
                <Layers className="w-12 h-12 text-slate-300 mx-auto mb-4" />
@@ -291,29 +532,53 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
             statementData.map((empData, idx) => {
                // Calculate column totals for this employee's statement
                const columnTotals: { [key: string]: number } = {};
-               selectedItems.forEach(itemId => {
+               orderedSelectedItems.forEach(itemId => {
                  columnTotals[itemId] = empData.rows.reduce((sum: number, row: any) => sum + (row[itemId] || 0), 0);
                });
 
                return (
-                  <div key={idx} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-slate-300 break-inside-avoid">
-                     <div className="bg-slate-50 p-4 border-b border-slate-200 print:bg-slate-100 flex justify-between items-center">
-                        <div>
+                  <div key={idx} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print:shadow-none print:border-none print:mb-8 break-inside-avoid print:w-full print:max-w-full print:p-0 print:m-0">
+                     {/* Print Header */}
+                     <div className="hidden print:block mb-6 border-b-2 border-slate-800 pb-4 text-center">
+                        <div className="flex justify-between items-center mb-2">
+                           <div className="text-right">
+                              <h2 className="text-xl font-black text-slate-800">{companyNameAr}</h2>
+                              <h3 className="text-sm font-bold text-slate-500">{companyNameEn}</h3>
+                           </div>
+                           <div className="text-center">
+                              <h1 className="text-2xl font-black text-slate-900">كشف حساب رواتب الموظف</h1>
+                              <p className="text-sm font-bold text-slate-500">Employee Payroll Statement</p>
+                           </div>
+                           <div className="text-left">
+                              <p className="text-xs font-bold text-slate-400">تاريخ الطباعة: {new Date().toLocaleDateString('en-GB')}</p>
+                           </div>
+                        </div>
+                        <div className="bg-slate-900 text-white py-2 px-4 rounded-xl mt-4 flex justify-between items-center">
+                           <span className="font-black text-lg">الموظف: {empData.employee.name}</span>
+                           <span className="font-bold text-sm">كود: {empData.employee.code || empData.employee.id}</span>
+                        </div>
+                     </div>
+
+                     <div className="bg-slate-50 p-4 border-b border-slate-200 print:bg-white print:border-b-2 print:border-slate-300 flex justify-between items-center">
+                        <div className="print:hidden">
                            <h3 className="text-lg font-black text-slate-900">{empData.employee.name}</h3>
                            <p className="text-sm text-slate-500">{empData.employee.jobTitle} - {empData.employee.branch}</p>
                         </div>
+                        <div className="hidden print:block">
+                           <h3 className="text-sm font-bold text-slate-500">تفاصيل الحركات المالية</h3>
+                        </div>
                         <div className="text-left">
-                           <span className="block text-xs text-slate-500 uppercase font-black tracking-wider mb-1">الإجمالي</span>
-                           <span className="text-xl font-mono font-black text-indigo-600">{formatCurrency(empData.totalValue)}</span>
+                           <span className="block text-xs text-slate-500 uppercase font-black tracking-wider mb-1">الإجمالي الكلي</span>
+                           <span className="text-xl font-mono font-black text-indigo-600 print:text-2xl print:text-slate-900">{formatCurrency(empData.totalValue)}</span>
                         </div>
                      </div>
                      
-                     <div className="p-0 overflow-x-auto">
-                        <table className="w-full text-sm text-right">
-                           <thead className="bg-white text-slate-500 text-xs uppercase font-black">
+                     <div className="p-0 overflow-x-auto print:overflow-visible print:w-full">
+                        <table className="w-full text-sm text-right print:text-[11px] print:w-full">
+                           <thead className="bg-white text-slate-500 text-xs uppercase font-black print:bg-slate-100 print:text-slate-900">
                               <tr>
                                  <th className="px-6 py-3 border-b border-slate-200">الشهر</th>
-                                 {selectedItems.map(itemId => (
+                                 {orderedSelectedItems.map(itemId => (
                                     <th key={itemId} className="px-6 py-3 border-b border-slate-200 whitespace-nowrap">
                                        {itemsList.find(i => i.id === itemId)?.label}
                                     </th>
@@ -322,9 +587,9 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
                            </thead>
                            <tbody className="divide-y divide-slate-100">
                               {empData.rows.map((row: any, rIdx: number) => (
-                                 <tr key={rIdx} className="hover:bg-slate-50">
-                                    <td className="px-6 py-4 font-bold text-slate-900 whitespace-nowrap">{row.month}</td>
-                                    {selectedItems.map(itemId => (
+                                 <tr key={rIdx} className="hover:bg-slate-50 print:hover:bg-transparent">
+                                    <td className="px-6 py-4 font-bold text-slate-900 whitespace-nowrap border-r border-slate-100">{row.month}</td>
+                                    {orderedSelectedItems.map(itemId => (
                                        <td key={itemId} className="px-6 py-4 font-mono whitespace-nowrap">
                                           {formatCurrency(row[itemId] || 0)}
                                        </td>
@@ -332,17 +597,29 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
                                  </tr>
                               ))}
                            </tbody>
-                           <tfoot className="bg-slate-50 border-t border-slate-200 font-bold">
+                           <tfoot className="bg-slate-50 border-t border-slate-200 font-bold print:bg-slate-100">
                               <tr>
                                  <td className="px-6 py-4 text-slate-900 whitespace-nowrap font-black">الإجمالي الكلي</td>
-                                 {selectedItems.map(itemId => (
-                                    <td key={itemId} className="px-6 py-4 font-mono text-indigo-600 whitespace-nowrap font-black">
+                                 {orderedSelectedItems.map(itemId => (
+                                    <td key={itemId} className="px-6 py-4 font-mono text-indigo-600 whitespace-nowrap font-black print:text-slate-900">
                                        {formatCurrency(columnTotals[itemId] || 0)}
                                     </td>
                                  ))}
                               </tr>
                            </tfoot>
                         </table>
+                     </div>
+
+                     {/* Signature Section for Print */}
+                     <div className="hidden print:grid grid-cols-2 gap-12 mt-12 px-8 pb-4 text-center">
+                        <div>
+                           <p className="font-black text-slate-500 mb-10 text-[10px] uppercase tracking-widest">توقيع الموظف</p>
+                           <div className="border-t border-dashed border-slate-400 w-full max-w-[200px] mx-auto"></div>
+                        </div>
+                        <div>
+                           <p className="font-black text-slate-500 mb-10 text-[10px] uppercase tracking-widest">اعتماد الإدارة المالية</p>
+                           <div className="border-t border-dashed border-slate-400 w-full max-w-[200px] mx-auto"></div>
+                        </div>
                      </div>
                   </div>
                );
@@ -353,21 +630,73 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
       {/* Print Styles */}
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
+          @page {
+            size: landscape;
+            margin: 1.2cm;
+          }
+          body {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          /* Hide all screen components */
           body * {
             visibility: hidden;
+            height: 0;
+            overflow: hidden;
           }
-          .w-full, .w-full * {
+          /* Show results container only */
+          .print-statement-container, .print-statement-container * {
             visibility: visible;
+            height: auto;
+            overflow: visible;
+          }
+          /* Reset print positioning to utilize full landscape width */
+          .print-statement-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+            display: block !important;
           }
           .print\\:hidden {
             display: none !important;
           }
-          .w-full {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 0;
+          /* Elegant Table Styling */
+          table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            border-spacing: 0 !important;
+            margin-top: 15px !important;
+            font-family: inherit;
+          }
+          th, td {
+            border: 1px solid #334155 !important; /* solid charcoal border */
+            padding: 10px 12px !important;
+            font-size: 11px !important;
+            text-align: right !important;
+            color: #000000 !important;
+          }
+          th {
+            background-color: #f1f5f9 !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+          }
+          /* Totals row highlight in print */
+          tfoot tr td {
+            font-weight: 800 !important;
+            background-color: #f8fafc !important;
+            border-top: 2px solid #000000 !important;
+          }
+          /* Hide empty/redundant spaces */
+          .shadow-sm, .rounded-2xl {
+            box-shadow: none !important;
+            border-radius: 0 !important;
           }
         }
       `}} />
