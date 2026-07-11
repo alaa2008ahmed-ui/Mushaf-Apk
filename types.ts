@@ -15,6 +15,7 @@ export interface TimeSheetEmployee {
     isActive: boolean;
     showInOvertime1?: boolean;
     showInOvertime2?: boolean;
+    showInDriversTab?: boolean;
 }
 
 export interface Employee {
@@ -92,6 +93,7 @@ export interface UserPermissions {
     canViewPayroll?: boolean;
     // Time Sheet Permissions
     tsCanViewEmployees?: boolean;
+    tsCanViewDriversTankers?: boolean;
     tsCanViewOvertime1?: boolean;
     tsCanViewOvertime2?: boolean;
     tsCanViewListOvertime?: boolean;
@@ -103,6 +105,7 @@ export interface UserPermissions {
     tsCanDeletePost?: boolean;
     tsCanViewArchiveO1?: boolean;
     tsCanViewArchiveO2?: boolean;
+    tsCanViewArchiveDrivers?: boolean;
     notifyAddCashInvoice?: boolean;
     notifyEditCashInvoice?: boolean;
     notifyDeleteCashInvoice?: boolean;

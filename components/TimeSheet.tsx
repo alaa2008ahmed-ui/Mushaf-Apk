@@ -5,6 +5,7 @@ import { dualStorage, COLLECTIONS } from '../DualStorageService';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import TimeSheetReport from './TimeSheetReport';
+import TimeSheetDriversTankers from './TimeSheetDriversTankers';
 import ListOvertime from './ListOvertime';
 import { initialEmployees } from '../payroll/data/initialEmployees';
 
@@ -118,13 +119,14 @@ const normalizeEnglishName = (name: string) => {
 };
 
 export default function TimeSheet({ drivers, workLogs, selectedBranchId, users = [], currentUser, onUpdateUser, isMobile }: Props) {
-    const [activeTab, setActiveTab] = useState<'employees' | 'overtime1' | 'overtime2' | 'list_overtime' | 'settings'>('employees');
+    const [activeTab, setActiveTab] = useState<'employees' | 'drivers_tankers' | 'overtime1' | 'overtime2' | 'list_overtime' | 'settings'>('employees');
 
     useEffect(() => {
         if (currentUser && currentUser.username.toLowerCase() !== 'alaa') {
             const perms = currentUser.permissions;
             const allowedTabs = [];
             if (perms?.tsCanViewEmployees === true) allowedTabs.push('employees');
+            if (perms?.tsCanViewDriversTankers === true) allowedTabs.push('drivers_tankers');
             if (perms?.tsCanViewOvertime1 === true) allowedTabs.push('overtime1');
             if (perms?.tsCanViewOvertime2 === true) allowedTabs.push('overtime2');
             if (perms?.tsCanViewListOvertime === true) allowedTabs.push('list_overtime');
@@ -216,7 +218,7 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
     useEffect(() => {
         const footer = document.querySelector('.global-app-footer');
         if (footer) {
-            if (activeTab === 'overtime1' || activeTab === 'overtime2' || activeTab === 'list_overtime') {
+            if (activeTab === 'drivers_tankers' || activeTab === 'overtime1' || activeTab === 'overtime2' || activeTab === 'list_overtime') {
                 footer.classList.add('hidden');
             } else {
                 footer.classList.remove('hidden');
@@ -237,6 +239,7 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
     const [empEnglishJobTitle, setEmpEnglishJobTitle] = useState('');
     const [empShowInOvertime1, setEmpShowInOvertime1] = useState(true);
     const [empShowInOvertime2, setEmpShowInOvertime2] = useState(true);
+    const [empShowInDriversTab, setEmpShowInDriversTab] = useState(false);
 
     const handleSeedEmployees = async () => {
         try {
@@ -443,7 +446,8 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                 jobTitle: empJobTitle,
                 englishJobTitle: empEnglishJobTitle,
                 showInOvertime1: empShowInOvertime1,
-                showInOvertime2: empShowInOvertime2
+                showInOvertime2: empShowInOvertime2,
+                showInDriversTab: empShowInDriversTab
             };
             updatedEmployees = updatedEmployees.map(emp => emp.id === targetEmp.id ? targetEmp : emp);
         } else {
@@ -457,7 +461,8 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                 englishJobTitle: empEnglishJobTitle,
                 isActive: true,
                 showInOvertime1: empShowInOvertime1,
-                showInOvertime2: empShowInOvertime2
+                showInOvertime2: empShowInOvertime2,
+                showInDriversTab: empShowInDriversTab
             };
             updatedEmployees.push(targetEmp);
         }
@@ -663,11 +668,12 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
         }
     };
 
-    const handleToggleOvertimeTab = async (emp: TimeSheetEmployee, tabNum: 1 | 2) => {
+    const handleToggleOvertimeTab = async (emp: TimeSheetEmployee, tabNum: 1 | 2 | 3) => {
         const updated = {
             ...emp,
             showInOvertime1: tabNum === 1 ? !(emp.showInOvertime1 !== false) : (emp.showInOvertime1 !== false),
-            showInOvertime2: tabNum === 2 ? !(emp.showInOvertime2 !== false) : (emp.showInOvertime2 !== false)
+            showInOvertime2: tabNum === 2 ? !(emp.showInOvertime2 !== false) : (emp.showInOvertime2 !== false),
+            showInDriversTab: tabNum === 3 ? !emp.showInDriversTab : emp.showInDriversTab
         };
         
         // Optimistic UI update
@@ -688,6 +694,7 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
         setEmpEnglishJobTitle(emp.englishJobTitle || '');
         setEmpShowInOvertime1(emp.showInOvertime1 !== false);
         setEmpShowInOvertime2(emp.showInOvertime2 !== false);
+        setEmpShowInDriversTab(emp.showInDriversTab || false);
         setShowAddModal(true);
     };
 
@@ -699,11 +706,12 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
         setEmpEnglishJobTitle('');
         setEmpShowInOvertime1(true);
         setEmpShowInOvertime2(true);
+        setEmpShowInDriversTab(false);
         setShowAddModal(true);
     };
 
     return (
-        <div className="w-full space-y-3 py-4 print:py-0 print:m-0 print:p-0">
+        <div className="w-full space-y-3 py-4 print:py-0 print:m-0 print:p-0 px-[0.5cm]">
             <div className={`px-2 print:hidden sticky bg-white z-40 py-3 border-b border-gray-200 shadow-sm ${isMobile ? 'top-0' : 'top-[160px]'}`}>
                 {/* Tabs */}
                 <div className="flex space-x-3 overflow-x-auto pb-1">
@@ -717,6 +725,18 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                         }`}
                     >
                         Employees
+                    </button>
+                )}
+                {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewDriversTankers === true) && (
+                    <button
+                        onClick={() => setActiveTab('drivers_tankers')}
+                        className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
+                            activeTab === 'drivers_tankers'
+                                ? 'border-indigo-600 text-indigo-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                        DRIVERS (TANKERS)
                     </button>
                 )}
                 {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewOvertime1 === true) && (
@@ -907,6 +927,15 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                                                         <label className="inline-flex items-center space-x-1 cursor-pointer select-none">
                                                             <input
                                                                 type="checkbox"
+                                                                checked={emp.showInDriversTab || false}
+                                                                onChange={() => handleToggleOvertimeTab(emp, 3)}
+                                                                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-3 w-3 cursor-pointer"
+                                                            />
+                                                            <span className="text-[9px] text-gray-600 font-bold tracking-wider" title="Drivers (Tankers)">DT</span>
+                                                        </label>
+                                                        <label className="inline-flex items-center space-x-1 cursor-pointer select-none">
+                                                            <input
+                                                                type="checkbox"
                                                                 checked={emp.showInOvertime1 !== false}
                                                                 onChange={() => handleToggleOvertimeTab(emp, 1)}
                                                                 className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-3 w-3 cursor-pointer"
@@ -938,6 +967,16 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                             </table>
                         </div>
                     </div>
+                    </div>
+                )}
+
+                {activeTab === 'drivers_tankers' && (
+                    <div className="block">
+                        <TimeSheetDriversTankers 
+                            employees={sortedEmployees}
+                            title="DRIVERS (TANKERS)"
+                            namesLanguage={namesLanguage}
+                        />
                     </div>
                 )}
 
@@ -1056,6 +1095,7 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 {[
                                                     { key: 'tsCanViewEmployees', label: 'View Employees Tab' },
+                                                    { key: 'tsCanViewDriversTankers', label: 'View Drivers (Tankers) Tab' },
                                                     { key: 'tsCanViewOvertime1', label: 'View Overtime 1 Tab' },
                                                     { key: 'tsCanViewOvertime2', label: 'View Overtime 2 Tab' },
                                                     { key: 'tsCanViewListOvertime', label: 'View List Overtime Tab' },
@@ -1192,6 +1232,15 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                             <div className="space-y-2 pt-2 border-t border-gray-100">
                                 <span className="block text-sm font-medium text-gray-700">Show in Overtime Tabs</span>
                                 <div className="flex flex-col gap-2">
+                                    <label className="inline-flex items-center space-x-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={empShowInDriversTab}
+                                            onChange={(e) => setEmpShowInDriversTab(e.target.checked)}
+                                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                                        />
+                                        <span className="text-sm text-gray-700 select-none">Show in Drivers (Tankers)</span>
+                                    </label>
                                     <label className="inline-flex items-center space-x-2 cursor-pointer">
                                         <input
                                             type="checkbox"

@@ -24,8 +24,9 @@ interface ArchivedMonth {
     postedAt: string;
     overtime1?: MonthlyGrid;
     overtime2?: MonthlyGrid;
+    drivers?: MonthlyGrid;
     employees: TimeSheetEmployee[];
-    overtimeType?: 'overtime1' | 'overtime2';
+    overtimeType?: 'overtime1' | 'overtime2' | 'drivers';
 }
 
 interface MergedArchive {
@@ -34,9 +35,11 @@ interface MergedArchive {
     postedAt: string;
     overtime1?: MonthlyGrid;
     overtime2?: MonthlyGrid;
+    drivers?: MonthlyGrid;
     employees: TimeSheetEmployee[];
     sourceId1?: string;
     sourceId2?: string;
+    sourceIdDrivers?: string;
 }
 
 interface Props {
@@ -61,8 +64,10 @@ export default function ListOvertime({ currentUser }: Props) {
                     employees: [...record.employees],
                     sourceId1: record.overtimeType === 'overtime1' ? record.id : undefined,
                     sourceId2: record.overtimeType === 'overtime2' ? record.id : undefined,
+                    sourceIdDrivers: record.overtimeType === 'drivers' ? record.id : undefined,
                     overtime1: record.overtime1,
                     overtime2: record.overtime2,
+                    drivers: record.drivers,
                 });
             } else {
                 const existing = groupedMap.get(m)!;
@@ -71,11 +76,15 @@ export default function ListOvertime({ currentUser }: Props) {
                 }
                 if (record.overtimeType === 'overtime1') existing.sourceId1 = record.id;
                 if (record.overtimeType === 'overtime2') existing.sourceId2 = record.id;
+                if (record.overtimeType === 'drivers') existing.sourceIdDrivers = record.id;
                 if (record.overtime1) {
                     existing.overtime1 = record.overtime1;
                 }
                 if (record.overtime2) {
                     existing.overtime2 = record.overtime2;
+                }
+                if (record.drivers) {
+                    existing.drivers = record.drivers;
                 }
                 const empMap = new Map<string, TimeSheetEmployee>();
                 existing.employees.forEach(e => empMap.set(e.id, e));
@@ -87,9 +96,9 @@ export default function ListOvertime({ currentUser }: Props) {
         return Array.from(groupedMap.values()).sort((a, b) => b.month.localeCompare(a.month));
     });
     const [selectedArchive, setSelectedArchive] = useState<MergedArchive | null>(null);
-    const [archiveTab, setArchiveTab] = useState<'overtime1' | 'overtime2'>('overtime1');
+    const [archiveTab, setArchiveTab] = useState<'overtime1' | 'overtime2' | 'drivers'>('overtime1');
     const [archiveToDelete, setArchiveToDelete] = useState<MergedArchive | null>(null);
-    const [archiveToUnpost, setArchiveToUnpost] = useState<{archive: MergedArchive, tab: 'overtime1' | 'overtime2'} | null>(null);
+    const [archiveToUnpost, setArchiveToUnpost] = useState<{archive: MergedArchive, tab: 'overtime1' | 'overtime2' | 'drivers'} | null>(null);
     const [isUnposting, setIsUnposting] = useState(false);
 
     const loadArchives = (records: any[]) => {
@@ -109,8 +118,10 @@ export default function ListOvertime({ currentUser }: Props) {
                     employees: [...record.employees],
                     sourceId1: record.overtimeType === 'overtime1' ? record.id : undefined,
                     sourceId2: record.overtimeType === 'overtime2' ? record.id : undefined,
+                    sourceIdDrivers: record.overtimeType === 'drivers' ? record.id : undefined,
                     overtime1: record.overtime1,
                     overtime2: record.overtime2,
+                    drivers: record.drivers,
                 });
             } else {
                 const existing = groupedMap.get(m)!;
@@ -119,11 +130,15 @@ export default function ListOvertime({ currentUser }: Props) {
                 }
                 if (record.overtimeType === 'overtime1') existing.sourceId1 = record.id;
                 if (record.overtimeType === 'overtime2') existing.sourceId2 = record.id;
+                if (record.overtimeType === 'drivers') existing.sourceIdDrivers = record.id;
                 if (record.overtime1) {
                     existing.overtime1 = record.overtime1;
                 }
                 if (record.overtime2) {
                     existing.overtime2 = record.overtime2;
+                }
+                if (record.drivers) {
+                    existing.drivers = record.drivers;
                 }
                 // Merge employees list without duplicates by id
                 const empMap = new Map<string, TimeSheetEmployee>();
@@ -155,6 +170,7 @@ export default function ListOvertime({ currentUser }: Props) {
         try {
             if (archive.sourceId1) await dualStorage.delete(COLLECTIONS.RECORDS, archive.sourceId1);
             if (archive.sourceId2) await dualStorage.delete(COLLECTIONS.RECORDS, archive.sourceId2);
+            if (archive.sourceIdDrivers) await dualStorage.delete(COLLECTIONS.RECORDS, archive.sourceIdDrivers);
             
             setArchiveToDelete(null);
             if (selectedArchive?.month === archive.month) {
@@ -165,7 +181,7 @@ export default function ListOvertime({ currentUser }: Props) {
         }
     };
 
-    const handleUnpost = async (item: {archive: MergedArchive, tab: 'overtime1' | 'overtime2'}) => {
+    const handleUnpost = async (item: {archive: MergedArchive, tab: 'overtime1' | 'overtime2' | 'drivers'}) => {
         setIsUnposting(true);
         const { archive, tab } = item;
         try {
@@ -186,6 +202,15 @@ export default function ListOvertime({ currentUser }: Props) {
                 });
                 if (archive.sourceId2) {
                     await dualStorage.delete(COLLECTIONS.RECORDS, archive.sourceId2);
+                }
+            } else if (tab === 'drivers' && archive.drivers) {
+                // Restore Drivers
+                await dualStorage.save(COLLECTIONS.RECORDS, archive.drivers.id, {
+                    type: 'timesheet_drivers_tankers',
+                    data: archive.drivers
+                });
+                if (archive.sourceIdDrivers) {
+                    await dualStorage.delete(COLLECTIONS.RECORDS, archive.sourceIdDrivers);
                 }
             }
 
@@ -216,6 +241,12 @@ export default function ListOvertime({ currentUser }: Props) {
         return new Date(parseInt(year), parseInt(month), 0).getDate();
     };
 
+    const getDayName = (dayNumber: number, monthStr: string) => {
+        const [year, month] = monthStr.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1, dayNumber);
+        return date.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+    };
+
     // Calculate total hours for an employee in the archived grid
     const calculateArchivedHours = (grid: MonthlyGrid | undefined, empId: string, daysCount: number) => {
         if (!grid || !grid.employeesData[empId]) return 0;
@@ -228,21 +259,27 @@ export default function ListOvertime({ currentUser }: Props) {
         return sum;
     };
 
-    const calculateTotalTabHours = (grid: MonthlyGrid | undefined, employees: TimeSheetEmployee[], daysCount: number, typeKey: 'overtime1' | 'overtime2') => {
+    const calculateTotalTabHours = (grid: any | undefined, employees: TimeSheetEmployee[], daysCount: number, typeKey: 'overtime1' | 'overtime2' | 'drivers') => {
         if (!grid) return 0;
         let grandTotal = 0;
         employees.forEach(emp => {
-            const showInTab = typeKey === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
+            const showInTab = typeKey === 'overtime1' ? emp.showInOvertime1 !== false : (typeKey === 'overtime2' ? emp.showInOvertime2 !== false : emp.showInDriversTab !== false);
             if (emp.isActive !== false && showInTab) {
-                grandTotal += calculateArchivedHours(grid, emp.id, daysCount);
+                if (typeKey === 'drivers') {
+                    const eData = grid.employeesData?.[emp.id];
+                    const otVal = parseFloat(eData?.overtime || '0');
+                    grandTotal += isNaN(otVal) ? 0 : otVal;
+                } else {
+                    grandTotal += calculateArchivedHours(grid, emp.id, daysCount);
+                }
             }
         });
         return grandTotal;
     };
 
-    const exportArchivedToExcel = async (archive: ArchivedMonth, typeKey: 'overtime1' | 'overtime2') => {
-        const grid = typeKey === 'overtime1' ? archive.overtime1 : archive.overtime2;
-        const title = typeKey === 'overtime1' ? 'Overtime 1' : 'Overtime 2';
+    const exportArchivedToExcel = async (archive: ArchivedMonth, typeKey: 'overtime1' | 'overtime2' | 'drivers') => {
+        const grid = typeKey === 'overtime1' ? archive.overtime1 : (typeKey === 'overtime2' ? archive.overtime2 : archive.drivers);
+        const title = typeKey === 'overtime1' ? 'Overtime 1' : (typeKey === 'overtime2' ? 'Overtime 2' : 'Drivers (Tankers)');
         
         const ExcelJS = (window as any).ExcelJS;
         if (!ExcelJS) {
@@ -257,8 +294,6 @@ export default function ListOvertime({ currentUser }: Props) {
         const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
         const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet(`${title} ${archive.month}`, { views: [{ rightToLeft: false }] });
-        
         const headerTitleFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB4C6E7' } };
         const fontBold = { bold: true };
         const borderStyle = { 
@@ -266,6 +301,133 @@ export default function ListOvertime({ currentUser }: Props) {
             bottom: { style: 'thin' }, right: { style: 'thin' } 
         };
 
+        if (typeKey === 'drivers') {
+            const sheet = workbook.addWorksheet(`Drivers ${archive.month}`, { views: [{ rightToLeft: false }] });
+            sheet.getCell(`A2`).value = `Drivers (Tankers) (Archived) - ${getMonthName(archive.month)}`;
+            sheet.getCell(`A2`).font = { bold: true, size: 16, color: { argb: 'FF1F3A60' } };
+            
+            let currentRow = 4;
+            const headers = ['Name', 'CAPACITY (M3)', 'TOTAL TRIPS', 'TRIPS ON DUTY', 'TRIPS O.T.', 'OVERTIME'];
+            daysArray.forEach(day => headers.push(day.toString()));
+            
+            headers.forEach((header, idx) => {
+                const cell = sheet.getCell(currentRow, idx + 1);
+                cell.value = header;
+                cell.fill = headerTitleFill;
+                cell.font = fontBold;
+                cell.border = borderStyle as any;
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            });
+            sheet.getRow(currentRow).height = 25;
+            currentRow++;
+            
+            const filteredEmployees = archive.employees.filter(emp => {
+                const showInTab = emp.showInDriversTab !== false;
+                return emp.isActive !== false && showInTab;
+            });
+            
+            filteredEmployees.forEach((emp) => {
+                const eData = (grid?.employeesData?.[emp.id] || { capacity: '', totalTrips: '', tripsOnDuty: '', tripsOT: '', overtime: '', days: {} }) as any;
+                
+                // Write Row 1
+                const row1Values: any[] = [
+                    emp.englishName || emp.name,
+                    eData.capacity,
+                    '',
+                    '',
+                    '',
+                    eData.overtime
+                ];
+                daysArray.forEach(day => {
+                    row1Values.push(eData.days?.[`${day}_1`] || '');
+                });
+                
+                row1Values.forEach((val, cIdx) => {
+                    const cell = sheet.getCell(currentRow, cIdx + 1);
+                    cell.value = val;
+                    cell.border = borderStyle as any;
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    if (cIdx === 0) {
+                        cell.font = { bold: true };
+                        cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                    }
+                });
+                sheet.getRow(currentRow).height = 20;
+                currentRow++;
+                
+                // Write Row 2
+                const row2Values: any[] = [
+                    '',
+                    '',
+                    eData.totalTrips,
+                    '',
+                    eData.tripsOT,
+                    ''
+                ];
+                daysArray.forEach(day => {
+                    row2Values.push(eData.days?.[`${day}_2`] || '');
+                });
+                row2Values.forEach((val, cIdx) => {
+                    const cell = sheet.getCell(currentRow, cIdx + 1);
+                    cell.value = val;
+                    cell.border = borderStyle as any;
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                });
+                sheet.getRow(currentRow).height = 20;
+                currentRow++;
+                
+                // Write Row 3
+                const row3Values: any[] = [
+                    '',
+                    '',
+                    '',
+                    eData.tripsOnDuty,
+                    '',
+                    ''
+                ];
+                daysArray.forEach(day => {
+                    row3Values.push(eData.days?.[`${day}_3`] || '');
+                });
+                row3Values.forEach((val, cIdx) => {
+                    const cell = sheet.getCell(currentRow, cIdx + 1);
+                    cell.value = val;
+                    cell.border = borderStyle as any;
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                });
+                sheet.getRow(currentRow).height = 20;
+                currentRow++;
+                
+                // Merge name cell across the 3 rows
+                sheet.mergeCells(currentRow - 3, 1, currentRow - 1, 1);
+            });
+            
+            sheet.getColumn(1).width = 25;
+            sheet.getColumn(2).width = 15;
+            sheet.getColumn(3).width = 15;
+            sheet.getColumn(4).width = 15;
+            sheet.getColumn(5).width = 15;
+            sheet.getColumn(6).width = 15;
+            for(let i = 0; i < daysArray.length; i++) {
+                sheet.getColumn(7 + i).width = 5;
+            }
+            
+            workbook.xlsx.writeBuffer().then((buffer: ArrayBuffer) => {
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const filename = `Archived_${title}_${archive.month}.xlsx`;
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            });
+            return;
+        }
+
+        const sheet = workbook.addWorksheet(`${title} ${archive.month}`, { views: [{ rightToLeft: false }] });
+        
         let currentRow = 2;
         sheet.getCell(`A${currentRow}`).value = `${title} (Archived) - ${getMonthName(archive.month)}`;
         sheet.getCell(`A${currentRow}`).font = { bold: true, size: 16, color: { argb: 'FFEA580C' } };
@@ -296,7 +458,7 @@ export default function ListOvertime({ currentUser }: Props) {
         currentRow++;
 
         const filteredEmployees = archive.employees.filter(emp => {
-            const showInTab = typeKey === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
+            const showInTab = typeKey === 'overtime1' ? emp.showInOvertime1 !== false : (typeKey === 'overtime2' ? emp.showInOvertime2 !== false : emp.showInDriversTab !== false);
             return emp.isActive !== false && showInTab;
         });
 
@@ -444,6 +606,22 @@ export default function ListOvertime({ currentUser }: Props) {
                                                                 )}
                                                             </div>
                                                         )}
+                                                        {archive.drivers && (
+                                                            <div className="flex items-center bg-[#b4c6e7] rounded-full pl-2 pr-1 py-0.5">
+                                                                <span className="text-[9px] font-bold text-indigo-700 mr-1">
+                                                                    Drivers
+                                                                </span>
+                                                                {idx === 0 && (!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanUndoPost === true) && (
+                                                                    <button 
+                                                                        onClick={() => setArchiveToUnpost({ archive, tab: 'drivers' })}
+                                                                        className="text-indigo-500 hover:text-indigo-700 bg-white rounded-full p-0.5 shadow-sm transition-colors"
+                                                                        title="Undo Post Drivers"
+                                                                    >
+                                                                        <Undo2 size={10} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <p className="text-[11px] text-gray-400">
@@ -463,41 +641,61 @@ export default function ListOvertime({ currentUser }: Props) {
                                             )}
                                         </div>
                                     </div>
-                                    <div className="mt-3 grid grid-cols-2 gap-3 text-center border-t border-b py-2 my-3 bg-gray-50 rounded-md">
-                                        <div className="border-r border-gray-200 pr-2">
-                                            <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">EMPLOYEES</p>
-                                            <p className="text-sm font-black text-indigo-600">
+                                    <div className="mt-3 grid grid-cols-3 gap-1.5 text-center border-t border-b py-2 my-3 bg-gray-50 rounded-md">
+                                        <div className="border-r border-gray-200 pr-1">
+                                            <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">O1</p>
+                                            <p className="text-xs font-black text-indigo-600">
                                                 {archive.employees.filter(e => e.isActive && e.showInOvertime1 !== false).length}
                                             </p>
                                             {archive.overtime1 ? (
-                                                <p className="text-[11px] text-gray-500 font-medium mt-1">
-                                                    Total: <span className="font-bold text-orange-600">{calculateTotalTabHours(archive.overtime1, archive.employees, daysInMonth, 'overtime1')}h</span>
+                                                <p className="text-[10px] text-gray-500 font-medium mt-0.5">
+                                                    <span className="font-bold text-orange-600">{calculateTotalTabHours(archive.overtime1, archive.employees, daysInMonth, 'overtime1')}h</span>
                                                 </p>
                                             ) : (
-                                                <p className="text-[10px] text-gray-400 italic mt-1">Not Posted</p>
+                                                <p className="text-[9px] text-gray-400 italic mt-0.5">None</p>
                                             )}
                                         </div>
-                                        <div className="pl-2">
-                                            <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">EMPLOYEES</p>
-                                            <p className="text-sm font-black text-indigo-600">
+                                        <div className="border-r border-gray-200 px-1">
+                                            <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">O2</p>
+                                            <p className="text-xs font-black text-indigo-600">
                                                 {archive.employees.filter(e => e.isActive && e.showInOvertime2 !== false).length}
                                             </p>
                                             {archive.overtime2 ? (
-                                                <p className="text-[11px] text-gray-500 font-medium mt-1">
-                                                    Total: <span className="font-bold text-teal-600">{calculateTotalTabHours(archive.overtime2, archive.employees, daysInMonth, 'overtime2')}h</span>
+                                                <p className="text-[10px] text-gray-500 font-medium mt-0.5">
+                                                    <span className="font-bold text-teal-600">{calculateTotalTabHours(archive.overtime2, archive.employees, daysInMonth, 'overtime2')}h</span>
                                                 </p>
                                             ) : (
-                                                <p className="text-[10px] text-gray-400 italic mt-1">Not Posted</p>
+                                                <p className="text-[9px] text-gray-400 italic mt-0.5">None</p>
+                                            )}
+                                        </div>
+                                        <div className="pl-1">
+                                            <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">Drivers</p>
+                                            <p className="text-xs font-black text-indigo-600">
+                                                {archive.employees.filter(e => e.isActive && e.showInDriversTab !== false).length}
+                                            </p>
+                                            {archive.drivers ? (
+                                                <p className="text-[10px] text-gray-500 font-medium mt-0.5">
+                                                    <span className="font-bold text-indigo-600">{calculateTotalTabHours(archive.drivers, archive.employees, daysInMonth, 'drivers')}h</span>
+                                                </p>
+                                            ) : (
+                                                <p className="text-[9px] text-gray-400 italic mt-0.5">None</p>
                                             )}
                                         </div>
                                     </div>
                                 </div>
-                                {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewArchiveO1 === true || currentUser.permissions?.tsCanViewArchiveO2 === true) ? (
+                                {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewArchiveO1 === true || currentUser.permissions?.tsCanViewArchiveO2 === true || currentUser.permissions?.tsCanViewArchiveDrivers === true) ? (
                                     <button
                                         onClick={() => {
                                             setSelectedArchive(archive);
                                             const canViewO1 = !currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewArchiveO1 === true;
-                                            setArchiveTab((archive.overtime1 && canViewO1) ? 'overtime1' : 'overtime2');
+                                            const canViewO2 = !currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewArchiveO2 === true;
+                                            if (archive.overtime1 && canViewO1) {
+                                                setArchiveTab('overtime1');
+                                            } else if (archive.overtime2 && canViewO2) {
+                                                setArchiveTab('overtime2');
+                                            } else {
+                                                setArchiveTab('drivers');
+                                            }
                                         }}
                                         className="w-full flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 rounded-lg font-medium text-sm transition-all"
                                     >
@@ -580,6 +778,18 @@ export default function ListOvertime({ currentUser }: Props) {
                                         Overtime 2
                                     </button>
                                 )}
+                                {selectedArchive.drivers && (!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewArchiveDrivers === true) && (
+                                    <button
+                                        onClick={() => setArchiveTab('drivers')}
+                                        className={`px-4 py-2 rounded-md font-bold text-sm transition-all ${
+                                            archiveTab === 'drivers'
+                                                ? 'bg-white text-indigo-700 shadow-sm'
+                                                : 'text-gray-500 hover:text-gray-900'
+                                        }`}
+                                    >
+                                        Drivers (Tankers)
+                                    </button>
+                                )}
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
@@ -603,75 +813,211 @@ export default function ListOvertime({ currentUser }: Props) {
                         <div className="flex-1 overflow-auto p-6">
                             <div className="overflow-x-auto border rounded-lg">
                                 <table id="printable-archive-table" className="min-w-full divide-y divide-gray-200 text-center text-xs">
-                                    <thead className="bg-[#b4c6e7]">
-                                        <tr>
-                                            <th className="px-1 py-2 font-bold text-gray-900 border border-gray-300 w-10">No</th>
-                                            <th className="px-2 py-2 font-bold text-gray-900 border border-gray-300 text-right min-w-[150px]">Name</th>
-                                            <th className="px-2 py-2 font-bold text-gray-900 border border-gray-300 min-w-[120px]">Job Title</th>
-                                            <th className="px-2 py-2 font-bold text-gray-900 border border-gray-300 w-16">Bonuses</th>
-                                            <th className="px-1 py-2 font-bold text-gray-900 border border-gray-300 w-16">O.T Trips</th>
-                                            <th className="px-2 py-2 font-bold text-red-600 border border-gray-300 w-16">Total</th>
-                                            {Array.from({ length: getDaysInMonth(selectedArchive.month) }, (_, i) => i + 1).map(day => (
-                                                <th key={day} className="px-0.5 py-2 font-bold text-[#800080] border border-gray-300 w-8">
-                                                    {day}
-                                                </th>
-                                            ))}
-                                            <th className="px-2 py-2 font-bold text-[#800080] border border-gray-300 w-16">Rate</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {(() => {
-                                            const grid = archiveTab === 'overtime1' ? selectedArchive.overtime1 : selectedArchive.overtime2;
-                                            const filteredEmployees = selectedArchive.employees.filter(emp => {
-                                                const showInTab = archiveTab === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
-                                                return emp.isActive !== false && showInTab;
-                                            });
+                                    {archiveTab === 'drivers' ? (
+                                        <>
+                                            <thead className="bg-[#b4c6e7]">
+                                                <tr>
+                                                    <th className="border border-gray-300 p-2 font-bold text-gray-900 w-40 align-middle" rowSpan={2}>
+                                                        Name
+                                                    </th>
+                                                    <th className="border border-gray-300 p-2 font-bold text-gray-900 w-16 align-middle uppercase" rowSpan={2}>
+                                                        CAPACITY (M3)
+                                                    </th>
+                                                    <th className="border border-gray-300 p-2 font-bold text-gray-900 w-16 align-middle uppercase" rowSpan={2}>
+                                                        TOTAL TRIPS
+                                                    </th>
+                                                    <th className="border border-gray-300 p-2 font-bold text-gray-900 w-16 align-middle uppercase" rowSpan={2}>
+                                                        TRIPS ON DUTY
+                                                    </th>
+                                                    <th className="border border-gray-300 p-2 font-bold text-gray-900 w-16 align-middle uppercase" rowSpan={2}>
+                                                        TRIPS O.T.
+                                                    </th>
+                                                    <th className="border border-gray-300 p-2 font-bold text-red-600 w-16 align-middle uppercase" rowSpan={2}>
+                                                        OVERTIME
+                                                    </th>
+                                                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => {
+                                                        const dName = getDayName(day, selectedArchive.month);
+                                                        const isRed = dName === 'FRIDAY' || dName === 'SATURDAY';
+                                                        return (
+                                                            <th key={`h1-${day}`} className={`border border-gray-300 p-0.5 align-middle bg-[#00b0f0] w-6 font-bold ${isRed ? 'text-red-600' : 'text-gray-900'}`}>
+                                                                <div className="flex items-center justify-center h-full w-full py-1">
+                                                                    <div className="[writing-mode:vertical-rl] rotate-180 text-[10px] font-bold tracking-wider">{dName.substring(0, 3)}</div>
+                                                                </div>
+                                                            </th>
+                                                        );
+                                                    })}
+                                                </tr>
+                                                <tr>
+                                                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                                        <th key={`h2-${day}`} className="border border-gray-300 p-1 text-center font-bold bg-yellow-300 text-[11px] text-gray-900">
+                                                            {day <= getDaysInMonth(selectedArchive.month) ? day : ''}
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {(() => {
+                                                    const grid = selectedArchive.drivers;
+                                                    const filteredEmployees = selectedArchive.employees.filter(emp => emp.isActive !== false && emp.showInDriversTab === true);
 
-                                            if (filteredEmployees.length === 0) {
-                                                return (
-                                                    <tr>
-                                                        <td colSpan={7 + getDaysInMonth(selectedArchive.month)} className="px-6 py-12 text-center text-gray-500 font-medium">
-                                                            No active employees in this archive tab.
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            }
-
-                                            const daysCount = getDaysInMonth(selectedArchive.month);
-                                            const [yStr, mStr] = selectedArchive.month.split('-');
-                                            const y = parseInt(yStr);
-                                            const m = parseInt(mStr);
-
-                                            return filteredEmployees.map((emp, idx) => {
-                                                const dData = grid?.employeesData?.[emp.id] || { bonus: '', otTrips: '', rate: '', days: {} };
-                                                const totalHours = calculateArchivedHours(grid, emp.id, daysCount);
-                                                const bgStriped = idx % 2 === 0 ? 'bg-white' : 'bg-[#e9f0fa]';
-                                                const isZeroHours = totalHours === 0;
-
-                                                return (
-                                                    <tr key={emp.id} className={`${bgStriped} hover:bg-yellow-50 ${(isZeroHours || emp.name.toLowerCase() === 'admin' || emp.englishName?.toLowerCase() === 'admin') ? 'print:hidden' : ''}`}>
-                                                        <td className="row-counter px-1 py-1 font-bold text-gray-900 border border-gray-200"></td>
-                                                        <td className="px-2 py-1 font-bold text-gray-900 border border-gray-200 text-right whitespace-nowrap">{emp.name}</td>
-                                                        <td className="px-2 py-1 text-gray-600 border border-gray-200 whitespace-nowrap text-left">{emp.jobTitle}</td>
-                                                        <td className="px-1 py-1 font-bold text-red-600 border border-gray-200">{dData.bonus || ''}</td>
-                                                        <td className="px-1 py-1 font-bold text-indigo-700 border border-gray-200">{dData.otTrips || ''}</td>
-                                                        <td className="px-1 py-1 font-bold text-red-600 border border-gray-200">{totalHours}</td>
-                                                        {Array.from({ length: daysCount }, (_, i) => i + 1).map(day => {
-                                                            const isFriday = new Date(y, m - 1, day).getDay() === 5;
-                                                            const cellBg = isFriday ? 'bg-[#00b0f0]' : 'bg-transparent';
-                                                            const val = dData.days?.[day] || '';
-                                                            return (
-                                                                <td key={day} className={`px-0.5 py-1 border border-gray-200 font-medium ${cellBg}`}>
-                                                                    {val}
+                                                    if (filteredEmployees.length === 0) {
+                                                        return (
+                                                            <tr>
+                                                                <td colSpan={37} className="px-6 py-12 text-center text-gray-500 font-medium">
+                                                                    No active employees in this archive tab.
                                                                 </td>
-                                                            );
-                                                        })}
-                                                        <td className="px-1 py-1 border border-gray-200 font-semibold">{dData.rate || ''}</td>
-                                                    </tr>
-                                                );
-                                            });
-                                        })()}
-                                    </tbody>
+                                                            </tr>
+                                                        );
+                                                    }
+
+                                                    const daysCount = getDaysInMonth(selectedArchive.month);
+                                                    const daysArray = Array.from({ length: 31 }, (_, i) => i + 1);
+
+                                                    const isWeekend = (dayNumber: number) => {
+                                                        const dName = getDayName(dayNumber, selectedArchive.month);
+                                                        return dName === 'FRIDAY' || dName === 'SATURDAY';
+                                                    };
+
+                                                    return filteredEmployees.map((emp) => {
+                                                        const eData = (grid?.employeesData?.[emp.id] || { capacity: '', totalTrips: '', tripsOnDuty: '', tripsOT: '', overtime: '', days: {} }) as any;
+                                                        const isDriver = (emp.jobTitle || '').includes('سائق شاحنه') || (emp.jobTitle || '').includes('سائق');
+                                                        const borderBottom = isDriver ? '1px dashed #9ca3af' : '2px solid #000';
+                                                        const rowSpan = isDriver ? 3 : 1;
+
+                                                        return (
+                                                            <React.Fragment key={emp.id}>
+                                                                <tr>
+                                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000' }} className="p-2 font-bold text-red-600 uppercase text-left align-middle bg-white" rowSpan={rowSpan}>
+                                                                        {emp.englishName || emp.name}
+                                                                    </td>
+                                                                    <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-1 text-center font-bold bg-white h-6 border border-gray-200">
+                                                                        {isDriver && eData.capacity}
+                                                                    </td>
+                                                                    <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-1 text-center bg-white h-6 border border-gray-200"></td>
+                                                                    <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-1 text-center bg-white h-6 border border-gray-200"></td>
+                                                                    <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-1 text-center bg-white h-6 border border-gray-200"></td>
+                                                                    <td style={{ borderBottom: borderBottom, borderRight: '1px solid #000' }} className="p-1 text-center font-bold text-red-600 bg-white h-6 border border-gray-200">
+                                                                        {eData.overtime}
+                                                                    </td>
+                                                                    {daysArray.map(day => (
+                                                                        <td key={`d1-${day}`} style={{ borderBottom: borderBottom, borderRight: day === 31 ? '1px solid #000' : '1px dashed #9ca3af' }} className={`p-1 text-center font-bold bg-white h-6 border border-gray-200 ${day <= daysCount && isWeekend(day) ? 'text-red-600' : 'text-gray-800'}`}>
+                                                                            {day <= daysCount && (eData.days[`${day}_1`] || '')}
+                                                                        </td>
+                                                                    ))}
+                                                                </tr>
+                                                                {isDriver && (
+                                                                    <>
+                                                                        <tr>
+                                                                            <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                            <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-1 text-center font-bold bg-white h-6 border border-gray-200">
+                                                                                {eData.totalTrips}
+                                                                            </td>
+                                                                            <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                            <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-1 text-center font-bold bg-white h-6 border border-gray-200">
+                                                                                {eData.tripsOT}
+                                                                            </td>
+                                                                            <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px solid #000' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                            {daysArray.map(day => (
+                                                                                <td key={`d2-${day}`} style={{ borderBottom: '1px dashed #9ca3af', borderRight: day === 31 ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-1 text-center font-bold text-gray-800 bg-white h-6 border border-gray-200">
+                                                                                    {day <= daysCount && (eData.days[`${day}_2`] || '')}
+                                                                                </td>
+                                                                            ))}
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                            <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                            <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-1 text-center font-bold bg-white h-6 border border-gray-200">
+                                                                                {eData.tripsOnDuty}
+                                                                            </td>
+                                                                            <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                            <td style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                            {daysArray.map(day => (
+                                                                                <td key={`d3-${day}`} style={{ borderBottom: '2px solid #000', borderRight: day === 31 ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-1 text-center font-bold text-gray-800 bg-white h-6 border border-gray-200">
+                                                                                    {day <= daysCount && (eData.days[`${day}_3`] || '')}
+                                                                                </td>
+                                                                            ))}
+                                                                        </tr>
+                                                                    </>
+                                                                )}
+                                                            </React.Fragment>
+                                                        );
+                                                    });
+                                                })()}
+                                            </tbody>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <thead className="bg-[#b4c6e7]">
+                                                <tr>
+                                                    <th className="px-1 py-2 font-bold text-gray-900 border border-gray-300 w-10">No</th>
+                                                    <th className="px-2 py-2 font-bold text-gray-900 border border-gray-300 text-right min-w-[150px]">Name</th>
+                                                    <th className="px-2 py-2 font-bold text-gray-900 border border-gray-300 min-w-[120px]">Job Title</th>
+                                                    <th className="px-2 py-2 font-bold text-gray-900 border border-gray-300 w-16">Bonuses</th>
+                                                    <th className="px-1 py-2 font-bold text-gray-900 border border-gray-300 w-16">O.T Trips</th>
+                                                    <th className="px-2 py-2 font-bold text-red-600 border border-gray-300 w-16">Total</th>
+                                                    {Array.from({ length: getDaysInMonth(selectedArchive.month) }, (_, i) => i + 1).map(day => (
+                                                        <th key={day} className="px-0.5 py-2 font-bold text-[#800080] border border-gray-300 w-8">
+                                                            {day}
+                                                        </th>
+                                                    ))}
+                                                    <th className="px-2 py-2 font-bold text-[#800080] border border-gray-300 w-16">Rate</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {(() => {
+                                                    const grid = archiveTab === 'overtime1' ? selectedArchive.overtime1 : selectedArchive.overtime2;
+                                                    const filteredEmployees = selectedArchive.employees.filter(emp => {
+                                                        const showInTab = archiveTab === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
+                                                        return emp.isActive !== false && showInTab;
+                                                    });
+
+                                                    if (filteredEmployees.length === 0) {
+                                                        return (
+                                                            <tr>
+                                                                <td colSpan={7 + getDaysInMonth(selectedArchive.month)} className="px-6 py-12 text-center text-gray-500 font-medium">
+                                                                    No active employees in this archive tab.
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    }
+
+                                                    const daysCount = getDaysInMonth(selectedArchive.month);
+                                                    const [yStr, mStr] = selectedArchive.month.split('-');
+                                                    const y = parseInt(yStr);
+                                                    const m = parseInt(mStr);
+
+                                                    return filteredEmployees.map((emp, idx) => {
+                                                        const dData = grid?.employeesData?.[emp.id] || { bonus: '', otTrips: '', rate: '', days: {} };
+                                                        const totalHours = calculateArchivedHours(grid, emp.id, daysCount);
+                                                        const bgStriped = idx % 2 === 0 ? 'bg-white' : 'bg-[#e9f0fa]';
+                                                        const isZeroHours = totalHours === 0;
+
+                                                        return (
+                                                            <tr key={emp.id} className={`${bgStriped} hover:bg-yellow-50 ${(isZeroHours || emp.name.toLowerCase() === 'admin' || emp.englishName?.toLowerCase() === 'admin') ? 'print:hidden' : ''}`}>
+                                                                <td className="row-counter px-1 py-1 font-bold text-gray-900 border border-gray-200"></td>
+                                                                <td className="px-2 py-1 font-bold text-gray-900 border border-gray-200 text-right whitespace-nowrap">{emp.name}</td>
+                                                                <td className="px-2 py-1 text-gray-600 border border-gray-200 whitespace-nowrap text-left">{emp.jobTitle}</td>
+                                                                <td className="px-1 py-1 font-bold text-red-600 border border-gray-200">{dData.bonus || ''}</td>
+                                                                <td className="px-1 py-1 font-bold text-indigo-700 border border-gray-200">{dData.otTrips || ''}</td>
+                                                                <td className="px-1 py-1 font-bold text-red-600 border border-gray-200">{totalHours}</td>
+                                                                {Array.from({ length: daysCount }, (_, i) => i + 1).map(day => {
+                                                                    const isFriday = new Date(y, m - 1, day).getDay() === 5;
+                                                                    const cellBg = isFriday ? 'bg-[#00b0f0]' : 'bg-transparent';
+                                                                    const val = dData.days?.[day] || '';
+                                                                    return (
+                                                                        <td key={day} className={`px-0.5 py-1 border border-gray-200 font-medium ${cellBg}`}>
+                                                                            {val}
+                                                                        </td>
+                                                                    );
+                                                                })}
+                                                                <td className="px-1 py-1 border border-gray-200 font-semibold">{dData.rate || ''}</td>
+                                                            </tr>
+                                                        );
+                                                    });
+                                                })()}
+                                            </tbody>
+                                        </>
+                                    )}
                                 </table>
                             </div>
                         </div>
@@ -737,7 +1083,7 @@ export default function ListOvertime({ currentUser }: Props) {
                             Undo Post
                         </h3>
                         <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-                            Are you sure you want to undo the post for ({archiveToUnpost.tab === 'overtime1' ? 'O1' : 'O2'}) of {getMonthName(archiveToUnpost.archive.month)}? Data will be restored to the active tabs for editing.
+                            Are you sure you want to undo the post for ({archiveToUnpost.tab === 'overtime1' ? 'O1' : (archiveToUnpost.tab === 'overtime2' ? 'O2' : 'Drivers')}) of {getMonthName(archiveToUnpost.archive.month)}? Data will be restored to the active tabs for editing.
                         </p>
                         <div className="flex justify-center gap-3">
                             <button

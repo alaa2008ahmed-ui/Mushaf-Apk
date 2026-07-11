@@ -130,6 +130,8 @@ const App: React.FC = () => {
                             permissions: {
                                 ...u.permissions,
                                 allowedPages: finalPages,
+                                allowedOrderCustomers: u.permissions?.allowedOrderCustomers ?? [],
+                                allowedOrderItems: u.permissions?.allowedOrderItems ?? [],
                                 // Core Defaults
                                 canCreatePO: u.permissions?.canCreatePO ?? (u.username.toLowerCase() === 'alaa'),
                                 canEditPO: u.permissions?.canEditPO ?? (u.username.toLowerCase() === 'alaa'),
@@ -144,6 +146,11 @@ const App: React.FC = () => {
                                 showDeliveryConfirmationPopup: u.permissions?.showDeliveryConfirmationPopup ?? false,
                                 showOrderReceiptPopup: u.permissions?.showOrderReceiptPopup ?? false,
                                 showReceiptDetailsPopup: u.permissions?.showReceiptDetailsPopup ?? false,
+                                canAddCustomer: u.permissions?.canAddCustomer ?? false,
+                                canEditCustomer: u.permissions?.canEditCustomer ?? false,
+                                canDeleteCustomer: u.permissions?.canDeleteCustomer ?? false,
+                                canDeleteOrder: u.permissions?.canDeleteOrder ?? false,
+                                canViewAllOrders: u.permissions?.canViewAllOrders ?? false,
                                 // Payroll
                                 canViewPayroll: u.permissions?.canViewPayroll ?? false,
                                 // Allowances
@@ -156,6 +163,7 @@ const App: React.FC = () => {
                                 canViewAllowancesSettings: u.permissions?.canViewAllowancesSettings ?? false,
                                 // Time Sheet
                                 tsCanViewEmployees: u.permissions?.tsCanViewEmployees ?? false,
+                                tsCanViewDriversTankers: u.permissions?.tsCanViewDriversTankers ?? false,
                                 tsCanViewOvertime1: u.permissions?.tsCanViewOvertime1 ?? false,
                                 tsCanViewOvertime2: u.permissions?.tsCanViewOvertime2 ?? false,
                                 tsCanViewListOvertime: u.permissions?.tsCanViewListOvertime ?? false,
@@ -167,6 +175,42 @@ const App: React.FC = () => {
                                 tsCanDeletePost: u.permissions?.tsCanDeletePost ?? false,
                                 tsCanViewArchiveO1: u.permissions?.tsCanViewArchiveO1 ?? false,
                                 tsCanViewArchiveO2: u.permissions?.tsCanViewArchiveO2 ?? false,
+                                tsCanViewArchiveDrivers: u.permissions?.tsCanViewArchiveDrivers ?? false,
+                                // Notifications
+                                notifyAddCashInvoice: u.permissions?.notifyAddCashInvoice ?? false,
+                                notifyEditCashInvoice: u.permissions?.notifyEditCashInvoice ?? false,
+                                notifyDeleteCashInvoice: u.permissions?.notifyDeleteCashInvoice ?? false,
+                                notifyAddCreditInvoice: u.permissions?.notifyAddCreditInvoice ?? false,
+                                notifyEditCreditInvoice: u.permissions?.notifyEditCreditInvoice ?? false,
+                                notifyDeleteCreditInvoice: u.permissions?.notifyDeleteCreditInvoice ?? false,
+                                notifyAddOrder: u.permissions?.notifyAddOrder ?? false,
+                                notifyApproveOrder: u.permissions?.notifyApproveOrder ?? false,
+                                notifyRejectOrder: u.permissions?.notifyRejectOrder ?? false,
+                                notifyDeleteOrder: u.permissions?.notifyDeleteOrder ?? false,
+                                notifyAddCustomer: u.permissions?.notifyAddCustomer ?? false,
+                                notifyEditCustomer: u.permissions?.notifyEditCustomer ?? false,
+                                notifyDeleteCustomer: u.permissions?.notifyDeleteCustomer ?? false,
+                                notifyAddItem: u.permissions?.notifyAddItem ?? false,
+                                notifyEditItem: u.permissions?.notifyEditItem ?? false,
+                                notifyDeleteItem: u.permissions?.notifyDeleteItem ?? false,
+                                notifyAddBranch: u.permissions?.notifyAddBranch ?? false,
+                                notifyEditBranch: u.permissions?.notifyEditBranch ?? false,
+                                notifyDeleteBranch: u.permissions?.notifyDeleteBranch ?? false,
+                                notifyAddUser: u.permissions?.notifyAddUser ?? false,
+                                notifyEditUser: u.permissions?.notifyEditUser ?? false,
+                                notifyDeleteUser: u.permissions?.notifyDeleteUser ?? false,
+                                notifyAddDriver: u.permissions?.notifyAddDriver ?? false,
+                                notifyEditDriver: u.permissions?.notifyEditDriver ?? false,
+                                notifyDeleteDriver: u.permissions?.notifyDeleteDriver ?? false,
+                                notifyAddVehicle: u.permissions?.notifyAddVehicle ?? false,
+                                notifyEditVehicle: u.permissions?.notifyEditVehicle ?? false,
+                                notifyDeleteVehicle: u.permissions?.notifyDeleteVehicle ?? false,
+                                notifyUpdateSettings: u.permissions?.notifyUpdateSettings ?? false,
+                                notifyAddDriverLog: u.permissions?.notifyAddDriverLog ?? false,
+                                notifyEditDriverLog: u.permissions?.notifyEditDriverLog ?? false,
+                                notifyDeleteDriverLog: u.permissions?.notifyDeleteDriverLog ?? false,
+                                notifySync: u.permissions?.notifySync ?? false,
+                                notifyErrors: u.permissions?.notifyErrors ?? false,
                             }
                         } as User;
                     });
@@ -2849,7 +2893,7 @@ const App: React.FC = () => {
                     `}
                 >
                     {!['Dashboard', 'Payroll', 'Allowances For Employees'].includes(currentPage) && (
-                        <div className={`${currentPage === 'Time Sheet' ? 'px-1 sm:px-2' : 'px-4 sm:px-6 lg:px-8'} ${isMobile ? 'pt-4 pb-2' : 'pt-4'} relative z-30`}>
+                        <div className={`${currentPage === 'Time Sheet' ? 'px-[0.5cm]' : 'px-4 sm:px-6 lg:px-8'} ${isMobile ? 'pt-4 pb-2' : 'pt-4'} relative z-30`}>
                             <div className="rounded-lg shadow-md">
                                 <Header 
                                 employeeName={currentUser.username} 
