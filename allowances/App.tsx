@@ -120,6 +120,7 @@ const applyBranchCorrections = (list: Employee[]): Employee[] => {
 import { User } from '../types';
 
 export default function App({ currentUser }: { currentUser: User }) {
+  const isAlaa = currentUser?.username?.toLowerCase() === 'alaa';
   const isMobile = useIsMobile(768);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>(isMobile ? 'cards' : 'table');
 
@@ -583,7 +584,7 @@ export default function App({ currentUser }: { currentUser: User }) {
         <header className="no-print sticky top-0 z-40 bg-white shadow-sm shrink-0">
           <div className="bg-white border-b border-slate-200 px-3 sm:px-8 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 sm:gap-6 overflow-x-auto scrollbar-none py-1 sm:py-0">
             <div className="flex items-center gap-3 sm:gap-6 shrink-0">
-              {currentUser?.permissions?.canViewAllowancesEndOfService && (
+              {(isAlaa || currentUser?.permissions?.canViewAllowancesEndOfService) && (
                 <button
                   onClick={() => setCurrentView('end-of-service')}
                   className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'end-of-service' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
@@ -591,7 +592,7 @@ export default function App({ currentUser }: { currentUser: User }) {
                   المخصصات
                 </button>
               )}
-              {currentUser?.permissions?.canViewAllowancesEndOfServicePrint && (
+              {isAlaa && currentUser?.permissions?.canViewAllowancesEndOfServicePrint && (
                 <button
                   onClick={() => setCurrentView('end-of-service-print')}
                   className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'end-of-service-print' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
@@ -599,7 +600,7 @@ export default function App({ currentUser }: { currentUser: User }) {
                   مخصص نهاية الخدمة
                 </button>
               )}
-              {currentUser?.permissions?.canViewAllowancesVacationAllowance && (
+              {isAlaa && currentUser?.permissions?.canViewAllowancesVacationAllowance && (
                 <button
                   onClick={() => setCurrentView('vacation-allowance')}
                   className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'vacation-allowance' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
@@ -607,7 +608,7 @@ export default function App({ currentUser }: { currentUser: User }) {
                   مخصص الإجازة
                 </button>
               )}
-              {currentUser?.permissions?.canViewAllowancesVacationRequest && (
+              {isAlaa && currentUser?.permissions?.canViewAllowancesVacationRequest && (
                 <button
                   onClick={() => setCurrentView('vacation-request')}
                   className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'vacation-request' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
@@ -615,7 +616,7 @@ export default function App({ currentUser }: { currentUser: User }) {
                   طلب إجازة
                 </button>
               )}
-              {currentUser?.permissions?.canViewAllowancesLoanRequest && (
+              {isAlaa && currentUser?.permissions?.canViewAllowancesLoanRequest && (
                 <button
                   onClick={() => setCurrentView('loan-request')}
                   className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'loan-request' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
@@ -623,7 +624,7 @@ export default function App({ currentUser }: { currentUser: User }) {
                   طلب سلفة
                 </button>
               )}
-              {currentUser?.permissions?.canViewAllowancesArchive && (
+              {isAlaa && currentUser?.permissions?.canViewAllowancesArchive && (
                 <button
                   onClick={() => setCurrentView('archive')}
                   className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'archive' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
@@ -631,7 +632,7 @@ export default function App({ currentUser }: { currentUser: User }) {
                   الأرشيف
                 </button>
               )}
-              {currentUser?.permissions?.canViewAllowancesSettings && (
+              {isAlaa && currentUser?.permissions?.canViewAllowancesSettings && (
                 <button
                   onClick={() => setCurrentView('settings')}
                   className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'settings' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
@@ -641,30 +642,34 @@ export default function App({ currentUser }: { currentUser: User }) {
               )}
             </div>
             <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 py-1.5 sm:py-0 my-auto">
-              <button 
-                onClick={openAddModal}
-                className="bg-indigo-600 text-white p-2 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors shadow-sm shrink-0"
-                title="إضافة موظف / Add Employee"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => {
-                  if (isPasswordUnlocked) {
-                    setIsPasswordUnlocked(false);
-                  } else {
-                    requirePasswordAuth(() => {});
-                  }
-                }}
-                className={`p-2 rounded-lg transition-all flex items-center justify-center border ${
-                  isPasswordUnlocked 
-                    ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100' 
-                    : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
-                }`}
-                title={isPasswordUnlocked ? 'التعديل مفتوح (انقر لقفل التعديلات) / Edit Unlocked (Click to Lock)' : 'التعديل محمي بكلمة سر / Edit Protected with Password'}
-              >
-                {isPasswordUnlocked ? <Unlock className="w-5 h-5 text-amber-600" /> : <Lock className="w-5 h-5 text-slate-600" />}
-              </button>
+              {isAlaa && (
+                <button 
+                  onClick={openAddModal}
+                  className="bg-indigo-600 text-white p-2 rounded-lg flex items-center justify-center hover:bg-indigo-700 transition-colors shadow-sm shrink-0"
+                  title="إضافة موظف / Add Employee"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              )}
+              {isAlaa && (
+                <button
+                  onClick={() => {
+                    if (isPasswordUnlocked) {
+                      setIsPasswordUnlocked(false);
+                    } else {
+                      requirePasswordAuth(() => {});
+                    }
+                  }}
+                  className={`p-2 rounded-lg transition-all flex items-center justify-center border ${
+                    isPasswordUnlocked 
+                      ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100' 
+                      : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                  }`}
+                  title={isPasswordUnlocked ? 'التعديل مفتوح (انقر لقفل التعديلات) / Edit Unlocked (Click to Lock)' : 'التعديل محمي بكلمة سر / Edit Protected with Password'}
+                >
+                  {isPasswordUnlocked ? <Unlock className="w-5 h-5 text-amber-600" /> : <Lock className="w-5 h-5 text-slate-600" />}
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -773,32 +778,34 @@ export default function App({ currentUser }: { currentUser: User }) {
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 shadow-sm shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setViewMode('cards')}
-                      title="بطاقات الهاتف"
-                      className={`p-1.5 sm:p-2 rounded-md transition-all flex items-center justify-center ${
-                        viewMode === 'cards'
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'text-slate-600 hover:bg-slate-200/60'
-                      }`}
-                    >
-                      <Smartphone className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setViewMode('table')}
-                      title="جدول التفاصيل"
-                      className={`p-1.5 sm:p-2 rounded-md transition-all flex items-center justify-center ${
-                        viewMode === 'table'
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'text-slate-600 hover:bg-slate-200/60'
-                      }`}
-                    >
-                      <Monitor className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                  </div>
+                  {isAlaa && (
+                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 shadow-sm shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('cards')}
+                        title="بطاقات الهاتف"
+                        className={`p-1.5 sm:p-2 rounded-md transition-all flex items-center justify-center ${
+                          viewMode === 'cards'
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'text-slate-600 hover:bg-slate-200/60'
+                        }`}
+                      >
+                        <Smartphone className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('table')}
+                        title="جدول التفاصيل"
+                        className={`p-1.5 sm:p-2 rounded-md transition-all flex items-center justify-center ${
+                          viewMode === 'table'
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'text-slate-600 hover:bg-slate-200/60'
+                        }`}
+                      >
+                        <Monitor className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </button>
+                    </div>
+                  )}
 
                   <button
                     onClick={handleExportPDF}

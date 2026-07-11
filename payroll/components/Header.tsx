@@ -493,7 +493,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Left side: Search & Branch Filter & Actions */}
             <div className="flex items-center flex-wrap gap-2.5">
-              {selectedCount > 0 && onBulkPrint && (
+              {selectedCount > 0 && onBulkPrint && isAlaa && (
                 <button
                   onClick={onBulkPrint}
                   className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-1.5 rounded-md text-xs font-bold transition-all shadow-sm animate-in fade-in zoom-in duration-200 cursor-pointer"
@@ -565,14 +565,16 @@ export const Header: React.FC<HeaderProps> = ({
 
               {viewMode === 'table' && (
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => onViewChange('account-statement')}
-                    className="flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-md p-2 transition-all shadow-2xs cursor-pointer"
-                    title="كشف حساب للموظفين"
-                  >
-                    <Layers className="w-4 h-4" />
-                    <span className="sr-only">كشف حساب</span>
-                  </button>
+                  {isAlaa && (
+                    <button
+                      onClick={() => onViewChange('account-statement')}
+                      className="flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-md p-2 transition-all shadow-2xs cursor-pointer"
+                      title="كشف حساب للموظفين"
+                    >
+                      <Layers className="w-4 h-4" />
+                      <span className="sr-only">كشف حساب</span>
+                    </button>
+                  )}
 
                   <button
                     onClick={onExportExcel}

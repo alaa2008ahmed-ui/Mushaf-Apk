@@ -54,7 +54,7 @@ const Nav: React.FC<NavProps> = ({ currentPage, onNavigate, allowedPages, onLogo
     const [isHovered, setIsHovered] = useState(false);
     const fabRef = useRef(null);
     
-    const navItems = ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Invoices Tracking', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Time Sheet', 'Orders', 'Order Approvals', 'Account Statement', 'Payroll', 'Allowances For Employees', 'Settings'];
+    const navItems = ['Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 'Invoices Tracking', 'PO', 'Driver Work Log', 'Drivers Timesheet', 'Customers', 'Time Sheet', 'Orders', 'Order Approvals', 'Payroll', 'Allowances For Employees', 'Account Statement', 'Settings'];
     const filteredItems = navItems.filter(item => {
         return allowedPages.includes(item);
     });
@@ -88,6 +88,8 @@ const Nav: React.FC<NavProps> = ({ currentPage, onNavigate, allowedPages, onLogo
             'Customers': { bg: 'bg-gradient-to-r from-teal-500 to-teal-600', text: 'text-teal-600', activeBg: 'bg-teal-50' },
             'Orders': { bg: 'bg-gradient-to-r from-orange-500 to-orange-600', text: 'text-orange-600', activeBg: 'bg-orange-50' },
             'Order Approvals': { bg: 'bg-gradient-to-r from-orange-500 to-orange-600', text: 'text-orange-600', activeBg: 'bg-orange-50' },
+            'Payroll': { bg: 'bg-gradient-to-r from-violet-500 to-violet-600', text: 'text-violet-600', activeBg: 'bg-violet-50' },
+            'Allowances For Employees': { bg: 'bg-gradient-to-r from-violet-500 to-violet-600', text: 'text-violet-600', activeBg: 'bg-violet-50' },
             'Settings': { bg: 'bg-gradient-to-r from-slate-600 to-slate-700', text: 'text-slate-600', activeBg: 'bg-slate-50' },
         };
         const defaultColor = { bg: 'bg-gradient-to-r from-blue-500 to-blue-600', text: 'text-blue-600', activeBg: 'bg-blue-50' };

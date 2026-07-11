@@ -110,14 +110,33 @@ const App: React.FC = () => {
 
                     const usersData = data.filter(r => r.type === 'user').map(r => {
                         const u = r.data as User;
+                        
+                        // Ensure allowedPages is always an array
+                        const currentPages = Array.isArray(u.permissions?.allowedPages) ? u.permissions.allowedPages : [];
+                        const finalPages = [...currentPages];
+                        
+                        // Dynamically ensure 'alaa' has access to all core pages without writing to DB
+                        if (u.username.toLowerCase() === 'alaa') {
+                            const adminPages = ['PO', 'Invoices Tracking', 'Customers', 'Driver Work Log', 'Drivers Timesheet', 'Time Sheet', 'Payroll', 'Allowances For Employees', 'Orders', 'Order Approvals'];
+                            adminPages.forEach(page => {
+                                if (!finalPages.includes(page)) {
+                                    finalPages.push(page);
+                                }
+                            });
+                        }
+
                         return {
                             ...u,
                             permissions: {
                                 ...u.permissions,
+                                allowedPages: finalPages,
                                 // Core Defaults
-                                canCreatePO: u.permissions?.canCreatePO ?? true,
-                                canEditPO: u.permissions?.canEditPO ?? false,
-                                canDeletePO: u.permissions?.canDeletePO ?? false,
+                                canCreatePO: u.permissions?.canCreatePO ?? (u.username.toLowerCase() === 'alaa'),
+                                canEditPO: u.permissions?.canEditPO ?? (u.username.toLowerCase() === 'alaa'),
+                                canDeletePO: u.permissions?.canDeletePO ?? (u.username.toLowerCase() === 'alaa'),
+                                canForceDeletePO: u.permissions?.canForceDeletePO ?? (u.username.toLowerCase() === 'alaa'),
+                                manageDrivers: u.permissions?.manageDrivers ?? (u.username.toLowerCase() === 'alaa'),
+                                manageVehicles: u.permissions?.manageVehicles ?? (u.username.toLowerCase() === 'alaa'),
                                 canEditDriverLog: u.permissions?.canEditDriverLog ?? false,
                                 canDeleteDriverLog: u.permissions?.canDeleteDriverLog ?? false,
                                 receiveLowPOAlert: u.permissions?.receiveLowPOAlert ?? true,
@@ -556,102 +575,8 @@ const App: React.FC = () => {
                     }
                 }
                 
-                // MIGRATION: Ensure 'PO' page is available to admins and all permissions are initialized
-                for (const r of currentRecords) {
-                    if (r.type === 'user') {
-                        const user = r.data as User;
-                        let neededUpdate = false;
-
-                        // Initialize allowedPages if missing
-                        if (!Array.isArray(user.permissions.allowedPages)) {
-                            user.permissions.allowedPages = [];
-                            neededUpdate = true;
-                        }
-
-                        // Ensure 'PO' page for admins
-                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('PO')) {
-                            user.permissions.allowedPages.push('PO');
-                            neededUpdate = true;
-                        }
-
-                        // Ensure 'Invoices Tracking' page for admins
-                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Invoices Tracking')) {
-                            user.permissions.allowedPages.push('Invoices Tracking');
-                            neededUpdate = true;
-                        }
-
-                        // Ensure 'Customers' page for admins
-                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Customers')) {
-                            user.permissions.allowedPages.push('Customers');
-                            neededUpdate = true;
-                        }
-
-                        // Ensure 'Driver Work Log' page for admins
-                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Driver Work Log')) {
-                            user.permissions.allowedPages.push('Driver Work Log');
-                            neededUpdate = true;
-                        }
-
-                        // Ensure 'Drivers Timesheet' page for admins
-                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Drivers Timesheet')) {
-                            user.permissions.allowedPages.push('Drivers Timesheet');
-                            neededUpdate = true;
-                        }
-
-                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Time Sheet')) {
-                            user.permissions.allowedPages.push('Time Sheet');
-                            neededUpdate = true;
-                        }
-
-                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Payroll')) {
-                            user.permissions.allowedPages.push('Payroll');
-                            neededUpdate = true;
-                        }
-
-                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Allowances For Employees')) {
-                            user.permissions.allowedPages.push('Allowances For Employees');
-                            neededUpdate = true;
-                        }
-
-                        // Ensure 'Orders' and 'Order Approvals' page for admins
-                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Orders')) {
-                            user.permissions.allowedPages.push('Orders');
-                            neededUpdate = true;
-                        }
-                        if ((user.username.toLowerCase() === 'alaa') && !user.permissions.allowedPages.includes('Order Approvals')) {
-                            user.permissions.allowedPages.push('Order Approvals');
-                            neededUpdate = true;
-                        }
-
-
-                        // Ensure canForceDeletePO is initialized
-                        if (user.permissions.canForceDeletePO === undefined) {
-                            user.permissions.canForceDeletePO = user.username.toLowerCase() === 'alaa';
-                            neededUpdate = true;
-                        }
-
-                        // Ensure PO permissions are initialized for admins
-                        if (user.username.toLowerCase() === 'alaa') {
-                            if (!user.permissions.canCreatePO) { user.permissions.canCreatePO = true; neededUpdate = true; }
-                            if (!user.permissions.canEditPO) { user.permissions.canEditPO = true; neededUpdate = true; }
-                            if (!user.permissions.canDeletePO) { user.permissions.canDeletePO = true; neededUpdate = true; }
-                        }
-
-                        // Ensure driver permissions are initialized
-                        if (user.permissions.manageDrivers === undefined) {
-                            user.permissions.manageDrivers = user.username.toLowerCase() === 'alaa';
-                            neededUpdate = true;
-                        }
-                        if (user.permissions.manageVehicles === undefined) {
-                            user.permissions.manageVehicles = user.username.toLowerCase() === 'alaa';
-                            neededUpdate = true;
-                        }
-
-                        if (neededUpdate) {
-                            await dualStorage.save(COLLECTIONS.RECORDS, user.id, { type: 'user', data: user });
-                        }
-                    }
-                }
+                // MIGRATION: Block removed to prevent overwriting cloud data with stale local storage.
+                // The application now relies on dynamic defaults in the data mapping layer.
             }
 
         };
