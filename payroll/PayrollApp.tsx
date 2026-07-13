@@ -201,11 +201,13 @@ export default function PayrollApp({
           let updated = { ...emp };
           let changed = false;
           if (
-            emp.code === "1175" ||
             emp.name === "محمد سليم" ||
             emp.name === "محمد سليم "
           ) {
             updated.name = "محمد تسليم";
+            changed = true;
+          }
+          if (emp.code === "1175" && !emp.nameEn) {
             updated.nameEn = "Mohamed Tasleem";
             changed = true;
           }
@@ -748,31 +750,31 @@ export default function PayrollApp({
       branches.find((b) => b !== "الكل" && b !== "All") || "الادارة";
     const newEmp: Employee = {
       id: newId,
-      code: newCode,
+      code: "",
       name: "",
       nameEn: "",
       nationalId: "",
-      jobTitle: "مبيعات",
-      branch: defaultBranch,
+      jobTitle: "",
+      branch: "",
       hireDate: new Date().toISOString().split("T")[0],
       iban: "",
-      nationality: "سعودي",
-      hasInsurance: true,
+      nationality: "",
+      hasInsurance: false,
       isActive: true,
-      basicSalary: 3000,
-      overtimeHours: 0,
-      overtime: 0,
-      communicationAllowance: 0,
-      housingAllowance: 500,
-      foodAllowance: 200,
-      transportationAllowance: 0,
-      commission: 0,
-      bonus: 0,
-      insuranceDeduction: 300,
-      generalDeduction: 0,
-      loan: 0,
-      absenceDeduction: 0,
-      endOfServicePaid: 0,
+      basicSalary: "" as unknown as number,
+      overtimeHours: "" as unknown as number,
+      overtime: "" as unknown as number,
+      communicationAllowance: "" as unknown as number,
+      housingAllowance: "" as unknown as number,
+      foodAllowance: "" as unknown as number,
+      transportationAllowance: "" as unknown as number,
+      commission: "" as unknown as number,
+      bonus: "" as unknown as number,
+      insuranceDeduction: "" as unknown as number,
+      generalDeduction: "" as unknown as number,
+      loan: "" as unknown as number,
+      absenceDeduction: "" as unknown as number,
+      endOfServicePaid: "" as unknown as number,
       paymentStage: "1",
     };
 
@@ -1076,7 +1078,7 @@ export default function PayrollApp({
         };
       } else {
         tsEmp.name = savedEmp.name;
-        if (savedEmp.nameEn) tsEmp.englishName = savedEmp.nameEn;
+        tsEmp.englishName = savedEmp.nameEn || "";
         tsEmp.jobTitle = savedEmp.jobTitle;
         tsEmp.englishJobTitle = getEnglishJobTitleForArabic(savedEmp.jobTitle);
         tsEmp.isActive = savedEmp.isActive !== false;

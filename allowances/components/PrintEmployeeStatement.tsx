@@ -112,9 +112,9 @@ export default function PrintEmployeeStatement({ employee }: Props) {
                 <td className="border border-black p-1 w-[15%] font-mono text-base">{formatCurrency((employee.vacationAllowance || 0) + (employee.ticketAllowance || 0) + (employee.dueEndOfService || 0))}</td>
                 <td className="border border-black p-1 border-4 border-slate-800 bg-white w-[65%]" style={{ borderStyle: 'double' }}>
                   <div className="flex flex-col justify-center gap-0.5 text-center py-0.5">
-                    <div dir="rtl" className="text-slate-900 font-bold text-[11px] whitespace-nowrap">{tafqeetArabic((employee.vacationAllowance || 0) + (employee.ticketAllowance || 0) + (employee.dueEndOfService || 0))}</div>
+                    <div dir="rtl" className="text-slate-900 font-bold text-[11px] px-1 leading-tight">{tafqeetArabic((employee.vacationAllowance || 0) + (employee.ticketAllowance || 0) + (employee.dueEndOfService || 0))}</div>
                     <div className="border-t border-slate-300 w-4/5 mx-auto my-0.5"></div>
-                    <div dir="ltr" className="text-slate-800 font-mono font-semibold text-[9px] whitespace-nowrap">{tafqeetEnglish((employee.vacationAllowance || 0) + (employee.ticketAllowance || 0) + (employee.dueEndOfService || 0))}</div>
+                    <div dir="ltr" className="text-slate-800 font-mono font-semibold text-[9px] px-1 leading-tight">{tafqeetEnglish((employee.vacationAllowance || 0) + (employee.ticketAllowance || 0) + (employee.dueEndOfService || 0))}</div>
                   </div>
                 </td>
               </tr>

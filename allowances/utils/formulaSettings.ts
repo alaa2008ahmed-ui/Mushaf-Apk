@@ -6,6 +6,7 @@ export interface FormulaSettings {
   vacationLessThan5YearsDays: number; // default: 21
   vacationMoreThan5YearsDays: number; // default: 30
   vacationSalaryBasis: 'total' | 'basic'; // default: 'total'
+  vacationCalculationMethod: 'split' | 'complete'; // default: 'split'
   vacationDivisor: number; // default: 30
 
   // Ticket Allowance settings
@@ -24,6 +25,7 @@ export const DEFAULT_FORMULA_SETTINGS: FormulaSettings = {
   vacationLessThan5YearsDays: 21,
   vacationMoreThan5YearsDays: 30,
   vacationSalaryBasis: 'total',
+  vacationCalculationMethod: 'split',
   vacationDivisor: 30,
   
   ticketAdminIntervalYears: 1,
@@ -48,6 +50,7 @@ export const getFormulaSettings = (): FormulaSettings => {
         vacationLessThan5YearsDays: Number(parsed.vacationLessThan5YearsDays ?? DEFAULT_FORMULA_SETTINGS.vacationLessThan5YearsDays),
         vacationMoreThan5YearsDays: Number(parsed.vacationMoreThan5YearsDays ?? DEFAULT_FORMULA_SETTINGS.vacationMoreThan5YearsDays),
         vacationSalaryBasis: parsed.vacationSalaryBasis === 'basic' ? 'basic' : 'total',
+        vacationCalculationMethod: parsed.vacationCalculationMethod === 'complete' ? 'complete' : 'split',
         vacationDivisor: Number(parsed.vacationDivisor ?? DEFAULT_FORMULA_SETTINGS.vacationDivisor),
         
         ticketAdminIntervalYears: Number(parsed.ticketAdminIntervalYears ?? DEFAULT_FORMULA_SETTINGS.ticketAdminIntervalYears),
@@ -72,29 +75,37 @@ export const saveFormulaSettings = (settings: FormulaSettings): void => {
   window.dispatchEvent(new Event('formulaSettingsChanged'));
 };
 
+let isSubscribedToFormulaSettings = false;
+
+const initGlobalFormulaSettingsListener = () => {
+  if (isSubscribedToFormulaSettings) return;
+  isSubscribedToFormulaSettings = true;
+
+  subscribeToFormulaSettings((data) => {
+    if (data) {
+      const updated = {
+        ...DEFAULT_FORMULA_SETTINGS,
+        ...data,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event('formulaSettingsChanged'));
+    }
+  });
+};
+
 export const useFormulaSettings = () => {
   const [settings, setSettings] = useState<FormulaSettings>(getFormulaSettings);
 
   useEffect(() => {
+    initGlobalFormulaSettingsListener();
+
     const handleUpdate = () => {
       setSettings(getFormulaSettings());
     };
     window.addEventListener('formulaSettingsChanged', handleUpdate);
 
-    const unsubscribe = subscribeToFormulaSettings((data) => {
-      if (data) {
-        const updated = {
-          ...DEFAULT_FORMULA_SETTINGS,
-          ...data,
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-        handleUpdate();
-      }
-    });
-
     return () => {
       window.removeEventListener('formulaSettingsChanged', handleUpdate);
-      if (unsubscribe) unsubscribe();
     };
   }, []);
 

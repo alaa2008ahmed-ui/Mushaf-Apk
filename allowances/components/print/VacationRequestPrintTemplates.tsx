@@ -84,48 +84,19 @@ export default function VacationRequestPrintTemplates(props: VacationRequestPrin
         @media print {
           @page {
             size: A4 portrait;
-            margin-left: 1cm;
-            margin-right: 1cm;
-            margin-top: 1cm;
-            margin-bottom: 1cm;
+            margin-left: 0.25cm !important;
+            margin-right: 0.25cm !important;
+            margin-top: 0.5cm !important;
+            margin-bottom: 0.5cm !important;
           }
-          body {
-            background-color: white !important;
+          .print-single-page {
+            zoom: 1.12 !important;
+            width: 100% !important;
+            max-width: 100% !important;
             padding: 0 !important;
             margin: 0 !important;
-            width: 100% !important;
-            min-width: 100% !important;
-          }
-          /* إخفاء أسهم الإدخال الرقمي */
-          input[type="number"]::-webkit-outer-spin-button,
-          input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-          }
-          input[type="number"] {
-            -moz-appearance: textfield;
-            appearance: textfield;
-          }
-          /* إلغاء الهوامش الجانبية تماماً وتمديد التصميم عرضياً */
-          .print-single-page {
-            width: 100% !important;
-            max-width: 100% !important;
-            min-width: 100% !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
             border: none !important;
             box-shadow: none !important;
-            transform: none !important;
-          }
-          .print-single-page > div {
-            width: 100% !important;
-            max-width: 100% !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
           }
           table {
             width: 100% !important;
@@ -140,7 +111,7 @@ export default function VacationRequestPrintTemplates(props: VacationRequestPrin
         <PrintHeader theme={theme} companyNameAr={companyNameAr} companyNameEn={companyNameEn} docTitle="طلب إجازة" docTitleEn="Vacation Request" emp={emp} customCalcDate={requestDate} />
 
         {/* 1. جدول بيانات الموظف الأساسية */}
-        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-[10px]">
+        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-sm sm:text-xs print:text-sm">
           <tbody>
             <tr>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 bg-gray-50 w-[22%] whitespace-nowrap">اسم الموظف</td>
@@ -172,7 +143,7 @@ export default function VacationRequestPrintTemplates(props: VacationRequestPrin
         </table>
 
         {/* 2. جدول تفاصيل ونوع الإجازة المطلوبة */}
-        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-[10px]">
+        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-sm sm:text-xs print:text-sm">
           <tbody>
             <tr className={`${theme.tableHeadClass} h-6 print:h-5`}>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5" colSpan={4}>نوع الاجازة المطلوبة</td>
@@ -247,7 +218,7 @@ export default function VacationRequestPrintTemplates(props: VacationRequestPrin
         </table>
 
         {/* جدول توقيع الموظف والبديل والملاحظات */}
-        <table className="w-full border-collapse border-2 border-black text-right mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-[10px] bg-white">
+        <table className="w-full border-collapse border-2 border-black text-right mb-1 print:mb-0.5 font-bold text-sm sm:text-xs print:text-sm bg-white">
           <tbody>
             <tr className="h-8 print:h-7">
               <td className="border border-black p-0.5 bg-white text-right w-[33%] align-top pt-0.5 pr-2">
@@ -280,11 +251,11 @@ export default function VacationRequestPrintTemplates(props: VacationRequestPrin
         {displayMonths && displayMonths.length > 0 && (
           <div className="mb-1 print:mb-0.5">
             <h4 className={`${theme.subHeadClass} mb-1 print:mb-0.5`}>التقويم الشهري (أيام الإجازة المظللة)</h4>
-            <div className="grid grid-cols-2 gap-3 print:gap-2 text-center text-xs print:text-[10px]">
+            <div className="grid grid-cols-2 gap-3 print:gap-2 text-center text-xs print:text-sm">
               {displayMonths.slice(0, 2).map((m, idx) => (
                 <div key={idx} className="border border-black p-2 sm:p-3 print:p-1 rounded bg-gray-50/50 flex flex-col justify-between">
                   <div className="font-bold border-b border-gray-400 pb-1 mb-1 print:mb-0.5 text-center text-xs sm:text-sm print:text-xs">{m.title}</div>
-                  <div className="grid grid-cols-7 gap-1 print:gap-[2px] font-bold text-[10px] print:text-[8px] text-gray-600 mb-1 print:mb-0.5">
+                  <div className="grid grid-cols-7 gap-1 print:gap-[2px] font-bold text-sm print:text-xs text-gray-600 mb-1 print:mb-0.5">
                     <span>ح</span><span>ن</span><span>ث</span><span>ر</span><span>خ</span><span>ج</span><span>س</span>
                   </div>
                   <div className="space-y-1 print:space-y-0.5">
@@ -297,7 +268,7 @@ export default function VacationRequestPrintTemplates(props: VacationRequestPrin
                           return (
                             <span 
                               key={dIdx} 
-                              className={`py-1 print:py-0.5 px-0.5 print:px-0.5 rounded font-mono text-center flex items-center justify-center text-[11px] print:text-[9.5px] leading-none ${isLeave ? 'bg-blue-600 text-white font-black' : ''}`}
+                              className={`py-1 print:py-0.5 px-0.5 print:px-0.5 rounded font-mono text-center flex items-center justify-center text-sm print:text-xs leading-none ${isLeave ? 'bg-blue-600 text-white font-black' : ''}`}
                             >
                               {day}
                             </span>
@@ -313,7 +284,7 @@ export default function VacationRequestPrintTemplates(props: VacationRequestPrin
         )}
 
         {/* 4. التوقيعات والاعتمادات */}
-        <div className="flex justify-between items-end mt-0.5 pt-0.5 pb-0.5 print:mt-0.5 print:pb-0.5 px-4 font-bold text-xs print:text-[10px] gap-2">
+        <div className="flex justify-between items-end mt-0.5 pt-0.5 pb-0.5 print:mt-0.5 print:pb-0.5 px-4 font-bold text-xs print:text-sm gap-2">
           <div className="text-center flex flex-col justify-end flex-1">
              <div className="h-6 print:h-4"></div> {/* Space for physical signature */}
              <div className="w-full max-w-[120px] mx-auto pt-0.5 mb-0.5">المستلم</div>

@@ -3,7 +3,7 @@ import { PrintTemplateId } from '../../utils/printTemplates';
 import { CalculatedEmployee } from '../../types';
 import { formatDateGB } from '../../utils';
 
-export type HeaderType = 'swc' | 'classic' | 'executive' | 'minimal' | 'institutional' | 'modern' | 'geometric' | 'creative' | 'detailed' | 'compact' | 'elegant' | 'tech' | 'academic' | 'fast' | 'balanced';
+export type HeaderType = 'swc' | 'classic' | 'executive' | 'minimal' | 'institutional' | 'modern' | 'geometric' | 'creative' | 'detailed' | 'compact' | 'elegant' | 'tech' | 'academic' | 'fast' | 'balanced' | 'professional-advanced' | 'modern-corporate' | 'innovative-elegant' | 'clear-data' | 'official-luxury';
 
 export interface ThemeConfig {
   wrapper: string;
@@ -14,34 +14,14 @@ export interface ThemeConfig {
 
 export const getThemeConfig = (templateId: PrintTemplateId): ThemeConfig => {
   switch (templateId) {
-    case '2': // الكلاسيكي الرسمي
-      return { wrapper: "border-[3px] border-double border-slate-900 p-2 sm:p-5 bg-white print:border-none", headerType: 'classic', tableHeadClass: "bg-slate-200 text-slate-900 font-bold", subHeadClass: "font-bold text-sm sm:text-base mb-1 text-right text-slate-900 border-b-2 border-slate-800 pb-0.5" };
-    case '3': // التنفيذي الراقي
-      return { wrapper: "border border-indigo-300 p-2 sm:p-5 bg-white print:border-none rounded-lg", headerType: 'executive', tableHeadClass: "bg-indigo-950 text-white font-bold", subHeadClass: "font-bold text-sm sm:text-base mb-1 text-right text-indigo-950" };
-    case '4': // المبسط المدمج
-      return { wrapper: "border border-gray-300 p-2 sm:p-4 bg-white print:border-none font-sans", headerType: 'minimal', tableHeadClass: "bg-gray-100 text-gray-900 font-bold", subHeadClass: "font-bold text-xs sm:text-sm mb-1 text-right text-gray-800 underline" };
-    case '5': // الحكومي المؤسسي
-      return { wrapper: "border-4 border-slate-900 p-2 sm:p-4 bg-white print:border-none font-serif", headerType: 'institutional', tableHeadClass: "bg-slate-300 text-slate-950 font-bold", subHeadClass: "font-bold text-sm sm:text-base mb-1 text-right text-slate-900 bg-slate-100 px-2 py-0.5 border-r-4 border-slate-800" };
-    case '6': // حديث ومبسط
-      return { wrapper: "p-2 sm:p-4 bg-white print:border-none text-slate-800 font-sans shadow-md print:shadow-none", headerType: 'modern', tableHeadClass: "bg-blue-50 text-blue-900 font-bold border-b-2 border-blue-200", subHeadClass: "font-bold text-sm mb-1 text-right text-blue-800 border-b border-blue-100" };
-    case '7': // هندسي دقيق
-      return { wrapper: "border-2 border-emerald-900 p-2 sm:p-4 bg-white print:border-none font-mono", headerType: 'geometric', tableHeadClass: "bg-emerald-900 text-white font-bold tracking-wider", subHeadClass: "font-bold text-sm mb-1 text-right text-emerald-900 bg-emerald-50 px-2 border-l-4 border-emerald-800" };
-    case '8': // إبداعي ملون
-      return { wrapper: "border-[4px] border-amber-400 p-2 sm:p-4 bg-white print:border-none rounded-xl font-sans", headerType: 'creative', tableHeadClass: "bg-gradient-to-r from-amber-200 to-orange-200 text-amber-900 font-bold", subHeadClass: "font-bold text-sm mb-1 text-right text-amber-800 bg-amber-50 rounded px-2" };
-    case '9': // شامل تفصيلي
-      return { wrapper: "border-2 border-dashed border-gray-600 p-2 sm:p-4 bg-gray-50 print:bg-white print:border-none font-serif", headerType: 'detailed', tableHeadClass: "bg-gray-800 text-gray-100 font-bold", subHeadClass: "font-bold text-sm mb-1 text-right text-gray-900 border-b-2 border-dotted border-gray-400" };
-    case '10': // مدمج مضغوط
-      return { wrapper: "p-1 sm:p-2 bg-white print:border-none text-xs font-sans", headerType: 'compact', tableHeadClass: "bg-slate-100 text-slate-800 font-bold text-[10px]", subHeadClass: "font-bold text-xs mb-0.5 text-right text-slate-700 bg-slate-50 px-1 border-r-2 border-slate-400" };
-    case '11': // أنيق وفاخر
-      return { wrapper: "border border-rose-200 p-2 sm:p-5 bg-white print:border-none rounded-2xl shadow-xl print:shadow-none font-sans", headerType: 'elegant', tableHeadClass: "bg-rose-900 text-rose-50 font-bold uppercase", subHeadClass: "font-bold text-sm mb-1 text-right text-rose-900 border-b border-rose-200 pb-1" };
-    case '12': // تقني متطور
-      return { wrapper: "border-l-4 border-cyan-600 p-2 sm:p-4 bg-slate-50 print:bg-white print:border-none font-mono", headerType: 'tech', tableHeadClass: "bg-cyan-900 text-cyan-50 font-bold", subHeadClass: "font-bold text-sm mb-1 text-right text-cyan-800 border-b border-cyan-800 border-dashed" };
-    case '13': // أكاديمي موثق
-      return { wrapper: "border-4 border-double border-stone-800 p-3 sm:p-6 bg-[#fdfbf7] print:bg-white print:border-none font-serif", headerType: 'academic', tableHeadClass: "bg-stone-300 text-stone-900 font-bold", subHeadClass: "font-bold text-sm sm:text-base mb-1 text-right text-stone-900 bg-stone-200 px-2 font-serif" };
-    case '14': // سريع ومباشر
-      return { wrapper: "p-2 bg-white print:border-none font-sans", headerType: 'fast', tableHeadClass: "bg-zinc-800 text-white font-bold text-xs", subHeadClass: "font-bold text-xs mb-1 text-right text-zinc-800 bg-zinc-100 px-1 border-l-[3px] border-zinc-800" };
-    case '15': // عصري متوازن
-      return { wrapper: "border border-teal-500 rounded p-2 sm:p-4 bg-white print:border-none font-sans", headerType: 'balanced', tableHeadClass: "bg-teal-50 text-teal-900 font-bold border-t-2 border-teal-500", subHeadClass: "font-bold text-sm mb-1 text-right text-teal-800 px-2 bg-teal-50 rounded-full inline-block" };
+    case '2': // الاحترافي المطور
+      return { wrapper: "border-l-[6px] border-l-blue-800 border-t border-r border-b border-gray-200 p-2 sm:p-5 bg-white print:border-none shadow-sm print:shadow-none font-sans", headerType: 'professional-advanced', tableHeadClass: "bg-blue-800 text-white font-bold", subHeadClass: "font-bold text-sm mb-1 text-right text-blue-900 border-b border-blue-200 pb-1" };
+    case '3': // تصميم الشركات الحديث
+      return { wrapper: "border border-slate-300 p-2 sm:p-4 bg-slate-50 print:bg-white print:border-none font-sans", headerType: 'modern-corporate', tableHeadClass: "bg-slate-800 text-slate-100 font-bold uppercase", subHeadClass: "font-bold text-sm mb-1 text-right text-slate-800 bg-slate-200 px-2 py-0.5" };
+    case '4': // المبتكر الأنيق
+      return { wrapper: "border-2 border-indigo-100 rounded-xl p-2 sm:p-5 bg-white print:border-none font-sans", headerType: 'innovative-elegant', tableHeadClass: "bg-indigo-50 text-indigo-900 font-bold border-y-2 border-indigo-200", subHeadClass: "font-bold text-sm mb-1 text-right text-indigo-800" };
+    case '5': // الرسمي الفاخر
+      return { wrapper: "border-4 border-double border-amber-800 p-3 sm:p-6 bg-[#fffcf5] print:bg-white print:border-none font-serif", headerType: 'official-luxury', tableHeadClass: "bg-amber-900 text-amber-50 font-bold", subHeadClass: "font-bold text-sm sm:text-base mb-1 text-right text-amber-950 border-b border-amber-900/30 pb-0.5" };
     case '1': // المعاصر النظيف (القالب الأساسي)
     default:
       return { wrapper: "border border-slate-200 shadow-sm p-3 sm:p-6 bg-white print:border-none print:shadow-none print:p-0", headerType: 'swc', tableHeadClass: "bg-gray-300 text-black font-bold", subHeadClass: "font-bold text-sm sm:text-base mb-1 text-right text-black" };
@@ -63,6 +43,79 @@ export const PrintHeader: React.FC<PrintHeaderProps> = ({ theme, companyNameAr, 
   const refCode = emp?.code || 'DOC';
 
   switch (theme.headerType) {
+    case 'professional-advanced':
+      return (
+        <div className="flex justify-between items-center border-b-[3px] border-blue-800 pb-2 mb-3 print:pb-2 print:mb-3">
+          <div className="flex flex-col">
+            <h1 className="text-2xl print:text-lg font-bold text-blue-900 mb-0.5">{companyNameAr}</h1>
+            <h2 className="text-[10px] text-blue-600 uppercase tracking-widest">{companyNameEn}</h2>
+          </div>
+          <div className="text-left bg-blue-50 px-4 py-1.5 rounded-lg border border-blue-100 shadow-sm">
+            <h3 className="text-lg print:text-base font-black text-blue-900 mb-0.5">{docTitle}</h3>
+            <div className="text-[10px] text-blue-700 font-mono flex justify-between gap-4">
+              <span>Date: {dateStr}</span>
+              <span>Ref: {refCode}</span>
+            </div>
+          </div>
+        </div>
+      );
+    case 'modern-corporate':
+      return (
+        <div className="flex bg-slate-900 text-white p-3 print:p-2 mb-3 print:mb-2 justify-between items-center rounded-t-lg print:rounded-none shadow-sm">
+          <div>
+            <h1 className="text-xl print:text-base font-bold tracking-tight">{companyNameAr}</h1>
+            <h2 className="text-[10px] text-slate-400 font-medium uppercase mt-0.5">{companyNameEn}</h2>
+          </div>
+          <div className="bg-white text-slate-900 px-4 py-1 rounded text-sm print:text-xs font-bold shadow flex flex-col items-center justify-center">
+            <span className="text-base print:text-sm">{docTitle}</span>
+            <span className="text-[9px] text-slate-500 font-normal mt-0.5">{dateStr}</span>
+          </div>
+        </div>
+      );
+    case 'innovative-elegant':
+      return (
+        <div className="text-center mb-4 print:mb-3 pb-3 border-b-2 border-indigo-100 relative">
+          <div className="absolute left-0 top-0 text-[10px] text-indigo-400 font-mono text-left bg-indigo-50 px-2 py-1 rounded">
+            <div>D: {dateStr}</div>
+            <div>R: {refCode}</div>
+          </div>
+          <h1 className="text-2xl print:text-xl font-black text-indigo-950 mb-1">{companyNameAr}</h1>
+          <h2 className="text-[11px] uppercase text-indigo-400 tracking-[0.2em] mb-2">{companyNameEn}</h2>
+          <div className="inline-block px-8 py-1.5 bg-gradient-to-r from-indigo-50 via-white to-indigo-50 text-indigo-900 font-bold text-lg print:text-base rounded-full border border-indigo-200 shadow-sm">
+            {docTitle}
+          </div>
+        </div>
+      );
+    case 'clear-data':
+      return (
+        <div className="border-b-[4px] border-gray-900 mb-3 print:mb-2 pb-1.5 flex justify-between items-end bg-gray-50 print:bg-white px-2">
+          <div className="font-mono">
+            <h1 className="text-lg print:text-base font-bold text-gray-900">{companyNameAr}</h1>
+            <h2 className="text-[10px] text-gray-600 font-sans">{companyNameEn}</h2>
+          </div>
+          <div className="bg-gray-900 text-white px-3 py-1 font-black text-lg print:text-base tracking-wider shadow-sm uppercase">
+            {docTitle}
+          </div>
+          <div className="text-[10px] font-mono text-left text-gray-700 bg-gray-200 print:bg-gray-100 px-2 py-1">
+            <div>DATE: {dateStr}</div>
+            <div>REF: {refCode}</div>
+          </div>
+        </div>
+      );
+    case 'official-luxury':
+      return (
+        <div className="border-b-[5px] border-double border-amber-900 mb-3 print:mb-2 pb-1.5 text-center bg-gradient-to-b from-amber-50/50 to-transparent">
+          <h1 className="text-2xl print:text-xl font-serif text-amber-950 font-black mb-0.5 drop-shadow-sm">{companyNameAr}</h1>
+          <h2 className="text-[10px] font-serif text-amber-700 mb-2 tracking-widest">{companyNameEn}</h2>
+          <div className="flex justify-between items-center max-w-[95%] mx-auto mt-1" dir="ltr">
+            <span className="text-[10px] print:text-[9px] text-amber-900 font-serif font-bold min-w-[80px] text-left">Ref: {refCode}</span>
+            <div className="inline-block border-y-2 border-amber-800 py-1 px-8 bg-white shadow-sm mx-2">
+               <h3 className="text-base print:text-sm font-bold text-amber-950" dir="rtl">{docTitle}</h3>
+            </div>
+            <span className="text-[10px] print:text-[9px] text-amber-900 font-serif font-bold min-w-[80px] text-right">Date: {dateStr}</span>
+          </div>
+        </div>
+      );
     case 'classic':
       return (
         <div className="text-center border-b-2 border-slate-900 pb-2 mb-2 print:pb-1 print:mb-1.5">
@@ -216,19 +269,11 @@ export const PrintHeader: React.FC<PrintHeaderProps> = ({ theme, companyNameAr, 
     case 'swc':
     default:
       return (
-        <div className="flex justify-between items-center border-b-[3px] border-black pb-2 mb-2 print:pb-0.5 print:mb-1">
-          <div className="flex flex-col items-center text-[#4a148c]">
-            <span className="text-sm print:text-[10px] font-bold -mb-1 print:-mb-2">مياه</span>
-            <span className="text-5xl print:text-2xl font-black tracking-tighter">عذبة</span>
-            <span className="text-lg print:text-[10px] font-bold -mt-1 print:-mt-1.5">adba water</span>
-          </div>
+        <div className="flex justify-center items-center border-b-[3px] border-black pb-2 mb-2 print:pb-0.5 print:mb-1">
           <div className="text-center font-bold">
             <h1 className="text-2xl print:text-sm mb-1 print:mb-0">{companyNameAr}</h1>
             <h2 className="text-xl print:text-[10px] mb-2 print:mb-0.5 uppercase">{companyNameEn}</h2>
             <h3 className="text-2xl print:text-sm font-black">{docTitle}</h3>
-          </div>
-          <div className="text-[#e53935] font-black italic tracking-tighter text-7xl print:text-3xl leading-none">
-            SWC
           </div>
         </div>
       );

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { subscribeToPrintTemplates, savePrintTemplatesToFirestore } from './firebaseSync';
 
-export type PrintTemplateId = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13' | '14' | '15';
+export type PrintTemplateId = '1' | '2' | '3' | '4' | '5';
 
 export type PrintSectionKey = 'endOfService' | 'eos' | 'vacationAllowance' | 'vacationRequest' | 'loanRequest' | 'employeeStatement';
 
@@ -14,7 +14,11 @@ export interface PrintTemplateOption {
 }
 
 export const PRINT_TEMPLATE_OPTIONS: PrintTemplateOption[] = [
-  { id: '1', name: 'التصميم القياسي', label: 'التصميم القياسي', description: '', badge: 'الافتراضي' }
+  { id: '1', name: 'التصميم القياسي', label: 'التصميم القياسي', description: 'التصميم الافتراضي', badge: 'الافتراضي' },
+  { id: '2', name: 'الاحترافي المطور', label: 'الاحترافي المطور', description: 'تصميم احترافي مطور', badge: 'جديد' },
+  { id: '3', name: 'تصميم الشركات الحديث', label: 'تصميم الشركات الحديث', description: 'تصميم عصري للشركات', badge: 'جديد' },
+  { id: '4', name: 'المبتكر الأنيق', label: 'المبتكر الأنيق', description: 'تصميم مبتكر وأنيق', badge: 'جديد' },
+  { id: '5', name: 'الرسمي الفاخر', label: 'الرسمي الفاخر', description: 'تصميم رسمي فاخر', badge: 'جديد' }
 ];
 
 export const PRINT_SECTIONS: { key: PrintSectionKey; label: string }[] = [
@@ -27,9 +31,14 @@ export const PRINT_SECTIONS: { key: PrintSectionKey; label: string }[] = [
 
 const STORAGE_PREFIX = 'adba_print_template_v2_';
 
-const VALID_TEMPLATE_IDS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15'];
+const VALID_TEMPLATE_IDS = ['1', '2', '3', '4', '5'];
 
 export const getPrintTemplate = (section: PrintSectionKey): PrintTemplateId => {
+  const actualSection = section === 'eos' ? 'endOfService' : section;
+  const saved = localStorage.getItem(`${STORAGE_PREFIX}${actualSection}`);
+  if (saved && VALID_TEMPLATE_IDS.includes(saved)) {
+    return saved as PrintTemplateId;
+  }
   return '1';
 };
 
@@ -54,6 +63,28 @@ export const savePrintTemplate = (section: PrintSectionKey, templateId: PrintTem
   window.dispatchEvent(new Event('printTemplatesChanged'));
 };
 
+let isSubscribedToPrintTemplates = false;
+
+const initGlobalPrintTemplatesListener = () => {
+  if (isSubscribedToPrintTemplates) return;
+  isSubscribedToPrintTemplates = true;
+
+  subscribeToPrintTemplates((data) => {
+    let changed = false;
+    (['endOfService', 'eos', 'vacationAllowance', 'vacationRequest', 'loanRequest', 'employeeStatement'] as const).forEach(k => {
+      if (data[k] && VALID_TEMPLATE_IDS.includes(data[k])) {
+        const targetKey = k === 'eos' ? 'endOfService' : k;
+        localStorage.setItem(`${STORAGE_PREFIX}${targetKey}`, data[k]);
+        localStorage.setItem(`${STORAGE_PREFIX}eos`, data[k]);
+        changed = true;
+      }
+    });
+    if (changed) {
+      window.dispatchEvent(new Event('printTemplatesChanged'));
+    }
+  });
+};
+
 export const usePrintTemplates = () => {
   const [templates, setTemplates] = useState<Record<string, PrintTemplateId>>(() => ({
     endOfService: getPrintTemplate('endOfService'),
@@ -65,6 +96,8 @@ export const usePrintTemplates = () => {
   }));
 
   useEffect(() => {
+    initGlobalPrintTemplatesListener();
+
     const handleUpdate = () => {
       setTemplates({
         endOfService: getPrintTemplate('endOfService'),
@@ -78,24 +111,8 @@ export const usePrintTemplates = () => {
 
     window.addEventListener('printTemplatesChanged', handleUpdate);
 
-    const unsubscribe = subscribeToPrintTemplates((data) => {
-      let changed = false;
-      (['endOfService', 'eos', 'vacationAllowance', 'vacationRequest', 'loanRequest', 'employeeStatement'] as const).forEach(k => {
-        if (data[k] && VALID_TEMPLATE_IDS.includes(data[k])) {
-          const targetKey = k === 'eos' ? 'endOfService' : k;
-          localStorage.setItem(`${STORAGE_PREFIX}${targetKey}`, data[k]);
-          localStorage.setItem(`${STORAGE_PREFIX}eos`, data[k]);
-          changed = true;
-        }
-      });
-      if (changed) {
-        handleUpdate();
-      }
-    });
-
     return () => {
       window.removeEventListener('printTemplatesChanged', handleUpdate);
-      if (unsubscribe) unsubscribe();
     };
   }, []);
 

@@ -145,59 +145,6 @@ export default function LoanRequestPrintTemplates(props: LoanRequestPrintProps) 
 
   return (
     <PrintableSheet>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin-left: 1cm;
-            margin-right: 1cm;
-            margin-top: 1cm;
-            margin-bottom: 1cm;
-          }
-          body {
-            background-color: white !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            width: 100% !important;
-            min-width: 100% !important;
-          }
-          /* إخفاء أسهم الإدخال الرقمي */
-          input[type="number"]::-webkit-outer-spin-button,
-          input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-          }
-          input[type="number"] {
-            -moz-appearance: textfield;
-            appearance: textfield;
-          }
-          /* إلغاء الهوامش الجانبية تماماً وتمديد التصميم عرضياً */
-          .print-single-page {
-            width: 100% !important;
-            max-width: 100% !important;
-            min-width: 100% !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            transform: none !important;
-          }
-          .print-single-page > div {
-            width: 100% !important;
-            max-width: 100% !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-          }
-          table {
-            width: 100% !important;
-            max-width: 100% !important;
-          }
-        }
-      `}} />
       <div className={`${theme.wrapper} mx-auto w-full max-w-full flex-grow flex flex-col text-black text-xs sm:text-sm font-sans overflow-x-auto print-single-page h-full`} dir="rtl">
         {/* هامش علوي 1 سم للطباعة */}
         <div className="h-[10mm] w-full shrink-0 print:block"></div>

@@ -19,27 +19,35 @@ export const saveCompanyNames = (ar: string, en: string): void => {
   window.dispatchEvent(new Event('companySettingsChanged'));
 };
 
+let isSubscribedToCompanySettings = false;
+
+const initGlobalCompanySettingsListener = () => {
+  if (isSubscribedToCompanySettings) return;
+  isSubscribedToCompanySettings = true;
+
+  subscribeToCompanySettings((ar, en) => {
+    localStorage.setItem(COMPANY_NAME_AR_KEY, ar);
+    localStorage.setItem(COMPANY_NAME_EN_KEY, en);
+    window.dispatchEvent(new Event('companySettingsChanged'));
+  });
+};
+
 export const useCompanySettings = () => {
   const [companyNameAr, setCompanyNameAr] = useState<string>(getCompanyNameAr());
   const [companyNameEn, setCompanyNameEn] = useState<string>(getCompanyNameEn());
 
   useEffect(() => {
+    initGlobalCompanySettingsListener();
+
     const handleUpdate = () => {
       setCompanyNameAr(getCompanyNameAr());
       setCompanyNameEn(getCompanyNameEn());
     };
+    
     window.addEventListener('companySettingsChanged', handleUpdate);
-
-    const unsubscribe = subscribeToCompanySettings((ar, en) => {
-      localStorage.setItem(COMPANY_NAME_AR_KEY, ar);
-      localStorage.setItem(COMPANY_NAME_EN_KEY, en);
-      setCompanyNameAr(ar);
-      setCompanyNameEn(en);
-    });
 
     return () => {
       window.removeEventListener('companySettingsChanged', handleUpdate);
-      if (unsubscribe) unsubscribe();
     };
   }, []);
 

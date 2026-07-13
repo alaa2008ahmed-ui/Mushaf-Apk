@@ -80,10 +80,10 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
       <span className="w-full text-center font-mono py-1 block">{formatDateGB(customCalcDate)}</span>
     ) : (
       <>
-        <EnglishDateInput 
-           
+        <input 
+          type="date"
           lang="en-GB"
-          className="w-full text-center outline-none bg-transparent py-1 print:hidden font-bold text-blue-600 cursor-pointer" 
+          className="w-full text-center outline-none bg-transparent py-1 print:hidden font-bold text-blue-600 cursor-pointer font-mono" 
           value={customCalcDate} 
           onChange={(e) => {
             setCustomCalcDate(e.target.value);
@@ -126,6 +126,30 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
 
   return (
     <PrintableSheet>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin-left: 0.5cm !important;
+            margin-right: 0.5cm !important;
+            margin-top: 0.5cm !important;
+            margin-bottom: 0.5cm !important;
+          }
+          .print-single-page {
+            zoom: 0.92 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+          }
+          table {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+        }
+      `}} />
       <div className={`${theme.wrapper} mx-auto w-full max-w-full flex-grow flex flex-col text-black text-xs sm:text-sm font-sans overflow-x-auto print-single-page h-full`} dir="rtl">
         {/* هامش علوي 1 سم للطباعة */}
         <div className="h-[10mm] w-full shrink-0 print:block"></div>
@@ -338,7 +362,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
               <td className="border border-black p-0.5 print:p-0.5"></td>
             </tr>
             <tr className="h-6 print:h-5">
-              <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">خصم اجازات</td>
+              <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">خصم اجازات {emp.absence ? `(${emp.absence} أيام)` : ''}</td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Absence</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono text-blue-600">{formatNumber(absenceDeduction)}</td>
               <td className="border border-black p-0.5 print:p-0.5"></td>
@@ -366,10 +390,10 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 w-[18%] whitespace-nowrap">صافي المبلغ المستحق</td>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 w-[14%] font-mono text-base whitespace-nowrap">{formatNumber(netAmount)}</td>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 border-4 border-black bg-white w-[68%] print-double-border" style={{ borderStyle: 'double' }}>
-                <div className="flex flex-col justify-center gap-0 text-center py-0.5 overflow-x-auto overflow-y-hidden">
-                  <div dir="rtl" className="text-slate-950 font-bold text-[11px] sm:text-xs print:text-[11px] whitespace-nowrap leading-tight">{tafqeetArabic(netAmount)}</div>
+                <div className="flex flex-col justify-center gap-0 text-center py-0.5">
+                  <div dir="rtl" className="text-slate-950 font-bold text-[11px] sm:text-xs print:text-[11px] leading-tight px-1">{tafqeetArabic(netAmount)}</div>
                   <div className="border-t border-slate-300 w-4/5 mx-auto my-0.5"></div>
-                  <div dir="ltr" className="text-slate-800 font-mono font-semibold text-[10px] sm:text-[11px] print:text-[10px] whitespace-nowrap leading-tight">{tafqeetEnglish(netAmount)}</div>
+                  <div dir="ltr" className="text-slate-800 font-mono font-semibold text-[10px] sm:text-[11px] print:text-[10px] leading-tight px-1">{tafqeetEnglish(netAmount)}</div>
                 </div>
               </td>
             </tr>

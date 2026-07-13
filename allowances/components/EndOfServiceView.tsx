@@ -120,7 +120,7 @@ export default function EndOfServiceView({ employees, onArchive, archivedData }:
     vacDiff = getYearMonthDay(emp.lastVacationReturnDate, effectiveCalcDate);
     absenceDeduction = (emp.totalSalary / 30) * (emp.absence || 0);
     const tenPercentCalc = Math.round(0.10 * (emp.basicSalary + (emp.housingAllowance || 0)) * 100) / 100;
-    const empSocialSecurityEnabled = emp.includeSocialSecurity !== false;
+    const empSocialSecurityEnabled = emp.includeSocialSecurity !== false && isProportionalActive;
     socialSecurityDeduction = empSocialSecurityEnabled ? (emp.socialSecurity || tenPercentCalc) : 0;
     totalDeductions = socialSecurityDeduction + (emp.loans || 0) + absenceDeduction + (emp.paidEndOfService || 0);
     actualIndemnity = calculateIndemnityByReason(emp.endOfServiceAllowance, emp.totalWorkDurationYears, endOfServiceReason);

@@ -72,7 +72,7 @@ export default function VacationAllowanceView({ employees, onArchive, archivedDa
     const effectiveCalcDate = customStartDate || originalEmp.calculationDate;
     emp = calculateEmployeeAllowances({ ...originalEmp, calculationDate: effectiveCalcDate });
     absenceDeduction = (emp.totalSalary / 30) * (emp.absence || 0);
-    const empSocialSecurityEnabled = emp.includeSocialSecurity !== false;
+    const empSocialSecurityEnabled = emp.includeSocialSecurity !== false && isProportionalActive;
     socialSecurityDeduction = empSocialSecurityEnabled ? (emp.socialSecurity || 0) : 0;
     totalDeductions = socialSecurityDeduction + (emp.loans || 0) + absenceDeduction;
 

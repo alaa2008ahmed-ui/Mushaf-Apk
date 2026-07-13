@@ -115,7 +115,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
         <PrintHeader theme={theme} companyNameAr={companyNameAr} companyNameEn={companyNameEn} docTitle="تسوية مستحقات إجازة" docTitleEn="Vacation Allowance Settlement" emp={emp} customCalcDate={emp.calculationDate} />
 
         {/* 1. جدول بيانات الموظف والإجازة */}
-        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-[10px]">
+        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-sm">
           <tbody>
             <tr>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 bg-gray-50 w-[22%] whitespace-nowrap">اسم الموظف</td>
@@ -168,7 +168,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
         </table>
 
         {/* 2. جدول إقرار الدخول والاعتماد */}
-        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-[10px]">
+        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-sm">
           <tbody>
             <tr>
               <td className="border border-black p-0.5 bg-gray-50 w-1/4 whitespace-nowrap">تاريخ دخول المملكه من مقيم</td>
@@ -181,7 +181,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
 
         {/* 3. جدول احتساب مستحقات الإجازة والرواتب الشهرية */}
         <h4 className={`${theme.subHeadClass} mb-0.5 py-0`}>حساب مستحقات الاجازة للموظف</h4>
-        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-[10px]">
+        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-sm">
           <thead>
             <tr className={`${theme.tableHeadClass} h-6 print:h-5`}>
               <th className="border border-black p-0.5 print:p-0.5" colSpan={2}>الاستحقاقات</th>
@@ -193,7 +193,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
           <tbody>
             <tr className="h-6 print:h-5">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
-                راتب ايام العمل {isProportionalActive && <span className="text-[9px] font-normal">({workDaysCount} يوم)</span>}
+                راتب ايام العمل {isProportionalActive && <span className="text-[12px] print:text-xs font-normal">({workDaysCount} يوم)</span>}
               </td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Salary Of Working</td>
               <td className="border border-black p-0.5 print:p-0.5">{formatNumber(workDaysSalary)}</td>
@@ -202,7 +202,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
             </tr>
             <tr className="h-6 print:h-5">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
-                بدل العمل الإضافي {isProportionalActive && <span className="text-[9px] font-normal">({overtimeHours} ساعة)</span>}
+                بدل العمل الإضافي {isProportionalActive && <span className="text-[12px] print:text-xs font-normal">({overtimeHours} ساعة)</span>}
               </td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Extra Work</td>
               <td className="border border-black p-0.5 print:p-0.5">{formatNumber(overtimeValue)}</td>
@@ -213,7 +213,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
             </tr>
             <tr className="h-6 print:h-5">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
-                بدل السكن {isProportionalActive && <span className="text-[9px] font-normal">({workDaysCount} يوم)</span>}
+                بدل السكن {isProportionalActive && <span className="text-[12px] print:text-xs font-normal">({workDaysCount} يوم)</span>}
               </td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Housing Allowance</td>
               <td className="border border-black p-0.5 print:p-0.5">{formatNumber(housingValue)}</td>
@@ -222,7 +222,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
             </tr>
             <tr className="h-6 print:h-5">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
-                بدل انتقال {isProportionalActive && <span className="text-[9px] font-normal">({workDaysCount} يوم)</span>}
+                بدل انتقال {isProportionalActive && <span className="text-[12px] print:text-xs font-normal">({workDaysCount} يوم)</span>}
               </td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Transfer Allowance</td>
               <td className="border border-black p-0.5 print:p-0.5">{formatNumber(transferValue)}</td>
@@ -231,7 +231,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
             </tr>
             <tr className="h-6 print:h-5">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
-                بدلات اخري {isProportionalActive && <span className="text-[9px] font-normal">({workDaysCount} يوم)</span>}
+                بدلات اخري {isProportionalActive && <span className="text-[12px] print:text-xs font-normal">({workDaysCount} يوم)</span>}
               </td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Other Allowances</td>
               <td className="border border-black p-0.5 print:p-0.5">{formatNumber(otherAllowancesValue)}</td>
@@ -254,7 +254,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
         </table>
 
         {/* 4. جدول الحسميات */}
-        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-[10px]">
+        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-sm">
           <thead>
             <tr className={`${theme.tableHeadClass} h-6 print:h-5`}>
               <th className="border border-black p-0.5 print:p-0.5 w-1/4">الحسميات</th>
@@ -276,7 +276,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
               <td className="border border-black p-0.5 print:p-0.5"></td>
             </tr>
             <tr className="h-6 print:h-5">
-              <td className="border border-black p-0.5 print:p-0.5 text-right px-2 whitespace-nowrap">خصم إجازة</td>
+              <td className="border border-black p-0.5 print:p-0.5 text-right px-2 whitespace-nowrap">خصم إجازة {emp.absence ? `(${emp.absence} أيام)` : ''}</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono text-red-600">{formatNumber(absenceDeduction)}</td>
               <td className="border border-black p-0.5 print:p-0.5"></td>
             </tr>
@@ -289,16 +289,16 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
         </table>
 
         {/* 5. صافي المبلغ والتفقيط */}
-        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-[10px] bg-gray-200">
+        <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-sm bg-gray-200">
           <tbody>
             <tr>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 w-[18%] whitespace-nowrap">صافي المبلغ المستحق</td>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 w-[14%] font-mono text-base whitespace-nowrap">{formatNumber(netAmount)}</td>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 border-4 border-black bg-white w-[68%] print-double-border" style={{ borderStyle: 'double' }}>
-                <div className="flex flex-col justify-center gap-0 text-center py-0.5 overflow-x-auto overflow-y-hidden">
-                  <div dir="rtl" className="text-slate-950 font-bold text-[11px] sm:text-xs print:text-[11px] whitespace-nowrap leading-tight">{tafqeetArabic(netAmount)}</div>
+                <div className="flex flex-col justify-center gap-0 text-center py-0.5">
+                  <div dir="rtl" className="text-slate-950 font-bold text-[11px] sm:text-xs print:text-[11px] leading-tight px-1">{tafqeetArabic(netAmount)}</div>
                   <div className="border-t border-slate-300 w-4/5 mx-auto my-0.5"></div>
-                  <div dir="ltr" className="text-slate-800 font-mono font-semibold text-[10px] sm:text-[11px] print:text-[10px] whitespace-nowrap leading-tight">{tafqeetEnglish(netAmount)}</div>
+                  <div dir="ltr" className="text-slate-800 font-mono font-semibold text-[10px] sm:text-[11px] print:text-[10px] leading-tight px-1">{tafqeetEnglish(netAmount)}</div>
                 </div>
               </td>
             </tr>
@@ -306,7 +306,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
         </table>
 
         {/* 6. التوقيعات والاعتمادات */}
-        <div className="flex justify-between items-end mt-0.5 pt-0.5 pb-0.5 print:mt-0.5 print:pb-0.5 px-4 font-bold text-xs print:text-[10px] gap-2">
+        <div className="flex justify-between items-end mt-0.5 pt-0.5 pb-0.5 print:mt-0.5 print:pb-0.5 px-4 font-bold text-xs print:text-sm gap-2">
           <div className="text-center flex flex-col justify-end flex-1">
              <div className="h-6 print:h-4"></div> {/* Space for physical signature */}
              <div className="w-full max-w-[120px] mx-auto pt-0.5 mb-0.5">المستلم</div>

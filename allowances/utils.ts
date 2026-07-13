@@ -36,12 +36,17 @@ export function calculateEndOfService(
 }
 
 export function calculateEmployeeAllowances(employee: Employee): CalculatedEmployee {
-  const computedFixedAllowances = (employee.housingAllowance || 0) + 
-                                  (employee.transferAllowance || 0) + 
-                                  (employee.phoneAllowance || 0) + 
-                                  (employee.foodAllowance || 0);
+  const basicSalary = Number(employee.basicSalary) || 0;
+  const housingAllowance = Number(employee.housingAllowance) || 0;
+  const transferAllowance = Number(employee.transferAllowance) || 0;
+  const phoneAllowance = Number(employee.phoneAllowance) || 0;
+  const foodAllowance = Number(employee.foodAllowance) || 0;
+  const ticketPriceValue = Number(employee.ticketPrice) || 0;
+  const paidEndOfServiceValue = Number(employee.paidEndOfService) || 0;
 
-  const totalSalary = employee.basicSalary + computedFixedAllowances;
+  const computedFixedAllowances = housingAllowance + transferAllowance + phoneAllowance + foodAllowance;
+
+  const totalSalary = basicSalary + computedFixedAllowances;
   
   const totalWorkDurationYears = calculateDateDifferenceInYears(employee.hireDate, employee.calculationDate);
   const durationSinceLastVacationYears = calculateDateDifferenceInYears(employee.lastVacationReturnDate, employee.calculationDate);
@@ -49,22 +54,44 @@ export function calculateEmployeeAllowances(employee: Employee): CalculatedEmplo
   // Load dynamic formula settings
   const settings = getFormulaSettings();
 
-  // Vacation allowance days entitlement
-  const vacationDaysEntitlement = totalWorkDurationYears < 5 
+  // Vacation allowance days entitlement based on the 5-year threshold crossing
+  const startYear = calculateDateDifferenceInYears(employee.hireDate, employee.lastVacationReturnDate);
+  const endYear = calculateDateDifferenceInYears(employee.hireDate, employee.calculationDate);
+  
+  let earnedVacationDays = 0;
+  if (settings.vacationCalculationMethod === 'complete') {
+    if (endYear >= 5) {
+      earnedVacationDays = durationSinceLastVacationYears * settings.vacationMoreThan5YearsDays;
+    } else {
+      earnedVacationDays = durationSinceLastVacationYears * settings.vacationLessThan5YearsDays;
+    }
+  } else {
+    if (endYear <= 5) {
+      earnedVacationDays = durationSinceLastVacationYears * settings.vacationLessThan5YearsDays;
+    } else if (startYear >= 5) {
+      earnedVacationDays = durationSinceLastVacationYears * settings.vacationMoreThan5YearsDays;
+    } else {
+      // Period crosses the 5-year mark
+      const periodUnder5 = 5 - startYear;
+      const periodOver5 = endYear - 5;
+      earnedVacationDays = (periodUnder5 * settings.vacationLessThan5YearsDays) + (periodOver5 * settings.vacationMoreThan5YearsDays);
+    }
+  }
+  
+  // For backwards compatibility or displaying a single entitlement rate, we can pick the current rate
+  const vacationDaysEntitlement = endYear < 5 
     ? settings.vacationLessThan5YearsDays 
     : settings.vacationMoreThan5YearsDays;
   
-  const earnedVacationDays = durationSinceLastVacationYears * vacationDaysEntitlement;
-  
   // Salary basis for vacation
   const vacationSalary = settings.vacationSalaryBasis === 'basic' 
-    ? employee.basicSalary 
+    ? basicSalary 
     : totalSalary;
     
   const vacationAllowance = (vacationSalary / settings.vacationDivisor) * earnedVacationDays;
   
   // Ticket allowance:
-  const ticketPrice = employee.ticketPrice || 0;
+  const ticketPrice = ticketPriceValue;
   const branch = (employee.branch || '').trim();
   const isAdministrative = branch === 'الادارة' || branch === 'الإدارة';
 
@@ -85,7 +112,7 @@ export function calculateEmployeeAllowances(employee: Employee): CalculatedEmplo
   
   // Salary basis for EOS
   const eosSalary = settings.eosSalaryBasis === 'basic'
-    ? employee.basicSalary
+    ? basicSalary
     : totalSalary;
 
   const endOfServiceAllowance = calculateEndOfService(
@@ -96,7 +123,7 @@ export function calculateEmployeeAllowances(employee: Employee): CalculatedEmplo
     settings.eosSecondPeriodCoefficient
   );
   
-  const dueEndOfService = endOfServiceAllowance - employee.paidEndOfService;
+  const dueEndOfService = endOfServiceAllowance - paidEndOfServiceValue;
 
   return {
     ...employee,
@@ -186,6 +213,49 @@ export function calculateIndemnityByReason(baseIndemnity: number, years: number,
 
 export function triggerSafePrint(): void {
   if (typeof window !== 'undefined') {
+    const printContainers = document.querySelectorAll('.print-single-page');
+    let scale = 1;
+    
+    printContainers.forEach(container => {
+      const scrollHeight = container.scrollHeight;
+      const A4_HEIGHT = 1050; // Safe height in pixels for A4 without margins
+      
+      if (scrollHeight > A4_HEIGHT) {
+        const currentScale = A4_HEIGHT / scrollHeight;
+        if (currentScale < scale) {
+          scale = currentScale;
+        }
+      }
+    });
+
+    const styleId = 'print-scale-fix';
+    let styleEl = document.getElementById(styleId);
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+    
+    // Use zoom to correctly scale layout for printing, plus enforce margin 0 to hide headers/footers
+    styleEl.innerHTML = `
+      @media print {
+        @page {
+          size: A4 portrait;
+          margin: 0 !important;
+        }
+        body {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        .print-single-page {
+          ${scale < 1 ? `zoom: ${scale} !important;` : ''}
+          page-break-inside: avoid !important;
+          max-height: 297mm !important;
+          overflow: hidden !important;
+        }
+      }
+    `;
+
     window.requestAnimationFrame(() => {
       setTimeout(() => {
         window.print();

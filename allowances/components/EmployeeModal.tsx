@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 import { Employee } from '../types';
 import { formatNumber } from '../utils';
 
@@ -17,48 +17,49 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
     jobTitle: '',
     name: '',
     branch: branches[0] || 'الادارة',
-    hireDate: '',
-    lastVacationReturnDate: '',
+    hireDate: new Date().toISOString().split('T')[0],
+    lastVacationReturnDate: new Date().toISOString().split('T')[0],
     calculationDate: new Date().toISOString().split('T')[0],
-    basicSalary: 0,
-    housingAllowance: 0,
-    transferAllowance: 0,
-    phoneAllowance: 0,
-    foodAllowance: 0,
-    fixedAllowances: 0,
-    ticketPrice: 0,
-    paidEndOfService: 0,
-    socialSecurity: 0,
+    basicSalary: '' as unknown as number,
+    housingAllowance: '' as unknown as number,
+    transferAllowance: '' as unknown as number,
+    phoneAllowance: '' as unknown as number,
+    foodAllowance: '' as unknown as number,
+    fixedAllowances: '' as unknown as number,
+    ticketPrice: '' as unknown as number,
+    paidEndOfService: '' as unknown as number,
+    socialSecurity: '' as unknown as number,
     includeSocialSecurity: true,
-    loans: 0,
-    absence: 0,
-    withdrawals: 0,
+    loans: '' as unknown as number,
+    absence: '' as unknown as number,
+    withdrawals: '' as unknown as number,
     notes: ''
   });
 
   useEffect(() => {
+    const getVal = (val: any) => (val === undefined || val === null || val === '' ? '' : val);
     if (employeeToEdit) {
       setFormData({
-        code: employeeToEdit.code || String(employeeToEdit.sequenceNumber || ''),
-        jobTitle: employeeToEdit.jobTitle || employeeToEdit.branch || '',
+        code: employeeToEdit.code || '',
+        jobTitle: employeeToEdit.jobTitle || '',
         name: employeeToEdit.name,
-        branch: employeeToEdit.branch,
+        branch: employeeToEdit.branch || '',
         hireDate: employeeToEdit.hireDate,
         lastVacationReturnDate: employeeToEdit.lastVacationReturnDate,
         calculationDate: employeeToEdit.calculationDate,
-        basicSalary: employeeToEdit.basicSalary,
-        housingAllowance: employeeToEdit.housingAllowance || 0,
-        transferAllowance: employeeToEdit.transferAllowance || 0,
-        phoneAllowance: employeeToEdit.phoneAllowance || 0,
-        foodAllowance: employeeToEdit.foodAllowance || 0,
-        fixedAllowances: employeeToEdit.fixedAllowances,
-        ticketPrice: employeeToEdit.ticketPrice,
-        paidEndOfService: employeeToEdit.paidEndOfService,
-        socialSecurity: employeeToEdit.socialSecurity || 0,
+        basicSalary: getVal(employeeToEdit.basicSalary) as unknown as number,
+        housingAllowance: getVal(employeeToEdit.housingAllowance) as unknown as number,
+        transferAllowance: getVal(employeeToEdit.transferAllowance) as unknown as number,
+        phoneAllowance: getVal(employeeToEdit.phoneAllowance) as unknown as number,
+        foodAllowance: getVal(employeeToEdit.foodAllowance) as unknown as number,
+        fixedAllowances: getVal(employeeToEdit.fixedAllowances) as unknown as number,
+        ticketPrice: getVal(employeeToEdit.ticketPrice) as unknown as number,
+        paidEndOfService: getVal(employeeToEdit.paidEndOfService) as unknown as number,
+        socialSecurity: getVal(employeeToEdit.socialSecurity) as unknown as number,
         includeSocialSecurity: employeeToEdit.includeSocialSecurity !== false,
-        loans: employeeToEdit.loans || 0,
-        absence: employeeToEdit.absence || 0,
-        withdrawals: employeeToEdit.withdrawals || 0,
+        loans: getVal(employeeToEdit.loans) as unknown as number,
+        absence: getVal(employeeToEdit.absence) as unknown as number,
+        withdrawals: getVal(employeeToEdit.withdrawals) as unknown as number,
         notes: employeeToEdit.notes || ''
       });
     } else {
@@ -67,22 +68,22 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
         jobTitle: '',
         name: '',
         branch: branches[0] || 'الادارة',
-        hireDate: '',
-        lastVacationReturnDate: '',
+        hireDate: new Date().toISOString().split('T')[0],
+        lastVacationReturnDate: new Date().toISOString().split('T')[0],
         calculationDate: new Date().toISOString().split('T')[0],
-        basicSalary: 0,
-        housingAllowance: 0,
-        transferAllowance: 0,
-        phoneAllowance: 0,
-        foodAllowance: 0,
-        fixedAllowances: 0,
-        ticketPrice: 0,
-        paidEndOfService: 0,
-        socialSecurity: 0,
+        basicSalary: '' as unknown as number,
+        housingAllowance: '' as unknown as number,
+        transferAllowance: '' as unknown as number,
+        phoneAllowance: '' as unknown as number,
+        foodAllowance: '' as unknown as number,
+        fixedAllowances: '' as unknown as number,
+        ticketPrice: '' as unknown as number,
+        paidEndOfService: '' as unknown as number,
+        socialSecurity: '' as unknown as number,
         includeSocialSecurity: true,
-        loans: 0,
-        absence: 0,
-        withdrawals: 0,
+        loans: '' as unknown as number,
+        absence: '' as unknown as number,
+        withdrawals: '' as unknown as number,
         notes: ''
       });
     }
@@ -96,7 +97,7 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
     setFormData(prev => {
       const updated = {
         ...prev,
-        [name]: type === 'number' ? Number(value) : value
+        [name]: type === 'number' ? (value === '' ? '' : Number(value)) : value
       };
 
       const computedFixedAllowances = Number(updated.housingAllowance || 0) + Number(updated.transferAllowance || 0) + Number(updated.phoneAllowance || 0) + Number(updated.foodAllowance || 0);
@@ -152,45 +153,90 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
             
             <div className="space-y-1.5">
               <label className="block text-sm font-bold text-slate-700">تاريخ التعيين</label>
-              <input 
-                required 
-                lang="en-GB"
-                type={formData.hireDate ? "date" : "text"} 
-                onFocus={(e) => (e.target.type = "date")}
-                onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
-                name="hireDate" 
-                value={formData.hireDate} 
-                onChange={handleChange} 
-                className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono" 
-              />
+              <div className="relative">
+                <input 
+                  required 
+                  lang="en-GB"
+                  dir="ltr"
+                  type="date"
+                  name="hireDate" 
+                  value={formData.hireDate} 
+                  onChange={handleChange} 
+                  onClick={(e) => {
+                    try { if (e.currentTarget.showPicker) e.currentTarget.showPicker(); } catch (err) {}
+                  }}
+                  className="relative w-full border border-slate-300 rounded-lg p-2.5 pl-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-left custom-date-picker" 
+                />
+                <button 
+                  type="button"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                    try { if (input && input.showPicker) input.showPicker(); } catch (err) {}
+                  }}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 focus:outline-none z-10"
+                >
+                  <Calendar className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             <div className="space-y-1.5">
               <label className="block text-sm font-bold text-slate-700">تاريخ العودة من اخر إجازة</label>
-              <input 
-                required 
-                lang="en-GB"
-                type={formData.lastVacationReturnDate ? "date" : "text"} 
-                onFocus={(e) => (e.target.type = "date")}
-                onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
-                name="lastVacationReturnDate" 
-                value={formData.lastVacationReturnDate} 
-                onChange={handleChange} 
-                className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono" 
-              />
+              <div className="relative">
+                <input 
+                  required 
+                  lang="en-GB"
+                  dir="ltr"
+                  type="date"
+                  name="lastVacationReturnDate" 
+                  value={formData.lastVacationReturnDate} 
+                  onChange={handleChange} 
+                  onClick={(e) => {
+                    try { if (e.currentTarget.showPicker) e.currentTarget.showPicker(); } catch (err) {}
+                  }}
+                  className="relative w-full border border-slate-300 rounded-lg p-2.5 pl-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-left custom-date-picker" 
+                />
+                <button 
+                  type="button"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                    try { if (input && input.showPicker) input.showPicker(); } catch (err) {}
+                  }}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 focus:outline-none z-10"
+                >
+                  <Calendar className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             <div className="space-y-1.5">
               <label className="block text-sm font-bold text-slate-700">تاريخ الاحتساب</label>
-              <input 
-                required 
-                lang="en-GB"
-                type={formData.calculationDate ? "date" : "text"} 
-                onFocus={(e) => (e.target.type = "date")}
-                onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
-                name="calculationDate" 
-                value={formData.calculationDate} 
-                onChange={handleChange} 
-                className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono" 
-              />
+              <div className="relative">
+                <input 
+                  required 
+                  lang="en-GB"
+                  dir="ltr"
+                  type="date"
+                  name="calculationDate" 
+                  value={formData.calculationDate} 
+                  onChange={handleChange} 
+                  onClick={(e) => {
+                    try { if (e.currentTarget.showPicker) e.currentTarget.showPicker(); } catch (err) {}
+                  }}
+                  className="relative w-full border border-slate-300 rounded-lg p-2.5 pl-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-left custom-date-picker" 
+                />
+                <button 
+                  type="button"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                    try { if (input && input.showPicker) input.showPicker(); } catch (err) {}
+                  }}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 focus:outline-none z-10"
+                >
+                  <Calendar className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <div className="space-y-1.5">

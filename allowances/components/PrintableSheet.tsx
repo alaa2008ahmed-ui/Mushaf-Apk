@@ -114,8 +114,8 @@ export default function PrintableSheet({ children }: Props) {
           style={{
             transform: isMobile ? `scale(${finalScale})` : 'none',
             transformOrigin: 'top center',
-            width: '820px',
-            maxWidth: 'none',
+            width: '100%',
+            maxWidth: '1200px',
             marginRight: 'auto',
             marginLeft: 'auto',
             marginBottom: isMobile ? `${-(1 - finalScale) * docHeight}px` : '0px'

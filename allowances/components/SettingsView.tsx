@@ -189,6 +189,18 @@ export default function SettingsView({ employees }: Props) {
                       </div>
 
                       <div>
+                        <label className="block text-[10px] font-bold text-slate-600 mb-0.5">طريقة حساب استحقاق الإجازة (عند إكمال 5 سنوات):</label>
+                        <select
+                          value={formulaSettings.vacationCalculationMethod}
+                          onChange={(e) => setFormulaSettings(prev => ({ ...prev, vacationCalculationMethod: e.target.value as 'split' | 'complete' }))}
+                          className="w-full px-2 py-1 text-xs rounded border border-slate-300 bg-white font-bold text-slate-800 focus:ring-1 focus:ring-indigo-500"
+                        >
+                          <option value="split">الفصل بين المدد (يحسب جزء أقل من 5 سنوات والجزء الأكبر بشكل منفصل)</option>
+                          <option value="complete">احتساب كامل المدة على الأساس الجديد (بمجرد إكمال 5 سنوات)</option>
+                        </select>
+                      </div>
+
+                      <div>
                         <label className="block text-[10px] font-bold text-slate-600 mb-0.5">أيام الاستحقاق السنوية (أقل من 5 سنوات):</label>
                         <input
                           type="number"

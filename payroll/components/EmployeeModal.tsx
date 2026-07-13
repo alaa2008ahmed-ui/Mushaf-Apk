@@ -33,21 +33,23 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     branch: branches.length > 1 ? branches[1] : 'الادارة',
     hireDate: new Date().toISOString().split('T')[0],
     iban: '',
-    nationality: 'سعودي',
-    hasInsurance: true,
-    basicSalary: 3000,
-    overtime: 0,
-    communicationAllowance: 0,
-    housingAllowance: 500,
-    foodAllowance: 200,
-    transportationAllowance: 0,
-    commission: 0,
-    bonus: 0,
-    insuranceDeduction: 300,
-    generalDeduction: 0,
-    loan: 0,
-    absenceDeduction: 0,
-    endOfServicePaid: 0,
+    nationality: '',
+    hasInsurance: false,
+    isActive: true,
+    basicSalary: '' as unknown as number,
+    overtimeHours: '' as unknown as number,
+    overtime: '' as unknown as number,
+    communicationAllowance: '' as unknown as number,
+    housingAllowance: '' as unknown as number,
+    foodAllowance: '' as unknown as number,
+    transportationAllowance: '' as unknown as number,
+    commission: '' as unknown as number,
+    bonus: '' as unknown as number,
+    insuranceDeduction: '' as unknown as number,
+    generalDeduction: '' as unknown as number,
+    loan: '' as unknown as number,
+    absenceDeduction: '' as unknown as number,
+    endOfServicePaid: '' as unknown as number,
     paymentStage: '1'
   });
 
@@ -68,8 +70,8 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
           nameEn: employeeToEdit.nameEn || '',
           nationalId: employeeToEdit.nationalId || '',
           iban: employeeToEdit.iban || '',
-          nationality: employeeToEdit.nationality || 'سعودي',
-          hasInsurance: employeeToEdit.hasInsurance !== false,
+          nationality: employeeToEdit.nationality !== undefined ? employeeToEdit.nationality : '',
+          hasInsurance: !!employeeToEdit.hasInsurance,
           isActive: employeeToEdit.isActive !== false,
         };
       });
@@ -82,7 +84,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
         nationalId: '',
         jobTitle: '',
         branch: '',
-        hireDate: '',
+        hireDate: new Date().toISOString().split('T')[0],
         iban: '',
         nationality: '',
         hasInsurance: false,
@@ -392,12 +394,30 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
 
               <div className="sm:col-span-3">
                 <label className="block text-xs font-semibold text-slate-700 mb-1">تاريخ التعيين</label>
-                <input
-                  type="date"
-                  value={formData.hireDate || ''}
-                  onChange={(e) => handleChange('hireDate', e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-all font-mono"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    lang="en-GB"
+                    dir="ltr"
+                    value={formData.hireDate || ''}
+                    onChange={(e) => handleChange('hireDate', e.target.value)}
+                    onClick={(e) => {
+                      try { if (e.currentTarget.showPicker) e.currentTarget.showPicker(); } catch (err) {}
+                    }}
+                    className="relative w-full bg-slate-50 border border-slate-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-all font-mono text-left custom-date-picker"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={(e) => {
+                      const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                      try { if (input && input.showPicker) input.showPicker(); } catch (err) {}
+                    }}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 focus:outline-none z-10"
+                  >
+                    <Calendar className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               <div className="sm:col-span-3">
