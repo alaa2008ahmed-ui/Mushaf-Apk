@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { doc, getDocFromServer, initializeFirestore, setLogLevel } from 'firebase/firestore';
+import { doc, getDocFromServer, initializeFirestore, setLogLevel, memoryLocalCache } from 'firebase/firestore';
 import { getAnalytics } from "firebase/analytics";
 import firebaseConfig from './firebase-config.json';
 
@@ -28,10 +28,10 @@ let dbInstance;
 if (typeof window !== 'undefined' && (window as any)[GLOBAL_FIRESTORE_KEY]) {
   dbInstance = (window as any)[GLOBAL_FIRESTORE_KEY];
 } else {
-  // Use standard getFirestore for stability. 
-  // experimentalForceLongPolling is known to cause ID: ca9 assertion failures in 12.x
+  // Use memoryLocalCache to prevent IndexedDB assertion errors (such as Unexpected state ID: ca9) in sandboxed iframes.
+  // DualStorageService already manages full local persistence via localStorage.
   dbInstance = initializeFirestore(app, {
-    // Standard configuration for web environment
+    localCache: memoryLocalCache(),
   }, dbId === "(default)" ? undefined : dbId);
   
   if (typeof window !== 'undefined') {

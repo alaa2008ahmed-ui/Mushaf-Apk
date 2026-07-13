@@ -1,8 +1,8 @@
 
 export const printOrDownloadPdf = async (canvas: HTMLCanvasElement, filename: string, orientation: 'p' | 'l' = 'p') => {
     try {
-        const imgData = canvas.toDataURL('image/png');
-        const { jsPDF } = (window as any).jspdf;
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const { jsPDF } = (window as any).jspdf || (window as any).jsPDF;
         const pdf = new jsPDF(orientation, 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -15,7 +15,8 @@ export const printOrDownloadPdf = async (canvas: HTMLCanvasElement, filename: st
             width = height * ratio; 
         }
         const xOffset = (pdfWidth - width) / 2;
-        pdf.addImage(imgData, 'PNG', xOffset, 0, width, height);
+        const yOffset = (pdfHeight - height) / 2;
+        pdf.addImage(imgData, 'JPEG', xOffset, yOffset, width, height, undefined, 'FAST');
 
         const blob = pdf.output('blob');
         const url = URL.createObjectURL(blob);
@@ -65,9 +66,19 @@ export const captureAndExport = (printableAreaId: string, exportFn: (canvas: HTM
     clone.style.position = 'absolute';
     clone.style.top = '0';
     clone.style.left = '-9999px';
-    clone.style.width = `${Math.max(originalElement.offsetWidth, originalElement.scrollWidth)}px`;
-    clone.style.height = `${Math.max(originalElement.offsetHeight, originalElement.scrollHeight)}px`;
     clone.style.overflow = 'visible';
+    
+    // Determine perfect dimensions
+    const isTable = originalElement.querySelector('table');
+    if (isTable) {
+        // For tables, use the exact unclipped scrollWidth of the table inside
+        const table = originalElement.querySelector('table') as HTMLElement;
+        clone.style.width = `${table?.scrollWidth || originalElement.scrollWidth || 1200}px`;
+        clone.style.height = 'auto';
+    } else {
+        clone.style.width = 'max-content';
+        clone.style.height = 'auto';
+    }
     
     // Ensure all styles are captured accurately
     const elementsToHide = clone.querySelectorAll('.no-print');
@@ -77,8 +88,8 @@ export const captureAndExport = (printableAreaId: string, exportFn: (canvas: HTM
     
     document.body.appendChild(clone);
     
-    // Ensure the clone itself and its nested overflow containers don't clip content
-    const elementsWithOverflow = [clone, ...Array.from(clone.querySelectorAll('.overflow-x-auto, .overflow-y-auto, .overflow-auto'))];
+    // Ensure the nested overflow containers don't clip content
+    const elementsWithOverflow = Array.from(clone.querySelectorAll('.overflow-x-auto, .overflow-y-auto, .overflow-auto'));
     elementsWithOverflow.forEach(el => {
         (el as HTMLElement).style.overflow = 'visible';
         (el as HTMLElement).style.width = 'auto';
@@ -97,7 +108,7 @@ export const captureAndExport = (printableAreaId: string, exportFn: (canvas: HTM
     
     // Lower scale on mobile to avoid memory issues
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const scale = isMobile ? 1.2 : 2;
+    const scale = isMobile ? 2 : 4;
 
     const html2canvas = (window as any).html2canvas;
     if (!html2canvas) {

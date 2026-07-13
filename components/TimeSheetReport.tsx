@@ -1531,9 +1531,9 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                     <button
                         onClick={() => setShowPostConfirm(true)}
                         disabled={!isEditableMonth}
-                        className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-lg shadow-sm transition-all disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-lg shadow-sm transition-all text-sm h-10 disabled:bg-gray-300 disabled:cursor-not-allowed"
                     >
-                        <span>Post Current Month Overtime</span>
+                        <span>Post Current</span>
                     </button>
                 </div>
             )}

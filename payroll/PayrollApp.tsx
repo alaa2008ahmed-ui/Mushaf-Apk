@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Employee, ViewMode, Signatures, ArchivedMonth } from "./types";
 import { initialEmployees } from "./data/initialEmployees";
+import { initialArchives } from "./data/initialArchives";
 import {
   calculateGrandTotals,
   calculateEmployeeTotals,
@@ -271,12 +272,32 @@ export default function PayrollApp({
 
   const [archives, setArchives] = useState<any[]>(() => {
     const saved = getSafeSavedArchives();
-    return saved ? JSON.parse(saved) : [];
+    const parsed = saved ? JSON.parse(saved) : [];
+    
+    // Seed with initialArchives if missing
+    const initial = initialArchives || [];
+    const merged = [...parsed];
+    initial.forEach(arc => {
+      if (!merged.find(m => m.monthIso === arc.monthIso)) {
+        merged.push(arc);
+      }
+    });
+
+    // Remove Jan-May 2026 as per user request
+    const toRemove = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05'];
+    const filtered = merged.filter(arc => !toRemove.includes(arc.monthIso));
+
+    return filtered;
   });
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const saved = getSafeSavedArchives();
-    const localArchives = saved ? JSON.parse(saved) : [];
+    let localArchives = saved ? JSON.parse(saved) : [];
+    
+    // Filter out Jan-May 2026 for latest calculation
+    const toRemove = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05'];
+    localArchives = localArchives.filter((arc: any) => !toRemove.includes(arc.monthIso));
+    
     const latest = getLatestArchivedMonth(localArchives);
     const isUsernameAlaa = currentUser?.username?.toLowerCase() === "alaa";
     
@@ -564,14 +585,18 @@ export default function PayrollApp({
         // Sync Archives
         const arcRecord = records.find((r: any) => r.id === "payroll_archives_data");
         if (arcRecord && arcRecord.data && Array.isArray(arcRecord.data)) {
+          // Filter out Jan-May 2026
+          const toRemove = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05'];
+          const filteredData = arcRecord.data.filter((arc: any) => !toRemove.includes(arc.monthIso));
+
           setArchives(prev => {
             const currentStr = JSON.stringify(prev);
-            const newStr = JSON.stringify(arcRecord.data);
+            const newStr = JSON.stringify(filteredData);
             if (currentStr !== newStr) {
               lastSavedArchivesRef.current = newStr;
               localStorage.setItem("payroll_archives", newStr);
               localStorage.setItem("payroll_archives_2026", newStr);
-              return arcRecord.data;
+              return filteredData;
             }
             return prev;
           });
@@ -613,11 +638,16 @@ export default function PayrollApp({
         try {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed)) {
+            // Filter out Jan-May 2026
+            const toRemove = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05'];
+            const filteredData = parsed.filter((arc: any) => !toRemove.includes(arc.monthIso));
+
             setArchives(prev => {
               const currentStr = JSON.stringify(prev);
-              if (JSON.stringify(parsed) !== currentStr) {
-                lastSavedArchivesRef.current = saved;
-                return parsed;
+              const filteredStr = JSON.stringify(filteredData);
+              if (filteredStr !== currentStr) {
+                lastSavedArchivesRef.current = filteredStr;
+                return filteredData;
               }
               return prev;
             });
@@ -674,7 +704,8 @@ export default function PayrollApp({
   // Filter employees based on search & branch
   const filteredEmployees = useMemo(() => {
     const list = displayedEmployees.filter((emp) => {
-      if (!activeShowInactive && emp.isActive === false) return false;
+      // For archived months, do not filter out inactive or unregistered employees - show everyone completely
+      if (!isCurrentMonthArchived && !activeShowInactive && emp.isActive === false) return false;
       const matchBranch =
         selectedBranch === "الكل" || emp.branch === selectedBranch;
       const matchSearch =
@@ -926,6 +957,7 @@ export default function PayrollApp({
           const res = updateEmps(prev);
           return res.changed ? res.emps : prev;
         });
+
         setArchives((prev) => {
           let arcsChanged = false;
           const newArcs = prev.map((arc) => {
@@ -1224,11 +1256,7 @@ export default function PayrollApp({
     const newArchive: ArchivedMonth = {
       id: Date.now().toString(),
       monthName: monthName,
-      archivedAt: new Date().toLocaleDateString("ar-EG", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
+      archivedAt: new Date().toISOString().split("T")[0],
       sheetTitle: sheetTitle,
       employees: JSON.parse(JSON.stringify(activeEmployeesToArchive)),
       totals: currentTotals,
@@ -1547,7 +1575,7 @@ export default function PayrollApp({
   };
 
   const handleBulkPrint = () => {
-    const selected = employees.filter((emp) =>
+    const selected = displayedEmployees.filter((emp) =>
       selectedEmployeeIds.includes(emp.id),
     );
     if (selected.length === 0) return;

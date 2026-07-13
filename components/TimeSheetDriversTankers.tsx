@@ -3,7 +3,7 @@ import { TimeSheetEmployee } from '../types';
 import { dualStorage, COLLECTIONS } from '../DualStorageService';
 import { onSnapshot, query, collection, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Printer, Calendar, ChevronLeft, ChevronRight, FileSpreadsheet, Edit2, Trash2 } from 'lucide-react';
+import { Printer, Calendar, ChevronLeft, ChevronRight, FileSpreadsheet, Edit2, Trash2, Truck } from 'lucide-react';
 import { captureAndExport, printOrDownloadPdf } from '../captureUtils';
 
 interface Props {
@@ -182,7 +182,38 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
     };
 
     const handlePrint = () => {
-        window.print();
+        const filename = `Drivers_Tankers_Timesheet_${monthKey}`;
+        captureAndExport("printable-drivers-tankers", (canvas) => {
+            printOrDownloadPdf(canvas, filename, 'l');
+        });
+    };
+
+    const handleExportPdf = () => {
+        const filename = `Drivers_Tankers_Timesheet_${monthKey}`;
+        captureAndExport("printable-drivers-tankers", (canvas) => {
+            try {
+                const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                const { jsPDF } = (window as any).jspdf || (window as any).jsPDF;
+                const pdf = new jsPDF('l', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const ratio = canvas.width / canvas.height;
+                let width = pdfWidth;
+                let height = width / ratio;
+                
+                if (height > pdfHeight) { 
+                    height = pdfHeight; 
+                    width = height * ratio; 
+                }
+                const xOffset = (pdfWidth - width) / 2;
+                const yOffset = (pdfHeight - height) / 2;
+                pdf.addImage(imgData, 'JPEG', xOffset, yOffset, width, height, undefined, 'FAST');
+                pdf.save(`${filename}.pdf`);
+            } catch (err) {
+                console.error("PDF generation failed:", err);
+                alert("Failed to export PDF.");
+            }
+        });
     };
 
     const [isPosting, setIsPosting] = useState(false);
@@ -292,10 +323,231 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
         }
     };
 
-    const handleExportExcel = () => {
-        // Excel export requires proper library which isn't available here, 
-        // fallback to printing or let user copy
-        alert('Please use the copy functionality (or print) for this table.');
+    const handleExportExcel = async () => {
+        const ExcelJS = (window as any).ExcelJS;
+        if (!ExcelJS) {
+            console.error("ExcelJS library is not loaded.");
+            alert("ExcelJS library is not loaded. Please wait a moment and try again.");
+            return;
+        }
+
+        const daysArray31 = Array.from({ length: 31 }, (_, i) => i + 1);
+
+        const workbook = new ExcelJS.Workbook();
+        const headerTitleFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFB4C6E7' } };
+        const fontBold = { bold: true };
+        const borderStyle = { 
+            top: { style: 'thin' }, left: { style: 'thin' }, 
+            bottom: { style: 'thin' }, right: { style: 'thin' } 
+        };
+
+        const sheet = workbook.addWorksheet(`Drivers ${monthKey}`, { views: [{ rightToLeft: false }] });
+        sheet.getCell(`A2`).value = `Drivers (Tankers) - ${currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+        sheet.getCell(`A2`).font = { bold: true, size: 12, color: { argb: 'FF1F3A60' } };
+        
+        let currentRow = 4;
+        const blueFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF00B0F0' } };
+        const yellowFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDE047' } };
+        const whiteFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+        
+        // 1. Write NAME column with diagonal border (A4:A5)
+        const cell4Name = sheet.getCell(4, 1);
+        cell4Name.value = 'NAME';
+        cell4Name.fill = whiteFill;
+        cell4Name.font = { bold: true, size: 11, color: { argb: 'FF000000' } };
+        cell4Name.alignment = { horizontal: 'center', vertical: 'middle', textRotation: 45 };
+        const diagonalBorder = {
+            top: { style: 'thin' }, left: { style: 'thin' }, 
+            bottom: { style: 'thin' }, right: { style: 'thin' },
+            diagonal: { up: true, down: false, style: 'thin', color: { argb: 'FF000000' } }
+        };
+        cell4Name.border = diagonalBorder as any;
+
+        const cell5Name = sheet.getCell(5, 1);
+        cell5Name.fill = whiteFill;
+        cell5Name.border = diagonalBorder as any;
+        
+        sheet.mergeCells(4, 1, 5, 1);
+
+        // 2. Write standard columns headers (B4:B5 to F4:F5) - CAPACITY (M3), TOTAL TRIPS, TRIPS ON DUTY, TRIPS O.T., OVERTIME
+        const colHeaders = ['CAPACITY (M3)', 'TOTAL TRIPS', 'TRIPS ON DUTY', 'TRIPS O.T.', 'OVERTIME'];
+        colHeaders.forEach((val, idx) => {
+            const colIdx = idx + 2; // Start from Column B
+            // Write to row 4
+            const cell4 = sheet.getCell(4, colIdx);
+            cell4.value = val;
+            cell4.fill = whiteFill;
+            cell4.font = { bold: true, size: 10, color: { argb: val === 'OVERTIME' ? 'FFFF0000' : 'FF000000' } };
+            cell4.border = borderStyle as any;
+            cell4.alignment = { horizontal: 'center', vertical: 'middle', textRotation: 90 };
+            
+            // Write to row 5
+            const cell5 = sheet.getCell(5, colIdx);
+            cell5.fill = whiteFill;
+            cell5.border = borderStyle as any;
+            
+            // Merge row 4 & 5 for this column
+            sheet.mergeCells(4, colIdx, 5, colIdx);
+        });
+        
+        // Days Row 4 (Day Names)
+        daysArray31.forEach(day => {
+            const dName = getDayName(day);
+            const isRed = dName === 'FRIDAY' || dName === 'SATURDAY';
+            const colIdx = 6 + day;
+            
+            const cell4 = sheet.getCell(4, colIdx);
+            cell4.value = dName;
+            cell4.fill = blueFill;
+            cell4.font = { bold: true, size: 9, color: { argb: isRed ? 'FFFF0000' : 'FF000000' } };
+            cell4.border = borderStyle as any;
+            cell4.alignment = { horizontal: 'center', vertical: 'middle', textRotation: 90 };
+        });
+        sheet.getRow(4).height = 90;
+        
+        // Days Row 5 (Day Numbers)
+        daysArray31.forEach(day => {
+            const colIdx = 6 + day;
+            const cell5 = sheet.getCell(5, colIdx);
+            cell5.value = day <= daysInMonth ? day : '';
+            cell5.fill = yellowFill;
+            cell5.font = { bold: true, size: 10, color: { argb: 'FF000000' } };
+            cell5.border = borderStyle as any;
+            cell5.alignment = { horizontal: 'center', vertical: 'middle' };
+        });
+        sheet.getRow(5).height = 22;
+        
+        currentRow = 6;
+        
+        activeEmployees.forEach((emp) => {
+            const eData = (gridData?.employeesData?.[emp.id] || { capacity: '', totalTrips: '', tripsOnDuty: '', tripsOT: '', overtime: '', days: {} }) as any;
+            const isDriver = (emp.jobTitle || '').includes('سائق شاحنه') || (emp.jobTitle || '').includes('سائق');
+            
+            if (isDriver) {
+                // Write Row 1
+                const row1Values: any[] = [
+                    emp.englishName || emp.name,
+                    eData.capacity,
+                    '',
+                    '',
+                    '',
+                    eData.overtime
+                ];
+                daysArray31.forEach(day => {
+                    row1Values.push(eData.days?.[`${day}_1`] || '');
+                });
+                
+                row1Values.forEach((val, cIdx) => {
+                    const cell = sheet.getCell(currentRow, cIdx + 1);
+                    cell.value = val;
+                    cell.border = borderStyle as any;
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.font = { size: 8 };
+                    if (cIdx === 0) {
+                        cell.font = { bold: true, size: 10 };
+                        cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                    }
+                });
+                sheet.getRow(currentRow).height = 14;
+                currentRow++;
+                
+                // Write Row 2
+                const row2Values: any[] = [
+                    '',
+                    '',
+                    eData.totalTrips,
+                    '',
+                    eData.tripsOT,
+                    ''
+                ];
+                daysArray31.forEach(day => {
+                    row2Values.push(eData.days?.[`${day}_2`] || '');
+                });
+                row2Values.forEach((val, cIdx) => {
+                    const cell = sheet.getCell(currentRow, cIdx + 1);
+                    cell.value = val;
+                    cell.border = borderStyle as any;
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.font = { size: 8 };
+                });
+                sheet.getRow(currentRow).height = 14;
+                currentRow++;
+                
+                // Write Row 3
+                const row3Values: any[] = [
+                    '',
+                    '',
+                    '',
+                    eData.tripsOnDuty,
+                    '',
+                    ''
+                ];
+                daysArray31.forEach(day => {
+                    row3Values.push(eData.days?.[`${day}_3`] || '');
+                });
+                row3Values.forEach((val, cIdx) => {
+                    const cell = sheet.getCell(currentRow, cIdx + 1);
+                    cell.value = val;
+                    cell.border = borderStyle as any;
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.font = { size: 8 };
+                });
+                sheet.getRow(currentRow).height = 14;
+                currentRow++;
+                
+                // Merge name cell across the 3 rows
+                sheet.mergeCells(currentRow - 3, 1, currentRow - 1, 1);
+            } else {
+                // Not a driver, write 1 row
+                const rowValues: any[] = [
+                    emp.englishName || emp.name,
+                    '',
+                    '',
+                    '',
+                    '',
+                    eData.overtime
+                ];
+                daysArray31.forEach(day => {
+                    rowValues.push(eData.days?.[`${day}_1`] || '');
+                });
+                rowValues.forEach((val, cIdx) => {
+                    const cell = sheet.getCell(currentRow, cIdx + 1);
+                    cell.value = val;
+                    cell.border = borderStyle as any;
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.font = { size: 8 };
+                    if (cIdx === 0) {
+                        cell.font = { bold: true, size: 10 };
+                        cell.alignment = { horizontal: 'left', vertical: 'middle' };
+                    }
+                });
+                sheet.getRow(currentRow).height = 14;
+                currentRow++;
+            }
+        });
+        
+        sheet.getColumn(1).width = 24;
+        sheet.getColumn(2).width = 4.5;
+        sheet.getColumn(3).width = 4.5;
+        sheet.getColumn(4).width = 4.5;
+        sheet.getColumn(5).width = 4.5;
+        sheet.getColumn(6).width = 4.5;
+        for(let i = 0; i < daysArray31.length; i++) {
+            sheet.getColumn(7 + i).width = 3.5;
+        }
+        
+        workbook.xlsx.writeBuffer().then((buffer: ArrayBuffer) => {
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const filename = `Drivers_Tankers_Timesheet_${monthKey}.xlsx`;
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        });
     };
 
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -321,14 +573,6 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
             <div className="flex flex-col sm:flex-row justify-between items-center mb-6 print:hidden gap-4 p-4 border-b">
                 <div className="flex items-center space-x-2 bg-gray-50 rounded-lg p-2 shadow-sm border border-gray-100 relative" ref={datePickerRef}>
                     <button
-                        onClick={handlePreviousMonth}
-                        className="p-1.5 hover:bg-gray-200 rounded text-gray-600 transition-colors"
-                        title={namesLanguage === 'ar' ? 'الشهر السابق' : 'Previous Month'}
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    
-                    <button
                         onClick={() => {
                             setPickerYear(currentDate.getFullYear());
                             setShowDatePicker(!showDatePicker);
@@ -338,14 +582,6 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                     >
                         <span>{displayMonthName}</span>
                         <Calendar className="w-5 h-5 text-indigo-500" />
-                    </button>
-
-                    <button
-                        onClick={handleNextMonth}
-                        className="p-1.5 hover:bg-gray-200 rounded text-gray-600 transition-colors"
-                        title={namesLanguage === 'ar' ? 'الشهر التالي' : 'Next Month'}
-                    >
-                        <ChevronRight className="w-5 h-5" />
                     </button>
 
                     {showDatePicker && (
@@ -383,19 +619,35 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                     )}
                 </div>
                 
-                <div className="flex space-x-3">
+                <div className="flex items-center space-x-2">
                     {!isArchived && (
-                        <button onClick={() => setShowPostConfirm(true)} className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 shadow-sm transition-all">
-                            <span>Transfer to Archive</span>
+                        <button 
+                            onClick={() => setShowPostConfirm(true)} 
+                            className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2 rounded-lg shadow-sm transition-all text-sm h-10 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                        >
+                            <span>Post Current</span>
                         </button>
                     )}
-                    <button onClick={handlePrint} className="flex items-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 shadow-sm transition-all">
+                    <button 
+                        onClick={handlePrint} 
+                        className="flex items-center justify-center bg-indigo-600 text-white p-2.5 rounded-md hover:bg-indigo-700 shadow-sm transition-all hover:scale-105 h-10 w-10"
+                        title="Print"
+                    >
                         <Printer size={18} />
-                        <span>Print PDF</span>
                     </button>
-                    <button onClick={handleExportExcel} className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 shadow-sm transition-all">
+                    <button 
+                        onClick={handleExportPdf} 
+                        className="flex items-center justify-center bg-red-600 text-white p-2.5 rounded-md hover:bg-red-700 shadow-sm transition-all hover:scale-105 h-10 w-10"
+                        title="Export PDF"
+                    >
+                        <Printer size={18} />
+                    </button>
+                    <button 
+                        onClick={handleExportExcel} 
+                        className="flex items-center justify-center bg-green-600 text-white p-2.5 rounded-md hover:bg-green-700 shadow-sm transition-all hover:scale-105 h-10 w-10"
+                        title="Export Excel"
+                    >
                         <FileSpreadsheet size={18} />
-                        <span>Export Excel</span>
                     </button>
                 </div>
             </div>
@@ -405,7 +657,8 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                 </div>
             ) : (
-                <div className="overflow-x-auto print:overflow-visible pb-12 w-full" ref={tableRef}>
+                <div id="printable-drivers-tankers" className="overflow-x-auto print:overflow-visible pb-12 w-full" ref={tableRef}>
+                    <div className="px-[0.5cm] w-full min-w-[1200px] bg-white">
                     <style>
                         {`
                         @media print {
@@ -418,53 +671,161 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                             thead { display: table-header-group; }
                             tfoot { display: table-row-group; }
                             .print-text-xs { font-size: 8px !important; }
+                            
+                            /* Ensure table headers are printed at custom larger font sizes */
+                            th.header-name-th div {
+                                font-size: 16px !important;
+                                font-weight: 900 !important;
+                            }
+                            th.header-col-th span {
+                                font-size: 11px !important;
+                                font-weight: 900 !important;
+                            }
+                            th.header-day-th span {
+                                font-size: 9px !important;
+                                font-weight: 900 !important;
+                            }
+                            th.header-num-th {
+                                font-size: 11px !important;
+                                font-weight: 900 !important;
+                                text-align: center !important;
+                                vertical-align: middle !important;
+                                line-height: 1 !important;
+                                padding: 0 !important;
+                                height: 24px !important;
+                            }
+                            th.header-num-th div {
+                                display: flex !important;
+                                align-items: center !important;
+                                justify-content: center !important;
+                                height: 100% !important;
+                                width: 100% !important;
+                                margin: 0 !important;
+                                padding: 0 !important;
+                            }
+                            td.print-name-td {
+                                font-size: 12.5px !important;
+                                font-weight: 900 !important;
+                                text-align: left !important;
+                                vertical-align: middle !important;
+                                line-height: 1.2 !important;
+                                padding: 4px 8px !important;
+                            }
+                            td.print-name-td div {
+                                display: flex !important;
+                                align-items: center !important;
+                                justify-content: flex-start !important;
+                                height: 100% !important;
+                                width: 100% !important;
+                            }
+                        }
+                        
+                        /* On-screen and fallback centering styles */
+                        th.header-num-th {
+                            font-size: 12px !important;
+                            font-weight: 900 !important;
+                            text-align: center !important;
+                            vertical-align: middle !important;
+                            line-height: 1 !important;
+                            padding: 0 !important;
+                            height: 24px !important;
+                        }
+                        th.header-num-th div {
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            height: 100% !important;
+                            width: 100% !important;
+                        }
+                        td.print-name-td {
+                            font-size: 12.5px !important;
+                            font-weight: 900 !important;
+                            text-align: left !important;
+                            vertical-align: middle !important;
+                            line-height: 1.2 !important;
+                            padding: 4px 8px !important;
+                        }
+                        td.print-name-td div {
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: flex-start !important;
+                            height: 100% !important;
+                            width: 100% !important;
                         }
                         `}
                     </style>
+                    <div className="print-only" style={{ height: '0.5cm', width: '100%' }}></div>
+                    {/* Print Header Banner */}
+                    <div className="print-only mb-4" style={{ width: '100%' }}>
+                        <div className="bg-[#2563eb] text-white rounded-lg p-4 flex items-center gap-4">
+                            <div className="border-2 border-white/40 bg-white/20 rounded-xl px-5 py-2 font-black text-2xl tracking-wider lowercase">
+                                swc
+                            </div>
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-2xl font-bold tracking-tight">Sweet Water Company LTD</span>
+                                    <Truck className="w-6 h-6" />
+                                </div>
+                                <span className="text-sm font-light text-blue-50">Employee Overtime</span>
+                            </div>
+                        </div>
+                    </div>
                     <table className="w-full border-collapse min-w-[1200px] border border-black table-fixed text-xs print-text-xs">
                         <thead>
                             <tr>
-                                <th className="border-b-2 border-r border-black p-0 relative bg-white w-40 h-[120px] align-middle" rowSpan={2}>
+                                <th className="border-b-2 border-r border-black p-0 relative bg-white w-40 h-[120px] align-middle header-name-th" rowSpan={2}>
                                     <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
                                         <line x1="0" y1="100%" x2="35%" y2="0" stroke="black" strokeWidth="1.5" />
                                         <line x1="35%" y1="0" x2="100%" y2="0" stroke="black" strokeWidth="1.5" />
                                     </svg>
-                                    <div className="absolute inset-0 flex items-center justify-center font-bold text-[15px] transform -rotate-45 pointer-events-none select-none">
-                                        {namesLanguage === 'ar' ? 'الاسم' : 'NAME'}
+                                    <div className="absolute inset-0 flex items-center justify-center font-black text-[18px] transform -rotate-45 pointer-events-none select-none">
+                                        NAME
                                     </div>
                                 </th>
-                                <th className="border border-black p-0 bg-white w-10 align-middle uppercase" rowSpan={2}>
-                                    <div className="flex items-center justify-center h-full w-full">
-                                        <div className="[writing-mode:vertical-rl] rotate-180 text-[12px] font-bold tracking-wider">CAPACITY (M3)</div>
+                                <th className="border border-black p-0 bg-white w-6 align-middle uppercase header-col-th" rowSpan={2}>
+                                    <div className="relative h-24 w-full flex items-center justify-center">
+                                        <span className="absolute transform -rotate-90 whitespace-nowrap text-[11.5px] font-black tracking-wider">
+                                            CAPACITY (M3)
+                                        </span>
                                     </div>
                                 </th>
-                                <th className="border border-black p-0 bg-white w-10 align-middle uppercase" rowSpan={2}>
-                                    <div className="flex items-center justify-center h-full w-full">
-                                        <div className="[writing-mode:vertical-rl] rotate-180 text-[12px] font-bold tracking-wider">TOTAL TRIPS</div>
+                                <th className="border border-black p-0 bg-white w-6 align-middle uppercase header-col-th" rowSpan={2}>
+                                    <div className="relative h-24 w-full flex items-center justify-center">
+                                        <span className="absolute transform -rotate-90 whitespace-nowrap text-[11.5px] font-black tracking-wider">
+                                            TOTAL TRIPS
+                                        </span>
                                     </div>
                                 </th>
-                                <th className="border border-black p-0 bg-white w-10 align-middle uppercase" rowSpan={2}>
-                                    <div className="flex items-center justify-center h-full w-full">
-                                        <div className="[writing-mode:vertical-rl] rotate-180 text-[12px] font-bold tracking-wider">TRIPS ON DUTY</div>
+                                <th className="border border-black p-0 bg-white w-6 align-middle uppercase header-col-th" rowSpan={2}>
+                                    <div className="relative h-24 w-full flex items-center justify-center">
+                                        <span className="absolute transform -rotate-90 whitespace-nowrap text-[11.5px] font-black tracking-wider">
+                                            TRIPS ON DUTY
+                                        </span>
                                     </div>
                                 </th>
-                                <th className="border border-black p-0 bg-white w-10 align-middle uppercase" rowSpan={2}>
-                                    <div className="flex items-center justify-center h-full w-full">
-                                        <div className="[writing-mode:vertical-rl] rotate-180 text-[12px] font-bold tracking-wider">TRIPS O.T.</div>
+                                <th className="border border-black p-0 bg-white w-6 align-middle uppercase header-col-th" rowSpan={2}>
+                                    <div className="relative h-24 w-full flex items-center justify-center">
+                                        <span className="absolute transform -rotate-90 whitespace-nowrap text-[11.5px] font-black tracking-wider">
+                                            TRIPS O.T.
+                                        </span>
                                     </div>
                                 </th>
-                                <th className="border border-black p-0 bg-white text-red-600 w-10 align-middle uppercase" rowSpan={2}>
-                                    <div className="flex items-center justify-center h-full w-full">
-                                        <div className="[writing-mode:vertical-rl] rotate-180 text-[12px] font-bold tracking-wider">OVERTIME</div>
+                                <th className="border border-black p-0 bg-white text-red-600 w-6 align-middle uppercase header-col-th" rowSpan={2}>
+                                    <div className="relative h-24 w-full flex items-center justify-center">
+                                        <span className="absolute transform -rotate-90 whitespace-nowrap text-[11.5px] font-black tracking-wider text-red-600">
+                                            OVERTIME
+                                        </span>
                                     </div>
                                 </th>
                                 {daysArray.map(day => {
                                     const dName = getDayName(day);
                                     const isRed = dName === 'FRIDAY' || dName === 'SATURDAY';
                                     return (
-                                        <th key={`h1-${day}`} className={`border border-black p-0 align-middle bg-[#00b0f0] w-6 ${isRed ? 'text-red-600' : 'text-black'}`}>
-                                            <div className="flex items-center justify-center h-full w-full py-2">
-                                                <div className="[writing-mode:vertical-rl] rotate-180 text-[12px] font-bold tracking-wider">{dName}</div>
+                                        <th key={`h1-${day}`} className={`border border-black p-0 align-middle bg-[#00b0f0] w-5 ${isRed ? 'text-red-600' : 'text-black'} header-day-th`}>
+                                            <div className="relative h-24 w-full flex items-center justify-center">
+                                                <span className={`absolute transform -rotate-90 whitespace-nowrap text-[9.5px] font-black tracking-wider ${isRed ? 'text-red-600' : 'text-black'}`}>
+                                                    {dName}
+                                                </span>
                                             </div>
                                         </th>
                                     );
@@ -472,8 +833,14 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                             </tr>
                             <tr>
                                 {daysArray.map(day => (
-                                    <th key={`h2-${day}`} className="border border-black p-1 text-center font-bold bg-yellow-300 text-[12px]">
-                                        {day <= daysInMonth ? day : ''}
+                                    <th 
+                                        key={`h2-${day}`} 
+                                        style={{ verticalAlign: 'middle', textAlign: 'center' }} 
+                                        className="border border-black p-0 text-center align-middle font-black bg-yellow-300 text-[12px] header-num-th"
+                                    >
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            {day <= daysInMonth ? day : ''}
+                                        </div>
                                     </th>
                                 ))}
                             </tr>
@@ -488,10 +855,16 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                 return (
                                     <React.Fragment key={emp.id}>
                                         <tr>
-                                            <td style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000' }} className="p-2 font-bold text-red-600 uppercase text-left align-middle bg-white" rowSpan={rowSpan}>
-                                                {emp.englishName || emp.name}
+                                            <td 
+                                                style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000', verticalAlign: 'middle', textAlign: 'left' }} 
+                                                className="p-1 font-black text-red-600 uppercase text-left align-middle bg-white text-[12.5px] print-name-td" 
+                                                rowSpan={rowSpan}
+                                            >
+                                                <div className="w-full h-full flex items-center justify-start">
+                                                    {emp.englishName || emp.name}
+                                                </div>
                                             </td>
-                                            <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-6 bg-white">
+                                            <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
                                                 {isDriver && (
                                                     <input
                                                         type="text"
@@ -501,23 +874,23 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                                         readOnly={isArchived}
                                                         value={eData.capacity}
                                                         onChange={(e) => handleDataChange(emp.id, 'capacity', e.target.value)}
-                                                        className="w-full h-full text-center outline-none bg-transparent text-[12px] font-bold"
+                                                        className="w-full h-full text-center outline-none bg-transparent text-[10px] font-bold"
                                                     />
                                                 )}
                                             </td>
-                                            <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-6 bg-white"></td>
-                                            <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-6 bg-white"></td>
-                                            <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-6 bg-white"></td>
-                                            <td style={{ borderBottom: borderBottom, borderRight: '1px solid #000' }} className="p-0 text-center relative font-bold text-red-600 h-6 bg-white">
+                                            <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white"></td>
+                                            <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white"></td>
+                                            <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white"></td>
+                                            <td style={{ borderBottom: borderBottom, borderRight: '1px solid #000' }} className="p-0 text-center relative font-bold text-red-600 h-5 bg-white">
                                                 <input
                                                     type="text"
                                                     value={eData.overtime}
                                                     readOnly
-                                                    className="w-full h-full text-center outline-none bg-transparent font-bold text-red-600 text-[12px]"
+                                                    className="w-full h-full text-center outline-none bg-transparent font-bold text-red-600 text-[10px]"
                                                 />
                                             </td>
                                             {daysArray.map(day => (
-                                                <td key={`d1-${day}`} style={{ borderBottom: borderBottom, borderRight: day === daysInMonth ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-0 text-center relative h-6 bg-white">
+                                                <td key={`d1-${day}`} style={{ borderBottom: borderBottom, borderRight: day === daysInMonth ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
                                                     {day <= daysInMonth && (
                                                         <input
                                                             type="text"
@@ -527,7 +900,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                                             onKeyDown={(e) => handleKeyDown(e, activeEmployees.indexOf(emp) * 3, day + 4)}
                                                             readOnly={isArchived}
                                                             onChange={(e) => handleDataChange(emp.id, `${day}_1`, e.target.value)}
-                                                            className={`w-full h-full text-center outline-none bg-transparent text-[12px] font-bold ${isWeekend(getDayName(day)) ? 'text-red-600' : ''}`}
+                                                            className={`w-full h-full text-center outline-none bg-transparent text-[10px] font-bold ${isWeekend(getDayName(day)) ? 'text-red-600' : ''}`}
                                                         />
                                                     )}
                                                 </td>
@@ -536,27 +909,27 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                         {isDriver && (
                                             <>
                                                 <tr>
-                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-0 bg-white h-6"></td>
-                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-6 bg-white">
+                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-0 bg-white h-5"></td>
+                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
                                                         <input
                                                             type="text"
                                                             value={eData.totalTrips}
                                                             readOnly
-                                                            className="w-full h-full text-center outline-none bg-transparent text-[12px] font-bold"
+                                                            className="w-full h-full text-center outline-none bg-transparent text-[10px] font-bold"
                                                         />
                                                     </td>
-                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-6 bg-white"></td>
-                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-6 bg-white">
+                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white"></td>
+                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
                                                         <input
                                                             type="text"
                                                             value={eData.tripsOT}
                                                             readOnly
-                                                            className="w-full h-full text-center outline-none bg-transparent text-[12px] font-bold"
+                                                            className="w-full h-full text-center outline-none bg-transparent text-[10px] font-bold"
                                                         />
                                                     </td>
-                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px solid #000' }} className="p-0 bg-white h-6"></td>
+                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px solid #000' }} className="p-0 bg-white h-5"></td>
                                                     {daysArray.map(day => (
-                                                        <td key={`d2-${day}`} style={{ borderBottom: '1px dashed #9ca3af', borderRight: day === daysInMonth ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-0 text-center relative h-6 bg-white">
+                                                        <td key={`d2-${day}`} style={{ borderBottom: '1px dashed #9ca3af', borderRight: day === daysInMonth ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
                                                             {day <= daysInMonth && (
                                                                 <input
                                                                     type="text"
@@ -566,27 +939,27 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                                                     onKeyDown={(e) => handleKeyDown(e, activeEmployees.indexOf(emp) * 3 + 1, day + 4)}
                                                                     readOnly={isArchived}
                                                                     onChange={(e) => handleDataChange(emp.id, `${day}_2`, e.target.value)}
-                                                                    className="w-full h-full text-center outline-none bg-transparent text-[12px] font-bold text-gray-800"
+                                                                    className="w-full h-full text-center outline-none bg-transparent text-[10px] font-bold text-gray-800"
                                                                 />
                                                             )}
                                                         </td>
                                                     ))}
                                                 </tr>
                                                 <tr>
-                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-0 bg-white h-6"></td>
-                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-0 bg-white h-6"></td>
-                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-6 bg-white">
+                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-0 bg-white h-5"></td>
+                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-0 bg-white h-5"></td>
+                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
                                                         <input
                                                             type="text"
                                                             value={eData.tripsOnDuty}
                                                             readOnly
-                                                            className="w-full h-full text-center outline-none bg-transparent text-[12px] font-bold"
+                                                            className="w-full h-full text-center outline-none bg-transparent text-[10px] font-bold"
                                                         />
                                                     </td>
-                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-0 bg-white h-6"></td>
-                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000' }} className="p-0 bg-white h-6"></td>
+                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-0 bg-white h-5"></td>
+                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000' }} className="p-0 bg-white h-5"></td>
                                                     {daysArray.map(day => (
-                                                        <td key={`d3-${day}`} style={{ borderBottom: '2px solid #000', borderRight: day === daysInMonth ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-0 text-center relative h-6 bg-white">
+                                                        <td key={`d3-${day}`} style={{ borderBottom: '2px solid #000', borderRight: day === daysInMonth ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
                                                             {day <= daysInMonth && (
                                                                 <input
                                                                     type="text"
@@ -596,7 +969,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                                                     onKeyDown={(e) => handleKeyDown(e, activeEmployees.indexOf(emp) * 3 + 2, day + 4)}
                                                                     readOnly={isArchived}
                                                                     onChange={(e) => handleDataChange(emp.id, `${day}_3`, e.target.value)}
-                                                                    className="w-full h-full text-center outline-none bg-transparent text-[12px] font-bold text-gray-800"
+                                                                    className="w-full h-full text-center outline-none bg-transparent text-[10px] font-bold text-gray-800"
                                                                 />
                                                             )}
                                                         </td>
@@ -616,6 +989,8 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                             )}
                         </tbody>
                     </table>
+                    <div className="print-only" style={{ height: '0.5cm', width: '100%' }}></div>
+                    </div>
                 </div>
             )}
 

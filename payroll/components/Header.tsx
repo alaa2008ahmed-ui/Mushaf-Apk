@@ -254,11 +254,11 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {isExactlyAlaa && !isArchivedView && viewMode !== 'edit-archive' && onMigrateMonth && (
+          {isExactlyAlaa && !isArchivedView && viewMode === 'table' && onMigrateMonth && (
             <button
               onClick={onMigrateMonth}
               className="flex items-center justify-center bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 p-2 rounded-md shadow-xs border border-slate-200 transition-colors cursor-pointer"
-              title="ترحيل رواتب الشهر الحالي وحفظها في الأرشيف وتفريغ الجدول لشهر جديد"
+              title="Post current month payroll, archive, and clear table for a new month"
             >
               <CalendarCheck className="w-5 h-5 text-emerald-600" />
             </button>
@@ -295,11 +295,18 @@ export const Header: React.FC<HeaderProps> = ({
                     const val = e.target.value;
                     setLocalTypedMonth(val);
                     if (/^\d{4}-\d{2}$/.test(val)) {
+                      const [y, m] = val.split('-').map(Number);
+                      if (y < 2026 || (y === 2026 && m < 6)) return;
                       onSelectedMonthChange(val);
                     }
                   }}
                   onBlur={() => {
                     if (/^\d{4}-\d{2}$/.test(localTypedMonth)) {
+                      const [y, m] = localTypedMonth.split('-').map(Number);
+                      if (y < 2026 || (y === 2026 && m < 6)) {
+                        setLocalTypedMonth(selectedMonth);
+                        return;
+                      }
                       onSelectedMonthChange(localTypedMonth);
                     } else {
                       setLocalTypedMonth(selectedMonth);
@@ -308,7 +315,12 @@ export const Header: React.FC<HeaderProps> = ({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       if (/^\d{4}-\d{2}$/.test(localTypedMonth)) {
-                        onSelectedMonthChange(localTypedMonth);
+                        const [y, m] = localTypedMonth.split('-').map(Number);
+                        if (y < 2026 || (y === 2026 && m < 6)) {
+                          setLocalTypedMonth(selectedMonth);
+                        } else {
+                          onSelectedMonthChange(localTypedMonth);
+                        }
                       } else {
                         setLocalTypedMonth(selectedMonth);
                       }
@@ -358,12 +370,15 @@ export const Header: React.FC<HeaderProps> = ({
                       const mm = String(i + 1).padStart(2, '0');
                       const monthIso = `${pickerYear}-${mm}`;
                       const isSelected = monthIso === selectedMonth;
+                      const isDisabled = pickerYear < 2026 || (pickerYear === 2026 && i < 5); // Disable before June 2026
                       
                       return (
                         <button
                           key={m}
                           type="button"
+                          disabled={isDisabled}
                           onClick={() => {
+                            if (isDisabled) return;
                             onSelectedMonthChange(monthIso);
                             setLocalTypedMonth(monthIso);
                             setShowDatePicker(false);
@@ -371,6 +386,8 @@ export const Header: React.FC<HeaderProps> = ({
                           className={`py-1.5 text-xs rounded transition-colors cursor-pointer ${
                             isSelected
                               ? 'bg-blue-600 text-white font-bold shadow-xs'
+                              : isDisabled
+                              ? 'text-slate-300 cursor-not-allowed bg-slate-50'
                               : 'hover:bg-blue-50 text-slate-700 font-medium'
                           }`}
                         >
@@ -413,13 +430,14 @@ export const Header: React.FC<HeaderProps> = ({
                         const mm = String(m).padStart(2, '0');
                         const monthIso = `${yr}-${mm}`;
                         const isArchived = archives.some(a => a.monthIso === monthIso);
+                        const isDisabled = yr < 2026 || (yr === 2026 && m < 6); // Disable before June 2026
                         
                         options.push(
                           <option 
                             key={monthIso} 
                             value={monthIso} 
-                            disabled={!isArchived}
-                            className={`font-sans ${isArchived ? 'text-slate-900 font-bold' : 'text-slate-400'}`}
+                            disabled={!isArchived || isDisabled}
+                            className={`font-sans ${isArchived && !isDisabled ? 'text-slate-900 font-bold' : 'text-slate-400'}`}
                           >
                             {getFormattedMonthLabel(monthIso)}
                           </option>

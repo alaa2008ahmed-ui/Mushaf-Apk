@@ -14,7 +14,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { ArchivedMonth, ViewMode } from '../types';
-import { formatCurrency } from '../utils/calculations';
+import { formatCurrency, calculateGrandTotals } from '../utils/calculations';
 import { ArchivedSheetModal } from './ArchivedSheetModal';
 import { ArchivedSheetEditor } from './ArchivedSheetEditor';
 import { ArchivedSheetView } from './ArchivedSheetView';
@@ -58,6 +58,8 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({
     );
   }
 
+  const sortedArchives = [...archives].sort((a, b) => a.monthIso.localeCompare(b.monthIso));
+
   return (
     <div className="w-full px-1 sm:px-2 py-8 space-y-8 font-sans" dir="rtl">
       
@@ -69,14 +71,11 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-              أرشيف كشوف الرواتب الشهرية
+              أرشيف الرواتب الشهرية
               <span className="text-xs bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full font-bold">
                 {archives.length} شهر مؤرشف
               </span>
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              السجل التاريخي الكامل لرواتب الشهور السابقة المحفوظة في النظام للرجوع إليها أو طباعتها أو استرجاعها
-            </p>
           </div>
         </div>
         
@@ -85,7 +84,7 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({
           className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-bold text-sm transition-colors border border-slate-200"
         >
           <ArrowRight className="w-4 h-4" />
-          <span>العودة لجدول الرواتب</span>
+          <span>العوده</span>
         </button>
       </div>
 
@@ -111,99 +110,109 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({
         </div>
       ) : (
         /* Archives Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {archives.map((archive) => {
-            const net = archive.totals?.netSalary || 0;
-            const ent = archive.totals?.totalEntitlements || 0;
-            const ded = archive.totals?.totalDeductions || 0;
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          {sortedArchives.map((archive) => {
+            // Recalculate totals based on the active payroll phase
+            const currentTotals = calculateGrandTotals(archive.employees, payrollPhase as 'full' | 'phase1' | 'phase2');
+            const net = currentTotals.netSalary || 0;
+            const ent = currentTotals.totalEntitlements || 0;
+            const ded = currentTotals.totalDeductions || 0;
 
             return (
               <div 
                 key={archive.id} 
                 className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-200 overflow-hidden flex flex-col justify-between group"
               >
-                {/* Card Header */}
-                <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-5 space-y-2">
+                {/* Card Header - White Background */}
+                <div className="bg-white border-b border-slate-100 p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                    <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {archive.archivedAt}
+                      {(() => {
+                        if (!archive.archivedAt) return '';
+                        // Simple check for Arabic digits and replace them
+                        const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+                        let str = archive.archivedAt;
+                        arabicDigits.forEach((d, i) => {
+                          str = str.replace(new RegExp(d, 'g'), i.toString());
+                        });
+                        
+                        // If it's a long date with Arabic months, try to keep digits but English
+                        // If it was already ISO like "2026-01-31", it stays same.
+                        return str;
+                      })()}
                     </span>
-                    <span className="text-xs font-mono font-bold bg-white/10 px-2 py-0.5 rounded text-slate-300">
+                    <span className="text-[10px] font-mono font-bold bg-slate-100 px-2 py-0.5 rounded text-slate-600">
                       {archive.employeeCount} موظف
                     </span>
                   </div>
-                  <h3 className="text-base font-extrabold leading-snug text-white pt-1 line-clamp-2">
-                    {archive.sheetTitle}
-                  </h3>
                 </div>
 
                 {/* Card Body - Financial Summary */}
-                <div className="p-5 space-y-4 bg-slate-50/50 flex-1">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                      <span className="block text-[11px] text-slate-400 mb-0.5">إجمالي الاستحقاقات</span>
-                      <span className="font-mono font-bold text-emerald-600 text-xs">
+                <div className="p-4 space-y-3 bg-slate-50/30 flex-1">
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="bg-white p-2 rounded-lg border border-slate-100 flex justify-between items-center">
+                      <span className="text-[10px] text-slate-400">إجمالي الاستحقاقات</span>
+                      <span className="font-mono font-bold text-emerald-600 text-[11px]">
                         {formatCurrency(ent)}
                       </span>
                     </div>
-                    <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                      <span className="block text-[11px] text-slate-400 mb-0.5">إجمالي الخصومات</span>
-                      <span className="font-mono font-bold text-rose-600 text-xs">
+                    <div className="bg-white p-2 rounded-lg border border-slate-100 flex justify-between items-center">
+                      <span className="text-[10px] text-slate-400">إجمالي الخصومات</span>
+                      <span className="font-mono font-bold text-rose-600 text-[11px]">
                         {formatCurrency(ded)}
                       </span>
                     </div>
                   </div>
 
-                  <div className="bg-blue-50/70 border border-blue-200 p-3 rounded-xl flex items-center justify-between">
-                    <span className="text-xs font-bold text-blue-900">صافي الرواتب المستحقة:</span>
-                    <span className="font-mono font-extrabold text-blue-700 text-sm">
+                  <div className="bg-blue-50/50 border border-blue-100 p-2 rounded-lg flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-blue-900">الصافي:</span>
+                    <span className="font-mono font-extrabold text-blue-700 text-xs">
                       {formatCurrency(net)}
                     </span>
                   </div>
                 </div>
 
                 {/* Card Actions */}
-                <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 flex-1">
+                <div className="p-3 bg-white border-t border-slate-100 flex items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1 flex-1">
                     <button
                       onClick={() => handleOpenView(archive)}
-                      className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-indigo-200/60"
-                      title="عرض جدول الرواتب الكامل لهذا الشهر"
+                      className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold py-1.5 px-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-colors border border-indigo-100"
+                      title="عرض"
                     >
-                      <Eye className="w-4 h-4 text-indigo-600" />
+                      <Eye className="w-3.5 h-3.5" />
                       <span>عرض</span>
                     </button>
 
                     <button
                       onClick={() => onEditArchive(archive)}
-                      className="bg-amber-50 hover:bg-amber-100 text-amber-700 font-extrabold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-amber-200/60"
-                      title="تعديل بيانات هذا الشهر المؤرشف مباشرة"
+                      className="bg-amber-50 hover:bg-amber-100 text-amber-700 font-extrabold py-1.5 px-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-colors border border-amber-100"
+                      title="تعديل"
                     >
-                      <RotateCcw className="w-4 h-4 text-amber-600" />
+                      <RotateCcw className="w-3.5 h-3.5" />
                       <span>تعديل</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => onPrintArchive(archive)}
-                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold p-2 rounded-xl text-xs transition-colors border border-slate-200"
-                      title="طباعة كشف هذا الشهر"
-                    >
-                      <Printer className="w-4 h-4 text-blue-600" />
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => onPrintArchive(archive)}
+                      className="bg-slate-50 hover:bg-slate-100 text-slate-600 p-1.5 rounded-lg transition-colors border border-slate-100"
+                      title="طباعة"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                    </button>
                     <button
                       onClick={() => {
                         if (window.confirm(`هل أنت متأكد من حذف كشف (${archive.sheetTitle}) من الأرشيف نهائياً؟`)) {
                           onDeleteArchive(archive.id);
                         }
                       }}
-                      className="bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold p-2 rounded-xl text-xs transition-colors border border-rose-200/60"
-                      title="حذف من الأرشيف"
+                      className="bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-lg transition-colors border border-rose-100"
+                      title="حذف"
                     >
-                      <Trash2 className="w-4 h-4 text-rose-600" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
