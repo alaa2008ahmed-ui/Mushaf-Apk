@@ -98,7 +98,6 @@ export interface UserPermissions {
     tsCanViewOvertime1?: boolean;
     tsCanViewOvertime2?: boolean;
     tsCanViewListOvertime?: boolean;
-    tsCanManageSettings?: boolean;
     tsCanAddEmployee?: boolean;
     tsCanEditEmployee?: boolean;
     tsCanDeleteEmployee?: boolean;

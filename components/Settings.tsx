@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { MapPin, AlertTriangle, ShieldCheck, Lock, Unlock, Download, Upload, Users, Box, Truck, Car, Calendar, Hash, Database, Activity, ArrowLeft, Search, ClipboardList, Bell, Smartphone } from 'lucide-react';
+import { MapPin, AlertTriangle, ShieldCheck, Lock, Unlock, Download, Upload, Users, Box, Truck, Car, Calendar, Hash, Database, Activity, ArrowLeft, Search, ClipboardList, Bell, Smartphone, LayoutDashboard, CheckSquare, Wallet, FilePlus, FileText, Clock, ShoppingCart, Settings as SettingsIcon } from 'lucide-react';
 import CryptoJS from 'crypto-js';
 import LZString from 'lz-string';
 import { Capacitor } from '@capacitor/core';
@@ -13,6 +13,7 @@ import { dualStorage, COLLECTIONS } from '../DualStorageService';
 import { downloadBlob } from '../downloadUtils';
 import CustomDatePicker from './ui/CustomDatePicker';
 import { saveFolderHandle, getFolderHandle, deleteFolderHandle, verifyPermission } from '../IndexedDBService';
+import { UserPermissionsModalContent } from './UserPermissionsModalContent';
 
 interface SettingsProps {
     customers: Customer[];
@@ -260,7 +261,38 @@ const Settings: React.FC<SettingsProps> = ({
     };
 
     const openEditUserModal = (user: User) => {
-        setTempUser({ ...user });
+        const defaultPermissions = {
+            allowedPages: ['Daily Sales'],
+            allowedBranches: [],
+            canAddInvoice: true,
+            canEditInvoice: false,
+            canDeleteInvoice: false,
+            canChangeInvoiceDate: false,
+            canViewAccountStatement: false,
+            canManageSettings: false,
+            canCreatePO: true,
+            canForceDeletePO: false,
+            canEditPO: false,
+            canDeletePO: false,
+            canEditDriverLog: false,
+            canDeleteDriverLog: false,
+            manageDrivers: false,
+            manageVehicles: false,
+            canDeleteOrder: false,
+            canViewAllOrders: false,
+            showDeliveryConfirmationPopup: false,
+            showOrderReceiptPopup: false,
+            showReceiptDetailsPopup: false,
+            receiveNewOrderAlert: false
+        };
+
+        setTempUser({ 
+            ...user,
+            permissions: {
+                ...defaultPermissions,
+                ...(user.permissions || {})
+            }
+        });
         setEditUsername(user.username);
         setEditPassword(user.password || '');
         setEditingUserId(user.id);
@@ -318,7 +350,6 @@ const Settings: React.FC<SettingsProps> = ({
                 tsCanViewOvertime1: !!tempUser.permissions?.tsCanViewOvertime1,
                 tsCanViewOvertime2: !!tempUser.permissions?.tsCanViewOvertime2,
                 tsCanViewListOvertime: !!tempUser.permissions?.tsCanViewListOvertime,
-                tsCanManageSettings: !!tempUser.permissions?.tsCanManageSettings,
                 tsCanAddEmployee: !!tempUser.permissions?.tsCanAddEmployee,
                 tsCanEditEmployee: !!tempUser.permissions?.tsCanEditEmployee,
                 tsCanDeleteEmployee: !!tempUser.permissions?.tsCanDeleteEmployee,
@@ -384,28 +415,68 @@ const Settings: React.FC<SettingsProps> = ({
     };
 
     const togglePagePermission = (page: string) => {
-        if (!tempUser.permissions) return;
-        const currentPages = tempUser.permissions.allowedPages;
-        const newPages = currentPages.includes(page)
-            ? currentPages.filter(p => p !== page)
-            : [...currentPages, page];
+        const permissions = tempUser.permissions || { allowedPages: ['Daily Sales'], allowedBranches: [] };
+        const currentPages = permissions.allowedPages || [];
+        const isEnabling = !currentPages.includes(page);
         
+        const newPages = isEnabling
+            ? [...currentPages, page]
+            : currentPages.filter(p => p !== page);
+        
+        let updatedPermissions = {
+            ...permissions,
+            allowedPages: newPages
+        };
+
+        // If page has isSinglePermission, also sync subPermissions automatically
+        if (page === 'Time Sheet') {
+            const val = isEnabling;
+            updatedPermissions = {
+                ...updatedPermissions,
+                tsCanViewEmployees: val,
+                tsCanViewDriversTankers: val,
+                tsCanViewOvertime1: val,
+                tsCanViewOvertime2: val,
+                tsCanViewListOvertime: val,
+                tsCanAddEmployee: val,
+                tsCanEditEmployee: val,
+                tsCanDeleteEmployee: val,
+                tsCanUndoPost: val,
+                tsCanDeletePost: val,
+                tsCanViewArchiveO1: val,
+                tsCanViewArchiveO2: val,
+                tsCanViewArchiveDrivers: val
+            };
+        } else if (page === 'Allowances For Employees') {
+            const val = isEnabling;
+            updatedPermissions = {
+                ...updatedPermissions,
+                canViewAllowancesEndOfService: val,
+                canViewAllowancesEndOfServicePrint: val,
+                canViewAllowancesVacationAllowance: val,
+                canViewAllowancesVacationRequest: val,
+                canViewAllowancesLoanRequest: val,
+                canViewAllowancesArchive: val,
+                canViewAllowancesSettings: val
+            };
+        }
+
         setTempUser({
             ...tempUser,
-            permissions: { ...tempUser.permissions, allowedPages: newPages }
+            permissions: updatedPermissions
         });
     };
 
     const toggleBranchPermission = (branchId: string) => {
-        if (!tempUser.permissions) return;
-        const currentBranches = tempUser.permissions.allowedBranches;
+        const permissions = tempUser.permissions || { allowedPages: ['Daily Sales'], allowedBranches: [] };
+        const currentBranches = permissions.allowedBranches || [];
         const newBranches = currentBranches.includes(branchId)
             ? currentBranches.filter(id => id !== branchId)
             : [...currentBranches, branchId];
         
         setTempUser({
             ...tempUser,
-            permissions: { ...tempUser.permissions, allowedBranches: newBranches }
+            permissions: { ...permissions, allowedBranches: newBranches }
         });
     };
 
@@ -1942,6 +2013,34 @@ const Settings: React.FC<SettingsProps> = ({
                 {/* User Permissions Modal - Always outside categories logic so it can show over it */}
                 {showUserModal && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[100] p-4 overflow-y-auto">
+                        <UserPermissionsModalContent
+                            tempUser={tempUser}
+                            setTempUser={setTempUser}
+                            editUsername={editUsername}
+                            setEditUsername={setEditUsername}
+                            editPassword={editPassword}
+                            setEditPassword={setEditPassword}
+                            saveError={saveError}
+                            editingUserId={editingUserId}
+                            setShowUserModal={setShowUserModal}
+                            handleSaveUser={handleSaveUser}
+                            lang={lang}
+                            branches={branches}
+                            customers={customers}
+                            items={items}
+                            currentUser={currentUser}
+                            settings={settings}
+                            customerSearchTerm={customerSearchTerm}
+                            setCustomerSearchTerm={setCustomerSearchTerm}
+                            togglePagePermission={togglePagePermission}
+                            toggleBranchPermission={toggleBranchPermission}
+                        />
+                    </div>
+                )}
+
+                {/* Legacy User Permissions Modal - Kept for reference but disabled */}
+                {false && showUserModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[100] p-4 overflow-y-auto">
                         <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8">
                             <div className="bg-gradient-to-r from-blue-700 to-blue-600 p-6 text-white rounded-t-xl">
                                 <h3 className="text-xl font-bold">{editingUserId ? 'Edit User Permissions' : 'Add New User'}</h3>
@@ -2076,8 +2175,8 @@ const Settings: React.FC<SettingsProps> = ({
                                                         { key: 'canDeleteInvoice', label: 'Delete Invoices' },
                                                         { key: 'canChangeInvoiceDate', label: 'Change Invoice Date' },
                                                     ].filter(perm => {
-                                                        const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
-                                                        if (isAlaa) return true;
+                                                        const isAlaaOrAdmin = currentUser?.username.toLowerCase() === 'alaa' || currentUser?.role === 'admin';
+                                                        if (isAlaaOrAdmin) return true;
                                                         return !!(currentUser?.permissions as any)?.[perm.key];
                                                     }).map(perm => (
                                                         <label key={perm.key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-blue-600 transition-colors">
@@ -2120,8 +2219,8 @@ const Settings: React.FC<SettingsProps> = ({
                                                         { key: 'canDeletePO', label: 'Delete PO' },
                                                         { key: 'canForceDeletePO', label: 'Force Delete PO' },
                                                     ].filter(perm => {
-                                                        const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
-                                                        if (isAlaa) return true;
+                                                        const isAlaaOrAdmin = currentUser?.username.toLowerCase() === 'alaa' || currentUser?.role === 'admin';
+                                                        if (isAlaaOrAdmin) return true;
                                                         return !!(currentUser?.permissions as any)?.[perm.key];
                                                     }).map(perm => (
                                                         <label key={perm.key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-purple-600 transition-colors">
@@ -2164,8 +2263,8 @@ const Settings: React.FC<SettingsProps> = ({
                                                         { key: 'manageDrivers', label: 'Manage Drivers List' },
                                                         { key: 'manageVehicles', label: 'Manage Vehicles List' },
                                                     ].filter(perm => {
-                                                        const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
-                                                        if (isAlaa) return true;
+                                                        const isAlaaOrAdmin = currentUser?.username.toLowerCase() === 'alaa' || currentUser?.role === 'admin';
+                                                        if (isAlaaOrAdmin) return true;
                                                         return !!(currentUser?.permissions as any)?.[perm.key];
                                                     }).map(perm => (
                                                         <label key={perm.key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-indigo-600 transition-colors">
@@ -2220,23 +2319,22 @@ const Settings: React.FC<SettingsProps> = ({
                                             {tempUser.permissions?.allowedPages.includes('Time Sheet') && (
                                                 <div className="ml-6 grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 pt-2 border-t border-indigo-50">
                                                     {[
-                                                        { key: 'tsCanViewEmployees', label: 'View Employees' },
-                                                        { key: 'tsCanViewDriversTankers', label: 'View Drivers (Tankers)' },
-                                                        { key: 'tsCanViewOvertime1', label: 'View Overtime (O1)' },
-                                                        { key: 'tsCanViewOvertime2', label: 'View Overtime (O2)' },
-                                                        { key: 'tsCanViewListOvertime', label: 'View Overtime List' },
-                                                        { key: 'tsCanManageSettings', label: 'Manage Settings' },
-                                                        { key: 'tsCanAddEmployee', label: 'Add Employee' },
-                                                        { key: 'tsCanEditEmployee', label: 'Edit Employee' },
-                                                        { key: 'tsCanDeleteEmployee', label: 'Delete Employee' },
-                                                        { key: 'tsCanUndoPost', label: 'Undo Post' },
-                                                        { key: 'tsCanDeletePost', label: 'Delete Post' },
-                                                        { key: 'tsCanViewArchiveO1', label: 'View Archive (O1)' },
-                                                        { key: 'tsCanViewArchiveO2', label: 'View Archive (O2)' },
+                                                        { key: 'tsCanViewEmployees', label: lang === 'en' ? 'View Employees' : 'عرض الموظفين' },
+                                                        { key: 'tsCanViewDriversTankers', label: lang === 'en' ? 'View Drivers (Tankers)' : 'عرض السائقين (الناقلات)' },
+                                                        { key: 'tsCanViewOvertime1', label: lang === 'en' ? 'View Overtime (O1)' : 'عرض الإضافي (1)' },
+                                                        { key: 'tsCanViewOvertime2', label: lang === 'en' ? 'View Overtime (O2)' : 'عرض الإضافي (2)' },
+                                                        { key: 'tsCanViewListOvertime', label: lang === 'en' ? 'View Overtime List' : 'عرض كشف الإضافي' },
+                                                        { key: 'tsCanAddEmployee', label: lang === 'en' ? 'Add Employee' : 'إضافة موظف' },
+                                                        { key: 'tsCanEditEmployee', label: lang === 'en' ? 'Edit Employee' : 'تعديل موظف' },
+                                                        { key: 'tsCanDeleteEmployee', label: lang === 'en' ? 'Delete Employee' : 'حذف موظف' },
+                                                        { key: 'tsCanUndoPost', label: lang === 'en' ? 'Undo Post' : 'التراجع عن الترحيل' },
+                                                        { key: 'tsCanDeletePost', label: lang === 'en' ? 'Delete Post' : 'حذف الترحيل' },
+                                                        { key: 'tsCanViewArchiveO1', label: lang === 'en' ? 'View Archive (O1)' : 'عرض الأرشيف (إضافي 1)' },
+                                                        { key: 'tsCanViewArchiveO2', label: lang === 'en' ? 'View Archive (O2)' : 'عرض الأرشيف (إضافي 2)' },
                                                         { key: 'tsCanViewArchiveDrivers', label: lang === 'en' ? 'View Archive (Drivers)' : 'عرض الأرشيف (السائقين)' },
                                                     ].filter(perm => {
-                                                        const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
-                                                        if (isAlaa) return true;
+                                                        const isAlaaOrAdmin = currentUser?.username.toLowerCase() === 'alaa' || currentUser?.role === 'admin';
+                                                        if (isAlaaOrAdmin) return true;
                                                         return !!(currentUser?.permissions as any)?.[perm.key];
                                                     }).map(perm => (
                                                         <label key={perm.key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-indigo-600 transition-colors">
@@ -2279,8 +2377,8 @@ const Settings: React.FC<SettingsProps> = ({
                                                             { key: 'canEditCustomer', label: 'Edit Customer' },
                                                             { key: 'canDeleteCustomer', label: 'Delete Customer' },
                                                         ].filter(perm => {
-                                                            const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
-                                                            if (isAlaa) return true;
+                                                            const isAlaaOrAdmin = currentUser?.username.toLowerCase() === 'alaa' || currentUser?.role === 'admin';
+                                                        if (isAlaaOrAdmin) return true;
                                                             return !!(currentUser?.permissions as any)?.[perm.key];
                                                         }).map(perm => (
                                                             <label key={perm.key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 hover:text-amber-600 transition-colors">
@@ -2658,8 +2756,8 @@ const Settings: React.FC<SettingsProps> = ({
                                                     if (isGloballyDisabled) return false;
                                                     
                                                     // Admin restriction: Only show pages the CURRENT user has access to
-                                                    const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
-                                                    if (isAlaa) return true;
+                                                    const isAlaaOrAdmin = currentUser?.username.toLowerCase() === 'alaa' || currentUser?.role === 'admin';
+                                                        if (isAlaaOrAdmin) return true;
                                                     
                                                     return currentUser?.permissions?.allowedPages.includes(page);
                                                 }).map(page => (
@@ -2699,8 +2797,8 @@ const Settings: React.FC<SettingsProps> = ({
                                                             { key: 'canViewAllowancesArchive', label: 'الأرشيف' },
                                                             { key: 'canViewAllowancesSettings', label: 'الإعدادات' },
                                                         ].filter(perm => {
-                                                            const isAlaa = currentUser?.username.toLowerCase() === 'alaa';
-                                                            if (isAlaa) return true;
+                                                            const isAlaaOrAdmin = currentUser?.username.toLowerCase() === 'alaa' || currentUser?.role === 'admin';
+                                                        if (isAlaaOrAdmin) return true;
                                                             return !!(currentUser?.permissions as any)?.[perm.key];
                                                         }).map(perm => (
                                                             <label key={perm.key} className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:text-blue-700 transition-colors">

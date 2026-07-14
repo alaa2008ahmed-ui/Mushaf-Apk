@@ -121,23 +121,24 @@ const normalizeEnglishName = (name: string) => {
 
 export default function TimeSheet({ drivers, workLogs, selectedBranchId, users = [], currentUser, onUpdateUser, isMobile }: Props) {
     const [activeTab, setActiveTab] = useState<'employees' | 'drivers_tankers' | 'overtime1' | 'overtime2' | 'list_overtime'>('employees');
+    const isSuperAdmin = currentUser?.username?.toLowerCase() === 'alaa';
 
     // Ensure activeTab is always one of the permitted tabs
     useEffect(() => {
-        if (currentUser && currentUser.username.toLowerCase() !== 'alaa') {
+        if (currentUser) {
             const perms = currentUser.permissions;
             const allowedTabs: ('employees' | 'drivers_tankers' | 'overtime1' | 'overtime2' | 'list_overtime')[] = [];
-            if (!perms || perms.tsCanViewEmployees !== false) allowedTabs.push('employees');
-            if (perms?.tsCanViewDriversTankers === true) allowedTabs.push('drivers_tankers');
-            if (perms?.tsCanViewOvertime1 === true) allowedTabs.push('overtime1');
-            if (perms?.tsCanViewOvertime2 === true) allowedTabs.push('overtime2');
-            if (perms?.tsCanViewListOvertime === true) allowedTabs.push('list_overtime');
+            if (isSuperAdmin || perms?.tsCanViewEmployees === true) allowedTabs.push('employees');
+            if (isSuperAdmin || perms?.tsCanViewDriversTankers === true) allowedTabs.push('drivers_tankers');
+            if (isSuperAdmin || perms?.tsCanViewOvertime1 === true) allowedTabs.push('overtime1');
+            if (isSuperAdmin || perms?.tsCanViewOvertime2 === true) allowedTabs.push('overtime2');
+            if (isSuperAdmin || perms?.tsCanViewListOvertime === true) allowedTabs.push('list_overtime');
             
             if (allowedTabs.length > 0 && !allowedTabs.includes(activeTab)) {
                 setActiveTab(allowedTabs[0]);
             }
         }
-    }, [currentUser, activeTab]);
+    }, [currentUser, activeTab, isSuperAdmin]);
 
     const [employees, setEmployees] = useState<TimeSheetEmployee[]>(() => {
         const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
@@ -741,7 +742,7 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
             <div className={`px-2 print:hidden sticky bg-white z-40 py-3 border-b border-gray-200 shadow-sm ${isMobile ? 'top-0' : 'top-[160px]'}`}>
                 {/* Tabs */}
                 <div className="flex space-x-3 overflow-x-auto pb-1">
-                    {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewEmployees !== false) && (
+                    {(isSuperAdmin || currentUser?.permissions?.tsCanViewEmployees === true) && (
                         <button
                             onClick={() => setActiveTab('employees')}
                             className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
@@ -750,10 +751,10 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }`}
                         >
-                                Employees
+                            {namesLanguage === 'en' ? 'Employees' : 'الموظفين'}
                         </button>
                     )}
-                    {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewOvertime1 === true) && (
+                    {(isSuperAdmin || currentUser?.permissions?.tsCanViewOvertime1 === true) && (
                         <button
                             onClick={() => setActiveTab('overtime1')}
                             className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
@@ -762,10 +763,10 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }`}
                         >
-                            Overtime 1
+                            {namesLanguage === 'en' ? 'Overtime 1' : 'الإضافي 1'}
                         </button>
                     )}
-                    {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewDriversTankers === true) && (
+                    {(isSuperAdmin || currentUser?.permissions?.tsCanViewDriversTankers === true) && (
                         <button
                             onClick={() => setActiveTab('drivers_tankers')}
                             className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
@@ -774,10 +775,10 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }`}
                         >
-                            Drivers
+                            {namesLanguage === 'en' ? 'Drivers' : 'السائقين'}
                         </button>
                     )}
-                    {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewOvertime2 === true) && (
+                    {(isSuperAdmin || currentUser?.permissions?.tsCanViewOvertime2 === true) && (
                         <button
                             onClick={() => setActiveTab('overtime2')}
                             className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
@@ -786,10 +787,10 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }`}
                         >
-                            Overtime 2
+                            {namesLanguage === 'en' ? 'Overtime 2' : 'الإضافي 2'}
                         </button>
                     )}
-                    {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewListOvertime === true) && (
+                    {(isSuperAdmin || currentUser?.permissions?.tsCanViewListOvertime === true) && (
                         <button
                             onClick={() => setActiveTab('list_overtime')}
                             className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
@@ -798,10 +799,10 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }`}
                         >
-                            List Overtime
+                            {namesLanguage === 'en' ? 'List Overtime' : 'كشف الإضافي'}
                         </button>
                     )}
-            </div>
+                </div>
             </div>
 
             {/* Content */}
