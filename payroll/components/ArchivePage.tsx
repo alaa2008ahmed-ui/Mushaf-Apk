@@ -203,17 +203,6 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({
                     >
                       <Printer className="w-3.5 h-3.5" />
                     </button>
-                    <button
-                      onClick={() => {
-                        if (window.confirm(`هل أنت متأكد من حذف كشف (${archive.sheetTitle}) من الأرشيف نهائياً؟`)) {
-                          onDeleteArchive(archive.id);
-                        }
-                      }}
-                      className="bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-lg transition-colors border border-rose-100"
-                      title="حذف"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
                   </div>
                 </div>
               </div>

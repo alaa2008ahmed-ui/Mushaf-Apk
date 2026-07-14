@@ -27,8 +27,29 @@ interface DriversGridData {
 
 export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (TANKERS)", namesLanguage = 'en' }: Props) {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [gridData, setGridData] = useState<DriversGridData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [gridData, setGridData] = useState<DriversGridData | null>(() => {
+        try {
+            const tempDate = new Date();
+            const initMonthKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}`;
+            const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+            const record = local.find((r: any) => r && r.type === 'timesheet_drivers_tankers' && r.data && r.data.month === initMonthKey);
+            return record ? record.data : null;
+        } catch (e) {
+            console.error("Error loading initial grid data from cache:", e);
+            return null;
+        }
+    });
+    const [isLoading, setIsLoading] = useState(() => {
+        try {
+            const tempDate = new Date();
+            const initMonthKey = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}`;
+            const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+            const hasRecord = local.some((r: any) => r && r.type === 'timesheet_drivers_tankers' && r.data && r.data.month === initMonthKey);
+            return !hasRecord;
+        } catch (e) {
+            return true;
+        }
+    });
     const tableRef = useRef<HTMLDivElement>(null);
 
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -67,7 +88,22 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
     }, [employees]);
 
     useEffect(() => {
-        setIsLoading(true);
+        // Try to load from local cache instantly when monthKey changes
+        try {
+            const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+            const record = local.find((r: any) => r && r.type === 'timesheet_drivers_tankers' && r.data && r.data.month === monthKey);
+            if (record) {
+                setGridData(record.data);
+                setIsLoading(false);
+            } else {
+                setGridData(null);
+                setIsLoading(true);
+            }
+        } catch (e) {
+            console.error("Error fetching local cached drivers tankers data:", e);
+            setIsLoading(true);
+        }
+
         const q = query(
             collection(db, COLLECTIONS.RECORDS),
             where('type', '==', 'timesheet_drivers_tankers')

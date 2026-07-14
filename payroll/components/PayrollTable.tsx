@@ -60,6 +60,7 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
   };
 
   const handleCellClick = (emp: Employee, field: keyof Employee) => {
+    if (readOnly || !isAlaa) return;
     setEditingCell({
       id: emp.id,
       field,
@@ -173,7 +174,7 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
 
       {/* Title only visible in Print or above table */}
       <div className="text-center mb-2 hidden print:block">
-        <h2 className="text-sm sm:text-base print:text-[11pt] font-extrabold border-b border-black pb-0.5 inline-block text-black">
+        <h2 className="text-sm sm:text-base print:text-[13.5pt] font-extrabold inline-block text-black">
           شركة المياه العذبة المحدوده - {isAllBranches ? sheetTitle : `${sheetTitle} - ${selectedBranch}`}
         </h2>
       </div>

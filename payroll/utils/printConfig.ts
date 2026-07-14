@@ -51,9 +51,9 @@ export function getSmartPrintConfig(count: number, isAllBranches?: boolean): Sma
       headerFontSize: isAllBranches ? '8.2pt' : '7.8pt',
       headerHeight: '15px',
       cellPadding: '1px 1.6px',
-      sigMarginTop: isAllBranches ? '28px' : '10px',
+      sigMarginTop: '4px',
       sigGap: '14px',
-      sigFontSize: '8.5pt',
+      sigFontSize: '11pt',
       zoom: isAllBranches ? '68%' : '66%',
       label: `تلقائي مخصص لاستغلال كامل الصفحة (${count} موظف)`,
       density: 'dense'
@@ -64,11 +64,11 @@ export function getSmartPrintConfig(count: number, isAllBranches?: boolean): Sma
       rowHeight: isAllBranches ? '22px' : '15px',
       fontSize: isAllBranches ? '8.2pt' : '7.8pt',
       headerFontSize: isAllBranches ? '8.6pt' : '8.2pt',
-      headerHeight: '16px',
+      headerHeight: '18px',
       cellPadding: '1.2px 2px',
-      sigMarginTop: isAllBranches ? '30px' : '10px',
+      sigMarginTop: '4px',
       sigGap: '16px',
-      sigFontSize: '8.8pt',
+      sigFontSize: '11.5pt',
       zoom: isAllBranches ? '70%' : '68%',
       label: `تلقائي متوسط لملء الصفحة (${count} موظف)`,
       density: 'medium'
@@ -81,9 +81,9 @@ export function getSmartPrintConfig(count: number, isAllBranches?: boolean): Sma
       headerFontSize: isAllBranches ? '9.0pt' : '8.6pt',
       headerHeight: '18px',
       cellPadding: '1.4px 2.2px',
-      sigMarginTop: isAllBranches ? '32px' : '10px',
+      sigMarginTop: '4px',
       sigGap: '20px',
-      sigFontSize: '9.0pt',
+      sigFontSize: '12pt',
       zoom: isAllBranches ? '72%' : '70%',
       label: `تلقائي مريح لملء الصفحة (${count} موظف)`,
       density: 'comfortable'
@@ -96,9 +96,9 @@ export function getSmartPrintConfig(count: number, isAllBranches?: boolean): Sma
       headerFontSize: isAllBranches ? '9.6pt' : '9.2pt',
       headerHeight: '20px',
       cellPadding: '1.8px 3.2px',
-      sigMarginTop: isAllBranches ? '35px' : '10px',
+      sigMarginTop: '4px',
       sigGap: '24px',
-      sigFontSize: '9.5pt',
+      sigFontSize: '12.5pt',
       zoom: isAllBranches ? '74%' : '72%',
       label: `تلقائي مخصص للفرع الصغير (${count} موظف)`,
       density: 'spacious'
@@ -122,7 +122,7 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
     body { 
       background-color: white !important; 
       color: black !important; 
-      font-family: 'Cairo', system-ui, -apple-system, sans-serif !important; 
+      font-family: Arial, sans-serif !important; 
       margin: 0 !important; 
       padding: 0 !important;
       zoom: ${config.zoom} !important;
@@ -138,7 +138,8 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
       width: 100% !important;
     }
     h2 {
-      font-size: 11pt !important;
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif !important;
+      font-size: 13.5pt !important;
       margin-top: calc(15px + 0.5cm) !important;
       margin-bottom: 10px !important;
       padding-bottom: 2px !important;
@@ -174,7 +175,7 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
       page-break-inside: avoid !important;
     }
     thead tr { 
-      height: ${config.headerHeight} !important; 
+      height: 19px !important; 
     }
     tbody tr { 
       height: ${config.rowHeight} !important; 
@@ -183,12 +184,12 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
       page-break-after: auto !important;
     }
     tfoot tr { 
-      height: ${config.headerHeight} !important; 
+      height: 19px !important; 
     }
     th, td { 
       border: 1px solid #000000 !important; 
       padding: ${config.cellPadding} !important; 
-      font-size: ${config.fontSize} !important; 
+      font-size: 11pt !important; 
       line-height: 1 !important; 
       text-align: center !important; 
       height: ${config.rowHeight} !important; 
@@ -202,8 +203,12 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
     th { 
       background-color: #f1f5f9 !important; 
       font-weight: 800 !important; 
-      font-size: ${config.headerFontSize} !important; 
+      font-size: 11pt !important; 
       color: #000000 !important;
+      height: 19px !important;
+    }
+    tfoot td {
+      height: 19px !important;
     }
     th.print-col-total, td.print-col-total {
       color: #dc2626 !important;
@@ -260,7 +265,7 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
       body { 
         background-color: white !important; 
         color: black !important; 
-        font-family: 'Cairo', system-ui, -apple-system, sans-serif !important; 
+        font-family: Arial, sans-serif !important; 
         margin: 0 !important; 
         padding: 0 !important;
         zoom: ${config.zoom} !important;
@@ -276,7 +281,8 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
         width: 100% !important;
       }
       #printable-payroll-section h2 {
-        font-size: 11pt !important;
+        font-family: 'Cairo', system-ui, -apple-system, sans-serif !important;
+        font-size: 13.5pt !important;
         margin-top: calc(15px + 0.5cm) !important;
         margin-bottom: 10px !important;
         padding-bottom: 2px !important;
@@ -312,7 +318,7 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
         page-break-inside: avoid !important;
       }
       #printable-payroll-section thead tr { 
-        height: ${config.headerHeight} !important; 
+        height: 19px !important; 
       }
       #printable-payroll-section tbody tr { 
         height: ${config.rowHeight} !important; 
@@ -321,12 +327,12 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
         page-break-after: auto !important;
       }
       #printable-payroll-section tfoot tr { 
-        height: ${config.headerHeight} !important; 
+        height: 19px !important; 
       }
       #printable-payroll-section th, #printable-payroll-section td { 
         border: 1px solid #000000 !important; 
         padding: ${config.cellPadding} !important; 
-        font-size: ${config.fontSize} !important; 
+        font-size: 11pt !important; 
         line-height: 1 !important; 
         text-align: center !important; 
         height: ${config.rowHeight} !important; 
@@ -340,8 +346,12 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
       #printable-payroll-section th { 
         background-color: #f1f5f9 !important; 
         font-weight: 800 !important; 
-        font-size: ${config.headerFontSize} !important; 
+        font-size: 11pt !important; 
         color: #000000 !important;
+        height: 19px !important;
+      }
+      #printable-payroll-section tfoot td {
+        height: 19px !important;
       }
       #printable-payroll-section th.print-col-total, #printable-payroll-section td.print-col-total {
         color: #dc2626 !important;

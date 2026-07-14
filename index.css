@@ -136,6 +136,7 @@ body {
   .payroll-wrapper {
     background-color: white !important;
     color: black !important;
+    font-family: Arial, sans-serif !important;
     font-size: 10.2pt !important;
     line-height: 1 !important;
     margin: 0 !important;
@@ -162,7 +163,7 @@ body {
   }
 
   .payroll-wrapper thead tr {
-    height: 16px !important;
+    height: 19px !important;
   }
 
   .payroll-wrapper tbody tr {
@@ -173,25 +174,31 @@ body {
   }
 
   .payroll-wrapper tfoot tr {
-    height: 16px !important;
+    height: 19px !important;
   }
 
   .payroll-wrapper th, .payroll-wrapper td,
   .payroll-wrapper th *, .payroll-wrapper td * {
     border-color: #64748b !important;
-    font-size: 9.8pt !important;
+    font-size: 11pt !important;
     line-height: 1 !important;
     white-space: nowrap !important;
   }
 
-  .payroll-wrapper th, .payroll-wrapper td {
+  .payroll-wrapper th {
+    border: 0.5px solid #64748b !important;
+    padding: 1.5px 2px !important;
+    height: 19px !important;
+  }
+
+  .payroll-wrapper td {
     border: 0.5px solid #64748b !important;
     padding: 1.5px 2px !important;
     height: 11.5px !important;
   }
 
   .payroll-wrapper th, .payroll-wrapper th * {
-    font-size: 10pt !important;
+    font-size: 11pt !important;
     font-weight: 800 !important;
     background-color: #f1f5f9 !important;
     color: #0f172a !important;
@@ -199,28 +206,32 @@ body {
 
   .payroll-wrapper tfoot td,
   .payroll-wrapper tfoot td * {
-    font-size: 10.8pt !important;
+    font-size: 11pt !important;
     font-weight: 900 !important;
     padding: 2.5px 3px !important;
+    height: 19px !important;
   }
 
   /* Compact signatures for print */
+  .payroll-wrapper .print-signatures-grid,
   .payroll-wrapper .grid.grid-cols-2.md\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 6px !important;
+    gap: 12px !important;
     margin-top: 4px !important;
     padding-top: 2px !important;
   }
 
+  .payroll-wrapper .print-signatures-grid > div,
   .payroll-wrapper .grid.grid-cols-2.md\:grid-cols-4 > div {
     padding: 1px !important;
     border: none !important;
     box-shadow: none !important;
   }
 
+  .payroll-wrapper .print-signatures-grid p,
   .payroll-wrapper .grid.grid-cols-2.md\:grid-cols-4 p {
     margin-bottom: 2px !important;
-    font-size: 6.5pt !important;
+    font-size: 11.5pt !important;
   }
 }
 

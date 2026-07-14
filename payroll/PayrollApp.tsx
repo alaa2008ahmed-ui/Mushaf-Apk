@@ -970,21 +970,6 @@ export default function PayrollApp({
           const res = updateEmps(prev);
           return res.changed ? res.emps : prev;
         });
-
-        setArchives((prev) => {
-          let arcsChanged = false;
-          const newArcs = prev.map((arc) => {
-            if (arc.monthIso === currentMonth) {
-              const res = updateEmps(arc.employees);
-              if (res.changed) {
-                arcsChanged = true;
-                return { ...arc, employees: res.emps };
-              }
-            }
-            return arc;
-          });
-          return arcsChanged ? newArcs : prev;
-        });
       } catch (err) {
         console.error("Error syncing overtime from TimeSheet", err);
       }
