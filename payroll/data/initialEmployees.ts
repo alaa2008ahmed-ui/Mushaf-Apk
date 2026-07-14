@@ -1045,7 +1045,7 @@ export const initialEmployees: Employee[] = [
   {
     "code": "1175",
     "name": "محمد تسليم",
-    "nameEn": "Mohamed Tasleem",
+    "nameEn": "MD Mohamed Tasleem",
     "nationalId": "2608737588",
     "iban": "SA513040108036413960022",
     "jobTitle": "عامل تجميع",

@@ -9,6 +9,7 @@ export interface TimeSheetEmployee {
     id: string;
     serialNumber: number;
     name: string;
+    code?: string;
     englishName?: string;
     jobTitle: string;
     englishJobTitle?: string;

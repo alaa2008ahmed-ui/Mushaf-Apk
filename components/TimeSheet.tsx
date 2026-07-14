@@ -56,6 +56,7 @@ const DEFAULT_EMPLOYEES = [
     { name: "محمد رياض", jobTitle: "ميكانيكي", englishName: "Mohamed Riad" },
     { name: "ياسين عبدالجبار البكري", jobTitle: "مراقب حركة سيارات", englishName: "Yaseen Abdul Jabbar Al-Bakri" },
     { name: "محمد طارق انس احمد", jobTitle: "مشغل محطة", englishName: "Mohamed Tariq Anas Ahmed" },
+    { name: "محمد تسليم", jobTitle: "عامل تجميع", englishName: "MD Mohamed Tasleem" },
     { name: "الترابى احمد ادريس على", jobTitle: "مراقب حركة سيارات", englishName: "Al-Torabi Ahmed Idris Ali" },
     { name: "نعمان كبير حسين", jobTitle: "مشغل محطة", englishName: "Numan Kabeer Hussein" }
 ];
@@ -119,21 +120,21 @@ const normalizeEnglishName = (name: string) => {
 };
 
 export default function TimeSheet({ drivers, workLogs, selectedBranchId, users = [], currentUser, onUpdateUser, isMobile }: Props) {
-    const [activeTab, setActiveTab] = useState<'employees' | 'drivers_tankers' | 'overtime1' | 'overtime2' | 'list_overtime' | 'settings'>('employees');
+    const [activeTab, setActiveTab] = useState<'employees' | 'drivers_tankers' | 'overtime1' | 'overtime2' | 'list_overtime'>('employees');
 
+    // Ensure activeTab is always one of the permitted tabs
     useEffect(() => {
         if (currentUser && currentUser.username.toLowerCase() !== 'alaa') {
             const perms = currentUser.permissions;
-            const allowedTabs = [];
-            if (perms?.tsCanViewEmployees === true) allowedTabs.push('employees');
+            const allowedTabs: ('employees' | 'drivers_tankers' | 'overtime1' | 'overtime2' | 'list_overtime')[] = [];
+            if (!perms || perms.tsCanViewEmployees !== false) allowedTabs.push('employees');
             if (perms?.tsCanViewDriversTankers === true) allowedTabs.push('drivers_tankers');
             if (perms?.tsCanViewOvertime1 === true) allowedTabs.push('overtime1');
             if (perms?.tsCanViewOvertime2 === true) allowedTabs.push('overtime2');
             if (perms?.tsCanViewListOvertime === true) allowedTabs.push('list_overtime');
-            if (perms?.tsCanManageSettings === true) allowedTabs.push('settings');
             
-            if (!allowedTabs.includes(activeTab) && allowedTabs.length > 0) {
-                setActiveTab(allowedTabs[0] as any);
+            if (allowedTabs.length > 0 && !allowedTabs.includes(activeTab)) {
+                setActiveTab(allowedTabs[0]);
             }
         }
     }, [currentUser, activeTab]);
@@ -377,7 +378,9 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                 "سنتاج كاتورا ياداف": "سنتراج كاتورا ياداف",
                 "جومبر جاراسيا": "جومير جاراسيا",
                 "جيمي هاو قرفايو": "جيمى هاو قرقايو",
-                "ماجومادار سويكوت": "ماجوما دار سوبكوت"
+                "ماجومادار سويكوت": "ماجوما دار سوبكوت",
+                "محمد سليم": "محمد تسليم",
+                "محمد سليم ": "محمد تسليم"
             };
 
             let hasActualCorrections = false;
@@ -412,6 +415,18 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                     hasActualCorrections = true;
                     return dualStorage.save(COLLECTIONS.RECORDS, emp.id, { type: 'timesheet_employee', data: updated });
                 }
+
+                // Also auto-backfill code if missing by matching with payroll data
+                if (!emp.code) {
+                    const normTsName = normalizeArabicName(updated.name);
+                    const payrollMatch = initialEmployees.find(p => normalizeArabicName(p.name) === normTsName);
+                    if (payrollMatch) {
+                        updated.code = payrollMatch.code;
+                        hasActualCorrections = true;
+                        return dualStorage.save(COLLECTIONS.RECORDS, emp.id, { type: 'timesheet_employee', data: updated });
+                    }
+                }
+
                 return Promise.resolve();
             });
 
@@ -500,21 +515,26 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
 
             if (payrollEmps && payrollEmps.length > 0) {
                 const oldName = editEmployee ? editEmployee.name : empName;
+                const empCode = targetEmp.code || '';
                 
                 // Let's check if the employee already exists in Payroll
-                const exists = payrollEmps.some((emp: any) => normalizeArabicName(emp.name) === normalizeArabicName(oldName));
+                const exists = payrollEmps.some((emp: any) => 
+                    normalizeArabicName(emp.name) === normalizeArabicName(oldName) || 
+                    (empCode && emp.code === empCode)
+                );
                 
                 let updatedPayrollEmps;
                 if (exists) {
                     updatedPayrollEmps = payrollEmps.map((emp: any) => {
                         const normPayrollAr = normalizeArabicName(emp.name);
                         const normOldAr = normalizeArabicName(oldName);
-                        if (normPayrollAr === normOldAr) {
+                        if (normPayrollAr === normOldAr || (empCode && emp.code === empCode)) {
                             return {
                                 ...emp,
                                 name: empName,
                                 nameEn: empEnglishName,
-                                jobTitle: empJobTitle
+                                jobTitle: empJobTitle,
+                                code: empCode || emp.code
                             };
                         }
                         return emp;
@@ -721,78 +741,66 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
             <div className={`px-2 print:hidden sticky bg-white z-40 py-3 border-b border-gray-200 shadow-sm ${isMobile ? 'top-0' : 'top-[160px]'}`}>
                 {/* Tabs */}
                 <div className="flex space-x-3 overflow-x-auto pb-1">
-                {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewEmployees === true) && (
-                    <button
-                        onClick={() => setActiveTab('employees')}
-                        className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
-                            activeTab === 'employees'
-                                ? 'border-indigo-600 text-indigo-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                    >
-                        Employees
-                    </button>
-                )}
-                {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewOvertime1 === true) && (
-                    <button
-                        onClick={() => setActiveTab('overtime1')}
-                        className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
-                            activeTab === 'overtime1'
-                                ? 'border-indigo-600 text-indigo-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                    >
-                        Overtime 1
-                    </button>
-                )}
-                {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewDriversTankers === true) && (
-                    <button
-                        onClick={() => setActiveTab('drivers_tankers')}
-                        className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
-                            activeTab === 'drivers_tankers'
-                                ? 'border-indigo-600 text-indigo-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                    >
-                        Drivers
-                    </button>
-                )}
-                {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewOvertime2 === true) && (
-                    <button
-                        onClick={() => setActiveTab('overtime2')}
-                        className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
-                            activeTab === 'overtime2'
-                                ? 'border-indigo-600 text-indigo-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                    >
-                        Overtime 2
-                    </button>
-                )}
-                {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewListOvertime === true) && (
-                    <button
-                        onClick={() => setActiveTab('list_overtime')}
-                        className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
-                            activeTab === 'list_overtime'
-                                ? 'border-indigo-600 text-indigo-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                    >
-                        List Overtime
-                    </button>
-                )}
-                {(currentUser && (currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanManageSettings === true)) && (
-                    <button
-                        onClick={() => setActiveTab('settings')}
-                        className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
-                            activeTab === 'settings'
-                                ? 'border-blue-600 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                    >
-                        Setting
-                    </button>
-                )}
+                    {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewEmployees !== false) && (
+                        <button
+                            onClick={() => setActiveTab('employees')}
+                            className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
+                                activeTab === 'employees'
+                                    ? 'border-indigo-600 text-indigo-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                                Employees
+                        </button>
+                    )}
+                    {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewOvertime1 === true) && (
+                        <button
+                            onClick={() => setActiveTab('overtime1')}
+                            className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
+                                activeTab === 'overtime1'
+                                    ? 'border-indigo-600 text-indigo-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Overtime 1
+                        </button>
+                    )}
+                    {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewDriversTankers === true) && (
+                        <button
+                            onClick={() => setActiveTab('drivers_tankers')}
+                            className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
+                                activeTab === 'drivers_tankers'
+                                    ? 'border-indigo-600 text-indigo-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Drivers
+                        </button>
+                    )}
+                    {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewOvertime2 === true) && (
+                        <button
+                            onClick={() => setActiveTab('overtime2')}
+                            className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
+                                activeTab === 'overtime2'
+                                    ? 'border-indigo-600 text-indigo-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Overtime 2
+                        </button>
+                    )}
+                    {(!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanViewListOvertime === true) && (
+                        <button
+                            onClick={() => setActiveTab('list_overtime')}
+                            className={`pb-2 px-2 whitespace-nowrap text-lg sm:text-xl font-bold transition-colors border-b-2 ${
+                                activeTab === 'list_overtime'
+                                    ? 'border-indigo-600 text-indigo-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            List Overtime
+                        </button>
+                    )}
             </div>
             </div>
 
@@ -1019,159 +1027,6 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                 {activeTab === 'list_overtime' && (
                     <div className="block">
                         <ListOvertime currentUser={currentUser} />
-                    </div>
-                )}
-
-                {activeTab === 'settings' && (
-                    <div className="block">
-                        <div className="p-4 sm:p-6 w-full">
-                        
-                        <div className="mb-6">
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Select User</label>
-                            <select
-                                value={settingsUserId}
-                                onChange={(e) => setSettingsUserId(e.target.value)}
-                                className="w-full sm:w-1/2 border border-gray-300 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500 font-semibold"
-                            >
-                                <option value="">-- Select a User --</option>
-                                {users && users
-                                    .filter(u => u.username.toLowerCase() !== 'alaa')
-                                    .filter((user, index, self) => 
-                                        self.findIndex(u => u.username.toLowerCase() === user.username.toLowerCase()) === index
-                                    )
-                                    .map(user => (
-                                        <option key={user.id} value={user.id}>{user.username} {user.role === 'admin' && user.username.toLowerCase() !== 'admin' ? '(Admin)' : ''}</option>
-                                    ))
-                                }
-                            </select>
-                        </div>
-                        
-                        <div className="p-6 border rounded-xl bg-white shadow-sm space-y-6">
-                            {(() => {
-                                const user = users.find(u => u.id === settingsUserId);
-                                const isUserSelected = !!user;
-                                const updatePerm = (key: string, value: boolean) => {
-                                    if (user && onUpdateUser) {
-                                        const updatedUser = {
-                                            ...user,
-                                            permissions: {
-                                                ...user.permissions,
-                                                [key]: value
-                                            }
-                                        };
-                                        onUpdateUser(user.id, updatedUser);
-                                    }
-                                };
-                                
-                                return (
-                                    <>
-                                        <div className="mb-4">
-                                            <h3 className="text-lg font-bold text-blue-800 mb-3 border-b border-blue-100 pb-2">
-                                                Page Access
-                                            </h3>
-                                            <label className={`flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-blue-600 transition-colors ${isUserSelected ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
-                                                <input
-                                                    type="checkbox"
-                                                    disabled={!isUserSelected}
-                                                    checked={isUserSelected && (user.permissions?.allowedPages || []).includes('Time Sheet')}
-                                                    onChange={(e) => {
-                                                        if (user && onUpdateUser) {
-                                                            const currentPages = user.permissions?.allowedPages || [];
-                                                            const newAllowed = e.target.checked 
-                                                                ? [...currentPages, 'Time Sheet']
-                                                                : currentPages.filter(p => p !== 'Time Sheet');
-                                                            onUpdateUser(user.id, {
-                                                                ...user,
-                                                                permissions: { ...user.permissions, allowedPages: newAllowed }
-                                                            });
-                                                        }
-                                                    }}
-                                                    className="w-4 h-4 text-blue-600 rounded"
-                                                />
-                                                Can Access Time Sheet Page
-                                            </label>
-                                        </div>
-
-                                        <div className="mb-4">
-                                            <h3 className="text-lg font-bold text-indigo-800 mb-3 border-b border-indigo-100 pb-2">
-                                                Tabs Visibility
-                                            </h3>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                {[
-                                                    { key: 'tsCanViewEmployees', label: 'View Employees Tab' },
-                                                    { key: 'tsCanViewDriversTankers', label: 'View Drivers (Tankers) Tab' },
-                                                    { key: 'tsCanViewOvertime1', label: 'View Overtime 1 Tab' },
-                                                    { key: 'tsCanViewOvertime2', label: 'View Overtime 2 Tab' },
-                                                    { key: 'tsCanViewListOvertime', label: 'View List Overtime Tab' },
-                                                    { key: 'tsCanManageSettings', label: 'View Setting Tab' },
-                                                ].map(perm => (
-                                                    <label key={perm.key} className={`flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-indigo-600 transition-colors ${isUserSelected ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
-                                                        <input
-                                                            type="checkbox"
-                                                            disabled={!isUserSelected}
-                                                            checked={isUserSelected && (user.permissions as any)?.[perm.key] === true}
-                                                            onChange={(e) => updatePerm(perm.key, e.target.checked)}
-                                                            className="w-4 h-4 text-indigo-600 rounded"
-                                                        />
-                                                        {perm.label}
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="mb-4">
-                                            <h3 className="text-lg font-bold text-teal-800 mb-3 border-b border-teal-100 pb-2">
-                                                Employees Tab Permissions
-                                            </h3>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                {[
-                                                    { key: 'tsCanAddEmployee', label: 'Add Employee' },
-                                                    { key: 'tsCanEditEmployee', label: 'Edit Employee' },
-                                                    { key: 'tsCanDeleteEmployee', label: 'Delete Employee' },
-                                                ].map(perm => (
-                                                    <label key={perm.key} className={`flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-teal-600 transition-colors ${isUserSelected ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
-                                                        <input
-                                                            type="checkbox"
-                                                            disabled={!isUserSelected}
-                                                            checked={isUserSelected && (user.permissions as any)?.[perm.key] === true}
-                                                            onChange={(e) => updatePerm(perm.key, e.target.checked)}
-                                                            className="w-4 h-4 text-teal-600 rounded"
-                                                        />
-                                                        {perm.label}
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        <div className="mb-4">
-                                            <h3 className="text-lg font-bold text-orange-800 mb-3 border-b border-orange-100 pb-2">
-                                                List Overtime Permissions
-                                            </h3>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                {[
-                                                    { key: 'tsCanViewArchiveO1', label: 'View Overtime 1 Archive' },
-                                                    { key: 'tsCanViewArchiveO2', label: 'View Overtime 2 Archive' },
-                                                    { key: 'tsCanUndoPost', label: 'Undo Post' },
-                                                    { key: 'tsCanDeletePost', label: 'Delete Post' },
-                                                ].map(perm => (
-                                                    <label key={perm.key} className={`flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-orange-600 transition-colors ${isUserSelected ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
-                                                        <input
-                                                            type="checkbox"
-                                                            disabled={!isUserSelected}
-                                                            checked={isUserSelected && (user.permissions as any)?.[perm.key] === true}
-                                                            onChange={(e) => updatePerm(perm.key, e.target.checked)}
-                                                            className="w-4 h-4 text-orange-600 rounded"
-                                                        />
-                                                        {perm.label}
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </>
-                                );
-                            })()}
-                        </div>
-                    </div>
                     </div>
                 )}
             </div>

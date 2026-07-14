@@ -207,8 +207,8 @@ export default function PayrollApp({
             updated.name = "محمد تسليم";
             changed = true;
           }
-          if (emp.code === "1175" && !emp.nameEn) {
-            updated.nameEn = "Mohamed Tasleem";
+          if (emp.code === "1175" && (!emp.nameEn || emp.nameEn === "Mohamed Tasleem")) {
+            updated.nameEn = "MD Mohamed Tasleem";
             changed = true;
           }
 
@@ -411,28 +411,39 @@ export default function PayrollApp({
     archivedMonthData,
   ]);
 
-  // Sync isActive changes to TimeSheet documents
+  // Sync changes to TimeSheet documents (Two-way sync)
   useEffect(() => {
     if (!employees || employees.length === 0) return;
 
-    // We only want to sync if it's a real user action, but since we don't have a direct hook for that,
-    // we'll check against a ref to see if statuses changed.
-    const syncStatus = async () => {
+    const syncToTimeSheet = async () => {
       for (const emp of employees) {
-        // Find existing timesheet doc to avoid unnecessary saves if already synced
         const tsRecords = dualStorage.getLocalData(COLLECTIONS.RECORDS);
         const existingTs = tsRecords.find(
           (r: any) =>
             r &&
             r.type === "timesheet_employee" &&
             r.data &&
-            normalizeArabicName(r.data.name) === normalizeArabicName(emp.name),
+            (normalizeArabicName(r.data.name) === normalizeArabicName(emp.name) || (r.data.code && r.data.code === emp.code)),
         );
 
         if (existingTs) {
           const tsData = existingTs.data;
-          if (tsData.isActive !== emp.isActive) {
-            const updatedTs = { ...tsData, isActive: emp.isActive !== false };
+          const needsSync = 
+            tsData.isActive !== (emp.isActive !== false) ||
+            tsData.name !== emp.name ||
+            tsData.englishName !== emp.nameEn ||
+            tsData.jobTitle !== emp.jobTitle ||
+            tsData.code !== emp.code;
+
+          if (needsSync) {
+            const updatedTs = { 
+              ...tsData, 
+              isActive: emp.isActive !== false,
+              name: emp.name,
+              englishName: emp.nameEn,
+              jobTitle: emp.jobTitle,
+              code: emp.code
+            };
             await dualStorage.save(COLLECTIONS.RECORDS, existingTs.id, {
               type: "timesheet_employee",
               data: updatedTs,
@@ -442,7 +453,7 @@ export default function PayrollApp({
       }
     };
 
-    syncStatus();
+    syncToTimeSheet();
   }, [employees]);
 
   const [searchTerm, setSearchTerm] = useState("");
