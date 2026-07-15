@@ -27,7 +27,20 @@ export const defaultAdmin: User = {
         receiveNewOrderAlert: true,
         showDeliveryConfirmationPopup: true,
         showOrderReceiptPopup: true,
-        showReceiptDetailsPopup: true
+        showReceiptDetailsPopup: true,
+        tsCanViewEmployees: true,
+        tsCanViewDriversTankers: true,
+        tsCanViewOvertime1: true,
+        tsCanViewOvertime2: true,
+        tsCanViewListOvertime: true,
+        tsCanAddEmployee: true,
+        tsCanEditEmployee: true,
+        tsCanDeleteEmployee: true,
+        tsCanUndoPost: true,
+        tsCanDeletePost: true,
+        tsCanViewArchiveO1: true,
+        tsCanViewArchiveO2: true,
+        tsCanViewArchiveDrivers: true
     }
 };
 
@@ -59,6 +72,19 @@ export const alaaUser: User = {
         showDeliveryConfirmationPopup: true,
         showOrderReceiptPopup: true,
         showReceiptDetailsPopup: true,
+        tsCanViewEmployees: true,
+        tsCanViewDriversTankers: true,
+        tsCanViewOvertime1: true,
+        tsCanViewOvertime2: true,
+        tsCanViewListOvertime: true,
+        tsCanAddEmployee: true,
+        tsCanEditEmployee: true,
+        tsCanDeleteEmployee: true,
+        tsCanUndoPost: true,
+        tsCanDeletePost: true,
+        tsCanViewArchiveO1: true,
+        tsCanViewArchiveO2: true,
+        tsCanViewArchiveDrivers: true,
 
         canViewAllowancesEndOfService: true,
         canViewAllowancesEndOfServicePrint: true,

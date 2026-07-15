@@ -67,6 +67,18 @@ export function calculateEmployeeTotals(emp: Employee, phase: 'full' | 'phase1' 
   totalAllowances: number;
   overtime: number;
 } {
+  if (emp.isActive === false) {
+    return {
+      totalEntitlements: 0,
+      totalDeductions: 0,
+      netSalary: 0,
+      insuranceDeduction: 0,
+      basicSalary: 0,
+      totalAllowances: 0,
+      overtime: 0
+    };
+  }
+
   const isInsuranceEnabled = emp.hasInsurance !== false;
   const insuranceDeductionVal = isInsuranceEnabled ? (emp.insuranceDeduction || 0) : 0;
   
@@ -134,6 +146,7 @@ export function calculateEmployeeTotals(emp: Employee, phase: 'full' | 'phase1' 
 export function calculateGrandTotals(employees: Employee[], phase: 'full' | 'phase1' | 'phase2' = 'full'): PayrollTotals {
   return employees.reduce(
     (acc, emp) => {
+      if (emp.isActive === false) return acc;
       const totals = calculateEmployeeTotals(emp, phase);
       
       const getVal = (val: number | undefined, fieldName: string) => {

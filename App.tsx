@@ -432,6 +432,7 @@ const App: React.FC = () => {
             let currentPOCustomers = dualStorage.getLocalData(COLLECTIONS.PO_CUSTOMERS);
             let currentCustomers = dualStorage.getLocalData(COLLECTIONS.CUSTOMERS);
             
+            let cloudHasData = false;
             // PREVENT ACCIDENTAL CLOUD OVERWRITE ON NEW DEVICES
             // If local storage is empty, we must ensure the cloud is truly empty before seeding defaults.
             if (currentRecords.length === 0 && navigator.onLine) {
@@ -439,10 +440,11 @@ const App: React.FC = () => {
                     // Check if cloud has ANY records
                     const cloudSnap = await getDocs(query(collection(db, COLLECTIONS.RECORDS)));
                     if (!cloudSnap.empty) {
+                        cloudHasData = true;
                         console.log("Cloud has data, but local is empty. Waiting for initial sync...");
                         // Wait for sync to populate local storage
                         let attempts = 0;
-                        while (currentRecords.length === 0 && attempts < 20) {
+                        while (currentRecords.length === 0 && attempts < 40) {
                             await new Promise(resolve => setTimeout(resolve, 500));
                             currentRecords = dualStorage.getLocalData(COLLECTIONS.RECORDS);
                             attempts++;
@@ -457,13 +459,13 @@ const App: React.FC = () => {
             }
 
             // Re-seed IF AND ONLY IF cloud AND local are both empty for these types
-            const hasItems = currentRecords.some((r: any) => r.type === 'item');
-            const hasBranches = currentRecords.some((r: any) => r.type === 'branch');
-            const hasDrivers = currentRecords.some((r: any) => r.type === 'driver');
-            const hasVehicles = currentRecords.some((r: any) => r.type === 'vehicle');
-            const hasUsers = currentRecords.some((r: any) => r.type === 'user');
-            const hasPOCustomers = currentPOCustomers && currentPOCustomers.length > 0;
-            const hasCustomers = currentCustomers && currentCustomers.length > 0;
+            const hasItems = cloudHasData || currentRecords.some((r: any) => r.type === 'item');
+            const hasBranches = cloudHasData || currentRecords.some((r: any) => r.type === 'branch');
+            const hasDrivers = cloudHasData || currentRecords.some((r: any) => r.type === 'driver');
+            const hasVehicles = cloudHasData || currentRecords.some((r: any) => r.type === 'vehicle');
+            const hasUsers = cloudHasData || currentRecords.some((r: any) => r.type === 'user');
+            const hasPOCustomers = cloudHasData || (currentPOCustomers && currentPOCustomers.length > 0);
+            const hasCustomers = cloudHasData || (currentCustomers && currentCustomers.length > 0);
 
             if (!hasItems) {
                 console.log("Seeding missing items...");
@@ -595,11 +597,8 @@ const App: React.FC = () => {
                 await dualStorage.save(COLLECTIONS.RECORDS, alaaUser.id, { type: 'user', data: alaaUser });
             }
 
-            // Also check for the specific case where ALAA or ADMIN user might be missing even if others exist
+            // Also check for the specific case where ALAA user might be missing even if others exist
             if (hasUsers) {
-                if (!currentRecords.some((r: any) => r.type === 'user' && r.data.id === 'admin')) {
-                    await dualStorage.save(COLLECTIONS.RECORDS, defaultAdmin.id, { type: 'user', data: defaultAdmin });
-                }
                 if (!currentRecords.some((r: any) => r.type === 'user' && r.data.id === 'alaa-hidden')) {
                     await dualStorage.save(COLLECTIONS.RECORDS, alaaUser.id, { type: 'user', data: alaaUser });
                 }
@@ -1032,10 +1031,6 @@ const App: React.FC = () => {
     };
 
     const handleDeleteUser = (id: string) => {
-        if (id === 'admin') {
-            setNotification({ message: 'Cannot delete the main admin user.', type: 'error' });
-            return;
-        }
         dualStorage.delete(COLLECTIONS.RECORDS, id);
         if (currentUser?.id === id) {
             handleLogout();

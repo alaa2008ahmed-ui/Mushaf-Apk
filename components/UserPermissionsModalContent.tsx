@@ -154,12 +154,11 @@ export const UserPermissionsModalContent: React.FC<UserPermissionsModalContentPr
         },
         {
             name: 'Time Sheet',
-            labelEn: 'Employee Overtime (Time Sheet)',
+            labelEn: 'Time Sheet',
             labelAr: 'ساعات العمل الإضافي (كشف الوقت)',
             colorClass: 'indigo',
             icon: 'Calendar',
             subPermissions: [
-                { key: 'tsCanViewEmployees', labelEn: 'Employees', labelAr: 'الموظفين' },
                 { key: 'tsCanViewOvertime1', labelEn: 'Overtime 1', labelAr: 'الإضافي 1' },
                 { key: 'tsCanViewDriversTankers', labelEn: 'Drivers', labelAr: 'السائقين' },
                 { key: 'tsCanViewOvertime2', labelEn: 'Overtime 2', labelAr: 'الإضافي 2' },

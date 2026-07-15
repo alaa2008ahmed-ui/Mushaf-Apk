@@ -91,9 +91,9 @@ export const BankPayrollFile: React.FC<BankPayrollFileProps> = ({
 
         if (!hasValidName) return false;
 
-        // Only include if net salary in this phase is > 0
+        // Only include if net salary in this phase is > 0 OR if employee is inactive
         const t = calculateEmployeeTotals(emp, payrollPhase);
-        return t.netSalary > 0;
+        return t.netSalary > 0 || emp.isActive === false;
       })
       .map(emp => {
       const totals = calculateEmployeeTotals(emp, payrollPhase);
@@ -102,22 +102,25 @@ export const BankPayrollFile: React.FC<BankPayrollFileProps> = ({
       const targetPhase = payrollPhase === 'phase1' ? '1' : '2';
       const showItem = (fieldName: string) => isFull || getEmployeeFieldPhase(emp, fieldName) === targetPhase;
 
-      const basic = showItem('basicSalary') ? (emp.basicSalary || 0) : 0;
-      const housing = showItem('housingAllowance') ? (emp.housingAllowance || 0) : 0;
+      const isInactive = emp.isActive === false;
 
-      const otherAllowances = 
+      const basic = isInactive ? 0 : (showItem('basicSalary') ? (emp.basicSalary || 0) : 0);
+      const housing = isInactive ? 0 : (showItem('housingAllowance') ? (emp.housingAllowance || 0) : 0);
+
+      const otherAllowances = isInactive ? 0 : (
         (showItem('communicationAllowance') ? (emp.communicationAllowance || 0) : 0) +
         (showItem('foodAllowance') ? (emp.foodAllowance || 0) : 0) +
         (showItem('transportationAllowance') ? (emp.transportationAllowance || 0) : 0) +
         (showItem('commission') ? (emp.commission || 0) : 0) +
         (showItem('bonus') ? (emp.bonus || 0) : 0) +
-        (showItem('overtime') ? (emp.overtime || 0) : 0);
+        (showItem('overtime') ? (emp.overtime || 0) : 0)
+      );
 
       // Deductions: sum of insurance + general + loan + absence
-      const deductions = totals.totalDeductions;
+      const deductions = isInactive ? 0 : totals.totalDeductions;
 
       // Net salary
-      const net = totals.netSalary;
+      const net = isInactive ? 0 : totals.netSalary;
 
       return {
         employee: emp,

@@ -57,6 +57,19 @@ const normalizeEnglishName = (name: string) => {
     .trim();
 };
 
+const getNormalizedJSONString = (obj: any): string => {
+  if (obj === null || obj === undefined) return "";
+  if (typeof obj !== "object") return JSON.stringify(obj);
+  if (Array.isArray(obj)) {
+    return "[" + obj.map(getNormalizedJSONString).join(",") + "]";
+  }
+  const sortedKeys = Object.keys(obj).sort();
+  const parts = sortedKeys.map(key => {
+    return JSON.stringify(key) + ":" + getNormalizedJSONString(obj[key]);
+  });
+  return "{" + parts.join(",") + "}";
+};
+
 const ensureUniqueIdsAndDeduplicate = (list: Employee[]): Employee[] => {
   if (!list || list.length === 0) return [];
 
@@ -91,16 +104,18 @@ const ensureUniqueIdsAndDeduplicate = (list: Employee[]): Employee[] => {
 
   // First pass: keep existing valid IDs that are not duplicated
   for (const emp of uniqueRecords) {
-    if (emp.id && !takenIds.has(emp.id)) {
-      takenIds.add(emp.id);
-      finalRecords.push(emp);
+    const numId = Number(emp.id);
+    if (emp.id !== undefined && emp.id !== null && !isNaN(numId) && numId > 0 && !takenIds.has(numId)) {
+      takenIds.add(numId);
+      finalRecords.push({ ...emp, id: numId });
     } else {
       finalRecords.push({ ...emp, id: 0 });
     }
   }
 
   // Second pass: assign new unique IDs to any that had id = 0 or collided
-  let nextId = Math.max(0, ...Array.from(takenIds)) + 1;
+  const validTakenIds = Array.from(takenIds).filter((id) => !isNaN(id) && isFinite(id));
+  let nextId = validTakenIds.length > 0 ? Math.max(0, ...validTakenIds) + 1 : 1;
   if (nextId < 1) nextId = 1;
 
   for (const emp of finalRecords) {
@@ -165,6 +180,128 @@ const syncMonthlyValuesForEmployee = (emp: Employee, month: string): Employee =>
       [month]: currentMonthValues
     }
   };
+};
+
+const getEmployeeTotalHours = (emp: Employee, grid: any, emps: Employee[]) => {
+  if (!grid || !grid.employeesData) return 0;
+
+  let dData = grid.employeesData[emp.id.toString()] || grid.employeesData[emp.id];
+
+  // Fallback to name matching if not found
+  if (!dData || !dData.days || Object.keys(dData.days).length === 0) {
+    const targetNormAr = normalizeArabicName(emp.name);
+    for (const key of Object.keys(grid.employeesData)) {
+      const otherEmp = emps.find(e => e.id.toString() === key || e.id === Number(key));
+      if (otherEmp && normalizeArabicName(otherEmp.name) === targetNormAr) {
+        const checkData = grid.employeesData[key];
+        if (checkData && checkData.days && Object.keys(checkData.days).length > 0) {
+          dData = checkData;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!dData || !dData.days) return 0;
+  let sum = 0;
+  for (let i = 1; i <= 31; i++) {
+    const val = parseFloat(String(dData.days[i] || "0").trim());
+    if (!isNaN(val)) sum += val;
+  }
+  return sum;
+};
+
+const getEmployeeBonus = (emp: Employee, grid: any, emps: Employee[]) => {
+  if (!grid || !grid.employeesData) return 0;
+
+  let dData = grid.employeesData[emp.id.toString()] || grid.employeesData[emp.id];
+
+  // Fallback to name matching if not found or no bonus
+  if ((!dData || dData.bonus === undefined || dData.bonus === '') && emp.name) {
+    const targetNormAr = normalizeArabicName(emp.name);
+    for (const key of Object.keys(grid.employeesData)) {
+      const otherEmp = emps.find(e => e.id.toString() === key || e.id === Number(key));
+      if (otherEmp && normalizeArabicName(otherEmp.name) === targetNormAr) {
+        const checkData = grid.employeesData[key];
+        if (checkData && checkData.bonus !== undefined && checkData.bonus !== '') {
+          dData = checkData;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!dData || dData.bonus === undefined || dData.bonus === '') return 0;
+  const cleaned = String(dData.bonus).replace(/,/g, '').trim();
+  const val = parseFloat(cleaned);
+  return isNaN(val) ? 0 : val;
+};
+
+const applyTimesheetCalculations = (
+  emps: Employee[],
+  selectedMonth: string,
+): Employee[] => {
+  try {
+    const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+
+    // Get overtime 1 and 2 grids
+    const ot1Record = local.find(
+      (r: any) =>
+        r &&
+        r.type === "timesheet_grid_overtime1" &&
+        r.data &&
+        r.data.month === selectedMonth,
+    );
+    const ot1Grid = ot1Record ? ot1Record.data : null;
+
+    const ot2Record = local.find(
+      (r: any) =>
+        r &&
+        r.type === "timesheet_grid_overtime2" &&
+        r.data &&
+        r.data.month === selectedMonth,
+    );
+    const ot2Grid = ot2Record ? ot2Record.data : null;
+
+    // If both grids are completely missing from dualStorage, do NOT overwrite or reset the employee's existing values.
+    if (!ot1Grid && !ot2Grid) {
+      return emps;
+    }
+
+    return emps.map((emp) => {
+      let updatedEmp = { ...emp };
+      let changedForThisEmp = false;
+
+      const ot1Hours = getEmployeeTotalHours(emp, ot1Grid, emps);
+      const ot2Hours = getEmployeeTotalHours(emp, ot2Grid, emps);
+      const totalOtHours = ot1Hours + ot2Hours;
+      if (emp.overtimeHours !== totalOtHours) {
+        const basic = emp.basicSalary || 0;
+        const hourlyRate = (basic / 240) * 1.5;
+        updatedEmp.overtimeHours = totalOtHours;
+        updatedEmp.overtime = Number(
+          (totalOtHours * hourlyRate).toFixed(2),
+        );
+        changedForThisEmp = true;
+      }
+
+      const totalBonus =
+        getEmployeeBonus(emp, ot1Grid, emps) +
+        getEmployeeBonus(emp, ot2Grid, emps);
+      if (emp.bonus !== totalBonus) {
+        updatedEmp.bonus = totalBonus;
+        changedForThisEmp = true;
+      }
+
+      if (changedForThisEmp) {
+        return syncMonthlyValuesForEmployee(updatedEmp, selectedMonth);
+      }
+      return emp;
+    });
+  } catch (err) {
+    console.error("Error calculating timesheet hours and bonuses", err);
+    return emps;
+  }
 };
 
 export default function PayrollApp({
@@ -428,11 +565,22 @@ export default function PayrollApp({
 
         if (existingTs) {
           const tsData = existingTs.data;
+          const empShowO1 = emp.showInOvertime1 !== false;
+          const tsShowO1 = tsData.showInOvertime1 !== false;
+          const empShowO2 = emp.showInOvertime2 !== false;
+          const tsShowO2 = tsData.showInOvertime2 !== false;
+          const empShowDrivers = !!emp.showInDriversTab;
+          const tsShowDrivers = !!tsData.showInDriversTab;
+
           const needsSync = 
             tsData.isActive !== (emp.isActive !== false) ||
             tsData.name !== emp.name ||
-            tsData.englishName !== emp.nameEn ||
+            (emp.nameEn !== undefined && emp.nameEn !== "" && tsData.englishName !== emp.nameEn) ||
             tsData.jobTitle !== emp.jobTitle ||
+            (emp.englishJobTitle !== undefined && emp.englishJobTitle !== "" && tsData.englishJobTitle !== emp.englishJobTitle) ||
+            tsShowO1 !== empShowO1 ||
+            tsShowO2 !== empShowO2 ||
+            tsShowDrivers !== empShowDrivers ||
             tsData.code !== emp.code;
 
           if (needsSync) {
@@ -440,8 +588,12 @@ export default function PayrollApp({
               ...tsData, 
               isActive: emp.isActive !== false,
               name: emp.name,
-              englishName: emp.nameEn,
+              englishName: emp.nameEn || tsData.englishName || "",
               jobTitle: emp.jobTitle,
+              englishJobTitle: emp.englishJobTitle || tsData.englishJobTitle || "",
+              showInOvertime1: emp.showInOvertime1 !== false,
+              showInOvertime2: emp.showInOvertime2 !== false,
+              showInDriversTab: !!emp.showInDriversTab,
               code: emp.code
             };
             await dualStorage.save(COLLECTIONS.RECORDS, existingTs.id, {
@@ -467,11 +619,12 @@ export default function PayrollApp({
     // Prevent saving if we are in the middle of a migration reset
     if (isMigratingRef.current) return;
 
-    const employeesJson = JSON.stringify(employees);
-    if (employeesJson === lastSavedJsonRef.current) return;
-    lastSavedJsonRef.current = employeesJson;
+    const employeesNormalized = getNormalizedJSONString(employees);
+    if (employeesNormalized === lastSavedJsonRef.current) return;
+    lastSavedJsonRef.current = employeesNormalized;
 
     // Save to localStorage
+    const employeesJson = JSON.stringify(employees);
     localStorage.setItem("payroll_employees_2026", employeesJson);
 
     // Save to Firestore (dualStorage)
@@ -584,12 +737,15 @@ export default function PayrollApp({
         const empRecord = records.find((r: any) => r.id === "payroll_employees_data");
         if (empRecord && empRecord.data && Array.isArray(empRecord.data) && empRecord.data.length > 0) {
           setEmployees(prev => {
-            const currentStr = JSON.stringify(prev);
-            const newStr = JSON.stringify(empRecord.data);
+            // Apply current timesheet calculations to the Firestore-loaded list
+            const firestoreWithTimesheet = applyTimesheetCalculations(empRecord.data, selectedMonth);
+
+            const currentStr = getNormalizedJSONString(prev);
+            const newStr = getNormalizedJSONString(firestoreWithTimesheet);
             if (currentStr !== newStr) {
               lastSavedJsonRef.current = newStr;
-              localStorage.setItem("payroll_employees_2026", newStr);
-              return empRecord.data;
+              localStorage.setItem("payroll_employees_2026", JSON.stringify(firestoreWithTimesheet));
+              return firestoreWithTimesheet;
             }
             return prev;
           });
@@ -629,10 +785,12 @@ export default function PayrollApp({
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
             setEmployees(prev => {
-              const currentStr = JSON.stringify(prev);
-              if (JSON.stringify(parsed) !== currentStr) {
-                lastSavedJsonRef.current = saved;
-                return parsed;
+              const parsedWithTimesheet = applyTimesheetCalculations(parsed, selectedMonth);
+              const currentStr = getNormalizedJSONString(prev);
+              const parsedStr = getNormalizedJSONString(parsedWithTimesheet);
+              if (currentStr !== parsedStr) {
+                lastSavedJsonRef.current = parsedStr;
+                return parsedWithTimesheet;
               }
               return prev;
             });
@@ -683,7 +841,7 @@ export default function PayrollApp({
       window.removeEventListener("payroll_employees_synced", handleEmployeesSynced);
       window.removeEventListener("payroll_archives_updated", handleArchivesUpdated);
     };
-  }, []);
+  }, [selectedMonth]);
 
   // Use archived snapshot if archived, otherwise active state
   const displayedEmployees = useMemo(() => {
@@ -754,8 +912,8 @@ export default function PayrollApp({
 
   // Handlers
   const handleAddEmployeeClick = () => {
-    const newId =
-      employees.length > 0 ? Math.max(...employees.map((i) => i.id)) + 1 : 1;
+    const validIds = employees.map((i) => Number(i.id)).filter((id) => !isNaN(id) && isFinite(id));
+    const newId = validIds.length > 0 ? Math.max(...validIds) + 1 : 1;
     const newCode = Math.floor(1000 + Math.random() * 9000).toString();
     const defaultBranch =
       branches.find((b) => b !== "الكل" && b !== "All") || "الادارة";
@@ -804,6 +962,30 @@ export default function PayrollApp({
   };
 
   const handleEditEmployeeClick = (emp: Employee) => {
+    try {
+      const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+      const tsEmployees = local
+        .filter((r: any) => r && r.type === "timesheet_employee" && r.data)
+        .map((r: any) => r.data);
+      
+      const matchedTs = tsEmployees.find(
+        (e: any) =>
+          normalizeArabicName(e.name) === normalizeArabicName(emp.name) ||
+          (e.code && e.code === emp.code)
+      );
+
+      if (matchedTs) {
+        emp = {
+          ...emp,
+          englishJobTitle: emp.englishJobTitle || matchedTs.englishJobTitle || '',
+          showInOvertime1: emp.showInOvertime1 !== undefined ? emp.showInOvertime1 : (matchedTs.showInOvertime1 !== false),
+          showInOvertime2: emp.showInOvertime2 !== undefined ? emp.showInOvertime2 : (matchedTs.showInOvertime2 !== false),
+          showInDriversTab: emp.showInDriversTab !== undefined ? emp.showInDriversTab : !!matchedTs.showInDriversTab,
+        };
+      }
+    } catch (err) {
+      console.error("Error matching timesheet employee on edit:", err);
+    }
     setEmployeeToEdit(emp);
     setIsEmployeeModalOpen(true);
   };
@@ -814,7 +996,28 @@ export default function PayrollApp({
       (e) => e.id === employeeToEdit.id,
     );
     if (currentIndex >= 0 && currentIndex < filteredEmployees.length - 1) {
-      setEmployeeToEdit(filteredEmployees[currentIndex + 1]);
+      let nextEmp = filteredEmployees[currentIndex + 1];
+      try {
+        const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+        const tsEmployees = local
+          .filter((r: any) => r && r.type === "timesheet_employee" && r.data)
+          .map((r: any) => r.data);
+        const matchedTs = tsEmployees.find(
+          (e: any) =>
+            normalizeArabicName(e.name) === normalizeArabicName(nextEmp.name) ||
+            (e.code && e.code === nextEmp.code)
+        );
+        if (matchedTs) {
+          nextEmp = {
+            ...nextEmp,
+            englishJobTitle: nextEmp.englishJobTitle || matchedTs.englishJobTitle || '',
+            showInOvertime1: nextEmp.showInOvertime1 !== undefined ? nextEmp.showInOvertime1 : (matchedTs.showInOvertime1 !== false),
+            showInOvertime2: nextEmp.showInOvertime2 !== undefined ? nextEmp.showInOvertime2 : (matchedTs.showInOvertime2 !== false),
+            showInDriversTab: nextEmp.showInDriversTab !== undefined ? nextEmp.showInDriversTab : !!matchedTs.showInDriversTab,
+          };
+        }
+      } catch (err) {}
+      setEmployeeToEdit(nextEmp);
     }
   };
 
@@ -824,151 +1027,39 @@ export default function PayrollApp({
       (e) => e.id === employeeToEdit.id,
     );
     if (currentIndex > 0) {
-      setEmployeeToEdit(filteredEmployees[currentIndex - 1]);
+      let prevEmp = filteredEmployees[currentIndex - 1];
+      try {
+        const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+        const tsEmployees = local
+          .filter((r: any) => r && r.type === "timesheet_employee" && r.data)
+          .map((r: any) => r.data);
+        const matchedTs = tsEmployees.find(
+          (e: any) =>
+            normalizeArabicName(e.name) === normalizeArabicName(prevEmp.name) ||
+            (e.code && e.code === prevEmp.code)
+        );
+        if (matchedTs) {
+          prevEmp = {
+            ...prevEmp,
+            englishJobTitle: prevEmp.englishJobTitle || matchedTs.englishJobTitle || '',
+            showInOvertime1: prevEmp.showInOvertime1 !== undefined ? prevEmp.showInOvertime1 : (matchedTs.showInOvertime1 !== false),
+            showInOvertime2: prevEmp.showInOvertime2 !== undefined ? prevEmp.showInOvertime2 : (matchedTs.showInOvertime2 !== false),
+            showInDriversTab: prevEmp.showInDriversTab !== undefined ? prevEmp.showInDriversTab : !!matchedTs.showInDriversTab,
+          };
+        }
+      } catch (err) {}
+      setEmployeeToEdit(prevEmp);
     }
   };
 
   useEffect(() => {
     const syncOvertime = () => {
       try {
-        const local = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
-
-        // Get TimeSheet employees
-        const tsEmployees = local
-          .filter((r: any) => r && r.type === "timesheet_employee" && r.data)
-          .map((r: any) => r.data);
-
-        if (tsEmployees.length === 0) {
-          return;
-        }
-
-        // Get current selected month
-        const currentMonth = selectedMonth;
-
-        // Get overtime 1 and 2 grids
-        const ot1Record = local.find(
-          (r: any) =>
-            r &&
-            r.type === "timesheet_grid_overtime1" &&
-            r.data &&
-            r.data.month === currentMonth,
-        );
-        const ot1Grid = ot1Record ? ot1Record.data : null;
-
-        const ot2Record = local.find(
-          (r: any) =>
-            r &&
-            r.type === "timesheet_grid_overtime2" &&
-            r.data &&
-            r.data.month === currentMonth,
-        );
-        const ot2Grid = ot2Record ? ot2Record.data : null;
-
-        const getEmployeeTotalHours = (empId: string, grid: any) => {
-          if (!grid || !grid.employeesData) return 0;
-
-          let dData = grid.employeesData[empId];
-          const targetTsEmp = tsEmployees.find((e: any) => e.id === empId);
-
-          if (
-            (!dData || !dData.days || Object.keys(dData.days).length === 0) &&
-            targetTsEmp
-          ) {
-            const targetNormAr = normalizeArabicName(targetTsEmp.name);
-            for (const key of Object.keys(grid.employeesData)) {
-              const otherTsEmp = tsEmployees.find((e: any) => e.id === key);
-              if (
-                otherTsEmp &&
-                normalizeArabicName(otherTsEmp.name) === targetNormAr
-              ) {
-                dData = grid.employeesData[key];
-                break;
-              }
-            }
-          }
-
-          if (!dData) return 0;
-          let sum = 0;
-          for (let i = 1; i <= 31; i++) {
-            const val = parseFloat(dData.days[i] || "0");
-            if (!isNaN(val)) sum += val;
-          }
-          return sum;
-        };
-
-        const getEmployeeBonus = (empId: string, grid: any) => {
-          if (!grid || !grid.employeesData) return 0;
-
-          let dData = grid.employeesData[empId];
-          const targetTsEmp = tsEmployees.find((e: any) => e.id === empId);
-
-          if ((!dData || !dData.bonus) && targetTsEmp) {
-            const targetNormAr = normalizeArabicName(targetTsEmp.name);
-            for (const key of Object.keys(grid.employeesData)) {
-              const otherTsEmp = tsEmployees.find((e: any) => e.id === key);
-              if (
-                otherTsEmp &&
-                normalizeArabicName(otherTsEmp.name) === targetNormAr
-              ) {
-                dData = grid.employeesData[key];
-                break;
-              }
-            }
-          }
-
-          return dData && dData.bonus
-            ? parseFloat(String(dData.bonus).replace(/,/g, "").trim()) || 0
-            : 0;
-        };
-
-        const updateEmps = (
-          emps: Employee[],
-        ): { changed: boolean; emps: Employee[] } => {
-          let changed = false;
-          const updated = emps.map((emp) => {
-            const tsEmp = tsEmployees.find((t: any) => {
-              const normTsAr = normalizeArabicName(t.name);
-              const normEmpAr = normalizeArabicName(emp.name);
-              if (normTsAr && normEmpAr && normTsAr === normEmpAr) return true;
-              const normTsEn = normalizeEnglishName(t.englishName || "");
-              const normEmpEn = normalizeEnglishName(emp.nameEn || "");
-              if (normTsEn && normEmpEn && normTsEn === normEmpEn) return true;
-              return false;
-            });
-            let updatedEmp = { ...emp };
-            let changedForThisEmp = false;
-            if (tsEmp) {
-              const ot1Hours = getEmployeeTotalHours(tsEmp.id, ot1Grid);
-              const ot2Hours = getEmployeeTotalHours(tsEmp.id, ot2Grid);
-              const totalOtHours = ot1Hours + ot2Hours;
-              if (emp.overtimeHours !== totalOtHours) {
-                const basic = emp.basicSalary || 0;
-                const hourlyRate = (basic / 240) * 1.5;
-                updatedEmp.overtimeHours = totalOtHours;
-                updatedEmp.overtime = Number(
-                  (totalOtHours * hourlyRate).toFixed(2),
-                );
-                changedForThisEmp = true;
-              }
-              const totalBonus =
-                getEmployeeBonus(tsEmp.id, ot1Grid) +
-                getEmployeeBonus(tsEmp.id, ot2Grid);
-              if (emp.bonus !== totalBonus) {
-                updatedEmp.bonus = totalBonus;
-                changedForThisEmp = true;
-              }
-            }
-            if (changedForThisEmp) {
-              changed = true;
-              return syncMonthlyValuesForEmployee(updatedEmp, currentMonth);
-            }
-            return emp;
-          });
-          return { changed, emps: updated };
-        };
         setEmployees((prev) => {
-          const res = updateEmps(prev);
-          return res.changed ? res.emps : prev;
+          const updated = applyTimesheetCalculations(prev, selectedMonth);
+          const currentStr = getNormalizedJSONString(prev);
+          const updatedStr = getNormalizedJSONString(updated);
+          return currentStr !== updatedStr ? updated : prev;
         });
       } catch (err) {
         console.error("Error syncing overtime from TimeSheet", err);
@@ -998,10 +1089,11 @@ export default function PayrollApp({
       setEmployees(newEmployees);
     } else {
       // Add new
+      const validIds = employees.map((i) => Number(i.id)).filter((id) => !isNaN(id) && isFinite(id));
       const newId = emp.id
         ? emp.id
-        : employees.length > 0
-          ? Math.max(...employees.map((i) => i.id)) + 1
+        : validIds.length > 0
+          ? Math.max(...validIds) + 1
           : 1;
       savedEmp = { ...savedEmp, id: newId };
       newEmployees = [...employees, savedEmp];
@@ -1010,8 +1102,9 @@ export default function PayrollApp({
     setEmployeeToEdit(savedEmp);
 
     // Synchronously save to dual storage to prevent race condition with incoming snapshot from tsEmp
+    const employeesNormalized = getNormalizedJSONString(newEmployees);
+    lastSavedJsonRef.current = employeesNormalized;
     const employeesJson = JSON.stringify(newEmployees);
-    lastSavedJsonRef.current = employeesJson;
     localStorage.setItem("payroll_employees_2026", employeesJson);
     dualStorage
       .save(COLLECTIONS.RECORDS, "payroll_employees_data", {
@@ -1067,17 +1160,21 @@ export default function PayrollApp({
           name: savedEmp.name,
           englishName: savedEmp.nameEn || "",
           jobTitle: savedEmp.jobTitle,
-          englishJobTitle: getEnglishJobTitleForArabic(savedEmp.jobTitle),
+          englishJobTitle: savedEmp.englishJobTitle || getEnglishJobTitleForArabic(savedEmp.jobTitle),
           isActive: savedEmp.isActive !== false,
-          showInOvertime1: true,
-          showInOvertime2: true,
+          showInOvertime1: savedEmp.showInOvertime1 !== false,
+          showInOvertime2: savedEmp.showInOvertime2 !== false,
+          showInDriversTab: !!savedEmp.showInDriversTab,
         };
       } else {
         tsEmp.name = savedEmp.name;
         tsEmp.englishName = savedEmp.nameEn || "";
         tsEmp.jobTitle = savedEmp.jobTitle;
-        tsEmp.englishJobTitle = getEnglishJobTitleForArabic(savedEmp.jobTitle);
+        tsEmp.englishJobTitle = savedEmp.englishJobTitle || getEnglishJobTitleForArabic(savedEmp.jobTitle);
         tsEmp.isActive = savedEmp.isActive !== false;
+        tsEmp.showInOvertime1 = savedEmp.showInOvertime1 !== false;
+        tsEmp.showInOvertime2 = savedEmp.showInOvertime2 !== false;
+        tsEmp.showInDriversTab = !!savedEmp.showInDriversTab;
       }
       await dualStorage.save(COLLECTIONS.RECORDS, tsEmp.id, {
         type: "timesheet_employee",
@@ -1098,8 +1195,9 @@ export default function PayrollApp({
     setEmployees(newEmployees);
 
     // Synchronously save to dual storage to prevent race condition
+    const employeesNormalized = getNormalizedJSONString(newEmployees);
+    lastSavedJsonRef.current = employeesNormalized;
     const employeesJson = JSON.stringify(newEmployees);
-    lastSavedJsonRef.current = employeesJson;
     localStorage.setItem("payroll_employees_2026", employeesJson);
     dualStorage
       .save(COLLECTIONS.RECORDS, "payroll_employees_data", {
@@ -1286,7 +1384,7 @@ export default function PayrollApp({
       otherDeductions: 0,
       generalDeduction: 0,
     }));
-    lastSavedJsonRef.current = JSON.stringify(resettedEmployees);
+    lastSavedJsonRef.current = getNormalizedJSONString(resettedEmployees);
     setEmployees(resettedEmployees);
 
     // 3. Calculate Next Month
@@ -1667,9 +1765,7 @@ export default function PayrollApp({
           />
         ) : viewMode === "bank" ? (
           <BankPayrollFile
-            employees={filteredEmployees.filter(
-              (emp) => emp.isActive !== false,
-            )}
+            employees={filteredEmployees}
             sheetTitle={sheetTitle}
             signatures={signatures}
             payrollPhase={activePayrollPhase}

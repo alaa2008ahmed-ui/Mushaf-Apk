@@ -1,3 +1,4 @@
+const toTitleCase = (str: string) => { if (!str) return ""; return str.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" "); };
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { TimeSheetEmployee } from '../types';
 import { dualStorage, COLLECTIONS } from '../DualStorageService';
@@ -386,8 +387,20 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
         const yellowFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDE047' } };
         const whiteFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
         
-        // 1. Write NAME column with diagonal border (A4:A5)
-        const cell4Name = sheet.getCell(4, 1);
+        // 0. Write # column (A4:A5)
+        const cell4Num = sheet.getCell(4, 1);
+        cell4Num.value = '#';
+        cell4Num.fill = whiteFill;
+        cell4Num.font = { bold: true, size: 11, color: { argb: 'FF000000' } };
+        cell4Num.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell4Num.border = borderStyle as any;
+        const cell5Num = sheet.getCell(5, 1);
+        cell5Num.fill = whiteFill;
+        cell5Num.border = borderStyle as any;
+        sheet.mergeCells(4, 2, 5, 2);
+
+        // 1. Write NAME column with diagonal border (B4:B5)
+        const cell4Name = sheet.getCell(4, 2);
         cell4Name.value = 'NAME';
         cell4Name.fill = whiteFill;
         cell4Name.font = { bold: true, size: 11, color: { argb: 'FF000000' } };
@@ -399,7 +412,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
         };
         cell4Name.border = diagonalBorder as any;
 
-        const cell5Name = sheet.getCell(5, 1);
+        const cell5Name = sheet.getCell(5, 2);
         cell5Name.fill = whiteFill;
         cell5Name.border = diagonalBorder as any;
         
@@ -408,7 +421,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
         // 2. Write standard columns headers (B4:B5 to F4:F5) - CAPACITY (M3), TOTAL TRIPS, TRIPS ON DUTY, TRIPS O.T., OVERTIME
         const colHeaders = ['CAPACITY (M3)', 'TOTAL TRIPS', 'TRIPS ON DUTY', 'TRIPS O.T.', 'OVERTIME'];
         colHeaders.forEach((val, idx) => {
-            const colIdx = idx + 2; // Start from Column B
+            const colIdx = idx + 3; // Start from Column C
             // Write to row 4
             const cell4 = sheet.getCell(4, colIdx);
             cell4.value = val;
@@ -430,7 +443,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
         daysArray31.forEach(day => {
             const dName = getDayName(day);
             const isRed = dName === 'FRIDAY' || dName === 'SATURDAY';
-            const colIdx = 6 + day;
+            const colIdx = 7 + day;
             
             const cell4 = sheet.getCell(4, colIdx);
             cell4.value = dName;
@@ -443,7 +456,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
         
         // Days Row 5 (Day Numbers)
         daysArray31.forEach(day => {
-            const colIdx = 6 + day;
+            const colIdx = 7 + day;
             const cell5 = sheet.getCell(5, colIdx);
             cell5.value = day <= daysInMonth ? day : '';
             cell5.fill = yellowFill;
@@ -462,7 +475,8 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
             if (isDriver) {
                 // Write Row 1
                 const row1Values: any[] = [
-                    emp.englishName || emp.name,
+                    activeEmployees.indexOf(emp) + 1,
+                    toTitleCase(emp.englishName || emp.name),
                     eData.capacity,
                     '',
                     '',
@@ -481,6 +495,10 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                     cell.font = { size: 8 };
                     if (cIdx === 0) {
                         cell.font = { bold: true, size: 10 };
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    }
+                    if (cIdx === 1) {
+                        cell.font = { bold: true, size: 10 };
                         cell.alignment = { horizontal: 'left', vertical: 'middle' };
                     }
                 });
@@ -489,6 +507,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                 
                 // Write Row 2
                 const row2Values: any[] = [
+                    '',
                     '',
                     '',
                     eData.totalTrips,
@@ -514,6 +533,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                     '',
                     '',
                     '',
+                    '',
                     eData.tripsOnDuty,
                     '',
                     ''
@@ -532,11 +552,13 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                 currentRow++;
                 
                 // Merge name cell across the 3 rows
+                sheet.mergeCells(currentRow - 3, 2, currentRow - 1, 2);
                 sheet.mergeCells(currentRow - 3, 1, currentRow - 1, 1);
             } else {
                 // Not a driver, write 1 row
                 const rowValues: any[] = [
-                    emp.englishName || emp.name,
+                    activeEmployees.indexOf(emp) + 1,
+                    toTitleCase(emp.englishName || emp.name),
                     '',
                     '',
                     '',
@@ -553,6 +575,10 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                     cell.alignment = { horizontal: 'center', vertical: 'middle' };
                     cell.font = { size: 8 };
                     if (cIdx === 0) {
+                        cell.font = { bold: true, size: 10 };
+                        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    }
+                    if (cIdx === 1) {
                         cell.font = { bold: true, size: 10 };
                         cell.alignment = { horizontal: 'left', vertical: 'middle' };
                     }
@@ -809,6 +835,11 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                     <table className="w-full border-collapse min-w-[1200px] border border-black table-fixed text-xs print-text-xs">
                         <thead>
                             <tr>
+                                <th className="border-b-2 border-r border-black p-0 relative bg-white w-10 h-[120px] align-middle" rowSpan={2}>
+                                    <div className="flex items-center justify-center font-black text-[16px]">
+                                        #
+                                    </div>
+                                </th>
                                 <th className="border-b-2 border-r border-black p-0 relative bg-white w-40 h-[120px] align-middle header-name-th" rowSpan={2}>
                                     <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
                                         <line x1="0" y1="100%" x2="35%" y2="0" stroke="black" strokeWidth="1.5" />
@@ -882,7 +913,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                             </tr>
                         </thead>
                         <tbody>
-                            {activeEmployees.map((emp) => {
+                            {activeEmployees.map((emp, index) => {
                                 const eData = gridData?.employeesData[emp.id] || { capacity: '', totalTrips: '', tripsOnDuty: '', tripsOT: '', overtime: '', days: {} };
                                 const isDriver = (emp.jobTitle || '').includes('سائق شاحنه') || (emp.jobTitle || '').includes('سائق');
                                 const borderBottom = isDriver ? '1px dashed #9ca3af' : '2px solid #000';
@@ -892,12 +923,19 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                     <React.Fragment key={emp.id}>
                                         <tr>
                                             <td 
+                                                style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000', verticalAlign: 'middle', textAlign: 'center' }} 
+                                                className="p-1 font-bold bg-white text-[12px]" 
+                                                rowSpan={rowSpan}
+                                            >
+                                                {index + 1}
+                                            </td>
+                                            <td 
                                                 style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000', verticalAlign: 'middle', textAlign: 'left' }} 
-                                                className="p-1 font-black text-red-600 uppercase text-left align-middle bg-white text-[12.5px] print-name-td" 
+                                                className="p-1 font-black text-red-600 text-left align-middle bg-white text-[12.5px] print-name-td" 
                                                 rowSpan={rowSpan}
                                             >
                                                 <div className="w-full h-full flex items-center justify-start">
-                                                    {emp.englishName || emp.name}
+                                                    {toTitleCase(emp.englishName || emp.name)}
                                                 </div>
                                             </td>
                                             <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">

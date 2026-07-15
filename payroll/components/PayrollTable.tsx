@@ -123,14 +123,14 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
   const printedCount = useMemo(() => {
     return employees.filter(emp => {
       const empTotals = calculateEmployeeTotals(emp, payrollPhase);
-      return empTotals.netSalary > 0;
+      return empTotals.netSalary > 0 || emp.isActive === false;
     }).length || 1;
   }, [employees, payrollPhase]);
 
   const printedEmployees = useMemo(() => {
     return employees.filter(emp => {
       const empTotals = calculateEmployeeTotals(emp, payrollPhase);
-      return empTotals.netSalary > 0;
+      return empTotals.netSalary > 0 || emp.isActive === false;
     });
   }, [employees, payrollPhase]);
 
@@ -378,7 +378,7 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                         : isEven 
                           ? 'bg-white hover:bg-slate-50' 
                           : 'bg-slate-50 hover:bg-slate-100'
-                  } print:bg-transparent items-center text-sm ${empTotals.netSalary === 0 ? 'print:hidden' : ''}`}
+                  } print:bg-transparent items-center text-sm ${(empTotals.netSalary === 0 && emp.isActive !== false) ? 'print:hidden' : ''}`}
                 >
                   <td className="p-2 border border-slate-100 print:hidden text-center" onClick={(e) => e.stopPropagation()}>
                     <input

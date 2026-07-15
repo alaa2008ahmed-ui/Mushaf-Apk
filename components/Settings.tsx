@@ -119,10 +119,28 @@ const Settings: React.FC<SettingsProps> = ({
     const [restoreFileContent, setRestoreFileContent] = useState<string | null>(null);
     const [backupError, setBackupError] = useState<string | null>(null);
 
+    // Ghost Cleanup State
+    const [showGhostCleanupModal, setShowGhostCleanupModal] = useState(false);
+    const [ghostCleanupPassword, setGhostCleanupPassword] = useState('');
+    const [ghostCleanupError, setGhostCleanupError] = useState<string | null>(null);
+    const [isCleaningGhosts, setIsCleaningGhosts] = useState(false);
+
     // Folder selection state
-    const [lang, setLang] = useState<'ar' | 'en'>(() => (localStorage.getItem('timesheet_names_language') as 'ar' | 'en') || 'en');
+    const lang = 'en';
     const [folderName, setFolderName] = useState<string>('');
     const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
+
+    // Toast Notification State
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    useEffect(() => {
+        if (toast) {
+            const timer = setTimeout(() => {
+                setToast(null);
+            }, 6000);
+            return () => clearTimeout(timer);
+        }
+    }, [toast]);
 
     useEffect(() => {
         async function loadFolder() {
@@ -481,6 +499,59 @@ const Settings: React.FC<SettingsProps> = ({
     };
 
     // --- Clear Invoices Logic ---
+    const executeGhostCleanup = async () => {
+        if (ghostCleanupPassword !== '0120301012') {
+            setGhostCleanupError(lang === 'en' ? "Unauthorized. Incorrect password." : "غير مصرح. كلمة المرور خاطئة.");
+            return;
+        }
+
+        setIsCleaningGhosts(true);
+        setGhostCleanupError(null);
+
+        try {
+            const localRecords = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+            const currentEmpIds = localRecords
+                .filter((r: any) => r && r.type === 'timesheet_employee' && r.data)
+                .map((r: any) => r.id);
+            
+            const { getDocs, query, collection } = await import('firebase/firestore');
+            const { db } = await import('../firebase');
+            const q = query(collection(db, COLLECTIONS.RECORDS));
+            const snapshot = await getDocs(q);
+            
+            let deletedCount = 0;
+            const deletePromises: Promise<any>[] = [];
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.type === 'timesheet_employee' && !currentEmpIds.includes(doc.id)) {
+                    deletePromises.push(dualStorage.delete(COLLECTIONS.RECORDS, doc.id));
+                    deletedCount++;
+                }
+            });
+            
+            await Promise.all(deletePromises);
+            setToast({
+                type: 'success',
+                message: lang === 'en' 
+                    ? `Successfully cleaned up ${deletedCount} ghost employees from the cloud. The current ${currentEmpIds.length} employees have been locked.`
+                    : `تم بنجاح تنظيف ${deletedCount} من الموظفين الأشباح من السحابة وقفل الموظفين الحاليين وعددهم ${currentEmpIds.length}.`
+            });
+            setShowGhostCleanupModal(false);
+            setGhostCleanupPassword('');
+        } catch (err) {
+            console.error(err);
+            const errMsg = lang === 'en' ? "Error during cleanup." : "حدث خطأ أثناء التنظيف.";
+            setGhostCleanupError(errMsg);
+            setToast({
+                type: 'error',
+                message: errMsg
+            });
+        } finally {
+            setIsCleaningGhosts(false);
+        }
+    };
+
     const handleClearInvoicesStart = () => {
         setClearPassword('');
         setClearError('');
@@ -1272,7 +1343,6 @@ const Settings: React.FC<SettingsProps> = ({
                                                                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                                                 </svg>
                                                             </button>
-                                                            {user.id !== 'admin' && (
                                                                 <button 
                                                                     onClick={() => onDeleteUser(user.id)}
                                                                     className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
@@ -1282,7 +1352,6 @@ const Settings: React.FC<SettingsProps> = ({
                                                                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                                                                     </svg>
                                                                 </button>
-                                                            )}
                                                         </div>
                                                     </li>
                                                 ))}
@@ -2000,6 +2069,20 @@ const Settings: React.FC<SettingsProps> = ({
                                                 Clear All Data
                                             </button>
                                         </div>
+                                        
+                                        <div className="mt-6 pt-6 border-t border-gray-300">
+                                            <h4 className="font-bold text-red-900 mb-2 flex items-center gap-2">
+                                                <AlertTriangle className="w-5 h-5 text-red-700" />
+                                                System Overrides (Admin Only)
+                                            </h4>
+                                            <button 
+                                                onClick={() => setShowGhostCleanupModal(true)}
+                                                className="w-full flex items-center justify-center gap-1.5 bg-red-900 hover:bg-red-950 text-white font-bold py-2 px-4 rounded text-sm transition-colors"
+                                            >
+                                                <Lock className="w-5 h-5" />
+                                                Lock Current Employees & Erase Ghosts (تنظيف الموظفين)
+                                            </button>
+                                        </div>
                                         <p className="text-xs text-red-500 mt-2 text-center">
                                             Note: You will be able to select which branch to clear.
                                         </p>
@@ -2313,13 +2396,12 @@ const Settings: React.FC<SettingsProps> = ({
                                                         onChange={() => togglePagePermission('Time Sheet')}
                                                         className="w-4 h-4 text-indigo-600 rounded"
                                                     />
-                                                    <span>Employee Overtime (Time Sheet)</span>
+                                                    <span>Time Sheet</span>
                                                 </label>
                                             </div>
                                             {tempUser.permissions?.allowedPages.includes('Time Sheet') && (
                                                 <div className="ml-6 grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 pt-2 border-t border-indigo-50">
                                                     {[
-                                                        { key: 'tsCanViewEmployees', label: lang === 'en' ? 'View Employees' : 'عرض الموظفين' },
                                                         { key: 'tsCanViewDriversTankers', label: lang === 'en' ? 'View Drivers (Tankers)' : 'عرض السائقين (الناقلات)' },
                                                         { key: 'tsCanViewOvertime1', label: lang === 'en' ? 'View Overtime (O1)' : 'عرض الإضافي (1)' },
                                                         { key: 'tsCanViewOvertime2', label: lang === 'en' ? 'View Overtime (O2)' : 'عرض الإضافي (2)' },
@@ -3017,6 +3099,126 @@ const Settings: React.FC<SettingsProps> = ({
                                 * A strong password is recommended. There is no way to recover the file if the password is lost.
                             </p>
                         </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Ghost Cleanup Modal */}
+            {showGhostCleanupModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[80] p-4 text-right" dir="rtl">
+                    <motion.div 
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-red-100"
+                    >
+                        <div className="bg-red-900 p-6 text-white text-center relative">
+                            <div className="inline-flex p-3 bg-red-800 rounded-full mb-3 shadow-lg">
+                                <Lock className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-xl font-bold">
+                                {lang === 'en' ? 'System Overrides: Lock Employees' : 'تجاوز النظام: قفل الموظفين'}
+                            </h3>
+                            <button
+                                onClick={() => {
+                                    setShowGhostCleanupModal(false);
+                                    setGhostCleanupPassword('');
+                                    setGhostCleanupError(null);
+                                }}
+                                className="absolute top-4 left-4 hover:scale-110 transition-transform"
+                                disabled={isCleaningGhosts}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div className="p-8">
+                            <div className="bg-red-50 border-r-4 border-red-600 p-4 mb-6 rounded-l-md">
+                                <p className="text-sm text-red-800 leading-relaxed font-bold">
+                                    {lang === 'en' 
+                                        ? 'WARNING: This will forcefully lock the current employees and delete any other ghost/hidden employees from the server. Proceed with caution.'
+                                        : 'تحذير: هذا سيؤدي إلى قفل الموظفين الحاليين بقوة وحذف أي موظفين مخفيين أو أشباح من الخادم. يرجى المتابعة بحذر.'}
+                                </p>
+                            </div>
+                            
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                executeGhostCleanup();
+                            }} className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                                        {lang === 'en' ? 'System Override Password' : 'كلمة مرور تجاوز النظام'}
+                                    </label>
+                                    <input 
+                                        type="password"
+                                        value={ghostCleanupPassword}
+                                        onChange={(e) => setGhostCleanupPassword(e.target.value)}
+                                        className="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-red-500 focus:ring-0 outline-none transition-all text-center text-lg font-mono tracking-widest bg-gray-50"
+                                        placeholder="••••••••"
+                                        autoFocus
+                                        disabled={isCleaningGhosts}
+                                    />
+                                    {ghostCleanupError && <p className="text-red-500 text-sm mt-2 font-bold animate-shake">{ghostCleanupError}</p>}
+                                </div>
+
+                                <div className="flex gap-4 pt-2">
+                                    <button 
+                                        type="submit"
+                                        className="flex-1 flex items-center justify-center gap-2 bg-red-900 hover:bg-red-950 text-white py-3 px-6 rounded-xl font-bold shadow-xl transition-all disabled:opacity-50"
+                                        disabled={isCleaningGhosts || ghostCleanupPassword.length < 4}
+                                    >
+                                        {isCleaningGhosts ? (
+                                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                            <AlertTriangle className="w-5 h-5" />
+                                        )}
+                                        {lang === 'en' ? (isCleaningGhosts ? 'Cleaning...' : 'Confirm & Clean') : (isCleaningGhosts ? 'جاري التنظيف...' : 'تأكيد وتنظيف')}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {toast && (
+                <div className="fixed bottom-5 right-5 z-[100] max-w-sm w-full p-4">
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        className={`p-4 rounded-xl shadow-2xl border flex items-start gap-3 text-right backdrop-blur-md ${
+                            toast.type === 'success' 
+                                ? 'bg-green-50/95 border-green-200 text-green-900 shadow-green-100/50' 
+                                : 'bg-red-50/95 border-red-200 text-red-900 shadow-red-100/50'
+                        }`}
+                        dir="rtl"
+                    >
+                        <div className={`p-1.5 rounded-lg shrink-0 ${toast.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {toast.type === 'success' ? (
+                                <ShieldCheck className="w-5 h-5" />
+                            ) : (
+                                <AlertTriangle className="w-5 h-5" />
+                            )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-sm">
+                                {toast.type === 'success' 
+                                    ? (lang === 'en' ? 'Success Operation' : 'نجاح العملية') 
+                                    : (lang === 'en' ? 'Error occurred' : 'حدث خطأ')}
+                            </h4>
+                            <p className="text-xs mt-1 text-gray-700 leading-relaxed whitespace-pre-line font-semibold">
+                                {toast.message}
+                            </p>
+                        </div>
+                        <button 
+                            onClick={() => setToast(null)}
+                            className="text-gray-400 hover:text-gray-600 transition-colors self-start p-0.5 shrink-0"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </motion.div>
                 </div>
             )}

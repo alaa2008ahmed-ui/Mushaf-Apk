@@ -3,6 +3,37 @@ import { Save, User, DollarSign, Building2, Briefcase, Calendar, ShieldAlert, Ch
 import { Employee } from '../types';
 import { calculateEmployeeTotals, formatCurrency, getEmployeeFieldPhase } from '../utils/calculations';
 
+const jobTitleTranslations: Record<string, string> = {
+  'كيميائيه': 'Chemist',
+  'كيميائية': 'Chemist',
+  'كيميائي': 'Chemist',
+  'محاسب': 'Accountant',
+  'سائق': 'Driver',
+  'عامل': 'Worker',
+  'فني': 'Technician',
+  'مدير': 'Manager',
+  'مهندس': 'Engineer',
+  'مبيعات': 'Sales',
+  'مندوب مبيعات': 'Sales Representative',
+  'مندوب': 'Representative',
+  'مشرف': 'Supervisor',
+  'حارس': 'Security',
+  'سكرتير': 'Secretary',
+  'شؤون موظفين': 'HR',
+  'مسؤول': 'Officer',
+  'مشغل': 'Operator'
+};
+
+const translateJobTitle = (arabicTitle: string) => {
+  if (!arabicTitle) return '';
+  for (const [ar, en] of Object.entries(jobTitleTranslations)) {
+    if (arabicTitle.includes(ar)) {
+      return en;
+    }
+  }
+  return '';
+};
+
 interface EmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -58,6 +89,9 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     onSaveRef.current = onSave;
   }, [onSave]);
 
+  const isDirtyRef = React.useRef<boolean>(false);
+  const lastSavedJsonRef = React.useRef<string>('');
+
   useEffect(() => {
     if (employeeToEdit) {
       setFormData(prev => {
@@ -65,6 +99,14 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
         if (prev.id === employeeToEdit.id && prev.name !== undefined) {
            return prev;
         }
+        isDirtyRef.current = false;
+        lastSavedJsonRef.current = '';
+
+        let parsedEnglishJobTitle = employeeToEdit.englishJobTitle || '';
+        if (/[\u0600-\u06FF]/.test(parsedEnglishJobTitle)) {
+           parsedEnglishJobTitle = translateJobTitle(parsedEnglishJobTitle) || translateJobTitle(employeeToEdit.jobTitle || '') || '';
+        }
+
         return {
           ...employeeToEdit,
           nameEn: employeeToEdit.nameEn || '',
@@ -73,9 +115,15 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
           nationality: employeeToEdit.nationality !== undefined ? employeeToEdit.nationality : '',
           hasInsurance: !!employeeToEdit.hasInsurance,
           isActive: employeeToEdit.isActive !== false,
+          englishJobTitle: parsedEnglishJobTitle,
+          showInOvertime1: employeeToEdit.showInOvertime1 !== false,
+          showInOvertime2: employeeToEdit.showInOvertime2 !== false,
+          showInDriversTab: !!employeeToEdit.showInDriversTab,
         };
       });
     } else {
+      isDirtyRef.current = false;
+      lastSavedJsonRef.current = '';
       setFormData({
         id: Date.now(),
         code: '',
@@ -83,12 +131,16 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
         nameEn: '',
         nationalId: '',
         jobTitle: '',
+        englishJobTitle: '',
         branch: '',
         hireDate: new Date().toISOString().split('T')[0],
         iban: '',
         nationality: '',
         hasInsurance: false,
         isActive: true,
+        showInOvertime1: true,
+        showInOvertime2: true,
+        showInDriversTab: false,
         basicSalary: '' as unknown as number,
         overtimeHours: '' as unknown as number,
         overtime: '' as unknown as number,
@@ -110,29 +162,108 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    const hasAnyInput = Object.entries(formData).some(([key, val]) => {
-      if (key === 'id' || key === 'isActive' || key === 'hasInsurance' || key === 'paymentStage') return false;
-      return val !== '' && val !== 0 && val !== undefined;
-    });
+    if (!isDirtyRef.current) return;
 
-    if (hasAnyInput || employeeToEdit) {
-       const timeoutId = setTimeout(() => {
-          onSaveRef.current(formData as Employee);
-       }, 400);
-       return () => clearTimeout(timeoutId);
+    // Helper to determine if actual values have changed from the original employeeToEdit
+    const isFormDataChanged = (current: Partial<Employee>, original: Employee | null | undefined): boolean => {
+      if (!original) {
+        // For new employee, check if there is any substantial input
+        return Object.entries(current).some(([key, val]) => {
+          if (
+            key === 'id' || 
+            key === 'isActive' || 
+            key === 'hasInsurance' || 
+            key === 'paymentStage' || 
+            key === 'showInOvertime1' || 
+            key === 'showInOvertime2' || 
+            key === 'showInDriversTab' || 
+            key === 'hireDate'
+          ) return false;
+          return val !== '' && val !== 0 && val !== undefined;
+        });
+      }
+
+      // Compare non-id fields
+      const keysToCompare = Object.keys(current) as Array<keyof Employee>;
+      for (const key of keysToCompare) {
+        if (key === 'id') continue;
+
+        let valCurrent = current[key];
+        let valOriginal = original[key];
+
+        if (valCurrent === undefined || valCurrent === null) valCurrent = '';
+        if (valOriginal === undefined || valOriginal === null) valOriginal = '';
+
+        if (key === 'isActive') {
+          if (!!valCurrent !== (valOriginal !== false)) return true;
+          continue;
+        }
+        if (key === 'hasInsurance') {
+          if (!!valCurrent !== !!valOriginal) return true;
+          continue;
+        }
+        if (key === 'showInOvertime1') {
+          if (!!valCurrent !== (valOriginal !== false)) return true;
+          continue;
+        }
+        if (key === 'showInOvertime2') {
+          if (!!valCurrent !== (valOriginal !== false)) return true;
+          continue;
+        }
+        if (key === 'showInDriversTab') {
+          if (!!valCurrent !== !!valOriginal) return true;
+          continue;
+        }
+
+        if (String(valCurrent) !== String(valOriginal)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const currentJson = JSON.stringify(formData);
+    if (currentJson === lastSavedJsonRef.current) {
+      return;
     }
+
+    const changed = isFormDataChanged(formData, employeeToEdit);
+    if (!changed) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      lastSavedJsonRef.current = currentJson;
+      isDirtyRef.current = false;
+      onSaveRef.current(formData as Employee);
+    }, 400);
+
+    return () => clearTimeout(timeoutId);
   }, [formData, isOpen, employeeToEdit]);
 
   if (!isOpen) return null;
 
   const handleChange = (field: keyof Employee, value: string | number | boolean) => {
+    isDirtyRef.current = true;
     setFormData(prev => {
       let numVal: any = value;
-      if (typeof value === 'string' && !['name', 'nameEn', 'nationalId', 'code', 'jobTitle', 'branch', 'hireDate', 'notes', 'iban', 'nationality'].includes(field)) {
+      if (typeof value === 'string' && !['name', 'nameEn', 'nationalId', 'code', 'jobTitle', 'englishJobTitle', 'branch', 'hireDate', 'notes', 'iban', 'nationality'].includes(field)) {
         numVal = value === '' ? '' : (parseFloat(value) || 0);
       }
       
       let updated: any = { ...prev, [field]: numVal };
+
+      if (field === 'jobTitle' && typeof value === 'string') {
+         const translated = translateJobTitle(value);
+         if (translated && (!updated.englishJobTitle || /[\u0600-\u06FF]/.test(updated.englishJobTitle))) {
+             updated.englishJobTitle = translated;
+         }
+      }
+
+      if (field === 'englishJobTitle' && typeof value === 'string') {
+         // Optionally remove arabic characters
+         updated.englishJobTitle = value.replace(/[\u0600-\u06FF]/g, '');
+      }
 
       if (field === 'paymentStage') {
         updated.paymentStage = value as '1' | '2';
@@ -193,6 +324,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
   };
 
   const handleFieldPhaseChange = (field: string, phase: '1' | '2') => {
+    isDirtyRef.current = true;
     setFormData(prev => {
       const currentPhases = { ...(prev.fieldPhases || {}) };
       currentPhases[field] = phase;
@@ -361,7 +493,19 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                   value={formData.jobTitle || ''}
                   onChange={(e) => handleChange('jobTitle', e.target.value)}
                   placeholder="مثال: محاسب، مبيعات، سائق..."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-all font-semibold"
+                />
+              </div>
+
+              <div className="sm:col-span-3">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">الوظيفة باللغة الإنجليزية / English Job Title</label>
+                <input
+                  type="text"
+                  value={formData.englishJobTitle || ''}
+                  onChange={(e) => handleChange('englishJobTitle', e.target.value)}
+                  placeholder="e.g. Accountant, Driver..."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:bg-white transition-all font-semibold text-left"
+                  dir="ltr"
                 />
               </div>
 
@@ -453,6 +597,64 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                     {formData.isActive !== false ? 'نشط' : 'معطل'}
                   </span>
                 </button>
+              </div>
+
+              <div className="sm:col-span-9">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  ظهور الموظف في تبويبات الإضافي / Overtime Tabs Visibility
+                </label>
+                <div className="grid grid-cols-3 gap-3 h-[38px]">
+                  {/* Overtime 1 */}
+                  <button
+                    type="button"
+                    onClick={() => handleChange('showInOvertime1', formData.showInOvertime1 === false)}
+                    className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer h-full ${
+                      formData.showInOvertime1 !== false
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-800 hover:bg-indigo-100/80'
+                        : 'bg-slate-100 border-slate-300 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${formData.showInOvertime1 !== false ? 'bg-indigo-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                      Overtime 1
+                    </span>
+                    <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-mono">O1</span>
+                  </button>
+
+                  {/* Overtime 2 */}
+                  <button
+                    type="button"
+                    onClick={() => handleChange('showInOvertime2', formData.showInOvertime2 === false)}
+                    className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer h-full ${
+                      formData.showInOvertime2 !== false
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-800 hover:bg-indigo-100/80'
+                        : 'bg-slate-100 border-slate-300 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${formData.showInOvertime2 !== false ? 'bg-indigo-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                      Overtime 2
+                    </span>
+                    <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-mono">O2</span>
+                  </button>
+
+                  {/* Drivers / Tankers */}
+                  <button
+                    type="button"
+                    onClick={() => handleChange('showInDriversTab', !formData.showInDriversTab)}
+                    className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer h-full ${
+                      formData.showInDriversTab
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-800 hover:bg-indigo-100/80'
+                        : 'bg-slate-100 border-slate-300 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${formData.showInDriversTab ? 'bg-indigo-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                      Drivers
+                    </span>
+                    <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-mono">DT</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -60,7 +60,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
             setCustomStartDate(e.target.value);
             if (e.target.value) {
               const d = new Date(e.target.value);
-              if (!isNaN(d.getDate())) setWorkDaysCount(Math.min(30, d.getDate()));
+              if (!isNaN(d.getDate())) setWorkDaysCount(Math.min(30, Math.max(0, d.getDate() - 1)));
             }
           }} 
           onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }} 
@@ -213,7 +213,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
             </tr>
             <tr className="h-6 print:h-5">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
-                بدل السكن {isProportionalActive && <span className="text-[12px] print:text-xs font-normal">({workDaysCount} يوم)</span>}
+                بدل السكن {isProportionalActive && <span className="text-[12px] print:text-xs font-normal">(30 يوم)</span>}
               </td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Housing Allowance</td>
               <td className="border border-black p-0.5 print:p-0.5">{formatNumber(housingValue)}</td>

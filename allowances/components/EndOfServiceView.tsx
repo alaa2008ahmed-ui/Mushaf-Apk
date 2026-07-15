@@ -46,7 +46,7 @@ export default function EndOfServiceView({ employees, onArchive, archivedData }:
     } else if (originalEmp) {
       setCustomCalcDate(originalEmp.calculationDate);
       const d = new Date(originalEmp.calculationDate);
-      const day = !isNaN(d.getDate()) ? Math.min(30, d.getDate()) : 30;
+      const day = !isNaN(d.getDate()) ? Math.min(30, Math.max(0, d.getDate() - 1)) : 30;
       setWorkDaysCount(day);
     }
   }, [originalEmp, archivedData]);
@@ -55,7 +55,7 @@ export default function EndOfServiceView({ employees, onArchive, archivedData }:
     if (!archivedData && customCalcDate) {
       const d = new Date(customCalcDate);
       if (!isNaN(d.getTime())) {
-        setWorkDaysCount(Math.min(30, d.getDate()));
+        setWorkDaysCount(Math.min(30, Math.max(0, d.getDate() - 1)));
       }
     }
   }, [customCalcDate, archivedData]);
@@ -155,7 +155,7 @@ export default function EndOfServiceView({ employees, onArchive, archivedData }:
                 const found = employees.find(emp => emp.id === val);
                 if (found) {
                   const d = new Date(found.calculationDate);
-                  const day = !isNaN(d.getDate()) ? Math.min(30, d.getDate()) : 30;
+                  const day = !isNaN(d.getDate()) ? Math.min(30, Math.max(0, d.getDate() - 1)) : 30;
                   setWorkDaysCount(day);
                 }
               }}

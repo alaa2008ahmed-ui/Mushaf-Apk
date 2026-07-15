@@ -11,6 +11,10 @@ export interface Employee {
   nationality?: string; // الجنسية
   hasInsurance?: boolean; // تفعيل/تعطيل التأمينات
   isActive?: boolean; // حالة الموظف (نشط / معطل)
+  englishJobTitle?: string; // الوظيفة بالإنجليزية
+  showInOvertime1?: boolean; // ظهور في الاضافي 1
+  showInOvertime2?: boolean; // ظهور في الاضافي 2
+  showInDriversTab?: boolean; // ظهور في تبويب السائقين والناقلات
   
   // Entitlements (إستحقاقات)
   basicSalary: number; // الراتب_الأساسي

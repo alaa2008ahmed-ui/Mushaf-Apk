@@ -89,7 +89,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
             setCustomCalcDate(e.target.value);
             if (e.target.value) {
               const d = new Date(e.target.value);
-              if (!isNaN(d.getDate())) setWorkDaysCount(Math.min(30, d.getDate()));
+              if (!isNaN(d.getDate())) setWorkDaysCount(Math.min(30, Math.max(0, d.getDate() - 1)));
             }
           }} 
           onClick={(e) => {
@@ -275,7 +275,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
             </tr>
             <tr className="h-6 print:h-5">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
-                بدل السكن {isProportionalActive && <span className="text-[9px] font-normal">(كامل)</span>}
+                بدل السكن {isProportionalActive && <span className="text-[9px] font-normal">(30 يوم)</span>}
               </td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Housing Allowance</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{formatNumber(housingValue)}</td>
