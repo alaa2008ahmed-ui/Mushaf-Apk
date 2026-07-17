@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Employee, Signatures } from '../types';
 import { calculateEmployeeTotals, formatCurrency, getEmployeeFieldPhase } from '../utils/calculations';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 interface BankPayrollFileProps {
   employees: Employee[];
@@ -146,6 +146,14 @@ export const BankPayrollFile: React.FC<BankPayrollFileProps> = ({
 
   // Generate text file contents (WPS Standard)
   const handleDownloadWPS = () => {
+    const exportRecords = processedRecords.filter(rec => 
+      rec.employee.iban && 
+      typeof rec.employee.iban === 'string' && 
+      rec.employee.iban.trim() !== '' && 
+      rec.employee.iban.trim() !== 'SA0000000000000000000000'
+    );
+    const exportTotalNetSalaries = exportRecords.reduce((sum, rec) => sum + rec.netSalary, 0);
+
     // Header Row values
     const headerRow = [
       'H',
@@ -156,13 +164,13 @@ export const BankPayrollFile: React.FC<BankPayrollFileProps> = ({
       employerAccount,
       'SAR',
       paymentDate,
-      totalNetSalaries.toFixed(2),
+      exportTotalNetSalaries.toFixed(2),
       paymentDate,
       employerId
     ].join(',');
 
     // Detail Rows
-    const detailRows = processedRecords.map(rec => [
+    const detailRows = exportRecords.map(rec => [
       rec.recordType,
       rec.netSalary.toFixed(2),
       rec.iban.replace(/\s+/g, ''), // Strip spaces from IBAN
@@ -192,79 +200,139 @@ export const BankPayrollFile: React.FC<BankPayrollFileProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  // Export to Excel Workbook with RTL formatting and Header information
+  // Export to Excel Workbook with raw WPS format
   const handleExportToExcel = () => {
+    const exportRecords = processedRecords.filter(rec => 
+      rec.employee.iban && 
+      typeof rec.employee.iban === 'string' && 
+      rec.employee.iban.trim() !== '' && 
+      rec.employee.iban.trim() !== 'SA0000000000000000000000'
+    );
+    const exportTotalNetSalaries = exportRecords.reduce((sum, rec) => sum + rec.netSalary, 0);
+
+    const today = new Date();
+    const todayDay = String(today.getDate()).padStart(2, '0');
+    const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const todayYear = today.getFullYear();
+    const todayDateString = `${todayDay}${todayMonth}${todayYear}`;
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDay = String(tomorrow.getDate()).padStart(2, '0');
+    const tomorrowMonth = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const tomorrowYear = tomorrow.getFullYear();
+    const tomorrowDateString = `${tomorrowDay}${tomorrowMonth}${tomorrowYear}`;
+    
+    let sequence = 1;
+    const storedSeq = localStorage.getItem(`wpy_sequence_${todayDateString}`);
+    if (storedSeq) {
+      sequence = parseInt(storedSeq, 10) + 1;
+    }
+    localStorage.setItem(`wpy_sequence_${todayDateString}`, sequence.toString());
+    
+    const sequenceString = String(sequence).padStart(2, '0');
+    const fileName = `WPY${todayDateString}${sequenceString}.xlsx`;
+    const todayRefDate = `${todayDateString}.105`;
+    const tomorrowPayDate = tomorrowDateString;
+
     // Construct layout data for Excel Sheet
-    const wsData = [
-      ["كشف رواتب البنك وحماية الأجور (WPS) - مسير الرواتب الفعلي"],
-      [],
-      ["ملخص بيانات الملف (Header Information)"],
-      ["رمز البنك (Bank Code)", bankCode, "رقم تسلسل الملف (Sequence)", fileSequence],
-      ["حساب المنشأة (Employer Account)", employerAccount, "تاريخ الصرف (Value Date)", paymentDate],
-      ["بيان الراتب (Description)", paymentDesc, "رقم الهوية الوطنية / كود الملف", employerId],
-      ["إجمالي الرواتب الصافية", totalNetSalaries, "عدد الموظفين", processedRecords.length],
-      [],
-      ["تفاصيل رواتب الموظفين (Detail Records)"],
+    const wsData: any[][] = [
       [
-        "نوع السجل",
-        "صافي الراتب (ر.س)",
-        "رقم الآيبان الدولي (IBAN)",
-        "اسم الموظف بالإنجليزية",
-        "كود البنك المستلم",
-        "بيان الدفعة",
-        "الراتب الأساسي (ر.س)",
-        "بدل السكن (ر.س)",
-        "البدلات الأخرى (ر.س)",
-        "الاستقطاعات والخصم (ر.س)",
-        "رقم الهوية / الإقامة"
+        'H',
+        bankCode,
+        fileSequence,
+        'N',
+        todayRefDate,
+        employerAccount,
+        'SAR',
+        tomorrowPayDate,
+        Number(exportTotalNetSalaries.toFixed(2)),
+        tomorrowPayDate,
+        employerId,
+        paymentDesc
       ]
     ];
 
     // Add detail rows
-    processedRecords.forEach(rec => {
+    exportRecords.forEach(rec => {
       wsData.push([
         rec.recordType,
-        rec.netSalary,
+        Number(rec.netSalary.toFixed(2)),
         rec.iban.replace(/\s+/g, ''), // Strip spaces from IBAN
-        rec.englishName,
+        rec.englishName.replace(/,/g, ''),
         rec.bankIdentifier,
-        rec.paymentDesc,
-        rec.basicSalary,
-        rec.housingAllowance,
-        rec.otherAllowances,
-        rec.deductions,
+        rec.paymentDesc.replace(/,/g, ''),
+        Number(rec.basicSalary.toFixed(2)),
+        Number(rec.housingAllowance.toFixed(2)),
+        Number(rec.otherAllowances.toFixed(2)),
+        Number(rec.deductions.toFixed(2)),
         rec.nationalId
       ]);
     });
 
     // Create Worksheet
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-    
-    // Set direction to RTL for Arabic Excel interface
-    if (!ws['!views']) ws['!views'] = [];
-    ws['!views'].push({ RTL: true });
+
+    // Apply Styles
+    for (const key in ws) {
+      if (key[0] === '!') continue;
+      const cell = ws[key];
+      
+      cell.s = {
+        border: {
+          top: { style: 'thin', color: { rgb: '000000' } },
+          bottom: { style: 'thin', color: { rgb: '000000' } },
+          left: { style: 'thin', color: { rgb: '000000' } },
+          right: { style: 'thin', color: { rgb: '000000' } }
+        },
+        alignment: { vertical: 'center', horizontal: 'left' }
+      };
+
+      let isRed = false;
+      if (key === 'E1' || key === 'H1' || key === 'J1' || key === 'L1') {
+        isRed = true;
+      } else if (key.startsWith('F') && key !== 'F1') {
+        isRed = true;
+      }
+
+      let fontName = 'Calibri';
+      if (key.match(/^[A-Z]+1$/) || key.startsWith('E') || key.startsWith('F') || key.startsWith('H')) {
+        fontName = 'Arial';
+      }
+
+      if (key.match(/^[A-Z]+1$/) || key.startsWith('F')) {
+        cell.s.alignment.horizontal = 'center';
+      }
+
+      if (isRed) {
+        cell.s.font = { name: fontName, sz: 10, color: { rgb: 'FF0000' } };
+      } else {
+        cell.s.font = { name: fontName, sz: 10, color: { rgb: '000000' } };
+      }
+    }
 
     // Set professional column widths
     ws['!cols'] = [
-      { wch: 10 }, // Record Type
-      { wch: 15 }, // Net Salary
-      { wch: 30 }, // IBAN
-      { wch: 35 }, // English Name
-      { wch: 15 }, // Bank Code
-      { wch: 25 }, // Description
-      { wch: 15 }, // Basic
-      { wch: 15 }, // Housing
-      { wch: 15 }, // Others
-      { wch: 15 }, // Deductions
-      { wch: 20 }, // National ID
+      { wch: 3 },  // A: H / Record Type
+      { wch: 10 }, // B: Bank Code / Net Salary
+      { wch: 28 }, // C: Sequence / IBAN
+      { wch: 35 }, // D: N / English Name
+      { wch: 15 }, // E: Reference Date / Bank Identifier
+      { wch: 25 }, // F: Employer Account / Description
+      { wch: 10 }, // G: SAR / Basic Salary
+      { wch: 12 }, // H: Payment Date / Housing
+      { wch: 10 }, // I: Total Net / Others
+      { wch: 10 }, // J: Payment Date / Deductions
+      { wch: 15 }, // K: Employer ID / National ID
+      { wch: 25 }, // L: Description
     ];
 
     // Create Workbook
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "ملف البنك وحماية الأجور");
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
 
     // Save/write the file
-    XLSX.writeFile(wb, `WPS_Payroll_${bankCode}_${paymentDate}.xlsx`);
+    XLSX.writeFile(wb, fileName);
   };
 
   useEffect(() => {

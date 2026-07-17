@@ -1,3 +1,20 @@
+const mapToArabicBranches = (allowed: string[]) => {
+    const arabicBranches: string[] = [];
+    allowed.forEach(b => {
+        if (b === 'b3' || b === 'Main Branch' || b === 'المركز الرئيسي') {
+            arabicBranches.push('المركز الرئيسي', 'الادارة', 'b3', 'Main Branch');
+        }
+        if (b === 'b1' || b === 'Dammam Branch' || b === 'فرع الدمام') {
+            arabicBranches.push('فرع الدمام', 'b1', 'Dammam Branch');
+        }
+        if (b === 'b2' || b === 'AlHasa Branch' || b === 'فرع الاحساء') {
+            arabicBranches.push('فرع الاحساء', 'b2', 'AlHasa Branch');
+        }
+        arabicBranches.push(b);
+    });
+    return arabicBranches;
+};
+
 import React, { useState, useEffect } from 'react';
 import { dualStorage, COLLECTIONS } from '../DualStorageService';
 import { Trash2, Calendar, FileSpreadsheet, Eye, X, Printer, Undo2 } from 'lucide-react';
@@ -100,6 +117,8 @@ export default function ListOvertime({ currentUser }: Props) {
     const [archiveToDelete, setArchiveToDelete] = useState<MergedArchive | null>(null);
     const [archiveToUnpost, setArchiveToUnpost] = useState<{archive: MergedArchive, tab: 'overtime1' | 'overtime2' | 'drivers'} | null>(null);
     const [isUnposting, setIsUnposting] = useState(false);
+    const [isEditingArchive, setIsEditingArchive] = useState(false);
+    const [editedArchive, setEditedArchive] = useState<MergedArchive | null>(null);
 
     const loadArchives = (records: any[]) => {
         const loaded = records
@@ -231,6 +250,88 @@ export default function ListOvertime({ currentUser }: Props) {
         }
     };
 
+    const startEditingArchive = () => {
+        if (!selectedArchive) return;
+        setIsEditingArchive(true);
+        setEditedArchive(JSON.parse(JSON.stringify(selectedArchive)));
+    };
+
+    const handleArchiveCellChange = (empId: string, field: string, value: string, day?: number) => {
+        if (!editedArchive) return;
+        
+        setEditedArchive(prev => {
+            if (!prev) return prev;
+            const newArchive = { ...prev };
+            
+            let targetGrid: any;
+            if (archiveTab === 'overtime1') targetGrid = newArchive.overtime1;
+            else if (archiveTab === 'overtime2') targetGrid = newArchive.overtime2;
+            else if (archiveTab === 'drivers') targetGrid = newArchive.drivers;
+            
+            if (!targetGrid) return prev;
+            
+            targetGrid = { ...targetGrid, employeesData: { ...targetGrid.employeesData } };
+            
+            if (!targetGrid.employeesData[empId]) {
+                targetGrid.employeesData[empId] = { days: {} };
+            }
+            
+            const empData = { ...targetGrid.employeesData[empId] };
+            if (field === 'day' && day !== undefined) {
+                empData.days = { ...empData.days, [day]: value };
+            } else if (field.startsWith('day_')) {
+                empData.days = { ...empData.days, [field.replace('day_', '')]: value };
+            } else {
+                empData[field] = value;
+            }
+            
+            targetGrid.employeesData[empId] = empData;
+            
+            if (archiveTab === 'overtime1') newArchive.overtime1 = targetGrid;
+            else if (archiveTab === 'overtime2') newArchive.overtime2 = targetGrid;
+            else if (archiveTab === 'drivers') newArchive.drivers = targetGrid;
+            
+            return newArchive;
+        });
+    };
+
+    const saveEditedArchive = async () => {
+        if (!editedArchive) return;
+        
+        const recordId = archiveTab === 'overtime1' ? editedArchive.sourceId1 : 
+                         archiveTab === 'overtime2' ? editedArchive.sourceId2 : 
+                         editedArchive.sourceIdDrivers;
+                         
+        if (!recordId) return;
+        
+        try {
+            const gridData = archiveTab === 'overtime1' ? editedArchive.overtime1 : 
+                             archiveTab === 'overtime2' ? editedArchive.overtime2 : 
+                             editedArchive.drivers;
+                             
+            const records = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
+            const originalRecord = records.find((r: any) => r.id === recordId);
+            
+            if (originalRecord && originalRecord.data) {
+                const updatedData = { ...originalRecord.data };
+                if (archiveTab === 'overtime1') updatedData.overtime1 = gridData;
+                else if (archiveTab === 'overtime2') updatedData.overtime2 = gridData;
+                else if (archiveTab === 'drivers') updatedData.drivers = gridData;
+                
+                await dualStorage.save(COLLECTIONS.RECORDS, recordId, {
+                    type: 'timesheet_posted_month',
+                    data: updatedData
+                });
+                
+                window.dispatchEvent(new Event('timesheet_updated'));
+                setIsEditingArchive(false);
+                setSelectedArchive(editedArchive);
+            }
+        } catch (e) {
+            console.error("Error saving edited archive", e);
+        }
+    };
+
     const getMonthName = (monthStr: string) => {
         const [year, month] = monthStr.split('-');
         return new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -247,12 +348,91 @@ export default function ListOvertime({ currentUser }: Props) {
         return date.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
     };
 
+    // Helper to get active branch for a day
+    const getActiveBranchForDay = (empId: string, dayNum: number, grid: any, employeesList: any[]) => {
+        const eData = grid?.employeesData?.[empId];
+        const emp = employeesList.find(e => e.id === empId);
+        
+        if (!eData || !eData.dayBranches) {
+            return emp?.branch || '';
+        }
+        
+        if (eData.dayBranches[dayNum]) return eData.dayBranches[dayNum];
+        
+        for (let d = dayNum - 1; d >= 1; d--) {
+            if (eData.dayBranches[d]) return eData.dayBranches[d];
+        }
+        
+        for (let d = dayNum + 1; d <= 31; d++) {
+            if (eData.dayBranches[d]) return eData.dayBranches[d];
+        }
+        
+        return emp?.branch || '';
+    };
+
+    const getVisibleSum1 = (emp: TimeSheetEmployee, grid: any, daysCount: number, employeesList: any[]) => {
+        const eData = grid?.employeesData?.[emp.id];
+        if (!eData || !eData.days) return '';
+        let sum = 0;
+        for (let d = 1; d <= daysCount; d++) {
+            if (isCellVisible(emp.id, d, grid, employeesList)) {
+                const val = parseFloat(eData.days[`${d}_1`]);
+                if (!isNaN(val)) sum += val;
+            }
+        }
+        return sum > 0 ? sum.toString() : '';
+    };
+
+    const getVisibleSum2 = (emp: TimeSheetEmployee, grid: any, daysCount: number, employeesList: any[]) => {
+        const eData = grid?.employeesData?.[emp.id];
+        if (!eData || !eData.days) return '';
+        let sum = 0;
+        for (let d = 1; d <= daysCount; d++) {
+            if (isCellVisible(emp.id, d, grid, employeesList)) {
+                const val = parseFloat(eData.days[`${d}_2`]);
+                if (!isNaN(val)) sum += val;
+            }
+        }
+        return sum > 0 ? sum.toString() : '';
+    };
+
+    const getVisibleSum3 = (emp: TimeSheetEmployee, grid: any, daysCount: number, employeesList: any[]) => {
+        const eData = grid?.employeesData?.[emp.id];
+        if (!eData || !eData.days) return '';
+        let sum = 0;
+        for (let d = 1; d <= daysCount; d++) {
+            if (isCellVisible(emp.id, d, grid, employeesList)) {
+                const val = parseFloat(eData.days[`${d}_3`]);
+                if (!isNaN(val)) sum += val;
+            }
+        }
+        return sum > 0 ? sum.toString() : '';
+    };
+
+    const getVisibleTotalTrips = (emp: TimeSheetEmployee, grid: any, daysCount: number, employeesList: any[]) => {
+        const sum2 = parseFloat(getVisibleSum2(emp, grid, daysCount, employeesList)) || 0;
+        const sum3 = parseFloat(getVisibleSum3(emp, grid, daysCount, employeesList)) || 0;
+        const total = sum2 + sum3;
+        return total > 0 ? total.toString() : '';
+    };
+
+    const isCellVisible = (empId: string, day: number, grid: any, employeesList: any[]) => {
+        if (!currentUser || !currentUser.permissions || !currentUser.permissions.allowedBranches) return true;
+        const allowed = currentUser.permissions.allowedBranches;
+        if (allowed.includes('all') || currentUser.username?.toLowerCase() === 'alaa') return true;
+        
+        const allowedArabicBranches = mapToArabicBranches(allowed);
+        const dayBranch = getActiveBranchForDay(empId, day, grid, employeesList);
+        return allowedArabicBranches.includes(dayBranch);
+    };
+
     // Calculate total hours for an employee in the archived grid
-    const calculateArchivedHours = (grid: MonthlyGrid | undefined, empId: string, daysCount: number) => {
+    const calculateArchivedHours = (grid: MonthlyGrid | undefined, empId: string, daysCount: number, employeesList: any[]) => {
         if (!grid || !grid.employeesData[empId]) return 0;
         const dData = grid.employeesData[empId];
         let sum = 0;
         for (let d = 1; d <= daysCount; d++) {
+            if (!isCellVisible(empId, d, grid, employeesList)) continue;
             const val = parseFloat(dData.days[d] || '0');
             sum += isNaN(val) ? 0 : val;
         }
@@ -267,10 +447,17 @@ export default function ListOvertime({ currentUser }: Props) {
             if (emp.isActive !== false && showInTab) {
                 if (typeKey === 'drivers') {
                     const eData = grid.employeesData?.[emp.id];
-                    const otVal = parseFloat(eData?.overtime || '0');
-                    grandTotal += isNaN(otVal) ? 0 : otVal;
+                    if (eData && eData.days) {
+                        let sum1 = 0;
+                        for (let d = 1; d <= daysCount; d++) {
+                            if (!isCellVisible(emp.id, d, grid, employees)) continue;
+                            const val = parseFloat(eData.days[`${d}_1`] || '0');
+                            if (!isNaN(val)) sum1 += val;
+                        }
+                        grandTotal += sum1;
+                    }
                 } else {
-                    grandTotal += calculateArchivedHours(grid, emp.id, daysCount);
+                    grandTotal += calculateArchivedHours(grid, emp.id, daysCount, employees);
                 }
             }
         });
@@ -278,6 +465,7 @@ export default function ListOvertime({ currentUser }: Props) {
     };
 
     const exportArchivedToExcel = async (archive: ArchivedMonth, typeKey: 'overtime1' | 'overtime2' | 'drivers') => {
+        const employeesList = archive.employees || [];
         const grid = typeKey === 'overtime1' ? archive.overtime1 : (typeKey === 'overtime2' ? archive.overtime2 : archive.drivers);
         const title = typeKey === 'overtime1' ? 'Overtime 1' : (typeKey === 'overtime2' ? 'Overtime 2' : 'Drivers (Tankers)');
         
@@ -321,7 +509,7 @@ export default function ListOvertime({ currentUser }: Props) {
             sheet.getRow(currentRow).height = 25;
             currentRow++;
             
-            const filteredEmployees = archive.employees.filter(emp => {
+            const filteredEmployees = employeesList.filter(emp => {
                 const showInTab = emp.showInDriversTab !== false;
                 return emp.isActive !== false && showInTab;
             });
@@ -457,14 +645,14 @@ export default function ListOvertime({ currentUser }: Props) {
         sheet.getRow(currentRow).height = 25;
         currentRow++;
 
-        const filteredEmployees = archive.employees.filter(emp => {
+        const filteredEmployees = employeesList.filter(emp => {
             const showInTab = typeKey === 'overtime1' ? emp.showInOvertime1 !== false : (typeKey === 'overtime2' ? emp.showInOvertime2 !== false : emp.showInDriversTab !== false);
             return emp.isActive !== false && showInTab;
         });
 
         filteredEmployees.forEach((emp, idx) => {
             const dData = grid?.employeesData?.[emp.id] || { bonus: '', otTrips: '', rate: '', days: {} };
-            const total = calculateArchivedHours(grid, emp.id, daysInMonth);
+            const total = calculateArchivedHours(grid, emp.id, daysInMonth, employeesList);
             
             const cellValues: any[] = [
                 idx + 1,
@@ -541,6 +729,8 @@ export default function ListOvertime({ currentUser }: Props) {
         });
     };
 
+    const activeArchive = isEditingArchive && editedArchive ? editedArchive : selectedArchive;
+
     return (
         <div className="w-full space-y-6 p-4 sm:p-6 pb-12">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 gap-4">
@@ -562,6 +752,7 @@ export default function ListOvertime({ currentUser }: Props) {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {archives.map((archive, idx) => {
                         const daysInMonth = getDaysInMonth(archive.month);
+                        const employeesList = archive.employees || [];
                         return (
                             <div key={archive.id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col justify-between">
                                 <div>
@@ -579,7 +770,7 @@ export default function ListOvertime({ currentUser }: Props) {
                                                                 <span className="text-[9px] font-bold text-orange-700 mr-1">
                                                                     O1
                                                                 </span>
-                                                                {idx === 0 && (!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanUndoPost === true) && (
+                                                                {idx === 0 && (new Date().getTime() - new Date(archive.postedAt).getTime() <= 7 * 24 * 60 * 60 * 1000) && (!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanUndoPost === true) && (
                                                                     <button 
                                                                         onClick={() => setArchiveToUnpost({ archive, tab: 'overtime1' })}
                                                                         className="text-orange-500 hover:text-orange-700 bg-white rounded-full p-0.5 shadow-sm transition-colors"
@@ -595,7 +786,7 @@ export default function ListOvertime({ currentUser }: Props) {
                                                                 <span className="text-[9px] font-bold text-teal-700 mr-1">
                                                                     O2
                                                                 </span>
-                                                                {idx === 0 && (!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanUndoPost === true) && (
+                                                                {idx === 0 && (new Date().getTime() - new Date(archive.postedAt).getTime() <= 7 * 24 * 60 * 60 * 1000) && (!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanUndoPost === true) && (
                                                                     <button 
                                                                         onClick={() => setArchiveToUnpost({ archive, tab: 'overtime2' })}
                                                                         className="text-teal-500 hover:text-teal-700 bg-white rounded-full p-0.5 shadow-sm transition-colors"
@@ -611,7 +802,7 @@ export default function ListOvertime({ currentUser }: Props) {
                                                                 <span className="text-[9px] font-bold text-indigo-700 mr-1">
                                                                     Drivers
                                                                 </span>
-                                                                {idx === 0 && (!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanUndoPost === true) && (
+                                                                {idx === 0 && (new Date().getTime() - new Date(archive.postedAt).getTime() <= 7 * 24 * 60 * 60 * 1000) && (!currentUser || currentUser.username.toLowerCase() === 'alaa' || currentUser.permissions?.tsCanUndoPost === true) && (
                                                                     <button 
                                                                         onClick={() => setArchiveToUnpost({ archive, tab: 'drivers' })}
                                                                         className="text-indigo-500 hover:text-indigo-700 bg-white rounded-full p-0.5 shadow-sm transition-colors"
@@ -645,11 +836,11 @@ export default function ListOvertime({ currentUser }: Props) {
                                         <div className="border-r border-gray-200 pr-1">
                                             <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">O1</p>
                                             <p className="text-xs font-black text-indigo-600">
-                                                {archive.employees.filter(e => e.isActive && e.showInOvertime1 !== false).length}
+                                                {employeesList.filter(e => e.isActive && e.showInOvertime1 !== false).length}
                                             </p>
                                             {archive.overtime1 ? (
                                                 <p className="text-[10px] text-gray-500 font-medium mt-0.5">
-                                                    <span className="font-bold text-orange-600">{calculateTotalTabHours(archive.overtime1, archive.employees, daysInMonth, 'overtime1')}h</span>
+                                                    <span className="font-bold text-orange-600">{calculateTotalTabHours(archive.overtime1, employeesList, daysInMonth, 'overtime1')}h</span>
                                                 </p>
                                             ) : (
                                                 <p className="text-[9px] text-gray-400 italic mt-0.5">None</p>
@@ -658,11 +849,11 @@ export default function ListOvertime({ currentUser }: Props) {
                                         <div className="border-r border-gray-200 px-1">
                                             <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">O2</p>
                                             <p className="text-xs font-black text-indigo-600">
-                                                {archive.employees.filter(e => e.isActive && e.showInOvertime2 !== false).length}
+                                                {employeesList.filter(e => e.isActive && e.showInOvertime2 !== false).length}
                                             </p>
                                             {archive.overtime2 ? (
                                                 <p className="text-[10px] text-gray-500 font-medium mt-0.5">
-                                                    <span className="font-bold text-teal-600">{calculateTotalTabHours(archive.overtime2, archive.employees, daysInMonth, 'overtime2')}h</span>
+                                                    <span className="font-bold text-teal-600">{calculateTotalTabHours(archive.overtime2, employeesList, daysInMonth, 'overtime2')}h</span>
                                                 </p>
                                             ) : (
                                                 <p className="text-[9px] text-gray-400 italic mt-0.5">None</p>
@@ -671,11 +862,11 @@ export default function ListOvertime({ currentUser }: Props) {
                                         <div className="pl-1">
                                             <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider mb-1">Drivers</p>
                                             <p className="text-xs font-black text-indigo-600">
-                                                {archive.employees.filter(e => e.isActive && e.showInDriversTab !== false).length}
+                                                {employeesList.filter(e => e.isActive && e.showInDriversTab !== false).length}
                                             </p>
                                             {archive.drivers ? (
                                                 <p className="text-[10px] text-gray-500 font-medium mt-0.5">
-                                                    <span className="font-bold text-indigo-600">{calculateTotalTabHours(archive.drivers, archive.employees, daysInMonth, 'drivers')}h</span>
+                                                    <span className="font-bold text-indigo-600">{calculateTotalTabHours(archive.drivers, employeesList, daysInMonth, 'drivers')}h</span>
                                                 </p>
                                             ) : (
                                                 <p className="text-[9px] text-gray-400 italic mt-0.5">None</p>
@@ -792,6 +983,29 @@ export default function ListOvertime({ currentUser }: Props) {
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
+                                {isEditingArchive ? (
+                                    <>
+                                        <button
+                                            onClick={saveEditedArchive}
+                                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium text-xs transition-colors shadow-sm"
+                                        >
+                                            Save Changes
+                                        </button>
+                                        <button
+                                            onClick={() => setIsEditingArchive(false)}
+                                            className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md font-medium text-xs transition-colors shadow-sm"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        onClick={startEditingArchive}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium text-xs transition-colors shadow-sm"
+                                    >
+                                        Edit Archive
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => exportArchivedToExcel(selectedArchive, archiveTab)}
                                     className="flex items-center space-x-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium text-xs transition-colors shadow-sm"
@@ -857,8 +1071,8 @@ export default function ListOvertime({ currentUser }: Props) {
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
                                                 {(() => {
-                                                    const grid = selectedArchive.drivers;
-                                                    const filteredEmployees = selectedArchive.employees.filter(emp => emp.isActive !== false && emp.showInDriversTab === true);
+                                                    const grid = activeArchive.drivers;
+                                                    const filteredEmployees = activeArchive.employees.filter(emp => emp.isActive !== false && emp.showInDriversTab === true);
 
                                                     if (filteredEmployees.length === 0) {
                                                         return (
@@ -878,70 +1092,86 @@ export default function ListOvertime({ currentUser }: Props) {
                                                         return dName === 'FRIDAY' || dName === 'SATURDAY';
                                                     };
 
-                                                    return filteredEmployees.map((emp) => {
-                                                        const eData = (grid?.employeesData?.[emp.id] || { capacity: '', totalTrips: '', tripsOnDuty: '', tripsOT: '', overtime: '', days: {} }) as any;
-                                                        const isDriver = (emp.jobTitle || '').includes('سائق شاحنه') || (emp.jobTitle || '').includes('سائق');
-                                                        const borderBottom = isDriver ? '1px dashed #9ca3af' : '2px solid #000';
-                                                        const rowSpan = isDriver ? 3 : 1;
+                                                    const grandTotalDrivers = filteredEmployees.reduce((sum, emp) => {
+                                                        const eData = grid?.employeesData?.[emp.id] || { overtime: '' } as any;
+                                                        return sum + (parseFloat(eData.overtime) || 0);
+                                                    }, 0);
 
-                                                        return (
-                                                            <React.Fragment key={emp.id}>
-                                                                <tr>
-                                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000' }} className="p-2 font-bold text-red-600 uppercase text-left align-middle bg-white" rowSpan={rowSpan}>
-                                                                        {emp.englishName || emp.name}
-                                                                    </td>
-                                                                    <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-1 text-center font-bold bg-white h-6 border border-gray-200">
-                                                                        {isDriver && eData.capacity}
-                                                                    </td>
-                                                                    <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-1 text-center bg-white h-6 border border-gray-200"></td>
-                                                                    <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-1 text-center bg-white h-6 border border-gray-200"></td>
-                                                                    <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-1 text-center bg-white h-6 border border-gray-200"></td>
-                                                                    <td style={{ borderBottom: borderBottom, borderRight: '1px solid #000' }} className="p-1 text-center font-bold text-red-600 bg-white h-6 border border-gray-200">
-                                                                        {eData.overtime}
-                                                                    </td>
-                                                                    {daysArray.map(day => (
-                                                                        <td key={`d1-${day}`} style={{ borderBottom: borderBottom, borderRight: day === 31 ? '1px solid #000' : '1px dashed #9ca3af' }} className={`p-1 text-center font-bold bg-white h-6 border border-gray-200 ${day <= daysCount && isWeekend(day) ? 'text-red-600' : 'text-gray-800'}`}>
-                                                                            {day <= daysCount && (eData.days[`${day}_1`] || '')}
-                                                                        </td>
-                                                                    ))}
-                                                                </tr>
-                                                                {isDriver && (
-                                                                    <>
+                                                    return (
+                                                        <>
+                                                            {filteredEmployees.map((emp) => {
+                                                                const eData = (grid?.employeesData?.[emp.id] || { capacity: '', totalTrips: '', tripsOnDuty: '', tripsOT: '', overtime: '', days: {} }) as any;
+                                                                const isDriver = (emp.jobTitle || '').includes('سائق شاحنه') || (emp.jobTitle || '').includes('سائق');
+                                                                const borderBottom = isDriver ? '1px dashed #9ca3af' : '2px solid #000';
+                                                                const rowSpan = isDriver ? 3 : 1;
+
+                                                                return (
+                                                                    <React.Fragment key={emp.id}>
                                                                         <tr>
-                                                                            <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
-                                                                            <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-1 text-center font-bold bg-white h-6 border border-gray-200">
-                                                                                {eData.totalTrips}
+                                                                            <td style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000' }} className="p-2 font-bold text-red-600 uppercase text-left align-middle bg-white" rowSpan={rowSpan}>
+                                                                                {emp.englishName || emp.name}
                                                                             </td>
-                                                                            <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
-                                                                            <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-1 text-center font-bold bg-white h-6 border border-gray-200">
-                                                                                {eData.tripsOT}
+                                                                            <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-1 text-center font-bold bg-white h-6 border border-gray-200">
+                                                                                {isDriver && (isEditingArchive ? <input type="text" value={eData.capacity || ''} onChange={e => handleArchiveCellChange(emp.id, 'capacity', e.target.value)} className="w-full h-full text-center outline-none bg-yellow-50" /> : eData.capacity)}
                                                                             </td>
-                                                                            <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px solid #000' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                            <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-1 text-center bg-white h-6 border border-gray-200"></td>
+                                                                            <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-1 text-center bg-white h-6 border border-gray-200"></td>
+                                                                            <td style={{ borderBottom: borderBottom, borderRight: '1px dashed #9ca3af' }} className="p-1 text-center bg-white h-6 border border-gray-200"></td>
+                                                                            <td style={{ borderBottom: borderBottom, borderRight: '1px solid #000' }} className="p-1 text-center font-bold text-red-600 bg-white h-6 border border-gray-200">
+                                                                                {isEditingArchive ? <input type="text" value={eData.overtime || ''} onChange={e => handleArchiveCellChange(emp.id, 'overtime', e.target.value)} className="w-full h-full text-center outline-none bg-yellow-50 font-bold text-red-600" /> : eData.overtime}
+                                                                            </td>
                                                                             {daysArray.map(day => (
-                                                                                <td key={`d2-${day}`} style={{ borderBottom: '1px dashed #9ca3af', borderRight: day === 31 ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-1 text-center font-bold text-gray-800 bg-white h-6 border border-gray-200">
-                                                                                    {day <= daysCount && (eData.days[`${day}_2`] || '')}
+                                                                                <td key={`d1-${day}`} style={{ borderBottom: borderBottom, borderRight: day === 31 ? '1px solid #000' : '1px dashed #9ca3af' }} className={`p-1 text-center font-bold bg-white h-6 border border-gray-200 ${day <= daysCount && isWeekend(day) ? 'text-red-600' : 'text-gray-800'}`}>
+                                                                                    {day <= daysCount && (isEditingArchive ? <input type="text" value={eData.days[`${day}_1`] || ''} onChange={e => handleArchiveCellChange(emp.id, `day_${day}_1`, e.target.value)} className="w-full h-full text-center outline-none bg-yellow-50" /> : (eData.days[`${day}_1`] || ''))}
                                                                                 </td>
                                                                             ))}
                                                                         </tr>
-                                                                        <tr>
-                                                                            <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
-                                                                            <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
-                                                                            <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-1 text-center font-bold bg-white h-6 border border-gray-200">
-                                                                                {eData.tripsOnDuty}
-                                                                            </td>
-                                                                            <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
-                                                                            <td style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000' }} className="p-1 bg-white h-6 border border-gray-200"></td>
-                                                                            {daysArray.map(day => (
-                                                                                <td key={`d3-${day}`} style={{ borderBottom: '2px solid #000', borderRight: day === 31 ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-1 text-center font-bold text-gray-800 bg-white h-6 border border-gray-200">
-                                                                                    {day <= daysCount && (eData.days[`${day}_3`] || '')}
-                                                                                </td>
-                                                                            ))}
-                                                                        </tr>
-                                                                    </>
-                                                                )}
-                                                            </React.Fragment>
-                                                        );
-                                                    });
+                                                                        {isDriver && (
+                                                                            <>
+                                                                                <tr>
+                                                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-1 text-center font-bold bg-white h-6 border border-gray-200">
+                                                                                        {isEditingArchive ? <input type="text" value={eData.totalTrips || ''} onChange={e => handleArchiveCellChange(emp.id, 'totalTrips', e.target.value)} className="w-full h-full text-center outline-none bg-yellow-50" /> : eData.totalTrips}
+                                                                                    </td>
+                                                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-1 text-center font-bold bg-white h-6 border border-gray-200">
+                                                                                        {isEditingArchive ? <input type="text" value={eData.tripsOT || ''} onChange={e => handleArchiveCellChange(emp.id, 'tripsOT', e.target.value)} className="w-full h-full text-center outline-none bg-yellow-50" /> : eData.tripsOT}
+                                                                                    </td>
+                                                                                    <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px solid #000' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                                    {daysArray.map(day => (
+                                                                                        <td key={`d2-${day}`} style={{ borderBottom: '1px dashed #9ca3af', borderRight: day === 31 ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-1 text-center font-bold text-gray-800 bg-white h-6 border border-gray-200">
+                                                                                            {day <= daysCount && (isEditingArchive ? <input type="text" value={eData.days[`${day}_2`] || ''} onChange={e => handleArchiveCellChange(emp.id, `day_${day}_2`, e.target.value)} className="w-full h-full text-center outline-none bg-yellow-50" /> : (eData.days[`${day}_2`] || ''))}
+                                                                                        </td>
+                                                                                    ))}
+                                                                                </tr>
+                                                                                <tr>
+                                                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-1 text-center font-bold bg-white h-6 border border-gray-200">
+                                                                                        {isEditingArchive ? <input type="text" value={eData.tripsOnDuty || ''} onChange={e => handleArchiveCellChange(emp.id, 'tripsOnDuty', e.target.value)} className="w-full h-full text-center outline-none bg-yellow-50" /> : eData.tripsOnDuty}
+                                                                                    </td>
+                                                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                                    <td style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000' }} className="p-1 bg-white h-6 border border-gray-200"></td>
+                                                                                    {daysArray.map(day => (
+                                                                                        <td key={`d3-${day}`} style={{ borderBottom: '2px solid #000', borderRight: day === 31 ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-1 text-center font-bold text-gray-800 bg-white h-6 border border-gray-200">
+                                                                                            {day <= daysCount && (isEditingArchive ? <input type="text" value={eData.days[`${day}_3`] || ''} onChange={e => handleArchiveCellChange(emp.id, `day_${day}_3`, e.target.value)} className="w-full h-full text-center outline-none bg-yellow-50" /> : (eData.days[`${day}_3`] || ''))}
+                                                                                        </td>
+                                                                                    ))}
+                                                                                </tr>
+                                                                            </>
+                                                                        )}
+                                                                    </React.Fragment>
+                                                                );
+                                                            })}
+                                                            <tr className="bg-gray-100 print:bg-white font-bold">
+                                                                <td colSpan={5} className="p-2 font-bold text-gray-900 border border-gray-300 text-right">الإجمالي الكلي (Grand Total)</td>
+                                                                <td className="p-1 text-center font-bold text-red-600 border border-gray-300">{grandTotalDrivers}</td>
+                                                                {daysArray.map(day => (
+                                                                    <td key={day} className="p-1 border border-gray-300"></td>
+                                                                ))}
+                                                            </tr>
+                                                        </>
+                                                    );
                                                 })()}
                                             </tbody>
                                         </>
@@ -965,8 +1195,9 @@ export default function ListOvertime({ currentUser }: Props) {
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
                                                 {(() => {
-                                                    const grid = archiveTab === 'overtime1' ? selectedArchive.overtime1 : selectedArchive.overtime2;
-                                                    const filteredEmployees = selectedArchive.employees.filter(emp => {
+                                                    const grid = archiveTab === 'overtime1' ? activeArchive.overtime1 : activeArchive.overtime2;
+                                                    const employeesList = activeArchive.employees || [];
+                                                    const filteredEmployees = activeArchive.employees.filter(emp => {
                                                         const showInTab = archiveTab === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
                                                         return emp.isActive !== false && showInTab;
                                                     });
@@ -986,34 +1217,52 @@ export default function ListOvertime({ currentUser }: Props) {
                                                     const y = parseInt(yStr);
                                                     const m = parseInt(mStr);
 
-                                                    return filteredEmployees.map((emp, idx) => {
-                                                        const dData = grid?.employeesData?.[emp.id] || { bonus: '', otTrips: '', rate: '', days: {} };
-                                                        const totalHours = calculateArchivedHours(grid, emp.id, daysCount);
-                                                        const bgStriped = idx % 2 === 0 ? 'bg-white' : 'bg-[#e9f0fa]';
-                                                        const isZeroHours = totalHours === 0;
+                                                    const grandTotalHours = filteredEmployees.reduce((sum, emp) => sum + calculateArchivedHours(grid, emp.id, daysCount, employeesList), 0);
 
-                                                        return (
-                                                            <tr key={emp.id} className={`${bgStriped} hover:bg-yellow-50 ${(isZeroHours || emp.name.toLowerCase() === 'admin' || emp.englishName?.toLowerCase() === 'admin') ? 'print:hidden' : ''}`}>
-                                                                <td className="row-counter px-1 py-1 font-bold text-gray-900 border border-gray-200"></td>
-                                                                <td className="px-2 py-1 font-bold text-gray-900 border border-gray-200 text-right whitespace-nowrap">{emp.name}</td>
-                                                                <td className="px-2 py-1 text-gray-600 border border-gray-200 whitespace-nowrap text-left">{emp.jobTitle}</td>
-                                                                <td className="px-1 py-1 font-bold text-red-600 border border-gray-200">{dData.bonus || ''}</td>
-                                                                <td className="px-1 py-1 font-bold text-indigo-700 border border-gray-200">{dData.otTrips || ''}</td>
-                                                                <td className="px-1 py-1 font-bold text-red-600 border border-gray-200">{totalHours}</td>
-                                                                {Array.from({ length: daysCount }, (_, i) => i + 1).map(day => {
-                                                                    const isFriday = new Date(y, m - 1, day).getDay() === 5;
-                                                                    const cellBg = isFriday ? 'bg-[#00b0f0]' : 'bg-transparent';
-                                                                    const val = dData.days?.[day] || '';
-                                                                    return (
-                                                                        <td key={day} className={`px-0.5 py-1 border border-gray-200 font-medium ${cellBg}`}>
-                                                                            {val}
+                                                    return (
+                                                        <>
+                                                            {filteredEmployees.map((emp, idx) => {
+                                                                const dData = grid?.employeesData?.[emp.id] || { bonus: '', otTrips: '', rate: '', days: {} };
+                                                                const totalHours = calculateArchivedHours(grid, emp.id, daysCount, employeesList);
+                                                                const bgStriped = idx % 2 === 0 ? 'bg-white' : 'bg-[#e9f0fa]';
+                                                                const isZeroHours = totalHours === 0;
+
+                                                                return (
+                                                                    <tr key={emp.id} className={`${bgStriped} hover:bg-yellow-50 ${(isZeroHours || emp.name.toLowerCase() === 'admin' || emp.englishName?.toLowerCase() === 'admin') ? 'print:hidden' : ''}`}>
+                                                                        <td className="row-counter px-1 py-1 font-bold text-gray-900 border border-gray-200"></td>
+                                                                        <td className="px-2 py-1 font-bold text-gray-900 border border-gray-200 text-right whitespace-nowrap">{emp.name}</td>
+                                                                        <td className="px-2 py-1 text-gray-600 border border-gray-200 whitespace-nowrap text-left">{emp.jobTitle}</td>
+                                                                        <td className="px-1 py-1 font-bold text-red-600 border border-gray-200">
+                                                                            {isEditingArchive ? <input type="text" value={dData.bonus || ''} onChange={e => handleArchiveCellChange(emp.id, 'bonus', e.target.value)} className="w-full h-full text-center outline-none bg-yellow-50 font-bold text-red-600" /> : (dData.bonus || '')}
                                                                         </td>
-                                                                    );
-                                                                })}
-                                                                <td className="px-1 py-1 border border-gray-200 font-semibold">{dData.rate || ''}</td>
+                                                                        <td className="px-1 py-1 font-bold text-indigo-700 border border-gray-200">
+                                                                            {isEditingArchive ? <input type="text" value={dData.otTrips || ''} onChange={e => handleArchiveCellChange(emp.id, 'otTrips', e.target.value)} className="w-full h-full text-center outline-none bg-yellow-50 font-bold text-indigo-700" /> : (dData.otTrips || '')}
+                                                                        </td>
+                                                                        <td className="px-1 py-1 font-bold text-red-600 border border-gray-200">{totalHours}</td>
+                                                                        {Array.from({ length: daysCount }, (_, i) => i + 1).map(day => {
+                                                                            const isFriday = new Date(y, m - 1, day).getDay() === 5;
+                                                                            const cellBg = isFriday ? 'bg-[#00b0f0]' : 'bg-transparent';
+                                                                            const visible = isCellVisible(emp.id, day, grid, employeesList);
+                                                                            const val = visible ? (dData.days?.[day] || '') : '';
+                                                                            return (
+                                                                                <td key={day} className={`px-0.5 py-1 border border-gray-200 font-medium ${cellBg} ${!visible ? 'bg-gray-100' : ''}`}>
+                                                                                    {visible ? (isEditingArchive ? <input type="text" value={val} onChange={e => handleArchiveCellChange(emp.id, 'day', e.target.value, day)} className="w-full h-full text-center outline-none bg-yellow-50" /> : val) : ''}
+                                                                                </td>
+                                                                            );
+                                                                        })}
+                                                                        <td className="px-1 py-1 border border-gray-200 font-semibold">
+                                                                            {isEditingArchive ? <input type="text" value={dData.rate || ''} onChange={e => handleArchiveCellChange(emp.id, 'rate', e.target.value)} className="w-full h-full text-center outline-none bg-yellow-50" /> : (dData.rate || '')}
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                            <tr className="bg-gray-100 print:bg-white font-bold">
+                                                                <td colSpan={5} className="px-2 py-2 text-right border border-gray-200">الإجمالي الكلي (Grand Total)</td>
+                                                                <td className="px-1 py-2 font-bold text-red-600 border border-gray-200">{grandTotalHours}</td>
+                                                                <td colSpan={daysCount + 1} className="border border-gray-200"></td>
                                                             </tr>
-                                                        );
-                                                    });
+                                                        </>
+                                                    );
                                                 })()}
                                             </tbody>
                                         </>

@@ -100,12 +100,30 @@ interface Props {
     currentUser?: any;
 }
 
+const mapToArabicBranches = (allowed: string[]) => {
+    const arabicBranches: string[] = [];
+    allowed.forEach(b => {
+        if (b === 'b3' || b === 'Main Branch' || b === 'المركز الرئيسي') {
+            arabicBranches.push('المركز الرئيسي', 'الادارة', 'b3', 'Main Branch');
+        }
+        if (b === 'b1' || b === 'Dammam Branch' || b === 'فرع الدمام') {
+            arabicBranches.push('فرع الدمام', 'b1', 'Dammam Branch');
+        }
+        if (b === 'b2' || b === 'AlHasa Branch' || b === 'فرع الاحساء') {
+            arabicBranches.push('فرع الاحساء', 'b2', 'AlHasa Branch');
+        }
+        arabicBranches.push(b);
+    });
+    return arabicBranches;
+};
+
 interface EmployeeGridData {
     bonus: string;
     otTrips: string;
     rate: string;
     days: Record<number, string>; // day index 1..31 to string value
     statuses?: Record<number, string>; // day index 1..31 to status option key
+    dayBranches?: Record<number, string>; // day index 1..31 to branch string
 }
 
 interface MonthlyGrid {
@@ -124,6 +142,8 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         }
         return new Date().toISOString().slice(0, 7);
     });
+
+    const [archivedEmployees, setArchivedEmployees] = useState<TimeSheetEmployee[] | null>(null);
 
     useEffect(() => {
         const handlePayrollMonthChanged = (e: Event) => {
@@ -314,15 +334,20 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             let isCurrentMonthPosted = false;
+            let loadedArchivedEmployees = null;
             
             snapshot.docs.forEach(doc => {
                 const data = doc.data().data;
                 if (data.month === selectedMonth && data.overtimeType === typeKey) {
                     isCurrentMonthPosted = true;
+                    if (data.employees) {
+                        loadedArchivedEmployees = data.employees;
+                    }
                 }
             });
             
             setIsPosted(isCurrentMonthPosted);
+            setArchivedEmployees(loadedArchivedEmployees);
         });
 
         return () => unsubscribe();
@@ -334,6 +359,10 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         }
         return true;
     }, [isPosted]);
+
+    const displayEmployees = useMemo(() => {
+        return archivedEmployees || employees;
+    }, [archivedEmployees, employees]);
 
     const getCellStyle = (empId: string, day: number, displayVal: string, isFriday: boolean) => {
         // 1. Check statuses field first
@@ -365,18 +394,41 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
             }
         }
 
+        let textColor = '#000000';
+        const eData = gridData?.employeesData[empId];
+        const emp = displayEmployees.find(e => e.id === empId);
+        
+        if (emp) {
+            const transferInfo = getTransferInfo(emp, eData?.dayBranches);
+            if (transferInfo.hasTransferred) {
+                if (day >= transferInfo.firstNewBranchDay) {
+                    textColor = '#2563eb'; // blue-600
+                } else {
+                    textColor = '#000000'; // black
+                }
+            } else {
+                textColor = '#000000'; // black
+            }
+        }
+
         if (isFriday) {
             return {
                 backgroundColor: '#00b0f0',
-                color: '#000000'
+                color: textColor,
+                fontWeight: 'bold' as const
             };
         }
 
-        return {};
+        return {
+            color: textColor,
+            fontWeight: textColor !== '#000000' ? ('bold' as const) : undefined
+        };
     };
 
     const handleCellDoubleClick = (e: React.MouseEvent, empId: string, day: number) => {
         if (!isEditableMonth) return;
+        const emp = displayEmployees.find(x => x.id === empId);
+        if (emp && !isCellEditable(emp, day)) return;
         e.preventDefault();
         const rect = e.currentTarget.getBoundingClientRect();
         setDoubleClickMenu({
@@ -518,31 +570,8 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         };
     }, [selectedMonth, typeKey]);
 
-
-    const syncArchive = (newData: any) => {
-        if (isPosted) {
-            const archiveId = `ts-archive-${typeKey}-${selectedMonth}`;
-            const records = dualStorage.getLocalData(COLLECTIONS.RECORDS) || [];
-            const archiveRecord = records.find((r: any) => r.id === archiveId);
-            if (archiveRecord && archiveRecord.data) {
-                const updatedArchiveData = { ...archiveRecord.data };
-                if (typeKey === 'overtime1') {
-                    updatedArchiveData.overtime1 = newData;
-                } else {
-                    updatedArchiveData.overtime2 = newData;
-                }
-                dualStorage.save(COLLECTIONS.RECORDS, archiveId, {
-                    type: 'timesheet_posted_month',
-                    data: updatedArchiveData
-                }).finally(() => window.dispatchEvent(new Event('timesheet_updated'))).catch(err => {
-                    console.error("Error updating archive:", err);
-                });
-            }
-        }
-    };
-
     const updateCell = (empId: string, field: 'bonus' | 'otTrips' | 'rate' | 'day', val: string, day?: number) => {
-        if (!gridData) return;
+        if (!isEditableMonth || !gridData) return;
         
         let finalVal = val;
         let matchedStatusKey: string | undefined = undefined;
@@ -558,22 +587,37 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
             }
         }
 
+        const employee = displayEmployees.find(e => e.id === empId);
+        if (field === 'day' && day && employee) {
+            if (!isCellEditable(employee, day)) {
+                return;
+            }
+        }
+
         // Deep copy employeesData so we don't mutate state directly
         const newEmployeesData = { ...gridData.employeesData };
         if (!newEmployeesData[empId]) {
-            newEmployeesData[empId] = { bonus: '', otTrips: '', rate: '', days: {}, statuses: {} };
+            newEmployeesData[empId] = { bonus: '', otTrips: '', rate: '', days: {}, statuses: {}, dayBranches: {} };
         } else {
             newEmployeesData[empId] = { 
                 ...newEmployeesData[empId],
                 days: { ...newEmployeesData[empId].days },
-                statuses: { ...(newEmployeesData[empId].statuses || {}) }
+                statuses: { ...(newEmployeesData[empId].statuses || {}) },
+                dayBranches: { ...(newEmployeesData[empId].dayBranches || {}) }
             };
         }
         
         if (field === 'day' && day) {
             newEmployeesData[empId].days[day] = finalVal;
             if (matchedStatusKey !== undefined) {
-                newEmployeesData[empId].statuses[day] = matchedStatusKey;
+                newEmployeesData[empId].statuses![day] = matchedStatusKey;
+            }
+            if (finalVal) {
+                if (employee && employee.branch) {
+                    if (!newEmployeesData[empId].dayBranches![day]) {
+                        newEmployeesData[empId].dayBranches![day] = employee.branch;
+                    }
+                }
             }
         } else if (field !== 'day') {
             newEmployeesData[empId][field] = finalVal;
@@ -594,12 +638,10 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         }).finally(() => window.dispatchEvent(new Event('timesheet_updated'))).catch(err => {
             console.error("Error saving grid cell:", err);
         });
-        
-        syncArchive(newData);
     };
 
     const updateCellStatus = (empId: string, day: number, statusKey: string) => {
-        if (!gridData) return;
+        if (!isEditableMonth || !gridData) return;
         
         const newEmployeesData = { ...gridData.employeesData };
         if (!newEmployeesData[empId]) {
@@ -634,18 +676,144 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         }).finally(() => window.dispatchEvent(new Event('timesheet_updated'))).catch(err => {
             console.error("Error saving grid cell status:", err);
         });
+    };
+
+    const getTransferInfo = (emp: TimeSheetEmployee, dayBranches: Record<string | number, string> | undefined) => {
+        const empBranch = emp.branch || '';
+
+        if (emp.transferDate) {
+            const parts = emp.transferDate.split('-');
+            if (parts.length === 3) {
+                const tYear = parseInt(parts[0], 10);
+                const tMonth = parseInt(parts[1], 10);
+                const tDay = parseInt(parts[2], 10);
+                
+                if (!isNaN(tYear) && !isNaN(tMonth) && !isNaN(tDay)) {
+                    if (tYear === currentYear && tMonth === currentMonth) {
+                        return {
+                            hasTransferred: true,
+                            firstNewBranchDay: tDay,
+                            lastOldBranchDay: tDay - 1
+                        };
+                    } else if (tYear > currentYear || (tYear === currentYear && tMonth > currentMonth)) {
+                        return {
+                            hasTransferred: true,
+                            firstNewBranchDay: 32,
+                            lastOldBranchDay: 31
+                        };
+                    } else {
+                        return {
+                            hasTransferred: true,
+                            firstNewBranchDay: 1,
+                            lastOldBranchDay: 0
+                        };
+                    }
+                }
+            }
+        }
+
+        if (!dayBranches || Object.keys(dayBranches).length === 0) {
+            return {
+                hasTransferred: false,
+                firstNewBranchDay: 1,
+                lastOldBranchDay: 0
+            };
+        }
+
+        const days = Object.keys(dayBranches).map(Number).sort((a, b) => a - b);
         
-        syncArchive(newData);
+        // Find if there is any old branch in dayBranches
+        const hasOldBranch = days.some(d => dayBranches[d] && dayBranches[d] !== empBranch);
+
+        if (!hasOldBranch) {
+            return {
+                hasTransferred: false,
+                firstNewBranchDay: 1,
+                lastOldBranchDay: 0
+            };
+        }
+
+        let firstNewBranchDay = 32;
+        let lastOldBranchDay = 0;
+
+        for (let d = 1; d <= 31; d++) {
+            const b = dayBranches[d];
+            if (b) {
+                if (b === empBranch) {
+                    if (d < firstNewBranchDay) {
+                        firstNewBranchDay = d;
+                    }
+                } else {
+                    if (d > lastOldBranchDay) {
+                        lastOldBranchDay = d;
+                    }
+                }
+            }
+        }
+
+        if (firstNewBranchDay === 32) {
+            return {
+                hasTransferred: true,
+                firstNewBranchDay: lastOldBranchDay + 1,
+                lastOldBranchDay
+            };
+        }
+
+        return {
+            hasTransferred: true,
+            firstNewBranchDay,
+            lastOldBranchDay
+        };
+    };
+
+    const isCellVisible = (emp: TimeSheetEmployee, day: string | number) => {
+        const dayNum = Number(day);
+        const eData = gridData?.employeesData?.[emp.id];
+        
+        if (!currentUser || !currentUser.permissions || !currentUser.permissions.allowedBranches) return true;
+        
+        const allowed = currentUser.permissions.allowedBranches;
+        const isAdmin = allowed.includes('all') || currentUser.username?.toLowerCase() === 'alaa';
+        
+        if (isAdmin) {
+            return true;
+        }
+        
+        const cellBranch = eData?.dayBranches?.[dayNum] || emp.branch || '';
+        const allowedArabicBranches = mapToArabicBranches(allowed);
+        return allowedArabicBranches.includes(cellBranch);
+    };
+
+    const isCellEditable = (emp: TimeSheetEmployee, day: string | number) => {
+        const dayNum = Number(day);
+        const eData = gridData?.employeesData?.[emp.id];
+        
+        if (!currentUser || !currentUser.permissions || !currentUser.permissions.allowedBranches) return true;
+        
+        const allowed = currentUser.permissions.allowedBranches;
+        const isAdmin = allowed.includes('all') || currentUser.username?.toLowerCase() === 'alaa';
+        
+        if (isAdmin) {
+            return true;
+        }
+        
+        const cellBranch = eData?.dayBranches?.[dayNum] || emp.branch || '';
+        const allowedArabicBranches = mapToArabicBranches(allowed);
+        return allowedArabicBranches.includes(cellBranch);
     };
 
     const getCellValue = (empId: string, day: number) => {
+        const emp = displayEmployees.find(e => e.id === empId);
+        if (emp && !isCellVisible(emp, day)) return '';
         return gridData?.employeesData[empId]?.days[day] || '';
     };
 
     const calculateTotalHours = (empId: string) => {
         if (!gridData || !gridData.employeesData[empId]) return 0;
         const dData = gridData.employeesData[empId];
+        const emp = displayEmployees.find(e => e.id === empId);
         return daysArray.reduce((sum, day) => {
+            if (emp && !isCellVisible(emp, day)) return sum;
             const val = parseFloat(dData.days[day] || '0');
             return sum + (isNaN(val) ? 0 : val);
         }, 0);
@@ -732,7 +900,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         sheet.getRow(currentRow).height = 25;
         currentRow++;
 
-        employees.forEach((emp, idx) => {
+        displayEmployees.forEach((emp, idx) => {
             const dData = gridData.employeesData[emp.id] || { bonus: '', otTrips: '', rate: '', days: {} };
             const total = calculateTotalHours(emp.id);
             
@@ -787,7 +955,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
         });
 
         // Add Grand Total row to Excel
-        const excelGrandTotal = employees.reduce((sum, emp) => sum + calculateTotalHours(emp.id), 0);
+        const excelGrandTotal = displayEmployees.reduce((sum, emp) => sum + calculateTotalHours(emp.id), 0);
         const totalRowValues = [
             '',
             'Total Hours',
@@ -872,15 +1040,29 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
 
         const newEmployeesData = { ...gridData.employeesData };
         
-        employees.forEach(emp => {
+        displayEmployees.forEach(emp => {
             const showInTab = typeKey === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
             if (emp.isActive !== false && showInTab) {
+                const existingEmpData = newEmployeesData[emp.id] || { bonus: '', otTrips: '', rate: '', days: {}, statuses: {}, dayBranches: {} };
+                const newDays = { ...existingEmpData.days };
+                const newStatuses = { ...(existingEmpData.statuses || {}) };
+                const newDayBranches = { ...(existingEmpData.dayBranches || {}) };
+                
+                daysArray.forEach(day => {
+                    if (isCellEditable(emp, day)) {
+                        delete newDays[day];
+                        delete newStatuses[day];
+                    }
+                });
+                
                 newEmployeesData[emp.id] = {
+                    ...existingEmpData,
                     bonus: '',
                     otTrips: '',
                     rate: '',
-                    days: {},
-                    statuses: {}
+                    days: newDays,
+                    statuses: newStatuses,
+                    dayBranches: newDayBranches
                 };
             }
         });
@@ -899,7 +1081,6 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
             console.error("Error clearing grid:", err);
         });
         
-        syncArchive(newData);
         setShowClearConfirm(false);
     };
 
@@ -916,34 +1097,46 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
             const newEmployeesData = { ...gridData.employeesData };
             
             let pastedCount = 0;
-            employees.forEach(emp => {
+            displayEmployees.forEach(emp => {
                 const showInTab = typeKey === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false;
                 if (emp.isActive !== false && showInTab && copiedEmployeesData[emp.id]) {
                     const copiedEmpData = copiedEmployeesData[emp.id];
+                    const existingEmpData = newEmployeesData[emp.id] || { bonus: '', otTrips: '', rate: '', days: {}, statuses: {}, dayBranches: {} };
+                    const newDays = { ...existingEmpData.days };
+                    const newStatuses = { ...(existingEmpData.statuses || {}) };
+                    const newDayBranches = { ...(existingEmpData.dayBranches || {}) };
                     
-                    const filteredDays: Record<number, string> = {};
                     if (copiedEmpData.days) {
-                        Object.keys(copiedEmpData.days).forEach(dayKey => {
-                            const val = copiedEmpData.days[parseInt(dayKey)];
-                            if (val) {
-                                const valClean = val.trim().toLowerCase();
-                                const isStatusText = statusOptions.some(opt => 
-                                    opt.en.toLowerCase() === valClean || 
-                                    opt.ar.toLowerCase() === valClean
-                                );
-                                if (!isStatusText) {
-                                    filteredDays[parseInt(dayKey)] = val;
+                        Object.keys(copiedEmpData.days).forEach(dayKeyStr => {
+                            const dayNum = parseInt(dayKeyStr);
+                            if (isCellEditable(emp, dayNum)) {
+                                const val = copiedEmpData.days[dayNum];
+                                if (val) {
+                                    const valClean = val.trim().toLowerCase();
+                                    const isStatusText = statusOptions.some(opt => 
+                                        opt.en.toLowerCase() === valClean || 
+                                        opt.ar.toLowerCase() === valClean
+                                    );
+                                    if (!isStatusText) {
+                                        newDays[dayNum] = val;
+                                    } else {
+                                        delete newDays[dayNum];
+                                    }
+                                } else {
+                                    delete newDays[dayNum];
                                 }
                             }
                         });
                     }
 
                     newEmployeesData[emp.id] = {
+                        ...existingEmpData,
                         bonus: copiedEmpData.bonus || '',
                         otTrips: copiedEmpData.otTrips || '',
                         rate: copiedEmpData.rate || '',
-                        days: filteredDays,
-                        statuses: newEmployeesData[emp.id]?.statuses || {}
+                        days: newDays,
+                        statuses: newStatuses,
+                        dayBranches: newDayBranches
                     };
                     pastedCount++;
                 }
@@ -968,7 +1161,6 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                 console.error("Error saving pasted data:", err);
             });
             
-            syncArchive(newData);
             alert(`Pasted data for ${pastedCount} employees.`);
 
         } catch (err) {
@@ -1027,8 +1219,16 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                 } else if (targetCol >= 2 && targetCol <= 32) {
                     const day = targetCol - 1;
                     if (day <= daysInMonth) {
-                        newEmpData.days[day] = value;
-                        hasChanges = true;
+                        if (isCellEditable(emp, day)) {
+                            newEmpData.days[day] = value;
+                            if (value) {
+                                if (!newEmpData.dayBranches) newEmpData.dayBranches = {};
+                                if (!newEmpData.dayBranches[day] && emp.branch) {
+                                    newEmpData.dayBranches[day] = emp.branch;
+                                }
+                            }
+                            hasChanges = true;
+                        }
                     }
                 } else if (targetCol === 33) {
                     newEmpData.rate = value;
@@ -1052,8 +1252,6 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
             }).finally(() => window.dispatchEvent(new Event('timesheet_updated'))).catch(err => {
                 console.error("Error saving Excel pasted data:", err);
             });
-            
-            syncArchive(newData);
         }
     };
 
@@ -1145,7 +1343,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                                     >
                                         All
                                     </button>
-                                    {employees.filter(emp => typeKey === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false).filter(e => e.isActive).map(emp => (
+                                    {displayEmployees.filter(emp => typeKey === 'overtime1' ? emp.showInOvertime1 !== false : emp.showInOvertime2 !== false).filter(e => e.isActive).map(emp => (
                                         <button
                                             key={emp.id}
                                             onClick={() => handleCopyData(emp.id)}
@@ -1244,7 +1442,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {employees.map((emp, idx) => {
+                        {displayEmployees.map((emp, idx) => {
                             const dData = gridData.employeesData[emp.id] || { bonus: '', otTrips: '', rate: '', days: {} };
                             const isSelected = selectedEmployeeId === emp.id;
                             const bgStriped = isSelected
@@ -1316,13 +1514,13 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                                                     type="text"
                                                     data-row={idx}
                                                     data-col={1 + day}
-                                                    disabled={!isEditableMonth}
+                                                    disabled={!isEditableMonth || !isCellEditable(emp, day)}
                                                     onDoubleClick={(e) => handleCellDoubleClick(e, emp.id, day)}
                                                     onFocus={() => setSelectedEmployeeId(emp.id)}
                                                     onKeyDown={(e) => handleKeyDown(e, idx, 1 + day)}
                                                     value={displayVal}
                                                     onChange={(e) => updateCell(emp.id, 'day', e.target.value, day)}
-                                                    className="w-full h-full min-h-[28px] text-center text-xs font-bold p-1 m-0 bg-transparent border-none outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600 disabled:cursor-not-allowed ts-print-hide"
+                                                    className={`w-full h-full min-h-[28px] text-center text-xs font-bold p-1 m-0 bg-transparent border-none outline-none focus:ring-2 focus:ring-inset focus:ring-blue-600 disabled:cursor-not-allowed ts-print-hide ${(!isCellEditable(emp, day) && isEditableMonth) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                                                     style={{ 
                                                         backgroundColor: cellStyle.backgroundColor,
                                                         color: cellStyle.color || (displayVal !== '' ? '#111827' : undefined) 
@@ -1359,7 +1557,7 @@ export default function TimeSheetReport({ employees, title = "Employee Overtime"
                             <td className="px-1 py-1.5 border border-gray-300"></td>
                             <td className="px-1 py-1.5 border border-gray-300"></td>
                             <td className="px-2 py-1.5 text-xs font-extrabold text-red-600 border border-gray-300 font-mono">
-                                {employees.reduce((sum, emp) => sum + calculateTotalHours(emp.id), 0)}
+                                {displayEmployees.reduce((sum, emp) => sum + calculateTotalHours(emp.id), 0)}
                             </td>
                             {daysArray.map(day => (
                                 <td key={day} className="px-1 py-1.5 border border-gray-300"></td>

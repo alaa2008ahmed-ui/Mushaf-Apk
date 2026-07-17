@@ -55,11 +55,27 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
 
     // Dynamic names language state for OT tabs ('ar' or 'en')
     const [namesLanguage, setNamesLanguage] = useState<'ar' | 'en'>(() => {
-        return (localStorage.getItem('timesheet_names_language') as 'ar' | 'en') || 'en';
+        const username = currentUser?.username || 'default';
+        return (localStorage.getItem(`timesheet_names_language_${username}`) as 'ar' | 'en') || 
+               (localStorage.getItem('timesheet_names_language') as 'ar' | 'en') || 'en';
     });
+
+    // Sync state when currentUser is loaded or switched
+    useEffect(() => {
+        const username = currentUser?.username || 'default';
+        const savedLang = localStorage.getItem(`timesheet_names_language_${username}`) as 'ar' | 'en';
+        if (savedLang) {
+            setNamesLanguage(savedLang);
+        } else {
+            const fallbackLang = (localStorage.getItem('timesheet_names_language') as 'ar' | 'en') || 'en';
+            setNamesLanguage(fallbackLang);
+        }
+    }, [currentUser?.username]);
 
     const toggleNamesLanguage = (lang: 'ar' | 'en') => {
         setNamesLanguage(lang);
+        const username = currentUser?.username || 'default';
+        localStorage.setItem(`timesheet_names_language_${username}`, lang);
         localStorage.setItem('timesheet_names_language', lang);
     };
 
@@ -102,7 +118,9 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
             showInOvertime1: emp.showInOvertime1 !== false,
             showInOvertime2: emp.showInOvertime2 !== false,
             showInDriversTab: emp.showInDriversTab || false,
-            code: emp.code
+            code: emp.code,
+            branch: emp.branch || '',
+            transferDate: emp.transferDate || ''
         })) as TimeSheetEmployee[];
     }, []);
 
@@ -212,7 +230,8 @@ export default function TimeSheet({ drivers, workLogs, selectedBranchId, users =
                         <TimeSheetDriversTankers 
                             employees={sortedEmployees}
                             title="Drivers"
-                            namesLanguage="en"
+                            namesLanguage={namesLanguage}
+                            currentUser={currentUser}
                         />
                     </div>
                 )}

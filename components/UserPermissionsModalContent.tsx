@@ -286,26 +286,26 @@ export const UserPermissionsModalContent: React.FC<UserPermissionsModalContentPr
                     <div className="flex flex-col gap-4">
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-1">
-                                {lang === 'ar' ? 'اسم المستخدم' : 'Username'}
+                                {false ? 'اسم المستخدم' : 'Username'}
                             </label>
                             <input 
                                 type="text"
                                 value={editUsername}
                                 onChange={(e) => setEditUsername(e.target.value)}
                                 className="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 bg-white"
-                                placeholder={lang === 'ar' ? 'أدخل اسم المستخدم' : 'Enter username'}
+                                placeholder={false ? 'أدخل اسم المستخدم' : 'Enter username'}
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-1">
-                                {lang === 'ar' ? 'كلمة المرور' : 'Password'}
+                                {false ? 'كلمة المرور' : 'Password'}
                             </label>
                             <input 
                                 type="text"
                                 value={editPassword}
                                 onChange={(e) => setEditPassword(e.target.value)}
                                 className="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 bg-white"
-                                placeholder={lang === 'ar' ? 'أدخل كلمة المرور' : 'Enter password'}
+                                placeholder={false ? 'أدخل كلمة المرور' : 'Enter password'}
                             />
                         </div>
                     </div>
@@ -314,7 +314,7 @@ export const UserPermissionsModalContent: React.FC<UserPermissionsModalContentPr
                     <div className="flex flex-col gap-3">
                         <div className="flex justify-between items-center mb-1">
                             <span className="text-sm font-bold text-slate-700">
-                                {lang === 'ar' ? 'صلاحيات الفروع' : 'Branch Access'}
+                                {false ? 'صلاحيات الفروع' : 'Branch Access'}
                             </span>
                             <label className="flex items-center gap-2 cursor-pointer px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm">
                                 <input 
@@ -333,7 +333,7 @@ export const UserPermissionsModalContent: React.FC<UserPermissionsModalContentPr
                                     }}
                                     className="w-4 h-4 text-blue-600 rounded border-white focus:ring-offset-blue-600"
                                 />
-                                <span>{lang === 'ar' ? 'كل الفروع' : 'All Branches'}</span>
+                                <span>{false ? 'كل الفروع' : 'All Branches'}</span>
                             </label>
                         </div>
                         
@@ -392,7 +392,7 @@ export const UserPermissionsModalContent: React.FC<UserPermissionsModalContentPr
                                             {renderPageIcon(page.icon)}
                                             <span className="flex flex-col text-left">
                                                 <span className="leading-tight font-semibold text-white">
-                                                    {lang === 'ar' ? (page as any).labelAr : (page as any).labelEn}
+                                                    {false ? (page as any).labelAr : (page as any).labelEn}
                                                 </span>
                                             </span>
                                         </div>
@@ -405,7 +405,7 @@ export const UserPermissionsModalContent: React.FC<UserPermissionsModalContentPr
                                             <span className="sr-only">Toggle page access</span>
                                             <span
                                                 aria-hidden="true"
-                                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${isPageEnabled ? (lang === 'ar' ? '-translate-x-5' : 'translate-x-5') : 'translate-x-0'}`}
+                                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${isPageEnabled ? (false ? '-translate-x-5' : 'translate-x-5') : 'translate-x-0'}`}
                                             />
                                         </button>
                                     </div>
@@ -591,12 +591,12 @@ export const UserPermissionsModalContent: React.FC<UserPermissionsModalContentPr
                                             /* Single permission page handling */
                                             <div className="text-left py-2 flex-1 flex flex-col justify-between">
                                                 <p className="text-xs text-slate-500 italic mb-3">
-                                                    {lang === 'ar' ? (page as any).descAr : (page as any).descEn}
+                                                    {false ? (page as any).descAr : (page as any).descEn}
                                                 </p>
                                                 <div className={`text-xs font-bold px-2 py-1.5 rounded-md border text-center ${isPageEnabled ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
                                                     {isPageEnabled 
-                                                        ? (lang === 'ar' ? '✓ تفعيل الصلاحية الكاملة' : '✓ FULL ACCESS ACTIVE') 
-                                                        : (lang === 'ar' ? '✗ لا توجد صلاحية' : '✗ NO ACCESS')}
+                                                        ? (false ? '✓ تفعيل الصلاحية الكاملة' : '✓ FULL ACCESS ACTIVE') 
+                                                        : (false ? '✗ لا توجد صلاحية' : '✗ NO ACCESS')}
                                                 </div>
                                             </div>
                                         ) : page.subPermissions && page.subPermissions.length > 0 ? (
@@ -616,7 +616,7 @@ export const UserPermissionsModalContent: React.FC<UserPermissionsModalContentPr
                                                         />
                                                         <span className="flex flex-col">
                                                             <span className="font-medium">
-                                                                {lang === 'ar' ? (perm as any).labelAr : (perm as any).labelEn}
+                                                                {false ? (perm as any).labelAr : (perm as any).labelEn}
                                                             </span>
                                                         </span>
                                                     </label>
@@ -626,7 +626,7 @@ export const UserPermissionsModalContent: React.FC<UserPermissionsModalContentPr
                                             /* Simple page with no sub-permissions */
                                             <div className="text-left py-4 flex flex-col justify-center items-center h-full">
                                                 <span className="text-xs text-slate-400 font-medium text-center italic">
-                                                    {lang === 'ar' ? 'صلاحية كاملة عند التفعيل' : 'Full access upon activation'}
+                                                    {false ? 'صلاحية كاملة عند التفعيل' : 'Full access upon activation'}
                                                 </span>
                                             </div>
                                         )}

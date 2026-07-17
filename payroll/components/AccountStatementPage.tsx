@@ -4,6 +4,24 @@ import { ArrowRight, Layers, FileText, Calendar, Filter, Printer, User, Search, 
 import { formatCurrency } from '../utils/calculations';
 import { useCompanySettings } from '../../allowances/utils/companySettings';
 
+const normalizeArabicName = (name: string) => {
+  if (!name) return "";
+  let n = name
+    .replace(/أ|إ|آ/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .replace(/\s+/g, "")
+    .trim();
+  const aliases: Record<string, string> = {
+    جيميهاوقرفايو: "جيميهاوقرقايو",
+    سنتاجكاتوراياداف: "سنتراجكاتوراياداف",
+    جومبرجاراسيا: "جوميرجاراسيا",
+    ماجومادارسويكوت: "ماجومادارسوبكوت",
+    نعمانكبيرحسين: "نعمانحسين",
+  };
+  return aliases[n] || n;
+};
+
 interface SearchableEmployeeDropdownProps {
   employees: Employee[];
   value: string;
@@ -39,17 +57,23 @@ const SearchableEmployeeDropdown: React.FC<SearchableEmployeeDropdownProps> = ({
     }
   }, [isOpen]);
 
-  const selectedEmp = employees.find(e => e.id.toString() === value);
+  const selectedEmp = employees.find(e => e.name === value || (e.name && normalizeArabicName(e.name) === normalizeArabicName(value)));
   const isAllSelected = value === 'all';
 
   const filteredEmployees = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return employees;
-    return employees.filter(e => 
-      (e.name && e.name.toLowerCase().includes(term)) ||
-      (e.code && e.code.toString().toLowerCase().includes(term)) ||
-      (e.jobTitle && e.jobTitle.toLowerCase().includes(term))
-    );
+    const normalizedTerm = normalizeArabicName(term);
+    return employees.filter(e => {
+      const nameMatch = e.name && (
+        e.name.toLowerCase().includes(term) ||
+        normalizeArabicName(e.name).includes(normalizedTerm)
+      );
+      const nameEnMatch = e.nameEn && e.nameEn.toLowerCase().includes(term);
+      const codeMatch = e.code && e.code.toString().toLowerCase().includes(term);
+      const jobTitleMatch = e.jobTitle && e.jobTitle.toLowerCase().includes(term);
+      return nameMatch || nameEnMatch || codeMatch || jobTitleMatch;
+    });
   }, [employees, searchTerm]);
 
   return (
@@ -105,7 +129,7 @@ const SearchableEmployeeDropdown: React.FC<SearchableEmployeeDropdownProps> = ({
                 } else if (e.key === 'Enter') {
                   e.preventDefault();
                   if (filteredEmployees.length > 0) {
-                    onChange(filteredEmployees[0].id.toString());
+                    onChange(filteredEmployees[0].name);
                     setIsOpen(false);
                   }
                 }
@@ -159,12 +183,12 @@ const SearchableEmployeeDropdown: React.FC<SearchableEmployeeDropdownProps> = ({
               </div>
             ) : (
               filteredEmployees.map((e) => {
-                const isSelected = e.id.toString() === value;
+                const isSelected = e.name === value || (e.name && normalizeArabicName(e.name) === normalizeArabicName(value));
                 return (
                   <div
-                    key={e.id}
+                    key={e.name}
                     onClick={() => {
-                      onChange(e.id.toString());
+                      onChange(e.name);
                       setIsOpen(false);
                     }}
                     className={`p-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between ${
@@ -284,16 +308,40 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
     return months.sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [archives]);
 
+  // Set default dateRange on mount to span the full available period
+  useEffect(() => {
+    if (allMonths.length > 0) {
+      if (!dateRange.start) {
+        setDateRange(prev => ({ ...prev, start: allMonths[0].id }));
+      }
+      if (!dateRange.end) {
+        setDateRange(prev => ({ ...prev, end: allMonths[allMonths.length - 1].id }));
+      }
+    }
+  }, [allMonths]);
+
+  // List of employees only from archived records, de-duplicated by normalized name
   const allEmployeesList = useMemo(() => {
-    const empMap = new Map<number, Employee>();
+    const empMap = new Map<string, Employee>();
     allMonths.forEach(m => {
       m.employees.forEach(e => {
-        if (!empMap.has(e.id)) {
-          empMap.set(e.id, e);
+        if (e && e.name) {
+          const norm = normalizeArabicName(e.name);
+          if (!empMap.has(norm)) {
+            empMap.set(norm, e);
+          }
         }
       });
     });
-    return Array.from(empMap.values());
+    // Sort employees by code or name
+    return Array.from(empMap.values()).sort((a, b) => {
+      const codeA = parseInt(a.code || '0', 10);
+      const codeB = parseInt(b.code || '0', 10);
+      if (!isNaN(codeA) && !isNaN(codeB) && codeA !== 0 && codeB !== 0) {
+        return codeA - codeB;
+      }
+      return a.name.localeCompare(b.name, 'ar');
+    });
   }, [allMonths]);
 
   const itemsList = [
@@ -338,21 +386,27 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
   }, [allMonths, dateRange]);
 
   const generateStatementData = () => {
-    if (!dateRange.start || !dateRange.end || !selectedEmployee) {
+    if (!selectedEmployee) {
        return [];
     }
     const data: any[] = [];
     
     const empsToProcess = selectedEmployee === 'all' 
       ? allEmployeesList 
-      : allEmployeesList.filter(e => e.id.toString() === selectedEmployee);
+      : allEmployeesList.filter(e => e.name === selectedEmployee || normalizeArabicName(e.name) === normalizeArabicName(selectedEmployee));
 
     empsToProcess.forEach(emp => {
       const empRows: any[] = [];
       let totalValue = 0;
 
       filteredMonths.forEach(m => {
-        const monthEmp = m.employees.find(e => e.id === emp.id);
+        // Robust employee matching in archived months using name/code
+        const monthEmp = m.employees.find(e => 
+          (e.name === emp.name) ||
+          (e.code && emp.code && e.code.trim() === emp.code.trim()) ||
+          (normalizeArabicName(e.name) === normalizeArabicName(emp.name))
+        );
+
         if (monthEmp) {
           const rowData: any = { month: m.name };
 
@@ -407,7 +461,7 @@ export const AccountStatementPage: React.FC<AccountStatementPageProps> = ({
 
   const statementData = useMemo(() => generateStatementData(), [filteredMonths, selectedEmployee, selectedItems, dateRange]);
 
-  const isFormComplete = dateRange.start !== '' && dateRange.end !== '' && selectedEmployee !== '';
+  const isFormComplete = selectedEmployee !== '';
 
   return (
     <div className="p-4 sm:p-6 w-full font-sans min-h-screen bg-slate-50">

@@ -14,7 +14,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { ArchivedMonth, ViewMode } from '../types';
-import { formatCurrency, calculateGrandTotals } from '../utils/calculations';
+import { formatCurrency, calculateGrandTotals, formatArchiveMonthName } from '../utils/calculations';
 import { ArchivedSheetModal } from './ArchivedSheetModal';
 import { ArchivedSheetEditor } from './ArchivedSheetEditor';
 import { ArchivedSheetView } from './ArchivedSheetView';
@@ -28,6 +28,7 @@ interface ArchivePageProps {
   onEditArchive: (archive: ArchivedMonth) => void;
   onViewChange: (mode: ViewMode) => void;
   payrollPhase?: 'full' | 'phase1' | 'phase2';
+  isEnglish?: boolean;
 }
 
 export const ArchivePage: React.FC<ArchivePageProps> = ({
@@ -39,6 +40,7 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({
   onEditArchive,
   onViewChange,
   payrollPhase = 'full',
+  isEnglish = false,
 }) => {
   const [viewingArchive, setViewingArchive] = useState<ArchivedMonth | null>(null);
   const [selectedArchive, setSelectedArchive] = useState<ArchivedMonth | null>(null);
@@ -54,6 +56,7 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({
         archive={viewingArchive}
         onBack={() => setViewingArchive(null)}
         payrollPhase={payrollPhase}
+        isEnglish={isEnglish}
       />
     );
   }
@@ -128,19 +131,7 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {(() => {
-                        if (!archive.archivedAt) return '';
-                        // Simple check for Arabic digits and replace them
-                        const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-                        let str = archive.archivedAt;
-                        arabicDigits.forEach((d, i) => {
-                          str = str.replace(new RegExp(d, 'g'), i.toString());
-                        });
-                        
-                        // If it's a long date with Arabic months, try to keep digits but English
-                        // If it was already ISO like "2026-01-31", it stays same.
-                        return str;
-                      })()}
+                      {formatArchiveMonthName(archive.monthIso, isEnglish)}
                     </span>
                     <span className="text-[10px] font-mono font-bold bg-slate-100 px-2 py-0.5 rounded text-slate-600">
                       {archive.employeeCount} موظف
@@ -216,6 +207,7 @@ export const ArchivePage: React.FC<ArchivePageProps> = ({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         archive={selectedArchive}
+        isEnglish={isEnglish}
         onPrint={(arch) => {
           setIsModalOpen(false);
           onPrintArchive(arch);

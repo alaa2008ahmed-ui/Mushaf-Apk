@@ -126,7 +126,7 @@ const Settings: React.FC<SettingsProps> = ({
     const [isCleaningGhosts, setIsCleaningGhosts] = useState(false);
 
     // Folder selection state
-    const lang = 'en';
+    const [lang, setLang] = useState<'ar' | 'en'>(() => (localStorage.getItem('timesheet_names_language') as 'ar' | 'en') || 'en');
     const [folderName, setFolderName] = useState<string>('');
     const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
 
@@ -363,7 +363,6 @@ const Settings: React.FC<SettingsProps> = ({
                 canEditCustomer: !!tempUser.permissions?.canEditCustomer,
                 canDeleteCustomer: !!tempUser.permissions?.canDeleteCustomer,
                 // Time Sheet Permissions
-                tsCanViewEmployees: !!tempUser.permissions?.tsCanViewEmployees,
                 tsCanViewDriversTankers: !!tempUser.permissions?.tsCanViewDriversTankers,
                 tsCanViewOvertime1: !!tempUser.permissions?.tsCanViewOvertime1,
                 tsCanViewOvertime2: !!tempUser.permissions?.tsCanViewOvertime2,
@@ -451,7 +450,6 @@ const Settings: React.FC<SettingsProps> = ({
             const val = isEnabling;
             updatedPermissions = {
                 ...updatedPermissions,
-                tsCanViewEmployees: val,
                 tsCanViewDriversTankers: val,
                 tsCanViewOvertime1: val,
                 tsCanViewOvertime2: val,
@@ -879,10 +877,6 @@ const Settings: React.FC<SettingsProps> = ({
             { id: 'restrictions', title: 'System Restrictions', icon: Calendar, color: 'text-red-600', bg: 'bg-red-50', desc: 'Control registration ranges and archive periods.' },
             { id: 'data', title: 'Data Management', icon: Database, color: 'text-purple-600', bg: 'bg-purple-50', desc: 'Backup, restore, or clear system databases.' },
         ];
-
-        if (currentUser?.username.toLowerCase() === 'alaa') {
-            cats.push({ id: 'mobile_config', title: 'Mobile App', icon: Smartphone, color: 'text-cyan-600', bg: 'bg-cyan-50', desc: 'Configure mobile app settings.' });
-        }
 
         return cats;
     }, [currentUser]);
@@ -1822,15 +1816,15 @@ const Settings: React.FC<SettingsProps> = ({
                                                     <button 
                                                         onClick={() => {
                                                             setEditingVehicleId(vehicle.id);
-                                                            setTempVehicleNumber(vehicle.vehicleNumber);
-                                                        }}
-                                                        className="text-teal-500 hover:text-teal-700 p-1 rounded hover:bg-black/5"
-                                                    >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" opacity={0.6} viewBox="0 0 20 20" fill="currentColor">
-                                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                                                        </svg>
-                                                    </button>
-                                                    <button 
+                                                             setTempVehicleNumber(vehicle.vehicleNumber);
+                                                         }}
+                                                         className="text-teal-500 hover:text-teal-700 p-1 rounded hover:bg-black/5"
+                                                     >
+                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" opacity={0.6} viewBox="0 0 20 20" fill="currentColor">
+                                                             <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                                         </svg>
+                                                     </button>
+                                                     <button 
                                                         onClick={() => onDeleteVehicle(vehicle.id)}
                                                         className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
                                                     >
@@ -1849,51 +1843,6 @@ const Settings: React.FC<SettingsProps> = ({
                         </div>
                     </div>
                 )}
-
-                            {activeCategory === 'mobile_config' && (
-                                <div className="space-y-6">
-                                    <div className="bg-cyan-50 p-6 rounded-xl border border-cyan-200 shadow-sm">
-
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                            {[
-                                                'Dashboard', 'Daily Sales', 'Monthly Sales', 'Annual Sales', 
-                                                'Account Statement', 'Invoices Tracking', 'PO', 'Driver Work Log', 
-                                                'Drivers Timesheet', 'Customers', 'Time Sheet', 'Orders', 'Order Approvals', 'Settings'
-                                            ].map(pageName => {
-                                                const isHidden = (settings.mobileHiddenPages || []).includes(pageName);
-                                                return (
-                                                    <label key={pageName} className="flex items-center gap-3 p-3 bg-white border border-cyan-100 rounded-lg cursor-pointer hover:bg-cyan-50 transition-colors">
-                                                        <input 
-                                                            type="checkbox"
-                                                            checked={!isHidden}
-                                                            onChange={(e) => {
-                                                                const checked = e.target.checked;
-                                                                const currentHidden = settings.mobileHiddenPages || [];
-                                                                let newHidden = [...currentHidden];
-                                                                
-                                                                if (checked) {
-                                                                    // Show it -> remove from hidden
-                                                                    newHidden = newHidden.filter(p => p !== pageName);
-                                                                } else {
-                                                                    // Hide it -> add to hidden
-                                                                    if (!newHidden.includes(pageName)) {
-                                                                        newHidden.push(pageName);
-                                                                    }
-                                                                }
-                                                                
-                                                                onUpdateSettings({ ...settings, mobileHiddenPages: newHidden });
-                                                            }}
-                                                            className="w-5 h-5 text-cyan-600 rounded border-gray-300 focus:ring-cyan-500"
-                                                        />
-                                                        <span className="text-sm font-semibold text-gray-700 select-none">{pageName}</span>
-                                                    </label>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
                             {activeCategory === 'data' && (
                                 <div className="space-y-6">

@@ -6,6 +6,7 @@ export interface Employee {
   nationalId?: string; // رقم الهوية / الإقامة
   jobTitle: string; // الوظيفة
   branch: string; // الفرع / الإدارة
+  transferDate?: string; // تاريخ النقل للفرع الحالي
   hireDate: string; // تاريخ_التعيين
   iban?: string; // رقم الآيبان
   nationality?: string; // الجنسية

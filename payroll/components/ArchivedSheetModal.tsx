@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Printer, Calendar, Users, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { ArchivedMonth, Employee } from '../types';
-import { formatCurrency } from '../utils/calculations';
+import { formatCurrency, formatArchiveMonthName } from '../utils/calculations';
 import { PaySlipModal } from './PaySlipModal';
 
 interface ArchivedSheetModalProps {
@@ -10,6 +10,7 @@ interface ArchivedSheetModalProps {
   archive: ArchivedMonth | null;
   onPrint: (archive: ArchivedMonth) => void;
   signatures: any;
+  isEnglish?: boolean;
 }
 
 export const ArchivedSheetModal: React.FC<ArchivedSheetModalProps> = ({
@@ -17,7 +18,8 @@ export const ArchivedSheetModal: React.FC<ArchivedSheetModalProps> = ({
   onClose,
   archive,
   onPrint,
-  signatures
+  signatures,
+  isEnglish = false
 }) => {
   const [selectedEmployeeForSlip, setSelectedEmployeeForSlip] = useState<Employee | null>(null);
 
@@ -64,7 +66,7 @@ export const ArchivedSheetModal: React.FC<ArchivedSheetModalProps> = ({
                 </span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                تاريخ الحفظ في الأرشيف: {archive.archivedAt} | عدد الموظفين: {archive.employeeCount}
+                {isEnglish ? `Archive Month: ${formatArchiveMonthName(archive.monthIso, true)} | Employees: ${archive.employeeCount}` : `تاريخ الحفظ في الأرشيف: ${formatArchiveMonthName(archive.monthIso, false)} | عدد الموظفين: ${archive.employeeCount}`}
               </p>
             </div>
           </div>

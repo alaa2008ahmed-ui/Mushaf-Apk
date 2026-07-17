@@ -29,6 +29,7 @@ interface SettingsPageProps {
   onResetData: () => void;
   onClearArchives: () => void;
   onViewChange: (mode: ViewMode) => void;
+  onSyncHiringDates?: () => number;
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
@@ -43,6 +44,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onResetData,
   onClearArchives,
   onViewChange,
+  onSyncHiringDates,
 }) => {
   const [localSignatures, setLocalSignatures] = useState<Signatures>({ ...signatures });
   const [localInsurancePercentage, setLocalInsurancePercentage] = useState(insurancePercentage);
@@ -50,6 +52,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const [saveInsuranceSuccess, setSaveInsuranceSuccess] = useState(false);
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [isExporting, setIsExporting] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<{ updatedCount: number; checked: boolean }>({ updatedCount: 0, checked: false });
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -291,6 +294,55 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Section: Synchronize Hiring Dates */}
+      {onSyncHiringDates && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-6 border-b border-slate-200 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900">Synchronize Hiring Dates</h2>
+              <p className="text-xs text-slate-500">Copy correct hiring dates from the Allowances For Employees page to existing payroll employees.</p>
+            </div>
+          </div>
+          
+          <div className="p-6 space-y-4">
+            <p className="text-sm text-slate-600">
+              This action matches employees between Allowances and Payroll pages using their codes or names, and updates their hiring dates in Payroll. No new employees will be added to the Payroll list.
+            </p>
+            <div className="flex items-center gap-4 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  const count = onSyncHiringDates();
+                  setSyncStatus({ updatedCount: count, checked: true });
+                }}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-6 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all text-sm flex items-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Sync Hiring Dates Now</span>
+              </button>
+              
+              {syncStatus.checked && (
+                <span className={`text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${
+                  syncStatus.updatedCount > 0 
+                    ? 'text-emerald-600 bg-emerald-50 border-emerald-200' 
+                    : 'text-slate-600 bg-slate-50 border-slate-200'
+                }`}>
+                  <CheckCircle className="w-4 h-4" />
+                  <span>
+                    {syncStatus.updatedCount > 0 
+                      ? `Successfully synchronized hiring dates for ${syncStatus.updatedCount} employees!`
+                      : 'All hiring dates are already synchronized.'}
+                  </span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

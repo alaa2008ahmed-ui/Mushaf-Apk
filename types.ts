@@ -17,6 +17,8 @@ export interface TimeSheetEmployee {
     showInOvertime1?: boolean;
     showInOvertime2?: boolean;
     showInDriversTab?: boolean;
+    branch?: string;
+    transferDate?: string;
 }
 
 export interface Employee {

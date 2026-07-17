@@ -27,6 +27,7 @@ class DualStorageService {
   private onDataUpdateCallback?: (collectionName: string, data: any[]) => void;
   private onErrorCallback?: (message: string, type: 'error' | 'warning') => void;
   private isInitializing = false;
+  private localCache: Record<string, { data: any[]; json: string }> = {};
 
   private convertTimestamps(obj: any): any {
     if (!obj || typeof obj !== 'object') return obj;
@@ -84,7 +85,11 @@ class DualStorageService {
     if (this.isInitializing) return;
     this.isInitializing = true;
 
-    this.onDataUpdateCallback = onDataUpdate;
+    this.onDataUpdateCallback = (collectionName, data) => {
+      setTimeout(() => {
+        onDataUpdate(collectionName, data);
+      }, 0);
+    };
     this.onErrorCallback = onError;
     // Clear existing listeners
     this.listeners.forEach(unsubscribe => unsubscribe());
@@ -152,6 +157,15 @@ class DualStorageService {
   private safeSetLocalItem(key: string, value: string) {
     try {
       localStorage.setItem(key, value);
+      if (key.startsWith('fs_')) {
+        const collectionName = key.substring(3);
+        try {
+          const data = JSON.parse(value);
+          this.localCache[collectionName] = { data, json: value };
+        } catch (e) {
+          delete this.localCache[collectionName];
+        }
+      }
     } catch (e: any) {
       console.warn(`DualStorage: LocalStorage limit reached or error for key ${key}:`, e);
     }
@@ -659,7 +673,21 @@ class DualStorageService {
 
   getLocalData(collectionName: string): any[] {
     const saved = localStorage.getItem(`fs_${collectionName}`);
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    
+    const cached = this.localCache[collectionName];
+    if (cached && cached.json === saved) {
+      return cached.data;
+    }
+    
+    try {
+      const data = JSON.parse(saved);
+      this.localCache[collectionName] = { data, json: saved };
+      return data;
+    } catch (e) {
+      console.error(`DualStorage: Error parsing local storage for key fs_${collectionName}:`, e);
+      return [];
+    }
   }
 
   private addToPendingQueue(collectionName: string, id: string, data: any, action: 'save' | 'delete') {

@@ -1,18 +1,20 @@
 import React from 'react';
 import { ArrowRight, Calendar, Users, ArrowUpRight } from 'lucide-react';
 import { ArchivedMonth } from '../types';
-import { formatCurrency, calculateEmployeeTotals, calculateGrandTotals, getEmployeeFieldPhase } from '../utils/calculations';
+import { formatCurrency, calculateEmployeeTotals, calculateGrandTotals, getEmployeeFieldPhase, formatArchiveMonthName } from '../utils/calculations';
 
 interface ArchivedSheetViewProps {
   archive: ArchivedMonth;
   onBack: () => void;
   payrollPhase?: 'full' | 'phase1' | 'phase2';
+  isEnglish?: boolean;
 }
 
 export const ArchivedSheetView: React.FC<ArchivedSheetViewProps> = ({
   archive,
   onBack,
   payrollPhase = 'full',
+  isEnglish = false,
 }) => {
   const activePhase = payrollPhase as 'full' | 'phase1' | 'phase2';
 
@@ -54,7 +56,7 @@ export const ArchivedSheetView: React.FC<ArchivedSheetViewProps> = ({
               </span>
             </h1>
             <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5 leading-none">
-              تاريخ الحفظ في الأرشيف: {archive.archivedAt} | عدد الموظفين: {archive.employeeCount} موظف
+              {isEnglish ? `Archive Month: ${formatArchiveMonthName(archive.monthIso, true)} | Employees: ${archive.employeeCount}` : `تاريخ الحفظ في الأرشيف: ${formatArchiveMonthName(archive.monthIso, false)} | عدد الموظفين: ${archive.employeeCount} موظف`}
             </p>
           </div>
         </div>

@@ -216,3 +216,27 @@ export function formatNumberClean(val: number): string {
     maximumFractionDigits: 2,
   });
 }
+
+export function formatArchiveMonthName(monthIso: string, isEnglish?: boolean): string {
+  if (!monthIso) return '';
+  const parts = monthIso.split('-');
+  if (parts.length < 2) return monthIso;
+  const year = parts[0];
+  const month = parts[1];
+  const monthInt = parseInt(month, 10);
+  const arabicMonths = [
+    "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+    "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+  ];
+  const englishMonths = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  if (monthInt >= 1 && monthInt <= 12) {
+    if (isEnglish) {
+      return `Payroll for ${englishMonths[monthInt - 1]} ${year}`;
+    }
+    return `رواتب شهر ${arabicMonths[monthInt - 1]} ${year}`;
+  }
+  return monthIso;
+}

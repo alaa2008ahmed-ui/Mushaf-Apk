@@ -214,6 +214,12 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
           if (!!valCurrent !== !!valOriginal) return true;
           continue;
         }
+        if (key === 'fieldPhases' || key === 'monthlyValues') {
+          const strCurrent = typeof valCurrent === 'object' ? JSON.stringify(valCurrent) : String(valCurrent);
+          const strOriginal = typeof valOriginal === 'object' ? JSON.stringify(valOriginal) : String(valOriginal);
+          if (strCurrent !== strOriginal) return true;
+          continue;
+        }
 
         if (String(valCurrent) !== String(valOriginal)) {
           return true;
@@ -247,7 +253,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     isDirtyRef.current = true;
     setFormData(prev => {
       let numVal: any = value;
-      if (typeof value === 'string' && !['name', 'nameEn', 'nationalId', 'code', 'jobTitle', 'englishJobTitle', 'branch', 'hireDate', 'notes', 'iban', 'nationality'].includes(field)) {
+      if (typeof value === 'string' && !['name', 'nameEn', 'nationalId', 'code', 'jobTitle', 'englishJobTitle', 'branch', 'transferDate', 'hireDate', 'notes', 'iban', 'nationality'].includes(field)) {
         numVal = value === '' ? '' : (parseFloat(value) || 0);
       }
       
@@ -267,6 +273,16 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
 
       if (field === 'paymentStage') {
         updated.paymentStage = value as '1' | '2';
+      }
+
+      if (field === 'branch' && typeof value === 'string') {
+         if (prev.branch && prev.branch !== 'الكل' && value !== prev.branch) {
+             const localDate = new Date();
+             const year = localDate.getFullYear();
+             const month = String(localDate.getMonth() + 1).padStart(2, '0');
+             const day = String(localDate.getDate()).padStart(2, '0');
+             updated.transferDate = `${year}-${month}-${day}`;
+         }
       }
 
       // Automatic Insurance Calculation

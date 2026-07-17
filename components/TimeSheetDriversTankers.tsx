@@ -1,4 +1,22 @@
 const toTitleCase = (str: string) => { if (!str) return ""; return str.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" "); };
+
+const mapToArabicBranches = (allowed: string[]) => {
+    const arabicBranches: string[] = [];
+    allowed.forEach(b => {
+        if (b === 'b3' || b === 'Main Branch' || b === 'المركز الرئيسي') {
+            arabicBranches.push('المركز الرئيسي', 'الادارة', 'b3', 'Main Branch');
+        }
+        if (b === 'b1' || b === 'Dammam Branch' || b === 'فرع الدمام') {
+            arabicBranches.push('فرع الدمام', 'b1', 'Dammam Branch');
+        }
+        if (b === 'b2' || b === 'AlHasa Branch' || b === 'فرع الاحساء') {
+            arabicBranches.push('فرع الاحساء', 'b2', 'AlHasa Branch');
+        }
+        arabicBranches.push(b);
+    });
+    return arabicBranches;
+};
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { TimeSheetEmployee } from '../types';
 import { dualStorage, COLLECTIONS } from '../DualStorageService';
@@ -11,6 +29,7 @@ interface Props {
     employees: TimeSheetEmployee[];
     title?: string;
     namesLanguage?: 'ar' | 'en';
+    currentUser?: any;
 }
 
 interface DriversGridData {
@@ -23,10 +42,11 @@ interface DriversGridData {
         tripsOT: string;
         overtime: string;
         days: Record<string, string>;
+        dayBranches?: Record<string, string>;
     }>;
 }
 
-export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (TANKERS)", namesLanguage = 'en' }: Props) {
+export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (TANKERS)", namesLanguage = 'en', currentUser }: Props) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [gridData, setGridData] = useState<DriversGridData | null>(() => {
         try {
@@ -73,12 +93,33 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
         };
     }, [showDatePicker]);
 
+    const [archivedEmployees, setArchivedEmployees] = useState<TimeSheetEmployee[] | null>(null);
+
     const monthKey = useMemo(() => {
         return `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
     }, [currentDate]);
 
     const activeEmployees = useMemo(() => {
-        const filtered = employees.filter(emp => emp.isActive !== false && emp.showInDriversTab === true);
+        let sourceEmployees = archivedEmployees || employees;
+        let filtered = sourceEmployees.filter(emp => emp.isActive !== false && emp.showInDriversTab === true);
+        
+        if (currentUser && currentUser.permissions?.allowedBranches) {
+            const allowed = currentUser.permissions.allowedBranches;
+            const username = currentUser.username?.toLowerCase();
+            const isAdmin = allowed.includes('all') || username === 'alaa' || username === 'admin' || username === 'moataz';
+            if (!isAdmin) {
+                const allowedArabicBranches = mapToArabicBranches(allowed);
+                filtered = filtered.filter(emp => {
+                    if (allowedArabicBranches.includes(emp.branch || '')) return true;
+                    const empData = gridData?.employeesData?.[emp.id];
+                    if (empData?.dayBranches) {
+                        return Object.values(empData.dayBranches).some((b: any) => allowedArabicBranches.includes(b));
+                    }
+                    return false;
+                });
+            }
+        }
+
         return filtered.sort((a, b) => {
             const aIsDriver = (a.jobTitle || '').includes('سائق شاحنه') || (a.jobTitle || '').includes('سائق');
             const bIsDriver = (b.jobTitle || '').includes('سائق شاحنه') || (b.jobTitle || '').includes('سائق');
@@ -86,7 +127,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
             if (!aIsDriver && bIsDriver) return 1;
             return 0;
         });
-    }, [employees]);
+    }, [employees, archivedEmployees, currentUser, gridData]);
 
     useEffect(() => {
         // Try to load from local cache instantly when monthKey changes
@@ -128,11 +169,78 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
             setIsLoading(false);
         });
 
-        return () => unsubscribe();
+        const qPosted = query(
+            collection(db, COLLECTIONS.RECORDS),
+            where('type', '==', 'timesheet_posted_month')
+        );
+
+        const unsubscribePosted = onSnapshot(qPosted, (snapshot) => {
+            let loadedArchivedEmployees = null;
+            snapshot.docs.forEach(doc => {
+                const data = doc.data().data;
+                if (data.month === monthKey && data.overtimeType === 'drivers') {
+                    if (data.employees) {
+                        loadedArchivedEmployees = data.employees;
+                    }
+                }
+            });
+            setArchivedEmployees(loadedArchivedEmployees);
+        });
+
+        return () => {
+            unsubscribe();
+            unsubscribePosted();
+        };
     }, [monthKey]);
 
     const handlePreviousMonth = () => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1));
     const handleNextMonth = () => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1));
+
+    const getVisibleSum1 = (emp: TimeSheetEmployee) => {
+        const eData = gridData?.employeesData?.[emp.id];
+        if (!eData || !eData.days) return '';
+        let sum = 0;
+        for (let i = 1; i <= 31; i++) {
+            if (isCellVisible(emp, i)) {
+                const val = parseFloat(eData.days[`${i}_1`]);
+                if (!isNaN(val)) sum += val;
+            }
+        }
+        return sum > 0 ? sum.toString() : '';
+    };
+
+    const getVisibleSum2 = (emp: TimeSheetEmployee) => {
+        const eData = gridData?.employeesData?.[emp.id];
+        if (!eData || !eData.days) return '';
+        let sum = 0;
+        for (let i = 1; i <= 31; i++) {
+            if (isCellVisible(emp, i)) {
+                const val = parseFloat(eData.days[`${i}_2`]);
+                if (!isNaN(val)) sum += val;
+            }
+        }
+        return sum > 0 ? sum.toString() : '';
+    };
+
+    const getVisibleSum3 = (emp: TimeSheetEmployee) => {
+        const eData = gridData?.employeesData?.[emp.id];
+        if (!eData || !eData.days) return '';
+        let sum = 0;
+        for (let i = 1; i <= 31; i++) {
+            if (isCellVisible(emp, i)) {
+                const val = parseFloat(eData.days[`${i}_3`]);
+                if (!isNaN(val)) sum += val;
+            }
+        }
+        return sum > 0 ? sum.toString() : '';
+    };
+
+    const getVisibleTotalTrips = (emp: TimeSheetEmployee) => {
+        const sum2 = parseFloat(getVisibleSum2(emp)) || 0;
+        const sum3 = parseFloat(getVisibleSum3(emp)) || 0;
+        const total = sum2 + sum3;
+        return total > 0 ? total.toString() : '';
+    };
 
     const handleDataChange = async (employeeId: string, field: 'capacity' | 'totalTrips' | 'tripsOnDuty' | 'tripsOT' | 'overtime' | string, value: string) => {
         let currentGrid = gridData;
@@ -144,17 +252,33 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
             };
         }
 
+        const employee = employees.find(e => e.id === employeeId);
+
         const empData = currentGrid.employeesData[employeeId] || {
             capacity: '',
             totalTrips: '',
             tripsOnDuty: '',
             tripsOT: '',
             overtime: '',
-            days: {}
+            days: {},
+            dayBranches: {}
         };
+        
+        if (!empData.dayBranches) empData.dayBranches = {};
 
         if (field.includes('_')) {
+            const dayStr = field.split('_')[0];
+            if (employee && !isCellEditable(employee, dayStr)) {
+                return;
+            }
+
             empData.days[field] = value;
+            
+            if (value && employee && employee.branch) {
+                if (!empData.dayBranches[dayStr]) {
+                    empData.dayBranches[dayStr] = employee.branch;
+                }
+            }
             
             // Auto-calculate sums
             let sum1 = 0, sum2 = 0, sum3 = 0;
@@ -175,7 +299,6 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
 
             // Sync with Overtime 2
             if (field.includes('_1')) {
-                const dayStr = field.split('_')[0];
                 const dayNum = parseInt(dayStr);
                 if (!isNaN(dayNum)) {
                     try {
@@ -184,8 +307,19 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                         const ot2Record = records.find((r: any) => r.id === ot2Id);
                         let ot2Data = ot2Record ? ot2Record.data : { id: ot2Id, month: monthKey, employeesData: {} };
                         if (!ot2Data.employeesData) ot2Data.employeesData = {};
-                        if (!ot2Data.employeesData[employeeId]) ot2Data.employeesData[employeeId] = { days: {}, statuses: {}, bonus: '', otTrips: '', rate: '' };
+                        if (!ot2Data.employeesData[employeeId]) ot2Data.employeesData[employeeId] = { days: {}, statuses: {}, bonus: '', otTrips: '', rate: '', dayBranches: {} };
+                        
                         ot2Data.employeesData[employeeId].days[dayNum] = value;
+                        
+                        // Sync dayBranches to Overtime 2 to preserve branch visibility on edit/delete
+                        if (!ot2Data.employeesData[employeeId].dayBranches) {
+                            ot2Data.employeesData[employeeId].dayBranches = {};
+                        }
+                        if (empData.dayBranches?.[dayStr]) {
+                            ot2Data.employeesData[employeeId].dayBranches[dayNum] = empData.dayBranches[dayStr];
+                        } else if (employee?.branch) {
+                            ot2Data.employeesData[employeeId].dayBranches[dayNum] = employee.branch;
+                        }
                         
                         dualStorage.save(COLLECTIONS.RECORDS, ot2Id, {
                             type: 'timesheet_grid_overtime2',
@@ -263,6 +397,147 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
         return records.some((r: any) => r.id === archiveId);
     }, [monthKey]);
 
+    const getTransferInfo = (emp: TimeSheetEmployee, dayBranches: Record<string | number, string> | undefined) => {
+        const empBranch = emp.branch || '';
+        
+        if (emp.transferDate) {
+            const parts = emp.transferDate.split('-');
+            if (parts.length === 3) {
+                const tYear = parseInt(parts[0], 10);
+                const tMonth = parseInt(parts[1], 10);
+                const tDay = parseInt(parts[2], 10);
+                const cYear = currentDate.getFullYear();
+                const cMonth = currentDate.getMonth() + 1;
+                
+                if (!isNaN(tYear) && !isNaN(tMonth) && !isNaN(tDay)) {
+                    if (tYear === cYear && tMonth === cMonth) {
+                        return {
+                            hasTransferred: true,
+                            firstNewBranchDay: tDay,
+                            lastOldBranchDay: tDay - 1
+                        };
+                    } else if (tYear > cYear || (tYear === cYear && tMonth > cMonth)) {
+                        return {
+                            hasTransferred: true,
+                            firstNewBranchDay: 32,
+                            lastOldBranchDay: 31
+                        };
+                    } else {
+                        return {
+                            hasTransferred: true,
+                            firstNewBranchDay: 1,
+                            lastOldBranchDay: 0
+                        };
+                    }
+                }
+            }
+        }
+
+        if (!dayBranches || Object.keys(dayBranches).length === 0) {
+            return {
+                hasTransferred: false,
+                firstNewBranchDay: 1,
+                lastOldBranchDay: 0
+            };
+        }
+
+        const days = Object.keys(dayBranches).map(Number).sort((a, b) => a - b);
+        
+        // Find if there is any old branch in dayBranches
+        const hasOldBranch = days.some(d => dayBranches[d] && dayBranches[d] !== empBranch);
+
+        if (!hasOldBranch) {
+            return {
+                hasTransferred: false,
+                firstNewBranchDay: 1,
+                lastOldBranchDay: 0
+            };
+        }
+
+        let firstNewBranchDay = 32;
+        let lastOldBranchDay = 0;
+
+        for (let d = 1; d <= 31; d++) {
+            const b = dayBranches[d];
+            if (b) {
+                if (b === empBranch) {
+                    if (d < firstNewBranchDay) {
+                        firstNewBranchDay = d;
+                    }
+                } else {
+                    if (d > lastOldBranchDay) {
+                        lastOldBranchDay = d;
+                    }
+                }
+            }
+        }
+
+        if (firstNewBranchDay === 32) {
+            return {
+                hasTransferred: true,
+                firstNewBranchDay: lastOldBranchDay + 1,
+                lastOldBranchDay
+            };
+        }
+
+        return {
+            hasTransferred: true,
+            firstNewBranchDay,
+            lastOldBranchDay
+        };
+    };
+
+    const isCellVisible = (emp: TimeSheetEmployee, day: string | number) => {
+        const dayNum = Number(day);
+        const eData = gridData?.employeesData?.[emp.id];
+        
+        if (!currentUser || !currentUser.permissions || !currentUser.permissions.allowedBranches) return true;
+        
+        const allowed = currentUser.permissions.allowedBranches;
+        const username = currentUser.username?.toLowerCase();
+        const isAdmin = allowed.includes('all') || username === 'alaa' || username === 'admin' || username === 'moataz';
+        
+        if (isAdmin) {
+            return true;
+        }
+        
+        const cellBranch = eData?.dayBranches?.[dayNum] || emp.branch || '';
+        const allowedArabicBranches = mapToArabicBranches(allowed);
+        return allowedArabicBranches.includes(cellBranch);
+    };
+
+    const isCellEditable = (emp: TimeSheetEmployee, day: string | number) => {
+        const username = currentUser?.username?.toLowerCase();
+        const isAdmin = username === 'alaa' || username === 'admin' || username === 'moataz';
+        
+        if (isArchived && !isAdmin) return false;
+        
+        const dayNum = Number(day);
+        const eData = gridData?.employeesData?.[emp.id];
+        
+        const transferInfo = getTransferInfo(emp, eData?.dayBranches);
+        if (transferInfo.hasTransferred && !isAdmin) {
+            if (dayNum < transferInfo.firstNewBranchDay) {
+                return false;
+            }
+        }
+        
+        if (!currentUser || !currentUser.permissions || !currentUser.permissions.allowedBranches) return true;
+        
+        const allowed = currentUser.permissions.allowedBranches;
+        if (isAdmin) {
+            return true;
+        }
+        
+        if (allowed.includes('all') || allowed.length > 1) {
+            return false;
+        }
+        
+        const cellBranch = eData?.dayBranches?.[dayNum] || emp.branch || '';
+        const allowedArabicBranches = mapToArabicBranches(allowed);
+        return allowedArabicBranches.includes(cellBranch);
+    };
+
     const handlePostDrivers = async () => {
         setIsPosting(true);
         try {
@@ -274,7 +549,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                 postedAt: new Date().toISOString(),
                 overtimeType: 'drivers',
                 drivers: gridData,
-                employees: activeEmployees
+                employees: employees.filter(emp => emp.isActive !== false && emp.showInDriversTab === true)
             };
 
             await dualStorage.save(COLLECTIONS.RECORDS, archiveId, {
@@ -481,7 +756,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                     '',
                     '',
                     '',
-                    eData.overtime
+                    getVisibleSum1(emp)
                 ];
                 daysArray31.forEach(day => {
                     row1Values.push(eData.days?.[`${day}_1`] || '');
@@ -510,9 +785,9 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                     '',
                     '',
                     '',
-                    eData.totalTrips,
+                    getVisibleTotalTrips(emp),
                     '',
-                    eData.tripsOT,
+                    getVisibleSum2(emp),
                     ''
                 ];
                 daysArray31.forEach(day => {
@@ -534,7 +809,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                     '',
                     '',
                     '',
-                    eData.tripsOnDuty,
+                    getVisibleSum3(emp),
                     '',
                     ''
                 ];
@@ -563,7 +838,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                     '',
                     '',
                     '',
-                    eData.overtime
+                    getVisibleSum1(emp)
                 ];
                 daysArray31.forEach(day => {
                     rowValues.push(eData.days?.[`${day}_1`] || '');
@@ -886,7 +1161,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                 </th>
                                 {daysArray.map(day => {
                                     const dName = getDayName(day);
-                                    const isRed = dName === 'FRIDAY' || dName === 'SATURDAY';
+                                    const isRed = dName === 'FRIDAY';
                                     return (
                                         <th key={`h1-${day}`} className={`border border-black p-0 align-middle bg-[#00b0f0] w-5 ${isRed ? 'text-red-600' : 'text-black'} header-day-th`}>
                                             <div className="relative h-24 w-full flex items-center justify-center">
@@ -945,7 +1220,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                                         data-row={activeEmployees.indexOf(emp) * 3}
                                                         data-col={0}
                                                         onKeyDown={(e) => handleKeyDown(e, activeEmployees.indexOf(emp) * 3, 0)}
-                                                        readOnly={isArchived}
+                                                        readOnly={!isCellEditable(emp, 1)}
                                                         value={eData.capacity}
                                                         onChange={(e) => handleDataChange(emp.id, 'capacity', e.target.value)}
                                                         className="w-full h-full text-center outline-none bg-transparent text-[10px] font-bold"
@@ -958,27 +1233,30 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                             <td style={{ borderBottom: borderBottom, borderRight: '1px solid #000' }} className="p-0 text-center relative font-bold text-red-600 h-5 bg-white">
                                                 <input
                                                     type="text"
-                                                    value={eData.overtime}
+                                                    value={getVisibleSum1(emp)}
                                                     readOnly
                                                     className="w-full h-full text-center outline-none bg-transparent font-bold text-red-600 text-[10px]"
                                                 />
                                             </td>
-                                            {daysArray.map(day => (
-                                                <td key={`d1-${day}`} style={{ borderBottom: borderBottom, borderRight: day === daysInMonth ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
-                                                    {day <= daysInMonth && (
-                                                        <input
-                                                            type="text"
-                                                            value={eData.days[`${day}_1`] || ''}
-                                                            data-row={activeEmployees.indexOf(emp) * 3}
-                                                            data-col={day + 4}
-                                                            onKeyDown={(e) => handleKeyDown(e, activeEmployees.indexOf(emp) * 3, day + 4)}
-                                                            readOnly={isArchived}
-                                                            onChange={(e) => handleDataChange(emp.id, `${day}_1`, e.target.value)}
-                                                            className={`w-full h-full text-center outline-none bg-transparent text-[10px] font-bold ${isWeekend(getDayName(day)) ? 'text-red-600' : ''}`}
-                                                        />
-                                                    )}
-                                                </td>
-                                            ))}
+                                            {daysArray.map(day => {
+                                                const isFri = getDayName(day) === 'FRIDAY';
+                                                return (
+                                                    <td key={`d1-${day}`} style={{ borderBottom: borderBottom, borderRight: day === daysInMonth ? '1px solid #000' : '1px dashed #9ca3af' }} className={`p-0 text-center relative h-5 ${isFri ? 'bg-[#fff5f5]' : 'bg-white'}`}>
+                                                        {day <= daysInMonth && (
+                                                            <input
+                                                                type="text"
+                                                                value={!isCellVisible(emp, day) ? '' : (eData.days[`${day}_1`] || '')}
+                                                                data-row={activeEmployees.indexOf(emp) * 3}
+                                                                data-col={day + 4}
+                                                                onKeyDown={(e) => handleKeyDown(e, activeEmployees.indexOf(emp) * 3, day + 4)}
+                                                                readOnly={!isCellEditable(emp, day)}
+                                                                onChange={(e) => handleDataChange(emp.id, `${day}_1`, e.target.value)}
+                                                                className={`w-full h-full text-center outline-none bg-transparent text-[10px] font-bold ${isFri ? 'text-red-600' : 'text-black'} ${!isCellEditable(emp, day) && !isArchived ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                                            />
+                                                        )}
+                                                    </td>
+                                                );
+                                            })}
                                         </tr>
                                         {isDriver && (
                                             <>
@@ -987,7 +1265,7 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                                     <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
                                                         <input
                                                             type="text"
-                                                            value={eData.totalTrips}
+                                                            value={getVisibleTotalTrips(emp)}
                                                             readOnly
                                                             className="w-full h-full text-center outline-none bg-transparent text-[10px] font-bold"
                                                         />
@@ -996,28 +1274,31 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                                     <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
                                                         <input
                                                             type="text"
-                                                            value={eData.tripsOT}
+                                                            value={getVisibleSum2(emp)}
                                                             readOnly
                                                             className="w-full h-full text-center outline-none bg-transparent text-[10px] font-bold"
                                                         />
                                                     </td>
                                                     <td style={{ borderBottom: '1px dashed #9ca3af', borderRight: '1px solid #000' }} className="p-0 bg-white h-5"></td>
-                                                    {daysArray.map(day => (
-                                                        <td key={`d2-${day}`} style={{ borderBottom: '1px dashed #9ca3af', borderRight: day === daysInMonth ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
-                                                            {day <= daysInMonth && (
-                                                                <input
-                                                                    type="text"
-                                                                    value={eData.days[`${day}_2`] || ''}
-                                                                    data-row={activeEmployees.indexOf(emp) * 3 + 1}
-                                                                    data-col={day + 4}
-                                                                    onKeyDown={(e) => handleKeyDown(e, activeEmployees.indexOf(emp) * 3 + 1, day + 4)}
-                                                                    readOnly={isArchived}
-                                                                    onChange={(e) => handleDataChange(emp.id, `${day}_2`, e.target.value)}
-                                                                    className="w-full h-full text-center outline-none bg-transparent text-[10px] font-bold text-gray-800"
-                                                                />
-                                                            )}
-                                                        </td>
-                                                    ))}
+                                                    {daysArray.map(day => {
+                                                        const isFri = getDayName(day) === 'FRIDAY';
+                                                        return (
+                                                            <td key={`d2-${day}`} style={{ borderBottom: '1px dashed #9ca3af', borderRight: day === daysInMonth ? '1px solid #000' : '1px dashed #9ca3af' }} className={`p-0 text-center relative h-5 ${isFri ? 'bg-[#fff5f5]' : 'bg-white'}`}>
+                                                                {day <= daysInMonth && (
+                                                                    <input
+                                                                        type="text"
+                                                                        value={!isCellVisible(emp, day) ? '' : (eData.days[`${day}_2`] || '')}
+                                                                        data-row={activeEmployees.indexOf(emp) * 3 + 1}
+                                                                        data-col={day + 4}
+                                                                        onKeyDown={(e) => handleKeyDown(e, activeEmployees.indexOf(emp) * 3 + 1, day + 4)}
+                                                                        readOnly={!isCellEditable(emp, day)}
+                                                                        onChange={(e) => handleDataChange(emp.id, `${day}_2`, e.target.value)}
+                                                                        className={`w-full h-full text-center outline-none bg-transparent text-[10px] font-bold text-gray-800 ${!isCellEditable(emp, day) && !isArchived ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                                                    />
+                                                                )}
+                                                            </td>
+                                                        );
+                                                    })}
                                                 </tr>
                                                 <tr>
                                                     <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-0 bg-white h-5"></td>
@@ -1025,29 +1306,32 @@ export default function TimeSheetDriversTankers({ employees, title = "DRIVERS (T
                                                     <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
                                                         <input
                                                             type="text"
-                                                            value={eData.tripsOnDuty}
+                                                            value={getVisibleSum3(emp)}
                                                             readOnly
                                                             className="w-full h-full text-center outline-none bg-transparent text-[10px] font-bold"
                                                         />
                                                     </td>
                                                     <td style={{ borderBottom: '2px solid #000', borderRight: '1px dashed #9ca3af' }} className="p-0 bg-white h-5"></td>
                                                     <td style={{ borderBottom: '2px solid #000', borderRight: '1px solid #000' }} className="p-0 bg-white h-5"></td>
-                                                    {daysArray.map(day => (
-                                                        <td key={`d3-${day}`} style={{ borderBottom: '2px solid #000', borderRight: day === daysInMonth ? '1px solid #000' : '1px dashed #9ca3af' }} className="p-0 text-center relative h-5 bg-white">
-                                                            {day <= daysInMonth && (
-                                                                <input
-                                                                    type="text"
-                                                                    value={eData.days[`${day}_3`] || ''}
-                                                                    data-row={activeEmployees.indexOf(emp) * 3 + 2}
-                                                                    data-col={day + 4}
-                                                                    onKeyDown={(e) => handleKeyDown(e, activeEmployees.indexOf(emp) * 3 + 2, day + 4)}
-                                                                    readOnly={isArchived}
-                                                                    onChange={(e) => handleDataChange(emp.id, `${day}_3`, e.target.value)}
-                                                                    className="w-full h-full text-center outline-none bg-transparent text-[10px] font-bold text-gray-800"
-                                                                />
-                                                            )}
-                                                        </td>
-                                                    ))}
+                                                    {daysArray.map(day => {
+                                                        const isFri = getDayName(day) === 'FRIDAY';
+                                                        return (
+                                                            <td key={`d3-${day}`} style={{ borderBottom: '2px solid #000', borderRight: day === daysInMonth ? '1px solid #000' : '1px dashed #9ca3af' }} className={`p-0 text-center relative h-5 ${isFri ? 'bg-[#fff5f5]' : 'bg-white'}`}>
+                                                                {day <= daysInMonth && (
+                                                                    <input
+                                                                        type="text"
+                                                                        value={!isCellVisible(emp, day) ? '' : (eData.days[`${day}_3`] || '')}
+                                                                        data-row={activeEmployees.indexOf(emp) * 3 + 2}
+                                                                        data-col={day + 4}
+                                                                        onKeyDown={(e) => handleKeyDown(e, activeEmployees.indexOf(emp) * 3 + 2, day + 4)}
+                                                                        readOnly={!isCellEditable(emp, day)}
+                                                                        onChange={(e) => handleDataChange(emp.id, `${day}_3`, e.target.value)}
+                                                                        className={`w-full h-full text-center outline-none bg-transparent text-[10px] font-bold text-gray-800 ${!isCellEditable(emp, day) && !isArchived ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                                                    />
+                                                                )}
+                                                            </td>
+                                                        );
+                                                    })}
                                                 </tr>
                                             </>
                                         )}
