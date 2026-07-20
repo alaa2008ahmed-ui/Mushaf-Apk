@@ -25,19 +25,17 @@ import {
   X,
   Menu,
   LogOut,
-  Users,
   Calculator,
-  CreditCard
+  Coins
 } from 'lucide-react';
 
 const DEFAULT_URLS = {
   accounting: "https://alaa-accounting-system.vercel.app",
+  miniAccounting: "https://mini-accounting-system-seven.vercel.app/",
   dailySales: "https://daily-sales-rose.vercel.app/",
   deliverySales: "https://dilevry-note.vercel.app/",
   quran: "https://mushaf-ahmed-laila.vercel.app/",
-  allowances: "https://allowances-for-employees.vercel.app/",
-  fixedassets: "https://fixed-assets-alpha.vercel.app/",
-  payroll: "https://payroll-management-vert.vercel.app/"
+  fixedassets: "https://fixed-assets-alpha.vercel.app/"
 };
 
 const t = {
@@ -46,18 +44,16 @@ const t = {
     portalSubtitle: "",
     accounting: "برنامج علاء المحاسبي",
     accountingDesc: "منظومة متكاملة لإدارة الحسابات العامة، القيود المالية، ومراقبة الميزانية بدقة عالية.",
+    miniAccounting: "نظام المحاسبة المصغر",
+    miniAccountingDesc: "نظام محاسبي مبسط لإدارة الحسابات والقيود والعمليات المالية بكل سهولة.",
     dailySales: "المبيعات اليومية",
     dailySalesDesc: "تقرير المبيعات اليومي المباشر لمتابعة حركة الفروع والإيرادات لحظة بلحظة.",
     deliverySales: "مبيعات الدليفري",
     deliverySalesDesc: "نظام إدارة مبيعات التوصيل، تتبع الطلبات وحسابات مناديب الدليفري.",
     quran: "مصحف أحمد وليلى",
     quranDesc: "المصحف الشريف الميسر للقراءة والتدبر برسم المصحف وتلاوات متعددة.",
-    allowances: "مخصصات الموظفين",
-    allowancesDesc: "إدارة مخصصات الموظفين",
     fixedassets: "الاصول الثابته",
     fixedassetsDesc: "نظام إدارة واحتساب الاهـلاكات للأصول الثابتة",
-    payroll: "إدارة الرواتب",
-    payrollDesc: "نظام إدارة الرواتب ومسيرات رواتب الموظفين والمدفوعات.",
     adminPortal: "بوابة الإدارة",
     adminLogin: "تسجيل دخول المشرف",
     username: "اسم المستخدم",
@@ -86,18 +82,16 @@ const t = {
     portalSubtitle: "",
     accounting: "Alaa Accounting System",
     accountingDesc: "An integrated system to manage general ledger, financial entries, and budget control.",
+    miniAccounting: "Mini Accounting system",
+    miniAccountingDesc: "A simplified accounting system to manage ledger, entries, and financial balances.",
     dailySales: "Daily Sales",
     dailySalesDesc: "Direct daily sales report to monitor branches' movements and revenues in real-time.",
     deliverySales: "Delivery Note",
     deliverySalesDesc: "System for managing delivery sales, tracking orders, and delivery agents' accounts.",
     quran: "Mushaf Ahmed & Laila",
     quranDesc: "The Holy Quran for reading, listening, and contemplation with multiple recitations.",
-    allowances: "Allowances For Employees",
-    allowancesDesc: "Manage employee allowances",
     fixedassets: "Fixed assets",
     fixedassetsDesc: "Manage fixed assets and depreciation rules",
-    payroll: "Payroll Management",
-    payrollDesc: "Manage payroll, employee salaries, and disbursements.",
     adminPortal: "Admin Portal",
     adminLogin: "Administrator Login",
     username: "Username",
@@ -130,12 +124,11 @@ export default function App() {
   // URLs configuration
   const [urls, setUrls] = useState({
     accounting: DEFAULT_URLS.accounting,
+    miniAccounting: DEFAULT_URLS.miniAccounting,
     dailySales: DEFAULT_URLS.dailySales,
     deliverySales: DEFAULT_URLS.deliverySales,
     quran: DEFAULT_URLS.quran,
-    allowances: DEFAULT_URLS.allowances,
     fixedassets: DEFAULT_URLS.fixedassets,
-    payroll: DEFAULT_URLS.payroll,
   });
 
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
@@ -173,21 +166,19 @@ export default function App() {
 
     // Load URLs configuration from localStorage
     const savedAccounting = localStorage.getItem('swc_url_accounting');
+    const savedMiniAccounting = localStorage.getItem('swc_url_miniAccounting');
     const savedDailySales = localStorage.getItem('swc_url_dailySales');
     const savedDeliverySales = localStorage.getItem('swc_url_deliverySales');
     const savedQuran = localStorage.getItem('swc_url_quran');
-    const savedAllowances = localStorage.getItem('swc_url_allowances');
     const savedFixedAssets = localStorage.getItem('swc_url_fixedassets') || localStorage.getItem('swc_url_depreciation');
-    const savedPayroll = localStorage.getItem('swc_url_payroll');
 
     const loadedUrls = {
       accounting: savedAccounting || DEFAULT_URLS.accounting,
+      miniAccounting: savedMiniAccounting || DEFAULT_URLS.miniAccounting,
       dailySales: savedDailySales || DEFAULT_URLS.dailySales,
       deliverySales: savedDeliverySales || DEFAULT_URLS.deliverySales,
       quran: savedQuran || DEFAULT_URLS.quran,
-      allowances: savedAllowances || DEFAULT_URLS.allowances,
       fixedassets: savedFixedAssets || DEFAULT_URLS.fixedassets,
-      payroll: savedPayroll || DEFAULT_URLS.payroll,
     };
 
     setUrls(loadedUrls);
@@ -213,12 +204,11 @@ export default function App() {
 
   const handleSaveUrls = () => {
     localStorage.setItem('swc_url_accounting', editUrls.accounting);
+    localStorage.setItem('swc_url_miniAccounting', editUrls.miniAccounting);
     localStorage.setItem('swc_url_dailySales', editUrls.dailySales);
     localStorage.setItem('swc_url_deliverySales', editUrls.deliverySales);
     localStorage.setItem('swc_url_quran', editUrls.quran);
-    localStorage.setItem('swc_url_allowances', editUrls.allowances);
     localStorage.setItem('swc_url_fixedassets', editUrls.fixedassets);
-    localStorage.setItem('swc_url_payroll', editUrls.payroll);
     
     setUrls({ ...editUrls });
     setSaveSuccess(true);
@@ -255,18 +245,16 @@ export default function App() {
     switch (id) {
       case 'accounting':
         return <Receipt className={className} />;
+      case 'miniAccounting':
+        return <Coins className={className} />;
       case 'dailySales':
         return <TrendingUp className={className} />;
       case 'deliverySales':
         return <Truck className={className} />;
       case 'quran':
         return <BookOpen className={className} />;
-      case 'allowances':
-        return <Users className={className} />;
       case 'fixedassets':
         return <Calculator className={className} />;
-      case 'payroll':
-        return <CreditCard className={className} />;
       default:
         return <Zap className={className} />;
     }
@@ -276,8 +264,35 @@ export default function App() {
   const isRTL = lang === 'ar';
 
   useEffect(() => {
+    if (selectedAppId) {
+      let appTitle = '';
+      switch (selectedAppId) {
+        case 'accounting':
+          appTitle = currentT.accounting;
+          break;
+        case 'miniAccounting':
+          appTitle = currentT.miniAccounting;
+          break;
+        case 'dailySales':
+          appTitle = currentT.dailySales;
+          break;
+        case 'deliverySales':
+          appTitle = currentT.deliverySales;
+          break;
+        case 'quran':
+          appTitle = currentT.quran;
+          break;
+        case 'fixedassets':
+          appTitle = currentT.fixedassets;
+          break;
+      }
+      if (appTitle) {
+        document.title = `Alaa - ${appTitle}`;
+        return;
+      }
+    }
     document.title = currentT.portalTitle;
-  }, [lang, currentT.portalTitle]);
+  }, [lang, currentT.portalTitle, selectedAppId, currentT.accounting, currentT.miniAccounting, currentT.dailySales, currentT.deliverySales, currentT.quran, currentT.fixedassets]);
 
   const appsList = [
     {
@@ -286,6 +301,13 @@ export default function App() {
       desc: currentT.accountingDesc,
       url: urls.accounting,
       color: "from-blue-50 to-blue-100/50 text-blue-700 border-blue-200 hover:border-blue-300 hover:shadow-blue-500/10"
+    },
+    {
+      id: 'miniAccounting',
+      title: currentT.miniAccounting,
+      desc: currentT.miniAccountingDesc,
+      url: urls.miniAccounting,
+      color: "from-sky-50 to-sky-100/50 text-sky-700 border-sky-200 hover:border-sky-300 hover:shadow-sky-500/10"
     },
     {
       id: 'dailySales',
@@ -309,25 +331,11 @@ export default function App() {
       color: "from-purple-50 to-purple-100/50 text-purple-700 border-purple-200 hover:border-purple-300 hover:shadow-purple-500/10"
     },
     {
-      id: 'allowances',
-      title: currentT.allowances,
-      desc: currentT.allowancesDesc,
-      url: urls.allowances,
-      color: "from-sky-50 to-sky-100/50 text-sky-700 border-sky-200 hover:border-sky-300 hover:shadow-sky-500/10"
-    },
-    {
       id: 'fixedassets',
       title: currentT.fixedassets,
       desc: currentT.fixedassetsDesc,
       url: urls.fixedassets,
       color: "from-indigo-50 to-indigo-100/50 text-indigo-700 border-indigo-200 hover:border-indigo-300 hover:shadow-indigo-500/10"
-    },
-    {
-      id: 'payroll',
-      title: currentT.payroll,
-      desc: currentT.payrollDesc,
-      url: urls.payroll,
-      color: "from-rose-50 to-rose-100/50 text-rose-700 border-rose-200 hover:border-rose-300 hover:shadow-rose-500/10"
     }
   ];
 
@@ -493,54 +501,52 @@ export default function App() {
               </div>
             ) : (
               // Landing dashboard displaying the 4 applications
-              <div className="w-full h-full flex flex-col justify-between overflow-y-auto px-4 md:px-6 py-4 md:py-8 relative">
+              <div className="w-full h-full flex flex-col justify-between overflow-y-auto px-4 md:px-6 pb-4 md:pb-8 pt-0 relative">
                 {/* Background ambient lighting effects */}
                 <div className="absolute top-[-10%] left-[10%] w-[30vw] h-[30vw] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
                 <div className="absolute bottom-[-10%] right-[10%] w-[30vw] h-[30vw] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
-
+                
                 {/* Dashboard Header */}
-                <header className="max-w-4xl w-full mx-auto flex items-center justify-between mb-4 md:mb-8">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-                      <Zap className="w-5 h-5 text-white fill-current" />
+                <header className="sticky top-0 z-30 w-full bg-slate-50/95 backdrop-blur-md border-b border-slate-200/50 -mx-4 md:-mx-6 px-4 md:px-6 py-4 mb-4 md:mb-8">
+                  <div className="max-w-4xl w-full mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+                        <Zap className="w-5 h-5 text-white fill-current" />
+                      </div>
+                      <div>
+                        <h1 className="text-base md:text-lg font-bold text-slate-800 tracking-tight">{currentT.portalTitle}</h1>
+                      </div>
                     </div>
-                    <div>
-                      <h1 className="text-base md:text-lg font-bold text-slate-800 tracking-tight">{currentT.portalTitle}</h1>
+
+                    <div className="flex items-center gap-2">
+                      {/* Language Switcher */}
+                      <button
+                        onClick={toggleLanguage}
+                        className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-xs text-slate-600 rounded-xl transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                      >
+                        <Globe className="w-3.5 h-3.5 text-blue-500" />
+                        <span>{currentT.language}</span>
+                      </button>
+
+                      {/* Admin Settings Link */}
+                      <button
+                        onClick={() => setShowAdminLogin(true)}
+                        className="p-2 bg-white hover:bg-gray-50 border border-gray-200 text-slate-400 hover:text-slate-600 rounded-xl transition-all shadow-sm active:scale-95"
+                        title={currentT.adminPortal}
+                      >
+                        <Settings className="w-4 h-4" />
+                      </button>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {/* Language Switcher */}
-                    <button
-                      onClick={toggleLanguage}
-                      className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-xs text-slate-600 rounded-xl transition-all flex items-center gap-2 shadow-sm active:scale-95"
-                    >
-                      <Globe className="w-3.5 h-3.5 text-blue-500" />
-                      <span>{currentT.language}</span>
-                    </button>
-
-                    {/* Admin Settings Link */}
-                    <button
-                      onClick={() => setShowAdminLogin(true)}
-                      className="p-2 bg-white hover:bg-gray-50 border border-gray-200 text-slate-400 hover:text-slate-600 rounded-xl transition-all shadow-sm active:scale-95"
-                      title={currentT.adminPortal}
-                    >
-                      <Settings className="w-4 h-4" />
-                    </button>
                   </div>
                 </header>
 
                 {/* Applications grid - 2x2 layout by default for mobile and desktop */}
                 <main className="max-w-4xl w-full mx-auto grid grid-cols-2 gap-3 md:gap-5 my-2 md:my-8 flex-1 items-center content-center">
-                  {appsList.map((app, index) => (
-                    <motion.div
+                  {appsList.map((app) => (
+                    <div
                       key={app.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * index + 0.2 }}
-                      whileHover={{ scale: 1.02, y: -2 }}
                       onClick={() => handleSelectApp(app.id)}
-                      className={`glass-panel p-4 md:p-8 rounded-2xl md:rounded-[2rem] border bg-white flex flex-col items-center justify-center text-center gap-2 md:gap-4 cursor-pointer transition-all ${app.color} group relative overflow-hidden h-28 sm:h-32 md:h-[180px] shadow-sm hover:shadow-md`}
+                      className={`glass-panel p-4 md:p-8 rounded-2xl md:rounded-[2rem] border bg-white flex flex-col items-center justify-center text-center gap-2 md:gap-4 cursor-pointer transform hover:scale-[1.02] hover:-translate-y-1 active:scale-95 transition-all duration-150 ease-out ${app.color} group relative overflow-hidden h-28 sm:h-32 md:h-[180px] shadow-sm hover:shadow-md`}
                     >
                       {/* Subtle app card background glow */}
                       <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
@@ -552,7 +558,7 @@ export default function App() {
                       <h3 className="text-xs md:text-lg font-bold text-slate-800 group-hover:text-current transition-colors tracking-tight line-clamp-2">
                         {app.title}
                       </h3>
-                    </motion.div>
+                    </div>
                   ))}
                 </main>
 
@@ -668,6 +674,21 @@ export default function App() {
                                 />
                               </div>
 
+                              {/* Mini Accounting */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
+                                  {renderAppIcon('miniAccounting', 'w-3.5 h-3.5')}
+                                  <span>{currentT.miniAccounting}</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editUrls.miniAccounting}
+                                  onChange={(e) => setEditUrls({ ...editUrls, miniAccounting: e.target.value })}
+                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
+                                  placeholder="https://..."
+                                />
+                              </div>
+
                               {/* Link 2 */}
                               <div className="space-y-1.5">
                                 <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
@@ -713,21 +734,6 @@ export default function App() {
                                 />
                               </div>
 
-                              {/* Link 5 */}
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
-                                  {renderAppIcon('allowances', 'w-3.5 h-3.5')}
-                                  <span>{currentT.allowances}</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={editUrls.allowances}
-                                  onChange={(e) => setEditUrls({ ...editUrls, allowances: e.target.value })}
-                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
-                                  placeholder="https://..."
-                                />
-                              </div>
-
                               {/* Link 6 */}
                               <div className="space-y-1.5">
                                 <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
@@ -738,21 +744,6 @@ export default function App() {
                                   type="text"
                                   value={editUrls.fixedassets}
                                   onChange={(e) => setEditUrls({ ...editUrls, fixedassets: e.target.value })}
-                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
-                                  placeholder="https://..."
-                                />
-                              </div>
-
-                              {/* Link 7 */}
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
-                                  {renderAppIcon('payroll', 'w-3.5 h-3.5')}
-                                  <span>{currentT.payroll}</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={editUrls.payroll}
-                                  onChange={(e) => setEditUrls({ ...editUrls, payroll: e.target.value })}
                                   className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
                                   placeholder="https://..."
                                 />
