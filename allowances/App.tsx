@@ -6,7 +6,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import './index.css';
 import EnglishDateInput from './components/EnglishDateInput';
-import { Plus, FileSpreadsheet, Smartphone, Monitor, FileText, Lock, Unlock } from 'lucide-react';
+import { Plus, FileSpreadsheet, Smartphone, Monitor, FileText, Lock, Unlock, Printer } from 'lucide-react';
 import { useIsMobile } from './hooks/useIsMobile';
 import { Employee, CalculatedEmployee, ArchivedRecord } from './types';
 import { calculateEmployeeAllowances, triggerSafePrint, formatNumber } from './utils';
@@ -35,83 +35,22 @@ const generateUUID = (): string => {
   });
 };
 
-const BRANCHES = ['الكل', 'الادارة', 'المركز الرئيسي', 'فرع المعباه', 'فرع الدمام', 'فرع الاحساء'];
+const BRANCHES = ['الكل', 'الادارة المركزيه', 'المركز الرئيسي', 'فرع الدمام', 'فرع الاحساء', 'فرع المعباه'];
 
 const isTargetAhsaEmployee = (emp?: Partial<Employee>): boolean => {
-  if (!emp || !emp.name) return false;
-  const name = emp.name
-    .replace(/[أإآ]/g, 'ا')
-    .replace(/[ى]/g, 'ي')
-    .replace(/[ة]/g, 'ه')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return (
-    name.includes('التراب') ||
-    name.includes('نعمان') ||
-    name.includes('ادريس') ||
-    name.includes('كبير')
-  );
+  return false;
 };
 
 const applyBranchCorrections = (list: Employee[]): Employee[] => {
   return list.map(emp => {
-    let branch = emp.branch;
-    let ticketPrice = emp.ticketPrice;
+    let branch = emp.branch ? emp.branch.trim() : '';
 
     if (branch === 'المركز الرئيسي 1') branch = 'المركز الرئيسي';
-    else if (branch === 'فرع المعبيلة' || branch === 'فرع المعبيله') branch = 'فرع المعباه';
+    else if (branch === 'فرع المعبيلة' || branch === 'فرع المعبيله' || branch === 'فرع المعبأه') branch = 'فرع المعباه';
+    else if (branch === 'الادارة' || branch === 'الإدارة' || branch === 'الاداره' || branch === 'الإداره') branch = 'الادارة المركزيه';
 
-    if (isTargetAhsaEmployee(emp)) {
-      branch = 'فرع الاحساء';
-    }
-
-    let transferAllowance = emp.transferAllowance;
-    let calculationDate = emp.calculationDate;
-    let code = emp.code;
-    let isActive = emp.isActive;
-    let hireDate = emp.hireDate;
-    let lastVacationReturnDate = emp.lastVacationReturnDate;
-
-    if (emp.id === '13' || (emp.name && emp.name.includes('باسمه'))) {
-      if (hireDate === '2021-01-01') hireDate = '2026-05-11';
-      if (lastVacationReturnDate === '2025-12-31') lastVacationReturnDate = '2026-05-11';
-    }
-
-    if (emp.id === '14' || (emp.name && emp.name.includes('لولوه'))) {
-      if (hireDate === '2021-01-01') hireDate = '2026-05-10';
-      if (lastVacationReturnDate === '2025-12-31') lastVacationReturnDate = '2026-05-10';
-    }
-
-    if (emp.id === '11' || (emp.name && emp.name.includes('اماني إبراهيم يحي الفيفي'))) {
-      if (code === '11' || !code) code = '1177';
-      if (emp.code === '11' || isActive === undefined) isActive = false;
-    }
-
-    if (emp.id === '31' || code === '31' || code === '1168' || (emp.name && emp.name.includes('سوريش كومار'))) {
-      if (code === '31' || !code) code = '1168';
-      if (calculationDate === '2026-07-02') {
-        calculationDate = '2026-12-31';
-      }
-    }
-
-    if (emp.id === '36' || code === '36' || (emp.name && emp.name.includes('عبد الصمد عبد السلام'))) {
-      if (code === '36' || !code) code = '1178';
-    }
-
-    if (emp.id === '37' || code === '37' || (emp.name && emp.name.includes('صاحب جود'))) {
-      if (code === '37' || !code) code = '1179';
-    }
-
-    if ((code === '1078' || (emp.name && emp.name.includes('التراب')))) {
-      if (!ticketPrice || ticketPrice === 0) ticketPrice = 1350;
-      if (transferAllowance !== 0) transferAllowance = 0;
-    } else if ((code === '1147' || (emp.name && emp.name.includes('نعمان')))) {
-      if (!ticketPrice || ticketPrice === 0) ticketPrice = 2000;
-      if (transferAllowance !== 0) transferAllowance = 0;
-    }
-
-    if (branch !== emp.branch || ticketPrice !== emp.ticketPrice || transferAllowance !== emp.transferAllowance || calculationDate !== emp.calculationDate || code !== emp.code || isActive !== emp.isActive || hireDate !== emp.hireDate || lastVacationReturnDate !== emp.lastVacationReturnDate) {
-      return { ...emp, branch, ticketPrice, transferAllowance, calculationDate, code, isActive, hireDate, lastVacationReturnDate };
+    if (branch !== emp.branch) {
+      return { ...emp, branch };
     }
     return emp;
   });
@@ -224,7 +163,7 @@ export default function App({ currentUser }: { currentUser: User }) {
     return () => window.removeEventListener('afterprint', handleAfterPrint);
   }, []);
 
-  const lastSavedJsonRef = React.useRef<string>('');
+  const lastSavedJsonRef = React.useRef<string>(localStorage.getItem('app_employees_data_v1') || '');
   const lastSavedArchivesRef = React.useRef<string>(localStorage.getItem('app_archived_records_v1') || '');
 
   const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -391,7 +330,28 @@ export default function App({ currentUser }: { currentUser: User }) {
         (emp.jobTitle && emp.jobTitle.toLowerCase().includes(q))
       );
     }
-    return list;
+
+    const branchOrder = [
+      "الادارة المركزيه",
+      "المركز الرئيسي",
+      "فرع الدمام",
+      "فرع الاحساء",
+      "فرع المعباه",
+      "فرع المعبأه"
+    ];
+
+    return [...list].sort((a, b) => {
+      const branchA = a.branch ? a.branch.trim() : '';
+      const branchB = b.branch ? b.branch.trim() : '';
+      const idxA = branchOrder.indexOf(branchA);
+      const idxB = branchOrder.indexOf(branchB);
+      const valA = idxA !== -1 ? idxA : 999;
+      const valB = idxB !== -1 ? idxB : 999;
+      if (valA !== valB) {
+        return valA - valB;
+      }
+      return Number(a.sequenceNumber || a.id) - Number(b.sequenceNumber || b.id);
+    });
   }, [calculatedEmployees, selectedBranch, vacationDurationFilter, searchQuery]);
 
   const activeFilteredEmployees = useMemo(() => {
@@ -408,11 +368,22 @@ export default function App({ currentUser }: { currentUser: User }) {
         savedEmp = { ...(empData as Employee), branch };
         setEmployees(prev => applyBranchCorrections(prev.map(emp => emp.id === savedEmp.id ? savedEmp : emp)));
       } else {
+        const existingCodes = new Set(
+          employees
+            .map((emp) => emp.code ? emp.code.trim() : "")
+            .filter((code) => code !== "")
+        );
+        let nextCodeInt = 1188;
+        while (existingCodes.has(nextCodeInt.toString())) {
+          nextCodeInt++;
+        }
+        const nextCode = nextCodeInt.toString();
         savedEmp = {
           ...empData,
           branch,
           id: generateUUID(),
           sequenceNumber: employees.length > 0 ? Math.max(...employees.map(e => e.sequenceNumber)) + 1 : 1,
+          code: empData.code || nextCode,
         };
         setEmployees(prev => applyBranchCorrections([...prev, savedEmp]));
       }
@@ -431,14 +402,24 @@ export default function App({ currentUser }: { currentUser: User }) {
     requirePasswordAuth(() => {
       const newId = generateUUID();
       const newSeq = employees.length > 0 ? Math.max(...employees.map(e => e.sequenceNumber)) + 1 : 1;
-      const defaultBranch = BRANCHES.find(b => b !== 'الكل' && b !== 'All') || 'الادارة';
+      const existingCodes = new Set(
+        employees
+          .map((emp) => emp.code ? emp.code.trim() : "")
+          .filter((code) => code !== "")
+      );
+      let nextCodeInt = 1188;
+      while (existingCodes.has(nextCodeInt.toString())) {
+        nextCodeInt++;
+      }
+      const nextCode = nextCodeInt.toString();
+      const defaultBranch = selectedBranch !== 'الكل' ? selectedBranch : (BRANCHES.find(b => b !== 'الكل' && b !== 'All') || 'الادارة');
       const newEmp: Employee = {
         id: newId,
         sequenceNumber: newSeq,
-        code: '',
+        code: nextCode,
         jobTitle: '',
         name: '',
-        branch: '',
+        branch: defaultBranch,
         hireDate: new Date().toISOString().split('T')[0],
         lastVacationReturnDate: new Date().toISOString().split('T')[0],
         calculationDate: new Date().toISOString().split('T')[0],
@@ -497,6 +478,105 @@ export default function App({ currentUser }: { currentUser: User }) {
   const handlePrintTable = () => {
     setPrintMode('table');
     triggerSafePrint();
+  };
+
+  const handleHorizontalPrintTable = () => {
+    setPrintMode('table');
+    setTimeout(() => {
+      try {
+        const el = document.getElementById("pdf-table-container");
+        if (!el) {
+          alert("لم يتم العثور على جدول الطباعة");
+          return;
+        }
+
+        const count = filteredEmployees.length || 1;
+        const isAllBranches = !selectedBranch || selectedBranch === "الكل" || selectedBranch === "All";
+        
+        import('../payroll/utils/printConfig').then(({ generateMediaPrintCSS }) => {
+          let smartCSS = generateMediaPrintCSS(count, isAllBranches);
+          smartCSS = smartCSS.replace(/#printable-payroll-section/g, '#pdf-table-container');
+          
+          smartCSS = smartCSS.replace(/margin-top:\s*[^!]+!important;/g, 'margin-top: 1cm !important;');
+          
+          // Reduce zoom slightly to ensure it stays on one page despite the 1cm top margin
+          smartCSS = smartCSS.replace(/zoom:\s*([0-9.]+)\s*!important;/, function(match, p1) {
+            return 'zoom: ' + (parseFloat(p1) * 0.96) + ' !important;';
+          });
+          
+          smartCSS += `
+            @media print {
+              #pdf-table-container th.print-header-th,
+              #pdf-table-container tr th.print-header-th,
+              #pdf-table-container thead tr.bg-white th {
+                background-color: white !important;
+                background: white !important;
+              }
+              #pdf-table-container table tbody th, 
+              #pdf-table-container table tbody td {
+                padding-top: 2.5px !important;
+                padding-bottom: 2.5px !important;
+              }
+            }
+          `;
+
+          const styles = Array.from(
+            document.querySelectorAll('style, link[rel="stylesheet"]')
+          )
+            .map((s) => s.outerHTML)
+            .join('\n');
+            
+          const htmlContent = `
+            <!DOCTYPE html>
+            <html dir="rtl" lang="ar">
+              <head>
+                <meta charset="utf-8">
+                <title>مخصصات نهاية الخدمة - طباعة أفقية</title>
+                ${styles}
+                <style>${smartCSS}</style>
+              </head>
+              <body class="bg-white" style="background-color: white !important;">
+                ${el.outerHTML.replace(/print-landscape/g, '').replace(/hidden print:block/g, 'block')}
+                <script>
+                  let hasPrinted = false;
+                  function triggerPrint() {
+                    if (hasPrinted) return;
+                    hasPrinted = true;
+                    try {
+                      window.focus();
+                      window.print();
+                    } catch(e) {}
+                  }
+                  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                    setTimeout(triggerPrint, 350);
+                  } else {
+                    window.addEventListener('load', function() {
+                      setTimeout(triggerPrint, 350);
+                    });
+                  }
+                  setTimeout(triggerPrint, 1000); // Fallback
+                </script>
+              </body>
+            </html>
+          `;
+          
+          const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+          const blobUrl = URL.createObjectURL(blob);
+          const newTab = window.open(blobUrl, "_blank");
+          if (!newTab) {
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
+        });
+      } catch (err) {
+        console.error("Standalone print error:", err);
+      }
+    }, 150);
   };
 
   const handleExportExcel = () => {
@@ -624,7 +704,7 @@ export default function App({ currentUser }: { currentUser: User }) {
                   طلب سلفة
                 </button>
               )}
-              {isAlaa && currentUser?.permissions?.canViewAllowancesArchive && (
+              {(isAlaa || currentUser?.permissions?.canViewAllowancesArchive) && (
                 <button
                   onClick={() => setCurrentView('archive')}
                   className={`py-3 sm:py-4 px-2 sm:px-0 text-xs sm:text-sm font-bold sm:font-semibold border-b-2 transition-colors whitespace-nowrap shrink-0 ${currentView === 'archive' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
@@ -677,39 +757,39 @@ export default function App({ currentUser }: { currentUser: User }) {
         <main className={`flex-grow flex flex-col w-full mx-auto ${currentView === 'end-of-service' ? 'p-1.5 sm:p-2 gap-2 max-w-full' : ['end-of-service-print', 'vacation-allowance', 'vacation-request', 'loan-request'].includes(currentView) ? 'p-0 gap-0 w-full max-w-full' : 'p-3 sm:p-6 gap-4 sm:gap-6 max-w-[1920px]'}`}>
           {currentView === 'end-of-service' ? (
             <>
-              <div className="no-print grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5 shrink-0 w-full">
-            <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-              <p className="text-slate-500 text-xs sm:text-sm mb-1 font-semibold">إجمالي الموظفين</p>
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-800">{activeFilteredEmployees.length} <span className="text-slate-400 text-xs sm:text-sm font-normal">موظف</span></h3>
+              <div className="no-print grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 sm:gap-2 shrink-0 w-full">
+            <div className="bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <p className="text-slate-500 text-[10px] sm:text-xs mb-0.5 font-semibold">إجمالي الموظفين</p>
+              <h3 className="text-sm sm:text-lg font-bold text-slate-800">{activeFilteredEmployees.length} <span className="text-slate-400 text-[9.5px] sm:text-[11px] font-normal">موظف</span></h3>
             </div>
-            <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-              <p className="text-indigo-600 text-xs sm:text-sm mb-1 font-bold">إجمالي الراتب</p>
-              <h3 className="text-lg sm:text-2xl font-bold text-slate-800 underline decoration-indigo-200">
-                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + emp.totalSalary, 0))} <span className="text-slate-400 text-xs sm:text-sm font-normal">ر.س</span>
+            <div className="bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <p className="text-indigo-600 text-[10px] sm:text-xs mb-0.5 font-bold">إجمالي الراتب</p>
+              <h3 className="text-sm sm:text-lg font-bold text-slate-800 underline decoration-indigo-200">
+                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + (Number(emp.totalSalary) || 0), 0))} <span className="text-slate-400 text-[9.5px] sm:text-[11px] font-normal">ر.س</span>
               </h3>
             </div>
-            <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-              <p className="text-indigo-600 text-xs sm:text-sm mb-1 font-bold">مخصص الإجازات</p>
-              <h3 className="text-lg sm:text-2xl font-bold text-slate-800 underline decoration-indigo-200">
-                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + emp.vacationAllowance, 0))} <span className="text-slate-400 text-xs sm:text-sm font-normal">ر.س</span>
+            <div className="bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <p className="text-indigo-600 text-[10px] sm:text-xs mb-0.5 font-bold">مخصص الإجازات</p>
+              <h3 className="text-sm sm:text-lg font-bold text-slate-800 underline decoration-indigo-200">
+                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + (Number(emp.vacationAllowance) || 0), 0))} <span className="text-slate-400 text-[9.5px] sm:text-[11px] font-normal">ر.س</span>
               </h3>
             </div>
-            <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-              <p className="text-amber-600 text-xs sm:text-sm mb-1 font-bold">مخصص التذاكر</p>
-              <h3 className="text-lg sm:text-2xl font-bold text-slate-800 underline decoration-amber-200">
-                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + emp.ticketAllowance, 0))} <span className="text-slate-400 text-xs sm:text-sm font-normal">ر.س</span>
+            <div className="bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <p className="text-amber-600 text-[10px] sm:text-xs mb-0.5 font-bold">مخصص التذاكر</p>
+              <h3 className="text-sm sm:text-lg font-bold text-slate-800 underline decoration-amber-200">
+                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + (Number(emp.ticketAllowance) || 0), 0))} <span className="text-slate-400 text-[9.5px] sm:text-[11px] font-normal">ر.س</span>
               </h3>
             </div>
-            <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-              <p className="text-emerald-600 text-xs sm:text-sm mb-1 font-bold">المدفوع من نهاية الخدمة</p>
-              <h3 className="text-lg sm:text-2xl font-bold text-slate-800 underline decoration-emerald-200">
-                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + emp.paidEndOfService, 0))} <span className="text-slate-400 text-xs sm:text-sm font-normal">ر.س</span>
+            <div className="bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <p className="text-emerald-600 text-[10px] sm:text-xs mb-0.5 font-bold">المدفوع من نهاية الخدمة</p>
+              <h3 className="text-sm sm:text-lg font-bold text-slate-800 underline decoration-emerald-200">
+                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + (Number(emp.paidEndOfService) || 0), 0))} <span className="text-slate-400 text-[9.5px] sm:text-[11px] font-normal">ر.س</span>
               </h3>
             </div>
-            <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-              <p className="text-rose-600 text-xs sm:text-sm mb-1 font-bold">نهاية الخدمة المستحقة</p>
-              <h3 className="text-lg sm:text-2xl font-bold text-slate-800 underline decoration-rose-200">
-                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + emp.dueEndOfService, 0))} <span className="text-slate-400 text-xs sm:text-sm font-normal">ر.س</span>
+            <div className="bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <p className="text-rose-600 text-[10px] sm:text-xs mb-0.5 font-bold">نهاية الخدمة المستحقة</p>
+              <h3 className="text-sm sm:text-lg font-bold text-slate-800 underline decoration-rose-200">
+                {formatNumber(activeFilteredEmployees.reduce((sum, emp) => sum + (Number(emp.dueEndOfService) || 0), 0))} <span className="text-slate-400 text-[9.5px] sm:text-[11px] font-normal">ر.س</span>
               </h3>
             </div>
           </div>
@@ -822,6 +902,13 @@ export default function App({ currentUser }: { currentUser: User }) {
                     <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-700" />
                   </button>
                   <button
+                    onClick={handleHorizontalPrintTable}
+                    title="الطباعة الأفقية (الموصى بها)"
+                    className="bg-blue-600 text-white p-2 sm:p-2.5 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors shadow-sm shrink-0"
+                  >
+                    <Printer className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
+                  <button
                     onClick={handlePrintTable}
                     title="طباعة الجدول"
                     className="bg-white border border-gray-200 text-emerald-600 p-2 sm:p-2.5 rounded-lg flex items-center justify-center hover:bg-emerald-50 transition-colors shadow-sm shrink-0"
@@ -868,6 +955,7 @@ export default function App({ currentUser }: { currentUser: User }) {
           onSave={handleSaveEmployee}
           branches={BRANCHES.filter(b => b !== 'الكل')}
           employeeToEdit={employeeToEdit}
+          employees={employees}
         />
 
         {isPasswordModalOpen && (

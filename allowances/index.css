@@ -12,12 +12,12 @@ body {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 0;
+    margin: 0 0.4cm;
   }
   
   @page landscape-page {
     size: A4 landscape;
-    margin: 0;
+    margin: 0 0.4cm;
   }
 
   .print-landscape {

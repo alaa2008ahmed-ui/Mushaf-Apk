@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Employee } from '../types';
 import { Database, ShieldCheck, AlertTriangle, CheckCircle, FileText, Building2, Save, Palette, Check, Calculator, Lock } from 'lucide-react';
 import { getCompanyNameAr, getCompanyNameEn, saveCompanyNames } from '../utils/companySettings';
@@ -20,6 +20,21 @@ export default function SettingsView({ employees }: Props) {
   const [formulaSettings, setFormulaSettings] = useState<FormulaSettings>(getFormulaSettings());
   const [isFormulaUnlocked, setIsFormulaUnlocked] = useState<boolean>(false);
   const [formulaPasswordInput, setFormulaPasswordInput] = useState<string>( '');
+  useEffect(() => {
+    const handleFormulaUpdate = () => {
+      setFormulaSettings(getFormulaSettings());
+    };
+    const handleCompanyUpdate = () => {
+      setCompanyNameArInput(getCompanyNameAr());
+      setCompanyNameEnInput(getCompanyNameEn());
+    };
+    window.addEventListener('formulaSettingsChanged', handleFormulaUpdate);
+    window.addEventListener('companySettingsChanged', handleCompanyUpdate);
+    return () => {
+      window.removeEventListener('formulaSettingsChanged', handleFormulaUpdate);
+      window.removeEventListener('companySettingsChanged', handleCompanyUpdate);
+    };
+  }, []);
 
   const handleUnlockFormulas = (e: React.FormEvent) => {
     e.preventDefault();

@@ -9,9 +9,10 @@ interface Props {
   onSave: (employee: Employee | Omit<Employee, 'id' | 'sequenceNumber'>) => void;
   branches: string[];
   employeeToEdit?: Employee | null;
+  employees: Employee[];
 }
 
-export default function EmployeeModal({ isOpen, onClose, onSave, branches, employeeToEdit }: Props) {
+export default function EmployeeModal({ isOpen, onClose, onSave, branches, employeeToEdit, employees }: Props) {
   const [formData, setFormData] = useState({
     code: '',
     jobTitle: '',
@@ -43,7 +44,7 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
         code: employeeToEdit.code || '',
         jobTitle: employeeToEdit.jobTitle || '',
         name: employeeToEdit.name,
-        branch: employeeToEdit.branch || '',
+        branch: employeeToEdit.branch || (branches.length > 0 ? branches[0] : 'الادارة'),
         hireDate: employeeToEdit.hireDate,
         lastVacationReturnDate: employeeToEdit.lastVacationReturnDate,
         calculationDate: employeeToEdit.calculationDate,
@@ -93,25 +94,34 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    const newValue = type === 'number' ? (value === '' ? '' : Number(value)) : value;
     
-    setFormData(prev => {
-      const updated = {
-        ...prev,
-        [name]: type === 'number' ? (value === '' ? '' : Number(value)) : value
-      };
+    const updated = { ...formData, [name]: newValue };
+    setFormData(updated);
 
-      const computedFixedAllowances = Number(updated.housingAllowance || 0) + Number(updated.transferAllowance || 0) + Number(updated.phoneAllowance || 0) + Number(updated.foodAllowance || 0);
-      const dataToSave = { ...updated, fixedAllowances: computedFixedAllowances };
+    const computedFixedAllowances = Number(updated.housingAllowance || 0) + Number(updated.transferAllowance || 0) + Number(updated.phoneAllowance || 0) + Number(updated.foodAllowance || 0);
+    const dataToSave = { ...updated, fixedAllowances: computedFixedAllowances };
 
-      if (employeeToEdit) {
-        onSave({ ...employeeToEdit, ...dataToSave, id: employeeToEdit.id, sequenceNumber: employeeToEdit.sequenceNumber });
-      } else {
-        onSave({ ...dataToSave, isActive: true });
-      }
+    const checkCode = (updated.code || '').trim();
+    const isDup = checkCode !== '' && (employees || []).some(
+      (emp) => emp.id !== (employeeToEdit?.id) && (emp.code || '').trim() === checkCode
+    );
 
-      return updated;
-    });
+    if (isDup) {
+      return;
+    }
+
+    if (employeeToEdit) {
+      onSave({ ...employeeToEdit, ...dataToSave, id: employeeToEdit.id, sequenceNumber: employeeToEdit.sequenceNumber });
+    } else {
+      onSave({ ...dataToSave, isActive: true } as any);
+    }
   };
+
+  const codeTrimmed = (formData.code || '').trim();
+  const isDuplicateCode = codeTrimmed !== '' && (employees || []).some(
+    (emp) => emp.id !== (employeeToEdit?.id) && (emp.code || '').trim() === codeTrimmed
+  );
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm" dir="rtl">
@@ -132,7 +142,23 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-5">
             <div className="space-y-1.5">
               <label className="block text-sm font-bold text-slate-700">كود الموظف</label>
-              <input type="text" name="code" value={formData.code} onChange={handleChange} className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono" placeholder="مثال: 1008" />
+              <input
+                type="text"
+                name="code"
+                value={formData.code}
+                onChange={handleChange}
+                className={`w-full border rounded-lg p-2.5 outline-none transition-all font-mono ${
+                  isDuplicateCode
+                    ? 'border-rose-500 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-rose-600 font-bold'
+                    : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                }`}
+                placeholder="مثال: 1008"
+              />
+              {isDuplicateCode && (
+                <p className="text-[10px] text-rose-600 font-bold mt-1 leading-snug">
+                  ⚠️ Code already in use by another employee! Duplicates not allowed.
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <label className="block text-sm font-bold text-slate-700">الوظيفة</label>
@@ -274,17 +300,24 @@ export default function EmployeeModal({ isOpen, onClose, onSave, branches, emplo
                 <label className="block text-sm font-bold text-slate-700">التأمينات الاجتماعية</label>
                 <button
                   type="button"
-                  onClick={() => setFormData(prev => {
-                    const updated = { ...prev, includeSocialSecurity: !prev.includeSocialSecurity };
+                  onClick={() => {
+                    const updated = { ...formData, includeSocialSecurity: !formData.includeSocialSecurity };
+                    setFormData(updated);
                     const computedFixedAllowances = Number(updated.housingAllowance || 0) + Number(updated.transferAllowance || 0) + Number(updated.phoneAllowance || 0) + Number(updated.foodAllowance || 0);
                     const dataToSave = { ...updated, fixedAllowances: computedFixedAllowances };
+
+                    const checkCode = (updated.code || '').trim();
+                    const isDup = checkCode !== '' && (employees || []).some(
+                      (emp) => emp.id !== (employeeToEdit?.id) && (emp.code || '').trim() === checkCode
+                    );
+                    if (isDup) return;
+
                     if (employeeToEdit) {
                       onSave({ ...employeeToEdit, ...dataToSave, id: employeeToEdit.id, sequenceNumber: employeeToEdit.sequenceNumber });
                     } else {
-                      onSave({ ...dataToSave, isActive: true });
+                      onSave({ ...dataToSave, isActive: true } as any);
                     }
-                    return updated;
-                  })}
+                  }}
                   className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all border ${
                     formData.includeSocialSecurity !== false
                       ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'

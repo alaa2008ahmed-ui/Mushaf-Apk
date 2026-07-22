@@ -43,6 +43,7 @@ interface EmployeeModalProps {
   insurancePercentage: number;
   onNext?: () => void;
   onPrev?: () => void;
+  employees: Employee[];
 }
 
 export const EmployeeModal: React.FC<EmployeeModalProps> = ({
@@ -53,7 +54,8 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
   branches,
   insurancePercentage,
   onNext,
-  onPrev
+  onPrev,
+  employees
 }) => {
   const [formData, setFormData] = useState<Partial<Employee>>({
     code: '',
@@ -61,7 +63,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     nameEn: '',
     nationalId: '',
     jobTitle: '',
-    branch: branches.length > 1 ? branches[1] : 'الادارة',
+    branch: branches.length > 0 ? branches[0] : 'الادارة المركزيه',
     hireDate: new Date().toISOString().split('T')[0],
     iban: '',
     nationality: '',
@@ -109,6 +111,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
 
         return {
           ...employeeToEdit,
+          branch: employeeToEdit.branch || (branches.length > 0 ? branches[0] : 'الادارة المركزيه'),
           nameEn: employeeToEdit.nameEn || '',
           nationalId: employeeToEdit.nationalId || '',
           iban: employeeToEdit.iban || '',
@@ -132,7 +135,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
         nationalId: '',
         jobTitle: '',
         englishJobTitle: '',
-        branch: '',
+        branch: branches.length > 0 ? branches[0] : 'الادارة المركزيه',
         hireDate: new Date().toISOString().split('T')[0],
         iban: '',
         nationality: '',
@@ -238,6 +241,15 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
       return;
     }
 
+    const codeTrimmed = (formData.code || '').trim();
+    const isDuplicateCode = codeTrimmed !== '' && (employees || []).some(
+      (emp) => emp.id !== (employeeToEdit?.id) && (emp.code || '').trim() === codeTrimmed
+    );
+
+    if (isDuplicateCode) {
+      return;
+    }
+
     const timeoutId = setTimeout(() => {
       lastSavedJsonRef.current = currentJson;
       isDirtyRef.current = false;
@@ -245,7 +257,7 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
     }, 400);
 
     return () => clearTimeout(timeoutId);
-  }, [formData, isOpen, employeeToEdit]);
+  }, [formData, isOpen, employeeToEdit, employees]);
 
   if (!isOpen) return null;
 
@@ -394,6 +406,11 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
   // Live calculation preview
   const totals = calculateEmployeeTotals(formData as Employee);
 
+  const codeTrimmed = (formData.code || '').trim();
+  const isDuplicateCode = codeTrimmed !== '' && (employees || []).some(
+    (emp) => emp.id !== (employeeToEdit?.id) && (emp.code || '').trim() === codeTrimmed
+  );
+
   return (
     <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center z-50 p-0 sm:p-2 overflow-y-auto font-sans" dir="rtl">
       <div className="bg-white sm:rounded-xl shadow-2xl w-full h-full sm:w-[98%] sm:h-[98%] overflow-hidden flex flex-col border border-slate-200">
@@ -485,8 +502,17 @@ export const EmployeeModal: React.FC<EmployeeModalProps> = ({
                   value={formData.code || ''}
                   onChange={(e) => handleChange('code', e.target.value)}
                   placeholder="مثال: 1045"
-                  className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+                  className={`w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:bg-white transition-all ${
+                    isDuplicateCode
+                      ? 'border-rose-500 focus:border-rose-500 text-rose-600 font-bold'
+                      : 'border-slate-300 focus:border-emerald-500'
+                  }`}
                 />
+                {isDuplicateCode && (
+                  <p className="text-[10px] text-rose-600 font-bold mt-1 leading-snug">
+                    ⚠️ Code already in use by another employee! Duplicates not allowed.
+                  </p>
+                )}
               </div>
 
               <div className="sm:col-span-3">

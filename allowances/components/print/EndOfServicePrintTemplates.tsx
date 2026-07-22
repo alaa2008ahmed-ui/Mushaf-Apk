@@ -136,17 +136,22 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
             margin-bottom: 0.5cm !important;
           }
           .print-single-page {
-            zoom: 0.92 !important;
-            width: 100% !important;
-            max-width: 100% !important;
+            width: 103% !important;
+            max-width: 103% !important;
             padding: 0 !important;
             margin: 0 !important;
+            margin-left: -1.5% !important;
+            margin-right: -1.5% !important;
             border: none !important;
             box-shadow: none !important;
           }
           table {
             width: 100% !important;
             max-width: 100% !important;
+          }
+          .print-single-page table th, 
+          .print-single-page table td {
+            padding: 3px 4px !important;
           }
         }
       `}} />
@@ -194,7 +199,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
         <h4 className={`${theme.subHeadClass} mb-0.5 py-0`}>حساب التصفية النهائية</h4>
         <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-[10px]">
           <thead>
-            <tr className={`${theme.tableHeadClass} h-6 print:h-5`}>
+            <tr className={`${theme.tableHeadClass} h-6 print:h-4`}>
               <th className="border border-black p-0.5 print:p-0.5">مكافأة نهاية الخدمة</th>
               <th className="border border-black p-0.5 print:p-0.5 w-[8%] whitespace-nowrap">يوم</th>
               <th className="border border-black p-0.5 print:p-0.5 w-[8%] whitespace-nowrap">شهر</th>
@@ -206,7 +211,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
             </tr>
           </thead>
           <tbody>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">تاريخ نهاية الخدمة</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{calcDateParts.day}</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{calcDateParts.month}</td>
@@ -216,7 +221,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{calcDateParts.month}</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{calcDateParts.year}</td>
             </tr>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">تاريخ التعيين</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{hireDateParts.day}</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{hireDateParts.month}</td>
@@ -226,7 +231,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{vacDateParts.month}</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{vacDateParts.year}</td>
             </tr>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">صافى مدة العمل</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{workDiff.days}</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{workDiff.months}</td>
@@ -243,7 +248,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
         <h4 className={`${theme.subHeadClass} mb-0.5 py-0`}>احتساب التصفية النهائية</h4>
         <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-[10px]">
           <thead>
-            <tr className={`${theme.tableHeadClass} h-6 print:h-5`}>
+            <tr className={`${theme.tableHeadClass} h-6 print:h-4`}>
               <th className="border border-black p-0.5 print:p-0.5" colSpan={2}>الاستحقاقات</th>
               <th className="border border-black p-0.5 print:p-0.5 w-[15%]">المبلغ</th>
               <th className="border border-black p-0.5 print:p-0.5 w-1/4">تفاصيل الراتب الشهرى</th>
@@ -251,7 +256,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
             </tr>
           </thead>
           <tbody>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
                 راتب ايام العمل
                 {isProportionalActive && <span className="text-[9px] font-normal"> ({workDaysCount} يوم)</span>}
@@ -261,7 +266,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">الراتب الاساسي</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{formatNumber(emp.basicSalary)}</td>
             </tr>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
                 بدل العمل الإضافي
                 {isProportionalActive && <span className="text-[9px] font-normal"> ({overtimeHours} ساعة)</span>}
@@ -273,7 +278,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
                 {renderOvertimeInput()}
               </td>
             </tr>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
                 بدل السكن {isProportionalActive && <span className="text-[9px] font-normal">(30 يوم)</span>}
               </td>
@@ -282,7 +287,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">بدل السكن</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{formatNumber(emp.housingAllowance || 0)}</td>
             </tr>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
                 بدل نقل
                 {isProportionalActive && <span className="text-[9px] font-normal"> ({workDaysCount} يوم)</span>}
@@ -292,7 +297,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">بدل نقل</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{formatNumber(emp.transferAllowance || 0)}</td>
             </tr>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
                 بدل اتصال
                 {isProportionalActive && <span className="text-[9px] font-normal"> ({workDaysCount} يوم)</span>}
@@ -302,7 +307,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">بدل اتصال</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{formatNumber(emp.phoneAllowance || 0)}</td>
             </tr>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">
                 بدل طعام
                 {isProportionalActive && <span className="text-[9px] font-normal"> ({workDaysCount} يوم)</span>}
@@ -312,21 +317,21 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">بدل طعام</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{formatNumber(emp.foodAllowance || 0)}</td>
             </tr>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">مخصص الاجازة</td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Holiday Allowance</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{formatNumber(emp.vacationAllowance)}</td>
               <td className="border border-black p-0.5 print:p-0.5"></td>
               <td className="border border-black p-0.5 print:p-0.5"></td>
             </tr>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">مكافأة الخدمة</td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Indemnity</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{formatNumber(actualIndemnity)}</td>
               <td className="border border-black p-0.5 print:p-0.5"></td>
               <td className="border border-black p-0.5 print:p-0.5"></td>
             </tr>
-            <tr className="bg-gray-200 h-6 print:h-5">
+            <tr className="bg-gray-200 h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" colSpan={2}>مجموع الاستحقاقات</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{formatNumber(totalEntitlements)}</td>
               <td className="border border-black p-0.5 print:p-0.5" colSpan={2}></td>
@@ -337,7 +342,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
         {/* 4. جدول الحسميات */}
         <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-[10px]">
           <thead>
-            <tr className={`${theme.tableHeadClass} h-6 print:h-5`}>
+            <tr className={`${theme.tableHeadClass} h-6 print:h-4`}>
               <th className="border border-black p-0.5 print:p-0.5" colSpan={2}>الحسميات</th>
               <th className="border border-black p-0.5 print:p-0.5 w-[15%]">المبلغ</th>
               <th className="border border-black p-0.5 print:p-0.5 w-1/4">الحسميات</th>
@@ -346,7 +351,7 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
           </thead>
           <tbody>
             {emp.includeSocialSecurity !== false && (
-              <tr className="h-6 print:h-5">
+              <tr className="h-6 print:h-4">
                 <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">تامينات اجتماعية (10%)</td>
                 <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Social Security</td>
                 <td className="border border-black p-0.5 print:p-0.5 font-mono text-blue-600">{formatNumber(socialSecurityDeduction)}</td>
@@ -354,28 +359,28 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
                 <td className="border border-black p-0.5 print:p-0.5"></td>
               </tr>
             )}
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">سلفيات</td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Loans</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono text-blue-600">{formatNumber(emp.loans || 0)}</td>
               <td className="border border-black p-0.5 print:p-0.5"></td>
               <td className="border border-black p-0.5 print:p-0.5"></td>
             </tr>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">خصم اجازات {emp.absence ? `(${emp.absence} أيام)` : ''}</td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Absence</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono text-blue-600">{formatNumber(absenceDeduction)}</td>
               <td className="border border-black p-0.5 print:p-0.5"></td>
               <td className="border border-black p-0.5 print:p-0.5"></td>
             </tr>
-            <tr className="h-6 print:h-5">
+            <tr className="h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 whitespace-nowrap">مسحوبات نهاية خدمه</td>
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" dir="ltr">Withdrawals</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{formatNumber(emp.paidEndOfService || 0)}</td>
               <td className="border border-black p-0.5 print:p-0.5"></td>
               <td className="border border-black p-0.5 print:p-0.5"></td>
             </tr>
-            <tr className="bg-gray-200 h-6 print:h-5">
+            <tr className="bg-gray-200 h-6 print:h-4">
               <td className="border border-black p-0.5 print:p-0.5 text-left px-2 whitespace-nowrap" colSpan={2}>مجموع الحسميات</td>
               <td className="border border-black p-0.5 print:p-0.5 font-mono">{formatNumber(totalDeductions)}</td>
               <td className="border border-black p-0.5 print:p-0.5" colSpan={2}></td>
@@ -387,9 +392,9 @@ export default function EndOfServicePrintTemplates(props: EndOfServicePrintProps
         <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-[10px] bg-gray-200">
           <tbody>
             <tr>
-              <td className="border border-black p-0.5 sm:p-1 print:p-0.5 w-[18%] whitespace-nowrap">صافي المبلغ المستحق</td>
+              <td className="border border-black p-0.5 sm:p-1 print:p-0.5 w-[12%] whitespace-nowrap">المبلغ المستحق</td>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 w-[14%] font-mono text-base whitespace-nowrap">{formatNumber(netAmount)}</td>
-              <td className="border border-black p-0.5 sm:p-1 print:p-0.5 border-4 border-black bg-white w-[68%] print-double-border" style={{ borderStyle: 'double' }}>
+              <td className="border border-black p-0.5 sm:p-1 print:p-0.5 border-4 border-black bg-white w-[74%] print-double-border" style={{ borderStyle: 'double' }}>
                 <div className="flex flex-col justify-center gap-0 text-center py-0.5">
                   <div dir="rtl" className="text-slate-950 font-bold text-[11px] sm:text-xs print:text-[11px] leading-tight px-1">{tafqeetArabic(netAmount)}</div>
                   <div className="border-t border-slate-300 w-4/5 mx-auto my-0.5"></div>

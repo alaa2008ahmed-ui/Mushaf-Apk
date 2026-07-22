@@ -35,57 +35,57 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ totals, employeeCount, i
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
         
         {/* Card 1: Total Employees */}
-        <div className="bg-white min-h-[100px] p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
-          <div className="text-slate-500 text-xs sm:text-sm mb-1.5 font-medium">{labels.totalEmployees}</div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-            {employeeCount} <span className="text-xs font-normal text-slate-400">{labels.employee}</span>
+        <div className="bg-white min-h-[70px] py-2.5 px-3 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
+          <div className="text-slate-500 text-[10px] sm:text-xs mb-0.5 font-medium">{labels.totalEmployees}</div>
+          <div className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+            {employeeCount} <span className="text-[9px] font-normal text-slate-400">{labels.employee}</span>
           </div>
         </div>
 
         {/* Card 2: Total Basic Salary */}
-        <div className="bg-white min-h-[100px] p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
-          <div className="text-slate-500 text-xs sm:text-sm mb-1.5 font-medium">{labels.basicSalaries}</div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+        <div className="bg-white min-h-[70px] py-2.5 px-3 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
+          <div className="text-slate-500 text-[10px] sm:text-xs mb-0.5 font-medium">{labels.basicSalaries}</div>
+          <div className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
             {formatCurrency(totals.basicSalary)}
           </div>
         </div>
 
         {/* Card 3: Total Allowances */}
-        <div className="bg-white min-h-[100px] p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
-          <div className="text-slate-500 text-xs sm:text-sm mb-1.5 font-medium">{labels.totalAllowances}</div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+        <div className="bg-white min-h-[70px] py-2.5 px-3 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
+          <div className="text-slate-500 text-[10px] sm:text-xs mb-0.5 font-medium">{labels.totalAllowances}</div>
+          <div className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
             {formatCurrency(totalAllowances)}
           </div>
         </div>
 
         {/* Card 4: Total Overtime */}
-        <div className="bg-white min-h-[100px] p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
-          <div className="text-slate-500 text-xs sm:text-sm mb-1.5 font-medium">{labels.totalOvertime}</div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+        <div className="bg-white min-h-[70px] py-2.5 px-3 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
+          <div className="text-slate-500 text-[10px] sm:text-xs mb-0.5 font-medium">{labels.totalOvertime}</div>
+          <div className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
             {formatCurrency(totalOvertime)}
           </div>
         </div>
 
         {/* Card 5: Total Entitlements */}
-        <div className="bg-white min-h-[100px] p-4 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center bg-blue-50/10">
-          <div className="text-violet-600 text-xs sm:text-sm mb-1.5 font-bold underline decoration-violet-200 underline-offset-4">{labels.totalEntitlements}</div>
-          <div className="text-xl sm:text-2xl font-black text-violet-700 tracking-tight">
+        <div className="bg-white min-h-[70px] py-2.5 px-3 rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center bg-blue-50/10">
+          <div className="text-violet-600 text-[10px] sm:text-xs mb-0.5 font-bold underline decoration-violet-200 underline-offset-4">{labels.totalEntitlements}</div>
+          <div className="text-sm sm:text-base font-black text-violet-700 tracking-tight">
             {formatCurrency(totals.totalEntitlements)}
           </div>
         </div>
 
         {/* Card 6: Total Deductions */}
-        <div className="bg-white min-h-[100px] p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
-          <div className="text-slate-500 text-xs sm:text-sm mb-1.5 font-medium">{labels.totalDeductions}</div>
-          <div className="text-xl sm:text-2xl font-bold text-rose-600 tracking-tight">
+        <div className="bg-white min-h-[70px] py-2.5 px-3 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col items-center justify-center text-center">
+          <div className="text-slate-500 text-[10px] sm:text-xs mb-0.5 font-medium">{labels.totalDeductions}</div>
+          <div className="text-sm sm:text-base font-bold text-rose-600 tracking-tight">
             -{formatCurrency(totals.totalDeductions)}
           </div>
         </div>
 
         {/* Card 7: Net Payable Payroll */}
-        <div className="bg-white min-h-[100px] p-4 rounded-xl border border-blue-300 shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center text-center col-span-2 sm:col-span-1 lg:col-span-1 border-t-4 border-t-blue-600">
-          <div className="text-blue-600 text-xs sm:text-sm mb-1.5 font-bold">{labels.netPayable}</div>
-          <div className="text-xl sm:text-2xl font-black text-blue-800 tracking-tighter">
+        <div className="bg-white min-h-[70px] py-2.5 px-3 rounded-xl border border-blue-300 shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center text-center col-span-2 sm:col-span-1 lg:col-span-1 border-t-4 border-t-blue-600">
+          <div className="text-blue-600 text-[10px] sm:text-xs mb-0.5 font-bold">{labels.netPayable}</div>
+          <div className="text-sm sm:text-base font-black text-blue-800 tracking-tighter">
             {formatCurrency(totals.netSalary)}
           </div>
         </div>

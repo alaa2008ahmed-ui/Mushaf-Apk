@@ -2456,6 +2456,7 @@ const App: React.FC = () => {
                                 onRefresh={handleForceSync}
                                 approvedOrders={orders.filter(o => o.status === 'approved')}
                                 currentPage={currentPage}
+                                isOrdersEnabled={!(appSettings?.globallyDisabledPages || []).includes('Orders')}
                                 onCreateInvoice={handleCreateInvoiceFromOrder}
                                 deliveredGroupProps={recentDeliveredGroup}
                                 onCloseDeliveredGroup={() => setRecentDeliveredGroup(null)}
@@ -2903,6 +2904,7 @@ const App: React.FC = () => {
                                 approvedOrders={orders.filter(o => o.status === 'approved')}
                                 currentPage={currentPage}
                                 reportTitle={currentPage === 'Time Sheet' ? `Employee Overtime${timeSheetMonthTitle ? ' - ' + timeSheetMonthTitle : ''}` : currentPage}
+                                isOrdersEnabled={!(appSettings?.globallyDisabledPages || []).includes('Orders')}
                                 onCreateInvoice={handleCreateInvoiceFromOrder}
                                 deliveredGroupProps={recentDeliveredGroup}
                                 onCloseDeliveredGroup={() => setRecentDeliveredGroup(null)}

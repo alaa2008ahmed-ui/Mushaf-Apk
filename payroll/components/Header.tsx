@@ -304,7 +304,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {isExactlyAlaa && (
+          {(isExactlyAlaa || isAlaa) && (
             <button
               onClick={() => onViewChange('archive')}
               className={`flex items-center justify-center p-2 rounded-md transition-colors shadow-xs cursor-pointer ${

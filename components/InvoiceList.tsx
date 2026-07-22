@@ -152,11 +152,6 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                                                 {invoice.itemCode && invoice.itemCode !== 'cancel' && <span className="text-gray-500 font-mono mr-1">[{invoice.itemCode}]</span>}
                                                 {invoice.itemName}
                                             </span>
-                                            {invoice.poNumber && (
-                                                <span className="shrink-0 px-1 py-0.5 rounded bg-purple-600 text-white text-[8px] font-black uppercase">
-                                                    PO: {invoice.poNumber}
-                                                </span>
-                                            )}
                                         </div>
                                         <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-1">
                                             <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${invoice.poNumber ? 'bg-purple-200 text-purple-800' : 'bg-gray-100 text-gray-700'}`}>Qty: {invoice.quantity.toFixed(2)}</span>
@@ -181,23 +176,6 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                                 </div>
                             </div>
 
-                            {/* PO Progress Summary for Mobile */}
-                            {poCust && (
-                                <div className="mt-1 pt-2 border-t border-purple-200 flex flex-col gap-1 bg-purple-100/30 rounded-lg p-2">
-                                    {poCust.quantity !== null && poCust.quantity > 0 && (
-                                        <div className="flex justify-between items-center text-[10px]">
-                                            <span className="text-purple-600 font-bold uppercase tracking-wider">Total Qty: {poCust.quantity}</span>
-                                            <span className="text-purple-800 font-black">REM: {poCust.remainingQuantity ?? (poCust.quantity - (poCust.usedQuantity || 0))}</span>
-                                        </div>
-                                    )}
-                                    {poCust.total !== null && poCust.total > 0 && (
-                                        <div className="flex justify-between items-center text-[10px]">
-                                            <span className="text-purple-600 font-bold uppercase tracking-wider">Total Amt: {poCust.total.toFixed(2)}</span>
-                                            <span className="text-purple-800 font-black">REM: {(poCust.remainingTotal ?? (poCust.total - (poCust.usedAmount || 0))).toFixed(2)}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </div>
                     );})}
                     <div className={`p-4 rounded-xl font-bold ${currentTheme.totalBg} ${currentTheme.textColor} flex justify-between items-center border border-current border-opacity-10 shadow-sm`}>
@@ -216,9 +194,6 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                             <tr>
                                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                                     No.
-                                </th>
-                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                    PO No.
                                 </th>
                                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                                     Date & Time
@@ -245,9 +220,6 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                                     Total
                                 </th>
-                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                                    PO Progress
-                                </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -257,13 +229,6 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                                 <tr key={invoice.id} className={`${invoice.poNumber ? 'bg-purple-50 font-semibold' : (index % 2 === 0 ? 'bg-gray-50' : 'bg-white')} transition-colors`}>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {invoice.invoiceNumber}
-                                    </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                                        {invoice.poNumber ? (
-                                            <span className="px-1.5 py-0.5 rounded bg-purple-600 text-white text-[10px] font-black uppercase tracking-wider">
-                                                {invoice.poNumber}
-                                            </span>
-                                        ) : '-'}
                                     </td>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{formatTime(invoice.date)}</td>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{invoice.createdBy || '-'}</td>
@@ -279,40 +244,12 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                                         <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-orange-600 before-tax-amount">{(invoice.total / 1.15).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                     )}
                                     <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-800">{invoice.total.toFixed(2)}</td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                                        {poCust ? (
-                                            <div className="flex flex-col gap-0.5 min-w-[120px]">
-                                                {poCust.quantity !== null && poCust.quantity > 0 && (
-                                                    <div className="flex justify-between items-center text-[10px]">
-                                                        <span className="text-gray-400 uppercase font-bold">Qty:</span>
-                                                        <span className="font-bold text-gray-700">{poCust.quantity}</span>
-                                                        <span className="mx-1 text-gray-300">|</span>
-                                                        <span className="text-gray-400 uppercase font-bold text-[8px]">Rem:</span>
-                                                        <span className={`font-black ${((poCust as any).remainingQuantity ?? 0) <= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                                                            {((poCust as any).remainingQuantity ?? 0).toFixed(2)}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                {poCust.total !== null && poCust.total > 0 && (
-                                                    <div className="flex justify-between items-center text-[10px]">
-                                                        <span className="text-gray-400 uppercase font-bold">Amt:</span>
-                                                        <span className="font-bold text-gray-700">{poCust.total.toFixed(2)}</span>
-                                                        <span className="mx-1 text-gray-300">|</span>
-                                                        <span className="text-gray-400 uppercase font-bold text-[8px]">Rem:</span>
-                                                        <span className={`font-black ${((poCust as any).remainingTotal ?? 0) <= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                                                            {((poCust as any).remainingTotal ?? 0).toFixed(2)}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ) : '-'}
-                                    </td>
                                 </tr>
                             )})}
                         </tbody>
                         <tfoot className={`border-t-2 ${currentTheme.totalBorder} ${currentTheme.totalBg}`}>
                             <tr>
-                                <td colSpan={branches ? 6 : 5} className={`px-4 py-3 text-right text-sm font-bold ${currentTheme.textColor}`}>
+                                <td colSpan={branches ? 5 : 4} className={`px-4 py-3 text-right text-sm font-bold ${currentTheme.textColor}`}>
                                     Total
                                 </td>
                                 <td className={`px-4 py-3 text-left text-sm font-bold ${currentTheme.textColor}`}>
@@ -326,7 +263,6 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ title, invoices, theme, branc
                                 <td className={`px-4 py-3 text-left text-sm font-bold ${currentTheme.textColor} align-middle`}>
                                     {overallTotal.toFixed(2)}
                                 </td>
-                                <td></td>
                             </tr>
                         </tfoot>
                     </table>

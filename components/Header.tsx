@@ -19,6 +19,7 @@ interface HeaderProps {
     reportTitle?: string;
     approvedOrders?: Order[];
     currentPage?: string;
+    isOrdersEnabled?: boolean;
     onCreateInvoice?: (group: Order[]) => void;
     deliveredGroupProps?: Order[] | null;
     onCloseDeliveredGroup?: () => void;
@@ -38,6 +39,7 @@ const Header: React.FC<HeaderProps> = ({
     reportTitle = "Daily Sales Report",
     approvedOrders = [],
     currentPage = "Daily Sales",
+    isOrdersEnabled = true,
     onCreateInvoice,
     deliveredGroupProps,
     onCloseDeliveredGroup
@@ -47,6 +49,46 @@ const Header: React.FC<HeaderProps> = ({
     const [confirmDeliverySerial, setConfirmDeliverySerial] = useState<string | null>(null);
     const [deliveringSerials, setDeliveringSerials] = useState<Set<string>>(new Set());
     const [localDeliveredGroupDetails, setLocalDeliveredGroupDetails] = useState<Order[] | null>(null);
+    const [showQuotaWarning, setShowQuotaWarning] = useState(false);
+    const [isSyncStuck, setIsSyncStuck] = useState(false);
+    const [isForceSyncing, setIsForceSyncing] = useState(false);
+
+    useEffect(() => {
+        if (pendingCount > 0) {
+            const timer = setTimeout(() => setIsSyncStuck(true), 10000);
+            return () => clearTimeout(timer);
+        } else {
+            setIsSyncStuck(false);
+            setIsForceSyncing(false);
+        }
+    }, [pendingCount]);
+
+    useEffect(() => {
+        const handleQuotaExceeded = () => setShowQuotaWarning(true);
+        const handleQuotaResolved = () => setShowQuotaWarning(false);
+        
+        window.addEventListener('storage-quota-exceeded', handleQuotaExceeded);
+        window.addEventListener('storage-quota-resolved', handleQuotaResolved);
+        
+        return () => {
+            window.removeEventListener('storage-quota-exceeded', handleQuotaExceeded);
+            window.removeEventListener('storage-quota-resolved', handleQuotaResolved);
+        };
+    }, []);
+
+    const handleCleanCache = () => {
+        if (window.confirm("سيتم تنظيف فواتير الأشهر القديمة والإبقاء على الشهر الحالي والسابق فقط لحل مشكلة الذاكرة. هل تريد الاستمرار؟")) {
+            dualStorage.cleanOldInvoicesLocalCache();
+        }
+    };
+
+    const handleForceSync = async () => {
+        if (!isForceSyncing) {
+            setIsForceSyncing(true);
+            await dualStorage.forceSync();
+            setTimeout(() => setIsForceSyncing(false), 3000);
+        }
+    };
 
     const deliveredGroupDetails = deliveredGroupProps !== undefined ? deliveredGroupProps : localDeliveredGroupDetails;
     const setDeliveredGroupDetails = (group: Order[] | null) => {
@@ -160,6 +202,31 @@ const Header: React.FC<HeaderProps> = ({
                     </div>
 
                     {/* Sync Status Button */}
+                    {showQuotaWarning && currentPage === 'Daily Sales' && (
+                        <button 
+                            onClick={handleCleanCache}
+                            className="flex items-center gap-1 px-2 py-0.5 rounded transition-colors bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-500/50"
+                            title="تنظيف الذاكرة"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            <span className="hidden xs:inline text-[10px] font-bold">تنظيف المتصفح</span>
+                        </button>
+                    )}
+                    {isSyncStuck && currentPage === 'Daily Sales' && (
+                        <button 
+                            onClick={handleForceSync}
+                            disabled={isForceSyncing}
+                            className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${isForceSyncing ? 'bg-gray-500/20 text-gray-400' : 'bg-red-600/30 text-red-100 hover:bg-red-600/50 border border-red-400/50'}`}
+                            title="إجبار الرفع للسيرفر"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-3.5 w-3.5 ${isForceSyncing ? 'animate-spin' : 'animate-bounce'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            <span className="hidden xs:inline text-[10px] font-bold">{isForceSyncing ? 'Syncing...' : 'Force Sync'}</span>
+                        </button>
+                    )}
                     <button 
                         onClick={handleRefreshClick}
                         className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${pendingCount > 0 ? 'bg-orange-500/20 text-orange-300 hover:bg-orange-500/30' : 'hover:bg-blue-900/40 text-blue-300'}`}
@@ -229,7 +296,7 @@ const Header: React.FC<HeaderProps> = ({
                         
                         <div className="flex items-center gap-2 w-full justify-end">
                             {/* Floating/Action Icon on the left side of Branch selector with extreme high-impact visual design */}
-                            {(currentPage === 'Daily Sales' && (selectedBranchId === 'b3' || selectedBranchName.toLowerCase().includes('main') || selectedBranchName.includes('الرئيسي') || selectedBranchName.includes('الرئيسية'))) && (
+                            {(currentPage === 'Daily Sales' && isOrdersEnabled && (selectedBranchId === 'b3' || selectedBranchName.toLowerCase().includes('main') || selectedBranchName.includes('الرئيسي') || selectedBranchName.includes('الرئيسية')) && (currentUser?.permissions?.allowedPages?.includes('Orders') || currentUser?.permissions?.allowedPages?.includes('Order Approvals'))) && (
                                 <div className="relative flex items-center mr-1">
                                     <button
                                         type="button"

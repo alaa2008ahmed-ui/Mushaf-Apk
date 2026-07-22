@@ -106,9 +106,39 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
 
   const theme = getThemeConfig(templateId);
 
+  let lastWorkDateStr = (emp as any).lastWorkDate || emp.calculationDate;
+  if (customStartDate) {
+    const parts = customStartDate.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const d = new Date(year, month, day);
+      d.setDate(d.getDate() - 1);
+      
+      const resY = d.getFullYear();
+      const resM = String(d.getMonth() + 1).padStart(2, '0');
+      const resD = String(d.getDate()).padStart(2, '0');
+      lastWorkDateStr = `${resY}-${resM}-${resD}`;
+    }
+  }
+
   return (
     <PrintableSheet>
-      <div className={`${theme.wrapper} mx-auto w-full max-w-full flex-grow flex flex-col text-black text-xs sm:text-sm font-sans overflow-x-auto print-single-page h-full`} dir="rtl">
+      <style>{`
+        @media print {
+          div.print-vacation-custom {
+            padding-left: 1mm !important;
+            padding-right: 1mm !important;
+            margin-left: -8% !important;
+            margin-right: -8% !important;
+            width: 116% !important;
+            max-width: 116% !important;
+            overflow: visible !important;
+          }
+        }
+      `}</style>
+      <div className={`${theme.wrapper} mx-auto w-full max-w-full flex-grow flex flex-col text-black text-xs sm:text-sm font-sans print-single-page print-vacation-custom h-full`} dir="rtl">
         {/* هامش علوي 1 سم للطباعة */}
         <div className="h-[10mm] w-full shrink-0 print:block"></div>
 
@@ -143,7 +173,7 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 bg-gray-50 w-[22%] whitespace-nowrap">العودة من آخر إجازة</td>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 font-mono w-[28%] whitespace-nowrap">{formatDateGB(emp.lastVacationReturnDate || emp.hireDate)}</td>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 bg-gray-50 w-[22%] whitespace-nowrap">آخر يوم عمل</td>
-              <td className="border border-black p-0.5 sm:p-1 print:p-0.5 font-mono w-[28%] whitespace-nowrap">{formatDateGB((emp as any).lastWorkDate || emp.calculationDate)}</td>
+              <td className="border border-black p-0.5 sm:p-1 print:p-0.5 font-mono w-[28%] whitespace-nowrap">{formatDateGB(lastWorkDateStr)}</td>
             </tr>
             <tr>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 bg-gray-50 w-[22%] whitespace-nowrap">سبب الاجازة</td>
@@ -292,9 +322,9 @@ export default function VacationAllowancePrintTemplates(props: VacationAllowance
         <table className="w-full border-collapse border-2 border-black text-center mb-1 print:mb-0.5 font-bold text-[10px] sm:text-xs print:text-sm bg-gray-200">
           <tbody>
             <tr>
-              <td className="border border-black p-0.5 sm:p-1 print:p-0.5 w-[18%] whitespace-nowrap">صافي المبلغ المستحق</td>
+              <td className="border border-black p-0.5 sm:p-1 print:p-0.5 w-[12%] whitespace-nowrap">المبلغ المستحق</td>
               <td className="border border-black p-0.5 sm:p-1 print:p-0.5 w-[14%] font-mono text-base whitespace-nowrap">{formatNumber(netAmount)}</td>
-              <td className="border border-black p-0.5 sm:p-1 print:p-0.5 border-4 border-black bg-white w-[68%] print-double-border" style={{ borderStyle: 'double' }}>
+              <td className="border border-black p-0.5 sm:p-1 print:p-0.5 border-4 border-black bg-white w-[74%] print-double-border" style={{ borderStyle: 'double' }}>
                 <div className="flex flex-col justify-center gap-0 text-center py-0.5">
                   <div dir="rtl" className="text-slate-950 font-bold text-[11px] sm:text-xs print:text-[11px] leading-tight px-1">{tafqeetArabic(netAmount)}</div>
                   <div className="border-t border-slate-300 w-4/5 mx-auto my-0.5"></div>

@@ -48,9 +48,10 @@ export default function VacationAllowanceView({ employees, onArchive, archivedDa
 
   useEffect(() => {
     if (!archivedData && customStartDate) {
-      const d = new Date(customStartDate);
-      if (!isNaN(d.getTime())) {
-        setWorkDaysCount(Math.min(30, Math.max(0, d.getDate() - 1)));
+      const parts = customStartDate.split('-');
+      if (parts.length === 3) {
+        const day = parseInt(parts[2], 10);
+        setWorkDaysCount(Math.min(30, Math.max(0, day - 1)));
       }
     }
   }, [customStartDate, archivedData]);
@@ -109,9 +110,13 @@ export default function VacationAllowanceView({ employees, onArchive, archivedDa
                 setSelectedEmpId(val);
                 const found = employees.find(emp => emp.id === val);
                 if (found) {
-                  const d = new Date(found.calculationDate);
-                  const day = !isNaN(d.getDate()) ? Math.min(30, Math.max(0, d.getDate() - 1)) : 30;
-                  setWorkDaysCount(day);
+                  const parts = found.calculationDate.split('-');
+                  if (parts.length === 3) {
+                    const day = parseInt(parts[2], 10);
+                    setWorkDaysCount(Math.min(30, Math.max(0, day - 1)));
+                  } else {
+                    setWorkDaysCount(30);
+                  }
                 }
               }}
               className="w-full sm:max-w-md flex-grow"

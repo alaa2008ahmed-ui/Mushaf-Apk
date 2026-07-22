@@ -136,7 +136,7 @@ body {
   .payroll-wrapper {
     background-color: white !important;
     color: black !important;
-    font-family: Arial, sans-serif !important;
+    font-family: 'Cairo', system-ui, -apple-system, sans-serif !important;
     font-size: 10.2pt !important;
     line-height: 1 !important;
     margin: 0 !important;
@@ -174,7 +174,7 @@ body {
   }
 
   .payroll-wrapper tfoot tr {
-    height: 19px !important;
+    height: 27px !important;
   }
 
   .payroll-wrapper th, .payroll-wrapper td,
@@ -206,10 +206,10 @@ body {
 
   .payroll-wrapper tfoot td,
   .payroll-wrapper tfoot td * {
-    font-size: 11pt !important;
+    font-size: 12pt !important;
     font-weight: 900 !important;
-    padding: 2.5px 3px !important;
-    height: 19px !important;
+    padding: 4px 3px !important;
+    height: 27px !important;
   }
 
   /* Compact signatures for print */
@@ -247,3 +247,7 @@ body {
   cursor: pointer !important;
   z-index: 20 !important;
 }
+-e 
+
+.font-mono { font-family: "Cairo", system-ui, -apple-system, sans-serif !important; }
+* { font-family: "Cairo", system-ui, -apple-system, sans-serif !important; }

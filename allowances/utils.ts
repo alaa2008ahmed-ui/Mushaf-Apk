@@ -93,7 +93,7 @@ export function calculateEmployeeAllowances(employee: Employee): CalculatedEmplo
   // Ticket allowance:
   const ticketPrice = ticketPriceValue;
   const branch = (employee.branch || '').trim();
-  const isAdministrative = branch === 'الادارة' || branch === 'الإدارة';
+  const isAdministrative = branch === 'الادارة' || branch === 'الإدارة' || branch === 'الاداره' || branch === 'الإداره' || branch === 'الادارة المركزيه' || branch === 'الإدارة المركزية';
 
   const intervalYears = isAdministrative 
     ? settings.ticketAdminIntervalYears 

@@ -16,7 +16,7 @@ export function getSmartPrintConfig(count: number, isAllBranches?: boolean): Sma
   if (count >= 56) {
     // Ultra dense (56+ employees) - compact to guarantee 1 page
     return {
-      rowHeight: isAllBranches ? '13px' : '8.5px',
+      rowHeight: isAllBranches ? '12px' : '8px',
       fontSize: isAllBranches ? '6.6pt' : '6.2pt',
       headerFontSize: isAllBranches ? '7.0pt' : '6.6pt',
       headerHeight: '12px',
@@ -24,14 +24,14 @@ export function getSmartPrintConfig(count: number, isAllBranches?: boolean): Sma
       sigMarginTop: isAllBranches ? '20px' : '10px',
       sigGap: '6px',
       sigFontSize: '6.5pt',
-      zoom: isAllBranches ? '64%' : '62%',
+      zoom: isAllBranches ? '56%' : '54%',
       label: `مكثف جداً (${count} موظف) - ورقة واحدة`,
       density: 'ultra-dense'
     };
   } else if (count >= 46) {
     // Very Dense (46 - 55 employees)
     return {
-      rowHeight: isAllBranches ? '17px' : '11px',
+      rowHeight: isAllBranches ? '16px' : '10.5px',
       fontSize: isAllBranches ? '7.4pt' : '7.0pt',
       headerFontSize: isAllBranches ? '7.8pt' : '7.4pt',
       headerHeight: '14px',
@@ -39,14 +39,14 @@ export function getSmartPrintConfig(count: number, isAllBranches?: boolean): Sma
       sigMarginTop: isAllBranches ? '25px' : '10px',
       sigGap: '12px',
       sigFontSize: '8.0pt',
-      zoom: isAllBranches ? '66%' : '64%',
+      zoom: isAllBranches ? '58%' : '56%',
       label: `تلقائي مكثف لملء كامل الصفحة (${count} موظف)`,
       density: 'dense'
     };
   } else if (count >= 38) {
     // Dense (38 - 45 employees, e.g. 42 employees)
     return {
-      rowHeight: isAllBranches ? '20px' : '13px',
+      rowHeight: isAllBranches ? '19px' : '12px',
       fontSize: isAllBranches ? '7.8pt' : '7.4pt',
       headerFontSize: isAllBranches ? '8.2pt' : '7.8pt',
       headerHeight: '15px',
@@ -54,7 +54,7 @@ export function getSmartPrintConfig(count: number, isAllBranches?: boolean): Sma
       sigMarginTop: '4px',
       sigGap: '14px',
       sigFontSize: '11pt',
-      zoom: isAllBranches ? '68%' : '66%',
+      zoom: isAllBranches ? '60%' : '58%',
       label: `تلقائي مخصص لاستغلال كامل الصفحة (${count} موظف)`,
       density: 'dense'
     };
@@ -69,7 +69,7 @@ export function getSmartPrintConfig(count: number, isAllBranches?: boolean): Sma
       sigMarginTop: '4px',
       sigGap: '16px',
       sigFontSize: '11.5pt',
-      zoom: isAllBranches ? '70%' : '68%',
+      zoom: isAllBranches ? '64%' : '62%',
       label: `تلقائي متوسط لملء الصفحة (${count} موظف)`,
       density: 'medium'
     };
@@ -84,7 +84,7 @@ export function getSmartPrintConfig(count: number, isAllBranches?: boolean): Sma
       sigMarginTop: '4px',
       sigGap: '20px',
       sigFontSize: '12pt',
-      zoom: isAllBranches ? '72%' : '70%',
+      zoom: isAllBranches ? '66%' : '64%',
       label: `تلقائي مريح لملء الصفحة (${count} موظف)`,
       density: 'comfortable'
     };
@@ -99,7 +99,7 @@ export function getSmartPrintConfig(count: number, isAllBranches?: boolean): Sma
       sigMarginTop: '4px',
       sigGap: '24px',
       sigFontSize: '12.5pt',
-      zoom: isAllBranches ? '74%' : '72%',
+      zoom: isAllBranches ? '68%' : '66%',
       label: `تلقائي مخصص للفرع الصغير (${count} موظف)`,
       density: 'spacious'
     };
@@ -111,6 +111,9 @@ export function getSmartPrintConfig(count: number, isAllBranches?: boolean): Sma
  */
 export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): string {
   const config = getSmartPrintConfig(count, isAllBranches);
+  const rowHeightVal = parseFloat(config.rowHeight) || 19;
+  const rowHeightUnit = config.rowHeight.replace(/[\d\.]/g, '') || 'px';
+  const tfootRowHeight = `${(rowHeightVal * 1.4).toFixed(1)}${rowHeightUnit}`;
   return `
     @page { 
       size: A4 landscape; 
@@ -119,10 +122,11 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
       margin-right: 0.5cm !important; 
       margin-left: 0.5cm !important; 
     }
+    *, table th, table td, table.print-table th, table.print-table td, table.print-table tr.employee-row td, .font-mono, th, td, span, div, p, input { font-family: "Cairo", system-ui, -apple-system, sans-serif !important; }
     body { 
       background-color: white !important; 
       color: black !important; 
-      font-family: Arial, sans-serif !important; 
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif !important; 
       margin: 0 !important; 
       padding: 0 !important;
       zoom: ${config.zoom} !important;
@@ -168,8 +172,7 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
       border: 2px solid #000000 !important;
     }
     .print-signatures-grid {
-      margin-top: 10px !important;
-      margin-bottom: 5px !important;
+      margin-top: 2px !important;
       padding-left: 1.0cm !important;
       padding-right: 1.0cm !important;
       page-break-inside: avoid !important;
@@ -183,8 +186,8 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
       page-break-inside: avoid !important;
       page-break-after: auto !important;
     }
-    tfoot tr { 
-      height: 19px !important; 
+    .payroll-wrapper tfoot tr, tfoot tr { 
+      height: ${tfootRowHeight} !important; 
     }
     th, td { 
       border: 1px solid #000000 !important; 
@@ -207,8 +210,9 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
       color: #000000 !important;
       height: 19px !important;
     }
-    tfoot td {
-      height: 19px !important;
+    .payroll-wrapper tfoot td, .payroll-wrapper tfoot td *, tfoot td {
+      height: ${tfootRowHeight} !important;
+      font-size: 12pt !important;
     }
     th.print-col-total, td.print-col-total {
       color: #dc2626 !important;
@@ -216,11 +220,20 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
     th.print-col-net, td.print-col-net {
       color: #1d4ed8 !important;
     }
+    tbody tr:nth-child(odd) td {
+      background-color: #f1f5f9 !important;
+    }
+    tbody tr:nth-child(even) td {
+      background-color: #ffffff !important;
+    }
+    th.print-col-branch, td.print-col-branch {
+      font-size: 10pt !important;
+    }
     .print-signatures-grid, .grid.grid-cols-2.md\\:grid-cols-4 { 
       display: grid !important; 
       grid-template-columns: repeat(4, minmax(0, 1fr)) !important; 
       gap: ${config.sigGap} !important; 
-      margin-top: ${config.sigMarginTop} !important; 
+      margin-top: 2px !important; 
       padding-top: 4px !important;
       border-top: none !important;
     }
@@ -253,6 +266,9 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
  */
 export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): string {
   const config = getSmartPrintConfig(count, isAllBranches);
+  const rowHeightVal = parseFloat(config.rowHeight) || 19;
+  const rowHeightUnit = config.rowHeight.replace(/[\d\.]/g, '') || 'px';
+  const tfootRowHeight = `${(rowHeightVal * 1.4).toFixed(1)}${rowHeightUnit}`;
   return `
     @media print {
       @page { 
@@ -262,10 +278,11 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
         margin-right: 0.5cm !important; 
         margin-left: 0.5cm !important; 
       }
-      body { 
+      *, table th, table td, table.print-table th, table.print-table td, table.print-table tr.employee-row td, .font-mono, th, td, span, div, p, input { font-family: "Cairo", system-ui, -apple-system, sans-serif !important; }
+    body { 
         background-color: white !important; 
         color: black !important; 
-        font-family: Arial, sans-serif !important; 
+        font-family: 'Cairo', system-ui, -apple-system, sans-serif !important; 
         margin: 0 !important; 
         padding: 0 !important;
         zoom: ${config.zoom} !important;
@@ -311,8 +328,7 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
         border: 2px solid #000000 !important;
       }
       .print-signatures-grid {
-        margin-top: 10px !important;
-        margin-bottom: 5px !important;
+        margin-top: 2px !important;
         padding-left: 1.0cm !important;
         padding-right: 1.0cm !important;
         page-break-inside: avoid !important;
@@ -326,8 +342,9 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
         page-break-inside: avoid !important;
         page-break-after: auto !important;
       }
+      #printable-payroll-section .payroll-wrapper tfoot tr,
       #printable-payroll-section tfoot tr { 
-        height: 19px !important; 
+        height: ${tfootRowHeight} !important; 
       }
       #printable-payroll-section th, #printable-payroll-section td { 
         border: 1px solid #000000 !important; 
@@ -350,8 +367,11 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
         color: #000000 !important;
         height: 19px !important;
       }
+      #printable-payroll-section .payroll-wrapper tfoot td,
+      #printable-payroll-section .payroll-wrapper tfoot td *,
       #printable-payroll-section tfoot td {
-        height: 19px !important;
+        height: ${tfootRowHeight} !important;
+        font-size: 12pt !important;
       }
       #printable-payroll-section th.print-col-total, #printable-payroll-section td.print-col-total {
         color: #dc2626 !important;
@@ -359,11 +379,20 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
       #printable-payroll-section th.print-col-net, #printable-payroll-section td.print-col-net {
         color: #1d4ed8 !important;
       }
+      #printable-payroll-section tbody tr:nth-child(odd) td {
+        background-color: #f1f5f9 !important;
+      }
+      #printable-payroll-section tbody tr:nth-child(even) td {
+        background-color: #ffffff !important;
+      }
+      #printable-payroll-section th.print-col-branch, #printable-payroll-section td.print-col-branch {
+        font-size: 10pt !important;
+      }
       #printable-payroll-section .print-signatures-grid, #printable-payroll-section .grid.grid-cols-2.md\\:grid-cols-4 { 
         display: grid !important; 
         grid-template-columns: repeat(4, minmax(0, 1fr)) !important; 
         gap: ${config.sigGap} !important; 
-        margin-top: ${config.sigMarginTop} !important; 
+        margin-top: 2px !important; 
         padding-top: 4px !important;
         border-top: none !important;
       }

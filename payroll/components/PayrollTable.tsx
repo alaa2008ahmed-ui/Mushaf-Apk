@@ -83,12 +83,23 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
       'جيزان': 'Jizan',
       'جازان': 'Jazan',
       'القصيم': 'Qassim',
-      'الادارة': 'Administration',
-      'الإدارة': 'Administration',
-      'الاداره': 'Administration',
-      'الإداره': 'Administration',
+      'الادارة': 'Central Administration',
+      'الإدارة': 'Central Administration',
+      'الاداره': 'Central Administration',
+      'الإداره': 'Central Administration',
+      'الادارة المركزيه': 'Central Administration',
+      'الإدارة المركزية': 'Central Administration',
     };
     return mapping[name] || name;
+  };
+
+  const getArabicBranchName = (branch?: string): string => {
+    if (!branch) return 'أخرى';
+    const trimmed = branch.trim();
+    if (trimmed === 'الادارة' || trimmed === 'الإدارة' || trimmed === 'الاداره' || trimmed === 'الإداره' || trimmed === 'الادارة المركزيه' || trimmed === 'الإدارة المركزية') {
+      return 'الادارة المركزيه';
+    }
+    return trimmed;
   };
 
   const translateBranch = (branch?: string): string => {
@@ -101,7 +112,7 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
     const directMapping = translateBranchName(trimmed);
     if (directMapping !== trimmed) return directMapping;
 
-    if (trimmed === 'الادارة' || trimmed === 'الإدارة' || trimmed === 'الاداره' || trimmed === 'الإداره') return 'Administration';
+    if (trimmed === 'الادارة' || trimmed === 'الإدارة' || trimmed === 'الاداره' || trimmed === 'الإداره' || trimmed === 'الادارة المركزيه' || trimmed === 'الإدارة المركزية') return 'Central Administration';
     if (trimmed === 'أخرى' || trimmed === 'اخري') return 'Other';
     
     let clean = trimmed;
@@ -305,14 +316,14 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
       {/* Spreadsheet Table Container */}
       <div className="hidden md:block print:!block bg-white rounded-xl shadow-sm border border-slate-200 print:!shadow-none print:!border-none print:!rounded-none print:!overflow-visible print:!max-h-none print:!h-auto print:!w-full w-full overflow-auto max-h-[75vh]">
         <table 
-          className={`w-full text-center border-collapse text-[13px] sm:text-sm font-sans min-w-[1250px] print:min-w-0 ${isEnglishTable ? 'dir-ltr' : 'dir-rtl'}`} 
+          className={`w-full text-center border-collapse text-[12px] sm:text-[13px] font-sans min-w-[1250px] print:min-w-0 ${isEnglishTable ? 'dir-ltr' : 'dir-rtl'}`} 
           dir={isEnglishTable ? 'ltr' : 'rtl'}
         >
           
           {/* Table Headers (Exact 2-tier design from image) */}
           <thead className="sticky top-0 z-20 print:static shadow-sm bg-white">
             {/* Top Tier - UI version */}
-            <tr className="bg-white text-slate-900 font-extrabold border-b-2 border-slate-300 text-[13px] sm:text-sm print:hidden shadow-sm">
+            <tr className="bg-white text-slate-900 font-extrabold border-b-2 border-slate-300 text-[12px] sm:text-[13px] print:hidden shadow-sm">
               <th rowSpan={2} className="p-2.5 border border-slate-300 w-10 bg-white">
                 <input
                   type="checkbox"
@@ -327,11 +338,11 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
               <th rowSpan={2} className={`p-2.5 border border-slate-300 w-24 bg-white ${isEnglishTable ? 'text-left pl-3' : 'text-right pr-3'}`}>{headers.branch}</th>
               <th rowSpan={2} className={`p-2.5 border border-slate-300 w-24 bg-white ${isEnglishTable ? 'text-left pl-3' : 'text-right pr-3'}`}>{headers.jobTitle}</th>
               
-              <th colSpan={10} className="py-2.5 px-1 border border-slate-300 bg-blue-100 text-amber-700 font-extrabold text-sm text-center">
+              <th colSpan={10} className="py-2.5 px-1 border border-slate-300 bg-blue-100 text-amber-700 font-extrabold text-[13px] text-center">
                 {headers.entitlements}
               </th>
               
-              <th colSpan={6} className="py-2.5 px-1 border border-slate-300 bg-rose-100 text-rose-900 font-extrabold text-sm text-center">
+              <th colSpan={6} className="py-2.5 px-1 border border-slate-300 bg-rose-100 text-rose-900 font-extrabold text-[13px] text-center">
                 {headers.deductions}
               </th>
               
@@ -349,7 +360,7 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
               <th rowSpan={2} className="p-2 border border-black ">{headers.no}</th>
               <th rowSpan={2} className="p-2 border border-black print:hidden">{headers.code}</th>
               <th rowSpan={2} className={`p-2 border border-black min-w-[80px] ${isEnglishTable ? 'text-left pl-2' : 'text-right pr-2'}`}>{headers.employeeName}</th>
-              <th rowSpan={2} className={`p-2 border border-black ${isEnglishTable ? 'text-left pl-2' : 'text-right pr-2'}`}>{headers.branch}</th>
+              <th rowSpan={2} className={`p-2 border border-black print-col-branch ${isEnglishTable ? 'text-left pl-2' : 'text-right pr-2'}`}>{headers.branch}</th>
               <th rowSpan={2} className={`p-2 border border-black print:hidden ${isEnglishTable ? 'text-left pl-2' : 'text-right pr-2'}`}>{headers.jobTitle}</th>
               
               <th colSpan={printEntitlementsColSpan} className="py-2 border border-black bg-blue-50 text-amber-700 font-extrabold text-[10px]">
@@ -366,7 +377,7 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
             </tr>
 
             {/* Bottom Tier */}
-            <tr className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200 print:bg-slate-50 print:border-slate-800 text-xs print:static shadow-sm">
+            <tr className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200 print:bg-slate-50 print:border-slate-800 text-[11px] print:static shadow-sm">
               {/* Entitlements sub-columns */}
               <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 font-bold bg-slate-100 print:bg-slate-50 ${!colVisibility.basicSalary ? 'print:hidden' : ''}`}>{headers.basic}</th>
               <th className={`p-2 border border-slate-200 print:border-slate-800 text-amber-700 bg-slate-100 print:bg-slate-50 font-bold print:hidden`} title="عدد ساعات العمل / الإضافي (تتحول لمبلغ الإضافي تلقائياً)">{headers.workHours}</th>
@@ -436,7 +447,7 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                         onBlur={saveCellEdit}
                         placeholder="0"
                         onFocus={(e) => e.target.select()}
-                        className="w-full text-center text-[13px] font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-blue-950 p-0 m-0 font-mono leading-none block"
+                        className="w-full text-center text-[12px] font-bold bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-blue-950 p-0 m-0 font-mono leading-none block"
                       />
                     </td>
                   );
@@ -504,7 +515,7 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                         : isEven 
                           ? 'bg-white hover:bg-slate-50' 
                           : 'bg-slate-50 hover:bg-slate-100'
-                  } print:bg-transparent items-center text-sm ${(empTotals.netSalary === 0 && emp.isActive !== false) ? 'print:hidden' : ''}`}
+                  } print:bg-transparent items-center text-[13px] ${(empTotals.netSalary === 0 && emp.isActive !== false) ? 'print:hidden' : ''}`}
                 >
                   <td className="p-2 border border-slate-100 print:hidden text-center" onClick={(e) => e.stopPropagation()}>
                     <input
@@ -514,12 +525,12 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                       className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                   </td>
-                  <td className="p-2 border border-slate-100 print:border-slate-800 font-mono text-slate-400 text-[13px] sm:text-sm">
+                  <td className="p-2 border border-slate-100 print:border-slate-800 font-mono text-slate-400 text-[12px] sm:text-[13px]">
                     <span className="print:hidden">{index + 1}</span>
                     <span className="hidden print:inline-block">{printIndexMap[emp.id] || ''}</span>
                   </td>
-                  <td className="p-2 border border-slate-100 print:border-slate-800 font-mono font-medium text-slate-500 text-[13px] sm:text-sm print:hidden">{emp.code}</td>
-                  <td className={`p-2 border border-slate-100 print:border-slate-800 ${isEnglishTable ? 'text-left pl-3' : 'text-right pr-3'} text-[13px]`}>
+                  <td className="p-2 border border-slate-100 print:border-slate-800 font-mono font-medium text-slate-500 text-[12px] sm:text-[13px] print:hidden">{emp.code}</td>
+                  <td className={`p-2 border border-slate-100 print:border-slate-800 ${isEnglishTable ? 'text-left pl-3' : 'text-right pr-3'} text-[12px]`}>
                     <div className="flex items-center gap-1.5 justify-start">
                       <span className={`block font-bold leading-tight ${emp.isActive === false ? 'text-slate-400 line-through font-normal' : isSelected ? 'text-yellow-950' : 'text-slate-900'}`}>
                         {isEnglishTable ? (emp.nameEn || emp.name) : emp.name}
@@ -531,10 +542,10 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                       )}
                     </div>
                   </td>
-                  <td className={`p-2 border border-slate-100 print:border-slate-800 ${isEnglishTable ? 'text-left pl-3 font-medium' : 'text-right pr-3 font-semibold'} text-slate-700 text-[13px] sm:text-sm`}>
-                    {isEnglishTable ? translateBranch(emp.branch) : (emp.branch || 'أخرى')}
+                  <td className={`p-2 border border-slate-100 print:border-slate-800 print-col-branch ${isEnglishTable ? 'text-left pl-3 font-medium' : 'text-right pr-3 font-semibold'} text-slate-700 text-[12px] sm:text-[13px]`}>
+                    {isEnglishTable ? translateBranch(emp.branch) : getArabicBranchName(emp.branch)}
                   </td>
-                  <td className={`p-2 border border-slate-100 print:border-slate-800 ${isEnglishTable ? 'text-left pl-3' : 'text-right pr-3'} text-slate-600 text-[13px] sm:text-sm font-medium print:hidden`}>
+                  <td className={`p-2 border border-slate-100 print:border-slate-800 ${isEnglishTable ? 'text-left pl-3' : 'text-right pr-3'} text-slate-600 text-[12px] sm:text-[13px] font-medium print:hidden`}>
                     {isEnglishTable ? (emp.englishJobTitle || translateJobTitle(emp.jobTitle)) : emp.jobTitle}</td>
                   
                   {/* Entitlements */}
@@ -566,7 +577,7 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                   </td>
                   
                   {/* Net Employee Salary */}
-                  <td className={`p-2 border border-slate-100 print:border-slate-800 font-bold font-mono text-sm bg-white ${isSelected ? 'text-yellow-950 bg-yellow-200' : 'text-blue-700'} print-col-net`}>
+                  <td className={`p-2 border border-slate-100 print:border-slate-800 font-bold font-mono text-[13px] bg-white ${isSelected ? 'text-yellow-950 bg-yellow-200' : 'text-blue-700'} print-col-net`}>
                     {formatCurrency(empTotals.netSalary)}
                   </td>
                   
@@ -620,31 +631,31 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
           {employees.length > 0 && (
             <tfoot>
               <tr className="bg-slate-100 text-slate-900 font-extrabold border-t-2 border-slate-300 print:bg-slate-200 print:border-slate-800 shadow-xs">
-                <td colSpan={6} className={`py-2.5 px-3 border border-slate-300 print:border-slate-800 font-extrabold tracking-wide text-sm print:hidden ${isEnglishTable ? 'text-left' : 'text-right'}`}>
+                <td colSpan={6} className={`py-2.5 px-3 border border-slate-300 print:border-slate-800 font-extrabold tracking-wide text-[13px] print:hidden ${isEnglishTable ? 'text-left' : 'text-right'}`}>
                   {headers.totalLabel}
                 </td>
-                <td colSpan={3} className={`py-2.5 px-3 border border-slate-300 print:border-slate-800 font-extrabold tracking-wide text-sm hidden print:table-cell ${isEnglishTable ? 'text-left' : 'text-right'}`}>
+                <td colSpan={3} className={`py-2.5 px-3 border border-slate-300 print:border-slate-800 font-extrabold tracking-wide text-[13px] hidden print:table-cell ${isEnglishTable ? 'text-left' : 'text-right'}`}>
                   {headers.totalLabel}
                 </td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm ${!colVisibility.basicSalary ? 'print:hidden' : ''}`}>{formatCurrency(totals.basicSalary)}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-amber-700 font-bold print:hidden`}>{totals.overtimeHours ? totals.overtimeHours.toLocaleString('en-US') : '0'}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-blue-700 ${!colVisibility.overtime ? 'print:hidden' : ''}`}>{formatCurrency(totals.overtime)}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm ${!colVisibility.housingAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.housingAllowance)}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm ${!colVisibility.transportationAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.transportationAllowance)}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm ${!colVisibility.communicationAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.communicationAllowance)}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm ${!colVisibility.foodAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.foodAllowance)}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-blue-700 ${!colVisibility.commission ? 'print:hidden' : ''}`}>{formatCurrency(totals.commission)}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-blue-700 ${!colVisibility.bonus ? 'print:hidden' : ''}`}>{formatCurrency(totals.bonus)}</td>
-                <td className="p-2 border border-slate-300 print:border-slate-800 bg-slate-200 font-mono text-[13px] sm:text-sm text-slate-900 font-extrabold print-col-total">{formatCurrency(totals.totalEntitlements)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] ${!colVisibility.basicSalary ? 'print:hidden' : ''}`}>{formatCurrency(totals.basicSalary)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] text-amber-700 font-bold print:hidden`}>{totals.overtimeHours ? totals.overtimeHours.toLocaleString('en-US') : '0'}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] text-blue-700 ${!colVisibility.overtime ? 'print:hidden' : ''}`}>{formatCurrency(totals.overtime)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] ${!colVisibility.housingAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.housingAllowance)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] ${!colVisibility.transportationAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.transportationAllowance)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] ${!colVisibility.communicationAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.communicationAllowance)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] ${!colVisibility.foodAllowance ? 'print:hidden' : ''}`}>{formatCurrency(totals.foodAllowance)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] text-blue-700 ${!colVisibility.commission ? 'print:hidden' : ''}`}>{formatCurrency(totals.commission)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] text-blue-700 ${!colVisibility.bonus ? 'print:hidden' : ''}`}>{formatCurrency(totals.bonus)}</td>
+                <td className="p-2 border border-slate-300 print:border-slate-800 bg-slate-200 font-mono text-[12px] sm:text-[13px] text-slate-900 font-extrabold print-col-total">{formatCurrency(totals.totalEntitlements)}</td>
                 
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-rose-600 ${!colVisibility.insuranceDeduction ? 'print:hidden' : ''}`}>{formatCurrency(totals.insuranceDeduction)}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-rose-600 ${!colVisibility.generalDeduction ? 'print:hidden' : ''}`}>{formatCurrency(totals.generalDeduction)}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-rose-600 ${!colVisibility.loan ? 'print:hidden' : ''}`}>{formatCurrency(totals.loan)}</td>
-                <td className="p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-rose-600 print:hidden">{formatNumberClean(totals.absenceDays)}</td>
-                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[13px] sm:text-sm text-rose-600 ${!colVisibility.absenceDeduction ? 'print:hidden' : ''}`}>{formatCurrency(totals.absenceDeduction)}</td>
-                <td className="p-2 border border-slate-300 print:border-slate-800 bg-rose-100 font-mono text-[13px] sm:text-sm text-rose-800 font-extrabold print-col-total">{formatCurrency(totals.totalDeductions)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] text-rose-600 ${!colVisibility.insuranceDeduction ? 'print:hidden' : ''}`}>{formatCurrency(totals.insuranceDeduction)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] text-rose-600 ${!colVisibility.generalDeduction ? 'print:hidden' : ''}`}>{formatCurrency(totals.generalDeduction)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] text-rose-600 ${!colVisibility.loan ? 'print:hidden' : ''}`}>{formatCurrency(totals.loan)}</td>
+                <td className="p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] text-rose-600 print:hidden">{formatNumberClean(totals.absenceDays)}</td>
+                <td className={`p-2 border border-slate-300 print:border-slate-800 font-mono text-[12px] sm:text-[13px] text-rose-600 ${!colVisibility.absenceDeduction ? 'print:hidden' : ''}`}>{formatCurrency(totals.absenceDeduction)}</td>
+                <td className="p-2 border border-slate-300 print:border-slate-800 bg-rose-100 font-mono text-[12px] sm:text-[13px] text-rose-800 font-extrabold print-col-total">{formatCurrency(totals.totalDeductions)}</td>
                 
-                <td className="p-2 border border-slate-300 print:border-slate-800 bg-blue-600 print:!bg-[#dbeafe] font-mono text-sm sm:text-base text-white font-extrabold print-col-net">{formatCurrency(totals.netSalary)}</td>
+                <td className="p-2 border border-slate-300 print:border-slate-800 bg-blue-600 print:!bg-[#dbeafe] font-mono text-[13px] sm:text-sm text-white font-extrabold print-col-net">{formatCurrency(totals.netSalary)}</td>
                 <td className="border border-slate-300 print:hidden bg-slate-200"></td>
               </tr>
             </tfoot>
@@ -687,7 +698,7 @@ export const PayrollTable: React.FC<PayrollTableProps> = ({
                   <div className="text-xs text-slate-400 mt-1 flex flex-wrap gap-x-1.5 gap-y-0.5">
                     <span>{isEnglishTable ? 'Code' : 'كود'}: {emp.code}</span>
                     <span>•</span>
-                    <span>{isEnglishTable ? translateBranch(emp.branch) : (emp.branch || 'أخرى')}</span>
+                    <span>{isEnglishTable ? translateBranch(emp.branch) : getArabicBranchName(emp.branch)}</span>
                     <span>•</span>
                     <span>{isEnglishTable ? (emp.englishJobTitle || emp.jobTitle) : emp.jobTitle}</span>
                   </div>

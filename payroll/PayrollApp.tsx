@@ -263,6 +263,17 @@ export default function PayrollApp({
             }
           }
 
+          if (updated.branch) {
+            const b = updated.branch.trim();
+            if (b === "الادارة" || b === "الإدارة" || b === "الاداره" || b === "الإداره") {
+              updated.branch = "الادارة المركزيه";
+              changed = true;
+            } else if (b === "فرع المعبأه") {
+              updated.branch = "فرع المعباه";
+              changed = true;
+            }
+          }
+
           return updated;
         });
 
@@ -272,7 +283,20 @@ export default function PayrollApp({
         console.error("Error parsing employees", err);
       }
     }
-    return initialEmployees;
+    return initialEmployees.map((emp) => {
+      if (!emp || !emp.branch) return emp;
+      const b = emp.branch.trim();
+      let normalized = emp.branch;
+      if (b === "الادارة" || b === "الإدارة" || b === "الاداره" || b === "الإداره") {
+        normalized = "الادارة المركزيه";
+      } else if (b === "فرع المعبأه") {
+        normalized = "فرع المعباه";
+      }
+      if (normalized !== emp.branch) {
+        return { ...emp, branch: normalized };
+      }
+      return emp;
+    });
   });
 
   const [archives, setArchives] = useState<any[]>(() => {
@@ -379,6 +403,7 @@ export default function PayrollApp({
   const lastSavedJsonRef = useRef(
     localStorage.getItem("payroll_employees_2026") || "[]"
   );
+  const lastSavedSettingsRef = useRef<string>("");
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<any[]>([]);
   const [isBulkPrintOpen, setIsBulkPrintOpen] = useState(false);
   const [bulkEmployees, setBulkEmployees] = useState<Employee[]>([]);
@@ -630,7 +655,7 @@ export default function PayrollApp({
     }
   }, [selectedMonth, isCurrentMonthArchived, employees]);
 
-  // Save sheet title and signatures
+  // Save sheet title, signatures, insurance percentage, and selected month, and sync to Firestore
   useEffect(() => {
     if (sheetTitle) {
       localStorage.setItem("payroll_sheetTitle", sheetTitle);
@@ -643,6 +668,48 @@ export default function PayrollApp({
       localStorage.setItem("payroll_signatures", JSON.stringify(signatures));
     }
   }, [signatures]);
+
+  useEffect(() => {
+    if (insurancePercentage !== undefined) {
+      localStorage.setItem("payroll_insurance_percentage", insurancePercentage.toString());
+    }
+  }, [insurancePercentage]);
+
+  useEffect(() => {
+    if (selectedMonth) {
+      localStorage.setItem("payroll_selected_month_iso", selectedMonth);
+    }
+  }, [selectedMonth]);
+
+  useEffect(() => {
+    if (!signatures || !selectedMonth || !sheetTitle) return;
+
+    const currentSettings = {
+      signatures,
+      insurancePercentage,
+      sheetTitle,
+      selectedMonth,
+    };
+
+    const settingsJson = JSON.stringify(currentSettings);
+    if (settingsJson === lastSavedSettingsRef.current) return;
+    lastSavedSettingsRef.current = settingsJson;
+
+    const timer = setTimeout(() => {
+      dualStorage.save(COLLECTIONS.RECORDS, "payroll_global_settings", {
+        type: "payroll_settings",
+        data: currentSettings,
+      })
+        .then(() => {
+          console.log("DualStorage: Saved payroll global settings to Firestore successfully.");
+        })
+        .catch(err => {
+          console.error("DualStorage: Failed to save payroll global settings to Firestore:", err);
+        });
+    }, 1000); // Debounce by 1 second
+
+    return () => clearTimeout(timer);
+  }, [signatures, insurancePercentage, sheetTitle, selectedMonth]);
 
   // Listen for external real-time sync events from Firestore
   useEffect(() => {
@@ -730,6 +797,51 @@ export default function PayrollApp({
             }
             return prev;
           });
+        }
+
+        // Sync Global Settings
+        const settingsRecord = records.find((r: any) => r.id === "payroll_global_settings");
+        if (settingsRecord && settingsRecord.data) {
+          const settings = settingsRecord.data;
+          const currentSettings = {
+            signatures: settings.signatures,
+            insurancePercentage: settings.insurancePercentage,
+            sheetTitle: settings.sheetTitle,
+            selectedMonth: settings.selectedMonth,
+          };
+          const newStr = JSON.stringify(currentSettings);
+          if (newStr !== lastSavedSettingsRef.current) {
+            lastSavedSettingsRef.current = newStr;
+            if (settings.signatures) {
+              setSignatures(settings.signatures);
+              localStorage.setItem("payroll_signatures", JSON.stringify(settings.signatures));
+            }
+            if (settings.insurancePercentage !== undefined) {
+              setInsurancePercentage(settings.insurancePercentage);
+              localStorage.setItem("payroll_insurance_percentage", settings.insurancePercentage.toString());
+            }
+            if (settings.sheetTitle) {
+              setSheetTitle(settings.sheetTitle);
+              localStorage.setItem("payroll_sheet_title", settings.sheetTitle);
+              localStorage.setItem("payroll_sheetTitle", settings.sheetTitle);
+            }
+            // Sync month if not recently edited locally or under alaa user
+            const savedUser = localStorage.getItem('currentUser');
+            let isCurrentUserAlaa = false;
+            if (savedUser) {
+              try {
+                const u = JSON.parse(savedUser);
+                if (u && u.username && u.username.toLowerCase() === 'alaa') {
+                  isCurrentUserAlaa = true;
+                }
+              } catch (e) {}
+            }
+            const isSyncing = localStorage.getItem('payroll_sync_in_progress') === 'true';
+            if (!isSyncing && !isCurrentUserAlaa && settings.selectedMonth) {
+              setSelectedMonth(settings.selectedMonth);
+              localStorage.setItem("payroll_selected_month_iso", settings.selectedMonth);
+            }
+          }
         }
       } catch (err) {
         console.error("Error syncing from dual storage:", err);
@@ -835,43 +947,131 @@ export default function PayrollApp({
       }
     };
 
+    const handleSignaturesUpdated = () => {
+      const saved = localStorage.getItem("payroll_signatures");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setSignatures(parsed);
+          const currentSettings = {
+            signatures: parsed,
+            insurancePercentage,
+            sheetTitle,
+            selectedMonth,
+          };
+          lastSavedSettingsRef.current = JSON.stringify(currentSettings);
+        } catch (e) {
+          console.error("Error parsing synced signatures", e);
+        }
+      }
+    };
+
+    const handleInsuranceUpdated = () => {
+      const saved = localStorage.getItem("payroll_insurance_percentage");
+      if (saved) {
+        const val = Number(saved);
+        setInsurancePercentage(val);
+        const currentSettings = {
+          signatures,
+          insurancePercentage: val,
+          sheetTitle,
+          selectedMonth,
+        };
+        lastSavedSettingsRef.current = JSON.stringify(currentSettings);
+      }
+    };
+
+    const handleTitleUpdated = () => {
+      const saved = localStorage.getItem("payroll_sheet_title");
+      if (saved) {
+        setSheetTitle(saved);
+        const currentSettings = {
+          signatures,
+          insurancePercentage,
+          sheetTitle: saved,
+          selectedMonth,
+        };
+        lastSavedSettingsRef.current = JSON.stringify(currentSettings);
+      }
+    };
+
+    const handleMonthSynced = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail) {
+        setSelectedMonth(detail);
+        const currentSettings = {
+          signatures,
+          insurancePercentage,
+          sheetTitle,
+          selectedMonth: detail,
+        };
+        lastSavedSettingsRef.current = JSON.stringify(currentSettings);
+      }
+    };
+
     // Run once on mount
     syncFromDualStorage();
 
     window.addEventListener("payroll_employees_updated", handleEmployeesSynced);
     window.addEventListener("payroll_employees_synced", handleEmployeesSynced);
     window.addEventListener("payroll_archives_updated", handleArchivesUpdated);
+    window.addEventListener("payroll_signatures_updated", handleSignaturesUpdated);
+    window.addEventListener("payroll_insurance_updated", handleInsuranceUpdated);
+    window.addEventListener("payroll_title_updated", handleTitleUpdated);
+    window.addEventListener("payroll_selected_month_synced", handleMonthSynced);
 
     return () => {
       window.removeEventListener("payroll_employees_updated", handleEmployeesSynced);
       window.removeEventListener("payroll_employees_synced", handleEmployeesSynced);
       window.removeEventListener("payroll_archives_updated", handleArchivesUpdated);
+      window.removeEventListener("payroll_signatures_updated", handleSignaturesUpdated);
+      window.removeEventListener("payroll_insurance_updated", handleInsuranceUpdated);
+      window.removeEventListener("payroll_title_updated", handleTitleUpdated);
+      window.removeEventListener("payroll_selected_month_synced", handleMonthSynced);
     };
   }, []);
 
   // Use archived snapshot if archived, otherwise active state
   const displayedEmployees = useMemo(() => {
+    let rawList: Employee[] = [];
     if (!isAlaa) {
       if (isCurrentMonthArchived && archivedMonthData) {
-        return archivedMonthData.employees;
+        rawList = archivedMonthData.employees;
       } else if (archives.length > 0) {
         // Fallback to latest archived if current selected is not archived
         const sorted = [...archives].sort((a, b) =>
           (b.monthIso || "").localeCompare(a.monthIso || ""),
         );
-        return sorted[0].employees;
+        rawList = sorted[0].employees;
       }
-      return [];
+    } else {
+      rawList = isCurrentMonthArchived && archivedMonthData
+        ? archivedMonthData.employees
+        : employees;
     }
-    return isCurrentMonthArchived && archivedMonthData
-      ? archivedMonthData.employees
-      : employees;
+
+    // Dynamic normalization of branch names
+    return rawList.map(emp => {
+      if (!emp || !emp.branch) return emp;
+      const b = emp.branch.trim();
+      let normalized = emp.branch;
+      if (b === "الادارة" || b === "الإدارة" || b === "الاداره" || b === "الإداره") {
+        normalized = "الادارة المركزيه";
+      } else if (b === "فرع المعبأه") {
+        normalized = "فرع المعباه";
+      }
+      if (normalized !== emp.branch) {
+        return { ...emp, branch: normalized };
+      }
+      return emp;
+    });
   }, [isAlaa, isCurrentMonthArchived, archivedMonthData, employees, archives]);
 
   // Derive unique branches
   const branches = useMemo(() => {
     const set = new Set<string>();
     set.add("الكل");
+    ["الادارة المركزيه", "المركز الرئيسي", "فرع الدمام", "فرع الاحساء", "فرع المعباه"].forEach(b => set.add(b));
     displayedEmployees.forEach((emp) => {
       if (emp.branch) set.add(emp.branch);
     });
@@ -895,19 +1095,25 @@ export default function PayrollApp({
     });
 
     const branchOrder = [
-      "الادارة",
+      "الادارة المركزيه",
       "المركز الرئيسي",
       "فرع الدمام",
       "فرع الاحساء",
       "فرع المعباه",
+      "فرع المعبأه",
     ];
 
     return [...list].sort((a, b) => {
-      const idxA = a.branch ? branchOrder.indexOf(a.branch.trim()) : -1;
-      const idxB = b.branch ? branchOrder.indexOf(b.branch.trim()) : -1;
+      const branchA = a.branch ? a.branch.trim() : '';
+      const branchB = b.branch ? b.branch.trim() : '';
+      const idxA = branchOrder.indexOf(branchA);
+      const idxB = branchOrder.indexOf(branchB);
       const valA = idxA !== -1 ? idxA : 999;
       const valB = idxB !== -1 ? idxB : 999;
-      return valA - valB;
+      if (valA !== valB) {
+        return valA - valB;
+      }
+      return Number(a.id) - Number(b.id);
     });
   }, [displayedEmployees, selectedBranch, searchTerm, activeShowInactive]);
 
@@ -920,12 +1126,21 @@ export default function PayrollApp({
   const handleAddEmployeeClick = () => {
     const validIds = employees.map((i) => Number(i.id)).filter((id) => !isNaN(id) && isFinite(id));
     const newId = validIds.length > 0 ? Math.max(...validIds) + 1 : 1;
-    const newCode = Math.floor(1000 + Math.random() * 9000).toString();
+    const existingCodes = new Set(
+      employees
+        .map((emp) => emp.code ? emp.code.trim() : "")
+        .filter((code) => code !== "")
+    );
+    let nextCodeInt = 1188;
+    while (existingCodes.has(nextCodeInt.toString())) {
+      nextCodeInt++;
+    }
+    const nextCode = nextCodeInt.toString();
     const defaultBranch =
-      branches.find((b) => b !== "الكل" && b !== "All") || "الادارة";
+      selectedBranch !== "الكل" ? selectedBranch : (branches.find((b) => b !== "الكل" && b !== "All") || "الادارة") === "الادارة" ? "الادارة المركزيه" : (branches.find((b) => b !== "الكل" && b !== "All") || "الادارة المركزيه");
     const newEmp: Employee = {
       id: newId,
-      code: "",
+      code: nextCode,
       name: "",
       nameEn: "",
       nationalId: "",
@@ -2403,6 +2618,7 @@ export default function PayrollApp({
         employeeToEdit={employeeToEdit}
         branches={branches.filter((b) => b !== "الكل")}
         insurancePercentage={insurancePercentage}
+        employees={employees}
         onNext={
           employeeToEdit &&
           filteredEmployees.findIndex((e) => e.id === employeeToEdit.id) <

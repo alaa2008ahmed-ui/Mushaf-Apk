@@ -108,9 +108,9 @@ export default function PrintEmployeeStatement({ employee }: Props) {
           <table className="w-full border-collapse border-2 border-black text-center font-bold text-sm bg-gray-100">
             <tbody>
               <tr className="h-9 print:h-8">
-                <td className="border border-black p-1 w-[20%]">صافي المبلغ المستحق</td>
+                <td className="border border-black p-1 w-[12%] whitespace-nowrap">المبلغ المستحق</td>
                 <td className="border border-black p-1 w-[15%] font-mono text-base">{formatCurrency((employee.vacationAllowance || 0) + (employee.ticketAllowance || 0) + (employee.dueEndOfService || 0))}</td>
-                <td className="border border-black p-1 border-4 border-slate-800 bg-white w-[65%]" style={{ borderStyle: 'double' }}>
+                <td className="border border-black p-1 border-4 border-slate-800 bg-white w-[73%]" style={{ borderStyle: 'double' }}>
                   <div className="flex flex-col justify-center gap-0.5 text-center py-0.5">
                     <div dir="rtl" className="text-slate-900 font-bold text-[11px] px-1 leading-tight">{tafqeetArabic((employee.vacationAllowance || 0) + (employee.ticketAllowance || 0) + (employee.dueEndOfService || 0))}</div>
                     <div className="border-t border-slate-300 w-4/5 mx-auto my-0.5"></div>

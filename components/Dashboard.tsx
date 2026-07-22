@@ -1136,8 +1136,8 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats, 
                             className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] flex flex-col"
                         >
                             <div className="p-4 border-b">
-                                <h3 className="text-xl font-black text-slate-800 text-center">إدارة الصفحات</h3>
-                                <p className="text-xs text-slate-500 text-center mt-1">تفعيل أو تعطيل ظهور الصفحات لجميع المستخدمين</p>
+                                <h3 className="text-xl font-black text-slate-800 text-center">Manage Pages</h3>
+                                <p className="text-xs text-slate-500 text-center mt-1">Enable or disable pages for all users</p>
                             </div>
                             <div className="p-4 overflow-y-auto flex-1 space-y-2" dir="ltr">
                                 {[
@@ -1147,30 +1147,9 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats, 
                                 ].map(pageName => {
                                     const disabledList = appSettings?.globallyDisabledPages || [];
                                     const isEnabled = !disabledList.includes(pageName);
-                                    const translatedName = (() => {
-                                        switch (pageName) {
-                                            case 'Dashboard': return 'لوحة القيادة - Dashboard';
-                                            case 'Daily Sales': return 'المبيعات اليومية - Daily Sales';
-                                            case 'Monthly Sales': return 'المبيعات الشهرية - Monthly Sales';
-                                            case 'Annual Sales': return 'المبيعات السنوية - Annual Sales';
-                                            case 'Account Statement': return 'كشف الحساب - Account Statement';
-                                            case 'Invoices Tracking': return 'تتبع الفواتير - Invoices Tracking';
-                                            case 'PO': return 'أوامر الشراء - PO';
-                                            case 'Orders': return 'الطلبات - Orders';
-                                            case 'Order Approvals': return 'موافقات الطلبات - Order Approvals';
-                                            case 'Driver Work Log': return 'سجل عمل السائقين - Driver Work Log';
-                                            case 'Drivers Timesheet': return 'حضور وانصراف السائقين - Drivers Timesheet';
-                                            case 'Time Sheet': return 'الحضور والانصراف - Time Sheet';
-                                            case 'Payroll': return 'الرواتب - Payroll';
-                                            case 'Allowances For Employees': return 'مخصصات الموظفين - Allowances For Employees';
-                                            case 'Customers': return 'العملاء - Customers';
-                                            case 'Settings': return 'الإعدادات - Settings';
-                                            default: return pageName;
-                                        }
-                                    })();
                                     return (
                                         <div key={pageName} className="flex justify-between items-center p-3 border rounded-xl hover:bg-slate-50">
-                                            <span className="font-bold text-slate-700">{translatedName}</span>
+                                            <span className="font-bold text-slate-700">{pageName}</span>
                                             <button
                                                 onClick={() => {
                                                     if (!onUpdateSettings || !appSettings) return;
@@ -1195,7 +1174,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats, 
                                     onClick={() => setShowPagesConfig(false)}
                                     className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold"
                                 >
-                                    إغلاق
+                                    Close
                                 </button>
                             </div>
                         </motion.div>

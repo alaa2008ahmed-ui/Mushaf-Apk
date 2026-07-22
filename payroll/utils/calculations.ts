@@ -41,8 +41,8 @@ export function getEmployeeFieldPhase(emp: Employee, field: string): '1' | '2' {
   ].includes(field);
 
   if (isDeduction) {
-    // For Administrators (الادارة): All deductions applied in Phase 1 (except insurance which is already Phase 1)
-    if (emp.branch === 'الادارة') {
+    // For Administrators (الادارة المركزيه): All deductions applied in Phase 1 (except insurance which is already Phase 1)
+    if (emp.branch === 'الادارة' || emp.branch === 'الادارة المركزيه') {
       if (field !== 'insuranceDeduction') {
         return '1';
       }

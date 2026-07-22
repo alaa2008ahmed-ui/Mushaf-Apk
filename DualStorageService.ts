@@ -168,6 +168,9 @@ class DualStorageService {
       }
     } catch (e: any) {
       console.warn(`DualStorage: LocalStorage limit reached or error for key ${key}:`, e);
+      if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+          window.dispatchEvent(new Event('storage-quota-exceeded'));
+      }
     }
   }
 
@@ -717,7 +720,12 @@ class DualStorageService {
     return saved ? JSON.parse(saved) : [];
   }
 
-  private async syncPendingChanges() {
+  public async forceSync() {
+    console.log('Force sync triggered by user.');
+    await this.syncPendingChanges();
+  }
+
+  public async syncPendingChanges() {
     const queue = this.getPendingQueue();
     if (queue.length === 0) return;
 
@@ -1110,6 +1118,50 @@ class DualStorageService {
           console.error(`DualStorage: Failed to sync import for ${collectionName}`, error);
         }
       }
+    }
+  }
+  
+  /**
+   * Cleans up old invoices from local storage to free up quota.
+   * Keeps only invoices from the current month and the previous month.
+   */
+  public cleanOldInvoicesLocalCache() {
+    const localInvoices = this.getLocalData(COLLECTIONS.SALES_INVOICES);
+    if (!localInvoices || localInvoices.length === 0) return;
+
+    const now = new Date();
+    // Start of current month
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Start of previous month
+    const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    
+    const cutoffDateStr = startOfPreviousMonth.toISOString();
+
+    const filteredInvoices = localInvoices.filter((inv: any) => {
+      return inv.date >= cutoffDateStr;
+    });
+
+    const removedCount = localInvoices.length - filteredInvoices.length;
+
+    if (removedCount > 0) {
+      // Direct set to avoid safeSetLocalItem recursive triggers if it was already failing
+      try {
+        const jsonStr = JSON.stringify(filteredInvoices);
+        localStorage.setItem(`fs_${COLLECTIONS.SALES_INVOICES}`, jsonStr);
+        this.localCache[COLLECTIONS.SALES_INVOICES] = { data: filteredInvoices, json: jsonStr };
+        if (this.onDataUpdateCallback) {
+          this.onDataUpdateCallback(COLLECTIONS.SALES_INVOICES, filteredInvoices);
+        }
+        console.log(`DualStorage: Cleaned up ${removedCount} old invoices from local cache.`);
+        // Dispatch success event to hide the button
+        window.dispatchEvent(new Event('storage-quota-resolved'));
+      } catch (e) {
+        console.error("Failed to clean up old invoices:", e);
+      }
+    } else {
+       // Even if no invoices were removed, dispatch resolved so the button goes away if it was a false alarm or fixed
+       window.dispatchEvent(new Event('storage-quota-resolved'));
     }
   }
 }

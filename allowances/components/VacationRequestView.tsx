@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CalculatedEmployee } from '../types';
-import { calculateDateDifferenceInDays, formatNumber, triggerSafePrint, formatDateGB } from '../utils';
+import { calculateDateDifferenceInDays, formatNumber, triggerSafePrint, formatDateGB, calculateEmployeeAllowances } from '../utils';
 import SearchableEmployeeSelect from './SearchableEmployeeSelect';
 import { Printer, Archive } from 'lucide-react';
 import { useCompanySettings } from '../utils/companySettings';
@@ -21,20 +21,23 @@ export default function VacationRequestView({ employees, onArchive, archivedData
   const [requestDate, setRequestDate] = useState<string>(todayStr);
   const [customStartDate, setCustomStartDate] = useState<string>(todayStr);
   const [customReturnDate, setCustomReturnDate] = useState<string>(todayStr);
-  const emp = archivedData ? archivedData.emp : employees.find(e => e.id === selectedEmpId);
+  const baseEmp = archivedData ? archivedData.emp : employees.find(e => e.id === selectedEmpId);
+  const emp = archivedData 
+    ? archivedData.emp 
+    : (baseEmp ? calculateEmployeeAllowances({ ...baseEmp, calculationDate: requestDate }) : undefined);
 
   useEffect(() => {
     if (archivedData) {
       if (archivedData.requestDate !== undefined) setRequestDate(archivedData.requestDate);
       if (archivedData.customStartDate !== undefined) setCustomStartDate(archivedData.customStartDate);
       if (archivedData.customReturnDate !== undefined) setCustomReturnDate(archivedData.customReturnDate);
-    } else if (emp) {
+    } else if (selectedEmpId) {
       const t = new Date().toISOString().split('T')[0];
       setRequestDate(t);
       setCustomStartDate(t);
       setCustomReturnDate(t);
     }
-  }, [emp, archivedData]);
+  }, [selectedEmpId, archivedData]);
 
   const requestedLeaveDays = calculateDateDifferenceInDays(customStartDate, customReturnDate);
 
@@ -61,6 +64,10 @@ export default function VacationRequestView({ employees, onArchive, archivedData
       "January", "February", "March", "April", "May", "June",
       "July", "August", "September", "October", "November", "December"
     ];
+    const monthNamesAr = [
+      "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+      "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+    ];
     for (let i = 0; i < 4; i++) {
       const d = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, 1);
       const year = d.getFullYear();
@@ -81,7 +88,7 @@ export default function VacationRequestView({ employees, onArchive, archivedData
       months.push({
         year,
         month,
-        title: `${monthNames[month]}/${year}`,
+        title: `${monthNames[month]} - ${monthNamesAr[month]} / ${year}`,
         weeks
       });
     }
