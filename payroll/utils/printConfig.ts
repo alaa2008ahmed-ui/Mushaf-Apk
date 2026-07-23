@@ -117,7 +117,7 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
   return `
     @page { 
       size: A4 landscape; 
-      margin-top: 0.6cm !important; 
+      margin-top: 1.0cm !important; 
       margin-bottom: 0.6cm !important; 
       margin-right: 0.5cm !important; 
       margin-left: 0.5cm !important; 
@@ -129,7 +129,7 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
       font-family: 'Cairo', system-ui, -apple-system, sans-serif !important; 
       margin: 0 !important; 
       padding: 0 !important;
-      zoom: ${config.zoom} !important;
+      zoom: calc(${config.zoom} * 0.96) !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
@@ -212,7 +212,7 @@ export function generateSmartPrintCSS(count: number, isAllBranches?: boolean): s
     }
     .payroll-wrapper tfoot td, .payroll-wrapper tfoot td *, tfoot td {
       height: ${tfootRowHeight} !important;
-      font-size: 12pt !important;
+      font-size: 11pt !important;
     }
     th.print-col-total, td.print-col-total {
       color: #dc2626 !important;
@@ -273,7 +273,7 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
     @media print {
       @page { 
         size: A4 landscape; 
-        margin-top: 0.6cm !important; 
+        margin-top: 1.0cm !important; 
         margin-bottom: 0.6cm !important; 
         margin-right: 0.5cm !important; 
         margin-left: 0.5cm !important; 
@@ -285,7 +285,7 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
         font-family: 'Cairo', system-ui, -apple-system, sans-serif !important; 
         margin: 0 !important; 
         padding: 0 !important;
-        zoom: ${config.zoom} !important;
+        zoom: calc(${config.zoom} * 0.96) !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
@@ -371,7 +371,7 @@ export function generateMediaPrintCSS(count: number, isAllBranches?: boolean): s
       #printable-payroll-section .payroll-wrapper tfoot td *,
       #printable-payroll-section tfoot td {
         height: ${tfootRowHeight} !important;
-        font-size: 12pt !important;
+        font-size: 11pt !important;
       }
       #printable-payroll-section th.print-col-total, #printable-payroll-section td.print-col-total {
         color: #dc2626 !important;

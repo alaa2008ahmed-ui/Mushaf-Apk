@@ -269,14 +269,14 @@ export const PrintHeader: React.FC<PrintHeaderProps> = ({ theme, companyNameAr, 
     case 'swc':
     default:
       return (
-        <div className="flex justify-between items-center border-b-[3px] border-black pb-2 mb-2 print:pb-0.5 print:mb-1">
+        <div className="flex justify-between items-center border-b-[3px] border-black pb-2 mb-2 print:pb-0 print:mb-1">
           <div className="flex justify-start items-center pr-[2cm] print:pr-[2cm]">
             <img src="/swc-logo.jpg" alt="SWC Logo" className="max-h-20 print:max-h-16 object-contain" onError={(e) => { e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNmM2Y0ZjYiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2FjYWFjYSIgZHk9Ii4zZW0iPkxvZ288L3RleHQ+PC9zdmc+' }} />
           </div>
           <div className="text-center font-bold flex-1 px-2">
-            <h1 className="text-2xl print:text-lg mb-1 print:mb-0.5">{companyNameAr}</h1>
-            <h2 className="text-xl print:text-xs mb-2 print:mb-1 uppercase">{companyNameEn}</h2>
-            <h3 className="text-2xl print:text-lg font-black">{docTitle}</h3>
+            <h3 className="text-2xl print:text-lg font-black m-0 leading-none pb-1">{docTitle}</h3>
+            <h1 className="text-2xl print:text-lg m-0 leading-none">{companyNameAr} - {companyNameEn}</h1>
+            {customCalcDate && <div className="text-xs font-bold text-slate-800 m-0 leading-none pt-1">تاريخ الاحتساب: {formatDateGB(customCalcDate)}</div>}
           </div>
           <div className="flex justify-end items-center pl-[2cm] print:pl-[2cm]">
             <img src="/adba-logo.jpg" alt="Adba Water" className="max-h-32 print:max-h-28 object-contain" onError={(e) => { e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNmM2Y0ZjYiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSIxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2FjYWFjYSIgZHk9Ii4zZW0iPkxvZ288L3RleHQ+PC9zdmc+' }} />

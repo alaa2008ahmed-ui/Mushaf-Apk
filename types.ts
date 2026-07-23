@@ -220,6 +220,9 @@ export interface User {
     role: 'admin' | 'user';
     isActive?: boolean;
     permissions: UserPermissions;
+    totpSecret?: string;
+    totpEnabled?: boolean;
+    hideBeforeTax?: boolean;
 }
 
 export interface Customer {

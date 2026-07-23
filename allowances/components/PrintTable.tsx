@@ -18,19 +18,18 @@ export default function PrintTable({ employees, branchName, calcDate }: Props) {
 
   return (
     <div id="pdf-table-container" className="hidden print:block w-full bg-white text-black print-landscape p-0" dir="rtl">
+      
+      {/* Title only visible in Print or above table */}
+      <div className="text-center mb-2 hidden print:block">
+        <h2 className="text-sm sm:text-base print:text-[13.5pt] font-extrabold inline-block text-black m-0" style={{ lineHeight: '1.4' }}>
+          <div className="mb-1">{branchName === 'الكل' || !branchName ? 'مخصصات نهاية الخدمة' : `مخصصات نهاية الخدمة - ${branchName}`}</div>
+          <div className="mb-1">{companyNameAr} - {companyNameEn}</div>
+          <div className="text-[11px] print:text-xs font-bold text-slate-800">تاريخ الاحتساب: {displayCalcDate}</div>
+        </h2>
+      </div>
+
       <table className="w-full text-right border-collapse text-[8px] print-table">
         <thead>
-          <tr className="bg-white border-none">
-            <th colSpan={16} className="print-header-th p-0 font-normal text-center bg-white border-none pt-2 pb-3">
-              <h1 className="text-xl font-bold mb-1 text-black">
-                {branchName === 'الكل' || !branchName ? 'مخصصات نهاية الخدمة' : `مخصصات نهاية الخدمة - ${branchName}`}
-              </h1>
-              <h2 className="text-lg font-bold text-black">{companyNameAr} - {companyNameEn}</h2>
-
-              <p className="mt-1.5 text-xs font-bold" style={{ color: '#1e293b' }}>تاريخ الاحتساب: {displayCalcDate}</p>
-              <div className="border-b-2 border-black mt-3 w-full"></div>
-            </th>
-          </tr>
           <tr className="border-2 border-black text-[8px]" style={{ backgroundColor: '#f1f5f9' }}>
             <th className="p-1 border border-black align-middle font-bold text-center w-[3%]">م</th>
             <th className="p-1 border border-black align-middle font-bold text-right whitespace-nowrap">اسم الموظف</th>

@@ -497,12 +497,11 @@ export default function App({ currentUser }: { currentUser: User }) {
           let smartCSS = generateMediaPrintCSS(count, isAllBranches);
           smartCSS = smartCSS.replace(/#printable-payroll-section/g, '#pdf-table-container');
           
-          smartCSS = smartCSS.replace(/margin-top:\s*[^!]+!important;/g, 'margin-top: 1cm !important;');
+          // removed margin hack
           
           // Reduce zoom slightly to ensure it stays on one page despite the 1cm top margin
-          smartCSS = smartCSS.replace(/zoom:\s*([0-9.]+)\s*!important;/, function(match, p1) {
-            return 'zoom: ' + (parseFloat(p1) * 0.96) + ' !important;';
-          });
+          // removed zoom hack
+            // return removed
           
           smartCSS += `
             @media print {

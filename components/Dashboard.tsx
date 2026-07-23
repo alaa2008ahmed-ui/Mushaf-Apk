@@ -1,6 +1,7 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Invoice, Branch } from '../types';
+import { Invoice, Branch, User } from '../types';
+import { dualStorage, COLLECTIONS } from '../DualStorageService';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
     AreaChart, 
@@ -206,10 +207,18 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats, 
     } | null>(null);
 
     const currentUserStr = localStorage.getItem('currentUser');
-    const currentUsername = currentUserStr ? JSON.parse(currentUserStr).username : 'default';
+    const currentUserObj: User | null = currentUserStr ? JSON.parse(currentUserStr) : null;
+    const currentUsername = currentUserObj ? currentUserObj.username : 'default';
 
     const [hideTax, setHideTax] = useState(() => {
-        return localStorage.getItem(`hideBeforeTax_${currentUsername}`) === 'true';
+        if (currentUserObj && currentUserObj.hideBeforeTax !== undefined) {
+            return currentUserObj.hideBeforeTax;
+        }
+        const localVal = localStorage.getItem(`hideBeforeTax_${currentUsername}`);
+        if (localVal !== null) {
+            return localVal === 'true';
+        }
+        return true; // Default to true (hidden) when starting for the first time
     });
 
     const pressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -243,14 +252,25 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, branches, globalStats, 
         }
     };
 
-    const toggleBeforeTax = () => {
+    const toggleBeforeTax = async () => {
         const newVal = !hideTax;
         setHideTax(newVal);
         localStorage.setItem(`hideBeforeTax_${currentUsername}`, newVal.toString());
+        
         if (newVal) {
             document.body.classList.add('hide-before-tax');
         } else {
             document.body.classList.remove('hide-before-tax');
+        }
+
+        if (currentUserObj) {
+            try {
+                const updatedUser = { ...currentUserObj, hideBeforeTax: newVal };
+                localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+                await dualStorage.save(COLLECTIONS.USERS, updatedUser.id, updatedUser);
+            } catch (error) {
+                console.error("Failed to save hideBeforeTax preference to server", error);
+            }
         }
     };
 

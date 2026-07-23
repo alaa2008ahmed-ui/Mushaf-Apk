@@ -1,12 +1,16 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { MapPin, AlertTriangle, ShieldCheck, Lock, Unlock, Download, Upload, Users, Box, Truck, Car, Calendar, Hash, Database, Activity, ArrowLeft, Search, ClipboardList, Bell, Smartphone, LayoutDashboard, CheckSquare, Wallet, FilePlus, FileText, Clock, ShoppingCart, Settings as SettingsIcon } from 'lucide-react';
+import { MapPin, AlertTriangle, ShieldCheck, Lock, Unlock, Download, Upload, Users, Box, Truck, Car, Calendar, Hash, Database, Activity, ArrowLeft, Search, ClipboardList, Bell, Smartphone, LayoutDashboard, CheckSquare, Wallet, FilePlus, FileText, Clock, ShoppingCart, Settings as SettingsIcon, QrCode } from 'lucide-react';
 import CryptoJS from 'crypto-js';
 import LZString from 'lz-string';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { OTP } from 'otplib';
+import { QRCodeSVG } from 'qrcode.react';
 import { Item, Employee, Branch, User, UserPermissions, AppSettings, Driver, Vehicle, Invoice, Customer } from '../types';
+
+const authenticator = new OTP({ strategy: 'totp' });
 
 type SettingsCategory = 'users' | 'branches' | 'items' | 'drivers' | 'vehicles' | 'restrictions' | 'data' | null;
 import { dualStorage, COLLECTIONS } from '../DualStorageService';
@@ -328,12 +332,19 @@ const Settings: React.FC<SettingsProps> = ({
             return;
         }
 
+        let newTotpSecret = tempUser.totpSecret;
+        if (tempUser.totpEnabled && !newTotpSecret) {
+            newTotpSecret = authenticator.generateSecret();
+        }
+
         const userData: User = {
             id: tempUser.id || `u-${Date.now()}`,
             username: editUsername,
             password: editPassword,
             role: tempUser.role || 'user',
             isActive: tempUser.isActive !== false, // Defaults to true
+            totpEnabled: tempUser.totpEnabled,
+            totpSecret: newTotpSecret,
             permissions: {
                 ...tempUser.permissions,
                 allowedPages: tempUser.permissions?.allowedPages || ['Daily Sales'],
@@ -1312,6 +1323,11 @@ const Settings: React.FC<SettingsProps> = ({
                                                                 {user.username}
                                                                 {user.isActive === false && (
                                                                     <span className="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Inactive</span>
+                                                                )}
+                                                                {user.totpEnabled && (
+                                                                    <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1" title="2FA Google Authenticator Active">
+                                                                        <QrCode className="w-3 h-3" /> 2FA
+                                                                    </span>
                                                                 )}
                                                             </p>
                                                             <p className="text-xs text-gray-500 uppercase">{user.role}</p>

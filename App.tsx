@@ -753,12 +753,42 @@ const App: React.FC = () => {
 
     const [currentUser, setCurrentUser] = useState<User | null>(() => {
         const saved = localStorage.getItem('currentUser');
-        return saved ? JSON.parse(saved) : null;
+        if (saved) {
+            try {
+                const user = JSON.parse(saved);
+                if (user.totpEnabled) {
+                    const lastLoginStr = localStorage.getItem(`lastLogin_${user.username}`);
+                    if (lastLoginStr) {
+                        const lastLogin = parseInt(lastLoginStr, 10);
+                        const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+                        if (Date.now() - lastLogin > sevenDaysInMs) {
+                            localStorage.removeItem('currentUser');
+                            return null;
+                        }
+                    } else {
+                        localStorage.removeItem('currentUser');
+                        return null;
+                    }
+                }
+                return user;
+            } catch (e) {
+                return null;
+            }
+        }
+        return null;
     });
 
     useEffect(() => {
         if (currentUser) {
-            const hidden = localStorage.getItem(`hideBeforeTax_${currentUser.username}`) === 'true';
+            let hidden = true; // default to true
+            if (currentUser.hideBeforeTax !== undefined) {
+                hidden = currentUser.hideBeforeTax;
+            } else {
+                const localVal = localStorage.getItem(`hideBeforeTax_${currentUser.username}`);
+                if (localVal !== null) {
+                    hidden = localVal === 'true';
+                }
+            }
             if (hidden) {
                 document.body.classList.add('hide-before-tax');
             } else {
@@ -815,7 +845,8 @@ const App: React.FC = () => {
                     latestUser.isActive !== currentUser.isActive || 
                     latestUser.password !== currentUser.password ||
                     latestUser.role !== currentUser.role ||
-                    latestUser.username !== currentUser.username;
+                    latestUser.username !== currentUser.username ||
+                    latestUser.hideBeforeTax !== currentUser.hideBeforeTax;
 
                 if (permsChanged || detailsChanged) {
                     console.log("Real-time Sync: Updating currentUser permissions/details instantly.");
@@ -970,6 +1001,7 @@ const App: React.FC = () => {
     const handleLogin = (user: User) => {
         setCurrentUser(user);
         localStorage.setItem('currentUser', JSON.stringify(user));
+        localStorage.setItem(`lastLogin_${user.username}`, Date.now().toString());
         setHasShownLoginPOAlert(false);
         const allowedPages = Array.isArray(user.permissions?.allowedPages) ? user.permissions.allowedPages : [];
         if (allowedPages.includes('Dashboard')) {

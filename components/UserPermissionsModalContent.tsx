@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
     MapPin, 
     AlertTriangle, 
@@ -15,9 +15,14 @@ import {
     FileText, 
     Settings as SettingsIcon, 
     ShieldCheck,
-    Truck 
+    Truck,
+    QrCode
 } from 'lucide-react';
+import { OTP } from 'otplib';
+import { QRCodeSVG } from 'qrcode.react';
 import { Branch, User, Customer, Item, AppSettings } from '../types';
+
+const authenticator = new OTP({ strategy: 'totp' });
 
 interface UserPermissionsModalContentProps {
     tempUser: Partial<User>;
@@ -64,7 +69,8 @@ export const UserPermissionsModalContent: React.FC<UserPermissionsModalContentPr
     togglePagePermission,
     toggleBranchPermission
 }) => {
-    
+    const [showQR, setShowQR] = useState(false);
+
     const systemPages = [
         {
             name: 'Dashboard',
@@ -307,6 +313,69 @@ export const UserPermissionsModalContent: React.FC<UserPermissionsModalContentPr
                                 className="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 bg-white"
                                 placeholder={false ? 'أدخل كلمة المرور' : 'Enter password'}
                             />
+                        </div>
+                        <div className="mt-2">
+                            <label className="flex items-center gap-2 cursor-pointer p-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+                                <input 
+                                    type="checkbox"
+                                    checked={tempUser.totpEnabled || false}
+                                    onChange={(e) => {
+                                        const isEnabled = e.target.checked;
+                                        setTempUser({ 
+                                            ...tempUser, 
+                                            totpEnabled: isEnabled,
+                                            totpSecret: isEnabled && !tempUser.totpSecret ? authenticator.generateSecret() : tempUser.totpSecret
+                                        });
+                                        if (isEnabled && !tempUser.totpSecret) {
+                                            setShowQR(true); // Auto show QR for newly generated
+                                        }
+                                    }}
+                                    className="w-4 h-4 text-blue-600 rounded"
+                                />
+                                <span className="text-sm font-bold text-slate-700">Enable Google Authenticator (2FA)</span>
+                            </label>
+                            {tempUser.totpEnabled && tempUser.totpSecret && (
+                                <div className="mt-2 text-xs text-green-700 bg-green-50 p-2 rounded border border-green-200">
+                                    <div className="flex items-center justify-between">
+                                        <span>✓ 2FA is currently active for this user.</span>
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => setShowQR(!showQR)}
+                                                className="underline text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                            >
+                                                <QrCode className="w-3 h-3" />
+                                                {showQR ? 'Hide QR' : 'Show QR'}
+                                            </button>
+                                            <button 
+                                                onClick={() => {
+                                                    setTempUser({ ...tempUser, totpSecret: undefined });
+                                                    setShowQR(false);
+                                                }}
+                                                className="underline text-red-600 hover:text-red-800"
+                                            >
+                                                Reset Secret
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {showQR && (
+                                        <div className="mt-3 p-3 bg-white rounded flex flex-col items-center border border-gray-200">
+                                            <QRCodeSVG 
+                                                value={authenticator.generateURI({ label: tempUser.username || 'User', issuer: 'Daily Sales', secret: tempUser.totpSecret })}
+                                                size={128}
+                                                level="M"
+                                                includeMargin={true}
+                                            />
+                                            <p className="mt-2 text-gray-500 font-mono text-[10px] break-all">{tempUser.totpSecret}</p>
+                                            <p className="mt-1 text-gray-500 text-[10px] text-center">Scan this with Google Authenticator app</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            {tempUser.totpEnabled && !tempUser.totpSecret && (
+                                <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-2 rounded border border-orange-200">
+                                    ⚠️ Needs setup. The secret will be generated when you save.
+                                </div>
+                            )}
                         </div>
                     </div>
 
