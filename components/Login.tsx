@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User } from '../types';
 import { OTP } from 'otplib';
 
@@ -17,6 +17,7 @@ const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
     const [step, setStep] = useState<'login' | 'totp'>('login');
     const [pendingUser, setPendingUser] = useState<User | null>(null);
     const [totpCode, setTotpCode] = useState('');
+    const totpInputRef = useRef<HTMLInputElement>(null);
 
     const handleLoginSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,6 +54,18 @@ const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
             handleTotpSubmit();
         }
     }, [totpCode, step, pendingUser]);
+
+    useEffect(() => {
+        if (step === 'totp') {
+            // Focus with a small timeout to make sure the element is rendered and interactive
+            const timer = setTimeout(() => {
+                if (totpInputRef.current) {
+                    totpInputRef.current.focus();
+                }
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [step]);
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gray-900">
@@ -133,6 +146,7 @@ const Login: React.FC<LoginProps> = ({ users, onLogin }) => {
                                 type="text"
                                 value={totpCode}
                                 onChange={(e) => setTotpCode(e.target.value)}
+                                ref={totpInputRef}
                                 className="w-full border border-gray-300 rounded-lg p-2 sm:p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-center tracking-widest text-lg"
                                 placeholder="000000"
                                 maxLength={6}
