@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Bookmark, ChevronDown, Pause, Home, Share2, Minimize, Maximize } from 'lucide-react';
+import { Menu, Bookmark, ChevronDown, Pause, Home, Share2 } from 'lucide-react';
 import FloatingMenu from './FloatingMenu';
 
 interface QuranFooterProps {
@@ -20,8 +20,6 @@ interface QuranFooterProps {
     handleAutoScrollButtonPointerLeave: () => void;
     autoScrollState: { isActive: boolean; isPaused: boolean; elapsedTime: number };
     onBack: () => void;
-    fitToScreen?: boolean;
-    toggleFitToScreen?: () => void;
 }
 
 const QuranFooter: React.FC<QuranFooterProps> = React.memo(({
@@ -41,9 +39,7 @@ const QuranFooter: React.FC<QuranFooterProps> = React.memo(({
     handleAutoScrollButtonPointerUp,
     handleAutoScrollButtonPointerLeave,
     autoScrollState,
-    onBack,
-    fitToScreen,
-    toggleFitToScreen
+    onBack
 }) => {
     return (
         <footer id="bottom-bar" className={`footer-default flex-none border shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 flex justify-evenly items-center py-1 w-full ${isAnyMenuOpen ? 'pointer-events-none opacity-50' : ''}`} style={getToolbarStyle('bottom-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
@@ -72,19 +68,6 @@ const QuranFooter: React.FC<QuranFooterProps> = React.memo(({
             >
                 <Bookmark size={24} />
             </button>
-            
-            {toggleFitToScreen && (
-                <button 
-                    id="btn-fit-screen" 
-                    onClick={toggleFitToScreen} 
-                    className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1 shadow-sm" 
-                    style={getToolbarStyle('btn-fit-screen', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBorder || currentTheme.btnBg)}
-                    title={fitToScreen ? "إلغاء الضغط" : "ضغط الصفحة لتناسب الشاشة"}
-                >
-                    {fitToScreen ? <Maximize size={24} /> : <Minimize size={24} />}
-                </button>
-            )}
-
             {!hideAutoScrollButton && (
                 <button 
                     id="btn-autoscroll" 
