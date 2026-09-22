@@ -248,7 +248,12 @@ class CommunityService {
   }
 
   public async loginWithGoogleRedirect(): Promise<void> {
-    await signInWithRedirect(auth, googleProvider);
+    try {
+      await signInWithRedirect(auth, googleProvider);
+    } catch (e) {
+      console.error('signInWithRedirect error:', e);
+      throw e;
+    }
   }
 
   public async logoutGoogle(): Promise<void> {
@@ -264,11 +269,15 @@ class CommunityService {
 
     try {
       await signOut(auth);
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Firebase signOut notice:', e);
+    }
+    
+    // Clear stored authenticated user and re-initialize as anonymous guest
     localStorage.removeItem(STORAGE_KEY_USER);
     this.currentUser = null;
-    this.initCurrentUser();
-    window.dispatchEvent(new CustomEvent('community_user_updated'));
+    const freshUser = this.initCurrentUser();
+    window.dispatchEvent(new CustomEvent('community_user_updated', { detail: freshUser }));
   }
 
   private setupPresenceLifecycle() {
@@ -419,6 +428,14 @@ class CommunityService {
             }
           } catch (e) {
             console.warn('onAuthStateChanged profile fetch error:', e);
+          }
+        } else {
+          // Firebase reports signed out
+          if (this.currentUser && this.currentUser.isGoogleAuth) {
+            localStorage.removeItem(STORAGE_KEY_USER);
+            this.currentUser = null;
+            const fresh = this.initCurrentUser();
+            window.dispatchEvent(new CustomEvent('community_user_updated', { detail: fresh }));
           }
         }
       });

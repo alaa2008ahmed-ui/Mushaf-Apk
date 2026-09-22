@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, Globe, Check, Sparkles, ArrowRight, HeartHandshake, Camera, Upload, Trash2, Loader2, Shield, CheckCircle2 } from 'lucide-react';
-import { communityService } from '../../services/communityService';
+import { communityService, CommunityUser } from '../../services/communityService';
 
 interface UsernameModalProps {
   isOpen: boolean;
@@ -40,7 +40,7 @@ const PRESET_AVATARS = [
 ];
 
 const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved, isInitialPrompt = false, onBackToApps }) => {
-  const currentUser = communityService.getCurrentUser();
+  const [currentUser, setCurrentUser] = useState<CommunityUser>(() => communityService.getCurrentUser());
   const [username, setUsername] = useState(currentUser.username || '');
   const [country, setCountry] = useState(currentUser.country || '');
   const [bio, setBio] = useState(currentUser.bio || '');
@@ -48,50 +48,93 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showRedirectOption, setShowRedirectOption] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync state when modal opens or user auth updates
+  React.useEffect(() => {
+    const syncUser = () => {
+      const u = communityService.getCurrentUser();
+      setCurrentUser(u);
+      if (u.isGoogleAuth) {
+        if (u.username) setUsername(u.username);
+        if (u.country) setCountry(u.country);
+        if (u.bio) setBio(u.bio);
+        if (u.avatarUrl) setAvatarUrl(u.avatarUrl);
+      }
+    };
+
+    syncUser();
+    window.addEventListener('community_user_updated', syncUser);
+    return () => window.removeEventListener('community_user_updated', syncUser);
+  }, [isOpen]);
 
   const handleGoogleLogin = async (useRedirect = false) => {
     setIsGoogleLoading(true);
     setError('');
-    try {
-      if (useRedirect) {
+    
+    // Check if we are inside an iframe (like AI studio preview) where redirect is blocked by Google (403)
+    const isIframe = typeof window !== 'undefined' && window.self !== window.top;
+    const shouldRedirect = useRedirect && !isIframe;
+
+    if (shouldRedirect) {
+      setLoadingMessage('جارٍ التوجيه لصفحة Google الرسمية...');
+      try {
         await communityService.loginWithGoogleRedirect();
         return;
+      } catch (err: any) {
+        console.error('Google direct redirect error:', err);
+        setError('تعذر فتح صفحة Google المباشرة. يرجى تجربة خيار النافذة المنبثقة.');
+        setIsGoogleLoading(false);
+        setLoadingMessage('');
       }
+      return;
+    }
+
+    // Popup approach
+    setLoadingMessage('جارٍ فتح نافذة تسجيل Google...');
+    try {
       const user = await communityService.loginWithGoogle(false);
+      setCurrentUser(user);
       setUsername(user.username || '');
       setCountry(user.country || '');
       setBio(user.bio || '');
       if (user.avatarUrl) setAvatarUrl(user.avatarUrl);
-      setShowRedirectOption(false);
       if (onSaved) onSaved();
     } catch (err: any) {
-      console.warn('Google login attempt result:', err);
-      setShowRedirectOption(true);
+      console.warn('Google popup attempt result:', err);
       if (err?.code === 'auth/popup-blocked' || err?.code === 'auth/popup-closed-by-user') {
-        setError('حجب المتصفح نافذة Google المنبثقة أو تم إغلاقها. اضغط على خيار "الدخول عبر صفحة Google المباشرة" أدناه للمتابعة.');
+        setError('حجب المتصفح النافذة المنبثقة أو تم إغلاقها. يمكنك المتابعة بحفظ بياناتك مباشرة بالأسفل.');
+      } else if (err?.code === 'auth/unauthorized-domain') {
+        setError('نطاق التطبيق قيد الاعتماد في Firebase. يمكنك المتابعة وملء بياناتك مباشرة بالأسفل.');
       } else {
-        setError('تعذر إتمام الدخول عبر النافذة المنبثقة. يرجى استخدام زر الدخول المباشر أدناه.');
+        setError('تعذر تسجيل الدخول عبر Google. يمكنك إدخال اسمك وصورتك والمتابعة مباشرة بالأسفل.');
       }
     } finally {
       setIsGoogleLoading(false);
+      setLoadingMessage('');
     }
   };
 
   const handleGoogleLogout = async () => {
     setIsGoogleLoading(true);
+    setLoadingMessage('جارٍ تسجيل الخروج...');
+    setError('');
     try {
       await communityService.logoutGoogle();
-      const updated = communityService.getCurrentUser();
-      setUsername(updated.username || '');
-      setCountry(updated.country || '');
-      setBio(updated.bio || '');
-      setAvatarUrl(updated.avatarUrl || '');
-    } catch (e) {
+      const freshUser = communityService.getCurrentUser();
+      setCurrentUser(freshUser);
+      setUsername('');
+      setCountry('');
+      setBio('');
+      setAvatarUrl('');
+    } catch (e: any) {
+      console.error('Logout error:', e);
+      setError('حدث خطأ أثناء تسجيل الخروج');
     } finally {
       setIsGoogleLoading(false);
+      setLoadingMessage('');
     }
   };
 
@@ -114,11 +157,6 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const curr = communityService.getCurrentUser();
-    if (!curr.isGoogleAuth) {
-      setError('عفواً، يجب تسجيل الدخول باستخدام Google أولاً لبدء التراسل والتواصل.');
-      return;
-    }
     if (!username.trim() || username.trim().length < 2) {
       setError('يرجى كتابة اسم المستخدم أو اللقب المبارك (حرفين على الأقل)');
       return;
@@ -133,11 +171,13 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
     }
 
     setIsSaving(true);
+    setError('');
     try {
       await communityService.saveCurrentUser(username, country, bio, avatarUrl);
       if (onSaved) onSaved();
       onClose();
     } catch (err: any) {
+      console.error('Save profile error:', err);
       setError(err?.message || 'حدث خطأ أثناء الحفظ، يرجى المحاولة مرة أخرى');
     } finally {
       setIsSaving(false);
@@ -186,19 +226,21 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
             </p>
           </div>
 
-          {/* Google One-Click Login Box */}
+          {/* Google Auth Box */}
           <div className="mb-5 p-3.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-2xl">
-            {currentUser.isGoogleAuth ? (
+            {currentUser?.isGoogleAuth ? (
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 overflow-hidden">
-                  <Shield className="text-emerald-500 flex-shrink-0" size={18} />
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center flex-shrink-0">
+                    <Shield size={16} />
+                  </div>
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                      <span>حسابك موثّق مع Google</span>
+                      <span>تم توثيق الحساب مع Google</span>
                       <CheckCircle2 size={13} />
                     </p>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                      {currentUser.email || 'Google Account'}
+                      {currentUser.email || currentUser.username || 'Google Account'}
                     </p>
                   </div>
                 </div>
@@ -206,27 +248,30 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
                   type="button"
                   onClick={handleGoogleLogout}
                   disabled={isGoogleLoading}
-                  className="text-[11px] text-rose-500 hover:bg-rose-500/10 px-2.5 py-1 rounded-xl transition-all font-semibold flex-shrink-0"
+                  className="text-xs text-rose-500 hover:bg-rose-500/10 active:scale-95 px-3 py-1.5 rounded-xl transition-all font-bold flex items-center gap-1 border border-rose-200 dark:border-rose-900/40 flex-shrink-0 bg-white dark:bg-slate-900 shadow-sm"
                 >
-                  خروج
+                  {isGoogleLoading ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                  <span>تسجيل الخروج</span>
                 </button>
               </div>
             ) : (
-              <div className="text-center">
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-center gap-1.5">
+              <div className="space-y-2.5 text-center">
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-center gap-1.5">
                   <Shield size={15} className="text-emerald-500" />
-                  <span>لحفظ حسابك ومنع تكراره عند تغيير الجهاز:</span>
+                  <span>لحفظ حسابك وتوثيقه بشكل رسمي:</span>
                 </p>
+
+                {/* Primary Button: Direct Redirect (Method 2 - 100% Reliable without popups) */}
                 <button
                   type="button"
-                  onClick={() => handleGoogleLogin(false)}
+                  onClick={() => handleGoogleLogin(true)}
                   disabled={isGoogleLoading}
-                  className="w-full py-2.5 px-4 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-emerald-500 text-slate-800 dark:text-white rounded-xl font-bold shadow-sm hover:shadow transition-all flex items-center justify-center gap-2.5 text-xs active:scale-98"
+                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 text-xs active:scale-98"
                 >
                   {isGoogleLoading ? (
-                    <Loader2 size={16} className="animate-spin text-emerald-500" />
+                    <Loader2 size={16} className="animate-spin text-white" />
                   ) : (
-                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
                       <path
                         fill="#4285F4"
                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -245,29 +290,34 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
                       />
                     </svg>
                   )}
-                  <span>تسجيل الدخول الرسمي بحساب Google</span>
+                  <span>تسجيل الدخول الرسمي بحساب Google (مباشر)</span>
                 </button>
 
-                {/* Direct Redirect fallback if browser blocks popups */}
-                {showRedirectOption && (
-                  <div className="mt-2.5 pt-2.5 border-t border-slate-200 dark:border-slate-700/60 text-center">
-                    <button
-                      type="button"
-                      onClick={() => handleGoogleLogin(true)}
-                      disabled={isGoogleLoading}
-                      className="w-full py-2 px-3 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <Globe size={14} />
-                      <span>الدخول عبر صفحة Google المباشرة (بدون نوافذ منبثقة)</span>
-                    </button>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                      ينتقل بك هذا الخيار إلى صفحة Google الرسمية ثم يعود بك فوراً للتطبيق
-                    </p>
-                  </div>
+                {/* Secondary Button: Popup Mode */}
+                <button
+                  type="button"
+                  onClick={() => handleGoogleLogin(false)}
+                  disabled={isGoogleLoading}
+                  className="w-full py-2 px-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-emerald-500 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-[11px] shadow-sm transition-all flex items-center justify-center gap-2"
+                >
+                  <Globe size={13} className="text-slate-400" />
+                  <span>أو الدخول عبر نافذة منبثقة (Popup)</span>
+                </button>
+
+                {loadingMessage && (
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold animate-pulse">
+                    {loadingMessage}
+                  </p>
                 )}
               </div>
             )}
           </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-semibold text-center">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Avatar Upload Section */}
