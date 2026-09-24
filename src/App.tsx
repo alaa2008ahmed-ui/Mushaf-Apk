@@ -3,775 +3,331 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Zap, 
-  User, 
-  Lock, 
-  ArrowRight, 
-  Globe, 
-  Home, 
-  ExternalLink, 
   Settings, 
-  ChevronDown, 
+  X, 
   Check, 
-  BookOpen, 
-  Receipt, 
-  TrendingUp, 
-  Truck, 
-  Maximize2, 
-  Minimize2,
-  X,
-  Menu,
-  LogOut,
-  Calculator,
-  Coins
+  Lock, 
+  Eye, 
+  EyeOff, 
+  KeyRound, 
+  Link as LinkIcon 
 } from 'lucide-react';
 
-const DEFAULT_URLS = {
-  accounting: "https://alaa-accounting-system.vercel.app",
-  miniAccounting: "https://mini-accounting-system-seven.vercel.app/",
-  dailySales: "https://daily-sales-rose.vercel.app/",
-  deliverySales: "https://dilevry-note.vercel.app/",
-  quran: "https://mushaf-ahmed-laila.vercel.app/",
-  fixedassets: "https://fixed-assets-alpha.vercel.app/"
-};
-
-const t = {
-  ar: {
-    portalTitle: "مجموعة تطبيقات علاء",
-    portalSubtitle: "",
-    accounting: "برنامج علاء المحاسبي",
-    accountingDesc: "منظومة متكاملة لإدارة الحسابات العامة، القيود المالية، ومراقبة الميزانية بدقة عالية.",
-    miniAccounting: "نظام المحاسبة المصغر",
-    miniAccountingDesc: "نظام محاسبي مبسط لإدارة الحسابات والقيود والعمليات المالية بكل سهولة.",
-    dailySales: "المبيعات اليومية",
-    dailySalesDesc: "تقرير المبيعات اليومي المباشر لمتابعة حركة الفروع والإيرادات لحظة بلحظة.",
-    deliverySales: "مبيعات الدليفري",
-    deliverySalesDesc: "نظام إدارة مبيعات التوصيل، تتبع الطلبات وحسابات مناديب الدليفري.",
-    quran: "مصحف أحمد وليلى",
-    quranDesc: "المصحف الشريف الميسر للقراءة والتدبر برسم المصحف وتلاوات متعددة.",
-    fixedassets: "الاصول الثابته",
-    fixedassetsDesc: "نظام إدارة واحتساب الاهـلاكات للأصول الثابتة",
-    adminPortal: "بوابة الإدارة",
-    adminLogin: "تسجيل دخول المشرف",
-    username: "اسم المستخدم",
-    password: "كلمة المرور",
-    loginError: "اسم المستخدم أو كلمة المرور غير صحيحة",
-    loginBtn: "دخول",
-    configMode: "تهيئة وإعداد روابط الأنظمة",
-    saveBtn: "حفظ وتحديث الروابط",
-    backBtn: "رجوع",
-    homeBtn: "الرئيسية",
-    fullscreenBtn: "ملء الشاشة",
-    exitFullscreenBtn: "استعادة الواجهة",
-    language: "English",
-    loading: "جارٍ تهيئة الأنظمة والروابط...",
-    successSave: "تم تحديث روابط الأنظمة وحفظها بنجاح!",
-    openNewTab: "فتح في علامة تبويب جديدة",
-    switchApp: "الانتقال السريع",
-    closeBtn: "إغلاق",
-    chooseApp: "اختر النظام المطلوب تشغيله:",
-    activeApp: "التطبيق النشط حالياً:",
-    exitPortal: "العودة",
-    floatingMenuTitle: "التحكم السريع"
-  },
-  en: {
-    portalTitle: "Alaa Applications Suite",
-    portalSubtitle: "",
-    accounting: "Alaa Accounting System",
-    accountingDesc: "An integrated system to manage general ledger, financial entries, and budget control.",
-    miniAccounting: "Mini Accounting system",
-    miniAccountingDesc: "A simplified accounting system to manage ledger, entries, and financial balances.",
-    dailySales: "Daily Sales",
-    dailySalesDesc: "Direct daily sales report to monitor branches' movements and revenues in real-time.",
-    deliverySales: "Delivery Note",
-    deliverySalesDesc: "System for managing delivery sales, tracking orders, and delivery agents' accounts.",
-    quran: "Mushaf Ahmed & Laila",
-    quranDesc: "The Holy Quran for reading, listening, and contemplation with multiple recitations.",
-    fixedassets: "Fixed assets",
-    fixedassetsDesc: "Manage fixed assets and depreciation rules",
-    adminPortal: "Admin Portal",
-    adminLogin: "Administrator Login",
-    username: "Username",
-    password: "Password",
-    loginError: "Incorrect username or password",
-    loginBtn: "Login",
-    configMode: "Configure System URLs",
-    saveBtn: "Save & Update URLs",
-    backBtn: "Back",
-    homeBtn: "Home",
-    fullscreenBtn: "Fullscreen",
-    exitFullscreenBtn: "Exit Fullscreen",
-    language: "العربية",
-    loading: "Initializing systems and links...",
-    successSave: "System links updated and saved successfully!",
-    openNewTab: "Open in new tab",
-    switchApp: "Quick Switch",
-    closeBtn: "Close",
-    chooseApp: "Choose system to launch:",
-    activeApp: "Currently active app:",
-    exitPortal: "Return",
-    floatingMenuTitle: "Quick Control"
-  }
-};
+const DEFAULT_URL = "https://daily-sales-rose.vercel.app/";
+const SECRET_PASSCODE = "0120301012";
+const STORAGE_KEY = "daily_sales_custom_url";
 
 export default function App() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [lang, setLang] = useState<'ar' | 'en'>('en');
-  
-  // URLs configuration
-  const [urls, setUrls] = useState({
-    accounting: DEFAULT_URLS.accounting,
-    miniAccounting: DEFAULT_URLS.miniAccounting,
-    dailySales: DEFAULT_URLS.dailySales,
-    deliverySales: DEFAULT_URLS.deliverySales,
-    quran: DEFAULT_URLS.quran,
-    fixedassets: DEFAULT_URLS.fixedassets,
-  });
+  const [url, setUrl] = useState<string>(DEFAULT_URL);
+  const [editUrl, setEditUrl] = useState<string>(DEFAULT_URL);
+  const [iframeKey, setIframeKey] = useState<number>(0);
 
-  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
-  
-  // Editing state
-  const [editUrls, setEditUrls] = useState({ ...urls });
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  // 3-second icon visibility state
+  const [showConfigIcon, setShowConfigIcon] = useState<boolean>(true);
 
-  // Layout controls
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showQuickSwitcher, setShowQuickSwitcher] = useState(false);
-  const [showFloatingMenu, setShowFloatingMenu] = useState(false);
-  const [menuAlign, setMenuAlign] = useState<'left' | 'right'>('right');
-  const [menuValign, setMenuValign] = useState<'top' | 'bottom'>('bottom');
-  const [loadedApps, setLoadedApps] = useState<Record<string, boolean>>({});
-  const dragAreaRef = React.useRef<HTMLDivElement>(null);
+  // Settings Modal state
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [passcode, setPasscode] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isPasscodeAuthenticated, setIsPasscodeAuthenticated] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
 
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 1. Load saved URL on mount and start 2-second timer for icon
   useEffect(() => {
-    if (selectedAppId) {
-      setLoadedApps(prev => ({ ...prev, [selectedAppId]: true }));
-    }
-  }, [selectedAppId]);
-
-  useEffect(() => {
-    // Load language preference
-    const savedLang = localStorage.getItem('swc_portal_lang');
-    if (savedLang === 'ar' || savedLang === 'en') {
-      setLang(savedLang);
+    const savedUrl = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('swc_url_dailySales');
+    if (savedUrl && savedUrl.trim()) {
+      setUrl(savedUrl);
+      setEditUrl(savedUrl);
+    } else {
+      setUrl(DEFAULT_URL);
+      setEditUrl(DEFAULT_URL);
     }
 
-    // Load URLs configuration from localStorage
-    const savedAccounting = localStorage.getItem('swc_url_accounting');
-    const savedMiniAccounting = localStorage.getItem('swc_url_miniAccounting');
-    const savedDailySales = localStorage.getItem('swc_url_dailySales');
-    const savedDeliverySales = localStorage.getItem('swc_url_deliverySales');
-    const savedQuran = localStorage.getItem('swc_url_quran');
-    const savedFixedAssets = localStorage.getItem('swc_url_fixedassets') || localStorage.getItem('swc_url_depreciation');
+    // Show icon for exactly 3 seconds then disappear
+    timerRef.current = setTimeout(() => {
+      setShowConfigIcon(false);
+    }, 3000);
 
-    const loadedUrls = {
-      accounting: savedAccounting || DEFAULT_URLS.accounting,
-      miniAccounting: savedMiniAccounting || DEFAULT_URLS.miniAccounting,
-      dailySales: savedDailySales || DEFAULT_URLS.dailySales,
-      deliverySales: savedDeliverySales || DEFAULT_URLS.deliverySales,
-      quran: savedQuran || DEFAULT_URLS.quran,
-      fixedassets: savedFixedAssets || DEFAULT_URLS.fixedassets,
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
     };
-
-    setUrls(loadedUrls);
-    setEditUrls(loadedUrls);
   }, []);
 
-  const toggleLanguage = () => {
-    const nextLang = lang === 'ar' ? 'en' : 'ar';
-    setLang(nextLang);
-    localStorage.setItem('swc_portal_lang', nextLang);
+  // Handle clicking the 2-second icon
+  const handleIconClick = () => {
+    // Clear timeout so it doesn't close abruptly
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    setShowConfigIcon(false);
+    setIsModalOpen(true);
+    setEditUrl(url);
+    setPasscode('');
+    setErrorMessage('');
+    setIsPasscodeAuthenticated(false);
   };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  // Handle Passcode verification
+  const handleVerifyPasscode = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'alaa' && password === '0120301012') {
-      setIsAdminAuthenticated(true);
-      setEditUrls({ ...urls });
-      setLoginError('');
+    if (passcode.trim() === SECRET_PASSCODE) {
+      setIsPasscodeAuthenticated(true);
+      setErrorMessage('');
     } else {
-      setLoginError(t[lang].loginError);
+      setErrorMessage('الرقم السري غير صحيح، يرجى المحاولة مرة أخرى');
     }
   };
 
-  const handleSaveUrls = () => {
-    localStorage.setItem('swc_url_accounting', editUrls.accounting);
-    localStorage.setItem('swc_url_miniAccounting', editUrls.miniAccounting);
-    localStorage.setItem('swc_url_dailySales', editUrls.dailySales);
-    localStorage.setItem('swc_url_deliverySales', editUrls.deliverySales);
-    localStorage.setItem('swc_url_quran', editUrls.quran);
-    localStorage.setItem('swc_url_fixedassets', editUrls.fixedassets);
-    
-    setUrls({ ...editUrls });
+  // Handle saving the new URL
+  const handleSaveUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    let cleanUrl = editUrl.trim();
+    if (!cleanUrl) {
+      setErrorMessage('يرجى إدخال رابط صالح');
+      return;
+    }
+
+    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+      cleanUrl = 'https://' + cleanUrl;
+    }
+
+    // Persist in localStorage so it automatically loads on all future starts
+    localStorage.setItem(STORAGE_KEY, cleanUrl);
+    localStorage.setItem('swc_url_dailySales', cleanUrl);
+
+    setUrl(cleanUrl);
+    setEditUrl(cleanUrl);
     setSaveSuccess(true);
+    setIsIframeLoading(true);
+    setIframeKey(prev => prev + 1);
+
     setTimeout(() => {
       setSaveSuccess(false);
-      setIsAdminAuthenticated(false);
-      setShowAdminLogin(false);
-      setUsername('');
-      setPassword('');
-    }, 1500);
+      setIsModalOpen(false);
+      setIsPasscodeAuthenticated(false);
+      setPasscode('');
+      setErrorMessage('');
+    }, 1200);
   };
 
-  const closeAdminMenu = () => {
-    setShowAdminLogin(false);
-    setIsAdminAuthenticated(false);
-    setUsername('');
-    setPassword('');
-    setLoginError('');
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setIsPasscodeAuthenticated(false);
+    setPasscode('');
+    setErrorMessage('');
   };
-
-  const handleSelectApp = (id: string | null) => {
-    setSelectedAppId(id);
-    setShowQuickSwitcher(false);
-    setShowFloatingMenu(false);
-  };
-
-  const handleExitPortal = () => {
-    handleSelectApp(null);
-    setShowFloatingMenu(false);
-  };
-
-  // Render proper icon based on app identifier
-  const renderAppIcon = (id: string, className: string = "w-6 h-6") => {
-    switch (id) {
-      case 'accounting':
-        return <Receipt className={className} />;
-      case 'miniAccounting':
-        return <Coins className={className} />;
-      case 'dailySales':
-        return <TrendingUp className={className} />;
-      case 'deliverySales':
-        return <Truck className={className} />;
-      case 'quran':
-        return <BookOpen className={className} />;
-      case 'fixedassets':
-        return <Calculator className={className} />;
-      default:
-        return <Zap className={className} />;
-    }
-  };
-
-  const currentT = t[lang];
-  const isRTL = lang === 'ar';
-
-  useEffect(() => {
-    if (selectedAppId) {
-      let appTitle = '';
-      switch (selectedAppId) {
-        case 'accounting':
-          appTitle = currentT.accounting;
-          break;
-        case 'miniAccounting':
-          appTitle = currentT.miniAccounting;
-          break;
-        case 'dailySales':
-          appTitle = currentT.dailySales;
-          break;
-        case 'deliverySales':
-          appTitle = currentT.deliverySales;
-          break;
-        case 'quran':
-          appTitle = currentT.quran;
-          break;
-        case 'fixedassets':
-          appTitle = currentT.fixedassets;
-          break;
-      }
-      if (appTitle) {
-        document.title = `Alaa - ${appTitle}`;
-        return;
-      }
-    }
-    document.title = currentT.portalTitle;
-  }, [lang, currentT.portalTitle, selectedAppId, currentT.accounting, currentT.miniAccounting, currentT.dailySales, currentT.deliverySales, currentT.quran, currentT.fixedassets]);
-
-  const appsList = [
-    {
-      id: 'accounting',
-      title: currentT.accounting,
-      desc: currentT.accountingDesc,
-      url: urls.accounting,
-      color: "from-blue-50 to-blue-100/50 text-blue-700 border-blue-200 hover:border-blue-300 hover:shadow-blue-500/10"
-    },
-    {
-      id: 'miniAccounting',
-      title: currentT.miniAccounting,
-      desc: currentT.miniAccountingDesc,
-      url: urls.miniAccounting,
-      color: "from-sky-50 to-sky-100/50 text-sky-700 border-sky-200 hover:border-sky-300 hover:shadow-sky-500/10"
-    },
-    {
-      id: 'dailySales',
-      title: currentT.dailySales,
-      desc: currentT.dailySalesDesc,
-      url: urls.dailySales,
-      color: "from-emerald-50 to-emerald-100/50 text-emerald-700 border-emerald-200 hover:border-emerald-300 hover:shadow-emerald-500/10"
-    },
-    {
-      id: 'deliverySales',
-      title: currentT.deliverySales,
-      desc: currentT.deliverySalesDesc,
-      url: urls.deliverySales,
-      color: "from-amber-50 to-amber-100/50 text-amber-700 border-amber-200 hover:border-amber-300 hover:shadow-amber-500/10"
-    },
-    {
-      id: 'quran',
-      title: currentT.quran,
-      desc: currentT.quranDesc,
-      url: urls.quran,
-      color: "from-purple-50 to-purple-100/50 text-purple-700 border-purple-200 hover:border-purple-300 hover:shadow-purple-500/10"
-    },
-    {
-      id: 'fixedassets',
-      title: currentT.fixedassets,
-      desc: currentT.fixedassetsDesc,
-      url: urls.fixedassets,
-      color: "from-indigo-50 to-indigo-100/50 text-indigo-700 border-indigo-200 hover:border-indigo-300 hover:shadow-indigo-500/10"
-    }
-  ];
 
   return (
     <div 
-      className="fixed inset-0 w-full h-full bg-slate-50 overflow-hidden flex flex-col font-sans select-none text-slate-800"
-      dir={isRTL ? 'rtl' : 'ltr'}
+      className="fixed inset-0 w-full h-full bg-white overflow-hidden flex flex-col font-sans select-none"
+      dir="rtl"
     >
-      <AnimatePresence mode="wait">
-        {isLoading ? (
+      {/* 3-Second Temporary Settings Icon (Bottom Right) */}
+      <AnimatePresence>
+        {showConfigIcon && (
           <motion.div
-            key="splash"
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]"
+            initial={{ opacity: 0, scale: 0.6, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.5, y: 15 }}
+            transition={{ duration: 0.3 }}
+            className="fixed bottom-4 right-4 z-50 flex items-center gap-2"
           >
-            <div className="relative flex flex-col items-center max-w-sm px-6 text-center">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center mb-6 shadow-lg shadow-blue-900/20"
-              >
-                <Zap className="w-10 h-10 text-white fill-current" />
-              </motion.div>
-
-              <motion.h1
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-white font-semibold text-2xl mb-2 tracking-tight font-sans"
-              >
-                {currentT.portalTitle}
-              </motion.h1>
-
-              <motion.p
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="text-zinc-500 text-sm mb-12 leading-relaxed"
-              >
-                {currentT.loading}
-              </motion.p>
-
-              <div className="w-24 h-1 rounded-full bg-zinc-800 overflow-hidden">
-                <motion.div
-                  initial={{ x: "-100%" }}
-                  animate={{ x: "0%" }}
-                  transition={{
-                    duration: 1.5,
-                    ease: "easeInOut",
-                    repeat: Infinity,
-                  }}
-                  className="w-full h-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+            <button
+              onClick={handleIconClick}
+              className="relative group flex items-center justify-center p-2.5 rounded-2xl bg-slate-900/95 hover:bg-slate-900 text-blue-400 hover:text-blue-300 border border-blue-500/50 shadow-2xl backdrop-blur-md transition-all active:scale-90 cursor-pointer"
+              title="إعدادات الرابط"
+            >
+              {/* 3-second animated circular countdown */}
+              <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none p-0.5">
+                <circle
+                  cx="50%"
+                  cy="50%"
+                  r="16"
+                  className="stroke-blue-500/20"
+                  strokeWidth="2.5"
+                  fill="none"
                 />
-              </div>
-            </div>
+                <motion.circle
+                  cx="50%"
+                  cy="50%"
+                  r="16"
+                  className="stroke-blue-500"
+                  strokeWidth="2.5"
+                  fill="none"
+                  strokeDasharray="100"
+                  initial={{ strokeDashoffset: 0 }}
+                  animate={{ strokeDashoffset: 100 }}
+                  transition={{ duration: 3, ease: "linear" }}
+                />
+              </svg>
+              <Settings className="w-5 h-5 animate-[spin_4s_linear_infinite]" />
+            </button>
           </motion.div>
-        ) : (
+        )}
+      </AnimatePresence>
+
+      {/* Main Fullscreen Application Iframe */}
+      <div className="relative w-full h-full flex-1 bg-white">
+        <iframe
+          ref={iframeRef}
+          key={iframeKey}
+          src={url}
+          className="w-full h-full border-none block bg-white"
+          title="Daily Sales System"
+          referrerPolicy="no-referrer"
+          allow="camera; microphone; geolocation; clipboard-read; clipboard-write; fullscreen"
+        />
+      </div>
+
+      {/* Secret Passcode & URL Configuration Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
           <motion.div
-            key="app-portal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="w-full h-full flex flex-col"
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
           >
-            {selectedAppId ? (
-              // Active application screen with direct iframe and a draggable circular floating switcher menu
-              <div className="w-full h-full flex flex-col relative bg-white">
-                {appsList.map((app) => (
-                  loadedApps[app.id] && (
-                    <iframe
-                      key={app.id}
-                      src={urls[app.id as keyof typeof urls]}
-                      style={{ display: selectedAppId === app.id ? 'block' : 'none' }}
-                      className="w-full h-full flex-1 border-none"
-                      title={app.title}
-                      referrerPolicy="no-referrer"
-                      allow="camera; microphone; geolocation"
-                    />
-                  )
-                ))}
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 15 }}
+              className="w-full max-w-md bg-slate-950 border border-slate-800 p-6 md:p-8 rounded-3xl relative overflow-hidden shadow-2xl text-right"
+            >
+              {/* Close Button */}
+              <button 
+                onClick={handleCloseModal}
+                className="absolute top-5 left-5 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-                {/* Draggable Circular Floating Menu Area */}
-                <div ref={dragAreaRef} className="fixed inset-0 pointer-events-none z-50">
-                  <motion.div
-                    drag
-                    dragConstraints={dragAreaRef}
-                    dragElastic={0.05}
-                    dragMomentum={false}
-                    onDrag={(event, info) => {
-                      const screenWidth = window.innerWidth;
-                      const screenHeight = window.innerHeight;
-                      if (info.point.x < screenWidth / 2) {
-                        setMenuAlign('left');
-                      } else {
-                        setMenuAlign('right');
-                      }
-                      if (info.point.y < screenHeight / 2) {
-                        setMenuValign('top');
-                      } else {
-                        setMenuValign('bottom');
-                      }
-                    }}
-                    className="absolute bottom-10 right-10 pointer-events-auto"
-                  >
+              {/* Step 1: Request Secret Passcode (0120301012) */}
+              {!isPasscodeAuthenticated ? (
+                <form onSubmit={handleVerifyPasscode} className="space-y-5 pt-1">
+                  <div className="text-center mb-4">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold tracking-wider mb-2">
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>حماية الإعدادات</span>
+                    </div>
+                    <h2 className="text-lg font-bold text-white">أدخل الرقم السري</h2>
+                    <p className="text-xs text-slate-400 mt-1">أدخل الرقم السري لتعديل رابط تشغيل التطبيق</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs text-slate-300 font-medium block">
+                      الرقم السري
+                    </label>
                     <div className="relative">
-                      {/* Floating Trigger Button */}
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={passcode}
+                        onChange={(e) => {
+                          setPasscode(e.target.value);
+                          setErrorMessage('');
+                        }}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl py-3 px-10 text-white text-sm focus:outline-none focus:border-blue-500/60 transition-all font-mono tracking-widest text-center"
+                        placeholder="••••••••••"
+                        autoFocus
+                      />
+                      <KeyRound className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
                       <button
-                        onClick={() => setShowFloatingMenu(!showFloatingMenu)}
-                        className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.5)] border border-blue-400/20 active:scale-95 transition-all select-none cursor-grab active:cursor-grabbing"
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="text-slate-400 hover:text-slate-200 absolute left-3.5 top-1/2 -translate-y-1/2 cursor-pointer"
                       >
-                        <Menu className="w-6 h-6" />
-                      </button>
-
-                      {/* Floating Menu Popover */}
-                      <AnimatePresence>
-                        {showFloatingMenu && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 15 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 15 }}
-                            className={`absolute ${menuValign === 'top' ? 'top-16' : 'bottom-16'} ${menuAlign === 'left' ? 'left-0' : 'right-0'} w-64 bg-white backdrop-blur-xl border border-gray-200 rounded-[2rem] p-4 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] space-y-4`}
-                          >
-                            <div className="space-y-1.5">
-                              {appsList.map((app) => (
-                                <button
-                                  key={app.id}
-                                  onClick={() => {
-                                    handleSelectApp(app.id);
-                                    setShowFloatingMenu(false);
-                                  }}
-                                  className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs rounded-xl transition-all ${
-                                    selectedAppId === app.id 
-                                      ? 'bg-blue-50 text-blue-600 font-bold border border-blue-200' 
-                                      : 'hover:bg-gray-50 text-slate-600 hover:text-slate-900 border border-transparent'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2.5">
-                                    {renderAppIcon(app.id, "w-4 h-4")}
-                                    <span>{app.title}</span>
-                                  </div>
-                                  {selectedAppId === app.id && <Check className="w-3.5 h-3.5 text-blue-400" />}
-                                </button>
-                              ))}
-                            </div>
-
-                            <div className="pt-2 border-t border-gray-100">
-                              {/* Exit button */}
-                              <button
-                                onClick={handleExitPortal}
-                                className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 text-xs font-bold py-3 rounded-xl transition-all active:scale-95 cursor-pointer"
-                              >
-                                <Home className="w-4 h-4" />
-                                <span>{currentT.exitPortal}</span>
-                              </button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </motion.div>
-                </div>
-              </div>
-            ) : (
-              // Landing dashboard displaying the 4 applications
-              <div className="w-full h-full flex flex-col justify-between overflow-y-auto px-4 md:px-6 pb-4 md:pb-8 pt-0 relative">
-                {/* Background ambient lighting effects */}
-                <div className="absolute top-[-10%] left-[10%] w-[30vw] h-[30vw] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
-                <div className="absolute bottom-[-10%] right-[10%] w-[30vw] h-[30vw] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
-                
-                {/* Dashboard Header */}
-                <header className="sticky top-0 z-30 w-full bg-slate-50/95 backdrop-blur-md border-b border-slate-200/50 -mx-4 md:-mx-6 px-4 md:px-6 py-4 mb-4 md:mb-8">
-                  <div className="max-w-4xl w-full mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-                        <Zap className="w-5 h-5 text-white fill-current" />
-                      </div>
-                      <div>
-                        <h1 className="text-base md:text-lg font-bold text-slate-800 tracking-tight">{currentT.portalTitle}</h1>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {/* Language Switcher */}
-                      <button
-                        onClick={toggleLanguage}
-                        className="px-3 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-xs text-slate-600 rounded-xl transition-all flex items-center gap-2 shadow-sm active:scale-95"
-                      >
-                        <Globe className="w-3.5 h-3.5 text-blue-500" />
-                        <span>{currentT.language}</span>
-                      </button>
-
-                      {/* Admin Settings Link */}
-                      <button
-                        onClick={() => setShowAdminLogin(true)}
-                        className="p-2 bg-white hover:bg-gray-50 border border-gray-200 text-slate-400 hover:text-slate-600 rounded-xl transition-all shadow-sm active:scale-95"
-                        title={currentT.adminPortal}
-                      >
-                        <Settings className="w-4 h-4" />
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
-                </header>
 
-                {/* Applications grid - 2x2 layout by default for mobile and desktop */}
-                <main className="max-w-4xl w-full mx-auto grid grid-cols-2 gap-3 md:gap-5 my-2 md:my-8 flex-1 items-center content-center">
-                  {appsList.map((app) => (
-                    <div
-                      key={app.id}
-                      onClick={() => handleSelectApp(app.id)}
-                      className={`glass-panel p-4 md:p-8 rounded-2xl md:rounded-[2rem] border bg-white flex flex-col items-center justify-center text-center gap-2 md:gap-4 cursor-pointer transform hover:scale-[1.02] hover:-translate-y-1 active:scale-95 transition-all duration-150 ease-out ${app.color} group relative overflow-hidden h-28 sm:h-32 md:h-[180px] shadow-sm hover:shadow-md`}
-                    >
-                      {/* Subtle app card background glow */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                  {errorMessage && (
+                    <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 text-center font-medium">
+                      {errorMessage}
+                    </div>
+                  )}
 
-                      <div className="p-2 md:p-4 bg-white border border-gray-100 rounded-xl md:rounded-2xl group-hover:scale-105 md:group-hover:scale-110 transition-transform duration-300 shadow-sm">
-                        {renderAppIcon(app.id, "w-6 h-6 md:w-8 md:h-8")}
+                  <button
+                    type="submit"
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-3.5 rounded-xl transition-all shadow-lg active:scale-95 cursor-pointer"
+                  >
+                    تأكيد الرقم السري
+                  </button>
+                </form>
+              ) : (
+                /* Step 2: Passcode verified -> Show & Edit Application URL */
+                <form onSubmit={handleSaveUrl} className="space-y-5 pt-1">
+                  <div className="text-center mb-3">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold mb-2">
+                      <LinkIcon className="w-3.5 h-3.5" />
+                      <span>تعديل رابط التطبيق</span>
+                    </div>
+                    <h2 className="text-lg font-bold text-white">رابط النظام التلقائي</h2>
+                    <p className="text-xs text-slate-400 mt-1">سيتم فتح هذا الرابط مباشرة وتلقائياً عند تشغيل التطبيق</p>
+                  </div>
+
+                  {saveSuccess ? (
+                    <div className="py-6 flex flex-col items-center justify-center space-y-3">
+                      <div className="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                        <Check className="w-6 h-6 animate-bounce" />
+                      </div>
+                      <p className="text-xs font-medium text-blue-400 text-center">تم حفظ الرابط وسيتم فتح التطبيق عليه دائماً!</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
+                          <span>رابط الموقع / النظام</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={editUrl}
+                          onChange={(e) => {
+                            setEditUrl(e.target.value);
+                            setErrorMessage('');
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl py-3 px-3 text-white text-xs focus:outline-none focus:border-blue-500/60 transition-all font-mono"
+                          placeholder="https://daily-sales-rose.vercel.app/"
+                          dir="ltr"
+                          autoFocus
+                        />
                       </div>
 
-                      <h3 className="text-xs md:text-lg font-bold text-slate-800 group-hover:text-current transition-colors tracking-tight line-clamp-2">
-                        {app.title}
-                      </h3>
-                    </div>
-                  ))}
-                </main>
-
-                {/* Portal Footer - Compacted */}
-                <footer className="max-w-4xl w-full mx-auto text-center border-t border-gray-200 pt-4 mt-4">
-                  <p className="text-[10px] text-gray-400">
-                    &copy; 2026 {currentT.portalTitle}. All rights reserved.
-                  </p>
-                </footer>
-              </div>
-            )}
-
-            {/* Admin Portal Modal */}
-            <AnimatePresence>
-              {showAdminLogin && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/75 backdrop-blur-md"
-                >
-                  <motion.div
-                    initial={{ scale: 0.95, opacity: 0, y: 15 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.95, opacity: 0, y: 15 }}
-                    className="w-full max-w-md bg-zinc-950 border border-zinc-800 p-8 rounded-[2.5rem] relative overflow-hidden shadow-2xl"
-                  >
-                    <button 
-                      onClick={closeAdminMenu}
-                      className={`absolute top-6 ${isRTL ? 'left-6' : 'right-6'} text-zinc-500 hover:text-white transition-colors`}
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-
-                    {!isAdminAuthenticated ? (
-                      <form onSubmit={handleAdminLogin} className="space-y-6 pt-4">
-                        <div className="text-center mb-6">
-                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 text-[10px] font-bold tracking-wider uppercase mb-3">
-                            {currentT.adminPortal}
-                          </div>
-                          <h2 className="text-xl font-bold text-white">{currentT.adminLogin}</h2>
+                      {errorMessage && (
+                        <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 text-center font-medium">
+                          {errorMessage}
                         </div>
+                      )}
 
-                        <div className="space-y-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold block">
-                              {currentT.username}
-                            </label>
-                            <input
-                              type="text"
-                              value={username}
-                              onChange={(e) => setUsername(e.target.value)}
-                              className="w-full bg-zinc-900/60 border border-zinc-800/80 rounded-2xl py-3.5 px-4 text-white text-xs focus:outline-none focus:border-blue-500/40 transition-all font-mono"
-                              placeholder="alaa"
-                            />
-                          </div>
-                          
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold block">
-                              {currentT.password}
-                            </label>
-                            <input
-                              type="password"
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              className="w-full bg-zinc-900/60 border border-zinc-800/80 rounded-2xl py-3.5 px-4 text-white text-xs focus:outline-none focus:border-blue-500/40 transition-all"
-                              placeholder="••••••••"
-                            />
-                          </div>
-                        </div>
-
-                        {loginError && <p className="text-xs text-red-400 text-center font-medium">{loginError}</p>}
-
+                      <div className="flex flex-col gap-2 pt-2 border-t border-slate-900">
                         <button
                           type="submit"
-                          className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95"
+                          className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-3.5 rounded-xl transition-all shadow-lg active:scale-95 cursor-pointer"
                         >
-                          {currentT.loginBtn}
+                          حفظ وتطبيق الرابط الجديد
                         </button>
-                      </form>
-                    ) : (
-                      // Admin configuration for all 4 links individually!
-                      <div className="space-y-6 pt-4">
-                        <div className="text-center mb-4">
-                          <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold tracking-wider uppercase mb-3">
-                            {currentT.configMode}
-                          </div>
-                          <h2 className="text-xl font-bold text-white">{currentT.configMode}</h2>
-                        </div>
-
-                        {saveSuccess ? (
-                          <div className="py-8 flex flex-col items-center justify-center space-y-3">
-                            <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                              <Check className="w-6 h-6 animate-bounce" />
-                            </div>
-                            <p className="text-xs font-medium text-emerald-400 text-center">{currentT.successSave}</p>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
-                              {/* Link 1 */}
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
-                                  {renderAppIcon('accounting', 'w-3.5 h-3.5')}
-                                  <span>{currentT.accounting}</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={editUrls.accounting}
-                                  onChange={(e) => setEditUrls({ ...editUrls, accounting: e.target.value })}
-                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
-                                  placeholder="https://..."
-                                />
-                              </div>
-
-                              {/* Mini Accounting */}
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
-                                  {renderAppIcon('miniAccounting', 'w-3.5 h-3.5')}
-                                  <span>{currentT.miniAccounting}</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={editUrls.miniAccounting}
-                                  onChange={(e) => setEditUrls({ ...editUrls, miniAccounting: e.target.value })}
-                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
-                                  placeholder="https://..."
-                                />
-                              </div>
-
-                              {/* Link 2 */}
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
-                                  {renderAppIcon('dailySales', 'w-3.5 h-3.5')}
-                                  <span>{currentT.dailySales}</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={editUrls.dailySales}
-                                  onChange={(e) => setEditUrls({ ...editUrls, dailySales: e.target.value })}
-                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
-                                  placeholder="https://..."
-                                />
-                              </div>
-
-                              {/* Link 3 */}
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
-                                  {renderAppIcon('deliverySales', 'w-3.5 h-3.5')}
-                                  <span>{currentT.deliverySales}</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={editUrls.deliverySales}
-                                  onChange={(e) => setEditUrls({ ...editUrls, deliverySales: e.target.value })}
-                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
-                                  placeholder="https://..."
-                                />
-                              </div>
-
-                              {/* Link 4 */}
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
-                                  {renderAppIcon('quran', 'w-3.5 h-3.5')}
-                                  <span>{currentT.quran}</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={editUrls.quran}
-                                  onChange={(e) => setEditUrls({ ...editUrls, quran: e.target.value })}
-                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
-                                  placeholder="https://..."
-                                />
-                              </div>
-
-                              {/* Link 6 */}
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
-                                  {renderAppIcon('fixedassets', 'w-3.5 h-3.5')}
-                                  <span>{currentT.fixedassets}</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={editUrls.fixedassets}
-                                  onChange={(e) => setEditUrls({ ...editUrls, fixedassets: e.target.value })}
-                                  className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl py-2.5 px-3 text-white text-[11px] focus:outline-none focus:border-blue-500/40 transition-all font-mono"
-                                  placeholder="https://..."
-                                />
-                              </div>
-                            </div>
-
-                            <div className="flex flex-col gap-2 pt-2 border-t border-zinc-900">
-                              <button
-                                onClick={handleSaveUrls}
-                                className="w-full bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold py-3 rounded-2xl transition-all shadow-lg active:scale-95"
-                              >
-                                {currentT.saveBtn}
-                              </button>
-                              <button
-                                onClick={() => setIsAdminAuthenticated(false)}
-                                className="w-full py-2 text-zinc-500 hover:text-zinc-400 text-[10px] uppercase font-bold tracking-wider"
-                              >
-                                {currentT.backBtn}
-                              </button>
-                            </div>
-                          </>
-                        )}
+                        <button
+                          type="button"
+                          onClick={handleCloseModal}
+                          className="w-full py-2 text-slate-400 hover:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
+                        >
+                          إلغاء
+                        </button>
                       </div>
-                    )}
-                  </motion.div>
-                </motion.div>
+                    </>
+                  )}
+                </form>
               )}
-            </AnimatePresence>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
