@@ -71,30 +71,10 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
     return () => window.removeEventListener('community_user_updated', syncUser);
   }, [isOpen]);
 
-  const handleGoogleLogin = (useRedirect = false) => {
+  const handleGoogleLogin = () => {
     setError('');
-    
-    // Check if we are inside an iframe (like AI studio preview) where redirect is blocked by Google (403)
-    const isIframe = typeof window !== 'undefined' && window.self !== window.top;
-    
-    // Outside preview iframe (on APK or standard browser), redirect is the seamless in-app flow
-    const shouldRedirect = useRedirect || !isIframe;
-
-    if (shouldRedirect) {
-      setIsGoogleLoading(true);
-      setLoadingMessage('جارٍ التوجيه لصفحة Google الرسمية لتوثيق حسابك...');
-      communityService.loginWithGoogleRedirect().catch((err: any) => {
-        console.error('Google direct redirect error:', err);
-        setError('تعذر تسجيل الدخول عبر Google. يمكنك كتابة اسمك وصورتك بالأسفل والمتابعة كزائر.');
-        setIsGoogleLoading(false);
-        setLoadingMessage('');
-      });
-      return;
-    }
-
-    // Popup approach for preview iframe
     setIsGoogleLoading(true);
-    setLoadingMessage('جارٍ فتح نافذة تسجيل Google لتوثيق الحساب...');
+    setLoadingMessage('جارٍ فتح نافذة تسجيل الدخول عبر Google...');
 
     communityService.loginWithGoogle(false)
       .then((user) => {
@@ -104,14 +84,11 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
         setBio(user.bio || '');
         if (user.avatarUrl) setAvatarUrl(user.avatarUrl);
         if (onSaved) onSaved();
+        onClose();
       })
       .catch((err: any) => {
         console.warn('Google popup attempt result:', err);
-        if (err?.code === 'auth/popup-blocked' || err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
-          setError('حجب المتصفح النافذة المنبثقة. يمكنك المتابعة وكتابة بياناتك بالأسفل مباشرة كزائر.');
-        } else {
-          setError('لم يتم تسجيل الدخول عبر Google. يمكنك الاستمرار بكتابة بياناتك بالأسفل مباشرة.');
-        }
+        setError('تعذر المتابعة التلقائية عبر Google. لا قلق! يمكنك تحديد اسمك وصورتك بالأسفل مباشرة والضغط على "حفظ وتأكيد البيانات" للبدء بالدردشة فوراً.');
       })
       .finally(() => {
         setIsGoogleLoading(false);
@@ -263,87 +240,39 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
                   <span>لحفظ حسابك وتوثيقه بشكل رسمي:</span>
                 </p>
 
-                {Capacitor.isNativePlatform() ? (
-                  /* Single, bulletproof popup button on Android APK / iOS */
-                  <button
-                    type="button"
-                    onClick={() => handleGoogleLogin(false)}
-                    disabled={isGoogleLoading}
-                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 text-xs active:scale-98"
-                  >
-                    {isGoogleLoading ? (
-                      <Loader2 size={16} className="animate-spin text-white" />
-                    ) : (
-                      <svg className="w-4 h-4 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
-                        <path
-                          fill="#4285F4"
-                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                        />
-                        <path
-                          fill="#34A853"
-                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                        />
-                        <path
-                          fill="#FBBC05"
-                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                        />
-                        <path
-                          fill="#EA4335"
-                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                        />
-                      </svg>
-                    )}
-                    <span>تسجيل الدخول الرسمي بحساب Google</span>
-                  </button>
-                ) : (
-                  <>
-                    {/* Primary Button: Direct Redirect (Method 2 - 100% Reliable without popups) */}
-                    <button
-                      type="button"
-                      onClick={() => handleGoogleLogin(true)}
-                      disabled={isGoogleLoading}
-                      className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 text-xs active:scale-98"
-                    >
-                      {isGoogleLoading ? (
-                        <Loader2 size={16} className="animate-spin text-white" />
-                      ) : (
-                        <svg className="w-4 h-4 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
-                          <path
-                            fill="#4285F4"
-                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                          />
-                          <path
-                            fill="#34A853"
-                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                          />
-                          <path
-                            fill="#FBBC05"
-                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                          />
-                          <path
-                            fill="#EA4335"
-                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                          />
-                        </svg>
-                      )}
-                      <span>تسجيل الدخول الرسمي بحساب Google (مباشر)</span>
-                    </button>
-
-                    {/* Secondary Button: Popup Mode */}
-                    <button
-                      type="button"
-                      onClick={() => handleGoogleLogin(false)}
-                      disabled={isGoogleLoading}
-                      className="w-full py-2 px-3 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-emerald-500 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-[11px] shadow-sm transition-all flex items-center justify-center gap-2"
-                    >
-                      <Globe size={13} className="text-slate-400" />
-                      <span>أو الدخول عبر نافذة منبثقة (Popup)</span>
-                    </button>
-                  </>
-                )}
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  disabled={isGoogleLoading}
+                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 text-xs active:scale-98"
+                >
+                  {isGoogleLoading ? (
+                    <Loader2 size={16} className="animate-spin text-white" />
+                  ) : (
+                    <svg className="w-4 h-4 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                      />
+                    </svg>
+                  )}
+                  <span>تسجيل الدخول والتسجيل عبر حساب Google</span>
+                </button>
 
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
-                  💡 <strong>ملاحظة هامة:</strong> إذا كانت النوافذ المنبثقة محجوبة بمتصفحك، لا قلق! يمكنك ملء الاسم والصورة بالأسفل والمتابعة مباشرةً كـ <strong>زائر مبارك</strong> للدردشة وحفظ حسابك محلياً وبالسيرفر.
+                  💡 <strong>ملاحظة هامة:</strong> يمكن لكافة القُرّاء الأفاضل كتابة الاسم واختيار الصورة بالأسفل فوراً والضغط على "حفظ وتأكيد البيانات" للدردشة والمشاركة المباشرة!
                 </p>
 
                 {loadingMessage && (
