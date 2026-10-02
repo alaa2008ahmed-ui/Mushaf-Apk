@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تسجيل الدخول - مجتمع مصحف أحمد وليلى</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .card {
+      background: #1e293b;
+      padding: 35px 25px;
+      border-radius: 24px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+      max-width: 440px;
+      width: 100%;
+    }
+    h1 {
+      color: #10b981;
+      font-size: 22px;
+      margin-top: 10px;
+      margin-bottom: 8px;
+    }
+    p {
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .btn {
+      background-color: #10b981;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: bold;
+      border-radius: 14px;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+    }
+    .btn:hover {
+      background-color: #059669;
+      transform: translateY(-1px);
+    }
+    .btn:active {
+      transform: translateY(1px);
+    }
+    .loader {
+      border: 4px solid #334155;
+      border-top: 4px solid #10b981;
+      border-radius: 50%;
+      width: 45px;
+      height: 45px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .info-footer {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 25px;
+    }
+  </style>
+  
+  <!-- Firebase App & Auth SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    
+    // Config matches the app config perfectly
+    const firebaseConfig = {
+      projectId: "moshaf-ahmed-laila",
+      appId: "1:820638063534:web:599513548b6001ae69c63f",
+      apiKey: "AIzaSyDfe1Z37eOw6IuhrCw9cvwH1ATmxi_PHUU",
+      authDomain: "moshaf-ahmed-laila.firebaseapp.com"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const googleProvider = new GoogleAuthProvider();
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const scheme = urlParams.get('scheme') || 'com.mushaf.ahmedandlayla';
+    
+    const statusText = document.getElementById('status-text');
+    const loader = document.getElementById('loader');
+    const actionBtn = document.getElementById('action-btn');
+    
+    function sendBackToApp(idToken, accessToken) {
+      statusText.innerText = "نجح تسجيل الدخول! جارٍ إعادتك لتطبيق مصحف أحمد وليلى بشكل آمن...";
+      loader.style.display = 'block';
+      actionBtn.style.display = 'none';
+      
+      const returnUrl = `${scheme}://auth-success?idToken=${encodeURIComponent(idToken)}&accessToken=${encodeURIComponent(accessToken)}`;
+      console.log("Redirecting back to app via URL:", returnUrl);
+      window.location.href = returnUrl;
+      
+      // Fallback for some browsers if deep link does not trigger automatically
+      setTimeout(() => {
+        statusText.innerHTML = `إذا لم يتم فتح التطبيق تلقائياً، يرجى الضغط على الزر بالأسفل للعودة والمتابعة:`;
+        loader.style.display = 'none';
+        actionBtn.style.display = 'block';
+        actionBtn.innerText = 'اضغط هنا للعودة للتطبيق';
+        actionBtn.onclick = () => {
+          window.location.href = returnUrl;
+        };
+      }, 3500);
+    }
+    
+    async function startLogin() {
+      try {
+        statusText.innerText = "برجاء اختيار حسابك من نافذة Google لتسجيل الدخول...";
+        loader.style.display = 'block';
+        actionBtn.style.display = 'none';
+        
+        const result = await signInWithPopup(auth, googleProvider);
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential) {
+          const idToken = credential.idToken;
+          const accessToken = credential.accessToken || "";
+          sendBackToApp(idToken, accessToken);
+        } else {
+          throw new Error("لم نتمكن من الحصول على تفويض Google.");
+        }
+      } catch (error) {
+        console.error("Login failed:", error);
+        statusText.innerText = "لم تكتمل العملية أو حدث خطأ: " + (error.message || error);
+        showStartButton();
+      }
+    }
+    
+    function showStartButton() {
+      loader.style.display = 'none';
+      actionBtn.style.display = 'block';
+      actionBtn.innerText = 'اضغط هنا لبدء تسجيل الدخول عبر Google';
+      actionBtn.onclick = startLogin;
+    }
+    
+    // Check if redirected result is available
+    window.addEventListener('load', async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          const credential = GoogleAuthProvider.credentialFromResult(result);
+          if (credential) {
+            sendBackToApp(credential.idToken, credential.accessToken || "");
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("getRedirectResult exception:", e);
+      }
+      
+      statusText.innerText = "اضغط على الزر بالأسفل لتسجيل الدخول بأمان بحساب Google، وسيتم العودة للتطبيق تلقائياً بعد اختيار الحساب.";
+      showStartButton();
+    });
+  </script>
+</head>
+<body>
+  <div class="card">
+    <div style="font-size: 50px; margin-bottom: 10px;">🕌</div>
+    <h1>مجتمع مصحف أحمد وليلى</h1>
+    <p id="status-text">تجهيز بيئة تسجيل الدخول الآمن...</p>
+    <div id="loader" class="loader"></div>
+    <button id="action-btn" class="btn" style="display: none;"></button>
+    <div class="info-footer">
+      تأمين الاتصال 100% عبر خوادم Google الرسمية و تكنولوجيا Firebase للتوثيق والشفافية.
+    </div>
+  </div>
+</body>
+</html>

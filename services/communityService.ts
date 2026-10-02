@@ -1,8 +1,10 @@
 import { 
   db, auth, googleProvider, 
   signInWithPopup, signInWithRedirect, getRedirectResult, 
-  signOut, onAuthStateChanged 
+  signOut, onAuthStateChanged, signInWithCredential
 } from '../lib/firebase';
+import { GoogleAuthProvider } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
 import { 
   collection, doc, setDoc, getDoc, getDocs, onSnapshot, 
   updateDoc, deleteDoc 
@@ -397,6 +399,42 @@ class CommunityService {
       }).catch((e) => {
         console.warn('getRedirectResult notice:', e);
       });
+
+      // Handle custom URL scheme deep link redirects for native APK
+      if (Capacitor.isNativePlatform()) {
+        import('@capacitor/app').then(({ App }) => {
+          App.addListener('appUrlOpen', async (data: any) => {
+            console.log('App opened via deep link:', data.url);
+            if (data.url && data.url.includes('auth-success')) {
+              try {
+                // Convert custom protocol to standard local format for parsing parameters
+                const urlString = data.url.replace('com.mushaf.ahmedandlayla://', 'https://localhost/');
+                const parsedUrl = new URL(urlString);
+                const idToken = parsedUrl.searchParams.get('idToken');
+                const accessToken = parsedUrl.searchParams.get('accessToken');
+                
+                if (idToken) {
+                  console.log('Deep link login started with token...');
+                  const credential = GoogleAuthProvider.credential(idToken, accessToken || undefined);
+                  const result = await signInWithCredential(auth, credential);
+                  const fbUser = result.user;
+                  await this.loginWithGoogleAccount(
+                    fbUser.uid,
+                    fbUser.displayName || '',
+                    fbUser.photoURL || '',
+                    fbUser.email || undefined
+                  );
+                  console.log('Deep link login successful for user:', fbUser.uid);
+                }
+              } catch (err) {
+                console.error('Error handling auth deep link:', err);
+              }
+            }
+          });
+        }).catch((err) => {
+          console.warn('Could not load @capacitor/app plugin:', err);
+        });
+      }
 
       onAuthStateChanged(auth, async (fbUser) => {
         if (fbUser) {

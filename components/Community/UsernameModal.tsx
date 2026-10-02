@@ -78,6 +78,21 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
     const isIframe = typeof window !== 'undefined' && window.self !== window.top;
     const isNative = Capacitor.isNativePlatform();
     
+    if (isNative) {
+      setIsGoogleLoading(true);
+      setLoadingMessage('جارٍ فتح المتصفح لتسجيل الدخول الآمن بحساب Google...');
+      // Open our secure web app auth handler in Chrome/Safari
+      const authUrl = 'https://moshaf-ahmed-laila.firebaseapp.com/auth.html?scheme=com.mushaf.ahmedandlayla';
+      window.open(authUrl, '_system');
+      
+      // Stop the loading state after 8 seconds
+      setTimeout(() => {
+        setIsGoogleLoading(false);
+        setLoadingMessage('');
+      }, 8000);
+      return;
+    }
+
     // On native apps (APK), NEVER use redirect because it redirects to localhost in the external Chrome browser and fails!
     const shouldRedirect = useRedirect && !isIframe && !isNative;
 
