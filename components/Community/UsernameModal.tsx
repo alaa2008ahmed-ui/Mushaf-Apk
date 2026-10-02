@@ -74,9 +74,9 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
   const handleGoogleLogin = () => {
     setError('');
     setIsGoogleLoading(true);
-    setLoadingMessage('جارٍ فتح نافذة تسجيل الدخول عبر Google...');
+    setLoadingMessage('جارٍ تسجيل الدخول عبر حساب Google...');
 
-    communityService.loginWithGoogle(false)
+    communityService.loginWithGoogle()
       .then((user) => {
         setCurrentUser(user);
         setUsername(user.username || '');
@@ -87,8 +87,8 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
         onClose();
       })
       .catch((err: any) => {
-        console.warn('Google popup attempt result:', err);
-        setError('تعذر المتابعة التلقائية عبر Google. لا قلق! يمكنك تحديد اسمك وصورتك بالأسفل مباشرة والضغط على "حفظ وتأكيد البيانات" للبدء بالدردشة فوراً.');
+        console.warn('Google auth error:', err);
+        setError('تعذر تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى.');
       })
       .finally(() => {
         setIsGoogleLoading(false);
@@ -270,10 +270,6 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
                   )}
                   <span>تسجيل الدخول والتسجيل عبر حساب Google</span>
                 </button>
-
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
-                  💡 <strong>ملاحظة هامة:</strong> يمكن لكافة القُرّاء الأفاضل كتابة الاسم واختيار الصورة بالأسفل فوراً والضغط على "حفظ وتأكيد البيانات" للدردشة والمشاركة المباشرة!
-                </p>
 
                 {loadingMessage && (
                   <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold animate-pulse">

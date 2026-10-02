@@ -219,10 +219,29 @@ class CommunityService {
     return this.currentUser;
   }
 
-  public async loginWithGoogle(useRedirect: boolean = false): Promise<CommunityUser> {
-    if (useRedirect) {
-      await signInWithRedirect(auth, googleProvider);
-      return this.getCurrentUser();
+  public async loginWithGoogle(): Promise<CommunityUser> {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { GoogleSignIn } = await import('@capawesome/capacitor-google-sign-in');
+        const res: any = await (GoogleSignIn as any).signIn({
+          clientId: '820638063534-web.apps.googleusercontent.com'
+        });
+
+        if (res && res.idToken) {
+          const credential = GoogleAuthProvider.credential(res.idToken);
+          const result = await signInWithCredential(auth, credential);
+          const fbUser = result.user;
+          const userObj = (res.user || {}) as any;
+          return await this.loginWithGoogleAccount(
+            fbUser.uid,
+            fbUser.displayName || userObj.givenName || userObj.name || '',
+            fbUser.photoURL || userObj.imageUrl || '',
+            fbUser.email || userObj.email || undefined
+          );
+        }
+      } catch (nativeErr) {
+        console.warn('Capawesome GoogleSignIn failed, trying web fallback:', nativeErr);
+      }
     }
 
     try {
@@ -235,16 +254,7 @@ class CommunityService {
         fbUser.email || undefined
       );
     } catch (e: any) {
-      console.warn('signInWithPopup error:', e);
-      // If popup was blocked or failed due to mobile / browser restrictions, trigger redirect
-      if (
-        e?.code === 'auth/popup-blocked' || 
-        e?.code === 'auth/popup-closed-by-user' || 
-        e?.code === 'auth/cancelled-popup-request' ||
-        e?.code === 'auth/unauthorized-domain'
-      ) {
-        throw e;
-      }
+      console.warn('loginWithGoogle error:', e);
       throw e;
     }
   }

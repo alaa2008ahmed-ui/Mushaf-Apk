@@ -44,6 +44,10 @@
 		"classpath": "com.capacitorjs.plugins.share.SharePlugin"
 	},
 	{
+		"pkg": "@capawesome/capacitor-google-sign-in",
+		"classpath": "io.capawesome.capacitorjs.plugins.googlesignin.GoogleSignInPlugin"
+	},
+	{
 		"pkg": "capacitor-voice-recorder",
 		"classpath": "com.tchvu3.capacitorvoicerecorder.VoiceRecorder"
 	}
