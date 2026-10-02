@@ -1,6 +1,10 @@
+import { Capacitor } from '@capacitor/core';
+import { TextToSpeech } from '@capacitor-community/text-to-speech';
+
 /**
  * Centralized Text-to-Speech (TTS) Engine for spiritual texts (Adia, Adhkar, Hadiths).
  * Ensures a robust, high-quality, offline male voice across all devices and browsers.
+ * Native platform support is enabled via Capacitor TextToSpeech when packaged as an APK.
  */
 
 export type TTSStateCallback = (playingText: string | null) => void;
@@ -32,8 +36,12 @@ export const subscribeTTS = (listener: TTSStateCallback) => {
  * Stops any ongoing audio speech synthesis completely.
  */
 export const stopTTS = () => {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
+    if (Capacitor.isNativePlatform()) {
+        TextToSpeech.stop().catch((err) => console.error('Error stopping native TTS:', err));
+    } else {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
     }
     currentUtterance = null;
     currentPlayingText = null;
@@ -46,18 +54,12 @@ export const stopTTS = () => {
 export const getPlayingText = (): string | null => currentPlayingText;
 
 /**
- * Plays a given text via Web Speech API, enforcing a male voice.
+ * Plays a given text, enforcing a male voice.
+ * Supports both Native Android/iOS (via Capacitor) and Web Speech API.
  * @param text The Arabic text to speak.
  * @param onToast Optional callback to notify the UI of any messages or errors.
  */
-export const playTTS = (text: string, onToast?: (msg: string) => void) => {
-    if (!('speechSynthesis' in window)) {
-        if (onToast) {
-            onToast('خدمة القراءة الصوتية غير مدعومة على هذا الجهاز أو المتصفح');
-        }
-        return;
-    }
-
+export const playTTS = async (text: string, onToast?: (msg: string) => void) => {
     // Strip HTML tags from text if any
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = text;
@@ -69,13 +71,52 @@ export const playTTS = (text: string, onToast?: (msg: string) => void) => {
         return;
     }
 
-    // Cancel any active playback
-    window.speechSynthesis.cancel();
+    // Stop any active playback first
+    stopTTS();
+
+    // 1. NATIVE PLATFORM SOLUTION (Android APK / iOS)
+    if (Capacitor.isNativePlatform()) {
+        currentPlayingText = text;
+        notifyListeners();
+
+        try {
+            await TextToSpeech.speak({
+                text: cleanText,
+                lang: 'ar-SA',
+                rate: 0.88,   // Calmer speed appropriate for supplication/remembrance
+                pitch: 0.75,  // Deepen pitch natively: transforms generic system voice to deep, majestic male voice!
+                volume: 1.0,
+                category: 'playback'
+            });
+
+            // If it completed and hasn't been interrupted by another play request
+            if (currentPlayingText === text) {
+                currentPlayingText = null;
+                notifyListeners();
+            }
+        } catch (err) {
+            console.error('Native TTS Speak Error:', err);
+            if (onToast) {
+                onToast('خدمة القراءة الصوتية تواجه مشكلة على هذا الهاتف');
+            }
+            if (currentPlayingText === text) {
+                currentPlayingText = null;
+                notifyListeners();
+            }
+        }
+        return;
+    }
+
+    // 2. WEB BROWSER SOLUTION (Previews, Safari, Chrome)
+    if (!('speechSynthesis' in window)) {
+        if (onToast) {
+            onToast('خدمة القراءة الصوتية غير مدعومة على هذا الجهاز أو المتصفح');
+        }
+        return;
+    }
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'ar-SA';
-
-    // Set speed slightly lower (0.85 - 0.90) for calm, majestic, and clear Arabic pronunciation.
     utterance.rate = 0.88;
 
     // Get all available system/browser voices
@@ -101,13 +142,13 @@ export const playTTS = (text: string, onToast?: (msg: string) => void) => {
     let isExplicitMale = false;
 
     if (arabicVoices.length > 0) {
-        // 1. Look for a voice with known male tags
+        // Look for a voice with known male tags
         chosenVoice = arabicVoices.find((v) => {
             const name = v.name.toLowerCase();
             return maleVoiceKeywords.some((keyword) => name.includes(keyword));
         }) || null;
 
-        // 2. If not found, try to avoid explicit female names
+        // If not found, try to avoid explicit female names
         if (!chosenVoice) {
             chosenVoice = arabicVoices.find((v) => {
                 const name = v.name.toLowerCase();
@@ -115,7 +156,7 @@ export const playTTS = (text: string, onToast?: (msg: string) => void) => {
             }) || null;
         }
 
-        // 3. Fallback to any Arabic voice
+        // Fallback to any Arabic voice
         if (!chosenVoice) {
             chosenVoice = arabicVoices[0];
         }
@@ -127,11 +168,7 @@ export const playTTS = (text: string, onToast?: (msg: string) => void) => {
         isExplicitMale = maleVoiceKeywords.some((keyword) => name.includes(keyword));
     }
 
-    // THE FUNDAMENTAL PITCH ADJUSTMENT:
-    // If the voice is explicitly a known high-quality male voice, use a natural dignified pitch (0.90 - 0.95).
-    // If we had to fall back to a generic/female Arabic voice (which is the default on many mobile/desktop environments),
-    // we drop the pitch to 0.78. This lowers the vocal frequency by ~22%, turning the female voice into a beautiful,
-    // calm, deep male voice. This resolves the female-voice issue fundamentally for offline TTS!
+    // Drop the pitch to 0.78 for web fallback to turn female default voices into a gorgeous deep male voice.
     utterance.pitch = isExplicitMale ? 0.95 : 0.78;
 
     utterance.onstart = () => {
@@ -149,7 +186,7 @@ export const playTTS = (text: string, onToast?: (msg: string) => void) => {
     };
 
     utterance.onerror = (event) => {
-        console.error('TTS playback error:', event);
+        console.error('Web TTS playback error:', event);
         if (currentPlayingText === text) {
             currentPlayingText = null;
             currentUtterance = null;
