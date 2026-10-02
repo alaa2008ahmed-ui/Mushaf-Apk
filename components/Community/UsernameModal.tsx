@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, Globe, Check, Sparkles, ArrowRight, HeartHandshake, Camera, Upload, Trash2, Loader2, Shield, CheckCircle2 } from 'lucide-react';
 import { communityService, CommunityUser } from '../../services/communityService';
+import { registerBackInterceptor } from '../../hooks/useBackButton';
 import { Capacitor } from '@capacitor/core';
 
 interface UsernameModalProps {
@@ -70,6 +71,42 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
     window.addEventListener('community_user_updated', syncUser);
     return () => window.removeEventListener('community_user_updated', syncUser);
   }, [isOpen]);
+
+  // Handle hardware back button when modal is open
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const unregister = registerBackInterceptor(() => {
+      if (onBackToApps) {
+        onBackToApps();
+      } else {
+        onClose();
+      }
+      return true;
+    });
+
+    return () => {
+      unregister();
+    };
+  }, [isOpen, onBackToApps, onClose]);
+
+  // Handle hardware back button when modal is open
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const unregister = registerBackInterceptor(() => {
+      if (onBackToApps) {
+        onBackToApps();
+      } else {
+        onClose();
+      }
+      return true;
+    });
+
+    return () => {
+      unregister();
+    };
+  }, [isOpen, onBackToApps, onClose]);
 
   const handleGoogleLogin = () => {
     setError('');

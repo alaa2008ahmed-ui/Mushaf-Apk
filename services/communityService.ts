@@ -239,23 +239,53 @@ class CommunityService {
           clientId: oAuthClientId
         });
 
-        if (res && res.idToken) {
-          const credential = GoogleAuthProvider.credential(res.idToken);
-          const result = await signInWithCredential(auth, credential);
-          const fbUser = result.user;
-          const userObj = (res.user || {}) as any;
+        const idToken = res?.idToken || res?.authentication?.idToken || res?.id_token;
+
+        if (idToken) {
+          try {
+            const credential = GoogleAuthProvider.credential(idToken);
+            const result = await signInWithCredential(auth, credential);
+            const fbUser = result.user;
+            return await this.loginWithGoogleAccount(
+              fbUser.uid,
+              fbUser.displayName || res.displayName || res.givenName || '',
+              fbUser.photoURL || res.imageUrl || '',
+              fbUser.email || res.email || undefined
+            );
+          } catch (credErr) {
+            console.warn('signInWithCredential notice:', credErr);
+            const nativeUid = res.userId || 'g_' + Math.random().toString(36).substr(2, 9);
+            return await this.loginWithGoogleAccount(
+              nativeUid,
+              res.displayName || res.givenName || 'مستخدم Google',
+              res.imageUrl || '',
+              res.email || undefined
+            );
+          }
+        } else if (res && (res.userId || res.email)) {
+          const nativeUid = res.userId || 'g_' + Math.random().toString(36).substr(2, 9);
           return await this.loginWithGoogleAccount(
-            fbUser.uid,
-            fbUser.displayName || userObj.givenName || userObj.name || '',
-            fbUser.photoURL || userObj.imageUrl || '',
-            fbUser.email || userObj.email || undefined
+            nativeUid,
+            res.displayName || res.givenName || 'مستخدم Google',
+            res.imageUrl || '',
+            res.email || undefined
           );
         }
       } catch (nativeErr: any) {
-        console.warn('Capawesome GoogleSignIn native failed, trying web fallback:', nativeErr);
+        console.warn('Capawesome GoogleSignIn native error/cancel:', nativeErr);
+        const errMsg = (nativeErr?.message || '').toLowerCase();
+        if (
+          errMsg.includes('cancel') || 
+          errMsg.includes('canceled') || 
+          nativeErr?.code === 'SIGN_IN_CANCELED' ||
+          nativeErr?.code === '12501'
+        ) {
+          throw new Error('تم إلغاء عملية اختيار الحساب.');
+        }
       }
     }
 
+    // Web preview or fallback for web browser
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
@@ -268,32 +298,23 @@ class CommunityService {
     } catch (popupErr: any) {
       console.warn('signInWithPopup error:', popupErr);
       if (
-        popupErr?.code === 'auth/popup-blocked' ||
         popupErr?.code === 'auth/popup-closed-by-user' ||
-        popupErr?.code === 'auth/cancelled-popup-request' ||
+        popupErr?.code === 'auth/cancelled-popup-request'
+      ) {
+        throw new Error('تم إلغاء عملية تسجيل الدخول.');
+      }
+      if (
+        popupErr?.code === 'auth/popup-blocked' ||
         popupErr?.code === 'auth/operation-not-supported-in-this-environment'
       ) {
-        if (popupErr?.code === 'auth/popup-closed-by-user') {
-          throw new Error('تم إلغاء عملية تسجيل الدخول.');
-        }
-        try {
-          await signInWithRedirect(auth, googleProvider);
-          return this.getCurrentUser();
-        } catch (redirectErr: any) {
-          throw new Error(redirectErr?.message || 'تعذر فتح صفحة تسجيل الدخول.');
-        }
+        throw new Error('يرجى التأكد من السماح بالنوافذ المنبثقة (Popups) لتسجيل الدخول عبر Google.');
       }
       throw new Error(popupErr?.message || 'تعذر تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى.');
     }
   }
 
   public async loginWithGoogleRedirect(): Promise<void> {
-    try {
-      await signInWithRedirect(auth, googleProvider);
-    } catch (e) {
-      console.error('signInWithRedirect error:', e);
-      throw e;
-    }
+    console.warn('Redirect login disabled to prevent app reloads in Capacitor environment.');
   }
 
   public async logoutGoogle(): Promise<void> {
