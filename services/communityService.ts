@@ -3,6 +3,7 @@ import {
   signInWithPopup, signInWithRedirect, getRedirectResult, 
   signOut, onAuthStateChanged, signInWithCredential
 } from '../lib/firebase';
+import firebaseConfig from '../firebase-applet-config.json';
 import { GoogleAuthProvider } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
 import { 
@@ -220,11 +221,22 @@ class CommunityService {
   }
 
   public async loginWithGoogle(): Promise<CommunityUser> {
+    const oAuthClientId = firebaseConfig.oAuthClientId || '903816597633-1ph0t287hi7as4astptibanphv4dfp47.apps.googleusercontent.com';
+
     if (Capacitor.isNativePlatform()) {
       try {
         const { GoogleSignIn } = await import('@capawesome/capacitor-google-sign-in');
+        
+        try {
+          await (GoogleSignIn as any).initialize({
+            clientId: oAuthClientId
+          });
+        } catch (initErr) {
+          console.warn('GoogleSignIn initialize notice:', initErr);
+        }
+
         const res: any = await (GoogleSignIn as any).signIn({
-          clientId: '820638063534-web.apps.googleusercontent.com'
+          clientId: oAuthClientId
         });
 
         if (res && res.idToken) {
@@ -239,8 +251,8 @@ class CommunityService {
             fbUser.email || userObj.email || undefined
           );
         }
-      } catch (nativeErr) {
-        console.warn('Capawesome GoogleSignIn failed, trying web fallback:', nativeErr);
+      } catch (nativeErr: any) {
+        console.warn('Capawesome GoogleSignIn native failed, trying web fallback:', nativeErr);
       }
     }
 
@@ -253,9 +265,25 @@ class CommunityService {
         fbUser.photoURL || '',
         fbUser.email || undefined
       );
-    } catch (e: any) {
-      console.warn('loginWithGoogle error:', e);
-      throw e;
+    } catch (popupErr: any) {
+      console.warn('signInWithPopup error:', popupErr);
+      if (
+        popupErr?.code === 'auth/popup-blocked' ||
+        popupErr?.code === 'auth/popup-closed-by-user' ||
+        popupErr?.code === 'auth/cancelled-popup-request' ||
+        popupErr?.code === 'auth/operation-not-supported-in-this-environment'
+      ) {
+        if (popupErr?.code === 'auth/popup-closed-by-user') {
+          throw new Error('تم إلغاء عملية تسجيل الدخول.');
+        }
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return this.getCurrentUser();
+        } catch (redirectErr: any) {
+          throw new Error(redirectErr?.message || 'تعذر فتح صفحة تسجيل الدخول.');
+        }
+      }
+      throw new Error(popupErr?.message || 'تعذر تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى.');
     }
   }
 
