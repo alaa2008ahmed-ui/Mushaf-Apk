@@ -958,7 +958,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
       ? `_memorization_${isLandscape ? "h" : "v"}`
       : isWirdMode
         ? `_wird_${isLandscape ? "h" : "v"}`
-        : (readingMode === "mushaf" || readingMode === "mushaf_paging")
+        : readingMode === "mushaf"
           ? isLandscape
             ? "_h"
             : "_v"
@@ -1251,7 +1251,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                           onChange={(e) => {
                             setIsTransparentMode(e.target.checked);
                             const modeSuffix =
-                              (readingMode === "mushaf" || readingMode === "mushaf_paging")
+                              readingMode === "mushaf"
                                 ? isLandscape
                                   ? "_h"
                                   : "_v"
@@ -1291,7 +1291,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                             className="flex flex-col items-center gap-1.5 group"
                           >
                             <div
-                              className={`w-[20px] h-[20px] rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem("current_theme_id" + (isMemorizationMode ? `_memorization_${isLandscape ? "h" : "v"}` : isWirdMode ? `_wird_${isLandscape ? "h" : "v"}` : (readingMode === "mushaf" || readingMode === "mushaf_paging") ? (isLandscape ? "_h" : "_v") : `_${readingMode}_${isLandscape ? "h" : "v"}`)) === id ? "scale-110 border-gray-400 shadow-md" : "border-transparent hover:scale-105"}`}
+                              className={`w-[20px] h-[20px] rounded-full border-2 transition-all flex items-center justify-center ${localStorage.getItem("current_theme_id" + (isMemorizationMode ? `_memorization_${isLandscape ? "h" : "v"}` : isWirdMode ? `_wird_${isLandscape ? "h" : "v"}` : readingMode === "mushaf" ? (isLandscape ? "_h" : "_v") : `_${readingMode}_${isLandscape ? "h" : "v"}`)) === id ? "scale-110 border-gray-400 shadow-md" : "border-transparent hover:scale-105"}`}
                               style={{
                                 backgroundColor:
                                   id === "black"
@@ -1310,7 +1310,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                                     ? `_memorization_${isLandscape ? "h" : "v"}`
                                     : isWirdMode
                                       ? `_wird_${isLandscape ? "h" : "v"}`
-                                      : (readingMode === "mushaf" || readingMode === "mushaf_paging")
+                                      : readingMode === "mushaf"
                                         ? isLandscape
                                           ? "_h"
                                           : "_v"
@@ -1607,7 +1607,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                       ? `_memorization_${isLandscape ? "h" : "v"}`
                       : isWirdMode
                         ? `_wird_${isLandscape ? "h" : "v"}`
-                        : (readingMode === "mushaf" || readingMode === "mushaf_paging")
+                        : readingMode === "mushaf"
                           ? isLandscape
                             ? "_h"
                             : "_v"
@@ -2300,7 +2300,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                 <MenuItem
                   data-id="menu-item-mushaf"
                   icon={<BookText size={18} />}
-                  label="المصحف (تمرير رأسى)"
+                  label="المصحف"
                   onClick={() =>
                     handleAction(() => {
                       setReadingMode("mushaf");
@@ -2308,19 +2308,6 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   }
                   iconColor={sidebarIconColor}
                   isActive={readingMode === "mushaf"}
-                  currentTheme={currentTheme}
-                />
-                <MenuItem
-                  data-id="menu-item-mushaf-paging"
-                  icon={<BookOpen size={18} />}
-                  label="المصحف (تقليب أفقى)"
-                  onClick={() =>
-                    handleAction(() => {
-                      setReadingMode("mushaf_paging");
-                    })
-                  }
-                  iconColor={sidebarIconColor}
-                  isActive={readingMode === "mushaf_paging"}
                   currentTheme={currentTheme}
                 />
                 {!isLandscape && (
@@ -2949,7 +2936,7 @@ const ToolbarColorPickerContent: React.FC<{
     ? `_memorization_${isLandscape ? "h" : "v"}`
     : isWirdMode
       ? `_wird_${isLandscape ? "h" : "v"}`
-      : (readingMode === "mushaf" || readingMode === "mushaf_paging")
+      : readingMode === "mushaf"
         ? isLandscape
           ? "_h"
           : "_v"

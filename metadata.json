@@ -1,9 +1,12 @@
 {
-  "name": "Quran Last Version 3",
+  "name": "Quran 1.0.93",
   "description": "تطبيق إسلامي شامل يعمل بدون انترنت، يحتوي على القرآن الكريم، أذكار، تسبيح، مواقيت الصلاة، وقائمة تطبيقات متنوعة. مصمم ليكون رفيقك اليومي.",
   "requestFramePermissions": [
     "geolocation",
     "microphone",
     "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]
 }
