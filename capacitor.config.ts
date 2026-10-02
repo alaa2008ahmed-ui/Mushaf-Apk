@@ -6,7 +6,14 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   backgroundColor: '#000000',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    allowNavigation: [
+      '*.firebaseapp.com',
+      '*.firebase.com',
+      '*.google.com',
+      'accounts.google.com',
+      'ssl.gstatic.com'
+    ]
   },
   plugins: {
     Keyboard: {

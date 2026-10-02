@@ -76,39 +76,23 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
     
     // Check if we are inside an iframe (like AI studio preview) where redirect is blocked by Google (403)
     const isIframe = typeof window !== 'undefined' && window.self !== window.top;
-    const isNative = Capacitor.isNativePlatform();
     
-    if (isNative) {
-      setIsGoogleLoading(true);
-      setLoadingMessage('جارٍ فتح المتصفح لتسجيل الدخول الآمن بحساب Google...');
-      // Open our secure web app auth handler in Chrome/Safari
-      const authUrl = 'https://moshaf-ahmed-laila.firebaseapp.com/auth.html?scheme=com.mushaf.ahmedandlayla';
-      window.open(authUrl, '_system');
-      
-      // Stop the loading state after 8 seconds
-      setTimeout(() => {
-        setIsGoogleLoading(false);
-        setLoadingMessage('');
-      }, 8000);
-      return;
-    }
-
-    // On native apps (APK), NEVER use redirect because it redirects to localhost in the external Chrome browser and fails!
-    const shouldRedirect = useRedirect && !isIframe && !isNative;
+    // Outside preview iframe (on APK or standard browser), redirect is the seamless in-app flow
+    const shouldRedirect = useRedirect || !isIframe;
 
     if (shouldRedirect) {
       setIsGoogleLoading(true);
-      setLoadingMessage('جارٍ التوجيه لصفحة Google الرسمية...');
+      setLoadingMessage('جارٍ التوجيه لصفحة Google الرسمية لتوثيق حسابك...');
       communityService.loginWithGoogleRedirect().catch((err: any) => {
         console.error('Google direct redirect error:', err);
-        setError('تعذر فتح صفحة Google المباشرة. يرجى تجربة خيار النافذة المنبثقة.');
+        setError('تعذر تسجيل الدخول عبر Google. يمكنك كتابة اسمك وصورتك بالأسفل والمتابعة كزائر.');
         setIsGoogleLoading(false);
         setLoadingMessage('');
       });
       return;
     }
 
-    // Popup approach - MUST be completely synchronous to avoid browser popup blockers!
+    // Popup approach for preview iframe
     setIsGoogleLoading(true);
     setLoadingMessage('جارٍ فتح نافذة تسجيل Google لتوثيق الحساب...');
 
@@ -124,11 +108,9 @@ const UsernameModal: React.FC<UsernameModalProps> = ({ isOpen, onClose, onSaved,
       .catch((err: any) => {
         console.warn('Google popup attempt result:', err);
         if (err?.code === 'auth/popup-blocked' || err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
-          setError('حجب المتصفح النافذة المنبثقة أو تم إغلاقها. يمكنك المتابعة وكتابة بياناتك بالأسفل مباشرة كزائر مبارك دون الحاجة لحساب Google.');
-        } else if (err?.code === 'auth/unauthorized-domain') {
-          setError('هذا النطاق غير مصرح به في Firebase. لا قلق، يمكنك كتابة بياناتك وتعديل ملفك الشخصي بالأسفل مباشرة كزائر مبارك.');
+          setError('حجب المتصفح النافذة المنبثقة. يمكنك المتابعة وكتابة بياناتك بالأسفل مباشرة كزائر.');
         } else {
-          setError('لم يتم تسجيل الدخول عبر Google. يمكنك الاستمرار بكتابة بياناتك الشخصية وصورتك بالأسفل مباشرة للدردشة كزائر مبارك.');
+          setError('لم يتم تسجيل الدخول عبر Google. يمكنك الاستمرار بكتابة بياناتك بالأسفل مباشرة.');
         }
       })
       .finally(() => {
