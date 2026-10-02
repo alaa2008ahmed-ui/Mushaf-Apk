@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowRight, Search, MessageSquare, Users, Ban, User, Edit3, 
-  Sparkles, Globe, Shield, CheckCircle2, UserX, RefreshCw, Trash2
+  Sparkles, Globe, Shield, CheckCircle2, UserX, RefreshCw, Trash2, KeyRound, Copy
 } from 'lucide-react';
 import { communityService, CommunityUser, ChatConversation } from '../services/communityService';
 import UsernameModal from '../components/Community/UsernameModal';
@@ -207,17 +207,23 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-xs font-bold text-slate-900 dark:text-white">{currentUser.username}</span>
                   <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">(أنت)</span>
-                  {currentUser.isGoogleAuth ? (
-                    <span className="text-[10px] bg-sky-500/20 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                      <Shield size={10} />
-                      <span>موثق Google</span>
-                    </span>
-                  ) : (
+                  {currentUser.accountCode && (
                     <button
-                      onClick={() => setShowProfileModal(true)}
-                      className="text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 hover:bg-amber-500/30 transition-all"
+                      type="button"
+                      onClick={() => {
+                        try {
+                          navigator.clipboard.writeText(currentUser.accountCode);
+                          showToast(`تم نسخ كود حسابك: ${currentUser.accountCode}`);
+                        } catch (e) {
+                          showToast(`كود حسابك: ${currentUser.accountCode}`);
+                        }
+                      }}
+                      className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25 px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 border border-emerald-500/30 transition-all font-mono"
+                      title="انقر لنسخ كود الحساب للدخول من أي جهاز آخر"
                     >
-                      <span>ربط مع Google وحفظ الحساب</span>
+                      <KeyRound size={10} className="text-emerald-500" />
+                      <span>كود: {currentUser.accountCode}</span>
+                      <Copy size={9} />
                     </button>
                   )}
                 </div>
@@ -230,7 +236,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
               className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 self-end sm:self-center bg-white/60 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-emerald-500/20"
             >
               <Edit3 size={13} />
-              <span>تعديل الملف</span>
+              <span>تعديل / استعادة حساب</span>
             </button>
           </div>
         )}

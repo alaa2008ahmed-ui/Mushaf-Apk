@@ -1,11 +1,4 @@
-import { 
-  db, auth, googleProvider, 
-  signInWithPopup, signInWithRedirect, getRedirectResult, 
-  signOut, onAuthStateChanged, signInWithCredential
-} from '../lib/firebase';
-import firebaseConfig from '../firebase-applet-config.json';
-import { GoogleAuthProvider } from 'firebase/auth';
-import { Capacitor } from '@capacitor/core';
+import { db } from '../lib/firebase';
 import { 
   collection, doc, setDoc, getDoc, getDocs, onSnapshot, 
   updateDoc, deleteDoc 
@@ -32,6 +25,8 @@ export interface QuranVerseAttachment {
 
 export interface CommunityUser {
   userId: string;
+  accountCode?: string;
+  passcode?: string;
   username: string;
   avatarUrl?: string;
   country: string;
@@ -87,7 +82,6 @@ class CommunityService {
     this.initCurrentUser();
     this.loadFromLocalStorage();
     this.setupFirestoreListeners();
-    this.setupAuthListener();
     this.setupPresenceLifecycle();
     if (localStorage.getItem('server_purged_v3') !== 'true') {
       localStorage.setItem('server_purged_v3', 'true');
@@ -141,21 +135,40 @@ class CommunityService {
     } catch (e) {}
   }
 
+  public generateAccountCode(): string {
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let code = '';
+    for (let i = 0; i < 5; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `MQ-${code}`;
+  }
+
   public initCurrentUser(): CommunityUser {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_USER);
       if (stored) {
-        this.currentUser = JSON.parse(stored);
-        return this.currentUser!;
+        const u = JSON.parse(stored);
+        if (u && u.userId) {
+          if (!u.accountCode) {
+            u.accountCode = this.generateAccountCode();
+            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(u));
+          }
+          this.currentUser = u;
+          this.usersMap.set(u.userId, u);
+          return this.currentUser!;
+        }
       }
     } catch (e) {}
 
-    const randomId = 'usr_' + Math.random().toString(36).substr(2, 9);
+    const randomId = 'usr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
     this.currentUser = {
       userId: randomId,
+      accountCode: this.generateAccountCode(),
       username: '',
       country: '',
       bio: '',
+      avatarUrl: '',
       isOnline: true,
       createdAt: new Date().toISOString()
     };
@@ -169,175 +182,103 @@ class CommunityService {
     return this.currentUser;
   }
 
-  public async loginWithGoogleAccount(uid: string, displayName: string, avatarUrl: string, email?: string): Promise<CommunityUser> {
-    let existingProfile: CommunityUser | null = null;
-    try {
-      const docSnap = await getDoc(doc(db, 'users', uid));
-      if (docSnap.exists()) {
-        existingProfile = docSnap.data() as CommunityUser;
-      }
-    } catch (e) {
-      console.warn('Error fetching Google user profile:', e);
+  public async restoreAccount(codeOrUsername: string, inputPasscode?: string): Promise<CommunityUser> {
+    const queryTerm = codeOrUsername.trim();
+    if (!queryTerm) {
+      throw new Error('يرجى إدخال كود الحساب أو اسم المستخدم');
     }
 
+    const cleanCode = queryTerm.toUpperCase();
+    let foundUser: CommunityUser | null = null;
+
+    try {
+      // 1. Check in local cache first
+      for (const u of this.usersMap.values()) {
+        if (
+          (u.accountCode && u.accountCode.toUpperCase() === cleanCode) ||
+          (u.accountCode && u.accountCode.replace(/^MQ-/i, '').toUpperCase() === cleanCode.replace(/^MQ-/i, '')) ||
+          (u.userId && u.userId.toLowerCase() === queryTerm.toLowerCase()) ||
+          (u.username && u.username.trim().toLowerCase() === queryTerm.toLowerCase())
+        ) {
+          foundUser = u;
+          break;
+        }
+      }
+
+      // 2. Query Firestore if not found locally
+      if (!foundUser) {
+        const snap = await getDocs(collection(db, 'users'));
+        for (const docSnap of snap.docs) {
+          const u = docSnap.data() as CommunityUser;
+          if (
+            (u.accountCode && u.accountCode.toUpperCase() === cleanCode) ||
+            (u.accountCode && u.accountCode.replace(/^MQ-/i, '').toUpperCase() === cleanCode.replace(/^MQ-/i, '')) ||
+            (u.userId && u.userId.toLowerCase() === queryTerm.toLowerCase()) ||
+            (docSnap.id.toLowerCase() === queryTerm.toLowerCase()) ||
+            (u.username && u.username.trim().toLowerCase() === queryTerm.toLowerCase())
+          ) {
+            foundUser = { ...u, userId: u.userId || docSnap.id };
+            break;
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error('Error finding user in Firestore:', e);
+      throw new Error('حدث خطأ أثناء الاتصال بالخادم، يرجى التأكد من اتصالك بالإنترنت.');
+    }
+
+    if (!foundUser) {
+      throw new Error('لم يتم العثور على أي حساب بهذا الكود أو الاسم. تأكد من صحة الكود أو قم بإنشاء حساب جديد.');
+    }
+
+    // Verify PIN passcode if one was set for this account
+    if (foundUser.passcode && foundUser.passcode.trim()) {
+      if (!inputPasscode || inputPasscode.trim() !== foundUser.passcode.trim()) {
+        throw new Error('رمز الحماية (PIN) غير صحيح لهذا الحساب.');
+      }
+    }
+
+    // Switch active account to the restored user
     const nowIso = new Date().toISOString();
-    if (existingProfile) {
-      this.currentUser = {
-        ...existingProfile,
-        userId: uid,
-        email: email || existingProfile.email,
-        isGoogleAuth: true,
+    foundUser.isOnline = true;
+    foundUser.lastSeen = nowIso;
+    this.currentUser = foundUser;
+    this.usersMap.set(foundUser.userId, foundUser);
+
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(foundUser));
+    this.saveToLocalStorage();
+
+    try {
+      await updateDoc(doc(db, 'users', foundUser.userId), {
         isOnline: true,
         lastSeen: nowIso
-      };
-    } else {
-      this.currentUser = {
-        userId: uid,
-        username: displayName || '',
-        avatarUrl: avatarUrl || '',
-        country: '',
-        bio: '',
-        email: email || undefined,
-        isGoogleAuth: true,
-        isOnline: true,
-        lastSeen: nowIso,
-        createdAt: nowIso
-      };
-    }
+      });
+    } catch (e) {}
 
-    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(this.currentUser));
-    this.usersMap.set(uid, this.currentUser);
+    // Fetch messages for restored user
+    await this.fetchLatestMessages();
 
-    try {
-      const payload = this.cleanPayload(this.currentUser);
-      await setDoc(doc(db, 'users', uid), payload, { merge: true });
-    } catch (e) {
-      console.error('Error saving Google user to Firestore:', e);
-    }
-
-    window.dispatchEvent(new CustomEvent('community_user_updated', { detail: this.currentUser }));
+    window.dispatchEvent(new CustomEvent('community_user_updated', { detail: foundUser }));
+    window.dispatchEvent(new CustomEvent('community_messages_updated'));
     this.sendHeartbeat();
-    return this.currentUser;
+
+    return foundUser;
   }
 
-  public async loginWithGoogle(): Promise<CommunityUser> {
-    const oAuthClientId = firebaseConfig.oAuthClientId || '903816597633-1ph0t287hi7as4astptibanphv4dfp47.apps.googleusercontent.com';
-
-    if (Capacitor.isNativePlatform()) {
-      try {
-        const { GoogleSignIn } = await import('@capawesome/capacitor-google-sign-in');
-        
-        try {
-          await (GoogleSignIn as any).initialize({
-            clientId: oAuthClientId
-          });
-        } catch (initErr) {
-          console.warn('GoogleSignIn initialize notice:', initErr);
-        }
-
-        const res: any = await (GoogleSignIn as any).signIn({
-          clientId: oAuthClientId
-        });
-
-        const idToken = res?.idToken || res?.authentication?.idToken || res?.id_token;
-
-        if (idToken) {
-          try {
-            const credential = GoogleAuthProvider.credential(idToken);
-            const result = await signInWithCredential(auth, credential);
-            const fbUser = result.user;
-            return await this.loginWithGoogleAccount(
-              fbUser.uid,
-              fbUser.displayName || res.displayName || res.givenName || '',
-              fbUser.photoURL || res.imageUrl || '',
-              fbUser.email || res.email || undefined
-            );
-          } catch (credErr) {
-            console.warn('signInWithCredential notice:', credErr);
-            const nativeUid = res.userId || 'g_' + Math.random().toString(36).substr(2, 9);
-            return await this.loginWithGoogleAccount(
-              nativeUid,
-              res.displayName || res.givenName || 'مستخدم Google',
-              res.imageUrl || '',
-              res.email || undefined
-            );
-          }
-        } else if (res && (res.userId || res.email)) {
-          const nativeUid = res.userId || 'g_' + Math.random().toString(36).substr(2, 9);
-          return await this.loginWithGoogleAccount(
-            nativeUid,
-            res.displayName || res.givenName || 'مستخدم Google',
-            res.imageUrl || '',
-            res.email || undefined
-          );
-        }
-      } catch (nativeErr: any) {
-        console.warn('Capawesome GoogleSignIn native error/cancel:', nativeErr);
-        const errMsg = (nativeErr?.message || '').toLowerCase();
-        if (
-          errMsg.includes('cancel') || 
-          errMsg.includes('canceled') || 
-          nativeErr?.code === 'SIGN_IN_CANCELED' ||
-          nativeErr?.code === '12501'
-        ) {
-          throw new Error('تم إلغاء عملية اختيار الحساب.');
-        }
-      }
-    }
-
-    // Web preview or fallback for web browser
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const fbUser = result.user;
-      return await this.loginWithGoogleAccount(
-        fbUser.uid,
-        fbUser.displayName || '',
-        fbUser.photoURL || '',
-        fbUser.email || undefined
-      );
-    } catch (popupErr: any) {
-      console.warn('signInWithPopup error:', popupErr);
-      if (
-        popupErr?.code === 'auth/popup-closed-by-user' ||
-        popupErr?.code === 'auth/cancelled-popup-request'
-      ) {
-        throw new Error('تم إلغاء عملية تسجيل الدخول.');
-      }
-      if (
-        popupErr?.code === 'auth/popup-blocked' ||
-        popupErr?.code === 'auth/operation-not-supported-in-this-environment'
-      ) {
-        throw new Error('يرجى التأكد من السماح بالنوافذ المنبثقة (Popups) لتسجيل الدخول عبر Google.');
-      }
-      throw new Error(popupErr?.message || 'تعذر تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى.');
-    }
-  }
-
-  public async loginWithGoogleRedirect(): Promise<void> {
-    console.warn('Redirect login disabled to prevent app reloads in Capacitor environment.');
-  }
-
-  public async logoutGoogle(): Promise<void> {
+  public logoutAccount() {
     const userToSignOut = this.currentUser;
     if (userToSignOut && userToSignOut.userId) {
-      // Do not use await here to prevent blocking if network or auth is in a bad state
       updateDoc(doc(db, 'users', userToSignOut.userId), {
         isOnline: false,
         lastSeen: new Date().toISOString()
       }).catch(() => {});
     }
 
-    try {
-      await signOut(auth);
-    } catch (e) {
-      console.warn('Firebase signOut notice:', e);
-    }
-    
-    // Clear stored authenticated user and re-initialize as anonymous guest
     localStorage.removeItem(STORAGE_KEY_USER);
     this.currentUser = null;
     const freshUser = this.initCurrentUser();
     window.dispatchEvent(new CustomEvent('community_user_updated', { detail: freshUser }));
+    window.dispatchEvent(new CustomEvent('community_messages_updated'));
   }
 
   private setupPresenceLifecycle() {
@@ -442,66 +383,6 @@ class CommunityService {
     return `آخر ظهور منذ ${diffDays} يوم`;
   }
 
-  private setupAuthListener() {
-    try {
-      // Handle login redirect results if user returned from Google redirect sign-in
-      getRedirectResult(auth).then(async (result) => {
-        if (result && result.user) {
-          const fbUser = result.user;
-          await this.loginWithGoogleAccount(
-            fbUser.uid,
-            fbUser.displayName || '',
-            fbUser.photoURL || '',
-            fbUser.email || undefined
-          );
-        }
-      }).catch((e) => {
-        console.warn('getRedirectResult notice:', e);
-      });
-
-      onAuthStateChanged(auth, async (fbUser) => {
-        if (fbUser) {
-          const uid = fbUser.uid;
-          try {
-            const docSnap = await getDoc(doc(db, 'users', uid));
-            if (docSnap.exists()) {
-              const profile = docSnap.data() as CommunityUser;
-              this.currentUser = {
-                ...profile,
-                userId: uid,
-                isGoogleAuth: true,
-                isOnline: true,
-                lastSeen: new Date().toISOString()
-              };
-              localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(this.currentUser));
-              this.usersMap.set(uid, this.currentUser);
-              window.dispatchEvent(new CustomEvent('community_user_updated', { detail: this.currentUser }));
-              this.sendHeartbeat();
-            } else {
-              // Initial Google user creation if first time
-              await this.loginWithGoogleAccount(
-                uid,
-                fbUser.displayName || '',
-                fbUser.photoURL || '',
-                fbUser.email || undefined
-              );
-            }
-          } catch (e) {
-            console.warn('onAuthStateChanged profile fetch error:', e);
-          }
-        } else {
-          // Firebase reports signed out
-          if (this.currentUser && this.currentUser.isGoogleAuth) {
-            localStorage.removeItem(STORAGE_KEY_USER);
-            this.currentUser = null;
-            const fresh = this.initCurrentUser();
-            window.dispatchEvent(new CustomEvent('community_user_updated', { detail: fresh }));
-          }
-        }
-      });
-    } catch (e) {}
-  }
-
   public isProfileComplete(): boolean {
     const user = this.getCurrentUser();
     return Boolean(
@@ -516,13 +397,22 @@ class CommunityService {
     return this.isProfileComplete();
   }
 
-  public async saveCurrentUser(username: string, country: string = '', bio?: string, avatarUrl?: string): Promise<CommunityUser> {
+  public async saveCurrentUser(
+    username: string, 
+    country: string = '', 
+    bio?: string, 
+    avatarUrl?: string,
+    passcode?: string
+  ): Promise<CommunityUser> {
     const user = this.getCurrentUser();
     user.username = username.trim();
     user.country = country;
     if (bio !== undefined) user.bio = bio;
     if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
+    if (passcode !== undefined) user.passcode = passcode.trim();
+    if (!user.accountCode) user.accountCode = this.generateAccountCode();
     user.isOnline = true;
+    user.lastSeen = new Date().toISOString();
 
     this.currentUser = user;
     try {
@@ -620,6 +510,7 @@ class CommunityService {
       // Reset current user object
       this.currentUser = {
         userId: 'usr_' + Math.random().toString(36).substr(2, 9),
+        accountCode: this.generateAccountCode(),
         username: '',
         country: '',
         bio: '',
@@ -912,8 +803,8 @@ class CommunityService {
     audioUrl?: string
   ): Promise<ChatMessage> {
     const current = this.getCurrentUser();
-    if (!current.isGoogleAuth) {
-      throw new Error('عفواً، يجب تسجيل الدخول باستخدام Google أولاً لبدء التراسل وإرسال الرسائل.');
+    if (!this.isProfileComplete()) {
+      throw new Error('عفواً، يرجى حفظ اسمك وبياناتك وصورتك الشخصية أولاً لبدء إرسال الرسائل.');
     }
     const chatId = this.getChatId(current.userId, recipientId);
     const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);

@@ -1,4 +1,5 @@
 import React from 'react';
+import FloatingNeonTicker from '../FloatingNeonTicker';
 
 interface TitleSectionProps {
     isEditMode: boolean;
@@ -29,7 +30,11 @@ const TitleSection: React.FC<TitleSectionProps> = ({
                 <h1 id="app-title" className={`text-4xl font-black tracking-tight transition-transform ${isEditMode ? 'scale-110 text-yellow-400' : ''}`} style={{ color: isEditMode ? undefined : (isBlackTheme ? '#FFFFFF' : theme.textColor) }}>
                     مُصْحَفُ أَحْمَدَ وَلَيْلَى
                 </h1>
-                <p className="text-[16px] font-black mt-3" style={{ color: isBlackTheme ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#4D7C0F' : theme.textColor)) }}>
+                
+                {/* الشريط المتحرك فوق 'نرجوا الدعاء...' */}
+                <FloatingNeonTicker />
+
+                <p className="text-[16px] font-black mt-2" style={{ color: isBlackTheme ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#4D7C0F' : theme.textColor)) }}>
                     {isEditMode ? 'اسحب الأزرار لترتيبها' : 'نرجوا الدعاء لهم بالرحمة والمغفرة'}
                 </p>
                 
