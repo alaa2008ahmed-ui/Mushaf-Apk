@@ -7,6 +7,7 @@ import { ALL_DUAA, DUAA_CATEGORIES } from '../data/adiaData';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { shareAsImage } from '../utils/shareAsImage';
+import { playTTS, stopTTS, subscribeTTS } from '../utils/ttsEngine';
 
 function Adia({ onBack, onNavigate }) {
     const { theme, themeKey } = useTheme();
@@ -18,8 +19,25 @@ function Adia({ onBack, onNavigate }) {
     const [toastMessage, setToastMessage] = useState('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [menuOpenDirection, setMenuOpenDirection] = useState<'up' | 'down'>('up');
+    const [playingText, setPlayingText] = useState<string | null>(null);
     const fabRef = useRef<HTMLButtonElement>(null);
     const mainRef = useRef<HTMLElement>(null);
+
+    useEffect(() => {
+        const unsubscribe = subscribeTTS(setPlayingText);
+        return () => {
+            unsubscribe();
+            stopTTS();
+        };
+    }, []);
+
+    const handlePlayAudio = (text: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        playTTS(text, (msg) => {
+            setToastMessage(msg);
+            setTimeout(() => setToastMessage(''), 2500);
+        });
+    };
 
     useEffect(() => {
         if (mainRef.current) {
@@ -193,14 +211,23 @@ function Adia({ onBack, onNavigate }) {
                                                 }} 
                                                 className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100"
                                                 style={{ color: 'var(--text-color)' }}
+                                                title="تكبير"
                                             >
                                                 <i className="fa-solid fa-magnifying-glass-plus"></i>
                                             </button>
-                                            <button onClick={(e) => handleCopy(duaa.text, e)} className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
+                                            <button onClick={(e) => handleCopy(duaa.text, e)} className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }} title="نسخ">
                                                 <i className="fa-regular fa-copy"></i>
                                             </button>
-                                            <button onClick={(e) => handleShare(duaa, e)} className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
+                                            <button onClick={(e) => handleShare(duaa, e)} className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }} title="مشاركة">
                                                 <i className="fa-solid fa-share-nodes"></i>
+                                            </button>
+                                            <button 
+                                                onClick={(e) => handlePlayAudio(duaa.text, e)} 
+                                                className="w-9 h-9 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" 
+                                                style={{ color: playingText === duaa.text ? '#ef4444' : 'var(--text-color)' }}
+                                                title={playingText === duaa.text ? "إيقاف الاستماع" : "استماع صوتي"}
+                                            >
+                                                <i className={`fa-solid ${playingText === duaa.text ? 'fa-circle-pause text-red-500 animate-pulse' : 'fa-volume-high'}`}></i>
                                             </button>
                                         </div>
                                     </div>

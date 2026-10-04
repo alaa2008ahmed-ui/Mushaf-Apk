@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowRight, Search, MessageSquare, Users, Ban, User, Edit3, 
-  Sparkles, Globe, Shield, CheckCircle2, UserX, RefreshCw, Trash2
+  Sparkles, Globe, Shield, CheckCircle2, UserX, RefreshCw, Trash2, KeyRound, Copy
 } from 'lucide-react';
 import { communityService, CommunityUser, ChatConversation } from '../services/communityService';
 import UsernameModal from '../components/Community/UsernameModal';
@@ -33,7 +33,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
-  const currentUser = communityService.getCurrentUser();
+  const [currentUser, setCurrentUser] = useState<CommunityUser>(() => communityService.getCurrentUser());
 
   const [userToBlock, setUserToBlock] = useState<CommunityUser | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -44,7 +44,9 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
   };
 
   const loadData = () => {
-    const visibleUsers = communityService.getVisibleUsers(searchQuery);
+    const cur = communityService.getCurrentUser();
+    setCurrentUser(cur);
+    const visibleUsers = communityService.getVisibleUsers(searchQuery, false);
     setUsers(visibleUsers);
 
     const activeChats = communityService.getActiveConversations();
@@ -77,11 +79,16 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
       loadData();
     };
 
+    const presenceInterval = setInterval(() => {
+      loadData();
+    }, 3500);
+
     window.addEventListener('community_user_updated', handleUpdate);
     window.addEventListener('community_messages_updated', handleUpdate);
     window.addEventListener('community_block_updated', handleUpdate);
 
     return () => {
+      clearInterval(presenceInterval);
       window.removeEventListener('community_user_updated', handleUpdate);
       window.removeEventListener('community_messages_updated', handleUpdate);
       window.removeEventListener('community_block_updated', handleUpdate);
@@ -117,7 +124,10 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white pb-12 font-sans" dir="rtl">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between shadow-sm">
+      <div 
+        className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 pb-3.5 flex items-center justify-between shadow-sm"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.25rem)' }}
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -161,7 +171,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
             }`}
           >
             <Users size={16} />
-            <span>المستخدمون المسجلون ({totalUsersCount})</span>
+            <span>المستخدمون ({totalUsersCount})</span>
           </button>
 
           <button
@@ -192,64 +202,82 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
           </button>
         </div>
 
-        {/* Current User Profile Badge Card */}
+        {/* Current User Profile Badge Card (Single row only, country in place of 'أنت') */}
         {currentUser.username && (
-          <div className="mb-4 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center overflow-hidden border border-emerald-400/40 flex-shrink-0">
+          <div className="mb-3 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border border-emerald-500/30 rounded-2xl py-2 px-3.5 flex items-center justify-between gap-2 shadow-sm">
+            <div className="flex items-center gap-2 min-w-0 flex-1 overflow-x-auto hide-scrollbar">
+              <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center overflow-hidden border border-emerald-400/40 flex-shrink-0">
                 {currentUser.avatarUrl ? (
                   <img src={currentUser.avatarUrl} alt={currentUser.username} className="w-full h-full object-cover" />
                 ) : (
-                  <User size={20} />
+                  <User size={16} />
                 )}
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">{currentUser.username}</span>
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">(أنت)</span>
-                  {currentUser.isGoogleAuth ? (
-                    <span className="text-[10px] bg-sky-500/20 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                      <Shield size={10} />
-                      <span>موثق Google</span>
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => setShowProfileModal(true)}
-                      className="text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 hover:bg-amber-500/30 transition-all"
-                    >
-                      <span>ربط مع Google وحفظ الحساب</span>
-                    </button>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{currentUser.country} • {currentUser.bio || 'محب للقرآن'}</p>
+              <div className="flex items-center gap-1.5 flex-nowrap min-w-0">
+                <span className="text-xs font-bold text-slate-900 dark:text-white whitespace-nowrap">{currentUser.username}</span>
+                <span className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold whitespace-nowrap border border-emerald-500/20">
+                  {currentUser.country || 'دولة أخرى 🌍'}
+                </span>
+                {currentUser.accountCode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        navigator.clipboard.writeText(currentUser.accountCode);
+                        showToast(`تم نسخ كود حسابك: ${currentUser.accountCode}`);
+                      } catch (e) {
+                        showToast(`كود حسابك: ${currentUser.accountCode}`);
+                      }
+                    }}
+                    className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 border border-emerald-500/30 transition-all font-mono whitespace-nowrap leading-none"
+                    title="انقر لنسخ كود الحساب للدخول من أي جهاز آخر"
+                  >
+                    <KeyRound size={10} className="text-emerald-500" />
+                    <span>كود: {currentUser.accountCode}</span>
+                    <Copy size={9} />
+                  </button>
+                )}
               </div>
             </div>
 
             <button
+              type="button"
               onClick={() => setShowProfileModal(true)}
-              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 self-end sm:self-center bg-white/60 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-emerald-500/20"
+              className="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 p-1.5 rounded-xl border border-emerald-500/25 transition-all flex-shrink-0 shadow-xs active:scale-95 bg-white/70 dark:bg-slate-800/70"
+              title="تعديل حسابي"
             >
-              <Edit3 size={13} />
-              <span>تعديل الملف</span>
+              <Edit3 size={14} />
             </button>
           </div>
         )}
 
-        {/* Search Input (For Users tab) */}
+        {/* Search Input & Refresh Button (For Users tab) */}
         {activeTab === 'users' && (
-          <div className="relative mb-4">
-            <Search size={18} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ابحث عن قارئ بالاسم أو الدولة..."
-              className="w-full pl-4 pr-10 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-            />
+          <div className="flex items-center gap-2 mb-4">
+            <div className="relative flex-1">
+              <Search size={18} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="ابحث عن قارئ بالاسم أو الدولة أو كود الحساب..."
+                className="w-full pl-4 pr-10 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold transition-all flex-shrink-0 active:scale-95"
+              title="تحديث قائمة المستخدمين الآن من الخادم"
+            >
+              <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
+              <span className="hidden sm:inline">تحديث القائمة</span>
+            </button>
           </div>
         )}
 
-        {/* Tab 1: Global Users Directory */}
+        {/* Tab 1: Global Users Directory (Excluding current user) */}
         {activeTab === 'users' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {users.length === 0 ? (
@@ -258,15 +286,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                 <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
                   {searchQuery 
                     ? 'لا يوجد مستخدمون مطابقون للبحث' 
-                    : totalUsersCount <= 1 
-                      ? 'أنت أول المنضمين لمجتمع المصحف حالياً! ✨' 
-                      : 'لا يوجد مستخدمون آخرون مسجلون حالياً'
-                  }
-                </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {searchQuery 
-                    ? 'تأكد من كتابة الاسم بشكل صحيح' 
-                    : 'عند فتح التطبيق من حاسوب/متصفح آخر وتسجيل اسم مستخدم جديد، سيظهر فوراً هنا للبدء في التراسل والتواصل.'
+                    : 'لا يوجد مستخدمون آخرون مسجلون حالياً'
                   }
                 </p>
               </div>
@@ -280,30 +300,30 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                     key={u.userId}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-all"
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl py-2.5 px-3.5 flex items-center justify-between shadow-sm hover:shadow-md transition-all"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center border border-emerald-500/20 overflow-hidden">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full font-bold flex items-center justify-center overflow-hidden bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                           {u.avatarUrl ? (
                             <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" />
                           ) : (
-                            <User size={24} />
+                            <User size={20} />
                           )}
                         </div>
                         {isOnline ? (
-                          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" title="متصل الآن" />
+                          <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" title="متصل الآن" />
                         ) : (
-                          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white dark:border-slate-900 opacity-60" title="غير متصل" />
+                          <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-slate-400 border-2 border-white dark:border-slate-900 opacity-60" title="غير متصل" />
                         )}
                       </div>
 
-                      <div>
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                          <span>{u.username}</span>
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                          {u.username}
                         </h3>
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{u.country}</span>
+                        <div className="flex items-center gap-2 text-xs mt-0.5 flex-wrap">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{u.country || 'دولة أخرى 🌍'}</span>
                           <span className="text-slate-300 dark:text-slate-700">•</span>
                           <span className={isOnline ? "text-emerald-500 font-medium text-[11px]" : "text-slate-400 text-[11px]"}>
                             {statusText}
@@ -317,21 +337,23 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-shrink-0 mr-2">
                       <button
+                        type="button"
                         onClick={() => handleStartChat(u.userId)}
-                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
                       >
-                        <MessageSquare size={14} />
+                        <MessageSquare size={13} />
                         <span>محادثة</span>
                       </button>
 
                       <button
+                        type="button"
                         onClick={() => setUserToBlock(u)}
-                        className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors active:scale-95"
+                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors active:scale-95"
                         title="حظر المستخدم"
                       >
-                        <Ban size={16} />
+                        <Ban size={15} />
                       </button>
                     </div>
                   </motion.div>
@@ -348,7 +370,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
               <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6">
                 <MessageSquare size={40} className="mx-auto text-slate-400 mb-2" />
                 <p className="text-sm font-bold text-slate-700 dark:text-slate-300">لا توجد محادثات نشطة حالياً</p>
-                <p className="text-xs text-slate-500 mt-1">اختر قاريء من تبويب (المستخدمون المسجلون) لبدء المحادثة معه</p>
+                <p className="text-xs text-slate-500 mt-1">اختر قاريء من تبويب (المستخدمون) لبدء المحادثة معه</p>
               </div>
             ) : (
               chats.map((chat) => {
@@ -519,14 +541,21 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
       <UsernameModal
         isOpen={showProfileModal}
         onClose={() => {
+          setShowProfileModal(false);
           if (!communityService.isProfileComplete()) {
             onBack();
-          } else {
-            setShowProfileModal(false);
           }
         }}
         onBackToApps={onBack}
-        onSaved={() => loadData()}
+        onSaved={() => {
+          setShowProfileModal(false);
+          const u = communityService.getCurrentUser();
+          setCurrentUser(u);
+          loadData();
+          if (u.username) {
+            showToast(`أهلاً بك يا ${u.username}! يمكنك الآن التواصل والتراسل`);
+          }
+        }}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { shareAsImage } from '../../utils/shareAsImage';
+import { playTTS, stopTTS, subscribeTTS } from '../../utils/ttsEngine';
 
 interface DhikrCardProps {
     dhikr: {
@@ -21,11 +22,22 @@ const toArabicNumerals = (num: number) => String(num).replace(/\d/g, d => '٠١�
 const DhikrCard: React.FC<DhikrCardProps> = ({ dhikr, currentCount, isFinished, onDecrement, onZoom, setToastMessage }) => {
     const { theme, themeKey } = useTheme();
     const [isFav, setIsFav] = useState(false);
+    const [playingText, setPlayingText] = useState<string | null>(null);
 
     useEffect(() => {
         const favs = JSON.parse(localStorage.getItem('favorite_dhikr') || '[]');
         setIsFav(favs.includes(dhikr.text));
     }, [dhikr.text]);
+
+    useEffect(() => {
+        const unsubscribe = subscribeTTS(setPlayingText);
+        return () => {
+            unsubscribe();
+            stopTTS();
+        };
+    }, []);
+
+    const isPlaying = playingText === dhikr.text;
 
     const toggleFav = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -38,6 +50,16 @@ const DhikrCard: React.FC<DhikrCardProps> = ({ dhikr, currentCount, isFinished, 
         }
         localStorage.setItem('favorite_dhikr', JSON.stringify(newFavs));
         setIsFav(!isFav);
+    };
+
+    const handlePlayAudio = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const isMorning = dhikr.category === 'أذكار الصباح';
+        const isEvening = dhikr.category === 'أذكار المساء';
+        playTTS(dhikr.text, {
+            onToast: setToastMessage,
+            categoryId: isMorning ? 'hisn_27' : isEvening ? 'hisn_28' : undefined
+        });
     };
 
     return (
@@ -76,13 +98,13 @@ const DhikrCard: React.FC<DhikrCardProps> = ({ dhikr, currentCount, isFinished, 
                     <i className={`fa-heart ${isFav ? 'fa-solid text-red-500' : 'fa-regular opacity-70'}`} style={isFav ? {} : { color: 'var(--text-color)' }}></i>
                 </button>
                 <div className="flex gap-2">
-                   <button onClick={(e) => { e.stopPropagation(); onZoom(); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
+                   <button onClick={(e) => { e.stopPropagation(); onZoom(); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }} title="تكبير">
                        <i className="fa-solid fa-magnifying-glass-plus"></i>
                    </button>
                    <button onClick={(e) => {
                        e.stopPropagation();
                        navigator.clipboard.writeText(dhikr.text);
-                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
+                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }} title="نسخ">
                        <i className="fa-regular fa-copy"></i>
                    </button>
                    <button onClick={async (e) => {
@@ -94,8 +116,16 @@ const DhikrCard: React.FC<DhikrCardProps> = ({ dhikr, currentCount, isFinished, 
                            theme,
                            setToastMessage
                        });
-                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
+                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }} title="مشاركة">
                        <i className="fa-solid fa-share-nodes"></i>
+                   </button>
+                   <button 
+                       onClick={handlePlayAudio} 
+                       className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" 
+                       style={{ color: isPlaying ? '#ef4444' : 'var(--text-color)' }}
+                       title={isPlaying ? "إيقاف الاستماع" : "استماع صوتي"}
+                   >
+                       <i className={`fa-solid ${isPlaying ? 'fa-circle-pause text-red-500 animate-pulse' : 'fa-volume-high'}`}></i>
                    </button>
                 </div>
             </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HISN_ALMUSLIM_DATA } from '../../data/hisnAlmuslimData';
 import { useTheme } from '../../context/ThemeContext';
 import { shareAsImage } from '../../utils/shareAsImage';
+import { playTTS, stopTTS, subscribeTTS } from '../../utils/ttsEngine';
 
 interface CategoryDetailProps {
     selectedCategory: any;
@@ -9,14 +10,25 @@ interface CategoryDetailProps {
     setToastMessage: (msg: string) => void;
 }
 
-const HisnItemCard = ({ item, onZoom, setToastMessage }: { item: any; onZoom: (item: any) => void; setToastMessage: (msg: string) => void }) => {
+const HisnItemCard = ({ item, categoryId, onZoom, setToastMessage }: { item: any; categoryId: string; onZoom: (item: any) => void; setToastMessage: (msg: string) => void }) => {
     const { theme } = useTheme();
     const [isFav, setIsFav] = useState(false);
+    const [playingText, setPlayingText] = useState<string | null>(null);
 
     useEffect(() => {
         const favs = JSON.parse(localStorage.getItem('favorite_dhikr') || '[]');
         setIsFav(favs.includes(item.text));
     }, [item.text]);
+
+    useEffect(() => {
+        const unsubscribe = subscribeTTS(setPlayingText);
+        return () => {
+            unsubscribe();
+            stopTTS();
+        };
+    }, []);
+
+    const isPlaying = playingText === item.text;
 
     const toggleFav = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -29,6 +41,11 @@ const HisnItemCard = ({ item, onZoom, setToastMessage }: { item: any; onZoom: (i
         }
         localStorage.setItem('favorite_dhikr', JSON.stringify(newFavs));
         setIsFav(!isFav);
+    };
+
+    const handlePlayAudio = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        playTTS(item.text, { onToast: setToastMessage, categoryId });
     };
 
     return (
@@ -44,13 +61,13 @@ const HisnItemCard = ({ item, onZoom, setToastMessage }: { item: any; onZoom: (i
                     <i className={`fa-heart ${isFav ? 'fa-solid text-red-500' : 'fa-regular opacity-70'}`} style={isFav ? {} : { color: 'var(--text-color)' }}></i>
                 </button>
                 <div className="flex gap-2">
-                   <button onClick={(e) => { e.stopPropagation(); onZoom(item); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
+                   <button onClick={(e) => { e.stopPropagation(); onZoom(item); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }} title="تكبير">
                        <i className="fa-solid fa-magnifying-glass-plus"></i>
                    </button>
                    <button onClick={(e) => {
                        e.stopPropagation();
                        navigator.clipboard.writeText(item.text);
-                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
+                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }} title="نسخ">
                        <i className="fa-regular fa-copy"></i>
                    </button>
                    <button onClick={async (e) => {
@@ -62,8 +79,16 @@ const HisnItemCard = ({ item, onZoom, setToastMessage }: { item: any; onZoom: (i
                            theme,
                            setToastMessage
                        });
-                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }}>
+                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" style={{ color: 'var(--text-color)' }} title="مشاركة">
                        <i className="fa-solid fa-share-nodes"></i>
+                   </button>
+                   <button 
+                       onClick={handlePlayAudio} 
+                       className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100" 
+                       style={{ color: isPlaying ? '#ef4444' : 'var(--text-color)' }}
+                       title={isPlaying ? "إيقاف الاستماع" : "استماع صوتي"}
+                   >
+                       <i className={`fa-solid ${isPlaying ? 'fa-circle-pause text-red-500 animate-pulse' : 'fa-volume-high'}`}></i>
                    </button>
                 </div>
             </div>
@@ -102,7 +127,7 @@ const CategoryDetail: React.FC<CategoryDetailProps> = ({ selectedCategory, onZoo
     return (
         <div className="space-y-4">
             {items.map((item: any, index: number) => (
-                <HisnItemCard key={index} item={item} onZoom={onZoom} setToastMessage={setToastMessage} />
+                <HisnItemCard key={index} item={item} categoryId={selectedCategory.id} onZoom={onZoom} setToastMessage={setToastMessage} />
             ))}
         </div>
     );

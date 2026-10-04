@@ -6,12 +6,24 @@ import { useTheme } from '../context/ThemeContext';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { shareAsImage } from '../utils/shareAsImage';
+import { playTTS, stopTTS, subscribeTTS } from '../utils/ttsEngine';
 
 const HadithModal = ({ hadith, onClose, favorites, toggleFavorite, handleCopy, handleShare }) => {
     const { theme, themeKey } = useTheme();
     const [fontSize, setFontSize] = useState(18);
+    const [playingText, setPlayingText] = useState<string | null>(null);
     const isBlackAndWhite = themeKey === 'deep_black';
     const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
+
+    useEffect(() => {
+        const unsubscribe = subscribeTTS(setPlayingText);
+        return () => {
+            unsubscribe();
+            stopTTS();
+        };
+    }, []);
+
+    const isPlaying = playingText === hadith.hadith;
 
     const increaseFontSize = () => {
         setFontSize(prev => (prev >= 32 ? 18 : prev + 4));
@@ -26,6 +38,11 @@ const HadithModal = ({ hadith, onClose, favorites, toggleFavorite, handleCopy, h
             return title.split(': ')[1];
         }
         return title;
+    };
+
+    const handlePlayAudio = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        playTTS(hadith.hadith, { hadithId: hadith.id });
     };
 
     return (
@@ -57,11 +74,19 @@ const HadithModal = ({ hadith, onClose, favorites, toggleFavorite, handleCopy, h
                             >
                                 <i className="fas fa-search-plus text-lg"></i>
                             </button>
-                            <button onClick={(e) => handleCopy(hadith.hadith, e)} className="w-10 h-10 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                            <button onClick={(e) => handleCopy(hadith.hadith, e)} className="w-10 h-10 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" title="نسخ">
                                 <i className="fa-regular fa-copy text-lg"></i>
                             </button>
-                            <button onClick={(e) => handleShare(hadith, e)} className="w-10 h-10 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                            <button onClick={(e) => handleShare(hadith, e)} className="w-10 h-10 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" title="مشاركة">
                                 <i className="fa-solid fa-share-nodes text-lg"></i>
+                            </button>
+                            <button 
+                                onClick={handlePlayAudio} 
+                                className="w-10 h-10 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" 
+                                style={{ color: isPlaying ? '#ef4444' : 'inherit' }}
+                                title={isPlaying ? "إيقاف الاستماع" : "استماع صوتي"}
+                            >
+                                <i className={`fa-solid ${isPlaying ? 'fa-circle-pause text-red-500 animate-pulse' : 'fa-volume-high'} text-lg`}></i>
                             </button>
                         </div>
                     </div>

@@ -8,6 +8,10 @@
 		"classpath": "com.getcapacitor.community.speechrecognition.SpeechRecognition"
 	},
 	{
+		"pkg": "@capacitor-community/text-to-speech",
+		"classpath": "com.getcapacitor.community.tts.TextToSpeechPlugin"
+	},
+	{
 		"pkg": "@capacitor/app",
 		"classpath": "com.capacitorjs.plugins.app.AppPlugin"
 	},
@@ -38,6 +42,10 @@
 	{
 		"pkg": "@capacitor/share",
 		"classpath": "com.capacitorjs.plugins.share.SharePlugin"
+	},
+	{
+		"pkg": "@capawesome/capacitor-google-sign-in",
+		"classpath": "io.capawesome.capacitorjs.plugins.googlesignin.GoogleSignInPlugin"
 	},
 	{
 		"pkg": "capacitor-voice-recorder",

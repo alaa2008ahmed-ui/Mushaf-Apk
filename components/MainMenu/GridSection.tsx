@@ -30,15 +30,11 @@ const GridSection: React.FC<GridSectionProps> = ({
     const [showNewBadges, setShowNewBadges] = useState(false);
 
     useEffect(() => {
-        const opens = parseInt(localStorage.getItem('app_opens_count_new') || '0');
-        if (!sessionStorage.getItem('app_opened_this_session')) {
-            localStorage.setItem('app_opens_count_new', (opens + 1).toString());
-            sessionStorage.setItem('app_opened_this_session', 'true');
-        }
-        
-        const currentOpens = parseInt(localStorage.getItem('app_opens_count_new') || '1');
-        if (currentOpens <= 5) {
+        const count = parseInt(localStorage.getItem('apps_page_opens_count') || '0');
+        if (count <= 5) {
             setShowNewBadges(true);
+        } else {
+            setShowNewBadges(false);
         }
     }, []);
 
@@ -138,7 +134,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                                         onResize={(e) => handleResize(item.id, e)}
                                         isGlass={theme.isGlass}
                                         btnText={textColor}
-                                        showNewBadge={showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'habit-tracker'].includes(item.id)}
+                                        showNewBadge={showNewBadges && ['memorization', 'community'].includes(item.id)}
                                         badgeText="جديد"
                                     />
                                 </div>
@@ -155,7 +151,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 onResize={(e) => handleResize(item.id, e)}
                                 isGlass={theme.isGlass}
                                 btnText={textColor}
-                                showNewBadge={showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'habit-tracker'].includes(item.id)}
+                                showNewBadge={showNewBadges && ['memorization', 'community'].includes(item.id)}
                                 badgeText="جديد"
                             />
                         )}

@@ -374,11 +374,16 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
       loadData();
     };
 
+    const presenceInterval = setInterval(() => {
+      loadData();
+    }, 3500);
+
     window.addEventListener('community_messages_updated', handleUpdate);
     window.addEventListener('community_block_updated', handleUpdate);
     window.addEventListener('community_user_updated', handleUpdate);
 
     return () => {
+      clearInterval(presenceInterval);
       window.removeEventListener('community_messages_updated', handleUpdate);
       window.removeEventListener('community_block_updated', handleUpdate);
       window.removeEventListener('community_user_updated', handleUpdate);
@@ -487,7 +492,10 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col font-sans" dir="rtl">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between shadow-sm">
+      <div 
+        className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 pb-3.5 flex items-center justify-between shadow-sm"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.25rem)' }}
+      >
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}

@@ -68,12 +68,24 @@ const ReviewTestModal: React.FC<ReviewTestModalProps> = ({
         const correctAyah = ayahs[step];
         const distractors: any[] = [];
         
-        // Pick random distractors from the same surah or nearby
+        // Pick random distractors from the same surah or nearby safely
         const surah = quranData.surahs[correctAyah.surahNumber - 1];
-        while (distractors.length < 3) {
-            const randomAyah = surah.ayahs[Math.floor(Math.random() * surah.ayahs.length)];
-            if (randomAyah.numberInSurah !== correctAyah.ayahNumber && !distractors.find(d => d.numberInSurah === randomAyah.numberInSurah)) {
-                distractors.push(randomAyah);
+        let attempts = 0;
+        while (distractors.length < 3 && attempts < 100) {
+            attempts++;
+            const targetSurah = (surah && surah.ayahs.length >= 4 && attempts < 30)
+                ? surah
+                : quranData.surahs[Math.floor(Math.random() * quranData.surahs.length)];
+            
+            if (targetSurah?.ayahs?.length) {
+                const randomAyah = targetSurah.ayahs[Math.floor(Math.random() * targetSurah.ayahs.length)];
+                if (
+                    randomAyah && 
+                    !(targetSurah.number === correctAyah.surahNumber && randomAyah.numberInSurah === correctAyah.ayahNumber) &&
+                    !distractors.some(d => d.number === randomAyah.number)
+                ) {
+                    distractors.push(randomAyah);
+                }
             }
         }
         

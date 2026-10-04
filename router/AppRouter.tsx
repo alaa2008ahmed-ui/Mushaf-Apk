@@ -37,9 +37,9 @@ interface AppRouterProps {
 const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenThemes, onOpenSideMenu, navParams }) => {
     switch(page) {
       case 'quran':
-        return <QuranReader page={page} onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} initialLandscape={false} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} navParams={navParams} />;
+        return <QuranReader page={page} onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} initialLandscape={false} initialSurah={navParams?.surah ?? navParams?.initialSurah} initialAyah={navParams?.ayah ?? navParams?.initialAyah} initialPage={navParams?.page ?? navParams?.initialPage} isWirdMode={navParams?.isWird ?? navParams?.isWirdMode} isMemorizationMode={navParams?.isMemorization ?? navParams?.isMemorizationMode} memorizationSettings={navParams?.memorizationSettings} navParams={navParams} />;
       case 'quran-landscape':
-        return <QuranReader page={page} onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} initialLandscape={true} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} navParams={navParams} />;
+        return <QuranReader page={page} onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} initialLandscape={true} initialSurah={navParams?.surah ?? navParams?.initialSurah} initialAyah={navParams?.ayah ?? navParams?.initialAyah} initialPage={navParams?.page ?? navParams?.initialPage} isWirdMode={navParams?.isWird ?? navParams?.isWirdMode} isMemorizationMode={navParams?.isMemorization ?? navParams?.isMemorizationMode} memorizationSettings={navParams?.memorizationSettings} navParams={navParams} />;
       case 'quran-download':
         return <QuranDownload onBack={onBack} onNavigate={onNavigate} />;
       case 'salah-adhkar':

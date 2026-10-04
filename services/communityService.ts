@@ -1,8 +1,4 @@
-import { 
-  db, auth, googleProvider, 
-  signInWithPopup, signInWithRedirect, getRedirectResult, 
-  signOut, onAuthStateChanged 
-} from '../lib/firebase';
+import { db } from '../lib/firebase';
 import { 
   collection, doc, setDoc, getDoc, getDocs, onSnapshot, 
   updateDoc, deleteDoc 
@@ -29,6 +25,8 @@ export interface QuranVerseAttachment {
 
 export interface CommunityUser {
   userId: string;
+  accountCode?: string;
+  passcode?: string;
   username: string;
   avatarUrl?: string;
   country: string;
@@ -67,10 +65,10 @@ export interface BlockRecord {
   createdAt: string;
 }
 
-const STORAGE_KEY_USER = 'mushaf_community_current_user_v8';
-const STORAGE_KEY_USERS_ALL = 'mushaf_community_global_users_v8';
-const STORAGE_KEY_MESSAGES = 'mushaf_community_messages_v8';
-const STORAGE_KEY_BLOCKS = 'mushaf_community_blocks_v8';
+const STORAGE_KEY_USER = 'mushaf_community_current_user_v9';
+const STORAGE_KEY_USERS_ALL = 'mushaf_community_global_users_v9';
+const STORAGE_KEY_MESSAGES = 'mushaf_community_messages_v9';
+const STORAGE_KEY_BLOCKS = 'mushaf_community_blocks_v9';
 
 class CommunityService {
   private currentUser: CommunityUser | null = null;
@@ -83,16 +81,72 @@ class CommunityService {
   constructor() {
     this.initCurrentUser();
     this.loadFromLocalStorage();
+    this.purgeLegacyGoogleData();
     this.setupFirestoreListeners();
-    this.setupAuthListener();
     this.setupPresenceLifecycle();
-    if (localStorage.getItem('server_purged_v3') !== 'true') {
-      localStorage.setItem('server_purged_v3', 'true');
-      this.clearAllServerData();
-    } else {
-      this.fetchLatestUsers();
-    }
+    this.fetchLatestUsers();
     this.startPolling();
+  }
+
+  public isLegacyGoogleUser(u?: any): boolean {
+    if (!u) return false;
+    const name = (u.username || '').trim().toLowerCase();
+    const email = (u.email || '').trim().toLowerCase();
+    const uid = (u.userId || u.id || '').toString().toLowerCase();
+    return Boolean(
+      u.isGoogleAuth === true ||
+      uid === '1' ||
+      u.id === '1' ||
+      name === 'alaa' ||
+      name === 'alaa ahmed' ||
+      name.includes('alaa') ||
+      name.includes('علاء') ||
+      email.includes('alaa@swc.com.sa') ||
+      email.includes('@')
+    );
+  }
+
+  public async purgeLegacyGoogleData() {
+    try {
+      // 1. Remove legacy localStorage keys from prior versions
+      if (typeof localStorage !== 'undefined') {
+        const legacyKeys = [
+          'mushaf_community_global_users_v8',
+          'mushaf_community_current_user_v8',
+          'mushaf_community_global_users_v7',
+          'mushaf_community_current_user_v7',
+          'mushaf_community_global_users',
+          'mushaf_community_current_user',
+          'mushaf_community_user',
+          'quran_community_user',
+          'google_user_token'
+        ];
+        legacyKeys.forEach(k => {
+          try { localStorage.removeItem(k); } catch (e) {}
+        });
+      }
+
+      // 2. Remove legacy users from in-memory map & delete from Firestore
+      for (const [uid, user] of Array.from(this.usersMap.entries())) {
+        if (this.isLegacyGoogleUser(user)) {
+          this.usersMap.delete(uid);
+          try {
+            deleteDoc(doc(db, 'users', uid)).catch(() => {});
+          } catch (e) {}
+        }
+      }
+
+      // 3. Reset current user if legacy Google user
+      if (this.currentUser && this.isLegacyGoogleUser(this.currentUser)) {
+        localStorage.removeItem(STORAGE_KEY_USER);
+        this.currentUser = null;
+        this.initCurrentUser();
+      }
+
+      this.saveToLocalStorage();
+    } catch (e) {
+      console.warn('Purge legacy google data error:', e);
+    }
   }
 
   private cleanPayload(obj: any): any {
@@ -138,21 +192,40 @@ class CommunityService {
     } catch (e) {}
   }
 
+  public generateAccountCode(): string {
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let code = '';
+    for (let i = 0; i < 5; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `MQ-${code}`;
+  }
+
   public initCurrentUser(): CommunityUser {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_USER);
       if (stored) {
-        this.currentUser = JSON.parse(stored);
-        return this.currentUser!;
+        const u = JSON.parse(stored);
+        if (u && u.userId) {
+          if (!u.accountCode) {
+            u.accountCode = this.generateAccountCode();
+            localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(u));
+          }
+          this.currentUser = u;
+          this.usersMap.set(u.userId, u);
+          return this.currentUser!;
+        }
       }
     } catch (e) {}
 
-    const randomId = 'usr_' + Math.random().toString(36).substr(2, 9);
+    const randomId = 'usr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
     this.currentUser = {
       userId: randomId,
+      accountCode: this.generateAccountCode(),
       username: '',
       country: '',
       bio: '',
+      avatarUrl: '',
       isOnline: true,
       createdAt: new Date().toISOString()
     };
@@ -166,129 +239,186 @@ class CommunityService {
     return this.currentUser;
   }
 
-  public async loginWithGoogleAccount(uid: string, displayName: string, avatarUrl: string, email?: string): Promise<CommunityUser> {
-    let existingProfile: CommunityUser | null = null;
-    try {
-      const docSnap = await getDoc(doc(db, 'users', uid));
-      if (docSnap.exists()) {
-        existingProfile = docSnap.data() as CommunityUser;
-      }
-    } catch (e) {
-      console.warn('Error fetching Google user profile:', e);
+  public normalizeDigits(str?: string): string {
+    if (!str) return '';
+    return str
+      .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString())
+      .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString())
+      .trim();
+  }
+
+  public normalizeArabicText(str?: string): string {
+    if (!str) return '';
+    return str
+      .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString())
+      .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString())
+      .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, '')
+      .replace(/[أإآٱ]/g, 'ا')
+      .replace(/ة/g, 'ه')
+      .replace(/[ىي]/g, 'ي')
+      .replace(/\s+/g, '')
+      .toLowerCase();
+  }
+
+  public async restoreAccount(codeOrUsername: string, inputPasscode?: string): Promise<CommunityUser> {
+    const rawInput = (codeOrUsername || '').trim();
+    if (!rawInput) {
+      throw new Error('يرجى إدخال كود الحساب (مثل MQ-XXXXX) أو اسم المستخدم');
     }
 
+    const normQuery = this.normalizeArabicText(rawInput);
+    const cleanCode = this.normalizeDigits(rawInput).toUpperCase().replace(/\s+/g, '');
+    const cleanCodeNoMQ = cleanCode.replace(/^MQ-?/i, '');
+    const cleanInputPasscode = this.normalizeDigits(inputPasscode);
+
+    let foundUser: CommunityUser | null = null;
+
+    const matchUser = (u: CommunityUser, docId?: string): boolean => {
+      if (!u) return false;
+      const uCode = (u.accountCode || '').toUpperCase().replace(/\s+/g, '');
+      const uCodeNoMQ = uCode.replace(/^MQ-?/i, '');
+      const uNameNorm = this.normalizeArabicText(u.username);
+      const uIdNorm = this.normalizeArabicText(u.userId || docId || '');
+
+      return Boolean(
+        (uCode && (uCode === cleanCode || uCodeNoMQ === cleanCodeNoMQ)) ||
+        (uCodeNoMQ && cleanCode && (uCodeNoMQ === cleanCode || cleanCode.includes(uCodeNoMQ))) ||
+        (uNameNorm && (uNameNorm === normQuery || uNameNorm.includes(normQuery) || normQuery.includes(uNameNorm))) ||
+        (uIdNorm && uIdNorm === normQuery)
+      );
+    };
+
+    // 1. Check in local memory map first
+    for (const u of this.usersMap.values()) {
+      if (matchUser(u)) {
+        foundUser = u;
+        break;
+      }
+    }
+
+    // 2. Fetch fresh snapshot from Firestore to find the user or sync latest data
+    try {
+      const snap = await getDocs(collection(db, 'users'));
+      for (const docSnap of snap.docs) {
+        const u = docSnap.data() as CommunityUser;
+        const uid = u.userId || docSnap.id;
+        const fullUser = { ...u, userId: uid };
+        this.usersMap.set(uid, fullUser);
+        if (!foundUser && matchUser(fullUser, docSnap.id)) {
+          foundUser = fullUser;
+        }
+      }
+    } catch (e: any) {
+      console.warn('Firestore fetch during restore:', e);
+      if (!foundUser) {
+        throw new Error('تعذر الاتصال بقاعدة البيانات. يرجى التأكد من اتصال الإنترنت.');
+      }
+    }
+
+    if (!foundUser) {
+      throw new Error('لم يتم العثور على أي حساب بهذا الكود أو الاسم. تأكد من صحة كود الحساب أو قم بإنشاء حساب جديد.');
+    }
+
+    // Verify PIN passcode if one was set for this account
+    const storedPasscode = this.normalizeDigits(foundUser.passcode);
+    if (storedPasscode) {
+      if (!cleanInputPasscode) {
+        throw new Error('هذا الحساب محمي برمز مرور (PIN). يرجى إدخال رمز المرور للمتابعة.');
+      }
+      if (cleanInputPasscode !== storedPasscode) {
+        throw new Error('رمز الحماية (PIN) غير صحيح لهذا الحساب.');
+      }
+    }
+
+    // Activate restored user session
     const nowIso = new Date().toISOString();
-    if (existingProfile) {
-      this.currentUser = {
-        ...existingProfile,
-        userId: uid,
-        email: email || existingProfile.email,
-        isGoogleAuth: true,
+    foundUser.isOnline = true;
+    foundUser.lastSeen = nowIso;
+    if (!foundUser.country || !foundUser.country.trim()) {
+      foundUser.country = 'دولة أخرى 🌍';
+    }
+    if (!foundUser.avatarUrl || !foundUser.avatarUrl.trim()) {
+      foundUser.avatarUrl = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150';
+    }
+    if (!foundUser.accountCode) {
+      foundUser.accountCode = this.generateAccountCode();
+    }
+
+    this.currentUser = foundUser;
+    this.usersMap.set(foundUser.userId, foundUser);
+
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(foundUser));
+    this.saveToLocalStorage();
+
+    // Mark online in Firestore
+    try {
+      await updateDoc(doc(db, 'users', foundUser.userId), {
         isOnline: true,
         lastSeen: nowIso
-      };
-    } else {
-      this.currentUser = {
-        userId: uid,
-        username: displayName || '',
-        avatarUrl: avatarUrl || '',
-        country: '',
-        bio: '',
-        email: email || undefined,
-        isGoogleAuth: true,
-        isOnline: true,
-        lastSeen: nowIso,
-        createdAt: nowIso
-      };
-    }
-
-    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(this.currentUser));
-    this.usersMap.set(uid, this.currentUser);
-
-    try {
-      const payload = this.cleanPayload(this.currentUser);
-      await setDoc(doc(db, 'users', uid), payload, { merge: true });
+      });
     } catch (e) {
-      console.error('Error saving Google user to Firestore:', e);
-    }
-
-    window.dispatchEvent(new CustomEvent('community_user_updated', { detail: this.currentUser }));
-    this.sendHeartbeat();
-    return this.currentUser;
-  }
-
-  public async loginWithGoogle(useRedirect: boolean = false): Promise<CommunityUser> {
-    if (useRedirect) {
-      await signInWithRedirect(auth, googleProvider);
-      return this.getCurrentUser();
-    }
-
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const fbUser = result.user;
-      return await this.loginWithGoogleAccount(
-        fbUser.uid,
-        fbUser.displayName || '',
-        fbUser.photoURL || '',
-        fbUser.email || undefined
-      );
-    } catch (e: any) {
-      console.warn('signInWithPopup error:', e);
-      // If popup was blocked or failed due to mobile / browser restrictions, trigger redirect
-      if (
-        e?.code === 'auth/popup-blocked' || 
-        e?.code === 'auth/popup-closed-by-user' || 
-        e?.code === 'auth/cancelled-popup-request' ||
-        e?.code === 'auth/unauthorized-domain'
-      ) {
-        throw e;
-      }
-      throw e;
-    }
-  }
-
-  public async loginWithGoogleRedirect(): Promise<void> {
-    try {
-      await signInWithRedirect(auth, googleProvider);
-    } catch (e) {
-      console.error('signInWithRedirect error:', e);
-      throw e;
-    }
-  }
-
-  public async logoutGoogle(): Promise<void> {
-    const userToSignOut = this.currentUser;
-    if (userToSignOut && userToSignOut.userId && userToSignOut.isGoogleAuth) {
       try {
-        await updateDoc(doc(db, 'users', userToSignOut.userId), {
-          isOnline: false,
-          lastSeen: new Date().toISOString()
-        });
-      } catch (e) {}
+        await setDoc(doc(db, 'users', foundUser.userId), this.cleanPayload(foundUser), { merge: true });
+      } catch (err) {}
     }
 
-    try {
-      await signOut(auth);
-    } catch (e) {
-      console.warn('Firebase signOut notice:', e);
+    // Fetch messages for restored user
+    this.fetchLatestMessages().catch(() => {});
+
+    window.dispatchEvent(new CustomEvent('community_user_updated', { detail: foundUser }));
+    window.dispatchEvent(new CustomEvent('community_messages_updated'));
+    this.sendHeartbeat();
+
+    return foundUser;
+  }
+
+  public logoutAccount() {
+    const userToSignOut = this.currentUser;
+    if (userToSignOut && userToSignOut.userId) {
+      updateDoc(doc(db, 'users', userToSignOut.userId), {
+        isOnline: false,
+        lastSeen: new Date().toISOString()
+      }).catch(() => {});
     }
-    
-    // Clear stored authenticated user and re-initialize as anonymous guest
+
     localStorage.removeItem(STORAGE_KEY_USER);
     this.currentUser = null;
     const freshUser = this.initCurrentUser();
     window.dispatchEvent(new CustomEvent('community_user_updated', { detail: freshUser }));
+    window.dispatchEvent(new CustomEvent('community_messages_updated'));
   }
 
   private setupPresenceLifecycle() {
     if (typeof window === 'undefined') return;
 
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
-    // Send heartbeat every 20 seconds while app is open and active
+    // Send heartbeat every 15 seconds while app is open
     this.heartbeatInterval = setInterval(() => {
       this.sendHeartbeat();
-    }, 20000);
+    }, 15000);
 
+    // Initial heartbeat on boot
+    this.sendHeartbeat();
+
+    // 1. Web visibilitychange - offline when minimized or hidden, online when visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.sendHeartbeat();
+      } else {
+        this.setOfflineStatusSync();
+      }
+    });
+
+    // 2. Window focus & blur
+    window.addEventListener('focus', () => {
+      this.sendHeartbeat();
+    });
+
+    window.addEventListener('blur', () => {
+      // Don't mark offline on simple blur, let visibilitychange handle it
+    });
+
+    // 3. Unload & pagehide
     window.addEventListener('beforeunload', () => {
       this.setOfflineStatusSync();
     });
@@ -297,13 +427,18 @@ class CommunityService {
       this.setOfflineStatusSync();
     });
 
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        this.sendHeartbeat();
-      } else {
-        this.updateLastSeen();
-      }
-    });
+    // 4. Native Capacitor Android app state listener
+    try {
+      import('@capacitor/app').then(({ App }) => {
+        App.addListener('appStateChange', (state) => {
+          if (state.isActive) {
+            this.sendHeartbeat();
+          } else {
+            this.setOfflineStatusSync();
+          }
+        }).catch(() => {});
+      }).catch(() => {});
+    } catch (e) {}
   }
 
   public getUserById(userId: string): CommunityUser | undefined {
@@ -312,7 +447,7 @@ class CommunityService {
 
   public async sendHeartbeat() {
     const user = this.currentUser;
-    if (!user || !user.isGoogleAuth || !user.userId) return;
+    if (!user || !user.userId || !this.isProfileComplete()) return;
     const nowIso = new Date().toISOString();
     user.isOnline = true;
     user.lastSeen = nowIso;
@@ -323,25 +458,42 @@ class CommunityService {
         isOnline: true,
         lastSeen: nowIso
       });
-    } catch (e) {}
+    } catch (e) {
+      try {
+        await setDoc(doc(db, 'users', user.userId), {
+          isOnline: true,
+          lastSeen: nowIso
+        }, { merge: true });
+      } catch (err) {}
+    }
   }
 
-  public setOfflineStatusSync() {
+  public async setOfflineStatusSync() {
     const user = this.currentUser;
-    if (!user || !user.isGoogleAuth || !user.userId) return;
+    if (!user || !user.userId || !this.isProfileComplete()) return;
+    const nowIso = new Date().toISOString();
     user.isOnline = false;
-    user.lastSeen = new Date().toISOString();
+    user.lastSeen = nowIso;
+    this.usersMap.set(user.userId, user);
+
     try {
-      updateDoc(doc(db, 'users', user.userId), {
+      await updateDoc(doc(db, 'users', user.userId), {
         isOnline: false,
-        lastSeen: user.lastSeen
-      }).catch(() => {});
-    } catch (e) {}
+        lastSeen: nowIso
+      });
+    } catch (e) {
+      try {
+        await setDoc(doc(db, 'users', user.userId), {
+          isOnline: false,
+          lastSeen: nowIso
+        }, { merge: true });
+      } catch (err) {}
+    }
   }
 
   public async updateLastSeen() {
     const user = this.currentUser;
-    if (!user || !user.isGoogleAuth || !user.userId) return;
+    if (!user || !user.userId || !this.isProfileComplete()) return;
     const nowIso = new Date().toISOString();
     user.lastSeen = nowIso;
     try {
@@ -353,15 +505,19 @@ class CommunityService {
 
   public isUserOnline(user?: CommunityUser | null): boolean {
     if (!user) return false;
-    if (!user.isOnline) return false;
+    // Current user viewing the app is online
+    if (this.currentUser && user.userId === this.currentUser.userId) return true;
+
+    // If explicitly marked as not online, they are offline immediately
+    if (user.isOnline !== true) return false;
     if (!user.lastSeen) return false;
 
     const lastSeenTime = new Date(user.lastSeen).getTime();
     if (isNaN(lastSeenTime)) return false;
 
-    // A user is considered online if lastSeen heartbeat was sent within last 50 seconds
+    // Heartbeat is sent every 15s. A user is online if heartbeat was within last 70 seconds
     const diffSeconds = (Date.now() - lastSeenTime) / 1000;
-    return diffSeconds <= 50;
+    return diffSeconds >= -70 && diffSeconds <= 70;
   }
 
   public getUserStatusText(user?: CommunityUser | null): string {
@@ -382,74 +538,11 @@ class CommunityService {
     return `آخر ظهور منذ ${diffDays} يوم`;
   }
 
-  private setupAuthListener() {
-    try {
-      // Handle login redirect results if user returned from Google redirect sign-in
-      getRedirectResult(auth).then(async (result) => {
-        if (result && result.user) {
-          const fbUser = result.user;
-          await this.loginWithGoogleAccount(
-            fbUser.uid,
-            fbUser.displayName || '',
-            fbUser.photoURL || '',
-            fbUser.email || undefined
-          );
-        }
-      }).catch((e) => {
-        console.warn('getRedirectResult notice:', e);
-      });
-
-      onAuthStateChanged(auth, async (fbUser) => {
-        if (fbUser) {
-          const uid = fbUser.uid;
-          try {
-            const docSnap = await getDoc(doc(db, 'users', uid));
-            if (docSnap.exists()) {
-              const profile = docSnap.data() as CommunityUser;
-              this.currentUser = {
-                ...profile,
-                userId: uid,
-                isGoogleAuth: true,
-                isOnline: true,
-                lastSeen: new Date().toISOString()
-              };
-              localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(this.currentUser));
-              this.usersMap.set(uid, this.currentUser);
-              window.dispatchEvent(new CustomEvent('community_user_updated', { detail: this.currentUser }));
-              this.sendHeartbeat();
-            } else {
-              // Initial Google user creation if first time
-              await this.loginWithGoogleAccount(
-                uid,
-                fbUser.displayName || '',
-                fbUser.photoURL || '',
-                fbUser.email || undefined
-              );
-            }
-          } catch (e) {
-            console.warn('onAuthStateChanged profile fetch error:', e);
-          }
-        } else {
-          // Firebase reports signed out
-          if (this.currentUser && this.currentUser.isGoogleAuth) {
-            localStorage.removeItem(STORAGE_KEY_USER);
-            this.currentUser = null;
-            const fresh = this.initCurrentUser();
-            window.dispatchEvent(new CustomEvent('community_user_updated', { detail: fresh }));
-          }
-        }
-      });
-    } catch (e) {}
-  }
-
   public isProfileComplete(): boolean {
     const user = this.getCurrentUser();
     return Boolean(
       user &&
-      user.isGoogleAuth &&
-      user.username && user.username.trim().length >= 2 &&
-      user.country && user.country.trim().length > 0 &&
-      user.avatarUrl && user.avatarUrl.trim().length > 0
+      user.username && user.username.trim().length >= 2
     );
   }
 
@@ -457,16 +550,34 @@ class CommunityService {
     return this.isProfileComplete();
   }
 
-  public async saveCurrentUser(username: string, country: string = '', bio?: string, avatarUrl?: string): Promise<CommunityUser> {
+  public async saveCurrentUser(
+    username: string, 
+    country: string = 'دولة أخرى 🌍', 
+    bio?: string, 
+    avatarUrl?: string,
+    passcode?: string
+  ): Promise<CommunityUser> {
     const user = this.getCurrentUser();
-    if (!user.isGoogleAuth) {
-      throw new Error('عفواً، يجب تسجيل الدخول باستخدام Google أولاً لحفظ الحساب وبدء التراسل.');
-    }
     user.username = username.trim();
-    user.country = country;
+    user.country = country && country.trim() ? country.trim() : 'دولة أخرى 🌍';
     if (bio !== undefined) user.bio = bio;
-    if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
+    
+    // Fallback safe avatar if empty or oversized
+    let safeAvatar = avatarUrl && avatarUrl.trim() ? avatarUrl.trim() : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150';
+    if (safeAvatar.length > 250000) {
+      // If unexpectedly huge data URI, replace with clean preset
+      safeAvatar = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150';
+    }
+    user.avatarUrl = safeAvatar;
+
+    if (passcode !== undefined) {
+      user.passcode = this.normalizeDigits(passcode);
+    }
+    if (!user.accountCode) {
+      user.accountCode = this.generateAccountCode();
+    }
     user.isOnline = true;
+    user.lastSeen = new Date().toISOString();
 
     this.currentUser = user;
     try {
@@ -478,11 +589,59 @@ class CommunityService {
 
       this.saveToLocalStorage();
       window.dispatchEvent(new CustomEvent('community_user_updated', { detail: user }));
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error saving user to Firestore:', e);
+      throw new Error(e?.message || 'تعذر حفظ البيانات على الخادم، يرجى التأكد من اتصال الإنترنت.');
     }
 
     return user;
+  }
+
+  public async createNewAccount(
+    username: string, 
+    country: string = 'دولة أخرى 🌍', 
+    bio?: string, 
+    avatarUrl?: string,
+    passcode?: string
+  ): Promise<CommunityUser> {
+    const randomId = 'usr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
+    const newCode = this.generateAccountCode();
+
+    let safeAvatar = avatarUrl && avatarUrl.trim() ? avatarUrl.trim() : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150';
+    if (safeAvatar.length > 250000) {
+      safeAvatar = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150';
+    }
+
+    const newUser: CommunityUser = {
+      userId: randomId,
+      accountCode: newCode,
+      username: username.trim(),
+      country: country && country.trim() ? country.trim() : 'دولة أخرى 🌍',
+      bio: bio || '',
+      avatarUrl: safeAvatar,
+      passcode: this.normalizeDigits(passcode),
+      isOnline: true,
+      lastSeen: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+
+    this.currentUser = newUser;
+    this.usersMap.set(newUser.userId, newUser);
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(newUser));
+
+    try {
+      const payload = this.cleanPayload(newUser);
+      await setDoc(doc(db, 'users', newUser.userId), payload, { merge: true });
+
+      this.saveToLocalStorage();
+      this.sendHeartbeat();
+      window.dispatchEvent(new CustomEvent('community_user_updated', { detail: newUser }));
+    } catch (e: any) {
+      console.error('Error creating new account in Firestore:', e);
+      throw new Error(e?.message || 'تعذر إنشاء الحساب على الخادم، يرجى التأكد من اتصال الإنترنت.');
+    }
+
+    return newUser;
   }
 
   private loadFromLocalStorage() {
@@ -491,7 +650,9 @@ class CommunityService {
       if (storedUsers) {
         const arr: CommunityUser[] = JSON.parse(storedUsers);
         arr.forEach(u => {
-          if (u && u.userId) this.usersMap.set(u.userId, u);
+          if (u && u.userId && !this.isLegacyGoogleUser(u)) {
+            this.usersMap.set(u.userId, u);
+          }
         });
       }
 
@@ -564,6 +725,7 @@ class CommunityService {
       // Reset current user object
       this.currentUser = {
         userId: 'usr_' + Math.random().toString(36).substr(2, 9),
+        accountCode: this.generateAccountCode(),
         username: '',
         country: '',
         bio: '',
@@ -612,12 +774,37 @@ class CommunityService {
   public async fetchLatestUsers(): Promise<CommunityUser[]> {
     try {
       const snapshot = await getDocs(collection(db, 'users'));
+      const activeIds = new Set<string>();
       snapshot.forEach((docSnap) => {
         const data = docSnap.data() as CommunityUser;
-        if (data && data.userId && data.username && data.username.trim()) {
-          this.usersMap.set(data.userId, data);
+        const uid = data?.userId || docSnap.id;
+        if (this.isLegacyGoogleUser(data) || this.isLegacyGoogleUser({ ...data, userId: uid })) {
+          deleteDoc(doc(db, 'users', docSnap.id)).catch(() => {});
+          this.usersMap.delete(uid);
+          return;
+        }
+        if (data && uid && data.username && data.username.trim()) {
+          activeIds.add(uid);
+          this.usersMap.set(uid, {
+            ...data,
+            userId: uid
+          });
         }
       });
+
+      // Remove stale users that are no longer in Firestore (except active current user)
+      const currentUid = this.currentUser?.userId;
+      for (const id of Array.from(this.usersMap.keys())) {
+        if (!activeIds.has(id) && id !== currentUid) {
+          this.usersMap.delete(id);
+        }
+      }
+
+      // Ensure current user is in usersMap if they have username
+      if (this.currentUser && this.currentUser.userId && this.currentUser.username && this.currentUser.username.trim()) {
+        this.usersMap.set(this.currentUser.userId, this.currentUser);
+      }
+
       this.saveToLocalStorage();
       window.dispatchEvent(new CustomEvent('community_user_updated'));
     } catch (e) {
@@ -657,14 +844,27 @@ class CommunityService {
   }
 
   private setupFirestoreListeners() {
-    const current = this.getCurrentUser();
-
     try {
       onSnapshot(collection(db, 'users'), (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'removed') {
+            this.usersMap.delete(change.doc.id);
+          }
+        });
+
         snapshot.forEach((docSnap) => {
           const data = docSnap.data() as CommunityUser;
-          if (data && data.userId && data.username && data.username.trim()) {
-            this.usersMap.set(data.userId, data);
+          const uid = data?.userId || docSnap.id;
+          if (this.isLegacyGoogleUser(data) || this.isLegacyGoogleUser({ ...data, userId: uid })) {
+            deleteDoc(doc(db, 'users', docSnap.id)).catch(() => {});
+            this.usersMap.delete(uid);
+            return;
+          }
+          if (data && uid && data.username && data.username.trim()) {
+            this.usersMap.set(uid, {
+              ...data,
+              userId: uid
+            });
           }
         });
         this.saveToLocalStorage();
@@ -674,6 +874,7 @@ class CommunityService {
 
     try {
       onSnapshot(collection(db, 'messages'), (snapshot) => {
+        const myId = this.getCurrentUser().userId;
         const cutoffTime = Date.now() - (24 * 60 * 60 * 1000);
         snapshot.docChanges().forEach((change) => {
           const msg = change.doc.data() as ChatMessage;
@@ -685,11 +886,11 @@ class CommunityService {
             }
 
             if (change.type === 'added') {
-              if (msg.recipientId === current.userId || msg.senderId === current.userId) {
+              if (msg.recipientId === myId || msg.senderId === myId) {
                 const exists = this.messagesList.some(m => m.messageId === msg.messageId);
                 if (!exists) {
                   this.messagesList.push(msg);
-                  if (msg.recipientId === current.userId && !msg.isRead) {
+                  if (msg.recipientId === myId && !msg.isRead) {
                     const sender = this.usersMap.get(msg.senderId) || {
                       userId: msg.senderId,
                       username: 'مستخدم المصحف',
@@ -750,29 +951,71 @@ class CommunityService {
     );
   }
 
-  public getTotalRegisteredCount(): number {
-    return Array.from(this.usersMap.values()).filter(u => u.username && u.username.trim().length > 0).length;
+  public isSelf(user?: CommunityUser | null): boolean {
+    if (!user) return false;
+    const current = this.getCurrentUser();
+    return Boolean(
+      (user.userId && current.userId && user.userId === current.userId) ||
+      (current.accountCode && user.accountCode && user.accountCode.toUpperCase() === current.accountCode.toUpperCase())
+    );
   }
 
-  public getVisibleUsers(searchQuery: string = ''): CommunityUser[] {
+  public getTotalRegisteredCount(): number {
+    return Array.from(this.usersMap.values()).filter(u => !this.isLegacyGoogleUser(u) && u.username && u.username.trim().length > 0).length;
+  }
+
+  public getVisibleUsers(searchQuery: string = '', includeSelf: boolean = false): CommunityUser[] {
     const current = this.getCurrentUser();
     const queryLower = searchQuery.trim().toLowerCase();
+
+    // Ensure current user is in usersMap if they have a valid username
+    if (current && current.userId && current.username && current.username.trim()) {
+      this.usersMap.set(current.userId, current);
+    }
 
     const allUsersArray = Array.from(this.usersMap.values());
 
     return allUsersArray.filter(u => {
-      if (u.userId === current.userId) return false;
-      if (!u.username || !u.username.trim()) return false;
-      if (this.isBlockedMutually(u.userId)) return false;
+      // 1. Completely exclude legacy Google auth accounts / Alaa Ahmed
+      if (this.isLegacyGoogleUser(u)) return false;
 
+      // 2. Filter out self (current user) unless explicitly requested
+      const isCurrentSelf = this.isSelf(u);
+      if (!includeSelf && isCurrentSelf) return false;
+      
+      // 3. Must have valid username
+      if (!u.username || !u.username.trim()) return false;
+
+      // 4. Exclude blocked users (unless self)
+      if (!isCurrentSelf && this.isBlockedMutually(u.userId)) return false;
+
+      // 5. Search query matching
       if (queryLower) {
         const matchesName = u.username.toLowerCase().includes(queryLower);
-        const matchesCountry = u.country.toLowerCase().includes(queryLower);
+        const matchesCountry = u.country?.toLowerCase().includes(queryLower);
         const matchesBio = u.bio?.toLowerCase().includes(queryLower);
-        return matchesName || matchesCountry || matchesBio;
+        const matchesCode = u.accountCode?.toLowerCase().includes(queryLower);
+        return Boolean(matchesName || matchesCountry || matchesBio || matchesCode);
       }
 
       return true;
+    }).sort((a, b) => {
+      // 1. Current user always pinned at top if included
+      const aSelf = this.isSelf(a);
+      const bSelf = this.isSelf(b);
+      if (aSelf && !bSelf) return -1;
+      if (!aSelf && bSelf) return 1;
+
+      // 2. Online users next
+      const aOnline = this.isUserOnline(a);
+      const bOnline = this.isUserOnline(b);
+      if (aOnline && !bOnline) return -1;
+      if (!aOnline && bOnline) return 1;
+
+      // 3. Most recently active / joined
+      const bTime = new Date(b.lastSeen || b.createdAt || 0).getTime();
+      const aTime = new Date(a.lastSeen || a.createdAt || 0).getTime();
+      return bTime - aTime;
     });
   }
 
@@ -856,8 +1099,8 @@ class CommunityService {
     audioUrl?: string
   ): Promise<ChatMessage> {
     const current = this.getCurrentUser();
-    if (!current.isGoogleAuth) {
-      throw new Error('عفواً، يجب تسجيل الدخول باستخدام Google أولاً لبدء التراسل وإرسال الرسائل.');
+    if (!this.isProfileComplete()) {
+      throw new Error('عفواً، يرجى حفظ اسمك وبياناتك وصورتك الشخصية أولاً لبدء إرسال الرسائل.');
     }
     const chatId = this.getChatId(current.userId, recipientId);
     const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);

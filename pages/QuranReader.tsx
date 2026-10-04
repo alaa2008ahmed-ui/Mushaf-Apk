@@ -1984,16 +1984,17 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                                 isSessionFinishedRef.current = true;
                                 stopAudio();
                                 localStorage.removeItem('memorization_session_v1');
-                                showToast('انتهت جلسة التحفيظ');
+                                showToast('انتهت جلسة التحفيظ والمراجعة');
                                 if (memSettings.testAfterSession) {
-                                    showToast('حان وقت الاختبار!');
+                                    setShowReviewTest(true);
+                                } else {
+                                    // Auto-return to memorization page
+                                    setTimeout(() => {
+                                        if (!isMountedRef.current) return;
+                                        if (onBack) handleHomeClick();
+                                        else if (onNavigate) onNavigate('memorization');
+                                    }, 1500);
                                 }
-                                // Auto-return to memorization page
-                                setTimeout(() => {
-                                    if (!isMountedRef.current) return;
-                                    if (onBack) handleHomeClick();
-                                    else if (onNavigate) onNavigate('memorization');
-                                }, 1500);
                             }
                         } else {
                             playNextAyahRef.current();
@@ -3436,7 +3437,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
 
     const getToolbarStyle = (type: string, defaultBg: string, defaultText: string, defaultBorder: string) => {
-        const isBlackTheme = currentTheme?.bg === '#000000';
+        const isBlackTheme = currentTheme?.bg === '#000000' && currentTheme?.id !== 'deep_black';
         if (isBlackTheme && type === 'btn-home') {
             return {
                 backgroundColor: '#000000',
@@ -4047,10 +4048,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     onComplete={(success) => {
                         setShowReviewTest(false);
                         if (success) {
-                            showToast('أحسنت! لقد نجحت في الاختبار');
-                            // Update review schedule if in review mode
-                            if (localMemorizationSettings.isReviewMode) {
-                                // We need the range ID, but for now let's just show success
+                            showToast('أحسنت! لقد نجحت في الاختبار وجرى تحديث جدول المراجعة 🎉');
+                            if (localMemorizationSettings?.rangeId) {
+                                memorizationService.updateReviewStatus(localMemorizationSettings.rangeId);
                             }
                         } else {
                             showToast('تحتاج لمزيد من المراجعة، حاول مرة أخرى');

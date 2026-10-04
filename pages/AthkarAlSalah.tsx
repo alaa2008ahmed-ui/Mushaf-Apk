@@ -7,9 +7,11 @@ import { baseAthkar, specialZikr, prayerOptions, fajrDhikr, fajrMaghribDhikr } f
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'motion/react';
 import { shareAsImage } from '../utils/shareAsImage';
+import { playTTS, stopTTS, subscribeTTS } from '../utils/ttsEngine';
 
 const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { zikr: any; theme: any; onDecrement: () => void; onZoom: () => void; setToastMessage: (msg: string) => void }) => {
     const [isFav, setIsFav] = useState(false);
+    const [playingText, setPlayingText] = useState<string | null>(null);
     const isFinished = zikr.currentCount === 0;
     const textClass = zikr.isQuran ? 'font-amiri text-2xl text-center leading-relaxed' : 'text-lg leading-loose font-medium';
 
@@ -17,6 +19,16 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
         const favs = JSON.parse(localStorage.getItem('favorite_dhikr') || '[]');
         setIsFav(favs.includes(zikr.text));
     }, [zikr.text]);
+
+    useEffect(() => {
+        const unsubscribe = subscribeTTS(setPlayingText);
+        return () => {
+            unsubscribe();
+            stopTTS();
+        };
+    }, []);
+
+    const isPlaying = playingText === zikr.text;
 
     const toggleFav = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -29,6 +41,11 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
         }
         localStorage.setItem('favorite_dhikr', JSON.stringify(newFavs));
         setIsFav(!isFav);
+    };
+
+    const handlePlayAudio = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        playTTS(zikr.text, { onToast: setToastMessage, categoryId: 'hisn_25' });
     };
 
     return (
@@ -47,7 +64,7 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
                     <i className={`fa-heart ${isFav ? 'fa-solid text-red-500' : 'fa-regular text-gray-500 dark:text-gray-400'}`}></i>
                 </button>
                 <div className="flex gap-2">
-                   <button onClick={(e) => { e.stopPropagation(); onZoom(); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                   <button onClick={(e) => { e.stopPropagation(); onZoom(); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" title="تكبير">
                        <i className="fa-solid fa-magnifying-glass-plus"></i>
                    </button>
                    <button onClick={(e) => {
@@ -55,7 +72,7 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
                        const tempDiv = document.createElement("div");
                        tempDiv.innerHTML = zikr.text;
                        navigator.clipboard.writeText(tempDiv.textContent || tempDiv.innerText || "");
-                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" title="نسخ">
                        <i className="fa-regular fa-copy"></i>
                    </button>
                    <button onClick={async (e) => {
@@ -67,8 +84,16 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
                            theme,
                            setToastMessage
                        });
-                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" title="مشاركة">
                        <i className="fa-solid fa-share-nodes"></i>
+                   </button>
+                   <button 
+                       onClick={handlePlayAudio} 
+                       className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" 
+                       style={{ color: isPlaying ? '#ef4444' : 'inherit' }}
+                       title={isPlaying ? "إيقاف الاستماع" : "استماع صوتي"}
+                   >
+                       <i className={`fa-solid ${isPlaying ? 'fa-circle-pause text-red-500 animate-pulse' : 'fa-volume-high'}`}></i>
                    </button>
                 </div>
             </div>

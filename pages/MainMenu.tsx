@@ -11,7 +11,6 @@ import { registerBackInterceptor } from '../hooks/useBackButton';
 import VerseSection from '../components/MainMenu/VerseSection';
 import TitleSection from '../components/MainMenu/TitleSection';
 import GridSection from '../components/MainMenu/GridSection';
-import FloatingNeonTicker from '../components/FloatingNeonTicker';
 import VerseContextMenu from '../components/MainMenu/VerseContextMenu';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { Mic, Palette, Grid, BookOpen } from 'lucide-react';
@@ -1000,7 +999,6 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                               </div>
                           )}
                           <div className="themed-card p-1 rounded-2xl text-center flex-1 relative h-full flex flex-col justify-center overflow-hidden">
-                              <FloatingNeonTicker />
                               <p className="text-sm font-bold leading-tight" style={{ color: theme.bgColor === '#000000' ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#65A30D' : theme.textColor)) }}>
                                   اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
                               </p>

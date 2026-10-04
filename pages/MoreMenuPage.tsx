@@ -43,9 +43,14 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
     });
 
     useEffect(() => {
-        const currentOpens = parseInt(localStorage.getItem('app_opens_count_new') || '1');
-        if (currentOpens <= 5) {
+        const count = parseInt(localStorage.getItem('apps_page_opens_count') || '0');
+        const newCount = count + 1;
+        localStorage.setItem('apps_page_opens_count', newCount.toString());
+        
+        if (newCount <= 5) {
             setShowNewBadges(true);
+        } else {
+            setShowNewBadges(false);
         }
     }, []);
 
@@ -86,7 +91,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                 const isBlackTheme = theme.bgColor === '#000000';
                                 const primaryColor = isBlackTheme ? '#000000' : (isDefault ? '#FFFFFF' : getPrimaryColor(item.id, item.colorIndex));
                                 const textColor = isBlackTheme ? '#FFFFFF' : (isDefault ? '#000000' : theme.btnText);
-                                const isNew = showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'asmaul-husna', 'habit-tracker'].includes(item.id);
+                                const isNew = showNewBadges && ['memorization', 'community'].includes(item.id);
                                 
                                 return (
                                     <div
