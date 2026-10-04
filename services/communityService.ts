@@ -524,13 +524,13 @@ class CommunityService {
     if (isNaN(lastSeenTime)) return 'غير متصل';
 
     const diffSeconds = Math.max(0, Math.floor((Date.now() - lastSeenTime) / 1000));
-    if (diffSeconds < 60) return 'نشط منذ لحظات';
+    if (diffSeconds < 60) return 'متوقف منذ لحظات';
     const diffMinutes = Math.floor(diffSeconds / 60);
-    if (diffMinutes < 60) return `نشط منذ ${diffMinutes} د`;
+    if (diffMinutes < 60) return `متوقف منذ ${diffMinutes} د`;
     const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `نشط منذ ${diffHours} س`;
+    if (diffHours < 24) return `متوقف منذ ${diffHours} س`;
     const diffDays = Math.floor(diffHours / 24);
-    return `آخر ظهور منذ ${diffDays} يوم`;
+    return `متوقف منذ ${diffDays} يوم`;
   }
 
   public isProfileComplete(): boolean {
