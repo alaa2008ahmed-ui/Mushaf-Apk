@@ -90,20 +90,8 @@ class CommunityService {
 
   public isLegacyGoogleUser(u?: any): boolean {
     if (!u) return false;
-    const name = (u.username || '').trim().toLowerCase();
-    const email = (u.email || '').trim().toLowerCase();
-    const uid = (u.userId || u.id || '').toString().toLowerCase();
-    return Boolean(
-      u.isGoogleAuth === true ||
-      uid === '1' ||
-      u.id === '1' ||
-      name === 'alaa' ||
-      name === 'alaa ahmed' ||
-      name.includes('alaa') ||
-      name.includes('علاء') ||
-      email.includes('alaa@swc.com.sa') ||
-      email.includes('@')
-    );
+    // Never filter out real users or valid registered accounts
+    return false;
   }
 
   public async purgeLegacyGoogleData() {
@@ -768,7 +756,7 @@ class CommunityService {
       this.fetchLatestUsers();
       this.fetchLatestMessages();
       this.purgeExpiredServerMessages();
-    }, 5000);
+    }, 3000);
   }
 
   public async fetchLatestUsers(): Promise<CommunityUser[]> {
@@ -778,11 +766,6 @@ class CommunityService {
       snapshot.forEach((docSnap) => {
         const data = docSnap.data() as CommunityUser;
         const uid = data?.userId || docSnap.id;
-        if (this.isLegacyGoogleUser(data) || this.isLegacyGoogleUser({ ...data, userId: uid })) {
-          deleteDoc(doc(db, 'users', docSnap.id)).catch(() => {});
-          this.usersMap.delete(uid);
-          return;
-        }
         if (data && uid && data.username && data.username.trim()) {
           activeIds.add(uid);
           this.usersMap.set(uid, {
@@ -855,11 +838,6 @@ class CommunityService {
         snapshot.forEach((docSnap) => {
           const data = docSnap.data() as CommunityUser;
           const uid = data?.userId || docSnap.id;
-          if (this.isLegacyGoogleUser(data) || this.isLegacyGoogleUser({ ...data, userId: uid })) {
-            deleteDoc(doc(db, 'users', docSnap.id)).catch(() => {});
-            this.usersMap.delete(uid);
-            return;
-          }
           if (data && uid && data.username && data.username.trim()) {
             this.usersMap.set(uid, {
               ...data,

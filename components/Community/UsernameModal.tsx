@@ -16,23 +16,83 @@ interface UsernameModalProps {
 }
 
 const COUNTRIES = [
+  // الدول العربية (22 دولة)
   'السعودية 🇸🇦',
   'مصر 🇪🇬',
-  'المغرب 🇲🇦',
-  'الجزائر 🇩🇿',
-  'الأردن 🇯🇴',
   'الإمارات 🇦🇪',
   'الكويت 🇰🇼',
   'قطر 🇶🇦',
-  'العراق 🇮🇶',
-  'تونس 🇹🇳',
   'عُمان 🇴🇲',
+  'البحرين 🇧🇭',
+  'الأردن 🇯🇴',
   'فلسطين 🇵🇸',
+  'العراق 🇮🇶',
+  'سوريا 🇸🇾',
   'لبنان 🇱🇧',
+  'اليمن 🇾🇪',
+  'المغرب 🇲🇦',
+  'الجزائر 🇩🇿',
+  'تونس 🇹🇳',
   'ليبيا 🇱🇾',
   'السودان 🇸🇩',
-  'اليمن 🇾🇪',
-  'دولة أخرى 🌍'
+  'موريتانيا 🇲🇷',
+  'الصومال 🇸🇴',
+  'جيبوتي 🇩🇯',
+  'جزر القمر 🇰🇲',
+  // الدول الإسلامية
+  'تركيا 🇹🇷',
+  'إندونيسيا 🇮🇩',
+  'ماليزيا 🇲🇾',
+  'باكستان 🇵🇰',
+  'بنغلاديش 🇧🇩',
+  'إيران 🇮🇷',
+  'أفغانستان 🇦🇫',
+  'نيجيريا 🇳🇬',
+  'السنغال 🇸🇳',
+  'تشاد 🇹🇩',
+  'مالي 🇲🇱',
+  'النيجر 🇳🇪',
+  'غينيا 🇬🇳',
+  'كوت ديفوار 🇨🇮',
+  'بوركينا فاسو 🇧🇫',
+  'سيراليون 🇸🇱',
+  'غامبيا 🇬🇲',
+  'كازاخستان 🇰🇿',
+  'أوزبكستان 🇺🇿',
+  'تركمانستان 🇹🇲',
+  'قيرغيزستان 🇰🇬',
+  'طاجيكستان 🇹🇯',
+  'أذربيجان 🇦🇿',
+  'ألبانيا 🇦🇱',
+  'البوسنة والهرسك 🇧🇦',
+  'كوسوفو 🇽🇰',
+  'بروناي 🇧🇳',
+  'المالديف 🇲🇻',
+  // دول يتواجد بها الإسلام ومجتمعات مسلمة
+  'الهند 🇮🇳',
+  'المملكة المتحدة 🇬🇧',
+  'فرنسا 🇫🇷',
+  'ألمانيا 🇩🇪',
+  'الولايات المتحدة 🇺🇸',
+  'كندا 🇨🇦',
+  'أستراليا 🇦🇺',
+  'روسيا 🇷🇺',
+  'الصين 🇨🇳',
+  'السويد 🇸🇪',
+  'هولندا 🇳🇱',
+  'بلجيكا 🇧🇪',
+  'إيطاليا 🇮🇹',
+  'إسبانيا 🇪🇸',
+  'سويسرا 🇨🇭',
+  'النمسا 🇦🇹',
+  'النرويج 🇳🇴',
+  'الدنمارك 🇩🇰',
+  'اليابان 🇯🇵',
+  'كوريا الجنوبية 🇰🇷',
+  'البرازيل 🇧🇷',
+  'الأرجنتين 🇦🇷',
+  'جنوب إفريقيا 🇿🇦',
+  'دولة أخرى / كتابة يدوية ✍️'
 ];
 
 const PRESET_AVATARS = [
@@ -95,14 +155,22 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
   
   // Profile edit fields
   const [username, setUsername] = useState(currentUser.username || '');
-  const [country, setCountry] = useState(currentUser.country || COUNTRIES[0]);
+  const [country, setCountry] = useState(() => {
+    if (!currentUser.country) return '';
+    return COUNTRIES.includes(currentUser.country) ? currentUser.country : 'دولة أخرى / كتابة يدوية ✍️';
+  });
+  const [customCountry, setCustomCountry] = useState(() => {
+    if (!currentUser.country) return '';
+    return COUNTRIES.includes(currentUser.country) ? '' : currentUser.country;
+  });
   const [bio, setBio] = useState(currentUser.bio || '');
   const [avatarUrl, setAvatarUrl] = useState<string>(currentUser.avatarUrl || PRESET_AVATARS[0]);
   const [passcode, setPasscode] = useState(currentUser.passcode || '');
 
   // New account fields
   const [newUsername, setNewUsername] = useState('');
-  const [newCountry, setNewCountry] = useState(COUNTRIES[0]);
+  const [newCountry, setNewCountry] = useState('');
+  const [newCustomCountry, setNewCustomCountry] = useState('');
   const [newBio, setNewBio] = useState('');
   const [newAvatarUrl, setNewAvatarUrl] = useState<string>(PRESET_AVATARS[1]);
   const [newPasscode, setNewPasscode] = useState('');
@@ -132,7 +200,18 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
       } else {
         setActiveTab('create_new');
       }
-      setCountry(u.country || COUNTRIES[0]);
+      if (u.country) {
+        if (COUNTRIES.includes(u.country)) {
+          setCountry(u.country);
+          setCustomCountry('');
+        } else {
+          setCountry('دولة أخرى / كتابة يدوية ✍️');
+          setCustomCountry(u.country);
+        }
+      } else {
+        setCountry('');
+        setCustomCountry('');
+      }
       if (u.bio) setBio(u.bio);
       setAvatarUrl(u.avatarUrl || PRESET_AVATARS[0]);
       if (u.passcode) setPasscode(u.passcode);
@@ -206,7 +285,10 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
       return;
     }
 
-    const finalCountry = country && country.trim() ? country.trim() : COUNTRIES[0];
+    let finalCountry = country;
+    if (country === 'دولة أخرى / كتابة يدوية ✍️') {
+      finalCountry = customCountry.trim();
+    }
     const finalAvatar = avatarUrl && avatarUrl.trim() ? avatarUrl.trim() : PRESET_AVATARS[0];
 
     setIsSaving(true);
@@ -237,7 +319,10 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
       return;
     }
 
-    const finalCountry = newCountry && newCountry.trim() ? newCountry.trim() : COUNTRIES[0];
+    let finalCountry = newCountry;
+    if (newCountry === 'دولة أخرى / كتابة يدوية ✍️') {
+      finalCountry = newCustomCountry.trim();
+    }
     const finalAvatar = newAvatarUrl && newAvatarUrl.trim() ? newAvatarUrl.trim() : PRESET_AVATARS[1];
 
     setIsCreatingNew(true);
@@ -247,7 +332,18 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
       const created = await communityService.createNewAccount(newUsername, finalCountry, newBio, finalAvatar, newPasscode);
       setCurrentUser(created);
       setUsername(created.username);
-      setCountry(created.country);
+      if (created.country) {
+        if (COUNTRIES.includes(created.country)) {
+          setCountry(created.country);
+          setCustomCountry('');
+        } else {
+          setCountry('دولة أخرى / كتابة يدوية ✍️');
+          setCustomCountry(created.country);
+        }
+      } else {
+        setCountry('');
+        setCustomCountry('');
+      }
       setBio(created.bio || '');
       setAvatarUrl(created.avatarUrl || PRESET_AVATARS[0]);
       setPasscode(created.passcode || '');
@@ -284,7 +380,18 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
       const restored = await communityService.restoreAccount(cleanCode, restorePasscode);
       setCurrentUser(restored);
       setUsername(restored.username || '');
-      setCountry(restored.country || COUNTRIES[0]);
+      if (restored.country) {
+        if (COUNTRIES.includes(restored.country)) {
+          setCountry(restored.country);
+          setCustomCountry('');
+        } else {
+          setCountry('دولة أخرى / كتابة يدوية ✍️');
+          setCustomCountry(restored.country);
+        }
+      } else {
+        setCountry('');
+        setCustomCountry('');
+      }
       setBio(restored.bio || '');
       setAvatarUrl(restored.avatarUrl || PRESET_AVATARS[0]);
       setPasscode(restored.passcode || '');
@@ -310,7 +417,10 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
     const fresh = communityService.getCurrentUser();
     setCurrentUser(fresh);
     setUsername('');
-    setCountry(COUNTRIES[0]);
+    setCountry('');
+    setCustomCountry('');
+    setNewCountry('');
+    setNewCustomCountry('');
     setBio('');
     setAvatarUrl(PRESET_AVATARS[0]);
     setPasscode('');
@@ -365,9 +475,6 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
               <span>مجتمع المصحف الشريف</span>
               <Sparkles size={18} className="text-amber-500" />
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              حسابك ومحادثاتك محفوظة دائماً بدون حاجة لجوجل
-            </p>
           </div>
 
           {/* Mode Switch Tabs */}
@@ -531,22 +638,19 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   )}
 
                   {/* Preset Avatars */}
-                  <div className="mt-2.5 flex items-center gap-2">
-                    <span className="text-[11px] text-slate-400 font-medium">أو اختر رمزاً:</span>
-                    <div className="flex items-center gap-1.5">
-                      {PRESET_AVATARS.map((url, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => setAvatarUrl(url)}
-                          className={`w-7 h-7 rounded-full overflow-hidden border transition-all ${
-                            avatarUrl === url ? 'ring-2 ring-emerald-500 border-white' : 'border-slate-300 dark:border-slate-700 opacity-80'
-                          }`}
-                        >
-                          <img src={url} alt={`رمز ${i}`} className="w-full h-full object-cover" />
-                        </button>
-                      ))}
-                    </div>
+                  <div className="mt-2.5 flex items-center justify-center gap-1.5">
+                    {PRESET_AVATARS.map((url, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setAvatarUrl(url)}
+                        className={`w-7 h-7 rounded-full overflow-hidden border transition-all ${
+                          avatarUrl === url ? 'ring-2 ring-emerald-500 border-white' : 'border-slate-300 dark:border-slate-700 opacity-80'
+                        }`}
+                      >
+                        <img src={url} alt={`رمز ${i}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -562,7 +666,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       setUsername(e.target.value);
                       setError('');
                     }}
-                    placeholder="مثال: أحمد عبد الله..."
+                    placeholder=""
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
                   />
                 </div>
@@ -574,15 +678,33 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   </label>
                   <select
                     value={country}
-                    onChange={(e) => setCountry(e.target.value)}
+                    onChange={(e) => {
+                      setCountry(e.target.value);
+                      if (e.target.value !== 'دولة أخرى / كتابة يدوية ✍️') {
+                        setCustomCountry('');
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
                   >
+                    <option value="">-- اختر الدولة أو البلد --</option>
                     {COUNTRIES.map((c) => (
                       <option key={c} value={c}>
                         {c}
                       </option>
                     ))}
                   </select>
+                  {country === 'دولة أخرى / كتابة يدوية ✍️' && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        value={customCountry}
+                        onChange={(e) => setCustomCountry(e.target.value)}
+                        placeholder=""
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-emerald-500/50 dark:border-emerald-500/50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
+                        autoFocus
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Bio */}
@@ -594,7 +716,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     type="text"
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    placeholder="أكتب نبذة بسيطة عنك..."
+                    placeholder=""
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
                   />
                 </div>
@@ -613,7 +735,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     maxLength={8}
                     value={passcode}
                     onChange={(e) => setPasscode(e.target.value)}
-                    placeholder="ضع رمز مرور لحماية حسابك من الدخول..."
+                    placeholder=""
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white font-mono"
                   />
                 </div>
@@ -653,16 +775,6 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
           {/* TAB 2: Create Brand New Account */}
           {(activeTab === 'create_new' || (!currentUser.username && activeTab === 'profile')) && (
             <div>
-              <div className="mb-4 p-3.5 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border border-emerald-500/30 rounded-2xl">
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
-                  <Sparkles size={16} className="text-amber-500" />
-                  <span>إنشاء حساب مستقل جديد في مجتمع المصحف:</span>
-                </p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                  سيتم إنشاء معرّف وكود حساب جديد تماماً، وسيظهر حسابك فوراً لدى كل المستخدمين الآخرين في قائمة المجتمع.
-                </p>
-              </div>
-
               <form onSubmit={handleCreateNewAccount} className="space-y-3.5">
                 {/* Avatar Section */}
                 <div className="flex flex-col items-center justify-center mb-1">
@@ -694,22 +806,19 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   </div>
 
                   {/* Preset Avatars */}
-                  <div className="mt-2.5 flex items-center gap-2">
-                    <span className="text-[11px] text-slate-400 font-medium">أو اختر رمزاً:</span>
-                    <div className="flex items-center gap-1.5">
-                      {PRESET_AVATARS.map((url, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => setNewAvatarUrl(url)}
-                          className={`w-7 h-7 rounded-full overflow-hidden border transition-all ${
-                            newAvatarUrl === url ? 'ring-2 ring-emerald-500 border-white' : 'border-slate-300 dark:border-slate-700 opacity-80'
-                          }`}
-                        >
-                          <img src={url} alt={`رمز ${i}`} className="w-full h-full object-cover" />
-                        </button>
-                      ))}
-                    </div>
+                  <div className="mt-2.5 flex items-center justify-center gap-1.5">
+                    {PRESET_AVATARS.map((url, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setNewAvatarUrl(url)}
+                        className={`w-7 h-7 rounded-full overflow-hidden border transition-all ${
+                          newAvatarUrl === url ? 'ring-2 ring-emerald-500 border-white' : 'border-slate-300 dark:border-slate-700 opacity-80'
+                        }`}
+                      >
+                        <img src={url} alt={`رمز ${i}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -725,7 +834,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       setNewUsername(e.target.value);
                       setError('');
                     }}
-                    placeholder="أدخل اسمك الكريم (مثال: عبد الرحمن)..."
+                    placeholder=""
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
                   />
                 </div>
@@ -737,15 +846,33 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   </label>
                   <select
                     value={newCountry}
-                    onChange={(e) => setNewCountry(e.target.value)}
+                    onChange={(e) => {
+                      setNewCountry(e.target.value);
+                      if (e.target.value !== 'دولة أخرى / كتابة يدوية ✍️') {
+                        setNewCustomCountry('');
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
                   >
+                    <option value="">-- اختر الدولة أو البلد --</option>
                     {COUNTRIES.map((c) => (
                       <option key={c} value={c}>
                         {c}
                       </option>
                     ))}
                   </select>
+                  {newCountry === 'دولة أخرى / كتابة يدوية ✍️' && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        value={newCustomCountry}
+                        onChange={(e) => setNewCustomCountry(e.target.value)}
+                        placeholder=""
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-emerald-500/50 dark:border-emerald-500/50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
+                        autoFocus
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Bio */}
@@ -757,7 +884,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     type="text"
                     value={newBio}
                     onChange={(e) => setNewBio(e.target.value)}
-                    placeholder="أكتب نبذة بسيطة عنك..."
+                    placeholder=""
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
                   />
                 </div>
@@ -776,7 +903,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     maxLength={8}
                     value={newPasscode}
                     onChange={(e) => setNewPasscode(e.target.value)}
-                    placeholder="ضع رمز مرور لحماية الحساب..."
+                    placeholder=""
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white font-mono"
                   />
                 </div>
@@ -829,7 +956,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       setRestoreCode(e.target.value);
                       setError('');
                     }}
-                    placeholder="أدخل كود الحساب (MQ-XXXXX) أو اسم المستخدم..."
+                    placeholder=""
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white uppercase tracking-wider"
                   />
                 </div>
@@ -846,7 +973,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       setRestorePasscode(e.target.value);
                       setError('');
                     }}
-                    placeholder="اتركه فارغاً إذا لم تكن قد عينت رمزاً..."
+                    placeholder=""
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white font-mono"
                   />
                 </div>
