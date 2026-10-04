@@ -6,7 +6,7 @@ import {
   Download, Share2, Copy, FileText, Image as ImageIcon, CheckCircle2
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
-import { safeHtml2Canvas } from '../utils/canvasHelper';
+import { safeHtml2Canvas, renderQuranCardToCanvas } from '../utils/canvasHelper';
 import { Share as CapacitorShare } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import { communityService, CommunityUser, ChatMessage, QuranVerseAttachment } from '../services/communityService';
@@ -26,25 +26,52 @@ const FrameOverlay: React.FC<{ frameType?: string; frameColor?: string }> = ({ f
   if (frameType === 'double') {
     return (
       <div 
-        className="absolute inset-2 border-2 pointer-events-none rounded-xl z-10"
-        style={{ borderStyle: 'double', borderColor: frameColor, borderWidth: '3px' }}
+        className="absolute inset-2 pointer-events-none rounded-xl z-10"
+        style={{ border: `3px double ${frameColor}` }}
       />
+    );
+  }
+
+  if (frameType === 'corner-diamonds') {
+    return (
+      <div className="absolute inset-3 pointer-events-none z-10" style={{ border: `1px solid ${frameColor}` }}>
+        <div style={{ position: 'absolute', top: '-4px', left: '-4px', width: '8px', height: '8px', backgroundColor: frameColor, transform: 'rotate(45deg)' }} />
+        <div style={{ position: 'absolute', top: '-4px', right: '-4px', width: '8px', height: '8px', backgroundColor: frameColor, transform: 'rotate(45deg)' }} />
+        <div style={{ position: 'absolute', bottom: '-4px', left: '-4px', width: '8px', height: '8px', backgroundColor: frameColor, transform: 'rotate(45deg)' }} />
+        <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', width: '8px', height: '8px', backgroundColor: frameColor, transform: 'rotate(45deg)' }} />
+      </div>
     );
   }
 
   if (frameType === 'mihrab') {
     return (
       <div 
-        className="absolute inset-2 border-2 pointer-events-none rounded-t-full rounded-b-xl z-10"
-        style={{ borderColor: frameColor }}
+        className="absolute inset-2 pointer-events-none rounded-t-full rounded-b-xl z-10"
+        style={{ border: `2px solid ${frameColor}` }}
       />
     );
   }
 
   if (frameType === 'elegant') {
     return (
-      <div className="absolute inset-2 border pointer-events-none rounded-xl z-10" style={{ borderColor: frameColor }}>
-        <div className="absolute inset-1 border opacity-50 rounded-lg" style={{ borderColor: frameColor }} />
+      <div className="absolute inset-2 pointer-events-none rounded-xl z-10" style={{ border: `1px solid ${frameColor}` }}>
+        <div className="absolute inset-1 rounded-lg opacity-50" style={{ border: `1px solid ${frameColor}` }} />
+      </div>
+    );
+  }
+
+  if (frameType === 'mihrab-double') {
+    return (
+      <div className="absolute inset-2 pointer-events-none rounded-t-full rounded-b-xl z-10" style={{ border: `2px solid ${frameColor}` }}>
+        <div className="absolute inset-1 rounded-t-full rounded-b-lg opacity-60" style={{ border: `1px dashed ${frameColor}` }} />
+      </div>
+    );
+  }
+
+  if (frameType === 'classic-islamic') {
+    return (
+      <div className="absolute inset-2 pointer-events-none z-10" style={{ border: `1px solid ${frameColor}` }}>
+        <div className="absolute inset-1" style={{ border: `2px solid ${frameColor}`, opacity: 0.9 }} />
       </div>
     );
   }
@@ -74,37 +101,8 @@ const ChatQuranCard: React.FC<{
   const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (verseData.shareType === 'audio' && verseData.audioUrl) {
-      const a = document.createElement('a');
-      a.href = verseData.audioUrl;
-      a.download = `sura_${verseData.surahName}_ayah_${verseData.ayahNumber}.mp3`;
-      a.target = '_blank';
-      a.click();
-      showToast('جاري تحميل التلاوة الصوتية... 🎵');
-      return;
-    }
-
-    if (!cardRef.current || isProcessing) return;
-    setIsProcessing(true);
-
-    try {
-      const canvas = await safeHtml2Canvas(cardRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: null,
-        logging: false
-      });
-
-      const dataUrl = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = `quran_card_${verseData.surahNumber}_${verseData.ayahNumber}.png`;
-      a.click();
-      showToast('تم تحميل بطاقة الآية كصورة بنجاح 🖼️');
-    } catch (err) {
-      console.error('Download card error:', err);
-      // Fallback text download
-      const textContent = `سورة ${verseData.surahName} (الآية ${verseData.ayahNumber})\n\n﴿ ${verseData.text} ﴾\n\nمصحف احمد وليلي`;
+    if (verseData.shareType === 'text') {
+      const textContent = `سورة ${verseData.surahName} (${verseData.fromAyah && verseData.toAyah && verseData.fromAyah !== verseData.toAyah ? `الآيات ${toArabicDigits(verseData.fromAyah)} إلى ${toArabicDigits(verseData.toAyah)}` : `الآية ${toArabicDigits(verseData.ayahNumber)}`})\n\n﴿ ${verseData.text} ﴾\n\nمصحف احمد وليلي`;
       const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -112,7 +110,74 @@ const ChatQuranCard: React.FC<{
       a.download = `quran_verse_${verseData.surahNumber}_${verseData.ayahNumber}.txt`;
       a.click();
       URL.revokeObjectURL(url);
-      showToast('تم تحميل الآية كملف نصي 📄');
+      showToast('تم تحميل النص كملف نصي 📄');
+      return;
+    }
+
+    if (verseData.shareType === 'audio' && verseData.audioUrl) {
+      try {
+        const res = await fetch(verseData.audioUrl);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `quran_recitation_${verseData.surahNumber}_${verseData.ayahNumber}.mp3`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('تم تحميل التلاوة الصوتية بنجاح 🎵');
+      } catch (err) {
+        const a = document.createElement('a');
+        a.href = verseData.audioUrl;
+        a.download = `sura_${verseData.surahNumber}_ayah_${verseData.ayahNumber}.mp3`;
+        a.target = '_blank';
+        a.click();
+        showToast('جاري تحميل التلاوة الصوتية... 🎵');
+      }
+      return;
+    }
+
+    if (isProcessing) return;
+    setIsProcessing(true);
+
+    try {
+      let dataUrl: string = '';
+      try {
+        if (cardRef.current) {
+          const canvas = await safeHtml2Canvas(cardRef.current, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: null,
+            logging: false
+          });
+          dataUrl = canvas.toDataURL('image/png');
+        }
+      } catch (err) {
+        console.warn('DOM capture failed, falling back to direct Canvas renderer:', err);
+      }
+
+      // If safeHtml2Canvas produced empty or failed, use pristine Canvas renderer
+      if (!dataUrl || dataUrl === 'data:,') {
+        const fallbackCanvas = renderQuranCardToCanvas(verseData);
+        dataUrl = fallbackCanvas.toDataURL('image/png');
+      }
+
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = verseData.shareType === 'page' 
+        ? `quran_page_${verseData.surahNumber}_${verseData.ayahNumber}.png`
+        : `quran_card_${verseData.surahNumber}_${verseData.ayahNumber}.png`;
+      a.click();
+      showToast(verseData.shareType === 'page' ? 'تم تحميل صفحة المصحف كصورة 📄' : 'تم تحميل بطاقة الآية كصورة بنجاح 🖼️');
+    } catch (err) {
+      console.error('Download card error:', err);
+      // Final fallback to Canvas renderer
+      const fallbackCanvas = renderQuranCardToCanvas(verseData);
+      const dataUrl = fallbackCanvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `quran_card_${verseData.surahNumber}_${verseData.ayahNumber}.png`;
+      a.click();
+      showToast('تم تحميل بطاقة الآية كصورة بنجاح 🖼️');
     } finally {
       setIsProcessing(false);
     }
@@ -138,19 +203,40 @@ const ChatQuranCard: React.FC<{
             url: verseData.audioUrl
           });
         } else {
-          navigator.clipboard.writeText(shareText);
-          showToast('تم نسخ التلاوة للمشاركة 🎵');
+          await navigator.clipboard.writeText(shareText + '\n' + verseData.audioUrl);
+          showToast('تم نسخ رابط التلاوة 🎵');
         }
-      } else if (cardRef.current) {
-        // Capture image using safeHtml2Canvas and share via native app picker
-        const canvas = await safeHtml2Canvas(cardRef.current, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: null,
-          logging: false
-        });
+      } else if (verseData.shareType === 'text') {
+        if (navigator.share) {
+          await navigator.share({
+            title: `سورة ${verseData.surahName}`,
+            text: shareText
+          });
+        } else {
+          await navigator.clipboard.writeText(shareText);
+          showToast('تم نسخ النص للمشاركة 📋');
+        }
+      } else {
+        let dataUrl: string = '';
+        try {
+          if (cardRef.current) {
+            const canvas = await safeHtml2Canvas(cardRef.current, {
+              scale: 2,
+              useCORS: true,
+              backgroundColor: null,
+              logging: false
+            });
+            dataUrl = canvas.toDataURL('image/png');
+          }
+        } catch (e) {
+          console.warn('Share canvas DOM capture error:', e);
+        }
 
-        const dataUrl = canvas.toDataURL('image/png');
+        if (!dataUrl || dataUrl === 'data:,') {
+          const fallbackCanvas = renderQuranCardToCanvas(verseData);
+          dataUrl = fallbackCanvas.toDataURL('image/png');
+        }
+
         const response = await fetch(dataUrl);
         const blob = await response.blob();
         const file = new File([blob], `quran_verse_${verseData.surahNumber}.png`, { type: 'image/png' });
@@ -173,7 +259,7 @@ const ChatQuranCard: React.FC<{
             text: shareText
           });
         } else {
-          navigator.clipboard.writeText(shareText);
+          await navigator.clipboard.writeText(shareText);
           showToast('تم نسخ نص الآية للمشاركة للتطبيقات 📋');
         }
       }
@@ -187,36 +273,39 @@ const ChatQuranCard: React.FC<{
   const shareType = verseData.shareType || 'image';
 
   return (
-    <div className="mb-2 relative w-full overflow-hidden rounded-2xl shadow-md transition-all">
+    <div className="mb-2 relative w-full overflow-hidden rounded-2xl transition-all" dir="rtl">
       {/* Toast popup */}
       {toastMsg && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-slate-900/90 text-emerald-400 text-[11px] font-bold px-3 py-1 rounded-full shadow-lg border border-emerald-500/30 z-30 flex items-center gap-1">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-slate-900/90 text-emerald-400 text-[11px] font-bold px-3 py-1 rounded-full shadow-lg border border-emerald-500/30 z-30 flex items-center gap-1 animate-fadeIn">
           <CheckCircle2 size={13} />
           <span>{toastMsg}</span>
         </div>
       )}
 
-      {/* Captured Card View */}
-      <div ref={cardRef}>
+      {/* Captured Card View matching images exactly */}
+      <div ref={cardRef} style={{ letterSpacing: '0px', wordSpacing: 'normal' }}>
         {/* Render based on selected shareType */}
         {shareType === 'text' ? (
-          <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center text-slate-900 dark:text-white">
-            <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-2">
+          <div className="p-4 rounded-2xl bg-white/95 dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 text-center shadow-sm" style={{ letterSpacing: '0px' }}>
+            <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-2" style={{ letterSpacing: '0px' }}>
               سورة {verseData.surahName} ({verseData.fromAyah && verseData.toAyah && verseData.fromAyah !== verseData.toAyah ? `الآيات ${toArabicDigits(verseData.fromAyah)} إلى ${toArabicDigits(verseData.toAyah)}` : `الآية ${toArabicDigits(verseData.ayahNumber)}`})
             </div>
-            <p className={`text-base font-bold leading-loose ${verseData.fontClass || 'font-serif'}`} style={{ color: verseData.textColor }}>
+            <p className="text-base font-bold leading-loose px-2" style={{ letterSpacing: '0px', fontFamily: 'var(--font-amiri-quran), "Noto Naskh Arabic", serif' }}>
               ﴿ {verseData.text} ﴾
             </p>
             {verseData.customNote && (
-              <p className="text-xs italic text-amber-600 dark:text-amber-400 mt-2 border-t pt-1.5 border-slate-200 dark:border-slate-700">
+              <p className="text-xs italic text-amber-600 dark:text-amber-400 mt-2 border-t pt-1.5 border-slate-200 dark:border-slate-700" style={{ letterSpacing: '0px' }}>
                 "{verseData.customNote}"
               </p>
             )}
+            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mt-2 pt-1 border-t border-slate-100 dark:border-slate-800" style={{ letterSpacing: '0px' }}>
+              مصحف احمد وليلي
+            </div>
           </div>
         ) : shareType === 'audio' ? (
-          <div className="p-5 rounded-2xl bg-emerald-950 text-white border border-emerald-500/40 text-center flex flex-col items-center justify-center gap-2">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-900 to-teal-950 text-white border border-emerald-500/40 text-center flex flex-col items-center justify-center gap-2 shadow-sm" style={{ letterSpacing: '0px' }}>
             <div className="flex items-center justify-between w-full mb-1">
-              <span className="text-xs font-bold text-emerald-400">
+              <span className="text-xs font-bold text-emerald-300" style={{ letterSpacing: '0px' }}>
                 سورة {verseData.surahName} (آية {toArabicDigits(verseData.ayahNumber)})
               </span>
               {verseData.audioUrl && (
@@ -225,88 +314,111 @@ const ChatQuranCard: React.FC<{
                     e.stopPropagation();
                     onToggleAudio(verseData.audioUrl);
                   }}
-                  className="p-2 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-md transition-transform active:scale-95"
+                  className="p-2 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-md transition-transform active:scale-95 flex items-center justify-center"
                 >
                   {playingAudioUrl === verseData.audioUrl ? <Pause size={16} /> : <Play size={16} />}
                 </button>
               )}
             </div>
-            <p className="font-serif text-sm text-slate-200 line-clamp-2">
+            <p className="text-sm text-slate-100 line-clamp-3 leading-relaxed" style={{ letterSpacing: '0px', fontFamily: 'var(--font-amiri-quran), "Noto Naskh Arabic", serif' }}>
               ﴿ {verseData.text} ﴾
             </p>
-            <span className="text-[10px] text-amber-300 font-bold">بصوت الشيخ مشاري العفاسي 🎙️</span>
+            <span className="text-[10px] text-amber-300 font-bold" style={{ letterSpacing: '0px' }}>بصوت الشيخ مشاري العفاسي 🎙️</span>
           </div>
         ) : shareType === 'page' ? (
-          <div className="p-5 rounded-2xl bg-amber-50 dark:bg-slate-900 border-2 border-amber-500/40 text-center shadow-md flex flex-col items-center justify-between gap-2">
-            <div className="border-b border-amber-500/20 pb-1.5 w-full text-center">
-              <span className="text-xs font-bold text-amber-800 dark:text-amber-400">
-                صفحة مصحف - سورة {verseData.surahName} ({verseData.fromAyah && verseData.toAyah && verseData.fromAyah !== verseData.toAyah ? `الآيات ${toArabicDigits(verseData.fromAyah)} إلى ${toArabicDigits(verseData.toAyah)}` : `آية ${toArabicDigits(verseData.ayahNumber)}`})
-              </span>
+          /* Exact Match with Image 1 & Image 3 for Page Share */
+          <div className="p-5 rounded-2xl bg-[#FFFDF5] text-[#292524] border border-amber-500/30 text-center shadow-sm flex flex-col items-center justify-between gap-3" dir="rtl" style={{ letterSpacing: '0px', wordSpacing: 'normal' }}>
+            <div className="text-xs font-bold text-[#9A3412]" style={{ letterSpacing: '0px' }}>
+              صفحة مصحف - سورة {verseData.surahName} ({verseData.fromAyah && verseData.toAyah && verseData.fromAyah !== verseData.toAyah ? `الآيات ${toArabicDigits(verseData.fromAyah)} إلى ${toArabicDigits(verseData.toAyah)}` : `آية ${toArabicDigits(verseData.ayahNumber)}`})
             </div>
-            <p className={`font-serif text-base leading-loose font-bold text-slate-900 dark:text-amber-100 ${verseData.fontClass || ''}`} style={{ color: verseData.textColor }}>
+            <div className="w-full h-[1px] bg-[#E7E5E4]" />
+            <p 
+              className="text-base leading-loose font-bold text-[#1C1917] px-2"
+              style={{
+                fontFamily: verseData.fontFamily || 'var(--font-amiri-quran), var(--font-hafs), "Noto Naskh Arabic", serif',
+                fontSize: verseData.fontSize ? `${verseData.fontSize}px` : '18px',
+                letterSpacing: '0px',
+                wordSpacing: 'normal'
+              }}
+            >
               ﴿ {verseData.text} ﴾
             </p>
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold pt-1.5 border-t border-amber-500/20 w-full">
+            <div className="w-full h-[1px] bg-[#E7E5E4]" />
+            <div className="text-[11px] text-[#78716C] font-bold" style={{ letterSpacing: '0px' }}>
               مصحف احمد وليلي • صفحة قراءة
             </div>
           </div>
         ) : (
           /* Image Card mode matching preview */
           <div
-            className="relative min-h-[180px] p-5 rounded-2xl shadow-lg flex flex-col items-center justify-between text-center overflow-hidden border border-slate-200 dark:border-slate-800"
+            className="relative min-h-[180px] p-5 rounded-2xl shadow-sm flex flex-col items-center justify-between text-center overflow-hidden border border-slate-200 dark:border-slate-800"
+            dir="rtl"
             style={{
               background: verseData.bgValue || '#ffffff',
-              color: verseData.textColor || '#000000'
+              color: verseData.textColor || '#000000',
+              letterSpacing: '0px',
+              wordSpacing: 'normal'
             }}
           >
             <FrameOverlay frameType={verseData.frameType} frameColor={verseData.frameColor} />
 
-            <div className="text-center font-serif text-xs font-bold opacity-80 mb-1" style={{ color: verseData.textColor }}>
+            <div className="text-center text-xs font-bold opacity-80 mb-1" style={{ color: verseData.textColor, letterSpacing: '0px', fontFamily: 'var(--font-amiri-quran), "Noto Naskh Arabic", serif' }}>
               بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
             </div>
 
             <div
-              className={`text-center font-bold leading-loose my-2 px-1 ${verseData.fontClass || 'font-serif'}`}
+              className="text-center font-bold leading-loose my-2 px-1"
               style={{
                 fontSize: verseData.fontSize ? `${verseData.fontSize}px` : '18px',
-                color: verseData.textColor || '#000000'
+                fontFamily: verseData.fontFamily || 'var(--font-amiri-quran), var(--font-hafs), "Noto Naskh Arabic", serif',
+                color: verseData.textColor || '#000000',
+                letterSpacing: '0px',
+                wordSpacing: 'normal'
               }}
             >
               ﴿ {verseData.text} ﴾
             </div>
 
             {verseData.customNote && (
-              <div className="text-xs italic opacity-90 my-1 font-medium" style={{ color: verseData.textColor }}>
+              <div className="text-xs italic opacity-90 my-1 font-medium" style={{ color: verseData.textColor, letterSpacing: '0px' }}>
                 "{verseData.customNote}"
               </div>
             )}
 
-            <div className="text-[10px] font-bold tracking-wide opacity-70 mt-1 font-serif" style={{ color: verseData.textColor }}>
+            <div 
+              className="text-[11px] font-bold mt-1" 
+              style={{ 
+                color: verseData.textColor, 
+                letterSpacing: '0px', 
+                wordSpacing: 'normal',
+                fontFamily: 'var(--font-cairo), "Noto Naskh Arabic", Arial, sans-serif' 
+              }}
+            >
               سورة {verseData.surahName} ({verseData.fromAyah && verseData.toAyah && verseData.fromAyah !== verseData.toAyah ? `الآيات ${toArabicDigits(verseData.fromAyah)}-${toArabicDigits(verseData.toAyah)}` : `آية ${toArabicDigits(verseData.ayahNumber)}`}) • مصحف احمد وليلي
             </div>
           </div>
         )}
       </div>
 
-      {/* Action Toolbar: تحميل & مشاركة */}
-      <div className="mt-1.5 pt-1.5 border-t border-black/10 dark:border-white/10 flex items-center justify-between px-2 text-[11px] font-bold">
+      {/* Action Toolbar matching Image 3: تحميل (Download) & مشاركة (Share) */}
+      <div className="mt-2 pt-2 border-t border-black/10 dark:border-white/10 flex items-center justify-between px-1 text-xs font-bold">
         <button
           onClick={handleDownload}
           disabled={isProcessing}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 transition-all active:scale-95 disabled:opacity-50"
           title="تحميل"
         >
-          <Download size={13} />
+          <Download size={14} />
           <span>تحميل</span>
         </button>
 
         <button
           onClick={handleShareExternal}
           disabled={isProcessing}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 transition-colors disabled:opacity-50"
-          title="مشاركة للتطبيقات الأخرى"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 transition-all active:scale-95 disabled:opacity-50"
+          title="مشاركة"
         >
-          <Share2 size={13} />
+          <Share2 size={14} />
           <span>مشاركة</span>
         </button>
       </div>
@@ -332,14 +444,37 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<any>(null);
+  const isFirstLoadRef = useRef<boolean>(true);
+  const userIsNearBottomRef = useRef<boolean>(true);
+  const prevMsgCountRef = useRef<number>(0);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const loadData = () => {
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior
+      });
+    } else {
+      messagesEndRef.current?.scrollIntoView({ behavior });
+    }
+  };
+
+  const handleScroll = () => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    // User is considered near bottom if within 120px from bottom
+    const isNear = scrollHeight - scrollTop - clientHeight < 120;
+    userIsNearBottomRef.current = isNear;
+  };
+
+  const loadData = (shouldScrollIfNear: boolean = false) => {
     if (!communityService.isProfileComplete()) {
       showToast('عفواً، يجب استكمال بيانات ملفك الشخصي أولاً');
       onBack();
@@ -363,20 +498,44 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
     setIsBlocked(blocked);
 
     const chatMsgs = communityService.getMessagesForChat(partnerUserId);
-    setMessages(chatMsgs);
+    
+    setMessages(prev => {
+      // Check if messages actually changed
+      const isDifferent = prev.length !== chatMsgs.length || 
+        (chatMsgs.length > 0 && prev.length > 0 && prev[prev.length - 1]?.messageId !== chatMsgs[chatMsgs.length - 1]?.messageId);
+      
+      if (isDifferent || isFirstLoadRef.current) {
+        if (isFirstLoadRef.current) {
+          setTimeout(() => {
+            scrollToBottom('auto');
+            isFirstLoadRef.current = false;
+          }, 50);
+        } else if (shouldScrollIfNear && userIsNearBottomRef.current) {
+          setTimeout(() => {
+            scrollToBottom('smooth');
+          }, 50);
+        }
+        return chatMsgs;
+      }
+      return prev;
+    });
+
     communityService.markMessagesAsRead(partnerUserId);
   };
 
   useEffect(() => {
-    loadData();
+    isFirstLoadRef.current = true;
+    userIsNearBottomRef.current = true;
+    loadData(true);
 
     const handleUpdate = () => {
-      loadData();
+      loadData(true);
     };
 
     const presenceInterval = setInterval(() => {
-      loadData();
-    }, 3500);
+      // Periodic presence refresh without force scrolling
+      loadData(false);
+    }, 4000);
 
     window.addEventListener('community_messages_updated', handleUpdate);
     window.addEventListener('community_block_updated', handleUpdate);
@@ -389,10 +548,6 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
       window.removeEventListener('community_user_updated', handleUpdate);
     };
   }, [partnerUserId]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputText(e.target.value);
@@ -414,14 +569,16 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
     setInputText('');
     setShowEmojiPicker(false);
     communityService.setTypingStatus(partnerUserId, false);
-    loadData();
+    loadData(true);
+    setTimeout(() => scrollToBottom('smooth'), 50);
   };
 
   const handleSendVerse = (verse: QuranVerseAttachment) => {
     if (isBlocked) return;
     communityService.sendMessage(partnerUserId, '', verse);
     setShowVerseModal(false);
-    loadData();
+    loadData(true);
+    setTimeout(() => scrollToBottom('smooth'), 50);
   };
 
   const handleToggleAudio = (url?: string) => {
@@ -490,10 +647,10 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
   const isPartnerTyping = partner?.typingToUserId === currentUser.userId;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col font-sans" dir="rtl">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col font-sans" dir="rtl">
       {/* Header */}
       <div 
-        className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 pb-3.5 flex items-center justify-between shadow-sm"
+        className="shrink-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 pb-3.5 flex items-center justify-between shadow-sm"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.25rem)' }}
       >
         <div className="flex items-center gap-3">
@@ -588,14 +745,19 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
 
       {/* Notice Banner if blocked */}
       {isBlocked && (
-        <div className="bg-rose-500/10 border-b border-rose-500/20 px-4 py-2.5 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center justify-center gap-2">
+        <div className="shrink-0 bg-rose-500/10 border-b border-rose-500/20 px-4 py-2.5 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center justify-center gap-2">
           <AlertCircle size={16} />
           <span>تم حظر التواصل مع هذا المستخدم</span>
         </div>
       )}
 
-      {/* Messages Feed */}
-      <div className="flex-1 p-4 space-y-3 overflow-y-auto max-w-3xl w-full mx-auto">
+      {/* Messages Feed - Freely Scrollable */}
+      <div 
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 p-4 space-y-3 overflow-y-auto overscroll-y-contain max-w-3xl w-full mx-auto"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         {messages.length === 0 ? (
           <div className="text-center py-16 opacity-60">
             <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto mb-3">

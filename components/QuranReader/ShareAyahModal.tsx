@@ -483,7 +483,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                         // Smaller delay for faster response
                         await new Promise(r => setTimeout(r, 100));
 
-                        const canvas = await html2canvas(captureElement, {
+                        const canvas = await safeHtml2Canvas(captureElement, {
                             scale: 2, // 2x of 1000px = 2000px, very safe and high quality
                             backgroundColor: '#ffffff',
                             useCORS: true,
@@ -620,8 +620,13 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     ayahsToShare.push({ s: currentAyah.s, a });
                 }
 
-                // Custom file name: Use safe characters for filename
-                const fileName = `quran_audio_${currentAyah.s}_${start}${start !== end ? '_' + end : ''}.mp3`;
+                // Custom file name formatted exactly: سورة [اسم السورة] الايه01 أو سورة [اسم السورة] الايه من 01 الى 20
+                const surahName = getSurahName(currentAyah.s);
+                const fromStr = String(start).padStart(2, '0');
+                const toStr = String(end).padStart(2, '0');
+                const fileName = start === end 
+                    ? `سورة ${surahName} الايه${fromStr}.mp3` 
+                    : `سورة ${surahName} الايه من ${fromStr} الى ${toStr}.mp3`;
 
                 try {
                         // Helper to strip ID3v2, ID3v1 tags, and neutralize Xing/Info headers

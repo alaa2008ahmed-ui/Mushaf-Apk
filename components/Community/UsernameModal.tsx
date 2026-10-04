@@ -191,35 +191,40 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
 
   // Sync state when modal opens
   useEffect(() => {
-    const syncUser = () => {
-      const u = communityService.getCurrentUser();
-      setCurrentUser(u);
-      if (u.username) {
-        setUsername(u.username);
-        setActiveTab('profile');
-      } else {
-        setActiveTab('create_new');
-      }
-      if (u.country) {
-        if (COUNTRIES.includes(u.country)) {
-          setCountry(u.country);
-          setCustomCountry('');
-        } else {
-          setCountry('دولة أخرى / كتابة يدوية ✍️');
-          setCustomCountry(u.country);
-        }
-      } else {
-        setCountry('');
+    if (!isOpen) return;
+
+    const u = communityService.getCurrentUser();
+    setCurrentUser(u);
+    if (u.username) {
+      setUsername(u.username);
+      setActiveTab('profile');
+    } else {
+      setActiveTab('create_new');
+    }
+    if (u.country) {
+      if (COUNTRIES.includes(u.country)) {
+        setCountry(u.country);
         setCustomCountry('');
+      } else {
+        setCountry('دولة أخرى / كتابة يدوية ✍️');
+        setCustomCountry(u.country);
       }
-      if (u.bio) setBio(u.bio);
-      setAvatarUrl(u.avatarUrl || PRESET_AVATARS[0]);
-      if (u.passcode) setPasscode(u.passcode);
+    } else {
+      setCountry('');
+      setCustomCountry('');
+    }
+    if (u.bio) setBio(u.bio);
+    setAvatarUrl(u.avatarUrl || PRESET_AVATARS[0]);
+    if (u.passcode) setPasscode(u.passcode);
+
+    const handleBackgroundUserUpdate = (e: any) => {
+      const freshUser = communityService.getCurrentUser();
+      setCurrentUser(freshUser);
+      // DO NOT reset activeTab so the user can stay on "استعادة حساب" or "إنشاء حساب جديد" without being interrupted
     };
 
-    syncUser();
-    window.addEventListener('community_user_updated', syncUser);
-    return () => window.removeEventListener('community_user_updated', syncUser);
+    window.addEventListener('community_user_updated', handleBackgroundUserUpdate);
+    return () => window.removeEventListener('community_user_updated', handleBackgroundUserUpdate);
   }, [isOpen]);
 
   // Handle hardware back button when modal is open

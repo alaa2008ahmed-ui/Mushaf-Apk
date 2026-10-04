@@ -13,13 +13,20 @@ export interface QuranVerseAttachment {
   text: string;
   audioUrl?: string;
   shareType?: 'text' | 'image' | 'page' | 'audio';
+  pageNumber?: number;
+  fullPageText?: string;
+  reciterName?: string;
   bgValue?: string;
+  bgType?: string;
   bgText?: string;
+  border?: string;
+  accent?: string;
   frameType?: string;
   frameColor?: string;
   textColor?: string;
   fontSize?: number;
   fontClass?: string;
+  fontFamily?: string;
   customNote?: string;
 }
 
