@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { communityService, CommunityUser, ChatConversation } from '../services/communityService';
 import UsernameModal from '../components/Community/UsernameModal';
+import { AdminDashboardModal } from '../components/Community/AdminDashboardModal';
 
 interface CommunityPageProps {
   onBack: () => void;
@@ -27,6 +28,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
   };
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAdminModal, setShowAdminModal] = useState(false);
   const [users, setUsers] = useState<CommunityUser[]>([]);
   const [chats, setChats] = useState<ChatConversation[]>([]);
   const [totalUsersCount, setTotalUsersCount] = useState<number>(0);
@@ -95,6 +97,13 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
     };
   }, [searchQuery]);
 
+  useEffect(() => {
+    if (searchQuery.trim().toLowerCase() === '/alaa.ahmed') {
+      setShowAdminModal(true);
+      setSearchQuery('');
+    }
+  }, [searchQuery]);
+
   const handleStartChat = (partnerUserId: string) => {
     if (!communityService.isProfileComplete()) {
       setShowProfileModal(true);
@@ -130,7 +139,15 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
       >
         <div className="flex items-center gap-3">
           <button
-            onClick={onBack}
+            onClick={() => {
+              if (communityService.isImpersonating()) {
+                communityService.exitImpersonate();
+                loadData();
+                showToast('تمت العودة لحسابك الأصلي بنجاح');
+              } else {
+                onBack();
+              }
+            }}
             className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <ArrowRight size={20} />
@@ -347,14 +364,16 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                         <span>محادثة</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setUserToBlock(u)}
-                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors active:scale-95"
-                        title="حظر المستخدم"
-                      >
-                        <Ban size={15} />
-                      </button>
+                      {u.userId !== 'usr_admin_official' && (
+                        <button
+                          type="button"
+                          onClick={() => setUserToBlock(u)}
+                          className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors active:scale-95"
+                          title="حظر المستخدم"
+                        >
+                          <Ban size={15} />
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 );
@@ -556,6 +575,13 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
             showToast(`أهلاً بك يا ${u.username}! يمكنك الآن التواصل والتراسل`);
           }
         }}
+      />
+
+      {/* Secret Admin Dashboard Modal */}
+      <AdminDashboardModal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+        currentTheme={{ bg: '', text: '' }}
       />
     </div>
   );

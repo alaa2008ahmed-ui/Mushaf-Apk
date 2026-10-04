@@ -728,15 +728,19 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
                   <span>حذف المحادثة بالكامل</span>
                 </button>
 
-                <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                {partnerUserId !== 'usr_admin_official' && (
+                  <>
+                    <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
 
-                <button
-                  onClick={handleBlockUser}
-                  className="w-full px-4 py-2.5 text-right flex items-center gap-2 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400"
-                >
-                  <Ban size={16} />
-                  <span>حظر المستخدم</span>
-                </button>
+                    <button
+                      onClick={handleBlockUser}
+                      className="w-full px-4 py-2.5 text-right flex items-center gap-2 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400"
+                    >
+                      <Ban size={16} />
+                      <span>حظر المستخدم</span>
+                    </button>
+                  </>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

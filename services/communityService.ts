@@ -72,16 +72,36 @@ export interface BlockRecord {
   createdAt: string;
 }
 
+export const ADMIN_USER_ID = 'usr_admin_official';
+export const ADMIN_USER: CommunityUser = {
+  userId: ADMIN_USER_ID,
+  username: 'الدعم الفني',
+  accountCode: 'ADMIN-OFFICIAL',
+  country: 'الإدارة 🛡️',
+  bio: 'أهلاً بك! تواصل معنا هنا في حال مواجهة أي مشكلة بالتطبيق.',
+  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+  isOnline: true,
+  createdAt: new Date('2026-01-01').toISOString()
+};
+
+export interface ServerContact {
+  userId: string;
+  partnerId: string;
+  createdAt: string;
+}
+
 const STORAGE_KEY_USER = 'mushaf_community_current_user_v9';
 const STORAGE_KEY_USERS_ALL = 'mushaf_community_global_users_v9';
 const STORAGE_KEY_MESSAGES = 'mushaf_community_messages_v9';
 const STORAGE_KEY_BLOCKS = 'mushaf_community_blocks_v9';
+const STORAGE_KEY_CONTACTS = 'mushaf_community_contacts_v9';
 
 class CommunityService {
   private currentUser: CommunityUser | null = null;
   private usersMap: Map<string, CommunityUser> = new Map();
   private messagesList: ChatMessage[] = [];
   private blocksList: BlockRecord[] = [];
+  private serverContactsList: ServerContact[] = [];
   private pollInterval: any = null;
   private heartbeatInterval: any = null;
 
@@ -660,6 +680,11 @@ class CommunityService {
       if (storedBlocks) {
         this.blocksList = JSON.parse(storedBlocks);
       }
+
+      const storedContacts = localStorage.getItem(STORAGE_KEY_CONTACTS);
+      if (storedContacts) {
+        this.serverContactsList = JSON.parse(storedContacts);
+      }
     } catch (e) {}
   }
 
@@ -668,6 +693,7 @@ class CommunityService {
       localStorage.setItem(STORAGE_KEY_USERS_ALL, JSON.stringify(Array.from(this.usersMap.values())));
       localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(this.messagesList));
       localStorage.setItem(STORAGE_KEY_BLOCKS, JSON.stringify(this.blocksList));
+      localStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify(this.serverContactsList));
     } catch (e) {}
   }
 
@@ -707,15 +733,24 @@ class CommunityService {
       const blockDeletes = blocksSnap.docs.map((d) => deleteDoc(doc(db, 'blocks', d.id)));
       await Promise.all(blockDeletes);
 
+      // Delete all contacts from Firestore
+      try {
+        const contactsSnap = await getDocs(collection(db, 'contacts'));
+        const contactDeletes = contactsSnap.docs.map((d) => deleteDoc(doc(db, 'contacts', d.id)));
+        await Promise.all(contactDeletes);
+      } catch (e) {}
+
       // 4. Clear local memory and storage completely
       this.usersMap.clear();
       this.messagesList = [];
       this.blocksList = [];
+      this.serverContactsList = [];
 
       localStorage.removeItem(STORAGE_KEY_USER);
       localStorage.removeItem(STORAGE_KEY_USERS_ALL);
       localStorage.removeItem(STORAGE_KEY_MESSAGES);
       localStorage.removeItem(STORAGE_KEY_BLOCKS);
+      localStorage.removeItem(STORAGE_KEY_CONTACTS);
 
       // Reset current user object
       this.currentUser = {
@@ -759,9 +794,11 @@ class CommunityService {
   private startPolling() {
     if (this.pollInterval) clearInterval(this.pollInterval);
     this.purgeExpiredServerMessages();
+    this.fetchLatestContacts();
     this.pollInterval = setInterval(() => {
       this.fetchLatestUsers();
       this.fetchLatestMessages();
+      this.fetchLatestContacts();
       this.purgeExpiredServerMessages();
     }, 3000);
   }
@@ -770,10 +807,15 @@ class CommunityService {
     try {
       const snapshot = await getDocs(collection(db, 'users'));
       const activeIds = new Set<string>();
+
+      // Inject official Admin user
+      activeIds.add(ADMIN_USER_ID);
+      this.usersMap.set(ADMIN_USER_ID, ADMIN_USER);
+
       snapshot.forEach((docSnap) => {
         const data = docSnap.data() as CommunityUser;
         const uid = data?.userId || docSnap.id;
-        if (data && uid && data.username && data.username.trim()) {
+        if (data && uid && data.username && data.username.trim() && uid !== ADMIN_USER_ID) {
           activeIds.add(uid);
           this.usersMap.set(uid, {
             ...data,
@@ -782,17 +824,32 @@ class CommunityService {
         }
       });
 
-      // Remove stale users that are no longer in Firestore (except active current user)
+      // Check if current user was deleted from Firestore (and is not Admin or empty profile)
       const currentUid = this.currentUser?.userId;
+      if (currentUid && currentUid !== ADMIN_USER_ID && this.isProfileSetup()) {
+        const currentUserExistsOnServer = activeIds.has(currentUid);
+        if (!currentUserExistsOnServer && snapshot.size > 0) {
+          console.warn('Current user was deleted from Firestore. Force resetting account...');
+          this.logoutAccount();
+          return Array.from(this.usersMap.values());
+        }
+      }
+
+      // Remove stale users that are no longer in Firestore (except admin)
       for (const id of Array.from(this.usersMap.keys())) {
-        if (!activeIds.has(id) && id !== currentUid) {
+        if (!activeIds.has(id) && id !== ADMIN_USER_ID) {
+          if (id === currentUid) {
+            this.logoutAccount();
+          }
           this.usersMap.delete(id);
         }
       }
 
-      // Ensure current user is in usersMap if they have username
+      // Ensure current user is in usersMap only if they still exist in activeIds or if activeIds is empty (offline)
       if (this.currentUser && this.currentUser.userId && this.currentUser.username && this.currentUser.username.trim()) {
-        this.usersMap.set(this.currentUser.userId, this.currentUser);
+        if (activeIds.has(this.currentUser.userId) || snapshot.empty) {
+          this.usersMap.set(this.currentUser.userId, this.currentUser);
+        }
       }
 
       this.saveToLocalStorage();
@@ -805,6 +862,7 @@ class CommunityService {
 
   public async fetchLatestMessages(): Promise<ChatMessage[]> {
     try {
+      const myId = this.getCurrentUser().userId;
       const cutoffTime = Date.now() - (24 * 60 * 60 * 1000);
       const snapshot = await getDocs(collection(db, 'messages'));
       snapshot.forEach((docSnap) => {
@@ -816,12 +874,18 @@ class CommunityService {
             return;
           }
 
-          const exists = this.messagesList.some(m => m.messageId === msg.messageId);
-          if (!exists) {
-            this.messagesList.push(msg);
-          } else {
-            const idx = this.messagesList.findIndex(m => m.messageId === msg.messageId);
-            if (idx >= 0) this.messagesList[idx] = msg;
+          if (msg.recipientId === myId || msg.senderId === myId) {
+            const exists = this.messagesList.some(m => m.messageId === msg.messageId);
+            if (!exists) {
+              this.messagesList.push(msg);
+            } else {
+              const idx = this.messagesList.findIndex(m => m.messageId === msg.messageId);
+              if (idx >= 0) this.messagesList[idx] = msg;
+            }
+
+            // Save chatted user contact on server to keep history of who spoke with whom
+            this.saveChattedUser(msg.senderId, msg.recipientId);
+            this.saveChattedUser(msg.recipientId, msg.senderId);
           }
         }
       });
@@ -831,6 +895,40 @@ class CommunityService {
       console.warn('Firestore fetch messages:', e);
     }
     return this.messagesList;
+  }
+
+  public async saveChattedUser(userId: string, partnerId: string) {
+    if (!userId || !partnerId || userId === partnerId) return;
+    try {
+      const contactId = `${userId}_${partnerId}`;
+      await setDoc(doc(db, 'contacts', contactId), {
+        userId,
+        partnerId,
+        createdAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Error saving contact to firestore:', e);
+    }
+  }
+
+  public async fetchLatestContacts() {
+    try {
+      const current = this.getCurrentUser();
+      if (!current || !current.userId) return;
+      const snapshot = await getDocs(collection(db, 'contacts'));
+      const list: ServerContact[] = [];
+      snapshot.forEach((docSnap) => {
+        const c = docSnap.data() as ServerContact;
+        if (c && c.userId && c.partnerId) {
+          list.push(c);
+        }
+      });
+      this.serverContactsList = list;
+      this.saveToLocalStorage();
+      window.dispatchEvent(new CustomEvent('community_messages_updated'));
+    } catch (e) {
+      console.warn('Error fetching server contacts:', e);
+    }
   }
 
   private setupFirestoreListeners() {
@@ -886,6 +984,10 @@ class CommunityService {
                     this.notifyIncomingMessage(msg, sender);
                   }
                 }
+
+                // Save chatted user contact on server to keep history of who spoke with whom
+                this.saveChattedUser(msg.senderId, msg.recipientId);
+                this.saveChattedUser(msg.recipientId, msg.senderId);
               }
             } else if (change.type === 'modified') {
               const idx = this.messagesList.findIndex(m => m.messageId === msg.messageId);
@@ -909,6 +1011,21 @@ class CommunityService {
         this.saveToLocalStorage();
         window.dispatchEvent(new CustomEvent('community_block_updated'));
       }, (err) => console.warn('Firestore Blocks Listener:', err));
+    } catch (e) {}
+
+    try {
+      onSnapshot(collection(db, 'contacts'), (snapshot) => {
+        const list: ServerContact[] = [];
+        snapshot.forEach((docSnap) => {
+          const c = docSnap.data() as ServerContact;
+          if (c && c.userId && c.partnerId) {
+            list.push(c);
+          }
+        });
+        this.serverContactsList = list;
+        this.saveToLocalStorage();
+        window.dispatchEvent(new CustomEvent('community_messages_updated'));
+      }, (err) => console.warn('Firestore Contacts Listener:', err));
     } catch (e) {}
   }
 
@@ -946,7 +1063,7 @@ class CommunityService {
   }
 
   public getTotalRegisteredCount(): number {
-    return Array.from(this.usersMap.values()).filter(u => !this.isLegacyGoogleUser(u) && u.username && u.username.trim().length > 0).length;
+    return Array.from(this.usersMap.values()).filter(u => !this.isLegacyGoogleUser(u) && u.username && u.username.trim().length > 0 && u.userId !== ADMIN_USER_ID).length;
   }
 
   public getVisibleUsers(searchQuery: string = '', includeSelf: boolean = false): CommunityUser[] {
@@ -963,6 +1080,9 @@ class CommunityService {
     return allUsersArray.filter(u => {
       // 1. Completely exclude legacy Google auth accounts / Alaa Ahmed
       if (this.isLegacyGoogleUser(u)) return false;
+
+      // Filter out official Support Admin from users directory
+      if (u.userId === ADMIN_USER_ID) return false;
 
       // 2. Filter out self (current user) unless explicitly requested
       const isCurrentSelf = this.isSelf(u);
@@ -1107,6 +1227,10 @@ class CommunityService {
 
     this.setTypingStatus(recipientId, false);
 
+    // Save chatted user contact on server to keep history of who spoke with whom
+    this.saveChattedUser(current.userId, recipientId);
+    this.saveChattedUser(recipientId, current.userId);
+
     try {
       const payload = this.cleanPayload(newMsg);
       await setDoc(doc(db, 'messages', msgId), payload);
@@ -1185,7 +1309,16 @@ class CommunityService {
 
   public getActiveConversations(): ChatConversation[] {
     const current = this.getCurrentUser();
-    const partnersMap = new Map<string, { lastMsg: ChatMessage; unread: number }>();
+    const partnersMap = new Map<string, { lastMsg: ChatMessage | null; unread: number; time: string }>();
+
+    // 1. Ensure ADMIN conversation always exists at the top for everyone (except ADMIN user itself)
+    if (current.userId !== ADMIN_USER_ID) {
+      partnersMap.set(ADMIN_USER_ID, {
+        lastMsg: null,
+        unread: 0,
+        time: new Date('2099-12-31').toISOString() // Pin at the absolute top
+      });
+    }
 
     this.messagesList.forEach(m => {
       let partnerId = '';
@@ -1199,36 +1332,283 @@ class CommunityService {
       const existing = partnersMap.get(partnerId);
       const isUnread = m.recipientId === current.userId && !m.isRead;
 
-      if (!existing || new Date(m.createdAt).getTime() > new Date(existing.lastMsg.createdAt).getTime()) {
+      // Pin Admin override
+      const isPinnedAdmin = partnerId === ADMIN_USER_ID;
+      const msgTime = m.createdAt;
+
+      if (!existing || isPinnedAdmin || new Date(m.createdAt).getTime() > new Date(existing.time).getTime()) {
         partnersMap.set(partnerId, {
           lastMsg: m,
-          unread: (existing?.unread || 0) + (isUnread ? 1 : 0)
+          unread: (existing?.unread || 0) + (isUnread ? 1 : 0),
+          time: isPinnedAdmin ? new Date('2099-12-31').toISOString() : msgTime
         });
       } else if (isUnread) {
         existing.unread += 1;
       }
     });
 
+    // Populate from server contacts list
+    this.serverContactsList.forEach(c => {
+      if (c.userId === current.userId) {
+        const partnerId = c.partnerId;
+        if (this.isBlockedMutually(partnerId)) return;
+
+        if (!partnersMap.has(partnerId)) {
+          partnersMap.set(partnerId, {
+            lastMsg: null,
+            unread: 0,
+            time: partnerId === ADMIN_USER_ID ? new Date('2099-12-31').toISOString() : (c.createdAt || new Date(0).toISOString())
+          });
+        }
+      }
+    });
+
     const conversations: ChatConversation[] = [];
     partnersMap.forEach((val, partnerId) => {
-      const partnerUser = this.usersMap.get(partnerId) || {
+      const partnerUser = this.usersMap.get(partnerId) || (partnerId === ADMIN_USER_ID ? ADMIN_USER : {
         userId: partnerId,
         username: 'مستخدم المصحف',
         country: 'غير محدد',
         isOnline: false,
         createdAt: new Date().toISOString()
-      };
+      });
 
       conversations.push({
         chatId: this.getChatId(current.userId, partnerId),
         partner: partnerUser,
-        lastMessage: val.lastMsg.text || (val.lastMsg.verseData ? `آية من سورة ${val.lastMsg.verseData.surahName}` : 'مقطع صوتي 🎙️'),
-        lastMessageTime: val.lastMsg.createdAt,
+        lastMessage: val.lastMsg 
+          ? (val.lastMsg.text || (val.lastMsg.verseData ? `آية من سورة ${val.lastMsg.verseData.surahName}` : 'مقطع صوتي 🎙️'))
+          : (partnerId === ADMIN_USER_ID ? 'تواصل مع إدارة التطبيق للدعم الفني والشكاوى ✉️' : 'لا توجد رسائل (تم حذفها من السيرفر)'),
+        lastMessageTime: val.time,
         unreadCount: val.unread
       });
     });
 
     return conversations.sort((a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime());
+  }
+
+  public getRawContacts(): ServerContact[] {
+    return this.serverContactsList;
+  }
+
+  public async deleteUser(userId: string) {
+    try {
+      // 1. Delete from users collection (direct doc ID)
+      await deleteDoc(doc(db, 'users', userId)).catch(() => {});
+      
+      // Sweep any other user docs matching this userId
+      try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        const deletePromises: Promise<void>[] = [];
+        usersSnap.forEach((d) => {
+          const dData = d.data();
+          if (d.id === userId || dData?.userId === userId) {
+            deletePromises.push(deleteDoc(doc(db, 'users', d.id)).catch(() => {}));
+          }
+        });
+        await Promise.allSettled(deletePromises);
+      } catch (err) {}
+
+      // 2. Delete all their messages from Firestore
+      try {
+        const msgSnapshot = await getDocs(collection(db, 'messages'));
+        const deleteMsgPromises: Promise<void>[] = [];
+        msgSnapshot.forEach((docSnap) => {
+          const data = docSnap.data() as ChatMessage;
+          if (data && (data.senderId === userId || data.recipientId === userId)) {
+            deleteMsgPromises.push(deleteDoc(doc(db, 'messages', docSnap.id)).catch(() => {}));
+          }
+        });
+        await Promise.allSettled(deleteMsgPromises);
+      } catch (err) {}
+
+      // 3. Delete all contacts of theirs from Firestore
+      try {
+        const contactsSnapshot = await getDocs(collection(db, 'contacts'));
+        const deleteContactPromises: Promise<void>[] = [];
+        contactsSnapshot.forEach((docSnap) => {
+          const data = docSnap.data() as ServerContact;
+          if (data && (data.userId === userId || data.partnerId === userId)) {
+            deleteContactPromises.push(deleteDoc(doc(db, 'contacts', docSnap.id)).catch(() => {}));
+          }
+        });
+        await Promise.allSettled(deleteContactPromises);
+      } catch (err) {}
+
+      // 4. Delete all blocks of theirs from Firestore
+      try {
+        const blocksSnapshot = await getDocs(collection(db, 'blocks'));
+        const deleteBlockPromises: Promise<void>[] = [];
+        blocksSnapshot.forEach((docSnap) => {
+          const data = docSnap.data() as BlockRecord;
+          if (data && (data.blockerId === userId || data.blockedId === userId)) {
+            deleteBlockPromises.push(deleteDoc(doc(db, 'blocks', docSnap.id)).catch(() => {}));
+          }
+        });
+        await Promise.allSettled(deleteBlockPromises);
+      } catch (err) {}
+
+      // 5. Clean local state
+      this.usersMap.delete(userId);
+      this.messagesList = this.messagesList.filter(m => m.senderId !== userId && m.recipientId !== userId);
+      this.blocksList = this.blocksList.filter(b => b.blockerId !== userId && b.blockedId !== userId);
+      this.serverContactsList = this.serverContactsList.filter(c => c.userId !== userId && c.partnerId !== userId);
+      
+      // If deleted user was active current user, clear profile
+      if (this.currentUser && this.currentUser.userId === userId) {
+        this.logoutAccount();
+      }
+
+      // If impersonating this user, exit impersonation
+      if (this.isImpersonating()) {
+        const stored = localStorage.getItem('mushaf_community_original_owner');
+        if (stored) {
+          try {
+            const original = JSON.parse(stored);
+            if (original.userId === userId) {
+              localStorage.removeItem('mushaf_community_original_owner');
+            }
+          } catch (e) {}
+        }
+      }
+
+      this.saveToLocalStorage();
+      
+      // 6. Trigger events
+      window.dispatchEvent(new CustomEvent('community_user_updated'));
+      window.dispatchEvent(new CustomEvent('community_messages_updated'));
+      window.dispatchEvent(new CustomEvent('community_block_updated'));
+    } catch (e) {
+      console.error('Error deleting user from Firestore:', e);
+    }
+  }
+
+  public async fetchAllServerMessages(): Promise<ChatMessage[]> {
+    try {
+      const snapshot = await getDocs(collection(db, 'messages'));
+      const list: ChatMessage[] = [];
+      snapshot.forEach((docSnap) => {
+        const msg = docSnap.data() as ChatMessage;
+        if (msg && msg.messageId) {
+          list.push(msg);
+        }
+      });
+      return list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } catch (e) {
+      console.warn('Error fetching all server messages:', e);
+      return [];
+    }
+  }
+
+  public async deleteServerMessage(messageId: string) {
+    try {
+      await deleteDoc(doc(db, 'messages', messageId));
+    } catch (e) {
+      console.warn('Error deleting server message:', e);
+    }
+  }
+
+  public async sendAdminReply(recipientId: string, text: string): Promise<ChatMessage> {
+    const chatId = this.getChatId(ADMIN_USER_ID, recipientId);
+    const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+
+    const newMsg: ChatMessage = {
+      messageId: msgId,
+      chatId,
+      senderId: ADMIN_USER_ID,
+      recipientId,
+      text: text.trim(),
+      isRead: false,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      const payload = this.cleanPayload(newMsg);
+      await setDoc(doc(db, 'messages', msgId), payload);
+    } catch (e) {
+      console.error('Error sending admin reply to Firestore:', e);
+    }
+
+    return newMsg;
+  }
+
+  public impersonateUser(user: CommunityUser) {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      // Store current user as original owner if not already impersonating
+      if (!this.isImpersonating()) {
+        const original = this.getCurrentUser();
+        localStorage.setItem('mushaf_community_original_owner', JSON.stringify(original));
+      }
+      this.currentUser = user;
+      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+      this.usersMap.set(user.userId, user);
+      
+      // Trigger update events
+      window.dispatchEvent(new CustomEvent('community_user_updated', { detail: user }));
+      window.dispatchEvent(new CustomEvent('community_messages_updated'));
+    } catch (e) {
+      console.warn('Error impersonating user:', e);
+    }
+  }
+
+  public exitImpersonate() {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const stored = localStorage.getItem('mushaf_community_original_owner');
+      if (stored) {
+        const original = JSON.parse(stored);
+        this.currentUser = original;
+        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(original));
+        localStorage.removeItem('mushaf_community_original_owner');
+        this.usersMap.set(original.userId, original);
+        
+        // Trigger update events
+        window.dispatchEvent(new CustomEvent('community_user_updated', { detail: original }));
+        window.dispatchEvent(new CustomEvent('community_messages_updated'));
+      }
+    } catch (e) {
+      console.warn('Error exiting impersonation:', e);
+    }
+  }
+
+  public isImpersonating(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    return !!localStorage.getItem('mushaf_community_original_owner');
+  }
+
+  public getOriginalOwnerName(): string {
+    if (typeof localStorage === 'undefined') return 'الإدارة';
+    try {
+      const stored = localStorage.getItem('mushaf_community_original_owner');
+      if (stored) {
+        const original = JSON.parse(stored);
+        return original.username || 'الإدارة';
+      }
+    } catch (e) {}
+    return 'الإدارة';
+  }
+
+  public async markAdminMessagesAsRead(userId: string) {
+    try {
+      const snapshot = await getDocs(collection(db, 'messages'));
+      snapshot.forEach(async (docSnap) => {
+        const msg = docSnap.data() as ChatMessage;
+        if (msg && msg.senderId === userId && msg.recipientId === ADMIN_USER_ID && !msg.isRead) {
+          await updateDoc(doc(db, 'messages', docSnap.id), { isRead: true }).catch(() => {});
+        }
+      });
+      // Also mark locally inside messagesList
+      this.messagesList.forEach(m => {
+        if (m.senderId === userId && m.recipientId === ADMIN_USER_ID) {
+          m.isRead = true;
+        }
+      });
+      this.saveToLocalStorage();
+      window.dispatchEvent(new CustomEvent('community_messages_updated'));
+    } catch (e) {
+      console.warn('Error marking admin messages as read:', e);
+    }
   }
 }
 
