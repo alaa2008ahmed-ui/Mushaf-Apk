@@ -593,59 +593,36 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
         return;
       }
 
-      // Pre-check for audio input hardware if device enumeration is available
-      if (navigator.mediaDevices.enumerateDevices) {
-        try {
-          const devices = await navigator.mediaDevices.enumerateDevices();
-          const hasMic = devices.some(d => d.kind === 'audioinput');
-          if (devices.length > 0 && !hasMic) {
-            showToast('لم يتم العثور على ميكروفون متصل بهذا الجهاز 🎙️');
-            return;
-          }
-        } catch (e) {
-          // Ignore enumeration errors and proceed
-        }
-      }
-
       let stream: MediaStream | null = null;
 
-      // Level 1: Try soft audio constraints
+      // Request microphone permission & audio stream directly
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true
-          }
-        });
-      } catch (e1) {
-        console.warn('Soft audio constraints unavailable, trying standard audio stream:', e1);
-        // Level 2: Fallback to basic audio stream (works on devices with non-standard mics/WebViews)
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch (e2: any) {
-          console.warn('Audio stream request failed:', e2?.name || e2);
-          if (e2?.name === 'NotFoundError' || e2?.message?.toLowerCase().includes('not found')) {
-            showToast('لم يتم العثور على ميكروفون متصل بهذا الجهاز 🎙️');
-          } else if (e2?.name === 'NotAllowedError' || e2?.name === 'PermissionDeniedError') {
-            showToast('يرجى السماح بصلاحية الميكروفون في متصفحك لبدء التسجيل');
-          } else {
-            showToast('تعذر تشغيل الميكروفون على هذا الجهاز');
-          }
-          return;
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (e: any) {
+        console.warn('Audio stream request failed:', e?.name || e);
+        const errName = e?.name || '';
+        const errMsg = e?.message?.toLowerCase() || '';
+
+        if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError' || errMsg.includes('denied') || errMsg.includes('not allowed')) {
+          showToast('يرجى السماح بإذن الميكروفون للتطبيق من إعدادات الهاتف (الأذونات -> الميكروفون) 🎙️');
+        } else if (errName === 'NotFoundError' || errMsg.includes('not found')) {
+          showToast('لم يتم العثور على ميكروفون متصل بهذا الجهاز');
+        } else {
+          showToast('تعذر تشغيل الميكروفون على هذا الجهاز');
         }
+        return;
       }
 
       if (!stream) return;
 
       audioChunksRef.current = [];
       const mimeType = getSupportedMimeType();
-      const options = mimeType ? { mimeType } : undefined;
 
       let mediaRecorder: MediaRecorder;
       try {
-        mediaRecorder = new MediaRecorder(stream, options);
+        mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       } catch (err) {
-        // Fallback without mimeType options if browser rejects it
+        // Fallback without mimeType options if browser/WebView rejects it
         mediaRecorder = new MediaRecorder(stream);
       }
 
@@ -667,7 +644,7 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
       }, 1000);
     } catch (err) {
       console.warn('Unexpected error starting audio recording:', err);
-      showToast('تعذر بدء التسجيل الصوتي على هذا الجهاز');
+      showToast('تعذر بدء التسجيل الصوتي');
     }
   };
 

@@ -136,6 +136,10 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
     return chats.filter(c => c.partner.userId !== ADMIN_USER_ID).length;
   }, [chats]);
 
+  const totalUnreadCount = useMemo(() => {
+    return chats.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+  }, [chats]);
+
   const filteredChats = useMemo(() => {
     if (!searchQuery.trim()) return chats;
     const q = searchQuery.toLowerCase().trim();
@@ -237,20 +241,22 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <span>الأعضاء ({totalUsersCount})</span>
+            <span>الأعضاء</span>
           </button>
 
           <button
             onClick={() => setActiveTab('chats')}
-            className={`w-full flex items-center justify-center py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all relative truncate ${
+            className={`w-full flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all relative truncate ${
               activeTab === 'chats'
                 ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-md'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <span>المحادثة ({activeUserChatsCount})</span>
-            {chats.some(c => c.unreadCount > 0) && (
-              <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-2 left-2" />
+            <span>المحادثة</span>
+            {totalUnreadCount > 0 && (
+              <span className="px-1.5 py-0.5 min-w-[18px] h-[18px] rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center leading-none shadow-sm animate-pulse">
+                {totalUnreadCount > 99 ? '+99' : totalUnreadCount}
+              </span>
             )}
           </button>
 
