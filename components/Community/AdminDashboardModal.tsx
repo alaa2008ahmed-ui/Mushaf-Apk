@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trash2, ShieldAlert, Users, Info, ShieldCheck, Mail, Send, Reply, ArrowRight, User, Globe, Calendar, Activity, UserMinus, Eye, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { X, Trash2, ShieldAlert, Users, Info, ShieldCheck, Mail, Send, Reply, ArrowRight, User, Globe, Calendar, Activity, UserMinus, Eye, AlertTriangle, CheckCircle2, Megaphone } from 'lucide-react';
 import { communityService, CommunityUser, ServerContact, ChatMessage, ADMIN_USER_ID } from '../../services/communityService';
 
 interface AdminDashboardModalProps {
@@ -16,7 +16,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
     const [users, setUsers] = useState<CommunityUser[]>([]);
     const [contacts, setContacts] = useState<ServerContact[]>([]);
     const [serverMessages, setServerMessages] = useState<ChatMessage[]>([]);
-    const [activeTab, setActiveTab] = useState<'users' | 'support'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'support' | 'broadcast'>('users');
     
     // Detailed User Inspector State
     const [selectedInspectorUser, setSelectedInspectorUser] = useState<CommunityUser | null>(null);
@@ -25,6 +25,10 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
     const [selectedUserForSupport, setSelectedUserForSupport] = useState<string | null>(null);
     const [replyText, setReplyText] = useState('');
     const [sendingReply, setSendingReply] = useState(false);
+
+    // Broadcast message states
+    const [broadcastText, setBroadcastText] = useState('');
+    const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
 
     // In-app Confirmation Modal State
     const [userToDeleteConfirm, setUserToDeleteConfirm] = useState<CommunityUser | null>(null);
@@ -91,6 +95,22 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
             console.error(e);
         } finally {
             setSendingReply(false);
+        }
+    };
+
+    const handleSendBroadcast = async () => {
+        if (!broadcastText.trim()) return;
+        setIsSendingBroadcast(true);
+        try {
+            const sentCount = await communityService.sendBroadcastAdminMessage(broadcastText);
+            setBroadcastText('');
+            showAdminToast(`تم إرسال الرسالة الجماعية بنجاح إلى جميع القراء (${sentCount} قارئ) 🚀`);
+            await loadData();
+        } catch (e) {
+            console.error('Error sending broadcast message:', e);
+            showAdminToast('حدث خطأ أثناء إرسال الرسالة الجماعية');
+        } finally {
+            setIsSendingBroadcast(false);
         }
     };
 
@@ -190,7 +210,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                 <div className="flex flex-1 items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl">
                     <button 
                         onClick={() => { setActiveTab('users'); setSelectedInspectorUser(null); setSelectedUserForSupport(null); }}
-                        className={`flex-1 py-2 px-3 text-center transition-all rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm ${
+                        className={`flex-1 py-2 px-2 text-center transition-all rounded-xl flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold ${
                             activeTab === 'users' 
                                 ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' 
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -201,7 +221,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                     </button>
                     <button 
                         onClick={() => { setActiveTab('support'); setSelectedInspectorUser(null); }}
-                        className={`flex-1 py-2 px-3 text-center transition-all rounded-xl flex items-center justify-center gap-2 relative text-xs sm:text-sm ${
+                        className={`flex-1 py-2 px-2 text-center transition-all rounded-xl flex items-center justify-center gap-1.5 relative text-xs sm:text-sm font-bold ${
                             activeTab === 'support' 
                                 ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' 
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -214,6 +234,17 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                 {supportUserIds.length}
                             </span>
                         )}
+                    </button>
+                    <button 
+                        onClick={() => { setActiveTab('broadcast'); setSelectedInspectorUser(null); setSelectedUserForSupport(null); }}
+                        className={`flex-1 py-2 px-2 text-center transition-all rounded-xl flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold ${
+                            activeTab === 'broadcast' 
+                                ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-sm' 
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                    >
+                        <Megaphone size={16} className="text-amber-500" />
+                        <span>إرسال جماعي 📢</span>
                     </button>
                 </div>
             </div>
@@ -395,7 +426,16 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                         {!selectedUserForSupport ? (
                             /* Conversations list with Admin - Full screen width */
                             <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-white dark:bg-slate-900/50 w-full animate-fadeIn">
-                                <div className="font-bold text-sm text-slate-500 dark:text-slate-400 pb-2 border-b dark:border-slate-850 mb-2">صندوق الوارد (رسائل الشكاوى):</div>
+                                <div className="flex items-center justify-between pb-2 border-b dark:border-slate-800 mb-3 gap-2 flex-wrap">
+                                    <div className="font-bold text-sm text-slate-500 dark:text-slate-400">صندوق الوارد (رسائل الشكاوى):</div>
+                                    <button
+                                        onClick={() => setActiveTab('broadcast')}
+                                        className="px-3.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                                    >
+                                        <Megaphone size={14} className="text-amber-500" />
+                                        <span>إرسال رسالة جماعية لكل المستخدمين 📢</span>
+                                    </button>
+                                </div>
                                 {supportUserIds.length === 0 ? (
                                     <div className="text-center py-24 opacity-50 text-sm">لا توجد رسائل دعم فني واردة</div>
                                 ) : (
@@ -505,6 +545,88 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                 </div>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {/* 3. BROADCAST TAB */}
+                {activeTab === 'broadcast' && (
+                    <div className="flex-1 flex flex-col overflow-y-auto p-4 sm:p-6 w-full max-w-3xl mx-auto animate-fadeIn">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+                            
+                            {/* Header Banner */}
+                            <div className="flex items-start gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+                                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0 shadow-sm">
+                                    <Megaphone size={26} />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                                        <span>إرسال رسالة جماعية من الدعم الفني</span>
+                                        <span className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full font-bold">
+                                            رسمي 📢
+                                        </span>
+                                    </h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                                        هذه الرسالة ستصل إلى جميع المستخدمين والقراء المسجلين بالخدمة (حالياً <strong className="text-emerald-600 font-bold">{users.length} مستخدم</strong>) في محادثة الدعم الفني الخاصة بكل قارئ فوراً.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Message Textarea */}
+                            <div className="space-y-2">
+                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                    نص الرسالة الجماعية:
+                                </label>
+                                <textarea
+                                    rows={4}
+                                    value={broadcastText}
+                                    onChange={(e) => setBroadcastText(e.target.value)}
+                                    placeholder="اكتب التنبيه، أو التهنئة، أو الرسالة الجماعية التي ترغب في إرسالها لجميع المستخدمين دفعة واحدة..."
+                                    className="w-full p-3.5 text-xs sm:text-sm rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-slate-900 dark:text-white leading-relaxed resize-y"
+                                />
+                            </div>
+
+                            {/* Message Preview */}
+                            {broadcastText.trim() && (
+                                <div className="space-y-2">
+                                    <span className="text-[11px] font-bold text-slate-400 block">معاينة الرسالة كما ستظهر للمستخدم في محادثته:</span>
+                                    <div className="p-4 rounded-2xl bg-emerald-600 text-white shadow-md max-w-md space-y-1">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-100">
+                                            <img src="/support_icon.jpg" alt="الدعم الفني" className="w-5 h-5 rounded-full object-cover border border-white/40" />
+                                            <span>الدعم الفني (إدارة التطبيق)</span>
+                                        </div>
+                                        <p className="text-xs font-medium leading-relaxed pt-1 whitespace-pre-wrap">
+                                            {broadcastText}
+                                        </p>
+                                        <span className="text-[9px] opacity-60 block text-left font-mono">
+                                            {new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Send Broadcast Button */}
+                            <div className="pt-2">
+                                <button
+                                    type="button"
+                                    disabled={isSendingBroadcast || !broadcastText.trim() || users.length === 0}
+                                    onClick={handleSendBroadcast}
+                                    className="w-full py-3.5 px-5 bg-emerald-600 hover:bg-emerald-700 active:scale-98 disabled:opacity-40 text-white rounded-2xl font-extrabold text-xs sm:text-sm shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                >
+                                    {isSendingBroadcast ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            <span>جارٍ إرسال الرسالة الجماعية لـ ({users.length}) مستخدم...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send size={16} />
+                                            <span>إرسال جماعي لجميع المستخدمين ({users.length} مستخدم) 🚀</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                        </div>
                     </div>
                 )}
 

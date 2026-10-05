@@ -217,9 +217,12 @@ const ChatQuranCard: React.FC<{
 const ChatMessageAudioPlayer: React.FC<{
   audioUrl: string;
   isMe: boolean;
-}> = ({ audioUrl, isMe }) => {
+  audioDuration?: number;
+  timeStr?: string;
+  isRead?: boolean;
+}> = ({ audioUrl, isMe, audioDuration, timeStr, isRead }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [duration, setDuration] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(audioDuration || 0);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -228,14 +231,26 @@ const ChatMessageAudioPlayer: React.FC<{
     audioRef.current = audio;
 
     const handleLoadedMetadata = () => {
-      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration) && audio.duration > 0) {
         setDuration(audio.duration);
+      } else {
+        // WebM MediaRecorder duration fix trick for browsers/WebViews
+        audio.currentTime = 1e101;
       }
     };
 
     const handleTimeUpdate = () => {
+      // If we jumped to 1e101 to extract duration, reset to 0 once duration is resolved
+      if (audio.currentTime > 10000) {
+        if (audio.duration && isFinite(audio.duration) && !isNaN(audio.duration) && audio.duration > 0) {
+          setDuration(audio.duration);
+        }
+        audio.currentTime = 0;
+        return;
+      }
+
       setCurrentTime(audio.currentTime);
-      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration) && audio.duration > 0) {
         setDuration(audio.duration);
       }
     };
@@ -246,16 +261,41 @@ const ChatMessageAudioPlayer: React.FC<{
     };
 
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('durationchange', handleLoadedMetadata);
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('ended', handleEnded);
 
+    // Fast Web Audio API duration calculation for base64 / WebM voice notes
+    let isCancelled = false;
+    if (!audioDuration || audioDuration <= 0) {
+      try {
+        fetch(audioUrl)
+          .then(res => res.arrayBuffer())
+          .then(buffer => {
+            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+            if (AudioContextClass) {
+              const ctx = new AudioContextClass();
+              return ctx.decodeAudioData(buffer);
+            }
+          })
+          .then(decoded => {
+            if (!isCancelled && decoded && decoded.duration && isFinite(decoded.duration) && decoded.duration > 0) {
+              setDuration(decoded.duration);
+            }
+          })
+          .catch(() => {});
+      } catch (e) {}
+    }
+
     return () => {
+      isCancelled = true;
       audio.pause();
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('durationchange', handleLoadedMetadata);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [audioUrl]);
+  }, [audioUrl, audioDuration]);
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -292,51 +332,69 @@ const ChatMessageAudioPlayer: React.FC<{
 
   return (
     <div 
-      className={`flex items-center gap-3 p-2.5 px-3.5 rounded-2xl min-w-[210px] sm:min-w-[240px] max-w-[290px] shadow-sm my-1 ${
+      className={`relative flex flex-col p-3 px-3.5 rounded-2xl min-w-[210px] sm:min-w-[240px] max-w-[290px] shadow-sm transition-all cursor-pointer ${
         isMe 
-          ? 'bg-emerald-700/80 text-white border border-emerald-500/40' 
-          : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700'
+          ? 'bg-emerald-600 text-white rounded-tr-none' 
+          : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700/70 rounded-tl-none'
       }`} 
       dir="rtl"
       onClick={(e) => e.stopPropagation()}
     >
-      <button
-        onClick={togglePlay}
-        className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center transition-all active:scale-90 shadow-md ${
-          isMe
-            ? 'bg-white text-emerald-700 hover:bg-slate-100'
-            : 'bg-emerald-600 text-white hover:bg-emerald-700'
-        }`}
-        title={isPlaying ? 'إيقاف موقت' : 'تشغيل الرسالة الصوتية'}
-      >
-        {isPlaying ? <Pause size={18} /> : <Play size={18} className="translate-x-[-1px]" />}
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={togglePlay}
+          className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center transition-all active:scale-90 shadow-md ${
+            isMe
+              ? 'bg-white text-emerald-600 hover:bg-slate-100'
+              : 'bg-emerald-600 text-white hover:bg-emerald-700'
+          }`}
+          title={isPlaying ? 'إيقاف موقت' : 'تشغيل الرسالة الصوتية'}
+        >
+          {isPlaying ? <Pause size={18} /> : <Play size={18} className="translate-x-[-1px]" />}
+        </button>
 
-      <div className="flex-1 flex flex-col justify-center gap-1.5 min-w-0">
-        <div className="flex items-center justify-between text-[11px] font-bold opacity-90">
-          <span className="flex items-center gap-1">
-            <Mic size={12} className={isMe ? 'text-emerald-200' : 'text-emerald-500'} />
-            <span>تسجيل صوتي</span>
-          </span>
-          <span>{duration > 0 ? formatTime(duration) : formatTime(currentTime)}</span>
-        </div>
+        <div className="flex-1 flex flex-col justify-center gap-1.5 min-w-0">
+          <div className="flex items-center justify-between text-[11px] font-bold opacity-90">
+            <span className="flex items-center gap-1">
+              <Mic size={12} className={isMe ? 'text-emerald-200' : 'text-emerald-500'} />
+              <span>تسجيل صوتي</span>
+            </span>
+            <span className="font-mono text-[11px]">
+              {isPlaying ? formatTime(currentTime) : formatTime(duration)}
+            </span>
+          </div>
 
-        {/* Progress Bar & Seek Slider */}
-        <div className="relative w-full h-2 rounded-full bg-black/20 dark:bg-white/20 overflow-hidden flex items-center">
-          <div 
-            className={`h-full rounded-full transition-all ${isMe ? 'bg-white' : 'bg-emerald-500'}`}
-            style={{ width: `${progressPercent}%` }}
-          />
-          <input
-            type="range"
-            min="0"
-            max={duration || 100}
-            value={currentTime}
-            onChange={handleSeek}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-          />
+          {/* Progress Bar & Seek Slider */}
+          <div className="relative w-full h-2 rounded-full bg-black/15 dark:bg-white/20 overflow-hidden flex items-center">
+            <div 
+              className={`h-full rounded-full transition-all ${isMe ? 'bg-white' : 'bg-emerald-500'}`}
+              style={{ width: `${progressPercent}%` }}
+            />
+            <input
+              type="range"
+              min="0"
+              max={duration || 100}
+              value={currentTime}
+              onChange={handleSeek}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+          </div>
         </div>
       </div>
+
+      {/* Timestamp and Read Status INSIDE the card */}
+      {timeStr && (
+        <div className={`flex items-center gap-1 justify-end mt-1.5 text-[10px] ${isMe ? 'text-emerald-100' : 'text-slate-400'}`}>
+          <span>{timeStr}</span>
+          {isMe && (
+            isRead ? (
+              <CheckCheck size={13} className="text-sky-300" />
+            ) : (
+              <Check size={13} className="opacity-70" />
+            )
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -928,50 +986,66 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
             const isMe = msg.senderId === currentUser.userId;
             const isSelected = selectedMsgId === msg.messageId;
             const timeStr = new Date(msg.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            const isPureAudio = Boolean(msg.audioUrl && !msg.text && !msg.verseData);
 
             return (
               <div
                 key={msg.messageId}
                 className={`flex flex-col ${isMe ? 'items-start' : 'items-end'} relative group`}
               >
-                <div
-                  onClick={() => setSelectedMsgId(isSelected ? null : msg.messageId)}
-                  className={`max-w-[90%] sm:max-w-[80%] p-3.5 rounded-2xl shadow-sm text-sm font-medium relative cursor-pointer transition-all ${
-                    isMe
-                      ? 'bg-emerald-600 text-white rounded-tr-none'
-                      : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700/60 rounded-tl-none'
-                  }`}
-                >
-                  {/* Custom Quran Attachment Card with identical preview */}
-                  {msg.verseData && (
-                    <ChatQuranCard
-                      verseData={msg.verseData}
-                      playingAudioUrl={playingAudioUrl}
-                      onToggleAudio={handleToggleAudio}
-                    />
-                  )}
-
-                  {/* Voice Note Audio Player */}
-                  {msg.audioUrl && (
+                {isPureAudio ? (
+                  <div onClick={() => setSelectedMsgId(isSelected ? null : msg.messageId)}>
                     <ChatMessageAudioPlayer
-                      audioUrl={msg.audioUrl}
+                      audioUrl={msg.audioUrl!}
                       isMe={isMe}
+                      timeStr={timeStr}
+                      isRead={msg.isRead}
                     />
-                  )}
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => setSelectedMsgId(isSelected ? null : msg.messageId)}
+                    className={`max-w-[90%] sm:max-w-[80%] p-3.5 rounded-2xl shadow-sm text-sm font-medium relative cursor-pointer transition-all ${
+                      isMe
+                        ? 'bg-emerald-600 text-white rounded-tr-none'
+                        : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700/60 rounded-tl-none'
+                    }`}
+                  >
+                    {/* Custom Quran Attachment Card with identical preview */}
+                    {msg.verseData && (
+                      <ChatQuranCard
+                        verseData={msg.verseData}
+                        playingAudioUrl={playingAudioUrl}
+                        onToggleAudio={handleToggleAudio}
+                      />
+                    )}
 
-                  {msg.text && <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>}
+                    {/* Voice Note Audio Player */}
+                    {msg.audioUrl && (
+                      <ChatMessageAudioPlayer
+                        audioUrl={msg.audioUrl}
+                        isMe={isMe}
+                        timeStr={timeStr}
+                        isRead={msg.isRead}
+                      />
+                    )}
 
-                  <div className={`flex items-center gap-1.5 justify-end mt-1 text-[10px] ${isMe ? 'text-emerald-100' : 'text-slate-400'}`}>
-                    <span>{timeStr}</span>
-                    {isMe && (
-                      msg.isRead ? (
-                        <CheckCheck size={14} className="text-sky-300" />
-                      ) : (
-                        <Check size={14} className="opacity-70" />
-                      )
+                    {msg.text && <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>}
+
+                    {!msg.audioUrl && (
+                      <div className={`flex items-center gap-1.5 justify-end mt-1 text-[10px] ${isMe ? 'text-emerald-100' : 'text-slate-400'}`}>
+                        <span>{timeStr}</span>
+                        {isMe && (
+                          msg.isRead ? (
+                            <CheckCheck size={14} className="text-sky-300" />
+                          ) : (
+                            <Check size={14} className="opacity-70" />
+                          )
+                        )}
+                      </div>
                     )}
                   </div>
-                </div>
+                )}
 
                 {/* Individual Message Delete Action Popover */}
                 <AnimatePresence>

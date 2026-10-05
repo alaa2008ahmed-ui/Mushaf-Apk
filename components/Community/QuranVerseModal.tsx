@@ -162,7 +162,7 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
   const [step, setStep] = useState<'search' | 'customize'>('search');
   const [quranSearchQuery, setQuranSearchQuery] = useState('');
   const [browseSurah, setBrowseSurah] = useState<number>(1);
-  const [searchMode, setSearchMode] = useState<'search' | 'browse'>('search');
+  const [searchMode, setSearchMode] = useState<'search' | 'browse'>('browse');
 
   const [shareType, setShareType] = useState<'text' | 'image' | 'page' | 'audio'>('page');
   const [selectedSurah, setSelectedSurah] = useState<number>(1);
@@ -187,15 +187,12 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
   const previewCardRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset to search step on open and auto-focus search input
+  // Reset to search step on open
   useEffect(() => {
     if (isOpen) {
       setStep('search');
       setQuranSearchQuery('');
-      setSearchMode('search');
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 150);
+      setSearchMode('browse');
     }
   }, [isOpen]);
 
@@ -1157,8 +1154,8 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
               className="w-full px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white"
             />
 
-            {/* Bottom 4 Action Buttons matching Image 1 & 2 */}
-            <div className="grid grid-cols-4 gap-2 pt-1">
+            {/* Bottom 3 Action Buttons in Chat */}
+            <div className="grid grid-cols-3 gap-2 pt-1">
               <button
                 onClick={() => setStep('search')}
                 className="py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all text-center"
@@ -1172,15 +1169,6 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
               >
                 <Copy size={14} />
                 <span>نسخ</span>
-              </button>
-
-              <button
-                onClick={handleExternalShare}
-                disabled={isProcessing}
-                className="py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-md shadow-amber-600/20"
-              >
-                <Share2 size={14} />
-                <span>مشاركة</span>
               </button>
 
               <button

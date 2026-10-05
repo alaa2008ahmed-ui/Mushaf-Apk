@@ -1544,6 +1544,57 @@ class CommunityService {
     return newMsg;
   }
 
+  public async sendBroadcastAdminMessage(text: string): Promise<number> {
+    const cleanText = text.trim();
+    if (!cleanText) return 0;
+
+    // 1. Fetch latest users list
+    const allUsers = await this.fetchLatestUsers();
+    // Exclude official admin user
+    const targetUsers = allUsers.filter(u => u.userId !== ADMIN_USER_ID);
+
+    if (targetUsers.length === 0) return 0;
+
+    const nowIso = new Date().toISOString();
+    let sentCount = 0;
+
+    // Send message to every user's support chat
+    for (const targetUser of targetUsers) {
+      const chatId = this.getChatId(ADMIN_USER_ID, targetUser.userId);
+      const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6) + '_' + sentCount;
+
+      const newMsg: ChatMessage = {
+        messageId: msgId,
+        chatId,
+        senderId: ADMIN_USER_ID,
+        recipientId: targetUser.userId,
+        text: cleanText,
+        isRead: false,
+        createdAt: nowIso
+      };
+
+      this.messagesList.push(newMsg);
+
+      // Save contact mapping so Technical Support chat appears in their conversation list
+      this.saveChattedUser(ADMIN_USER_ID, targetUser.userId);
+      this.saveChattedUser(targetUser.userId, ADMIN_USER_ID);
+
+      try {
+        const payload = this.cleanPayload(newMsg);
+        await setDoc(doc(db, 'messages', msgId), payload);
+      } catch (e) {
+        console.error('Error sending broadcast message to user:', targetUser.userId, e);
+      }
+
+      sentCount++;
+    }
+
+    this.saveToLocalStorage();
+    window.dispatchEvent(new CustomEvent('community_messages_updated'));
+
+    return sentCount;
+  }
+
   public impersonateUser(user: CommunityUser) {
     if (typeof localStorage === 'undefined') return;
     try {
