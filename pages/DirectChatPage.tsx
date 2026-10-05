@@ -841,11 +841,14 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
       </div>
 
       {/* Input Footer Bar */}
-      <div className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-3 sm:p-4 z-30">
+      <div 
+        className="sticky bottom-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-3 pt-3 pb-8 sm:pb-4 sm:px-4 z-30 shadow-md"
+        style={{ paddingBottom: 'max(2.25rem, calc(env(safe-area-inset-bottom, 0px) + 2rem))' }}
+      >
         <div className="max-w-3xl mx-auto relative">
           <AnimatePresence>
             {showEmojiPicker && (
-              <div className="absolute bottom-16 right-0 z-50">
+              <div className="absolute bottom-full mb-3 right-0 z-50">
                 <EmojiPicker
                   onSelectEmoji={handleEmojiSelect}
                   onClose={() => setShowEmojiPicker(false)}

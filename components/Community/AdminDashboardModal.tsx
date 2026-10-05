@@ -170,45 +170,52 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                 </div>
             )}
 
-            {/* Header - Full Screen Style */}
-            <div className="p-4 sm:p-5 border-b bg-white dark:bg-slate-900 flex items-center justify-between" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                        <ShieldAlert size={22} />
-                    </div>
-                    <div>
-                        <h2 className="font-bold text-lg sm:text-xl leading-tight">لوحة تحكم الإدارة الشاملة</h2>
-                    </div>
-                </div>
-                <button onClick={onClose} className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-rose-500 hover:text-white rounded-xl transition-all duration-200">
-                    <X size={22} />
+            {/* Sub-tabs & Return Button - Headerless Clean Full-Screen Layout */}
+            <div 
+                className="flex items-center border-b text-sm font-bold bg-white dark:bg-slate-900 px-3 py-2 shrink-0 shadow-sm gap-2" 
+                style={{ 
+                    borderColor: 'rgba(0,0,0,0.08)',
+                    paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)'
+                }}
+            >
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all active:scale-95 flex items-center justify-center shadow-sm flex-shrink-0"
+                    title="الرجوع"
+                >
+                    <ArrowRight size={20} />
                 </button>
-            </div>
 
-            {/* Sub-tabs - Sleek, Dense & Clean */}
-            <div className="flex border-b text-sm font-bold bg-slate-50 dark:bg-slate-900/50" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
-                <button 
-                    onClick={() => { setActiveTab('users'); setSelectedInspectorUser(null); setSelectedUserForSupport(null); }}
-                    className={`flex-1 py-4 text-center transition-all border-b-2 flex items-center justify-center gap-2 ${
-                        activeTab === 'users' 
-                            ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5' 
-                            : 'border-transparent opacity-70 hover:bg-black/5'
-                    }`}
-                >
-                    <Users size={16} />
-                    <span>إدارة المستخدمين</span>
-                </button>
-                <button 
-                    onClick={() => { setActiveTab('support'); setSelectedInspectorUser(null); }}
-                    className={`flex-1 py-4 text-center transition-all border-b-2 flex items-center justify-center gap-2 ${
-                        activeTab === 'support' 
-                            ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5' 
-                            : 'border-transparent opacity-70 hover:bg-black/5'
-                    }`}
-                >
-                    <Mail size={16} />
-                    <span>وارد الدعم الفني</span>
-                </button>
+                <div className="flex flex-1 items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl">
+                    <button 
+                        onClick={() => { setActiveTab('users'); setSelectedInspectorUser(null); setSelectedUserForSupport(null); }}
+                        className={`flex-1 py-2 px-3 text-center transition-all rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm ${
+                            activeTab === 'users' 
+                                ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' 
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                    >
+                        <Users size={16} />
+                        <span>إدارة المستخدمين</span>
+                    </button>
+                    <button 
+                        onClick={() => { setActiveTab('support'); setSelectedInspectorUser(null); }}
+                        className={`flex-1 py-2 px-3 text-center transition-all rounded-xl flex items-center justify-center gap-2 relative text-xs sm:text-sm ${
+                            activeTab === 'support' 
+                                ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm' 
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                    >
+                        <img src="/support_icon.jpg" alt="الدعم الفني" className="w-5 h-5 rounded-full object-cover shadow-sm" />
+                        <span>وارد الدعم الفني</span>
+                        {supportUserIds.length > 0 && (
+                            <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                                {supportUserIds.length}
+                            </span>
+                        )}
+                    </button>
+                </div>
             </div>
 
             {/* Main Full-Screen Layout Body */}
@@ -278,11 +285,11 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                 </div>
 
                                 {/* Simulated User Profile Screen */}
-                                <div className="max-w-2xl mx-auto w-full space-y-6">
+                                <div className="max-w-xl mx-auto w-full space-y-3">
                                     
-                                    {/* Big Avatar Card */}
-                                    <div className="flex flex-col items-center text-center p-6 bg-slate-50 dark:bg-slate-950 rounded-3xl border dark:border-slate-800 relative">
-                                        <div className="w-24 h-24 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-3xl overflow-hidden border-4 border-white dark:border-slate-900 shadow-lg mb-3">
+                                    {/* Minimized Compact Avatar Card */}
+                                    <div className="flex flex-col items-center text-center p-3 sm:p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border dark:border-slate-800 relative shadow-sm">
+                                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-md mb-2">
                                             {selectedInspectorUser.avatarUrl ? (
                                                 <img src={selectedInspectorUser.avatarUrl} alt={selectedInspectorUser.username} className="w-full h-full object-cover" />
                                             ) : (
@@ -290,36 +297,30 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                             )}
                                         </div>
                                         
-                                        <h3 className="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-1.5">
+                                        <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-1.5">
                                             <span>{selectedInspectorUser.username || 'بدون اسم'}</span>
                                         </h3>
                                         
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm px-4">
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-sm px-2 line-clamp-2">
                                             {selectedInspectorUser.bio || 'لا يوجد وصف شخصي متوفر لحساب القارئ.'}
                                         </p>
 
-                                        <div className="mt-4 flex items-center gap-2">
-                                            <span className="text-[10px] bg-black/10 dark:bg-white/10 px-3 py-1 rounded-full font-mono font-bold">
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <span className="text-[10px] bg-black/5 dark:bg-white/10 px-2.5 py-0.5 rounded-full font-mono font-bold">
                                                 كود الحساب: {selectedInspectorUser.accountCode}
-                                            </span>
-                                            <span className="text-[10px] bg-black/10 dark:bg-white/10 px-3 py-1 rounded-full font-mono font-bold">
-                                                ID: {selectedInspectorUser.userId}
                                             </span>
                                         </div>
                                     </div>
 
                                     {/* Simulated Enter / Impersonation Button */}
-                                    <div className="space-y-2">
+                                    <div>
                                         <button 
                                             onClick={() => handleImpersonate(selectedInspectorUser)}
-                                            className="w-full p-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-2xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2.5"
+                                            className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
                                         >
-                                            <Eye size={18} />
+                                            <Eye size={16} />
                                             <span>تصفح ودخول كصاحب الحساب تماماً 🛡️</span>
                                         </button>
-                                        <p className="text-[10px] text-slate-400 text-center">
-                                            عند النقر على هذا الزر، ستفتح معك واجهة الدردشات والمجتمع بتبويباتها الثلاثة كاملة كأنك هذا المستخدم لتقرأ دردشاته، وتراسل، وتحظر بالكامل! يمكنك الخروج والعودة لحسابك الأصلي في أي وقت من الشريط العلوي.
-                                        </p>
                                     </div>
 
                                     {/* Complete Info Fields Block */}

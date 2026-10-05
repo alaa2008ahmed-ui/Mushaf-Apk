@@ -79,7 +79,7 @@ export const ADMIN_USER: CommunityUser = {
   accountCode: 'ADMIN-OFFICIAL',
   country: 'الإدارة 🛡️',
   bio: 'أهلاً بك! تواصل معنا هنا في حال مواجهة أي مشكلة بالتطبيق.',
-  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+  avatarUrl: '/support_icon.jpg',
   isOnline: true,
   createdAt: new Date('2026-01-01').toISOString()
 };
@@ -457,6 +457,7 @@ class CommunityService {
   }
 
   public getUserById(userId: string): CommunityUser | undefined {
+    if (userId === ADMIN_USER_ID) return ADMIN_USER;
     return this.usersMap.get(userId);
   }
 
@@ -665,11 +666,12 @@ class CommunityService {
       if (storedUsers) {
         const arr: CommunityUser[] = JSON.parse(storedUsers);
         arr.forEach(u => {
-          if (u && u.userId && !this.isLegacyGoogleUser(u)) {
+          if (u && u.userId && !this.isLegacyGoogleUser(u) && u.userId !== ADMIN_USER_ID) {
             this.usersMap.set(u.userId, u);
           }
         });
       }
+      this.usersMap.set(ADMIN_USER_ID, ADMIN_USER);
 
       const storedMsgs = localStorage.getItem(STORAGE_KEY_MESSAGES);
       if (storedMsgs) {

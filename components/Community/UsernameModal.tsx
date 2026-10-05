@@ -437,52 +437,54 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
 
   if (!isOpen) return null;
 
+  const handleBackAction = () => {
+    if (communityService.isProfileComplete()) {
+      if (onSaved) {
+        onSaved();
+      } else {
+        onClose();
+      }
+    } else {
+      if (onBackToApps) {
+        onBackToApps();
+      } else {
+        onClose();
+      }
+    }
+  };
+
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100000] flex items-center justify-center p-4">
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="bg-white dark:bg-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl relative overflow-hidden max-h-[92vh] overflow-y-auto"
-          dir="rtl"
-        >
-          {/* Header Glow */}
-          <div className="absolute top-0 right-0 left-0 h-2 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600" />
+    <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col" dir="rtl">
+      {/* Full Screen Top Header Bar */}
+      <header className="app-top-bar">
+        <div className="app-top-bar__inner">
+          <div className="relative flex items-center justify-center w-full">
+            <button
+              type="button"
+              onClick={handleBackAction}
+              className="absolute right-0 p-2 rounded-xl text-current hover:opacity-80 transition-opacity active:scale-95"
+              title="الرجوع"
+            >
+              <ArrowRight size={22} />
+            </button>
 
-          {/* Back Button / Dismiss */}
-          <button
-            type="button"
-            onClick={() => {
-              if (communityService.isProfileComplete()) {
-                if (onSaved) {
-                  onSaved();
-                } else {
-                  onClose();
-                }
-              } else {
-                if (onBackToApps) {
-                  onBackToApps();
-                } else {
-                  onClose();
-                }
-              }
-            }}
-            className="absolute top-4 left-4 flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 text-xs font-bold transition-all shadow-sm hover:scale-105"
-            title="الرجوع"
-          >
-            <ArrowRight size={15} />
-            <span>رجوع</span>
-          </button>
-
-          <div className="text-center mb-4 mt-1">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center justify-center gap-2">
-              <span>مجتمع المصحف الشريف</span>
-              <Sparkles size={18} className="text-amber-500" />
-            </h3>
+            <h1 className="app-top-bar__title text-2xl font-kufi text-center px-12">
+              مجتمع المصحف والتواصل
+            </h1>
           </div>
+          <p className="app-top-bar__subtitle text-center">
+            {activeTab === 'restore' 
+              ? 'استعادة حسابك السابق ومتابعة المحادثات' 
+              : activeTab === 'profile' 
+                ? 'تعديل بيانات الحساب والملف الشخصي' 
+                : 'التسجيل وبدء التراسل مع الحُفّاظ والقُرّاء'}
+          </p>
+        </div>
+      </header>
 
-          {/* Mode Switch Tabs */}
+      {/* Full Screen Scrollable Page Body */}
+      <div className="flex-1 w-full max-w-xl mx-auto px-4 py-5 pb-24">
+        {/* Mode Switch Tabs */}
           <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/90 rounded-2xl mb-4 border border-slate-200 dark:border-slate-700">
             {currentUser.username ? (
               <>
@@ -1005,9 +1007,8 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
               </form>
             </div>
           )}
-        </motion.div>
       </div>
-    </AnimatePresence>
+    </div>
   );
 };
 

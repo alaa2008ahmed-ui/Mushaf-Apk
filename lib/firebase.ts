@@ -1,5 +1,9 @@
 import { initializeApp, setLogLevel } from "firebase/app";
-import { initializeFirestore, enableMultiTabIndexedDbPersistence } from "firebase/firestore";
+import { 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager 
+} from "firebase/firestore";
 import { 
   getAuth, 
   GoogleAuthProvider, 
@@ -13,44 +17,68 @@ import {
 } from "firebase/auth";
 import firebaseConfig from "../firebase-applet-config.json";
 
-// Set logging level to error to hide verbose connection status warnings in the console
+// Set logging level to silent to suppress internal retry/connection logs from Firebase SDK
 try {
-  setLogLevel("error");
+  setLogLevel("silent");
 } catch (e) {}
 
-// Intercept and silence Firebase connectivity warning logs from showing in the console
+// Intercept and silence Firebase connectivity warning & error logs from showing in the console
 if (typeof window !== 'undefined' && window.console) {
+  const isFirestoreNetworkNoise = (args: any[]) => {
+    return args.some(arg => {
+      if (typeof arg === 'string') {
+        return (
+          arg.includes('@firebase/firestore') ||
+          arg.includes('Could not reach Cloud Firestore backend') ||
+          arg.includes('code=unavailable') ||
+          arg.includes('The operation could not be completed') ||
+          arg.includes('operate in offline mode')
+        );
+      }
+      if (arg && typeof arg === 'object') {
+        const msg = arg.message || arg.stack || '';
+        return (
+          msg.includes('Could not reach Cloud Firestore backend') ||
+          msg.includes('code=unavailable') ||
+          msg.includes('The operation could not be completed')
+        );
+      }
+      return false;
+    });
+  };
+
   const originalWarn = window.console.warn;
   window.console.warn = function (...args) {
-    const msg = args[0];
-    if (
-      typeof msg === 'string' &&
-      (msg.includes('@firebase/firestore') ||
-       msg.includes('Could not reach Cloud Firestore backend'))
-    ) {
-      return;
-    }
+    if (isFirestoreNetworkNoise(args)) return;
     originalWarn.apply(window.console, args);
+  };
+
+  const originalError = window.console.error;
+  window.console.error = function (...args) {
+    if (isFirestoreNetworkNoise(args)) return;
+    originalError.apply(window.console, args);
+  };
+
+  const originalInfo = window.console.info;
+  window.console.info = function (...args) {
+    if (isFirestoreNetworkNoise(args)) return;
+    originalInfo.apply(window.console, args);
   };
 }
 
 export const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true
-}, firebaseConfig.firestoreDatabaseId || "(default)");
-
-// Enable robust offline persistence for local caching
-try {
-  enableMultiTabIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.warn("Multiple tabs open, persistence enabled in first tab only.");
-    } else if (err.code === 'unimplemented') {
-      console.warn("The current browser does not support all of the features required to enable persistence.");
-    }
-  });
-} catch (e) {}
+// Initialize Firestore with modern persistent multi-tab cache and force long-polling for reliable connectivity
+export const db = initializeFirestore(
+  app, 
+  {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager()
+    }),
+    experimentalForceLongPolling: true
+  }, 
+  firebaseConfig.firestoreDatabaseId || "(default)"
+);
 
 // Initialize Auth
 export const auth = getAuth(app);
