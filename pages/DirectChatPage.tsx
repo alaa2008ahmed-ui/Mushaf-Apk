@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowRight, Send, Smile, MoreVertical, Trash2, Check, 
-  CheckCheck, Ban, User, Sparkles, AlertCircle, BookOpen, Play, Pause, CheckCircle2
+  CheckCheck, Ban, User, Sparkles, AlertCircle, BookOpen, Play, Pause, CheckCircle2,
+  Mic, Volume2, Loader2
 } from 'lucide-react';
 import { communityService, CommunityUser, ChatMessage, QuranVerseAttachment, ADMIN_USER_ID } from '../services/communityService';
 import { SUPPORT_AVATAR_BASE64 } from '../src/supportAvatarBase64';
@@ -212,6 +213,134 @@ const ChatQuranCard: React.FC<{
   );
 };
 
+// Voice message player for chat messages
+const ChatMessageAudioPlayer: React.FC<{
+  audioUrl: string;
+  isMe: boolean;
+}> = ({ audioUrl, isMe }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [duration, setDuration] = useState<number>(0);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio(audioUrl);
+    audioRef.current = audio;
+
+    const handleLoadedMetadata = () => {
+      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+        setDuration(audio.duration);
+      }
+    };
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+        setDuration(audio.duration);
+      }
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [audioUrl]);
+
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch(err => {
+        console.error('Audio playback error:', err);
+      });
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+    const seekTime = parseFloat(e.target.value);
+    audioRef.current.currentTime = seekTime;
+    setCurrentTime(seekTime);
+  };
+
+  const formatTime = (secs: number) => {
+    if (isNaN(secs) || secs < 0 || !isFinite(secs)) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const progressPercent = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
+
+  return (
+    <div 
+      className={`flex items-center gap-3 p-2.5 px-3.5 rounded-2xl min-w-[210px] sm:min-w-[240px] max-w-[290px] shadow-sm my-1 ${
+        isMe 
+          ? 'bg-emerald-700/80 text-white border border-emerald-500/40' 
+          : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700'
+      }`} 
+      dir="rtl"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        onClick={togglePlay}
+        className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center transition-all active:scale-90 shadow-md ${
+          isMe
+            ? 'bg-white text-emerald-700 hover:bg-slate-100'
+            : 'bg-emerald-600 text-white hover:bg-emerald-700'
+        }`}
+        title={isPlaying ? 'إيقاف موقت' : 'تشغيل الرسالة الصوتية'}
+      >
+        {isPlaying ? <Pause size={18} /> : <Play size={18} className="translate-x-[-1px]" />}
+      </button>
+
+      <div className="flex-1 flex flex-col justify-center gap-1.5 min-w-0">
+        <div className="flex items-center justify-between text-[11px] font-bold opacity-90">
+          <span className="flex items-center gap-1">
+            <Mic size={12} className={isMe ? 'text-emerald-200' : 'text-emerald-500'} />
+            <span>تسجيل صوتي</span>
+          </span>
+          <span>{duration > 0 ? formatTime(duration) : formatTime(currentTime)}</span>
+        </div>
+
+        {/* Progress Bar & Seek Slider */}
+        <div className="relative w-full h-2 rounded-full bg-black/20 dark:bg-white/20 overflow-hidden flex items-center">
+          <div 
+            className={`h-full rounded-full transition-all ${isMe ? 'bg-white' : 'bg-emerald-500'}`}
+            style={{ width: `${progressPercent}%` }}
+          />
+          <input
+            type="range"
+            min="0"
+            max={duration || 100}
+            value={currentTime}
+            onChange={handleSeek}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, onNavigate }) => {
   const currentUser = communityService.getCurrentUser();
   const [partner, setPartner] = useState<CommunityUser | null>(null);
@@ -229,6 +358,14 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
   const [playingAudioUrl, setPlayingAudioUrl] = useState<string | null>(null);
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
 
+  // Voice Recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<any>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const menuContainerRef = useRef<HTMLDivElement>(null);
@@ -237,6 +374,18 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
   const isFirstLoadRef = useRef<boolean>(true);
   const userIsNearBottomRef = useRef<boolean>(true);
   const prevMsgCountRef = useRef<number>(0);
+
+  // Clean up recording timers & tracks on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+        try {
+          mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop());
+        } catch (e) {}
+      }
+    };
+  }, []);
 
   // Global click & touch outside listeners in capture phase to guarantee immediate closing
   useEffect(() => {
@@ -416,6 +565,188 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
       }
       return prev + emojiOrText;
     });
+  };
+
+  const getSupportedMimeType = () => {
+    if (typeof MediaRecorder === 'undefined') return '';
+    const types = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/aac',
+      'audio/ogg'
+    ];
+    for (const type of types) {
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) {
+        return type;
+      }
+    }
+    return '';
+  };
+
+  const startRecording = async () => {
+    if (isBlocked) return;
+
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showToast('عفواً، تسجيل الصوت غير مدعوم في متصفحك أو هذا الجهاز');
+        return;
+      }
+
+      // Pre-check for audio input hardware if device enumeration is available
+      if (navigator.mediaDevices.enumerateDevices) {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const hasMic = devices.some(d => d.kind === 'audioinput');
+          if (devices.length > 0 && !hasMic) {
+            showToast('لم يتم العثور على ميكروفون متصل بهذا الجهاز 🎙️');
+            return;
+          }
+        } catch (e) {
+          // Ignore enumeration errors and proceed
+        }
+      }
+
+      let stream: MediaStream | null = null;
+
+      // Level 1: Try soft audio constraints
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true
+          }
+        });
+      } catch (e1) {
+        console.warn('Soft audio constraints unavailable, trying standard audio stream:', e1);
+        // Level 2: Fallback to basic audio stream (works on devices with non-standard mics/WebViews)
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (e2: any) {
+          console.warn('Audio stream request failed:', e2?.name || e2);
+          if (e2?.name === 'NotFoundError' || e2?.message?.toLowerCase().includes('not found')) {
+            showToast('لم يتم العثور على ميكروفون متصل بهذا الجهاز 🎙️');
+          } else if (e2?.name === 'NotAllowedError' || e2?.name === 'PermissionDeniedError') {
+            showToast('يرجى السماح بصلاحية الميكروفون في متصفحك لبدء التسجيل');
+          } else {
+            showToast('تعذر تشغيل الميكروفون على هذا الجهاز');
+          }
+          return;
+        }
+      }
+
+      if (!stream) return;
+
+      audioChunksRef.current = [];
+      const mimeType = getSupportedMimeType();
+      const options = mimeType ? { mimeType } : undefined;
+
+      let mediaRecorder: MediaRecorder;
+      try {
+        mediaRecorder = new MediaRecorder(stream, options);
+      } catch (err) {
+        // Fallback without mimeType options if browser rejects it
+        mediaRecorder = new MediaRecorder(stream);
+      }
+
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.start(100);
+      setIsRecording(true);
+      setRecordingDuration(0);
+
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.warn('Unexpected error starting audio recording:', err);
+      showToast('تعذر بدء التسجيل الصوتي على هذا الجهاز');
+    }
+  };
+
+  const stopAndSendRecording = () => {
+    if (!mediaRecorderRef.current || !isRecording) return;
+    setIsProcessingAudio(true);
+
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+
+    const mediaRecorder = mediaRecorderRef.current;
+
+    mediaRecorder.onstop = async () => {
+      try {
+        if (mediaRecorder.stream) {
+          mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+
+        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+
+        if (blob.size < 200) {
+          showToast('التسجيل قصير جداً');
+          setIsRecording(false);
+          setIsProcessingAudio(false);
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+          const base64Audio = reader.result as string;
+          await communityService.sendMessage(partnerUserId, '', undefined, base64Audio);
+          setIsRecording(false);
+          setIsProcessingAudio(false);
+          setRecordingDuration(0);
+          loadData(true);
+          setTimeout(() => scrollToBottom('smooth'), 50);
+          showToast('تم إرسال التسجيل الصوتي بنجاح 🎙️');
+        };
+      } catch (err) {
+        console.error('Error processing voice message:', err);
+        showToast('حدث خطأ أثناء معالجة التسجيل الصوتي');
+        setIsRecording(false);
+        setIsProcessingAudio(false);
+      }
+    };
+
+    try {
+      mediaRecorder.stop();
+    } catch (e) {
+      setIsRecording(false);
+      setIsProcessingAudio(false);
+    }
+  };
+
+  const cancelRecording = () => {
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    if (mediaRecorderRef.current) {
+      try {
+        mediaRecorderRef.current.onstop = null;
+        if (mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
+        }
+        if (mediaRecorderRef.current.stream) {
+          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        }
+      } catch (e) {}
+    }
+    setIsRecording(false);
+    setIsProcessingAudio(false);
+    setRecordingDuration(0);
+    audioChunksRef.current = [];
+    showToast('تم إلغاء التسجيل الصوتي');
+  };
+
+  const formatRecordingTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
   const handleBlockUser = () => {
@@ -643,6 +974,14 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
                     />
                   )}
 
+                  {/* Voice Note Audio Player */}
+                  {msg.audioUrl && (
+                    <ChatMessageAudioPlayer
+                      audioUrl={msg.audioUrl}
+                      isMe={isMe}
+                    />
+                  )}
+
                   {msg.text && <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>}
 
                   <div className={`flex items-center gap-1.5 justify-end mt-1 text-[10px] ${isMe ? 'text-emerald-100' : 'text-slate-400'}`}>
@@ -709,42 +1048,103 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
             </AnimatePresence>
           </div>
 
-          <form onSubmit={handleSend} className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowVerseModal(true)}
-              className="p-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-2xl transition-colors flex items-center gap-1 font-bold text-xs"
-              title="مشاركة آية قرآنية"
-            >
-              <BookOpen size={18} />
-              <span className="hidden sm:inline">آية</span>
-            </button>
+          {isRecording ? (
+            /* Active Voice Recording Panel */
+            <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 p-2 px-3 rounded-2xl shadow-inner animate-fadeIn">
+              <button
+                type="button"
+                onClick={cancelRecording}
+                className="p-2.5 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all active:scale-95 shrink-0"
+                title="إلغاء التسجيل"
+              >
+                <Trash2 size={20} />
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="p-3 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              <Smile size={20} />
-            </button>
+              <div className="flex-1 flex items-center justify-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-600" />
+                </div>
+                <span className="text-sm font-bold text-emerald-900 dark:text-emerald-200 font-mono">
+                  {formatRecordingTime(recordingDuration)}
+                </span>
+                {/* Waveform visual animation */}
+                <div className="hidden sm:flex items-center gap-1 opacity-75">
+                  <span className="w-1 h-3 bg-emerald-500 rounded-full animate-bounce [animation-delay:0ms]" />
+                  <span className="w-1 h-5 bg-emerald-600 rounded-full animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1 h-2 bg-emerald-500 rounded-full animate-bounce [animation-delay:300ms]" />
+                  <span className="w-1 h-4 bg-emerald-600 rounded-full animate-bounce [animation-delay:450ms]" />
+                </div>
+              </div>
 
-            <input
-              type="text"
-              value={inputText}
-              onChange={handleInputChange}
-              disabled={isBlocked}
-              placeholder={isBlocked ? 'التواصل معطل بسبب الحظر' : 'اكتب رسالة مباركة...'}
-              className="flex-1 px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white disabled:opacity-50"
-            />
+              <button
+                type="button"
+                onClick={stopAndSendRecording}
+                disabled={isProcessingAudio}
+                className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-1.5 font-bold text-xs shrink-0 disabled:opacity-50"
+              >
+                {isProcessingAudio ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <>
+                    <Send size={16} className="rotate-180" />
+                    <span>إرسال</span>
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            /* Normal Input Bar with Mic button */
+            <form onSubmit={handleSend} className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowVerseModal(true)}
+                className="p-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-2xl transition-colors flex items-center gap-1 font-bold text-xs shrink-0"
+                title="مشاركة آية قرآنية"
+              >
+                <BookOpen size={18} />
+                <span className="hidden sm:inline">آية</span>
+              </button>
 
-            <button
-              type="submit"
-              disabled={!inputText.trim() || isBlocked}
-              className="p-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white rounded-2xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center"
-            >
-              <Send size={18} className="rotate-180" />
-            </button>
-          </form>
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="p-3 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+              >
+                <Smile size={20} />
+              </button>
+
+              <input
+                type="text"
+                value={inputText}
+                onChange={handleInputChange}
+                disabled={isBlocked}
+                placeholder={isBlocked ? 'التواصل معطل بسبب الحظر' : 'اكتب رسالة مباركة...'}
+                className="flex-1 px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white disabled:opacity-50"
+              />
+
+              {/* Mic recording button when input is empty, or Send button when text exists */}
+              {!inputText.trim() ? (
+                <button
+                  type="button"
+                  onClick={startRecording}
+                  disabled={isBlocked}
+                  className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center shrink-0 disabled:opacity-40"
+                  title="تسجيل صوتي"
+                >
+                  <Mic size={18} />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!inputText.trim() || isBlocked}
+                  className="p-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white rounded-2xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center shrink-0"
+                >
+                  <Send size={18} className="rotate-180" />
+                </button>
+              )}
+            </form>
+          )}
         </div>
       </div>
 
