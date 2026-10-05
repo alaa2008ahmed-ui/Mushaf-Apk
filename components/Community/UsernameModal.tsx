@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { communityService, CommunityUser } from '../../services/communityService';
 import { registerBackInterceptor } from '../../hooks/useBackButton';
+import { AvatarCropperModal } from './AvatarCropperModal';
 
 interface UsernameModalProps {
   isOpen: boolean;
@@ -186,6 +187,11 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
   const [successMsg, setSuccessMsg] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  // Avatar cropping modal state
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropperImgSrc, setCropperImgSrc] = useState('');
+  const [cropperTargetIsNew, setCropperTargetIsNew] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const newFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -232,6 +238,11 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
     if (!isOpen) return;
 
     const unregister = registerBackInterceptor(() => {
+      if (cropperOpen) {
+        setCropperOpen(false);
+        setCropperImgSrc('');
+        return true;
+      }
       if (communityService.isProfileComplete()) {
         if (onSaved) onSaved();
         else onClose();
@@ -245,7 +256,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
     return () => {
       unregister();
     };
-  }, [isOpen, onBackToApps, onClose, onSaved]);
+  }, [isOpen, onBackToApps, onClose, onSaved, cropperOpen]);
 
   const handleCopyCode = async () => {
     if (!currentUser.accountCode) return;
@@ -262,25 +273,37 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, isNew: boolean = false) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        setError('حجم الصورة كبير جداً، يرجى اختيار صورة أقل من 10 ميجابايت');
+      if (file.size > 15 * 1024 * 1024) {
+        setError('حجم الصورة كبير جداً، يرجى اختيار صورة أقل من 15 ميجابايت');
         return;
       }
       const reader = new FileReader();
-      reader.onloadend = async () => {
+      reader.onloadend = () => {
         if (typeof reader.result === 'string') {
-          try {
-            const compressed = await compressAvatar(reader.result, 128, 0.7);
-            if (isNew) setNewAvatarUrl(compressed);
-            else setAvatarUrl(compressed);
-          } catch (e) {
-            if (isNew) setNewAvatarUrl(PRESET_AVATARS[1]);
-            else setAvatarUrl(PRESET_AVATARS[0]);
-          }
+          setCropperImgSrc(reader.result);
+          setCropperTargetIsNew(isNew);
+          setCropperOpen(true);
         }
       };
       reader.readAsDataURL(file);
     }
+    e.target.value = '';
+  };
+
+  const handleCropComplete = async (croppedDataUrl: string) => {
+    try {
+      const compressed = await compressAvatar(croppedDataUrl, 180, 0.8);
+      if (cropperTargetIsNew) {
+        setNewAvatarUrl(compressed);
+      } else {
+        setAvatarUrl(compressed);
+      }
+    } catch (e) {
+      if (cropperTargetIsNew) setNewAvatarUrl(croppedDataUrl);
+      else setAvatarUrl(croppedDataUrl);
+    }
+    setCropperOpen(false);
+    setCropperImgSrc('');
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -454,36 +477,25 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col" dir="rtl">
-      {/* Full Screen Top Header Bar */}
-      <header className="app-top-bar">
-        <div className="app-top-bar__inner">
-          <div className="relative flex items-center justify-center w-full">
-            <button
-              type="button"
-              onClick={handleBackAction}
-              className="absolute right-0 p-2 rounded-xl text-current hover:opacity-80 transition-opacity active:scale-95"
-              title="الرجوع"
-            >
-              <ArrowRight size={22} />
-            </button>
-
-            <h1 className="app-top-bar__title text-2xl font-kufi text-center px-12">
-              مجتمع المصحف والتواصل
-            </h1>
-          </div>
-          <p className="app-top-bar__subtitle text-center">
-            {activeTab === 'restore' 
-              ? 'استعادة حسابك السابق ومتابعة المحادثات' 
-              : activeTab === 'profile' 
-                ? 'تعديل بيانات الحساب والملف الشخصي' 
-                : 'التسجيل وبدء التراسل مع الحُفّاظ والقُرّاء'}
-          </p>
-        </div>
-      </header>
-
+    <div 
+      className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col" 
+      dir="rtl"
+      style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
+    >
       {/* Full Screen Scrollable Page Body */}
-      <div className="flex-1 w-full max-w-xl mx-auto px-4 py-5 pb-24">
+      <div className="flex-1 w-full max-w-xl mx-auto px-4 py-3 pb-24">
+        {/* Compact Back Row */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <button
+            type="button"
+            onClick={handleBackAction}
+            className="p-2 rounded-xl bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 transition-all active:scale-95 flex items-center justify-center flex-shrink-0 shadow-sm"
+            title="الرجوع"
+          >
+            <ArrowRight size={20} />
+          </button>
+        </div>
+
         {/* Mode Switch Tabs */}
           <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/90 rounded-2xl mb-4 border border-slate-200 dark:border-slate-700">
             {currentUser.username ? (
@@ -1008,6 +1020,17 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
             </div>
           )}
       </div>
+
+      {/* Interactive Avatar Image Cropper Modal */}
+      <AvatarCropperModal
+        isOpen={cropperOpen}
+        imageSrc={cropperImgSrc}
+        onCropComplete={handleCropComplete}
+        onCancel={() => {
+          setCropperOpen(false);
+          setCropperImgSrc('');
+        }}
+      />
     </div>
   );
 };

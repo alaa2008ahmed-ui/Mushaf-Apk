@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  ArrowRight, Send, Smile, MoreVertical, Trash2, ShieldOff, Check, 
-  CheckCheck, Ban, User, Sparkles, AlertCircle, BookOpen, Play, Pause, Volume2,
-  Download, Share2, Copy, FileText, Image as ImageIcon, CheckCircle2
+  ArrowRight, Send, Smile, MoreVertical, Trash2, Check, 
+  CheckCheck, Ban, User, Sparkles, AlertCircle, BookOpen, Play, Pause, CheckCircle2
 } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import { safeHtml2Canvas, renderQuranCardToCanvas } from '../utils/canvasHelper';
-import { Share as CapacitorShare } from '@capacitor/share';
-import { Capacitor } from '@capacitor/core';
-import { communityService, CommunityUser, ChatMessage, QuranVerseAttachment } from '../services/communityService';
+import { communityService, CommunityUser, ChatMessage, QuranVerseAttachment, ADMIN_USER_ID } from '../services/communityService';
+import { SUPPORT_AVATAR_BASE64 } from '../src/supportAvatarBase64';
 import EmojiPicker from '../components/Community/EmojiPicker';
 import QuranVerseModal from '../components/Community/QuranVerseModal';
 
@@ -85,203 +81,16 @@ const ChatQuranCard: React.FC<{
   playingAudioUrl: string | null;
   onToggleAudio: (url?: string) => void;
 }> = ({ verseData, playingAudioUrl, onToggleAudio }) => {
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 2500);
-  };
 
   const toArabicDigits = (str: number | string) => {
     return String(str).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
-  };
-
-  const handleDownload = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    if (verseData.shareType === 'text') {
-      const textContent = `سورة ${verseData.surahName} (${verseData.fromAyah && verseData.toAyah && verseData.fromAyah !== verseData.toAyah ? `الآيات ${toArabicDigits(verseData.fromAyah)} إلى ${toArabicDigits(verseData.toAyah)}` : `الآية ${toArabicDigits(verseData.ayahNumber)}`})\n\n﴿ ${verseData.text} ﴾\n\nمصحف احمد وليلي`;
-      const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `quran_verse_${verseData.surahNumber}_${verseData.ayahNumber}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('تم تحميل النص كملف نصي 📄');
-      return;
-    }
-
-    if (verseData.shareType === 'audio' && verseData.audioUrl) {
-      try {
-        const res = await fetch(verseData.audioUrl);
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `quran_recitation_${verseData.surahNumber}_${verseData.ayahNumber}.mp3`;
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast('تم تحميل التلاوة الصوتية بنجاح 🎵');
-      } catch (err) {
-        const a = document.createElement('a');
-        a.href = verseData.audioUrl;
-        a.download = `sura_${verseData.surahNumber}_ayah_${verseData.ayahNumber}.mp3`;
-        a.target = '_blank';
-        a.click();
-        showToast('جاري تحميل التلاوة الصوتية... 🎵');
-      }
-      return;
-    }
-
-    if (isProcessing) return;
-    setIsProcessing(true);
-
-    try {
-      let dataUrl: string = '';
-      try {
-        if (cardRef.current) {
-          const canvas = await safeHtml2Canvas(cardRef.current, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: null,
-            logging: false
-          });
-          dataUrl = canvas.toDataURL('image/png');
-        }
-      } catch (err) {
-        console.warn('DOM capture failed, falling back to direct Canvas renderer:', err);
-      }
-
-      // If safeHtml2Canvas produced empty or failed, use pristine Canvas renderer
-      if (!dataUrl || dataUrl === 'data:,') {
-        const fallbackCanvas = renderQuranCardToCanvas(verseData);
-        dataUrl = fallbackCanvas.toDataURL('image/png');
-      }
-
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = verseData.shareType === 'page' 
-        ? `quran_page_${verseData.surahNumber}_${verseData.ayahNumber}.png`
-        : `quran_card_${verseData.surahNumber}_${verseData.ayahNumber}.png`;
-      a.click();
-      showToast(verseData.shareType === 'page' ? 'تم تحميل صفحة المصحف كصورة 📄' : 'تم تحميل بطاقة الآية كصورة بنجاح 🖼️');
-    } catch (err) {
-      console.error('Download card error:', err);
-      // Final fallback to Canvas renderer
-      const fallbackCanvas = renderQuranCardToCanvas(verseData);
-      const dataUrl = fallbackCanvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = `quran_card_${verseData.surahNumber}_${verseData.ayahNumber}.png`;
-      a.click();
-      showToast('تم تحميل بطاقة الآية كصورة بنجاح 🖼️');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleShareExternal = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isProcessing) return;
-    setIsProcessing(true);
-
-    const verseRangeLabel = verseData.fromAyah && verseData.toAyah && verseData.fromAyah !== verseData.toAyah
-      ? `سورة ${verseData.surahName} (الآيات ${toArabicDigits(verseData.fromAyah)} إلى ${toArabicDigits(verseData.toAyah)})`
-      : `سورة ${verseData.surahName} (آية ${toArabicDigits(verseData.ayahNumber)})`;
-
-    const shareText = `﴿ ${verseData.text} ﴾\n- ${verseRangeLabel}\nمن تطبيق مصحف احمد وليلي`;
-
-    try {
-      if (verseData.shareType === 'audio' && verseData.audioUrl) {
-        if (navigator.share) {
-          await navigator.share({
-            title: `سورة ${verseData.surahName}`,
-            text: shareText,
-            url: verseData.audioUrl
-          });
-        } else {
-          await navigator.clipboard.writeText(shareText + '\n' + verseData.audioUrl);
-          showToast('تم نسخ رابط التلاوة 🎵');
-        }
-      } else if (verseData.shareType === 'text') {
-        if (navigator.share) {
-          await navigator.share({
-            title: `سورة ${verseData.surahName}`,
-            text: shareText
-          });
-        } else {
-          await navigator.clipboard.writeText(shareText);
-          showToast('تم نسخ النص للمشاركة 📋');
-        }
-      } else {
-        let dataUrl: string = '';
-        try {
-          if (cardRef.current) {
-            const canvas = await safeHtml2Canvas(cardRef.current, {
-              scale: 2,
-              useCORS: true,
-              backgroundColor: null,
-              logging: false
-            });
-            dataUrl = canvas.toDataURL('image/png');
-          }
-        } catch (e) {
-          console.warn('Share canvas DOM capture error:', e);
-        }
-
-        if (!dataUrl || dataUrl === 'data:,') {
-          const fallbackCanvas = renderQuranCardToCanvas(verseData);
-          dataUrl = fallbackCanvas.toDataURL('image/png');
-        }
-
-        const response = await fetch(dataUrl);
-        const blob = await response.blob();
-        const file = new File([blob], `quran_verse_${verseData.surahNumber}.png`, { type: 'image/png' });
-
-        if (Capacitor.isNativePlatform()) {
-          await CapacitorShare.share({
-            title: `سورة ${verseData.surahName}`,
-            text: shareText,
-            dialogTitle: 'مشاركة بطاقة الآية عبر'
-          });
-        } else if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: `سورة ${verseData.surahName}`,
-            text: shareText,
-            files: [file]
-          });
-        } else if (navigator.share) {
-          await navigator.share({
-            title: `سورة ${verseData.surahName}`,
-            text: shareText
-          });
-        } else {
-          await navigator.clipboard.writeText(shareText);
-          showToast('تم نسخ نص الآية للمشاركة للتطبيقات 📋');
-        }
-      }
-    } catch (err) {
-      console.log('External share cancelled or failed:', err);
-    } finally {
-      setIsProcessing(false);
-    }
   };
 
   const shareType = verseData.shareType || 'image';
 
   return (
     <div className="mb-2 relative w-full overflow-hidden rounded-2xl transition-all" dir="rtl">
-      {/* Toast popup */}
-      {toastMsg && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-slate-900/90 text-emerald-400 text-[11px] font-bold px-3 py-1 rounded-full shadow-lg border border-emerald-500/30 z-30 flex items-center gap-1 animate-fadeIn">
-          <CheckCircle2 size={13} />
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
       {/* Captured Card View matching images exactly */}
       <div ref={cardRef} style={{ letterSpacing: '0px', wordSpacing: 'normal' }}>
         {/* Render based on selected shareType */}
@@ -399,29 +208,6 @@ const ChatQuranCard: React.FC<{
           </div>
         )}
       </div>
-
-      {/* Action Toolbar matching Image 3: تحميل (Download) & مشاركة (Share) */}
-      <div className="mt-2 pt-2 border-t border-black/10 dark:border-white/10 flex items-center justify-between px-1 text-xs font-bold">
-        <button
-          onClick={handleDownload}
-          disabled={isProcessing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 transition-all active:scale-95 disabled:opacity-50"
-          title="تحميل"
-        >
-          <Download size={14} />
-          <span>تحميل</span>
-        </button>
-
-        <button
-          onClick={handleShareExternal}
-          disabled={isProcessing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/10 hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20 transition-all active:scale-95 disabled:opacity-50"
-          title="مشاركة"
-        >
-          <Share2 size={14} />
-          <span>مشاركة</span>
-        </button>
-      </div>
     </div>
   );
 };
@@ -445,10 +231,35 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const menuContainerRef = useRef<HTMLDivElement>(null);
+  const emojiPickerContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<any>(null);
   const isFirstLoadRef = useRef<boolean>(true);
   const userIsNearBottomRef = useRef<boolean>(true);
   const prevMsgCountRef = useRef<number>(0);
+
+  // Global click & touch outside listeners in capture phase to guarantee immediate closing
+  useEffect(() => {
+    if (!showMenu && !showEmojiPicker) return;
+
+    const handleGlobalClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (showMenu && menuContainerRef.current && !menuContainerRef.current.contains(target)) {
+        setShowMenu(false);
+      }
+      if (showEmojiPicker && emojiPickerContainerRef.current && !emojiPickerContainerRef.current.contains(target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleGlobalClickOutside, true);
+    document.addEventListener('touchstart', handleGlobalClickOutside, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handleGlobalClickOutside, true);
+      document.removeEventListener('touchstart', handleGlobalClickOutside, true);
+    };
+  }, [showMenu, showEmojiPicker]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -596,8 +407,15 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
     }
   };
 
-  const handleEmojiSelect = (emoji: string) => {
-    setInputText(prev => prev + emoji);
+  const handleEmojiSelect = (emojiOrText: string) => {
+    setInputText(prev => {
+      if (!prev) return emojiOrText;
+      // If it's a long phrase / text sticker, add space before
+      if (emojiOrText.length > 2) {
+        return prev + (prev.endsWith(' ') ? '' : ' ') + emojiOrText;
+      }
+      return prev + emojiOrText;
+    });
   };
 
   const handleBlockUser = () => {
@@ -664,8 +482,17 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
           <div className="flex items-center gap-2.5">
             <div className="relative">
               <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center border border-emerald-500/20 text-sm overflow-hidden">
-                {partner?.avatarUrl ? (
-                  <img src={partner.avatarUrl} alt={partner.username} className="w-full h-full object-cover" />
+                {(partner?.userId === ADMIN_USER_ID ? SUPPORT_AVATAR_BASE64 : partner?.avatarUrl) ? (
+                  <img 
+                    src={partner?.userId === ADMIN_USER_ID ? SUPPORT_AVATAR_BASE64 : partner?.avatarUrl} 
+                    alt={partner?.username} 
+                    className="w-full h-full object-cover" 
+                    onError={(e) => {
+                      if (partner?.userId === ADMIN_USER_ID) {
+                        e.currentTarget.src = SUPPORT_AVATAR_BASE64;
+                      }
+                    }}
+                  />
                 ) : (
                   <User size={20} />
                 )}
@@ -696,52 +523,68 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
         </div>
 
         {/* Menu Options */}
-        <div className="relative">
+        <div className="relative" ref={menuContainerRef}>
           <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            onClick={() => setShowMenu(prev => !prev)}
+            className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative z-50"
           >
             <MoreVertical size={20} />
           </button>
 
           <AnimatePresence>
             {showMenu && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                className="absolute left-0 mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 z-50 text-xs font-bold"
-              >
-                <button
-                  onClick={handleDeleteReadMessages}
-                  className="w-full px-4 py-2.5 text-right flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+              <>
+                {/* Full screen backdrop for click/tap outside dismissal */}
+                <div 
+                  className="fixed inset-0 z-40 bg-transparent cursor-default" 
+                  onClick={() => setShowMenu(false)} 
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                  className="absolute left-0 mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 z-50 text-xs font-bold"
                 >
-                  <Trash2 size={16} className="text-amber-500" />
-                  <span>حذف الرسائل المقروءة</span>
-                </button>
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      handleDeleteReadMessages();
+                    }}
+                    className="w-full px-4 py-2.5 text-right flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                  >
+                    <Trash2 size={16} className="text-amber-500" />
+                    <span>حذف الرسائل المقروءة</span>
+                  </button>
 
-                <button
-                  onClick={handleClearConversation}
-                  className="w-full px-4 py-2.5 text-right flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-                >
-                  <Trash2 size={16} className="text-rose-500" />
-                  <span>حذف المحادثة بالكامل</span>
-                </button>
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      handleClearConversation();
+                    }}
+                    className="w-full px-4 py-2.5 text-right flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                  >
+                    <Trash2 size={16} className="text-rose-500" />
+                    <span>حذف المحادثة بالكامل</span>
+                  </button>
 
-                {partnerUserId !== 'usr_admin_official' && (
-                  <>
-                    <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                  {partnerUserId !== 'usr_admin_official' && (
+                    <>
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
 
-                    <button
-                      onClick={handleBlockUser}
-                      className="w-full px-4 py-2.5 text-right flex items-center gap-2 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400"
-                    >
-                      <Ban size={16} />
-                      <span>حظر المستخدم</span>
-                    </button>
-                  </>
-                )}
-              </motion.div>
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          handleBlockUser();
+                        }}
+                        className="w-full px-4 py-2.5 text-right flex items-center gap-2 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400"
+                      >
+                        <Ban size={16} />
+                        <span>حظر المستخدم</span>
+                      </button>
+                    </>
+                  )}
+                </motion.div>
+              </>
             )}
           </AnimatePresence>
         </div>
@@ -846,16 +689,25 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
         style={{ paddingBottom: 'max(2.25rem, calc(env(safe-area-inset-bottom, 0px) + 2rem))' }}
       >
         <div className="max-w-3xl mx-auto relative">
-          <AnimatePresence>
-            {showEmojiPicker && (
-              <div className="absolute bottom-full mb-3 right-0 z-50">
-                <EmojiPicker
-                  onSelectEmoji={handleEmojiSelect}
-                  onClose={() => setShowEmojiPicker(false)}
-                />
-              </div>
-            )}
-          </AnimatePresence>
+          <div ref={emojiPickerContainerRef}>
+            <AnimatePresence>
+              {showEmojiPicker && (
+                <>
+                  {/* Backdrop to close Emoji picker on tap outside */}
+                  <div 
+                    className="fixed inset-0 z-40 bg-transparent cursor-default" 
+                    onClick={() => setShowEmojiPicker(false)} 
+                  />
+                  <div className="absolute bottom-full mb-3 right-0 z-50">
+                    <EmojiPicker
+                      onSelectEmoji={handleEmojiSelect}
+                      onClose={() => setShowEmojiPicker(false)}
+                    />
+                  </div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
 
           <form onSubmit={handleSend} className="flex items-center gap-2">
             <button

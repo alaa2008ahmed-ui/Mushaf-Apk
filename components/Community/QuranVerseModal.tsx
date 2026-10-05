@@ -124,13 +124,52 @@ const normalizeArabic = (text: string) => {
     .replace(/[ىي]/g, 'ي');
 };
 
+interface QuranIndexItem {
+  surahNumber: number;
+  surahName: string;
+  ayahNumber: number;
+  text: string;
+  page: number;
+  juz: number;
+}
+
+const ALL_QURAN_AYAHS: QuranIndexItem[] = [];
+quranData.surahs.forEach((s: any) => {
+  s.ayahs.forEach((ay: any) => {
+    ALL_QURAN_AYAHS.push({
+      surahNumber: s.number,
+      surahName: s.name,
+      ayahNumber: ay.numberInSurah,
+      text: ay.text,
+      page: ay.page || 1,
+      juz: ay.juz || 1
+    });
+  });
+});
+
+const QUICK_SUGGESTIONS = [
+  { label: 'سورة الفاتحة 📖', surah: 1, ayah: 1 },
+  { label: 'آية الكرسي 🌟', surah: 2, ayah: 255 },
+  { label: 'خواتيم البقرة 🕊️', surah: 2, ayah: 285 },
+  { label: 'سورة الكهف 🌿', surah: 18, ayah: 1 },
+  { label: 'سورة يس 💎', surah: 36, ayah: 1 },
+  { label: 'سورة الرحمن 🌸', surah: 55, ayah: 1 },
+  { label: 'سورة الملك 👑', surah: 67, ayah: 1 },
+  { label: 'سورة الإخلاص 🤍', surah: 112, ayah: 1 },
+];
+
 const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSendVerse }) => {
+  const [step, setStep] = useState<'search' | 'customize'>('search');
+  const [quranSearchQuery, setQuranSearchQuery] = useState('');
+  const [browseSurah, setBrowseSurah] = useState<number>(1);
+  const [searchMode, setSearchMode] = useState<'search' | 'browse'>('search');
+
   const [shareType, setShareType] = useState<'text' | 'image' | 'page' | 'audio'>('page');
-  const [selectedSurah, setSelectedSurah] = useState<number>(47); // Default to Surah Muhammad as in image or 1
+  const [selectedSurah, setSelectedSurah] = useState<number>(1);
   const [fromAyah, setFromAyah] = useState<number>(1);
   const [toAyah, setToAyah] = useState<number>(1);
   
-  const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[8]); // Default amber/sand background as in Image 1
+  const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[8]); // Default amber/sand background
   const [selectedFrame, setSelectedFrame] = useState(FRAMES[0]);
   const [fontSize, setFontSize] = useState(20);
   const [textColor, setTextColor] = useState(TEXT_COLORS[0]);
@@ -146,6 +185,19 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
   const [isProcessing, setIsProcessing] = useState(false);
 
   const previewCardRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset to search step on open and auto-focus search input
+  useEffect(() => {
+    if (isOpen) {
+      setStep('search');
+      setQuranSearchQuery('');
+      setSearchMode('search');
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 150);
+    }
+  }, [isOpen]);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -154,6 +206,29 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
 
   const getSurahName = (s: number) => {
     return SURAH_NAMES_AR[s - 1] || '';
+  };
+
+  // Live Quran Search Results
+  const searchResults = useMemo(() => {
+    const q = normalizeArabic(quranSearchQuery.trim().toLowerCase());
+    if (!q) return [];
+    const results: QuranIndexItem[] = [];
+    for (const item of ALL_QURAN_AYAHS) {
+      const normText = normalizeArabic(item.text);
+      const normSurah = normalizeArabic(item.surahName);
+      if (normText.includes(q) || normSurah.includes(q)) {
+        results.push(item);
+        if (results.length >= 60) break;
+      }
+    }
+    return results;
+  }, [quranSearchQuery]);
+
+  const handleSelectAyahForCustomization = (surahNum: number, ayahNum: number) => {
+    setSelectedSurah(surahNum);
+    setFromAyah(ayahNum);
+    setToAyah(ayahNum);
+    setStep('customize');
   };
 
   const currentSurahObj = useMemo(() => {
@@ -371,21 +446,6 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
           exit={{ scale: 0.92, opacity: 0, y: 15 }}
           className="bg-white dark:bg-slate-900 border border-emerald-500/30 rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[92vh] relative"
         >
-          {/* Header */}
-          <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50 dark:bg-slate-900/90">
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-            >
-              <X size={18} />
-            </button>
-            <h3 className="text-sm font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-              <span>خيارات المشاركة</span>
-              <FileText size={16} />
-            </h3>
-            <div className="w-6" />
-          </div>
-
           {/* Toast message popup */}
           {toastMsg && (
             <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-slate-900/95 text-emerald-400 text-xs font-bold px-4 py-1.5 rounded-full shadow-xl border border-emerald-500/40 z-50 flex items-center gap-1.5 animate-fadeIn">
@@ -394,81 +454,285 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
             </div>
           )}
 
-          {/* Share Type Selector */}
-          <div className="p-3 pb-2 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900">
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl gap-1">
-              <button
-                onClick={() => setShareType('text')}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
-                  shareType === 'text'
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <Type size={14} />
-                <span>نص</span>
-              </button>
-
-              <button
-                onClick={() => setShareType('image')}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
-                  shareType === 'image'
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <ImageIcon size={14} />
-                <span>صورة</span>
-              </button>
-
-              <button
-                onClick={() => setShareType('page')}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
-                  shareType === 'page'
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <FileText size={14} />
-                <span>صفحة</span>
-              </button>
-
-              <button
-                onClick={() => setShareType('audio')}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
-                  shareType === 'audio'
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <Volume2 size={14} />
-                <span>صوت</span>
-              </button>
-            </div>
-
-            {/* Range Selector: من و إلى */}
-            <div className="flex justify-between items-center gap-3 mt-3">
-              <div className="flex-1">
-                <label className="block text-[10px] text-center mb-1 font-bold text-slate-500 dark:text-slate-400">من</label>
+          {/* ========================================================================= */}
+          {/* STEP 1: QURAN SEARCH & AYAH SELECTION                                    */}
+          {/* ========================================================================= */}
+          {step === 'search' && (
+            <div className="flex flex-col flex-1 overflow-hidden">
+              {/* Header */}
+              <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50 dark:bg-slate-900/90">
                 <button
-                  onClick={() => setRangeSelectorOpen('from')}
-                  className="w-full py-2 px-3 text-xs font-bold border-2 border-emerald-500/40 hover:border-emerald-500 rounded-2xl text-center bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm active:scale-98 transition-all"
+                  onClick={onClose}
+                  className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
-                  سورة {getSurahName(selectedSurah)} (الآية {toArabic(fromAyah)})
+                  <X size={18} />
+                </button>
+                <h3 className="text-sm font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                  <Search size={16} />
+                  <span>البحث في القرآن الكريم واختيار آية</span>
+                </h3>
+                <div className="w-6" />
+              </div>
+
+              {/* Search Bar Input */}
+              <div className="p-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0">
+                <div className="relative">
+                  <Search size={18} className="absolute right-3.5 top-3 text-emerald-600 dark:text-emerald-400" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={quranSearchQuery}
+                    onChange={(e) => setQuranSearchQuery(e.target.value)}
+                    placeholder="ابحث بالكلمة، الآية، أو اسم السورة..."
+                    className="w-full pr-10 pl-9 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white placeholder:text-slate-400"
+                  />
+                  {quranSearchQuery && (
+                    <button
+                      onClick={() => setQuranSearchQuery('')}
+                      className="absolute left-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Sub-modes: بحث حر / تصفح حسب السورة */}
+                <div className="flex items-center gap-2 mt-2.5">
+                  <button
+                    onClick={() => setSearchMode('search')}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                      searchMode === 'search'
+                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                        : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    🔍 نتائج البحث المباشر {quranSearchQuery ? `(${searchResults.length})` : ''}
+                  </button>
+                  <button
+                    onClick={() => setSearchMode('browse')}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                      searchMode === 'browse'
+                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                        : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    📖 تصفح السور والآيات
+                  </button>
+                </div>
+              </div>
+
+              {/* Content area */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {searchMode === 'search' && (
+                  <>
+                    {quranSearchQuery.trim() === '' ? (
+                      <div>
+                        <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5 px-1">
+                          <Sparkles size={14} className="text-amber-500" />
+                          <span>آيات وسور مقترحة ومباركة:</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {QUICK_SUGGESTIONS.map((item, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleSelectAyahForCustomization(item.surah, item.ayah)}
+                              className="p-2.5 bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border border-slate-200 dark:border-slate-700/80 hover:border-emerald-500/40 rounded-2xl text-right text-xs font-bold text-slate-800 dark:text-slate-200 transition-all flex items-center justify-between group active:scale-98"
+                            >
+                              <span>{item.label}</span>
+                              <ArrowRight size={14} className="text-slate-400 group-hover:text-emerald-500 rotate-180 transition-colors" />
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-center text-slate-400 dark:text-slate-500 mt-4">
+                          اكتب أي كلمة أو جزء من آية في شريط البحث أعلاه للبحث في كامل المصحف الشريف
+                        </p>
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Search size={36} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                          لم يتم العثور على آيات مطابقة لـ "{quranSearchQuery}"
+                        </p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          تأكد من كتابة الكلمة بشكل صحيح أو جرب كلمة أخرى
+                        </p>
+                      </div>
+                    ) : (
+                      searchResults.map((res) => (
+                        <div
+                          key={`${res.surahNumber}_${res.ayahNumber}`}
+                          onClick={() => handleSelectAyahForCustomization(res.surahNumber, res.ayahNumber)}
+                          className="p-3 bg-white dark:bg-slate-800/90 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-700/80 hover:border-emerald-500/50 rounded-2xl cursor-pointer transition-all active:scale-[0.99] shadow-sm group"
+                        >
+                          <div className="flex items-center justify-between mb-1.5 text-xs">
+                            <span className="font-bold text-emerald-700 dark:text-emerald-400 group-hover:text-emerald-600">
+                              سورة {res.surahName} - الآية {toArabic(res.ayahNumber)}
+                            </span>
+                            <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-700/60 px-2 py-0.5 rounded-full">
+                              صـ {toArabic(res.page)} • جـ {toArabic(res.juz)}
+                            </span>
+                          </div>
+                          <p 
+                            className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-arabic"
+                            style={{ fontFamily: 'amiri' }}
+                          >
+                            ﴿ {res.text} ﴾
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </>
+                )}
+
+                {searchMode === 'browse' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Surah List */}
+                    <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
+                      <span className="text-xs font-bold text-slate-400 sticky top-0 bg-white dark:bg-slate-900 py-1 block">
+                        اختر السورة:
+                      </span>
+                      {quranData.surahs.map(s => (
+                        <button
+                          key={s.number}
+                          onClick={() => setBrowseSurah(s.number)}
+                          className={`w-full text-right p-2 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${
+                            browseSurah === s.number
+                              ? 'bg-emerald-600 text-white shadow-sm'
+                              : 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          <span>{s.number}. سورة {s.name}</span>
+                          <span className={`text-[10px] ${browseSurah === s.number ? 'text-emerald-100' : 'text-slate-400'}`}>
+                            {toArabic(s.ayahs.length)} آية
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Ayahs of chosen Surah */}
+                    <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
+                      <span className="text-xs font-bold text-slate-400 sticky top-0 bg-white dark:bg-slate-900 py-1 block">
+                        اختر رقم الآية من سورة {getSurahName(browseSurah)}:
+                      </span>
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {Array.from({ length: quranData.surahs.find(s => s.number === browseSurah)?.ayahs.length || 1 }, (_, i) => i + 1).map(aNum => (
+                          <button
+                            key={aNum}
+                            onClick={() => handleSelectAyahForCustomization(browseSurah, aNum)}
+                            className="py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-emerald-600 hover:text-white text-slate-800 dark:text-slate-200 transition-colors shadow-sm active:scale-95"
+                          >
+                            {toArabic(aNum)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* STEP 2: SHARE CARD CUSTOMIZATION VIEW                                     */}
+          {/* ========================================================================= */}
+          {step === 'customize' && (
+            <div className="flex flex-col flex-1 overflow-hidden">
+              {/* Header */}
+              <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50 dark:bg-slate-900/90">
+                <button
+                  onClick={() => setStep('search')}
+                  className="px-2.5 py-1 rounded-xl bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  <ArrowRight size={14} />
+                  <span>تغيير الآية</span>
+                </button>
+                <h3 className="text-sm font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                  <FileText size={16} />
+                  <span>خيارات المشاركة (سورة {getSurahName(selectedSurah)})</span>
+                </h3>
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+                >
+                  <X size={18} />
                 </button>
               </div>
 
-              <div className="flex-1">
-                <label className="block text-[10px] text-center mb-1 font-bold text-slate-500 dark:text-slate-400">إلى</label>
-                <button
-                  onClick={() => setRangeSelectorOpen('to')}
-                  className="w-full py-2 px-3 text-xs font-bold border-2 border-emerald-500/40 hover:border-emerald-500 rounded-2xl text-center bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm active:scale-98 transition-all"
-                >
-                  سورة {getSurahName(selectedSurah)} (الآية {toArabic(toAyah)})
-                </button>
+              {/* Share Type Selector */}
+              <div className="p-3 pb-2 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900">
+                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl gap-1">
+                  <button
+                    onClick={() => setShareType('text')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+                      shareType === 'text'
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Type size={14} />
+                    <span>نص</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShareType('image')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+                      shareType === 'image'
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <ImageIcon size={14} />
+                    <span>صورة</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShareType('page')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+                      shareType === 'page'
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <FileText size={14} />
+                    <span>صفحة</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShareType('audio')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+                      shareType === 'audio'
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Volume2 size={14} />
+                    <span>صوت</span>
+                  </button>
+                </div>
+
+                {/* Range Selector: من و إلى */}
+                <div className="flex justify-between items-center gap-3 mt-3">
+                  <div className="flex-1">
+                    <label className="block text-[10px] text-center mb-1 font-bold text-slate-500 dark:text-slate-400">من</label>
+                    <button
+                      onClick={() => setRangeSelectorOpen('from')}
+                      className="w-full py-2 px-3 text-xs font-bold border-2 border-emerald-500/40 hover:border-emerald-500 rounded-2xl text-center bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm active:scale-98 transition-all"
+                    >
+                      سورة {getSurahName(selectedSurah)} (الآية {toArabic(fromAyah)})
+                    </button>
+                  </div>
+
+                  <div className="flex-1">
+                    <label className="block text-[10px] text-center mb-1 font-bold text-slate-500 dark:text-slate-400">إلى</label>
+                    <button
+                      onClick={() => setRangeSelectorOpen('to')}
+                      className="w-full py-2 px-3 text-xs font-bold border-2 border-emerald-500/40 hover:border-emerald-500 rounded-2xl text-center bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm active:scale-98 transition-all"
+                    >
+                      سورة {getSurahName(selectedSurah)} (الآية {toArabic(toAyah)})
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
           {/* Range Picker Modal (Surah & Ayah selection) */}
           <AnimatePresence>
@@ -896,7 +1160,7 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
             {/* Bottom 4 Action Buttons matching Image 1 & 2 */}
             <div className="grid grid-cols-4 gap-2 pt-1">
               <button
-                onClick={onClose}
+                onClick={() => setStep('search')}
                 className="py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all text-center"
               >
                 رجوع
@@ -928,6 +1192,8 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
               </button>
             </div>
           </div>
+        </div>
+      )}
         </motion.div>
       </div>
     </AnimatePresence>

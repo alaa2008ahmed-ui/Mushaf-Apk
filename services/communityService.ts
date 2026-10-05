@@ -3,6 +3,7 @@ import {
   collection, doc, setDoc, getDoc, getDocs, onSnapshot, 
   updateDoc, deleteDoc 
 } from 'firebase/firestore';
+import { SUPPORT_AVATAR_BASE64 } from '../src/supportAvatarBase64';
 
 export interface QuranVerseAttachment {
   surahName: string;
@@ -79,7 +80,7 @@ export const ADMIN_USER: CommunityUser = {
   accountCode: 'ADMIN-OFFICIAL',
   country: 'الإدارة 🛡️',
   bio: 'أهلاً بك! تواصل معنا هنا في حال مواجهة أي مشكلة بالتطبيق.',
-  avatarUrl: '/support_icon.jpg',
+  avatarUrl: SUPPORT_AVATAR_BASE64,
   isOnline: true,
   createdAt: new Date('2026-01-01').toISOString()
 };
@@ -1064,8 +1065,19 @@ class CommunityService {
     );
   }
 
+  public getOtherUsersCount(): number {
+    const current = this.getCurrentUser();
+    return Array.from(this.usersMap.values()).filter(u => 
+      !this.isLegacyGoogleUser(u) && 
+      u.username && 
+      u.username.trim().length > 0 && 
+      u.userId !== ADMIN_USER_ID &&
+      (!current || u.userId !== current.userId)
+    ).length;
+  }
+
   public getTotalRegisteredCount(): number {
-    return Array.from(this.usersMap.values()).filter(u => !this.isLegacyGoogleUser(u) && u.username && u.username.trim().length > 0 && u.userId !== ADMIN_USER_ID).length;
+    return this.getOtherUsersCount();
   }
 
   public getVisibleUsers(searchQuery: string = '', includeSelf: boolean = false): CommunityUser[] {
@@ -1083,20 +1095,20 @@ class CommunityService {
       // 1. Completely exclude legacy Google auth accounts / Alaa Ahmed
       if (this.isLegacyGoogleUser(u)) return false;
 
-      // Filter out official Support Admin from users directory
+      // 2. Technical Support only appears in chats tab, not in members directory
       if (u.userId === ADMIN_USER_ID) return false;
 
-      // 2. Filter out self (current user) unless explicitly requested
+      // 3. Filter out self (current user) unless explicitly requested
       const isCurrentSelf = this.isSelf(u);
       if (!includeSelf && isCurrentSelf) return false;
       
-      // 3. Must have valid username
+      // 4. Must have valid username
       if (!u.username || !u.username.trim()) return false;
 
-      // 4. Exclude blocked users (unless self)
+      // 5. Exclude blocked users (unless self)
       if (!isCurrentSelf && this.isBlockedMutually(u.userId)) return false;
 
-      // 5. Search query matching
+      // 6. Search query matching
       if (queryLower) {
         const matchesName = u.username.toLowerCase().includes(queryLower);
         const matchesCountry = u.country?.toLowerCase().includes(queryLower);
@@ -1113,7 +1125,7 @@ class CommunityService {
       if (aSelf && !bSelf) return -1;
       if (!aSelf && bSelf) return 1;
 
-      // 2. Online users next
+      // 2. Online users strictly first at the top
       const aOnline = this.isUserOnline(a);
       const bOnline = this.isUserOnline(b);
       if (aOnline && !bOnline) return -1;
@@ -1313,12 +1325,12 @@ class CommunityService {
     const current = this.getCurrentUser();
     const partnersMap = new Map<string, { lastMsg: ChatMessage | null; unread: number; time: string }>();
 
-    // 1. Ensure ADMIN conversation always exists at the top for everyone (except ADMIN user itself)
+    // 1. Ensure Technical Support always appears at the top of the chats tab for users
     if (current.userId !== ADMIN_USER_ID) {
       partnersMap.set(ADMIN_USER_ID, {
         lastMsg: null,
         unread: 0,
-        time: new Date('2099-12-31').toISOString() // Pin at the absolute top
+        time: new Date('2099-12-31').toISOString()
       });
     }
 
@@ -1333,8 +1345,6 @@ class CommunityService {
 
       const existing = partnersMap.get(partnerId);
       const isUnread = m.recipientId === current.userId && !m.isRead;
-
-      // Pin Admin override
       const isPinnedAdmin = partnerId === ADMIN_USER_ID;
       const msgTime = m.createdAt;
 
@@ -1349,7 +1359,7 @@ class CommunityService {
       }
     });
 
-    // Populate from server contacts list
+    // Populate from server contacts list (if contact was initiated)
     this.serverContactsList.forEach(c => {
       if (c.userId === current.userId) {
         const partnerId = c.partnerId;
@@ -1367,7 +1377,7 @@ class CommunityService {
 
     const conversations: ChatConversation[] = [];
     partnersMap.forEach((val, partnerId) => {
-      const partnerUser = this.usersMap.get(partnerId) || (partnerId === ADMIN_USER_ID ? ADMIN_USER : {
+      const partnerUser = partnerId === ADMIN_USER_ID ? ADMIN_USER : (this.usersMap.get(partnerId) || {
         userId: partnerId,
         username: 'مستخدم المصحف',
         country: 'غير محدد',

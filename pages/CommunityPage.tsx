@@ -4,7 +4,8 @@ import {
   ArrowRight, Search, MessageSquare, Users, Ban, User, Edit3, 
   Sparkles, Globe, Shield, CheckCircle2, UserX, RefreshCw, Trash2, KeyRound, Copy
 } from 'lucide-react';
-import { communityService, CommunityUser, ChatConversation } from '../services/communityService';
+import { communityService, CommunityUser, ChatConversation, ADMIN_USER_ID } from '../services/communityService';
+import { SUPPORT_AVATAR_BASE64 } from '../src/supportAvatarBase64';
 import UsernameModal from '../components/Community/UsernameModal';
 import { AdminDashboardModal } from '../components/Community/AdminDashboardModal';
 import BottomBar from '../components/BottomBar';
@@ -20,7 +21,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
     if (initialTab && ['users', 'chats', 'blocked'].includes(initialTab)) {
       return initialTab;
     }
-    return 'chats';
+    return 'users';
   });
 
   const setActiveTab = (tab: 'users' | 'chats' | 'blocked') => {
@@ -131,6 +132,10 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
 
   const blockedUsers = communityService.getMyBlockedUsers();
 
+  const activeUserChatsCount = useMemo(() => {
+    return chats.filter(c => c.partner.userId !== ADMIN_USER_ID).length;
+  }, [chats]);
+
   const filteredChats = useMemo(() => {
     if (!searchQuery.trim()) return chats;
     const q = searchQuery.toLowerCase().trim();
@@ -222,45 +227,42 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
           )}
         </div>
 
-        {/* Navigation Tabs (Chats first for dedicated chat experience) */}
-        <div className="flex items-center gap-2 bg-slate-200/60 dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-300/50 dark:border-slate-800 mb-3">
+        {/* Navigation Tabs (Equally divided 3 tabs: Members, Chats, Blocked) */}
+        <div className="grid grid-cols-3 gap-1.5 bg-slate-200/60 dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-300/50 dark:border-slate-800 mb-3">
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`w-full flex items-center justify-center py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all truncate ${
+              activeTab === 'users'
+                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-md'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <span>الأعضاء ({totalUsersCount})</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('chats')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all relative ${
+            className={`w-full flex items-center justify-center py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all relative truncate ${
               activeTab === 'chats'
                 ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-md'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <MessageSquare size={16} />
-            <span>المحادثات ({chats.length})</span>
+            <span>المحادثة ({activeUserChatsCount})</span>
             {chats.some(c => c.unreadCount > 0) && (
               <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-2 left-2" />
             )}
           </button>
 
           <button
-            onClick={() => setActiveTab('users')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-              activeTab === 'users'
-                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            <Users size={16} />
-            <span>المستخدمون ({totalUsersCount})</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('blocked')}
-            className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+            className={`w-full flex items-center justify-center py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all truncate ${
               activeTab === 'blocked'
                 ? 'bg-white dark:bg-slate-800 text-rose-500 shadow-md'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Ban size={15} />
-            <span>المحظورون</span>
+            <span>الحظر</span>
           </button>
         </div>
 
@@ -365,26 +367,27 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                     key={u.userId}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl py-2.5 px-3.5 flex items-center justify-between shadow-sm hover:shadow-md transition-all"
+                    onClick={() => handleStartChat(u.userId)}
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl py-3 px-4 flex items-center justify-between shadow-sm hover:shadow-md hover:border-emerald-500/40 transition-all cursor-pointer active:scale-[0.99] group"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="relative flex-shrink-0">
-                        <div className="w-10 h-10 rounded-full font-bold flex items-center justify-center overflow-hidden bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <div className="w-11 h-11 rounded-full font-bold flex items-center justify-center overflow-hidden bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                           {u.avatarUrl ? (
                             <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" />
                           ) : (
-                            <User size={20} />
+                            <User size={22} />
                           )}
                         </div>
                         {isOnline ? (
-                          <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" title="متصل الآن" />
+                          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" title="متصل الآن" />
                         ) : (
-                          <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-slate-400 border-2 border-white dark:border-slate-900 opacity-60" title="غير متصل" />
+                          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white dark:border-slate-900 opacity-60" title="غير متصل" />
                         )}
                       </div>
 
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                           {u.username}
                         </h3>
                         <div className="flex items-center gap-2 text-xs mt-0.5 flex-wrap">
@@ -400,28 +403,6 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                           </p>
                         )}
                       </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 flex-shrink-0 mr-2">
-                      <button
-                        type="button"
-                        onClick={() => handleStartChat(u.userId)}
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95"
-                      >
-                        <MessageSquare size={13} />
-                        <span>محادثة</span>
-                      </button>
-
-                      {u.userId !== 'usr_admin_official' && (
-                        <button
-                          type="button"
-                          onClick={() => setUserToBlock(u)}
-                          className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors active:scale-95"
-                          title="حظر المستخدم"
-                        >
-                          <Ban size={15} />
-                        </button>
-                      )}
                     </div>
                   </motion.div>
                 );
@@ -456,8 +437,17 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center border border-emerald-500/20 overflow-hidden">
-                            {chat.partner.avatarUrl ? (
-                              <img src={chat.partner.avatarUrl} alt={chat.partner.username} className="w-full h-full object-cover" />
+                            {(chat.partner.userId === ADMIN_USER_ID ? SUPPORT_AVATAR_BASE64 : chat.partner.avatarUrl) ? (
+                              <img 
+                                src={chat.partner.userId === ADMIN_USER_ID ? SUPPORT_AVATAR_BASE64 : chat.partner.avatarUrl} 
+                                alt={chat.partner.username} 
+                                className="w-full h-full object-cover" 
+                                onError={(e) => {
+                                  if (chat.partner.userId === ADMIN_USER_ID) {
+                                    e.currentTarget.src = SUPPORT_AVATAR_BASE64;
+                                  }
+                                }}
+                              />
                             ) : (
                               <User size={24} />
                             )}
