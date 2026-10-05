@@ -9,6 +9,7 @@ import { communityService, CommunityUser, ChatMessage, QuranVerseAttachment, ADM
 import { SUPPORT_AVATAR_BASE64 } from '../src/supportAvatarBase64';
 import EmojiPicker from '../components/Community/EmojiPicker';
 import QuranVerseModal from '../components/Community/QuranVerseModal';
+import { Capacitor } from '@capacitor/core';
 
 interface DirectChatPageProps {
   partnerUserId: string;
@@ -644,6 +645,19 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
 
   const startRecording = async () => {
     if (isBlocked) return;
+
+    // Direct native platform permission prompt trigger
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
+        const checkPerm = await SpeechRecognition.checkPermissions();
+        if (checkPerm.speechRecognition !== 'granted') {
+          await SpeechRecognition.requestPermissions();
+        }
+      } catch (permError) {
+        console.warn('Native speech recognition permission check failed (proceeding to web API):', permError);
+      }
+    }
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
