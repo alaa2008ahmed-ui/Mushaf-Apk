@@ -307,7 +307,7 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
 
   const handleCopy = async () => {
     if (shareType === 'text') {
-      const textToCopy = `﴿ ${getCombinedAyahsText()} ﴾\nسورة ${getSurahName(selectedSurah)} (الآيات ${toArabic(fromAyah)} إلى ${toArabic(toAyah)})\nمصحف احمد وليلي`;
+      const textToCopy = `﴿ ${getCombinedAyahsText()} ﴾\nسورة ${getSurahName(selectedSurah)} (الآيات ${toArabic(fromAyah)} إلى ${toArabic(toAyah)})\nمصحف أحمد وليلى`;
       await navigator.clipboard.writeText(textToCopy);
       showToast('تم نسخ نص الآية بنجاح 📋');
     } else if (previewCardRef.current) {
@@ -318,7 +318,7 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
             await navigator.clipboard.write([new (window as any).ClipboardItem({ 'image/png': blob })]);
             showToast('تم نسخ صورة البطاقة بنجاح 🖼️');
           } else {
-            const textToCopy = `﴿ ${getCombinedAyahsText()} ﴾\nسورة ${getSurahName(selectedSurah)}\nمصحف احمد وليلي`;
+            const textToCopy = `﴿ ${getCombinedAyahsText()} ﴾\nسورة ${getSurahName(selectedSurah)}\nمصحف أحمد وليلى`;
             await navigator.clipboard.writeText(textToCopy);
             showToast('تم نسخ النص بنجاح 📋');
           }
@@ -334,7 +334,7 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
     setIsProcessing(true);
 
     const shareTitle = `سورة ${getSurahName(selectedSurah)}`;
-    const shareText = `﴿ ${shareType === 'page' ? getCombinedPageText() : getCombinedAyahsText()} ﴾\nسورة ${getSurahName(selectedSurah)} (الآية ${toArabic(fromAyah)})\nمصحف احمد وليلي`;
+    const shareText = `﴿ ${shareType === 'page' ? getCombinedPageText() : getCombinedAyahsText()} ﴾\nسورة ${getSurahName(selectedSurah)} (الآية ${toArabic(fromAyah)})\nمصحف أحمد وليلى`;
 
     try {
       if (shareType === 'audio') {

@@ -4,6 +4,7 @@ import {
   updateDoc, deleteDoc 
 } from 'firebase/firestore';
 import { SUPPORT_AVATAR_BASE64 } from '../src/supportAvatarBase64';
+import { checkContentModeration } from '../utils/contentModerator';
 
 export interface QuranVerseAttachment {
   surahName: string;
@@ -52,10 +53,14 @@ export interface ChatMessage {
   chatId: string;
   senderId: string;
   recipientId: string;
+  targetRecipientId?: string;
   text: string;
   verseData?: QuranVerseAttachment;
   audioUrl?: string;
   isRead: boolean;
+  isViolationReport?: boolean;
+  isBroadcast?: boolean;
+  broadcastBatchId?: string;
   createdAt: string;
 }
 
@@ -778,11 +783,24 @@ class CommunityService {
 
   public async purgeExpiredServerMessages() {
     try {
-      const cutoffTime = Date.now() - (24 * 60 * 60 * 1000); // 24 hours ago
+      const cutoffTime = Date.now() - (24 * 60 * 60 * 1000); // 24 hours ago for regular peer messages only
       const snapshot = await getDocs(collection(db, 'messages'));
       snapshot.forEach((docSnap) => {
         const msg = docSnap.data() as ChatMessage;
         if (msg && msg.createdAt) {
+          // ALWAYS preserve support messages, violation reports, and broadcast announcements permanently on server!
+          const isPermanentServerMessage = (
+            msg.senderId === ADMIN_USER_ID ||
+            msg.recipientId === ADMIN_USER_ID ||
+            msg.isViolationReport ||
+            msg.isBroadcast ||
+            msg.messageId?.startsWith('msg_report_') ||
+            msg.text?.includes('[بلاغ آلي - محتوى محظور]')
+          );
+          if (isPermanentServerMessage) {
+            return; // Never auto-delete from server
+          }
+
           const msgTime = new Date(msg.createdAt).getTime();
           if (!isNaN(msgTime) && msgTime < cutoffTime) {
             deleteDoc(doc(db, 'messages', docSnap.id)).catch(() => {});
@@ -1221,6 +1239,63 @@ class CommunityService {
     if (!this.isProfileComplete()) {
       throw new Error('عفواً، يرجى حفظ اسمك وبياناتك وصورتك الشخصية أولاً لبدء إرسال الرسائل.');
     }
+
+    // --- Automated Content Moderation Check (Option 1: Block message + Send report to Admin /alaa.ahmed) ---
+    const checkText = (text || '') + (verseData?.customNote ? ' ' + verseData.customNote : '');
+    const modResult = checkContentModeration(checkText);
+
+    if (modResult.isViolating) {
+      // 1. Send automated report to Technical Support (/alaa.ahmed - ADMIN_USER_ID) using the offending user's account
+      const supportChatId = this.getChatId(current.userId, ADMIN_USER_ID);
+      const reportMsgId = 'msg_report_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      const categoryLabel = modResult.category === 'political' ? 'سياسية/تحريضية' : 'مسيئة وخادشة للحياء';
+      
+      const targetUser = this.getUserById(recipientId);
+      const targetDisplayName = targetUser?.username || 'قارئ';
+      const targetCode = targetUser?.accountCode || recipientId;
+
+      const reportText = `⚠️ [بلاغ آلي - محتوى محظور]
+تم حجب محاولة إرسال رسالة تحتوي على كلمات ${categoryLabel}.
+
+• المستخدم المخالف: ${current.username} (كود الحساب: ${current.accountCode || 'غير محدد'})
+• المرسل إليه: ${targetDisplayName} (كود الحساب: ${targetCode})
+• معرّف الحساب (UID): ${current.userId}
+• الدولة: ${current.country || 'غير محددة'}
+• الكلمات المكتشفة: ${modResult.detectedWords.join(' ، ')}
+• نص الرسالة المحجوبة:
+"${text.trim()}"
+• الوقت: ${new Date().toLocaleString('ar-EG')}`;
+
+      const reportMsg: ChatMessage = {
+        messageId: reportMsgId,
+        chatId: supportChatId,
+        senderId: current.userId,
+        recipientId: ADMIN_USER_ID,
+        targetRecipientId: recipientId,
+        text: reportText,
+        isViolationReport: true,
+        isRead: false,
+        createdAt: new Date().toISOString()
+      };
+
+      this.messagesList.push(reportMsg);
+      this.saveToLocalStorage();
+      this.saveChattedUser(current.userId, ADMIN_USER_ID);
+      this.saveChattedUser(ADMIN_USER_ID, current.userId);
+
+      try {
+        const payload = this.cleanPayload(reportMsg);
+        await setDoc(doc(db, 'messages', reportMsgId), payload);
+      } catch (e) {
+        console.error('Error sending moderation report to Firestore:', e);
+      }
+
+      window.dispatchEvent(new CustomEvent('community_messages_updated'));
+
+      // 2. Throw error to block the message from being sent to the recipient in normal chat
+      throw new Error('عفواً، تحتوي الرسالة على كلمات غير لائقة مخالفة لشروط الاستخدام.');
+    }
+
     const chatId = this.getChatId(current.userId, recipientId);
     const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 
@@ -1307,16 +1382,93 @@ class CommunityService {
   public async clearConversation(partnerUserId: string) {
     const current = this.getCurrentUser();
     const chatId = this.getChatId(current.userId, partnerUserId);
+    const adminChatId = this.getChatId(ADMIN_USER_ID, partnerUserId);
 
-    const toDelete = this.messagesList.filter(m => m.chatId === chatId);
-    this.messagesList = this.messagesList.filter(m => m.chatId !== chatId);
+    const toDeleteMsgIds = new Set<string>();
+    this.messagesList.forEach(m => {
+      if (
+        m.chatId === chatId ||
+        m.chatId === adminChatId ||
+        (m.senderId === current.userId && m.recipientId === partnerUserId) ||
+        (m.senderId === partnerUserId && m.recipientId === current.userId) ||
+        (m.senderId === ADMIN_USER_ID && m.recipientId === partnerUserId) ||
+        (m.senderId === partnerUserId && m.recipientId === ADMIN_USER_ID)
+      ) {
+        toDeleteMsgIds.add(m.messageId);
+      }
+    });
+
+    this.messagesList = this.messagesList.filter(m => !toDeleteMsgIds.has(m.messageId));
     this.saveToLocalStorage();
 
-    toDelete.forEach(async (m) => {
-      try {
-        await deleteDoc(doc(db, 'messages', m.messageId));
-      } catch (e) {}
+    try {
+      const snap = await getDocs(collection(db, 'messages'));
+      const deletePromises: Promise<any>[] = [];
+      snap.forEach(docSnap => {
+        const data = docSnap.data() as ChatMessage;
+        if (
+          data && (
+            toDeleteMsgIds.has(docSnap.id) ||
+            data.chatId === chatId ||
+            data.chatId === adminChatId ||
+            (data.senderId === current.userId && data.recipientId === partnerUserId) ||
+            (data.senderId === partnerUserId && data.recipientId === current.userId) ||
+            (data.senderId === ADMIN_USER_ID && data.recipientId === partnerUserId) ||
+            (data.senderId === partnerUserId && data.recipientId === ADMIN_USER_ID)
+          )
+        ) {
+          deletePromises.push(deleteDoc(doc(db, 'messages', docSnap.id)).catch(() => {}));
+        }
+      });
+      await Promise.allSettled(deletePromises);
+    } catch (e) {
+      console.warn('Error clearing conversation from Firestore:', e);
+    }
+
+    window.dispatchEvent(new CustomEvent('community_messages_updated'));
+  }
+
+  public async clearSupportConversation(partnerUserId: string) {
+    const adminChatId = this.getChatId(ADMIN_USER_ID, partnerUserId);
+    const current = this.getCurrentUser();
+    const currentChatId = this.getChatId(current.userId, partnerUserId);
+
+    const toDeleteMsgIds = new Set<string>();
+    this.messagesList.forEach(m => {
+      if (
+        m.chatId === adminChatId ||
+        m.chatId === currentChatId ||
+        (m.senderId === ADMIN_USER_ID && m.recipientId === partnerUserId) ||
+        (m.senderId === partnerUserId && m.recipientId === ADMIN_USER_ID)
+      ) {
+        toDeleteMsgIds.add(m.messageId);
+      }
     });
+
+    this.messagesList = this.messagesList.filter(m => !toDeleteMsgIds.has(m.messageId));
+    this.saveToLocalStorage();
+
+    try {
+      const snap = await getDocs(collection(db, 'messages'));
+      const deletePromises: Promise<any>[] = [];
+      snap.forEach(docSnap => {
+        const data = docSnap.data() as ChatMessage;
+        if (
+          data && (
+            toDeleteMsgIds.has(docSnap.id) ||
+            data.chatId === adminChatId ||
+            data.chatId === currentChatId ||
+            (data.senderId === ADMIN_USER_ID && data.recipientId === partnerUserId) ||
+            (data.senderId === partnerUserId && data.recipientId === ADMIN_USER_ID)
+          )
+        ) {
+          deletePromises.push(deleteDoc(doc(db, 'messages', docSnap.id)).catch(() => {}));
+        }
+      });
+      await Promise.allSettled(deletePromises);
+    } catch (e) {
+      console.warn('Error clearing support conversation from Firestore:', e);
+    }
 
     window.dispatchEvent(new CustomEvent('community_messages_updated'));
   }
@@ -1556,6 +1708,7 @@ class CommunityService {
     if (targetUsers.length === 0) return 0;
 
     const nowIso = new Date().toISOString();
+    const batchId = 'batch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     let sentCount = 0;
 
     // Send message to every user's support chat
@@ -1569,6 +1722,8 @@ class CommunityService {
         senderId: ADMIN_USER_ID,
         recipientId: targetUser.userId,
         text: cleanText,
+        isBroadcast: true,
+        broadcastBatchId: batchId,
         isRead: false,
         createdAt: nowIso
       };
@@ -1593,6 +1748,26 @@ class CommunityService {
     window.dispatchEvent(new CustomEvent('community_messages_updated'));
 
     return sentCount;
+  }
+
+  public async deleteBroadcastBatch(batchIdOrText: string) {
+    const toDelete = this.messagesList.filter(m => 
+      (m.isBroadcast && m.broadcastBatchId === batchIdOrText) || 
+      (m.senderId === ADMIN_USER_ID && m.text === batchIdOrText)
+    );
+    this.messagesList = this.messagesList.filter(m => 
+      !((m.isBroadcast && m.broadcastBatchId === batchIdOrText) || 
+        (m.senderId === ADMIN_USER_ID && m.text === batchIdOrText))
+    );
+    this.saveToLocalStorage();
+
+    toDelete.forEach(async (m) => {
+      try {
+        await deleteDoc(doc(db, 'messages', m.messageId));
+      } catch (e) {}
+    });
+
+    window.dispatchEvent(new CustomEvent('community_messages_updated'));
   }
 
   public impersonateUser(user: CommunityUser) {

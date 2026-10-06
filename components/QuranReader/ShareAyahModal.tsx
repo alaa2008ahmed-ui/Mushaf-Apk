@@ -308,7 +308,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
         if (isSharing) return;
         setIsSharing(true);
         
-        let shareText = `${surahInfo}\nايات من القران الكريم . بواسطة : مصحف احمد وليلى`;
+        let shareText = `${surahInfo}\nآيات من القرآن الكريم . بواسطة : مصحف أحمد وليلى`;
         
         if (shareType === 'page') {
             let pageSurahInfo = surahInfo;
@@ -320,7 +320,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
                     : `سورة ${getSurahName(firstPageAyah.sNum)} آية ${toArabic(firstPageAyah.numberInSurah)} - سورة ${getSurahName(lastPageAyah.sNum)} آية ${toArabic(lastPageAyah.numberInSurah)}`;
             }
             
-            shareText = `صفحة ${toArabic(pageNum)} - ${pageSurahInfo}\nايات من القران الكريم . بواسطة : مصحف احمد وليلى`;
+            shareText = `صفحة ${toArabic(pageNum)} - ${pageSurahInfo}\nآيات من القرآن الكريم . بواسطة : مصحف أحمد وليلى`;
         }
         
         const fullText = `${combinedText}\n\n${combinedExplanation ? combinedExplanation + '\n\n' : ''}${shareText}`;
@@ -763,7 +763,7 @@ const ShareAyahModal: React.FC<ShareAyahModalProps> = ({
     const handleCopy = async () => {
         if (isCopying) return;
         setIsCopying(true);
-        const shareText = `${surahInfo}\nايات من القران الكريم . بواسطة : مصحف احمد وليلى`;
+        const shareText = `${surahInfo}\nآيات من القرآن الكريم . بواسطة : مصحف أحمد وليلى`;
         const fullText = `${combinedText}\n\n${combinedExplanation ? combinedExplanation + '\n\n' : ''}${shareText}`;
         
         try {

@@ -580,24 +580,36 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
     }
   };
 
-  const handleSend = (e?: React.FormEvent) => {
+  const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!inputText.trim() || isBlocked) return;
 
-    communityService.sendMessage(partnerUserId, inputText);
+    const textToSend = inputText;
+    // Automatically clear the written text immediately from the message input box
     setInputText('');
     setShowEmojiPicker(false);
-    communityService.setTypingStatus(partnerUserId, false);
-    loadData(true);
-    setTimeout(() => scrollToBottom('smooth'), 50);
+
+    try {
+      await communityService.sendMessage(partnerUserId, textToSend);
+      communityService.setTypingStatus(partnerUserId, false);
+      loadData(true);
+      setTimeout(() => scrollToBottom('smooth'), 50);
+    } catch (err: any) {
+      communityService.setTypingStatus(partnerUserId, false);
+      showToast(err?.message || 'عفواً، تعذر إرسال الرسالة');
+    }
   };
 
-  const handleSendVerse = (verse: QuranVerseAttachment) => {
+  const handleSendVerse = async (verse: QuranVerseAttachment) => {
     if (isBlocked) return;
-    communityService.sendMessage(partnerUserId, '', verse);
-    setShowVerseModal(false);
-    loadData(true);
-    setTimeout(() => scrollToBottom('smooth'), 50);
+    try {
+      await communityService.sendMessage(partnerUserId, '', verse);
+      setShowVerseModal(false);
+      loadData(true);
+      setTimeout(() => scrollToBottom('smooth'), 50);
+    } catch (err: any) {
+      showToast(err?.message || 'عفواً، تعذر إرسال الرسالة');
+    }
   };
 
   const handleToggleAudio = (url?: string) => {
