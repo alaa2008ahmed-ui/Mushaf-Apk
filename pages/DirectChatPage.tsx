@@ -1008,7 +1008,9 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
             </p>
           </div>
         ) : (
-          messages.map((msg) => {
+          messages
+            .filter((msg) => !communityService.isViolationReportMessage(msg))
+            .map((msg) => {
             const isMe = msg.senderId === currentUser.userId;
             const isSelected = selectedMsgId === msg.messageId;
             const timeStr = new Date(msg.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });

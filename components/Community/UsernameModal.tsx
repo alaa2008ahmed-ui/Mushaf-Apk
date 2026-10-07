@@ -7,6 +7,7 @@ import {
 import { communityService, CommunityUser } from '../../services/communityService';
 import { registerBackInterceptor } from '../../hooks/useBackButton';
 import { AvatarCropperModal } from './AvatarCropperModal';
+import BottomBar from '../BottomBar';
 
 interface UsernameModalProps {
   isOpen: boolean;
@@ -195,6 +196,17 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const newFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Focus navigation refs for mobile keyboard Next ("التالي") and Done ("تم")
+  const customCountryRef = useRef<HTMLInputElement>(null);
+  const bioRef = useRef<HTMLInputElement>(null);
+  const passcodeRef = useRef<HTMLInputElement>(null);
+
+  const newCustomCountryRef = useRef<HTMLInputElement>(null);
+  const newBioRef = useRef<HTMLInputElement>(null);
+  const newPasscodeRef = useRef<HTMLInputElement>(null);
+
+  const restorePasscodeRef = useRef<HTMLInputElement>(null);
+
   // Sync state when modal opens
   useEffect(() => {
     if (!isOpen) return;
@@ -306,8 +318,8 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
     setCropperImgSrc('');
   };
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveProfile = async (e?: React.FormEvent | React.KeyboardEvent) => {
+    e?.preventDefault();
     if (!username.trim() || username.trim().length < 2) {
       setError('يرجى إدخال اسم المستخدم أو اللقب المبارك (حرفين على الأقل)');
       return;
@@ -324,6 +336,11 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
     setSuccessMsg('');
     try {
       await communityService.saveCurrentUser(username, finalCountry, bio, finalAvatar, passcode);
+      if (!communityService.hasUserAnyConversations()) {
+        communityService.setActiveTab('users');
+      } else {
+        communityService.setActiveTab('chats');
+      }
       setSuccessMsg('تم حفظ البيانات بنجاح! جاري الدخول للدردشة...');
       setTimeout(() => {
         if (onSaved) {
@@ -340,8 +357,8 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
     }
   };
 
-  const handleCreateNewAccount = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateNewAccount = async (e?: React.FormEvent | React.KeyboardEvent) => {
+    e?.preventDefault();
     if (!newUsername.trim() || newUsername.trim().length < 2) {
       setError('يرجى إدخال اسم المستخدم الجديد (حرفين على الأقل)');
       return;
@@ -358,6 +375,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
     setSuccessMsg('');
     try {
       const created = await communityService.createNewAccount(newUsername, finalCountry, newBio, finalAvatar, newPasscode);
+      communityService.setActiveTab('users');
       setCurrentUser(created);
       setUsername(created.username);
       if (created.country) {
@@ -392,8 +410,8 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
     }
   };
 
-  const handleRestoreAccount = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRestoreAccount = async (e?: React.FormEvent | React.KeyboardEvent) => {
+    e?.preventDefault();
     const cleanCode = restoreCode.trim();
     if (!cleanCode) {
       setError('يرجى إدخال كود الحساب (مثل MQ-XXXXX) أو اسم المستخدم');
@@ -478,23 +496,15 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
 
   return (
     <div 
-      className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col" 
+      className="h-screen max-h-screen h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col overflow-y-auto overscroll-contain" 
       dir="rtl"
-      style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
+      style={{ 
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 3.75rem + 1cm)'
+      }}
     >
       {/* Full Screen Scrollable Page Body */}
-      <div className="flex-1 w-full max-w-xl mx-auto px-4 py-3 pb-24">
-        {/* Compact Back Row */}
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <button
-            type="button"
-            onClick={handleBackAction}
-            className="p-2 rounded-xl bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 transition-all active:scale-95 flex items-center justify-center flex-shrink-0 shadow-sm"
-            title="الرجوع"
-          >
-            <ArrowRight size={20} />
-          </button>
-        </div>
+      <div className="flex-1 w-full px-2 sm:px-3 py-3">
 
         {/* Mode Switch Tabs */}
           <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/90 rounded-2xl mb-4 border border-slate-200 dark:border-slate-700">
@@ -513,7 +523,6 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <User size={14} />
                   <span>تعديل حسابي</span>
                 </button>
 
@@ -530,7 +539,6 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <Sparkles size={14} className="text-amber-500" />
                   <span>حساب جديد</span>
                 </button>
               </>
@@ -548,7 +556,6 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <User size={14} />
                 <span>إنشاء حساب جديد</span>
               </button>
             )}
@@ -566,7 +573,6 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <LogIn size={14} />
               <span>استعادة حساب</span>
             </button>
           </div>
@@ -651,7 +657,6 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       onClick={() => setAvatarUrl(PRESET_AVATARS[0])}
                       className="mt-1 text-[11px] text-rose-500 hover:underline flex items-center gap-1 font-medium"
                     >
-                      <Trash2 size={11} />
                       <span>استعادة الصورة الافتراضية</span>
                     </button>
                   )}
@@ -686,6 +691,17 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       setError('');
                     }}
                     placeholder=""
+                    enterKeyHint="next"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (country === 'دولة أخرى / كتابة يدوية ✍️' && customCountryRef.current) {
+                          customCountryRef.current.focus();
+                        } else if (bioRef.current) {
+                          bioRef.current.focus();
+                        }
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
                   />
                 </div>
@@ -715,10 +731,18 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   {country === 'دولة أخرى / كتابة يدوية ✍️' && (
                     <div className="mt-2">
                       <input
+                        ref={customCountryRef}
                         type="text"
                         value={customCountry}
                         onChange={(e) => setCustomCountry(e.target.value)}
                         placeholder=""
+                        enterKeyHint="next"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            bioRef.current?.focus();
+                          }
+                        }}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-emerald-500/50 dark:border-emerald-500/50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
                         autoFocus
                       />
@@ -732,10 +756,18 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     نبذة بسيطة (اختياري):
                   </label>
                   <input
+                    ref={bioRef}
                     type="text"
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     placeholder=""
+                    enterKeyHint="next"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        passcodeRef.current?.focus();
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
                   />
                 </div>
@@ -744,17 +776,24 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
                     <span className="flex items-center gap-1">
-                      <Lock size={12} className="text-emerald-500" />
                       <span>رمز مرور سري لحماية الحساب (اختياري):</span>
                     </span>
                     <span className="text-[10px] text-slate-400 font-normal">4-6 أرقام</span>
                   </label>
                   <input
+                    ref={passcodeRef}
                     type="password"
                     maxLength={8}
                     value={passcode}
                     onChange={(e) => setPasscode(e.target.value)}
                     placeholder=""
+                    enterKeyHint="done"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSaveProfile(e);
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white font-mono"
                   />
                 </div>
@@ -854,6 +893,17 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       setError('');
                     }}
                     placeholder=""
+                    enterKeyHint="next"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newCountry === 'دولة أخرى / كتابة يدوية ✍️' && newCustomCountryRef.current) {
+                          newCustomCountryRef.current.focus();
+                        } else if (newBioRef.current) {
+                          newBioRef.current.focus();
+                        }
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
                   />
                 </div>
@@ -883,10 +933,18 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   {newCountry === 'دولة أخرى / كتابة يدوية ✍️' && (
                     <div className="mt-2">
                       <input
+                        ref={newCustomCountryRef}
                         type="text"
                         value={newCustomCountry}
                         onChange={(e) => setNewCustomCountry(e.target.value)}
                         placeholder=""
+                        enterKeyHint="next"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            newBioRef.current?.focus();
+                          }
+                        }}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-emerald-500/50 dark:border-emerald-500/50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
                         autoFocus
                       />
@@ -900,10 +958,18 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     نبذة بسيطة (اختياري):
                   </label>
                   <input
+                    ref={newBioRef}
                     type="text"
                     value={newBio}
                     onChange={(e) => setNewBio(e.target.value)}
                     placeholder=""
+                    enterKeyHint="next"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        newPasscodeRef.current?.focus();
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white"
                   />
                 </div>
@@ -912,17 +978,24 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
                     <span className="flex items-center gap-1">
-                      <Lock size={12} className="text-emerald-500" />
                       <span>رمز مرور سري لحماية هذا الحساب (اختياري):</span>
                     </span>
                     <span className="text-[10px] text-slate-400 font-normal">4-6 أرقام</span>
                   </label>
                   <input
+                    ref={newPasscodeRef}
                     type="password"
                     maxLength={8}
                     value={newPasscode}
                     onChange={(e) => setNewPasscode(e.target.value)}
                     placeholder=""
+                    enterKeyHint="done"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleCreateNewAccount(e);
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white font-mono"
                   />
                 </div>
@@ -955,7 +1028,6 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
             <div className="space-y-4">
               <div className="p-3.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 <p className="font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
-                  <KeyRound size={15} className="text-emerald-500" />
                   <span>فتح حسابك من أي جهاز أو نسخة أخرى:</span>
                 </p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -976,6 +1048,13 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       setError('');
                     }}
                     placeholder=""
+                    enterKeyHint="next"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        restorePasscodeRef.current?.focus();
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white uppercase tracking-wider"
                   />
                 </div>
@@ -985,6 +1064,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     رمز الحماية (PIN) - إن كنت قد قمت بتعيينه:
                   </label>
                   <input
+                    ref={restorePasscodeRef}
                     type="password"
                     maxLength={8}
                     value={restorePasscode}
@@ -993,6 +1073,13 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       setError('');
                     }}
                     placeholder=""
+                    enterKeyHint="done"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleRestoreAccount(e);
+                      }
+                    }}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white font-mono"
                   />
                 </div>
@@ -1031,6 +1118,9 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
           setCropperImgSrc('');
         }}
       />
+
+      {/* Standard App Bottom Bar */}
+      <BottomBar onHomeClick={handleBackAction} onThemesClick={() => {}} showThemes={false} />
     </div>
   );
 };

@@ -2,9 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
     X, Trash2, ShieldAlert, Users, Info, ShieldCheck, Mail, Send, Reply, 
     ArrowRight, User, Globe, Calendar, Activity, UserMinus, Eye, AlertTriangle, 
-    CheckCircle2, Megaphone, Filter, Search, Ban, Clock, UserCheck, History
+    CheckCircle2, Megaphone, Filter, Search, Ban, Clock, UserCheck, History,
+    MessageSquarePlus
 } from 'lucide-react';
 import { communityService, CommunityUser, ServerContact, ChatMessage, ADMIN_USER_ID } from '../../services/communityService';
+import BottomBar from '../BottomBar';
 
 interface AdminDashboardModalProps {
     isOpen: boolean;
@@ -60,6 +62,33 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
     const [userToDeleteConfirm, setUserToDeleteConfirm] = useState<CommunityUser | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+    // Direct Support Message Modal state
+    const [messagingUser, setMessagingUser] = useState<CommunityUser | null>(null);
+    const [adminDirectMessageText, setAdminDirectMessageText] = useState('');
+    const [isSendingDirectMessage, setIsSendingDirectMessage] = useState(false);
+
+    const openSendMessageModal = (user: CommunityUser) => {
+        setMessagingUser(user);
+        setAdminDirectMessageText('');
+    };
+
+    const handleSendDirectMessage = async () => {
+        if (!messagingUser || !adminDirectMessageText.trim()) return;
+        setIsSendingDirectMessage(true);
+        try {
+            await communityService.sendAdminReply(messagingUser.userId, adminDirectMessageText);
+            showAdminToast(`تم إرسال الرسالة إلى "${messagingUser.username || 'المستخدم'}" وستظهر في دعمه الفني ✅`);
+            setMessagingUser(null);
+            setAdminDirectMessageText('');
+            await loadData();
+        } catch (e) {
+            console.error('Error sending direct message:', e);
+            showAdminToast('حدث خطأ أثناء إرسال الرسالة');
+        } finally {
+            setIsSendingDirectMessage(false);
+        }
+    };
 
     const loadData = async () => {
         const uList = await communityService.fetchLatestUsers();
@@ -120,6 +149,23 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
         }
     };
 
+    // Navigation: Home click handles smart back action depending on sub-state
+    const handleHomeClick = () => {
+        if (selectedInspectorUser) {
+            handleCloseInspector();
+            return;
+        }
+        if (selectedUserForSupport) {
+            setSelectedUserForSupport(null);
+            return;
+        }
+        if (selectedViolatorUserId) {
+            setSelectedViolatorUserId(null);
+            return;
+        }
+        onClose();
+    };
+
     const promptDeleteUser = (user: CommunityUser) => {
         setUserToDeleteConfirm(user);
     };
@@ -146,6 +192,10 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
 
     const handleImpersonate = (user: CommunityUser) => {
         communityService.impersonateUser(user);
+        setSelectedInspectorUser(null);
+        setSelectedUserForSupport(null);
+        setSelectedViolatorUserId(null);
+        setActiveTab('users');
         onClose();
     };
 
@@ -474,6 +524,122 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                 </div>
             )}
 
+            {/* Direct Technical Support Message Modal */}
+            {messagingUser && (
+                <div className="fixed inset-0 z-[1400] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 animate-scaleUp text-right" dir="rtl">
+                        <div className="flex items-center justify-between border-b dark:border-slate-800 pb-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                                    <MessageSquarePlus size={22} />
+                                </div>
+                                <div>
+                                    <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">
+                                        إرسال رسالة دعم فني ✉️
+                                    </h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        ستظهر هذه الرسالة مباشرة في محادثة الدعم الفني الخاصة بالمستخدم
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setMessagingUser(null)}
+                                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* User Info Card */}
+                        <div className="p-3 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-9 h-9 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xs overflow-hidden">
+                                    {messagingUser.avatarUrl ? (
+                                        <img src={messagingUser.avatarUrl} alt={messagingUser.username} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span>{messagingUser.username ? messagingUser.username[0] : 'ق'}</span>
+                                    )}
+                                </div>
+                                <div>
+                                    <div className="font-bold text-sm text-slate-900 dark:text-white">{messagingUser.username}</div>
+                                    <div className="text-[11px] text-slate-400 font-mono">كود: {messagingUser.accountCode} • 🌍 {messagingUser.country || 'غير محدد'}</div>
+                                </div>
+                            </div>
+                            <span className="text-[10px] px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full font-bold">
+                                مستلم الرسالة
+                            </span>
+                        </div>
+
+                        {/* Quick Templates */}
+                        <div>
+                            <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1.5">
+                                نماذج رسائل سريعة (انقر للاختيار):
+                            </label>
+                            <div className="flex flex-col gap-1.5">
+                                {[
+                                    'تنبيه: نرجو الالتزام بآداب الحوار القرآني وتجنب الألفاظ غير اللائقة وفقاً لشروط الاستخدام.',
+                                    'تحذير أخير: في حال تكرار إرسال رسائل مسيئة سيتم حظر حسابك نهائياً من التطبيق.',
+                                    'السلام عليكم، تم رصد مخالفة في رسائلكم، نأمل التوضيح أو الالتزام بالضوابط الشرعية.'
+                                ].map((tmpl, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => setAdminDirectMessageText(tmpl)}
+                                        className="text-[11px] bg-slate-100 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-300 hover:text-emerald-600 rounded-xl px-3 py-1.5 border border-slate-200 dark:border-slate-700 transition-all text-right leading-snug cursor-pointer"
+                                    >
+                                        {tmpl}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Message Input */}
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                                نص الرسالة:
+                            </label>
+                            <textarea
+                                rows={4}
+                                value={adminDirectMessageText}
+                                onChange={(e) => setAdminDirectMessageText(e.target.value)}
+                                placeholder="اكتب رسالتك أو التنبيه هنا..."
+                                className="w-full p-3 text-xs sm:text-sm rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white resize-none"
+                            />
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 pt-2">
+                            <button
+                                type="button"
+                                disabled={isSendingDirectMessage || !adminDirectMessageText.trim()}
+                                onClick={handleSendDirectMessage}
+                                className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 text-white rounded-2xl font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                {isSendingDirectMessage ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        <span>جارٍ الإرسال...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send size={15} />
+                                        <span>إرسال للدعم الفني</span>
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                type="button"
+                                disabled={isSendingDirectMessage}
+                                onClick={() => setMessagingUser(null)}
+                                className="py-3 px-5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl font-bold text-xs sm:text-sm transition-all cursor-pointer"
+                            >
+                                إلغاء
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Sub-tabs & Return Button - Headerless Clean Full-Screen Layout */}
             <div 
                 className="flex items-center border-b text-sm font-bold bg-white dark:bg-slate-900 px-3 py-2 shrink-0 shadow-sm gap-2" 
@@ -482,15 +648,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                     paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.5rem)'
                 }}
             >
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all active:scale-95 flex items-center justify-center shadow-sm flex-shrink-0 cursor-pointer"
-                    title="الرجوع"
-                >
-                    <ArrowRight size={20} />
-                </button>
-
                 <div className="flex flex-1 items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl overflow-x-auto no-scrollbar">
                     {/* 1. Users Tab */}
                     <button 
@@ -501,7 +658,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
-                        <Users size={16} />
                         <span>إدارة المستخدمين</span>
                     </button>
 
@@ -514,7 +670,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
-                        <img src="/support_icon.jpg" alt="الدعم الفني" className="w-5 h-5 rounded-full object-cover shadow-sm" />
                         <span>وارد الدعم الفني</span>
                         {supportUserIds.length > 0 && (
                             <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
@@ -532,11 +687,10 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                 : 'text-rose-600 dark:text-rose-400 hover:bg-rose-500/10'
                         }`}
                     >
-                        <ShieldAlert size={16} />
                         <span>الرسائل المسيئة والبلاغات</span>
                         {violationReports.length > 0 && (
                             <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                                activeTab === 'violations' ? 'bg-white text-rose-600' : 'bg-rose-500 text-white'
+                                activeTab === 'violations' ? 'bg-white text-rose-600' : 'bg-rose-50 text-white'
                             }`}>
                                 {unreadViolationsCount > 0 ? unreadViolationsCount : violationReports.length}
                             </span>
@@ -552,18 +706,20 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
-                        <Megaphone size={16} className="text-amber-500" />
                         <span>إرسال جماعي 📢</span>
                     </button>
                 </div>
             </div>
 
             {/* Main Full-Screen Layout Body */}
-            <div className="flex-1 overflow-hidden flex flex-col bg-slate-50/50 dark:bg-slate-950">
+            <div 
+                className="flex-1 overflow-hidden flex flex-col bg-slate-50/50 dark:bg-slate-950"
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 3.75rem + 1cm)' }}
+            >
                 
                 {/* 1. USERS TAB */}
                 {activeTab === 'users' && (
-                    <div className="flex-1 flex flex-col overflow-hidden h-full">
+                    <div className="flex-1 flex flex-col overflow-hidden">
                         {!selectedInspectorUser ? (
                             /* Users List Pane - Full screen width */
                             <div className="flex-1 flex flex-col overflow-y-auto p-4 w-full animate-fadeIn">
@@ -574,35 +730,48 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                 {users.length === 0 ? (
                                     <div className="text-center py-24 opacity-50 text-sm">لا يوجد مستخدمون مسجلون حالياً</div>
                                 ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                                        {users.map((u) => (
-                                            <button 
-                                                key={u.userId}
-                                                onClick={() => openInspectorForUser(u, { tab: 'users' })}
-                                                className="p-3.5 rounded-2xl transition-all text-right flex items-center justify-between gap-3 border bg-white dark:bg-slate-900 hover:bg-emerald-500/5 border-slate-200 dark:border-slate-800/60 shadow-xs cursor-pointer"
-                                            >
-                                                <div className="flex items-center gap-2.5 min-w-0">
-                                                    <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold flex-shrink-0 overflow-hidden border border-emerald-500/15 shadow-xs">
-                                                        {u.avatarUrl ? (
-                                                            <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <span className="text-xs">{u.username ? u.username[0] : 'ق'}</span>
-                                                        )}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <h4 className="font-bold text-xs sm:text-sm truncate leading-tight text-slate-900 dark:text-white">{u.username || 'قارئ بدون اسم'}</h4>
-                                                        <div className="text-[10px] opacity-70 mt-1 flex items-center gap-1.5 flex-wrap font-medium text-slate-600 dark:text-slate-400">
-                                                            <span>🌍 {u.country || 'غير محدد'}</span>
-                                                            <span>•</span>
-                                                            <span className="font-mono">{u.accountCode}</span>
+                                    <div className={
+                                        users.length > 100
+                                            ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2"
+                                            : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5"
+                                    }>
+                                        {users.map((u) => {
+                                            const isDense = users.length > 100;
+                                            return (
+                                                <button 
+                                                    key={u.userId}
+                                                    onClick={() => openInspectorForUser(u, { tab: 'users' })}
+                                                    className={`${
+                                                        isDense ? 'p-2.5 gap-2' : 'p-3.5 gap-3'
+                                                    } rounded-2xl transition-all text-right flex items-center justify-between border bg-white dark:bg-slate-900 hover:bg-emerald-500/5 border-slate-200 dark:border-slate-800/60 shadow-xs cursor-pointer`}
+                                                >
+                                                    <div className={`flex items-center ${isDense ? 'gap-2' : 'gap-2.5'} min-w-0`}>
+                                                        <div className={`${
+                                                            isDense ? 'w-8 h-8' : 'w-10 h-10'
+                                                        } rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold flex-shrink-0 overflow-hidden border border-emerald-500/15 shadow-xs`}>
+                                                            {u.avatarUrl ? (
+                                                                <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <span className={isDense ? "text-[10px]" : "text-xs"}>{u.username ? u.username[0] : 'ق'}</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <h4 className={`font-bold ${isDense ? 'text-xs' : 'text-xs sm:text-sm'} truncate leading-tight text-slate-900 dark:text-white`}>
+                                                                {u.username || 'قارئ بدون اسم'}
+                                                            </h4>
+                                                            <div className={`${isDense ? 'text-[9px]' : 'text-[10px]'} opacity-70 mt-1 flex items-center gap-1 flex-wrap font-medium text-slate-600 dark:text-slate-400`}>
+                                                                <span>🌍 {u.country || 'غير محدد'}</span>
+                                                                <span>•</span>
+                                                                <span className="font-mono">{u.accountCode}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div className="flex-shrink-0">
-                                                    <span className={`w-2.5 h-2.5 rounded-full block ${u.isOnline ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-300 dark:bg-slate-700"}`} />
-                                                </div>
-                                            </button>
-                                        ))}
+                                                    <div className="flex-shrink-0">
+                                                        <span className={`w-2.5 h-2.5 rounded-full block ${u.isOnline ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-300 dark:bg-slate-700"}`} />
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
@@ -611,14 +780,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                             <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 overflow-y-auto p-5 sm:p-6 w-full animate-slideLeft">
                                 
                                 {/* Inspector Header */}
-                                <div className="flex items-center justify-between mb-6 pb-4 border-b dark:border-slate-800">
-                                    <button 
-                                        onClick={handleCloseInspector}
-                                        className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                                    >
-                                        <ArrowRight size={14} />
-                                        <span>رجوع</span>
-                                    </button>
+                                <div className="flex items-center justify-center mb-6 pb-4 border-b dark:border-slate-800">
                                     <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full">
                                         معاينة وتحكم بالحساب
                                     </span>
@@ -679,6 +841,15 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                     <div className="pt-2 flex flex-col gap-2">
                                         <button
                                             type="button"
+                                            onClick={() => openSendMessageModal(selectedInspectorUser)}
+                                            className="w-full py-3 px-4 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-98 text-emerald-700 dark:text-emerald-300 rounded-2xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 border border-emerald-500/25 cursor-pointer"
+                                        >
+                                            <MessageSquarePlus size={16} />
+                                            <span>إرسال رسالة دعم فني للمستخدم</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
                                             onClick={() => handleImpersonate(selectedInspectorUser)}
                                             className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-2xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                                         >
@@ -704,7 +875,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
 
                 {/* 2. SUPPORT INBOX TAB (Genuine User Inquiries Only) */}
                 {activeTab === 'support' && (
-                    <div className="flex-1 flex flex-col overflow-hidden h-full">
+                    <div className="flex-1 flex flex-col overflow-hidden">
                         {!selectedUserForSupport ? (
                             /* Support User List */
                             <div className="flex-1 flex flex-col overflow-y-auto p-4 w-full animate-fadeIn">
@@ -776,14 +947,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                 {/* Support Chat Header */}
                                 <div className="flex items-center justify-between mb-4 pb-3 border-b dark:border-slate-800 flex-wrap gap-2">
                                     <div className="flex items-center gap-2">
-                                        <button 
-                                            onClick={() => setSelectedUserForSupport(null)}
-                                            className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                                        >
-                                            <ArrowRight size={14} />
-                                            <span>رجوع للوارد</span>
-                                        </button>
-
                                         {(() => {
                                             const targetUser = getUserData(selectedUserForSupport);
                                             return (
@@ -888,25 +1051,22 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
 
                 {/* 3. DEDICATED VIOLATIONS & OFFENSIVE MESSAGES TAB */}
                 {activeTab === 'violations' && (
-                    <div className="flex-1 flex flex-col overflow-hidden h-full bg-slate-50/70 dark:bg-slate-950 p-4 sm:p-6">
+                    <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/70 dark:bg-slate-950 p-4 sm:p-6">
                         
                         {!selectedViolatorUserId ? (
                             /* --- View A: Violating Users Grouped List --- */
-                            <div className="flex-1 flex flex-col overflow-hidden h-full">
+                            <div className="flex-1 flex flex-col overflow-hidden">
                                 
                                 {/* Violations Header Controls */}
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b dark:border-slate-800">
                                     <div>
                                         <h3 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
                                             <span className="text-rose-500">🚨</span>
-                                            <span>سجل المخالفين والرسائل المسيئة</span>
+                                            <span>الرسائل المسيئة</span>
                                             <span className="bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs px-2.5 py-0.5 rounded-full font-bold">
                                                 {violatingUserIds.length} مستخدم مخالف ({violationReports.length} بلاغ)
                                             </span>
                                         </h3>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                            تظل هذه البلاغات محفوظة للمراجعة حتى تقوم بحذفها يدوياً.
-                                        </p>
                                     </div>
 
                                     {/* Filter Pills */}
@@ -1026,7 +1186,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                             </div>
                         ) : (
                             /* --- View B: Detailed User's Violations (Drill-down compact view with intended recipient) --- */
-                            <div className="flex-1 flex flex-col overflow-hidden h-full animate-slideLeft">
+                            <div className="flex-1 flex flex-col overflow-hidden animate-slideLeft">
                                 
                                 {(() => {
                                     const violatorUser = getUserData(selectedViolatorUserId);
@@ -1036,14 +1196,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                             {/* Drill-down Header */}
                                             <div className="flex items-center justify-between gap-3 pb-3 border-b dark:border-slate-800 mb-3 flex-wrap">
                                                 <div className="flex items-center gap-2">
-                                                    <button 
-                                                        onClick={() => setSelectedViolatorUserId(null)}
-                                                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                                                    >
-                                                        <ArrowRight size={14} />
-                                                        <span>رجوع لقائمة المخالفين</span>
-                                                    </button>
-
                                                     <div className="flex items-center gap-2 mr-2">
                                                         <div className="w-8 h-8 rounded-full bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold text-xs overflow-hidden border border-rose-500/20 shadow-xs">
                                                             {violatorUser.avatarUrl ? (
@@ -1067,7 +1219,16 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                                 </div>
 
                                                 {/* Actions on violator user */}
-                                                <div className="flex items-center gap-1.5">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <button
+                                                        onClick={() => openSendMessageModal(violatorUser)}
+                                                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                                        title="إرسال رسالة للمستخدم عبر الدعم الفني"
+                                                    >
+                                                        <MessageSquarePlus size={13} />
+                                                        <span>مراسلة المستخدم ✉️</span>
+                                                    </button>
+
                                                     <button
                                                         onClick={() => handleDeleteAllUserViolations(violatorUser.userId)}
                                                         className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
@@ -1129,17 +1290,28 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                                                         </span>
                                                                     </div>
 
-                                                                    <div className="flex items-center gap-2">
+                                                                    <div className="flex items-center gap-1.5">
                                                                         {/* Time */}
                                                                         <span className="text-[10px] text-slate-400 flex items-center gap-1 font-mono">
                                                                             <Clock size={11} />
                                                                             {parsed.timeString}
                                                                         </span>
 
+                                                                        {/* Message violator button */}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => openSendMessageModal(violatorUser)}
+                                                                            className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-lg transition-all cursor-pointer bg-emerald-500/10 flex items-center gap-1"
+                                                                            title="إرسال رسالة لهذا المستخدم تظهر له في الدعم الفني"
+                                                                        >
+                                                                            <MessageSquarePlus size={14} />
+                                                                        </button>
+
                                                                         {/* Delete single report */}
                                                                         <button
+                                                                            type="button"
                                                                             onClick={() => handleDeleteViolationReport(report.messageId)}
-                                                                            className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                                                                            className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
                                                                             title="حذف هذا البلاغ"
                                                                         >
                                                                             <Trash2 size={14} />
@@ -1304,7 +1476,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
                                 <div className="flex items-center justify-between pb-3 border-b dark:border-slate-800">
                                     <h4 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
-                                        <History size={16} className="text-amber-500" />
                                         <span>سجل الرسائل الجماعية ({broadcastBatches.length})</span>
                                     </h4>
                                     <span className="text-xs text-slate-400">
@@ -1353,8 +1524,8 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
 
             </div>
 
-            {/* Footer */}
-            <div className="p-3.5 bg-slate-100 dark:bg-slate-900 border-t dark:border-slate-800 min-h-[46px]" />
+            {/* Footer - Standard BottomBar matching all other pages */}
+            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
         </div>
     );
 };

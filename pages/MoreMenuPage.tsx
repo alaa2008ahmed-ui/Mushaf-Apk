@@ -8,6 +8,7 @@ import { motion } from 'motion/react';
 const ALL_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-14", colorIndex: 0 },
     { id: 'community', label: "💬 مجتمع المصحف والتواصل", className: "col-span-2 h-14", colorIndex: 0 },
+    { id: 'ahl-al-quran', label: "🏆 أهل القرآن (لوحة الشرف)", className: "col-span-2 h-14", colorIndex: 0 },
     { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'adia', label: "🤲 الأدعية", className: "col-span-1 h-14", colorIndex: 1 },

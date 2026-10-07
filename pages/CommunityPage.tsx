@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowRight, Search, MessageSquare, Users, Ban, User, Edit3, 
-  Sparkles, Globe, Shield, CheckCircle2, UserX, RefreshCw, Trash2, KeyRound, Copy
+  Sparkles, Globe, Shield, CheckCircle2, UserX, RefreshCw, Trash2, KeyRound, Copy,
+  BookOpen, Trophy
 } from 'lucide-react';
 import { communityService, CommunityUser, ChatConversation, ADMIN_USER_ID } from '../services/communityService';
 import { SUPPORT_AVATAR_BASE64 } from '../src/supportAvatarBase64';
@@ -17,14 +18,17 @@ interface CommunityPageProps {
 }
 
 const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initialTab }) => {
+  const userManuallySwitchedTabRef = React.useRef(false);
+
   const [activeTab, setActiveTabState] = useState<'users' | 'chats' | 'blocked'>(() => {
     if (initialTab && ['users', 'chats', 'blocked'].includes(initialTab)) {
       return initialTab;
     }
-    return 'users';
+    return communityService.getDefaultTab();
   });
 
   const setActiveTab = (tab: 'users' | 'chats' | 'blocked') => {
+    userManuallySwitchedTabRef.current = true;
     setActiveTabState(tab);
     communityService.setActiveTab(tab);
   };
@@ -33,7 +37,9 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [users, setUsers] = useState<CommunityUser[]>([]);
   const [chats, setChats] = useState<ChatConversation[]>([]);
-  const [totalUsersCount, setTotalUsersCount] = useState<number>(0);
+  const [totalUsersCount, setTotalUsersCount] = useState<number>(() => {
+    return communityService.getTotalRegisteredCount();
+  });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(() => !communityService.isProfileComplete());
 
@@ -77,6 +83,13 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
       loadData();
     });
 
+    communityService.fetchLatestMessages().then(() => {
+      loadData();
+      if (!initialTab && !userManuallySwitchedTabRef.current) {
+        setActiveTabState(communityService.getDefaultTab());
+      }
+    });
+
     loadData();
 
     const handleUpdate = () => {
@@ -105,6 +118,12 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
       setSearchQuery('');
     }
   }, [searchQuery]);
+
+  useEffect(() => {
+    if (!showProfileModal && !initialTab && !userManuallySwitchedTabRef.current) {
+      setActiveTabState(communityService.getDefaultTab());
+    }
+  }, [showProfileModal]);
 
   const handleStartChat = (partnerUserId: string) => {
     if (!communityService.isProfileComplete()) {
@@ -185,31 +204,29 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
 
   return (
     <div 
-      className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white pb-32" 
+      className="h-screen max-h-screen h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col overflow-y-auto overscroll-contain" 
       dir="rtl"
-      style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
+      style={{ 
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 3.75rem + 1cm)'
+      }}
     >
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Compact Navigation Bar: Return + Profile Edit */}
-        <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="w-full px-2 sm:px-3">
+        {/* Top Navigation Bar: Quran Shortcut (Right), Profile Pill (Center), Home Shortcut (Left) */}
+        <div className="flex items-center justify-between mb-3 px-1">
+          {/* Right Icon: Go directly to Holy Quran Page */}
           <button
-            onClick={() => {
-              if (communityService.isImpersonating()) {
-                communityService.exitImpersonate();
-                loadData();
-                showToast('تمت العودة لحسابك الأصلي بنجاح');
-              } else {
-                onBack();
-              }
-            }}
-            className="p-2 rounded-xl bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 transition-all active:scale-95 flex items-center justify-center flex-shrink-0 shadow-sm"
-            title="الرجوع"
+            type="button"
+            onClick={() => onNavigate('quran')}
+            className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
+            title="صفحة القرآن الكريم"
+            aria-label="صفحة القرآن الكريم"
           >
-            <ArrowRight size={20} />
+            <BookOpen size={18} />
           </button>
 
-          {/* Current User Profile Pill (Click to edit) */}
-          {currentUser.username && (
+          {/* Center: Current User Profile Pill (Click to edit) */}
+          {currentUser.username ? (
             <div 
               onClick={() => setShowProfileModal(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-sm overflow-hidden"
@@ -226,9 +243,21 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
               <span className="text-[10px] bg-emerald-500/20 px-1.5 py-0.5 rounded-full font-bold">
                 {currentUser.country || '🌍'}
               </span>
-              <Edit3 size={13} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0 mr-1" />
             </div>
+          ) : (
+            <div />
           )}
+
+          {/* Left Icon: Go directly to Ahl Al-Quran Page */}
+          <button
+            type="button"
+            onClick={() => onNavigate('ahl-al-quran')}
+            className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
+            title="صفحة أهل القرآن الكريم"
+            aria-label="صفحة أهل القرآن الكريم"
+          >
+            <Trophy size={18} />
+          </button>
         </div>
 
         {/* Navigation Tabs (Equally divided 3 tabs: Members, Chats, Blocked) */}
@@ -315,6 +344,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
           )}
         </AnimatePresence>
 
+
         {/* Search Input & Refresh Button (Always available for both chats and users tabs to search for friends) */}
         {(activeTab === 'chats' || activeTab === 'users') && (
           <div className="flex items-center gap-2 mb-4">
@@ -352,7 +382,11 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
 
         {/* Tab 1: Global Users Directory (Excluding current user) */}
         {activeTab === 'users' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className={
+            (users.length > 100 || totalUsersCount > 100)
+              ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-2.5"
+              : "grid grid-cols-1 md:grid-cols-2 gap-3"
+          }>
             {users.length === 0 ? (
               <div className="col-span-full text-center py-12 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6">
                 <Globe size={40} className="mx-auto text-slate-400 mb-2" />
@@ -367,6 +401,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
               users.map((u) => {
                 const isOnline = communityService.isUserOnline(u);
                 const statusText = communityService.getUserStatusText(u);
+                const isDense = users.length > 100 || totalUsersCount > 100;
 
                 return (
                   <motion.div
@@ -374,37 +409,41 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={() => handleStartChat(u.userId)}
-                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl py-3 px-4 flex items-center justify-between shadow-sm hover:shadow-md hover:border-emerald-500/40 transition-all cursor-pointer active:scale-[0.99] group"
+                    className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl ${
+                      isDense ? 'py-2.5 px-2.5 sm:px-3 gap-2' : 'py-3 px-4 gap-3'
+                    } flex items-center justify-between shadow-sm hover:shadow-md hover:border-emerald-500/40 transition-all cursor-pointer active:scale-[0.99] group`}
                   >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className={`flex items-center ${isDense ? 'gap-2' : 'gap-3'} min-w-0 flex-1`}>
                       <div className="relative flex-shrink-0">
-                        <div className="w-11 h-11 rounded-full font-bold flex items-center justify-center overflow-hidden bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <div className={`${
+                          isDense ? 'w-9 h-9 sm:w-10 sm:h-10' : 'w-11 h-11'
+                        } rounded-full font-bold flex items-center justify-center overflow-hidden bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20`}>
                           {u.avatarUrl ? (
                             <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" />
                           ) : (
-                            <User size={22} />
+                            <User size={isDense ? 18 : 22} />
                           )}
                         </div>
                         {isOnline ? (
-                          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" title="متصل الآن" />
+                          <div className={`absolute bottom-0 right-0 ${isDense ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'} rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900`} title="متصل الآن" />
                         ) : (
-                          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white dark:border-slate-900 opacity-60" title="غير متصل" />
+                          <div className={`absolute bottom-0 right-0 ${isDense ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'} rounded-full bg-slate-400 border-2 border-white dark:border-slate-900 opacity-60`} title="غير متصل" />
                         )}
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        <h3 className={`font-bold ${isDense ? 'text-xs sm:text-sm' : 'text-sm'} text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors`}>
                           {u.username}
                         </h3>
-                        <div className="flex items-center gap-2 text-xs mt-0.5 flex-wrap">
-                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{u.country || 'دولة أخرى 🌍'}</span>
+                        <div className={`flex items-center gap-1.5 ${isDense ? 'text-[10px] sm:text-[11px]' : 'text-xs'} mt-0.5 truncate`}>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium truncate">{u.country || 'دولة أخرى 🌍'}</span>
                           <span className="text-slate-300 dark:text-slate-700">•</span>
-                          <span className={isOnline ? "text-emerald-500 font-medium text-[11px]" : "text-slate-400 text-[11px]"}>
+                          <span className={isOnline ? "text-emerald-500 font-medium text-[10px] truncate" : "text-slate-400 text-[10px] truncate"}>
                             {statusText}
                           </span>
                         </div>
                         {u.bio && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                          <p className={`${isDense ? 'text-[10px]' : 'text-[11px]'} text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1`}>
                             {u.bio}
                           </p>
                         )}
@@ -492,7 +531,6 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                 {newMatchingFriends.length > 0 && (
                   <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5 px-1">
-                      <Users size={14} className="text-emerald-500" />
                       <span>أصدقاء وقُرّاء متاحون لبدء المحادثة ({newMatchingFriends.length})</span>
                     </h4>
                     <div className="space-y-2">
@@ -615,7 +653,20 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
       />
 
       {/* Standard App Bottom Bar */}
-      <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
+      <BottomBar 
+        onHomeClick={() => {
+          if (communityService.isImpersonating()) {
+            communityService.exitImpersonate();
+            loadData();
+            setShowAdminModal(true);
+            showToast('تمت العودة لقائمة المستخدمين بنجاح');
+          } else {
+            onBack();
+          }
+        }} 
+        onThemesClick={() => {}} 
+        showThemes={false} 
+      />
     </div>
   );
 };

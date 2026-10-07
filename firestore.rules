@@ -13,6 +13,9 @@ service cloud.firestore {
     match /chats/{chatId} {
       allow read, write: if true;
     }
+    match /ahl_al_quran_stats/{userId} {
+      allow read, write: if true;
+    }
     match /{document=**} {
       allow read, write: if true;
     }

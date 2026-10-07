@@ -24,6 +24,7 @@ import AsmaulHusna from '../pages/AsmaulHusna';
 import HabitTracker from '../pages/HabitTracker';
 import CommunityPage from '../pages/CommunityPage';
 import DirectChatPage from '../pages/DirectChatPage';
+import AhlAlQuranPage from '../pages/AhlAlQuranPage';
 
 interface AppRouterProps {
     page: string;
@@ -86,6 +87,8 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
         return <CommunityPage onBack={onBack} onNavigate={onNavigate} initialTab={navParams?.initialTab} />;
       case 'direct-chat':
         return <DirectChatPage partnerUserId={navParams?.partnerUserId || ''} onBack={onBack} onNavigate={onNavigate} />;
+      case 'ahl-al-quran':
+        return <AhlAlQuranPage onBack={onBack} onNavigate={onNavigate} />;
       case 'home':
       default:
         return <MainMenu onNavigate={onNavigate} onOpenThemes={onOpenThemes} onOpenSideMenu={onOpenSideMenu} />;

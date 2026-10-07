@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
     Home, BookOpen, Headphones, Clock, Calendar, Brain, 
     Mic, Settings, Palette, MessageCircle, X, ChevronLeft,
-    Menu, Info, HelpCircle, Star, Type, Bell, Compass, Search
+    Menu, Info, HelpCircle, Star, Type, Bell, Compass, Search, Trophy
 } from 'lucide-react';
 import TutorialOverlay, { TutorialStep } from './Tutorial/TutorialOverlay';
 import { THEMES } from './QuranReader/constants';
@@ -49,6 +49,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
 
     const menuItems = [
         { id: 'community', label: 'مجتمع المصحف والتواصل', icon: MessageCircle, color: '#10b981', description: 'التواصل والمحادثات مع القراء والحفاظ من جميع أنحاء العالم.' },
+        { id: 'ahl-al-quran', label: 'أهل القرآن (لوحة الشرف)', icon: Trophy, color: '#f59e0b', description: 'لوحة صدارة وتنافس محمود لقراء القرآن الكريم مع تحديث شهري للأجزاء والختمات.' },
         { id: 'search', label: 'البحث المتقدم', icon: Search, color: '#14b8a6', description: 'البحث عن آية، أو دعاء، أو أذكار.' },
         { id: 'habit-tracker', label: 'مربّي العبادات', icon: Calendar, color: '#ec4899', description: 'متابعة الصلاة وتلاوة القرآن والأذكار والأهداف اليومية.' },
         { id: 'home', label: 'الرئيسية', icon: Home, color: '#3b82f6', description: 'العودة إلى الشاشة الرئيسية للتطبيق.' },

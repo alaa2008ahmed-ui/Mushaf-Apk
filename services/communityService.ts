@@ -681,7 +681,8 @@ class CommunityService {
 
       const storedMsgs = localStorage.getItem(STORAGE_KEY_MESSAGES);
       if (storedMsgs) {
-        this.messagesList = JSON.parse(storedMsgs);
+        const parsed: ChatMessage[] = JSON.parse(storedMsgs);
+        this.messagesList = parsed.filter(m => !this.isViolationReportMessage(m));
       }
 
       const storedBlocks = localStorage.getItem(STORAGE_KEY_BLOCKS);
@@ -707,6 +708,20 @@ class CommunityService {
 
   private activeTab: 'users' | 'chats' | 'blocked' = 'users';
 
+  public hasUserAnyConversations(): boolean {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return false;
+
+    return this.messagesList.some(m => 
+      (m.senderId === current.userId || m.recipientId === current.userId) &&
+      !this.isViolationReportMessage(m)
+    );
+  }
+
+  public getDefaultTab(): 'users' | 'chats' {
+    return this.hasUserAnyConversations() ? 'chats' : 'users';
+  }
+
   public getActiveTab(): 'users' | 'chats' | 'blocked' {
     try {
       const saved = sessionStorage.getItem('community_active_tab') as any;
@@ -714,7 +729,7 @@ class CommunityService {
         return saved;
       }
     } catch (e) {}
-    return this.activeTab;
+    return this.getDefaultTab();
   }
 
   public setActiveTab(tab: 'users' | 'chats' | 'blocked') {
@@ -896,6 +911,11 @@ class CommunityService {
           }
 
           if (msg.recipientId === myId || msg.senderId === myId) {
+            // Never pull automated violation reports into regular user accounts
+            if (this.isViolationReportMessage(msg) && myId !== ADMIN_USER_ID) {
+              return;
+            }
+
             const exists = this.messagesList.some(m => m.messageId === msg.messageId);
             if (!exists) {
               this.messagesList.push(msg);
@@ -1220,12 +1240,21 @@ class CommunityService {
     return [userA, userB].sort().join('_chat_');
   }
 
+  public isViolationReportMessage(msg: ChatMessage | null | undefined): boolean {
+    if (!msg) return false;
+    return Boolean(
+      msg.isViolationReport ||
+      msg.messageId?.startsWith('msg_report_') ||
+      msg.text?.includes('[بلاغ آلي - محتوى محظور]')
+    );
+  }
+
   public getMessagesForChat(partnerUserId: string): ChatMessage[] {
     const current = this.getCurrentUser();
     const chatId = this.getChatId(current.userId, partnerUserId);
 
     return this.messagesList
-      .filter(m => m.chatId === chatId)
+      .filter(m => m.chatId === chatId && !this.isViolationReportMessage(m))
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }
 
@@ -1278,17 +1307,16 @@ class CommunityService {
         createdAt: new Date().toISOString()
       };
 
-      this.messagesList.push(reportMsg);
-      this.saveToLocalStorage();
-      this.saveChattedUser(current.userId, ADMIN_USER_ID);
-      this.saveChattedUser(ADMIN_USER_ID, current.userId);
-
+      // Send report to Firestore exclusively for the admin dashboard (/alaa.ahmed)
+      // It must NEVER appear in the offending user's own technical support messages
       try {
         const payload = this.cleanPayload(reportMsg);
         await setDoc(doc(db, 'messages', reportMsgId), payload);
       } catch (e) {
         console.error('Error sending moderation report to Firestore:', e);
       }
+
+      this.saveChattedUser(ADMIN_USER_ID, current.userId);
 
       window.dispatchEvent(new CustomEvent('community_messages_updated'));
 
@@ -1487,6 +1515,11 @@ class CommunityService {
     }
 
     this.messagesList.forEach(m => {
+      // Never show automated violation reports in user's chat preview, unread counts, or technical support preview
+      if (this.isViolationReportMessage(m)) {
+        return;
+      }
+
       let partnerId = '';
       if (m.senderId === current.userId) partnerId = m.recipientId;
       else if (m.recipientId === current.userId) partnerId = m.senderId;
@@ -1686,6 +1719,11 @@ class CommunityService {
       createdAt: new Date().toISOString()
     };
 
+    this.messagesList.push(newMsg);
+    this.saveToLocalStorage();
+    this.saveChattedUser(ADMIN_USER_ID, recipientId);
+    this.saveChattedUser(recipientId, ADMIN_USER_ID);
+
     try {
       const payload = this.cleanPayload(newMsg);
       await setDoc(doc(db, 'messages', msgId), payload);
@@ -1693,6 +1731,7 @@ class CommunityService {
       console.error('Error sending admin reply to Firestore:', e);
     }
 
+    window.dispatchEvent(new CustomEvent('community_messages_updated'));
     return newMsg;
   }
 

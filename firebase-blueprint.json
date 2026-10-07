@@ -55,12 +55,32 @@
         "createdAt": { "type": "string" }
       },
       "required": ["blockerId", "blockedId"]
+    },
+    "AhlAlQuranRecord": {
+      "title": "Ahl Al Quran Stats Record",
+      "description": "Quran reading statistics and khatma records for Ahl Al-Quran leaderboard",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "username": { "type": "string", "maxLength": 50 },
+        "avatarUrl": { "type": "string", "maxLength": 500 },
+        "country": { "type": "string", "maxLength": 50 },
+        "privacyMode": { "type": "string", "maxLength": 20 },
+        "totalLifetimePages": { "type": "number" },
+        "totalLifetimeKhatmas": { "type": "number" },
+        "lastReadTimestamp": { "type": "number" }
+      },
+      "required": ["userId", "username"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "User",
       "description": "Global user profiles collection"
+    },
+    "/ahl_al_quran_stats/{userId}": {
+      "schema": "AhlAlQuranRecord",
+      "description": "Monthly and lifetime Quran reading stats for leaderboard"
     },
     "/chats/{chatId}": {
       "schema": "Chat",
