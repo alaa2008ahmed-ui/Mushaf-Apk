@@ -167,7 +167,14 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
                                         >
                                             <item.icon size={22} />
                                         </div>
-                                        <span className="font-bold text-[15px]">{item.label}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-[15px]">{item.label}</span>
+                                            {(item.id === 'community' || item.id === 'ahl-al-quran') && (
+                                                <span className="bg-yellow-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-xs border border-white dark:border-slate-800">
+                                                    جديد
+                                                </span>
+                                            )}
+                                        </div>
                                         <ChevronLeft size={16} className="mr-auto opacity-30 group-hover:opacity-100 transition-opacity" />
                                     </button>
                                 ))}

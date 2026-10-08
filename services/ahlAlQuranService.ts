@@ -335,6 +335,9 @@ class AhlAlQuranService {
       record.monthlyStats[gKey] = { pages: 0, khatmas: 0, lastReadTimestamp: now };
     }
     record.monthlyStats[gKey].pages += 1;
+    if (record.monthlyStats[gKey].pages > 0 && record.monthlyStats[gKey].pages % 604 === 0) {
+      record.monthlyStats[gKey].khatmas += 1;
+    }
     record.monthlyStats[gKey].lastReadTimestamp = now;
 
     // Update Hijri
@@ -342,10 +345,16 @@ class AhlAlQuranService {
       record.monthlyStats[hKey] = { pages: 0, khatmas: 0, lastReadTimestamp: now };
     }
     record.monthlyStats[hKey].pages += 1;
+    if (record.monthlyStats[hKey].pages > 0 && record.monthlyStats[hKey].pages % 604 === 0) {
+      record.monthlyStats[hKey].khatmas += 1;
+    }
     record.monthlyStats[hKey].lastReadTimestamp = now;
 
     // Lifetime
     record.totalLifetimePages += 1;
+    if (record.totalLifetimePages > 0 && record.totalLifetimePages % 604 === 0) {
+      record.totalLifetimeKhatmas += 1;
+    }
     record.lastReadTimestamp = now;
 
     this.recordsCache.set(cur.userId, record);

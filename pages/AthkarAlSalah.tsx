@@ -242,7 +242,7 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                     <p className="app-top-bar__subtitle px-4">
                         {currentPrayer 
                             ? `أذكار ما بعد صلاة ${currentPrayer.title.split(' ')[2] || currentPrayer.title}` 
-                            : (isFavoritesView ? "أذكارك التي اخترتها للوصول السريع" : "أذكار ما بعد الصلاة مع عدّاد تفاعلي وتنقل سهل بين")}
+                            : (isFavoritesView ? "أذكارك التي اخترتها للوصول السريع" : "أذكار ما بعد الصلاة مع عدّاد تفاعلي وتنقل سهل بين الصلوات")}
                     </p>
                 </div>
             </header>

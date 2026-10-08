@@ -58,7 +58,7 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
 
     useEffect(() => {
         const count = parseInt(localStorage.getItem('apps_page_opens_count') || '0');
-        if (count <= 5) {
+        if (count <= 10) {
             setShowNewBadge(true);
         } else {
             setShowNewBadge(false);

@@ -31,7 +31,7 @@ const GridSection: React.FC<GridSectionProps> = ({
 
     useEffect(() => {
         const count = parseInt(localStorage.getItem('apps_page_opens_count') || '0');
-        if (count <= 5) {
+        if (count <= 10) {
             setShowNewBadges(true);
         } else {
             setShowNewBadges(false);
@@ -134,7 +134,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                                         onResize={(e) => handleResize(item.id, e)}
                                         isGlass={theme.isGlass}
                                         btnText={textColor}
-                                        showNewBadge={showNewBadges && ['memorization', 'community'].includes(item.id)}
+                                        showNewBadge={showNewBadges && ['memorization', 'community', 'ahl-al-quran', 'others'].includes(item.id)}
                                         badgeText="جديد"
                                     />
                                 </div>
@@ -151,7 +151,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 onResize={(e) => handleResize(item.id, e)}
                                 isGlass={theme.isGlass}
                                 btnText={textColor}
-                                showNewBadge={showNewBadges && ['memorization', 'community'].includes(item.id)}
+                                showNewBadge={showNewBadges && ['memorization', 'community', 'ahl-al-quran', 'others'].includes(item.id)}
                                 badgeText="جديد"
                             />
                         )}

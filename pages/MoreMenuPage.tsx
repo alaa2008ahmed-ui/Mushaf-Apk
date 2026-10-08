@@ -8,7 +8,8 @@ import { motion } from 'motion/react';
 const ALL_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-14", colorIndex: 0 },
     { id: 'community', label: "💬 مجتمع المصحف والتواصل", className: "col-span-2 h-14", colorIndex: 0 },
-    { id: 'ahl-al-quran', label: "🏆 أهل القرآن (لوحة الشرف)", className: "col-span-2 h-14", colorIndex: 0 },
+    { id: 'ahl-al-quran', label: "🏆 أهل القرآن", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'others', label: "✨ الرقية الشرعية", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'adia', label: "🤲 الأدعية", className: "col-span-1 h-14", colorIndex: 1 },
@@ -48,7 +49,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
         const newCount = count + 1;
         localStorage.setItem('apps_page_opens_count', newCount.toString());
         
-        if (newCount <= 5) {
+        if (newCount <= 10) {
             setShowNewBadges(true);
         } else {
             setShowNewBadges(false);
@@ -87,12 +88,12 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                     <div className="main-layout px-4 flex flex-col" style={{ fontFamily: theme.font }}>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-5 w-full max-w-sm mx-auto mt-6">
                             {ALL_MENU_ITEMS.map((item, idx) => {
-                                const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna', 'community'].includes(item.id);
+                                const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna', 'community', 'ahl-al-quran', 'others'].includes(item.id);
                                 const isDefault = themeKey === 'default';
                                 const isBlackTheme = theme.bgColor === '#000000';
                                 const primaryColor = isBlackTheme ? '#000000' : (isDefault ? '#FFFFFF' : getPrimaryColor(item.id, item.colorIndex));
                                 const textColor = isBlackTheme ? '#FFFFFF' : (isDefault ? '#000000' : theme.btnText);
-                                const isNew = showNewBadges && ['memorization', 'community'].includes(item.id);
+                                const isNew = showNewBadges && ['memorization', 'community', 'ahl-al-quran', 'others'].includes(item.id);
                                 
                                 return (
                                     <div

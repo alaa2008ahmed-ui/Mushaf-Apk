@@ -10,6 +10,7 @@ import { SUPPORT_AVATAR_BASE64 } from '../src/supportAvatarBase64';
 import UsernameModal from '../components/Community/UsernameModal';
 import { AdminDashboardModal } from '../components/Community/AdminDashboardModal';
 import BottomBar from '../components/BottomBar';
+import { useTheme } from '../context/ThemeContext';
 
 interface CommunityPageProps {
   onBack: () => void;
@@ -18,6 +19,22 @@ interface CommunityPageProps {
 }
 
 const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initialTab }) => {
+  const { theme, themeKey } = useTheme();
+  const isBlackTheme = theme.bgColor === '#000000';
+  const primaryColor = isBlackTheme ? '#FFFFFF' : (theme.palette?.[0] || '#10b981');
+  const primaryTextColor = isBlackTheme ? '#000000' : (theme.btnText || '#FFFFFF');
+  const cardBg = isBlackTheme 
+    ? '#111111' 
+    : (theme.isGlass ? 'rgba(255, 255, 255, 0.15)' : (theme.cardBg || (theme.isDark ? '#1e293b' : '#ffffff')));
+  const cardBorder = isBlackTheme 
+    ? '#333333' 
+    : (theme.cardBorder || (theme.isDark ? '#334155' : '#e2e8f0'));
+  const secondaryBg = isBlackTheme 
+    ? '#1a1a1a' 
+    : (theme.isDark ? '#0f172a' : '#f8fafc');
+  const textColor = theme.textColor || (theme.isDark ? '#ffffff' : '#000000');
+  const textMuted = isBlackTheme ? '#9ca3af' : (theme.isDark ? '#94a3b8' : '#64748b');
+
   const userManuallySwitchedTabRef = React.useRef(false);
 
   const [activeTab, setActiveTabState] = useState<'users' | 'chats' | 'blocked'>(() => {
@@ -204,9 +221,11 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
 
   return (
     <div 
-      className="h-screen max-h-screen h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col overflow-y-auto overscroll-contain" 
+      className="h-screen max-h-screen h-[100dvh] w-full flex flex-col overflow-y-auto overscroll-contain transition-colors bg-transparent" 
       dir="rtl"
       style={{ 
+        fontFamily: theme.font,
+        color: textColor,
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 3.75rem + 1cm)'
       }}
@@ -218,7 +237,12 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
           <button
             type="button"
             onClick={() => onNavigate('quran')}
-            className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
+            className="w-10 h-10 rounded-2xl border flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
+            style={{
+              backgroundColor: cardBg,
+              borderColor: cardBorder,
+              color: primaryColor
+            }}
             title="صفحة القرآن الكريم"
             aria-label="صفحة القرآن الكريم"
           >
@@ -229,18 +253,29 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
           {currentUser.username ? (
             <div 
               onClick={() => setShowProfileModal(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-sm overflow-hidden"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-sm overflow-hidden"
+              style={{
+                backgroundColor: `${primaryColor}15`,
+                borderColor: `${primaryColor}35`,
+                color: primaryColor
+              }}
               title="تعديل الملف الشخصي"
             >
-              <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div 
+                className="w-6 h-6 rounded-full font-bold flex items-center justify-center overflow-hidden flex-shrink-0"
+                style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+              >
                 {currentUser.avatarUrl ? (
                   <img src={currentUser.avatarUrl} alt={currentUser.username} className="w-full h-full object-cover" />
                 ) : (
                   <User size={13} />
                 )}
               </div>
-              <span className="truncate max-w-[140px]">{currentUser.username}</span>
-              <span className="text-[10px] bg-emerald-500/20 px-1.5 py-0.5 rounded-full font-bold">
+              <span className="truncate max-w-[140px]" style={{ color: textColor }}>{currentUser.username}</span>
+              <span 
+                className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                style={{ backgroundColor: `${primaryColor}25`, color: primaryColor }}
+              >
                 {currentUser.country || '🌍'}
               </span>
             </div>
@@ -252,34 +287,47 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
           <button
             type="button"
             onClick={() => onNavigate('ahl-al-quran')}
-            className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
+            className="w-10 h-10 rounded-2xl border flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer flex-shrink-0 relative"
+            style={{
+              backgroundColor: cardBg,
+              borderColor: cardBorder,
+              color: '#f59e0b'
+            }}
             title="صفحة أهل القرآن الكريم"
             aria-label="صفحة أهل القرآن الكريم"
           >
             <Trophy size={18} />
+            <span className="absolute -top-1.5 -right-1 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded-full shadow-xs border border-white dark:border-slate-800 animate-bounce pointer-events-none">
+              جديد
+            </span>
           </button>
         </div>
 
         {/* Navigation Tabs (Equally divided 3 tabs: Members, Chats, Blocked) */}
-        <div className="grid grid-cols-3 gap-1.5 bg-slate-200/60 dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-300/50 dark:border-slate-800 mb-3">
+        <div 
+          className="grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl border mb-3"
+          style={{ backgroundColor: secondaryBg, borderColor: cardBorder }}
+        >
           <button
             onClick={() => setActiveTab('users')}
-            className={`w-full flex items-center justify-center py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all truncate ${
-              activeTab === 'users'
-                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            className="w-full flex items-center justify-center py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all truncate"
+            style={{
+              backgroundColor: activeTab === 'users' ? cardBg : 'transparent',
+              color: activeTab === 'users' ? primaryColor : textMuted,
+              boxShadow: activeTab === 'users' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+            }}
           >
             <span>الأعضاء</span>
           </button>
 
           <button
             onClick={() => setActiveTab('chats')}
-            className={`w-full flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all relative truncate ${
-              activeTab === 'chats'
-                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            className="w-full flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all relative truncate"
+            style={{
+              backgroundColor: activeTab === 'chats' ? cardBg : 'transparent',
+              color: activeTab === 'chats' ? primaryColor : textMuted,
+              boxShadow: activeTab === 'chats' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+            }}
           >
             <span>المحادثة</span>
             {totalUnreadCount > 0 && (
@@ -291,11 +339,12 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
 
           <button
             onClick={() => setActiveTab('blocked')}
-            className={`w-full flex items-center justify-center py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all truncate ${
-              activeTab === 'blocked'
-                ? 'bg-white dark:bg-slate-800 text-rose-500 shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            className="w-full flex items-center justify-center py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all truncate"
+            style={{
+              backgroundColor: activeTab === 'blocked' ? cardBg : 'transparent',
+              color: activeTab === 'blocked' ? '#ef4444' : textMuted,
+              boxShadow: activeTab === 'blocked' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+            }}
           >
             <span>الحظر</span>
           </button>
@@ -333,7 +382,8 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                     <button
                       type="button"
                       onClick={() => setUserToBlock(null)}
-                      className="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
+                      className="px-4 py-2 rounded-xl text-xs font-bold transition-all"
+                      style={{ backgroundColor: secondaryBg, color: textColor }}
                     >
                       تراجع
                     </button>
@@ -349,19 +399,25 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
         {(activeTab === 'chats' || activeTab === 'users') && (
           <div className="flex items-center gap-2 mb-4">
             <div className="relative flex-1">
-              <Search size={18} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={18} className="absolute right-3.5 top-1/2 -translate-y-1/2" style={{ color: textMuted }} />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ابحث عن أصدقاء وقُرّاء بالاسم أو الدولة أو كود الحساب..."
-                className="w-full pl-10 pr-10 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-slate-900 dark:text-white shadow-sm"
+                className="w-full pl-10 pr-10 py-2.5 rounded-2xl border text-sm font-medium focus:outline-none transition-all shadow-xs"
+                style={{
+                  backgroundColor: cardBg,
+                  borderColor: cardBorder,
+                  color: textColor
+                }}
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-xs px-2 py-0.5 rounded-lg"
+                  style={{ backgroundColor: secondaryBg, color: textMuted }}
                 >
                   مسح
                 </button>
@@ -371,7 +427,12 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
               type="button"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold transition-all flex-shrink-0 active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl border text-xs font-bold transition-all flex-shrink-0 active:scale-95"
+              style={{
+                backgroundColor: `${primaryColor}15`,
+                borderColor: `${primaryColor}30`,
+                color: primaryColor
+              }}
               title="تحديث القائمة الآن من الخادم"
             >
               <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
@@ -388,9 +449,12 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
               : "grid grid-cols-1 md:grid-cols-2 gap-3"
           }>
             {users.length === 0 ? (
-              <div className="col-span-full text-center py-12 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6">
-                <Globe size={40} className="mx-auto text-slate-400 mb-2" />
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+              <div 
+                className="col-span-full text-center py-12 rounded-3xl border p-6"
+                style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              >
+                <Globe size={40} className="mx-auto mb-2" style={{ color: textMuted }} />
+                <p className="text-sm font-bold" style={{ color: textColor }}>
                   {searchQuery 
                     ? 'لا يوجد مستخدمون مطابقون للبحث' 
                     : 'لا يوجد مستخدمون آخرون مسجلون حالياً'
@@ -409,15 +473,26 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={() => handleStartChat(u.userId)}
-                    className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl ${
+                    className={`border rounded-2xl ${
                       isDense ? 'py-2.5 px-2.5 sm:px-3 gap-2' : 'py-3 px-4 gap-3'
-                    } flex items-center justify-between shadow-sm hover:shadow-md hover:border-emerald-500/40 transition-all cursor-pointer active:scale-[0.99] group`}
+                    } flex items-center justify-between shadow-xs hover:shadow-md transition-all cursor-pointer active:scale-[0.99] group`}
+                    style={{
+                      backgroundColor: cardBg,
+                      borderColor: cardBorder
+                    }}
                   >
                     <div className={`flex items-center ${isDense ? 'gap-2' : 'gap-3'} min-w-0 flex-1`}>
                       <div className="relative flex-shrink-0">
-                        <div className={`${
-                          isDense ? 'w-9 h-9 sm:w-10 sm:h-10' : 'w-11 h-11'
-                        } rounded-full font-bold flex items-center justify-center overflow-hidden bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20`}>
+                        <div 
+                          className={`${
+                            isDense ? 'w-9 h-9 sm:w-10 sm:h-10' : 'w-11 h-11'
+                          } rounded-full font-bold flex items-center justify-center overflow-hidden border`}
+                          style={{
+                            backgroundColor: `${primaryColor}15`,
+                            borderColor: `${primaryColor}30`,
+                            color: primaryColor
+                          }}
+                        >
                           {u.avatarUrl ? (
                             <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" />
                           ) : (
@@ -432,18 +507,18 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <h3 className={`font-bold ${isDense ? 'text-xs sm:text-sm' : 'text-sm'} text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors`}>
+                        <h3 className={`font-bold ${isDense ? 'text-xs sm:text-sm' : 'text-sm'} truncate transition-colors`} style={{ color: textColor }}>
                           {u.username}
                         </h3>
                         <div className={`flex items-center gap-1.5 ${isDense ? 'text-[10px] sm:text-[11px]' : 'text-xs'} mt-0.5 truncate`}>
-                          <span className="text-emerald-600 dark:text-emerald-400 font-medium truncate">{u.country || 'دولة أخرى 🌍'}</span>
-                          <span className="text-slate-300 dark:text-slate-700">•</span>
-                          <span className={isOnline ? "text-emerald-500 font-medium text-[10px] truncate" : "text-slate-400 text-[10px] truncate"}>
+                          <span className="font-medium truncate" style={{ color: primaryColor }}>{u.country || 'دولة أخرى 🌍'}</span>
+                          <span style={{ color: textMuted }}>•</span>
+                          <span className="text-[10px] truncate" style={{ color: isOnline ? '#10b981' : textMuted }}>
                             {statusText}
                           </span>
                         </div>
                         {u.bio && (
-                          <p className={`${isDense ? 'text-[10px]' : 'text-[11px]'} text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1`}>
+                          <p className={`${isDense ? 'text-[10px]' : 'text-[11px]'} mt-0.5 line-clamp-1`} style={{ color: textMuted }}>
                             {u.bio}
                           </p>
                         )}
@@ -460,13 +535,16 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
         {activeTab === 'chats' && (
           <div className="space-y-2.5">
             {filteredChats.length === 0 && newMatchingFriends.length === 0 ? (
-              <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6">
-                <MessageSquare size={40} className="mx-auto text-slate-400 mb-2" />
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+              <div 
+                className="text-center py-12 rounded-3xl border p-6"
+                style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              >
+                <MessageSquare size={40} className="mx-auto mb-2" style={{ color: textMuted }} />
+                <p className="text-sm font-bold" style={{ color: textColor }}>
                   {searchQuery ? 'لا توجد محادثات أو أصدقاء مطابقون للبحث' : 'لا توجد محادثات نشطة حالياً'}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {searchQuery ? 'جرب البحث باسم أو كود حساب آخر' : 'اختر قارئاً من تبويب (المستخدمون) أو استخدم شريط البحث أعلاه لبدء محادثة'}
+                <p className="text-xs mt-1" style={{ color: textMuted }}>
+                  {searchQuery ? 'جرب البحث باسم أو كود حساب آخر' : 'اختر قارئاً من تبويب (الأعضاء) أو استخدم شريط البحث أعلاه لبدء محادثة'}
                 </p>
               </div>
             ) : (
@@ -477,11 +555,22 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                     <div
                       key={chat.chatId}
                       onClick={() => handleStartChat(chat.partner.userId)}
-                      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:border-emerald-500/50 transition-all shadow-sm"
+                      className="border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs"
+                      style={{
+                        backgroundColor: cardBg,
+                        borderColor: cardBorder
+                      }}
                     >
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center border border-emerald-500/20 overflow-hidden">
+                          <div 
+                            className="w-12 h-12 rounded-full font-bold flex items-center justify-center border overflow-hidden"
+                            style={{
+                              backgroundColor: `${primaryColor}15`,
+                              borderColor: `${primaryColor}30`,
+                              color: primaryColor
+                            }}
+                          >
                             {(chat.partner.userId === ADMIN_USER_ID ? SUPPORT_AVATAR_BASE64 : chat.partner.avatarUrl) ? (
                               <img 
                                 src={chat.partner.userId === ADMIN_USER_ID ? SUPPORT_AVATAR_BASE64 : chat.partner.avatarUrl} 
@@ -510,17 +599,17 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                         </div>
 
                         <div>
-                          <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                          <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: textColor }}>
                             <span>{chat.partner.username}</span>
-                            <span className="text-xs font-normal text-emerald-600 dark:text-emerald-400">({chat.partner.country})</span>
+                            <span className="text-xs font-normal" style={{ color: primaryColor }}>({chat.partner.country})</span>
                           </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 font-medium">
+                          <p className="text-xs mt-0.5 line-clamp-1 font-medium" style={{ color: textMuted }}>
                             {chat.lastMessage || 'بدء المحادثة'}
                           </p>
                         </div>
                       </div>
 
-                      <span className="text-[10px] text-slate-400 font-medium">
+                      <span className="text-[10px] font-medium" style={{ color: textMuted }}>
                         {chat.lastMessageTime ? new Date(chat.lastMessageTime).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : ''}
                       </span>
                     </div>
@@ -529,8 +618,8 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
 
                 {/* Additional Friends Found Matching Search Query */}
                 {newMatchingFriends.length > 0 && (
-                  <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5 px-1">
+                  <div className="mt-4 pt-3 border-t" style={{ borderColor: cardBorder }}>
+                    <h4 className="text-xs font-bold mb-2 flex items-center gap-1.5 px-1" style={{ color: textMuted }}>
                       <span>أصدقاء وقُرّاء متاحون لبدء المحادثة ({newMatchingFriends.length})</span>
                     </h4>
                     <div className="space-y-2">
@@ -538,10 +627,21 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                         <div
                           key={friend.userId}
                           onClick={() => handleStartChat(friend.userId)}
-                          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 flex items-center justify-between cursor-pointer hover:border-emerald-500/50 transition-all shadow-sm"
+                          className="border rounded-2xl p-3 flex items-center justify-between cursor-pointer transition-all shadow-xs"
+                          style={{
+                            backgroundColor: cardBg,
+                            borderColor: cardBorder
+                          }}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold flex items-center justify-center border border-emerald-500/20 overflow-hidden">
+                            <div 
+                              className="w-10 h-10 rounded-full font-bold flex items-center justify-center border overflow-hidden"
+                              style={{
+                                backgroundColor: `${primaryColor}15`,
+                                borderColor: `${primaryColor}30`,
+                                color: primaryColor
+                              }}
+                            >
                               {friend.avatarUrl ? (
                                 <img src={friend.avatarUrl} alt={friend.username} className="w-full h-full object-cover" />
                               ) : (
@@ -549,12 +649,12 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                               )}
                             </div>
                             <div>
-                              <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <div className="font-bold text-sm flex items-center gap-1.5" style={{ color: textColor }}>
                                 <span>{friend.username}</span>
-                                <span className="text-[11px] font-normal text-emerald-600 dark:text-emerald-400">({friend.country || 'دولة أخرى'})</span>
+                                <span className="text-[11px] font-normal" style={{ color: primaryColor }}>({friend.country || 'دولة أخرى'})</span>
                               </div>
                               {friend.bio && (
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">{friend.bio}</p>
+                                <p className="text-[11px] line-clamp-1" style={{ color: textMuted }}>{friend.bio}</p>
                               )}
                             </div>
                           </div>
@@ -564,7 +664,8 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                               e.stopPropagation();
                               handleStartChat(friend.userId);
                             }}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 active:scale-95"
+                            className="px-3 py-1.5 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 active:scale-95"
+                            style={{ backgroundColor: primaryColor, color: primaryTextColor }}
                           >
                             <MessageSquare size={13} />
                             <span>محادثة</span>
@@ -583,10 +684,13 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
         {activeTab === 'blocked' && (
           <div className="space-y-2.5">
             {blockedUsers.length === 0 ? (
-              <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6">
-                <Shield size={40} className="mx-auto text-emerald-500 mb-2 opacity-60" />
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">لا يوجد مستخدمون محظورون</p>
-                <p className="text-xs text-slate-500 mt-1">المستخدمون المحظورون فلن تظهر أسماؤهم لك ولن يتمكنوا من التراسل معك</p>
+              <div 
+                className="text-center py-12 rounded-3xl border p-6"
+                style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              >
+                <Shield size={40} className="mx-auto mb-2 opacity-60" style={{ color: primaryColor }} />
+                <p className="text-sm font-bold" style={{ color: textColor }}>لا يوجد مستخدمون محظورون</p>
+                <p className="text-xs mt-1" style={{ color: textMuted }}>المستخدمون المحظورون فلن تظهر أسماؤهم لك ولن يتمكنوا من التراسل معك</p>
               </div>
             ) : (
               blockedUsers.map((b) => {
@@ -595,7 +699,11 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                 return (
                   <div
                     key={b.blockedId}
-                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-sm"
+                    className="border rounded-2xl p-4 flex items-center justify-between shadow-xs"
+                    style={{
+                      backgroundColor: cardBg,
+                      borderColor: cardBorder
+                    }}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-11 h-11 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center font-bold overflow-hidden border border-rose-500/20">
@@ -606,19 +714,24 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                         )}
                       </div>
                       <div>
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <h3 className="font-bold text-sm flex items-center gap-1.5" style={{ color: textColor }}>
                           <span>{displayName}</span>
                           {displayCountry && (
-                            <span className="text-xs font-normal text-slate-400">({displayCountry})</span>
+                            <span className="text-xs font-normal" style={{ color: textMuted }}>({displayCountry})</span>
                           )}
                         </h3>
-                        <p className="text-[11px] text-slate-400">تاريخ الحظر: {new Date(b.createdAt).toLocaleDateString('ar-EG')}</p>
+                        <p className="text-[11px]" style={{ color: textMuted }}>تاريخ الحظر: {new Date(b.createdAt).toLocaleDateString('ar-EG')}</p>
                       </div>
                     </div>
 
                     <button
                       onClick={() => handleUnblockUser(b.blockedId, b.user?.username)}
-                      className="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-bold transition-all border border-transparent hover:border-emerald-500/30 active:scale-95"
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border active:scale-95"
+                      style={{
+                        backgroundColor: secondaryBg,
+                        borderColor: cardBorder,
+                        color: primaryColor
+                      }}
                     >
                       إلغاء الحظر
                     </button>
@@ -649,7 +762,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
       <AdminDashboardModal
         isOpen={showAdminModal}
         onClose={() => setShowAdminModal(false)}
-        currentTheme={{ bg: '', text: '' }}
+        currentTheme={{ bg: theme.bgColor || '#0D1B2A', text: textColor }}
       />
 
       {/* Standard App Bottom Bar */}

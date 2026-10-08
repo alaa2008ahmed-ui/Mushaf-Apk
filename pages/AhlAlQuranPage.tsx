@@ -21,13 +21,44 @@ interface AhlAlQuranPageProps {
 }
 
 const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) => {
-  const { theme } = useTheme();
+  const { theme, themeKey } = useTheme();
+
+  const isBlackTheme = theme.bgColor === '#000000';
+  const primaryColor = isBlackTheme ? '#FFFFFF' : (theme.palette?.[0] || '#10b981');
+  const primaryTextColor = isBlackTheme ? '#000000' : (theme.btnText || '#FFFFFF');
+  const cardBg = isBlackTheme 
+    ? '#111111' 
+    : (theme.isGlass ? 'rgba(255, 255, 255, 0.15)' : (theme.cardBg || (theme.isDark ? '#1e293b' : '#ffffff')));
+  const cardBorder = isBlackTheme 
+    ? '#333333' 
+    : (theme.cardBorder || (theme.isDark ? '#334155' : '#e2e8f0'));
+  const secondaryBg = isBlackTheme 
+    ? '#1a1a1a' 
+    : (theme.isDark ? '#0f172a' : '#f8fafc');
 
   // Navigation & Calendar States
-  const [calendarType, setCalendarType] = useState<CalendarType>('hijri');
+  const [calendarType, setCalendarType] = useState<CalendarType>(() => {
+    try {
+      const saved = localStorage.getItem('ahl_al_quran_calendar_type');
+      if (saved === 'hijri' || saved === 'gregorian') return saved;
+    } catch (e) {}
+    return 'hijri';
+  });
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>('');
   const [isArchiveDropdownOpen, setIsArchiveDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'leaderboard' | 'my_stats' | 'privacy'>('leaderboard');
+  
+  const handleCalendarTypeChange = (type: CalendarType) => {
+    setCalendarType(type);
+    try {
+      localStorage.setItem('ahl_al_quran_calendar_type', type);
+    } catch (e) {}
+    showToast(
+      type === 'hijri' 
+        ? 'تم اعتماد الشهور الهجرية للوحة المتصدرين' 
+        : 'تم اعتماد الشهور الميلادية للوحة المتصدرين'
+    );
+  };
   
   // Real-time Data
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -101,15 +132,6 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
     );
   };
 
-  const handleRecordManualKhatma = async () => {
-    if (!isProfileComplete) {
-      setShowUsernameModal(true);
-      return;
-    }
-    await ahlAlQuranService.recordKhatmaCompleted();
-    showToast('مبارك! تم تسجيل ختمة جديدة لك بنجاح، جعلها الله في ميزان حسناتك 🤲');
-  };
-
   const selectedMonthName = useMemo(() => {
     if (selectedMonthKey === 'lifetime') return 'جميع الأوقات (التراكمي)';
     const found = monthOptions.find(m => m.key === selectedMonthKey);
@@ -122,9 +144,12 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
 
   return (
     <div 
-      className="h-screen max-h-screen h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col overflow-y-auto overscroll-contain"
+      className="h-screen max-h-screen h-[100dvh] w-full flex flex-col overflow-y-auto overscroll-contain transition-colors bg-transparent"
       dir="rtl"
       style={{
+        backgroundColor: 'transparent',
+        color: theme.textColor,
+        fontFamily: theme.font,
         paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 3.75rem + 1cm)'
       }}
@@ -136,7 +161,12 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
           <button
             type="button"
             onClick={() => onNavigate('quran')}
-            className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
+            className="w-10 h-10 rounded-2xl border flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
+            style={{
+              backgroundColor: cardBg,
+              borderColor: cardBorder,
+              color: primaryColor
+            }}
             title="الذهاب للمصحف الشريف"
           >
             <BookOpen size={20} />
@@ -144,11 +174,7 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
 
           {/* Center Title */}
           <div className="text-center flex-1">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20 mb-0.5">
-              <Trophy size={14} className="text-amber-500" />
-              <span>لائحة الشرف والتنافس المحمود</span>
-            </div>
-            <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight" style={{ color: theme.textColor }}>
               أهل القرآن الكريم
             </h1>
           </div>
@@ -159,21 +185,27 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
 
         {/* Unregistered User Warning / Invitation Banner */}
         {!isProfileComplete && (
-          <div className="mb-4 p-4 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+          <div 
+            className="mb-4 p-4 rounded-3xl border flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs"
+            style={{
+              backgroundColor: `${primaryColor}15`,
+              borderColor: `${primaryColor}35`,
+              color: theme.textColor
+            }}
+          >
             <div className="flex items-center gap-3 text-right">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+              <div 
+                className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: `${primaryColor}25`, color: primaryColor }}
+              >
                 <Info size={22} />
               </div>
-              <div>
-                <h4 className="font-bold text-sm">لم تقم بالتسجيل في مجتمع المصحف بعد</h4>
-                <p className="text-xs opacity-85 mt-0.5">
-                  سجل اسمك وصورتك في مجتمع المصحف ليتم تتبع قراءتك وظهورك في لوحة أهل القرآن!
-                </p>
-              </div>
+              <h4 className="font-bold text-sm">لم تقم بالتسجيل في مجتمع المصحف بعد</h4>
             </div>
             <button
               onClick={() => setShowUsernameModal(true)}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+              style={{ backgroundColor: primaryColor, color: primaryTextColor }}
             >
               تسجيل حسابي الآن
             </button>
@@ -181,14 +213,21 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
         )}
 
         {/* Main Tab Switcher: Leaderboard, My Stats, Privacy */}
-        <div className="grid grid-cols-3 gap-1 bg-slate-200/70 dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-300/50 dark:border-slate-800 mb-4">
+        <div 
+          className="grid grid-cols-3 gap-1 p-1.5 rounded-2xl border mb-4"
+          style={{ backgroundColor: secondaryBg, borderColor: cardBorder }}
+        >
           <button
             onClick={() => setActiveTab('leaderboard')}
-            className={`py-2 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all ${
-              activeTab === 'leaderboard'
-                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            className="py-2 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all"
+            style={activeTab === 'leaderboard' ? {
+              backgroundColor: primaryColor,
+              color: primaryTextColor,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            } : {
+              color: theme.textColor,
+              opacity: 0.7
+            }}
           >
             <Trophy size={16} />
             <span>لوحة المتصدرين</span>
@@ -196,11 +235,15 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
 
           <button
             onClick={() => setActiveTab('my_stats')}
-            className={`py-2 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all ${
-              activeTab === 'my_stats'
-                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            className="py-2 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all"
+            style={activeTab === 'my_stats' ? {
+              backgroundColor: primaryColor,
+              color: primaryTextColor,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            } : {
+              color: theme.textColor,
+              opacity: 0.7
+            }}
           >
             <Award size={16} />
             <span>إحصائياتي</span>
@@ -208,11 +251,15 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
 
           <button
             onClick={() => setActiveTab('privacy')}
-            className={`py-2 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all ${
-              activeTab === 'privacy'
-                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-md'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            className="py-2 px-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all"
+            style={activeTab === 'privacy' ? {
+              backgroundColor: primaryColor,
+              color: primaryTextColor,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            } : {
+              color: theme.textColor,
+              opacity: 0.7
+            }}
           >
             <Shield size={16} />
             <span>الخصوصية والظهور</span>
@@ -222,142 +269,140 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
         {/* TAB 1: LEADERBOARD */}
         {activeTab === 'leaderboard' && (
           <div>
-            {/* Filter Bar: Calendar Switch & Archive Dropdown */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-3 sm:p-4 mb-4 shadow-xs">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                {/* Hijri vs Gregorian Switch */}
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-2xl border dark:border-slate-800">
-                  <button
-                    onClick={() => setCalendarType('hijri')}
-                    className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      calendarType === 'hijri'
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                    }`}
+            {/* Header: Selected Month & Archive Dropdown */}
+            <div 
+              className="border rounded-3xl p-3 sm:p-4 mb-4 shadow-xs flex items-center justify-between gap-3"
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+            >
+              <div className="flex items-center gap-2 truncate">
+                <Calendar size={18} style={{ color: primaryColor }} className="shrink-0" />
+                <span className="font-extrabold text-sm sm:text-base truncate" style={{ color: theme.textColor }}>
+                  {selectedMonthName}
+                </span>
+                {isCurrentMonthSelected && (
+                  <span 
+                    className="text-xs px-2 py-0.5 rounded-full font-bold shrink-0"
+                    style={{ backgroundColor: primaryColor, color: primaryTextColor }}
                   >
-                    📅 الشهور الهجرية
-                  </button>
-                  <button
-                    onClick={() => setCalendarType('gregorian')}
-                    className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      calendarType === 'gregorian'
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                    }`}
-                  >
-                    🗓️ الشهور الميلادية
-                  </button>
-                </div>
-
-                {/* Selected Month & Archive Selector */}
-                <div className="relative">
-                  <button
-                    onClick={() => setIsArchiveDropdownOpen(prev => !prev)}
-                    className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 px-3.5 py-2 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-all cursor-pointer"
-                  >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <Calendar size={15} />
-                      <span>{selectedMonthName}</span>
-                      {isCurrentMonthSelected && (
-                        <span className="text-[10px] bg-emerald-500 text-white px-1.5 py-0.2 rounded-full font-semibold">
-                          الحالي
-                        </span>
-                      )}
-                    </div>
-                    <ChevronDown size={14} className={`transition-transform ${isArchiveDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {/* Dropdown Menu for Archive */}
-                  <AnimatePresence>
-                    {isArchiveDropdownOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        className="absolute left-0 right-0 sm:right-auto sm:left-0 mt-1.5 sm:w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden max-h-72 overflow-y-auto p-1.5"
-                      >
-                        <div className="text-[11px] font-bold text-slate-400 px-2.5 py-1.5 border-b dark:border-slate-800">
-                          اختر الشهر أو الأرشيف السابق:
-                        </div>
-                        {monthOptions.map((opt) => (
-                          <button
-                            key={opt.key}
-                            onClick={() => {
-                              setSelectedMonthKey(opt.key);
-                              setIsArchiveDropdownOpen(false);
-                            }}
-                            className={`w-full text-right px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 transition-all ${
-                              selectedMonthKey === opt.key
-                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold'
-                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                            }`}
-                          >
-                            <span>{opt.name}</span>
-                            {opt.isCurrent ? (
-                              <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-md">
-                                الحالي
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-slate-400">أرشيف</span>
-                            )}
-                          </button>
-                        ))}
-                        <button
-                          onClick={() => {
-                            setSelectedMonthKey('lifetime');
-                            setIsArchiveDropdownOpen(false);
-                          }}
-                          className={`w-full text-right px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 border-t dark:border-slate-800 mt-1 ${
-                            selectedMonthKey === 'lifetime'
-                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold'
-                              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                          }`}
-                        >
-                          <span>👑 الإجمالي التراكمي (كل الأوقات)</span>
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                    الشهر الحالي
+                  </span>
+                )}
               </div>
 
-              {/* Status Note */}
-              <div className="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                <span>
-                  {isCurrentMonthSelected 
-                    ? '⚡ يتم التحديث لحظياً وتلقائياً عند قراءة أي صفحة في المصحف'
-                    : '📜 أنت تشاهد الأرشيف المحفوظ لهذا الشهر السابق'}
-                </span>
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                  {leaderboard.length} قارئ مسجل
-                </span>
+              {/* Archive Selector */}
+              <div className="relative shrink-0">
+                <button
+                  onClick={() => setIsArchiveDropdownOpen(prev => !prev)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border text-xs font-bold transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: `${primaryColor}15`,
+                    borderColor: `${primaryColor}30`,
+                    color: theme.textColor
+                  }}
+                >
+                  <span>الأرشيف</span>
+                  <ChevronDown size={14} className={`transition-transform ${isArchiveDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Menu for Archive */}
+                <AnimatePresence>
+                  {isArchiveDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      className="absolute left-0 mt-1.5 w-60 border rounded-2xl shadow-xl z-50 overflow-hidden max-h-72 overflow-y-auto p-1.5"
+                      style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+                    >
+                      {monthOptions.map((opt) => (
+                        <button
+                          key={opt.key}
+                          onClick={() => {
+                            setSelectedMonthKey(opt.key);
+                            setIsArchiveDropdownOpen(false);
+                          }}
+                          className="w-full text-right px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 transition-all hover:opacity-80"
+                          style={selectedMonthKey === opt.key ? {
+                            backgroundColor: `${primaryColor}20`,
+                            color: primaryColor,
+                            fontWeight: 'bold'
+                          } : {
+                            color: theme.textColor
+                          }}
+                        >
+                          <span>{opt.name}</span>
+                          {opt.isCurrent && (
+                            <span 
+                              className="text-[10px] px-1.5 py-0.5 rounded-md"
+                              style={{ backgroundColor: `${primaryColor}25`, color: primaryColor }}
+                            >
+                              الحالي
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => {
+                          setSelectedMonthKey('lifetime');
+                          setIsArchiveDropdownOpen(false);
+                        }}
+                        className="w-full text-right px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 border-t mt-1 hover:opacity-80"
+                        style={selectedMonthKey === 'lifetime' ? {
+                          backgroundColor: `${primaryColor}20`,
+                          color: primaryColor,
+                          fontWeight: 'bold',
+                          borderColor: cardBorder
+                        } : {
+                          color: theme.textColor,
+                          borderColor: cardBorder
+                        }}
+                      >
+                        <span>👑 الإجمالي التراكمي</span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
-
             {/* Current User Floating Progress Bar if participating */}
             {currentUserEntry && (
-              <div className="mb-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-xs">
+              <div 
+                className="mb-4 border rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-xs"
+                style={{
+                  backgroundColor: `${primaryColor}12`,
+                  borderColor: `${primaryColor}35`
+                }}
+              >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white font-extrabold flex items-center justify-center text-sm shadow-sm">
+                  <div 
+                    className="w-10 h-10 rounded-2xl font-extrabold flex items-center justify-center text-sm shadow-sm"
+                    style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+                  >
                     #{currentUserEntry.rank}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                      <span className="font-bold text-xs sm:text-sm" style={{ color: theme.textColor }}>
                         ترتيبك في {selectedMonthName}:
                       </span>
-                      <span className="text-xs bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-full">
+                      <span 
+                        className="text-xs font-bold px-2 py-0.5 rounded-full"
+                        style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                      >
                         المركز {currentUserEntry.rank}
                       </span>
                     </div>
-                    <div className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    <div className="text-xs font-extrabold mt-0.5" style={{ color: primaryColor }}>
                       {currentUserEntry.formattedProgress.summaryText}
                     </div>
                   </div>
                 </div>
                 {currentUserEntry.khatmas > 0 && (
-                  <div className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-xl">
+                  <div 
+                    className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-xl"
+                    style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                  >
                     <Crown size={14} />
                     <span>{currentUserEntry.khatmas} ختمة</span>
                   </div>
@@ -367,17 +412,18 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
 
             {/* Leaderboard Cards List */}
             {leaderboard.length === 0 ? (
-              <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6">
-                <Trophy size={48} className="mx-auto text-slate-400 mb-3 opacity-60" />
-                <h3 className="font-bold text-base text-slate-800 dark:text-slate-200">
+              <div 
+                className="text-center py-16 rounded-3xl border p-6"
+                style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              >
+                <Trophy size={48} className="mx-auto mb-3 opacity-60" style={{ color: primaryColor }} />
+                <h3 className="font-bold text-base" style={{ color: theme.textColor }}>
                   لا توجد قراءات مسجلة في هذا الشهر حتى الآن
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                  ابدأ بقراءة القرآن من صفحة المصحف وسيتم تسجيل تقدمك وأجزائك هنا في الحال!
-                </p>
                 <button
                   onClick={() => onNavigate('quran')}
-                  className="mt-4 px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"
+                  className="mt-4 px-5 py-2.5 rounded-2xl font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"
+                  style={{ backgroundColor: primaryColor, color: primaryTextColor }}
                 >
                   <BookOpen size={16} />
                   <span>فتح المصحف والقراءة الآن</span>
@@ -397,15 +443,23 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
                       animate={{ opacity: 1, y: 0 }}
                       className={`relative rounded-3xl border p-3.5 sm:p-4 flex items-center justify-between gap-3 transition-all ${
                         item.isCurrentUser
-                          ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-500/50 shadow-sm ring-1 ring-emerald-500/30'
+                          ? 'shadow-sm ring-1 ring-emerald-500/30'
                           : isTop1
                           ? 'bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-amber-500/40 shadow-xs'
                           : isTop2
                           ? 'bg-gradient-to-r from-slate-400/10 via-slate-400/5 to-transparent border-slate-300 dark:border-slate-700 shadow-xs'
                           : isTop3
                           ? 'bg-gradient-to-r from-amber-700/10 via-amber-700/5 to-transparent border-amber-700/30 shadow-xs'
-                          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800/80 shadow-xs'
+                          : 'shadow-xs'
                       }`}
+                      style={{
+                        backgroundColor: item.isCurrentUser 
+                          ? `${primaryColor}15` 
+                          : (!isTop1 && !isTop2 && !isTop3 ? cardBg : undefined),
+                        borderColor: item.isCurrentUser 
+                          ? `${primaryColor}50` 
+                          : (!isTop1 && !isTop2 && !isTop3 ? cardBorder : undefined)
+                      }}
                     >
                       {/* Left Side: Rank Badge + User Profile */}
                       <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -424,42 +478,54 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
                               🥉
                             </div>
                           ) : (
-                            <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-extrabold text-xs flex items-center justify-center">
+                            <div 
+                              className="w-8 h-8 rounded-xl font-extrabold text-xs flex items-center justify-center"
+                              style={{ backgroundColor: secondaryBg, color: theme.textColor }}
+                            >
                               {item.rank}
                             </div>
                           )}
                         </div>
 
                         {/* Avatar */}
-                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 overflow-hidden flex items-center justify-center shrink-0">
+                        <div 
+                          className="w-10 h-10 rounded-full border overflow-hidden flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: `${primaryColor}15`, borderColor: `${primaryColor}30` }}
+                        >
                           {item.isAnonymous ? (
-                            <Shield size={20} className="text-emerald-600 dark:text-emerald-400" />
+                            <Shield size={20} style={{ color: primaryColor }} />
                           ) : item.displayAvatar ? (
                             <img src={item.displayAvatar} alt={item.displayName} className="w-full h-full object-cover" />
                           ) : (
-                            <User size={20} className="text-emerald-600 dark:text-emerald-400" />
+                            <User size={20} style={{ color: primaryColor }} />
                           )}
                         </div>
 
                         {/* Name & Details */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                            <h4 className="font-extrabold text-xs sm:text-sm truncate" style={{ color: theme.textColor }}>
                               {item.displayName}
                             </h4>
                             {item.isCurrentUser && (
-                              <span className="text-[10px] bg-emerald-500 text-white px-1.5 py-0.2 rounded-full font-bold">
+                              <span 
+                                className="text-[10px] px-1.5 py-0.2 rounded-full font-bold"
+                                style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+                              >
                                 أنت
                               </span>
                             )}
                             {item.isAnonymous && (
-                              <span className="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.2 rounded-full font-bold">
+                              <span 
+                                className="text-[10px] px-1.5 py-0.2 rounded-full font-bold"
+                                style={{ backgroundColor: secondaryBg, color: theme.textColor }}
+                              >
                                 مجهول
                               </span>
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                          <div className="flex items-center gap-2 text-[10px] mt-0.5 truncate opacity-70" style={{ color: theme.textColor }}>
                             {!item.isAnonymous && item.record.country && (
                               <span>{item.record.country}</span>
                             )}
@@ -471,11 +537,14 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
 
                       {/* Right Side: Formatted Progress (Ajza & Remaining Pages) */}
                       <div className="text-left shrink-0">
-                        <div className="text-xs sm:text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
+                        <div className="text-xs sm:text-sm font-extrabold" style={{ color: primaryColor }}>
                           {item.formattedProgress.summaryText}
                         </div>
                         {item.khatmas > 0 && (
-                          <div className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg mt-0.5">
+                          <div 
+                            className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-lg mt-0.5"
+                            style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                          >
                             <Crown size={12} />
                             <span>{item.khatmas} ختمة</span>
                           </div>
@@ -489,66 +558,59 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
           </div>
         )}
 
-        {/* TAB 2: MY STATS & RECORD MANUAL KHATMA */}
+        {/* TAB 2: MY STATS */}
         {activeTab === 'my_stats' && (
           <div className="space-y-4">
             {/* Quick Profile Overview Card */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs text-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 mx-auto mb-3 overflow-hidden flex items-center justify-center">
+            <div 
+              className="border rounded-3xl p-5 shadow-xs text-center"
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+            >
+              <div 
+                className="w-16 h-16 rounded-full border-2 mx-auto mb-3 overflow-hidden flex items-center justify-center"
+                style={{ backgroundColor: `${primaryColor}15`, borderColor: `${primaryColor}35` }}
+              >
                 {currentUser?.avatarUrl ? (
                   <img src={currentUser.avatarUrl} alt={currentUser.username} className="w-full h-full object-cover" />
                 ) : (
-                  <User size={30} className="text-emerald-600" />
+                  <User size={30} style={{ color: primaryColor }} />
                 )}
               </div>
-              <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
+              <h3 className="font-extrabold text-base" style={{ color: theme.textColor }}>
                 {currentUser?.username || 'قارئ المصحف'}
               </h3>
-              <p className="text-xs text-slate-500 font-mono mt-0.5">
-                كود الحساب: {currentUser?.accountCode || 'غير مسجل'}
-              </p>
 
               {/* Progress Counters Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-5">
-                <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border dark:border-slate-800 text-center">
-                  <div className="text-xs text-slate-400 font-medium">صفحات هذا الشهر</div>
-                  <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-4">
+                <div 
+                  className="p-3.5 rounded-2xl border text-center"
+                  style={{ backgroundColor: secondaryBg, borderColor: cardBorder }}
+                >
+                  <div className="text-xs font-bold" style={{ color: theme.textColor }}>صفحات هذا الشهر</div>
+                  <div className="text-xl font-black mt-1" style={{ color: primaryColor }}>
                     {currentUserEntry?.pages || 0}
                   </div>
-                  <div className="text-[10px] text-slate-500 truncate mt-0.5">
-                    {currentUserEntry?.formattedProgress.summaryText || '0 صفحة'}
-                  </div>
                 </div>
 
-                <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border dark:border-slate-800 text-center">
-                  <div className="text-xs text-slate-400 font-medium">ختمات هذا الشهر</div>
-                  <div className="text-lg font-black text-amber-500 mt-1">
+                <div 
+                  className="p-3.5 rounded-2xl border text-center"
+                  style={{ backgroundColor: secondaryBg, borderColor: cardBorder }}
+                >
+                  <div className="text-xs font-bold" style={{ color: theme.textColor }}>ختمات هذا الشهر</div>
+                  <div className="text-xl font-black mt-1 text-amber-500">
                     {currentUserEntry?.khatmas || 0}
                   </div>
-                  <div className="text-[10px] text-slate-500 mt-0.5">ختمة كاملة</div>
                 </div>
 
-                <div className="col-span-2 sm:col-span-1 p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border dark:border-slate-800 text-center">
-                  <div className="text-xs text-slate-400 font-medium">الترتيب الحالي</div>
-                  <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-1">
+                <div 
+                  className="col-span-2 sm:col-span-1 p-3.5 rounded-2xl border text-center"
+                  style={{ backgroundColor: secondaryBg, borderColor: cardBorder }}
+                >
+                  <div className="text-xs font-bold" style={{ color: theme.textColor }}>الترتيب الحالي</div>
+                  <div className="text-xl font-black mt-1" style={{ color: primaryColor }}>
                     {currentUserEntry ? `#${currentUserEntry.rank}` : '-'}
                   </div>
-                  <div className="text-[10px] text-slate-500 mt-0.5">في {selectedMonthName}</div>
                 </div>
-              </div>
-
-              {/* Button to Record Completed Khatma */}
-              <div className="mt-5 pt-4 border-t dark:border-slate-800">
-                <button
-                  onClick={handleRecordManualKhatma}
-                  className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs sm:text-sm shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <Crown size={18} />
-                  <span>أتممتُ ختمة جديدة للقرآن الكريم (تسجيل ختمة)</span>
-                </button>
-                <p className="text-[11px] text-slate-400 mt-2">
-                  يتم أيضاً احتساب الختمة تلقائياً بمجرد إكمال قراءة صفحات المصحف الشريف كاملاً (604 صفحات).
-                </p>
               </div>
             </div>
 
@@ -556,28 +618,30 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => onNavigate('quran')}
-                className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 shadow-xs flex items-center gap-3 transition-all cursor-pointer"
+                className="p-4 rounded-3xl border shadow-xs flex items-center justify-center gap-3 transition-all cursor-pointer"
+                style={{ backgroundColor: cardBg, borderColor: cardBorder }}
               >
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                <div 
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                >
                   <BookOpen size={20} />
                 </div>
-                <div className="text-right">
-                  <div className="font-bold text-xs sm:text-sm">فتح المصحف</div>
-                  <div className="text-[10px] text-slate-400">متابعة القراءة والورد</div>
-                </div>
+                <div className="font-bold text-sm" style={{ color: theme.textColor }}>فتح المصحف</div>
               </button>
 
               <button
                 onClick={() => onNavigate('community')}
-                className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 shadow-xs flex items-center gap-3 transition-all cursor-pointer"
+                className="p-4 rounded-3xl border shadow-xs flex items-center justify-center gap-3 transition-all cursor-pointer"
+                style={{ backgroundColor: cardBg, borderColor: cardBorder }}
               >
-                <div className="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
+                <div 
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                >
                   <User size={20} />
                 </div>
-                <div className="text-right">
-                  <div className="font-bold text-xs sm:text-sm">مجتمع المصحف</div>
-                  <div className="text-[10px] text-slate-400">ملفي الشخصي والرسائل</div>
-                </div>
+                <div className="font-bold text-sm" style={{ color: theme.textColor }}>مجتمع المصحف</div>
               </button>
             </div>
           </div>
@@ -585,96 +649,134 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
 
         {/* TAB 3: PRIVACY & VISIBILITY CONTROLS */}
         {activeTab === 'privacy' && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-xs space-y-4">
-            <div>
-              <h3 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                <Shield size={20} className="text-emerald-600" />
-                <span>إعدادات خصوصية الظهور في قائمة أهل القرآن</span>
+          <div className="space-y-4">
+            {/* Calendar Selection Card (Moved here from leaderboard tab) */}
+            <div 
+              className="border rounded-3xl p-5 shadow-xs"
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+            >
+              <h3 className="font-extrabold text-base flex items-center gap-2 mb-3" style={{ color: theme.textColor }}>
+                <Calendar size={20} style={{ color: primaryColor }} />
+                <span>نوع التقويم المعتمد للوحة المتصدرين</span>
               </h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                لك مطلق الحرية في اختيار كيفية ظهور إنجازك القرآني، سواءً رغبت في التنافس المحمود وتشجيع إخوانك، أو رغبت في إخفاء اسمك ابتغاء الأجر وسر العبادة.
-              </p>
+
+              <div 
+                className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl border"
+                style={{ backgroundColor: secondaryBg, borderColor: cardBorder }}
+              >
+                <button
+                  onClick={() => handleCalendarTypeChange('hijri')}
+                  className="py-3 px-3 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  style={calendarType === 'hijri' ? {
+                    backgroundColor: primaryColor,
+                    color: primaryTextColor,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  } : {
+                    color: theme.textColor,
+                    opacity: 0.75
+                  }}
+                >
+                  <span>📅 الشهور الهجرية</span>
+                  {calendarType === 'hijri' && <CheckCircle2 size={16} />}
+                </button>
+
+                <button
+                  onClick={() => handleCalendarTypeChange('gregorian')}
+                  className="py-3 px-3 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  style={calendarType === 'gregorian' ? {
+                    backgroundColor: primaryColor,
+                    color: primaryTextColor,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  } : {
+                    color: theme.textColor,
+                    opacity: 0.75
+                  }}
+                >
+                  <span>🗓️ الشهور الميلادية</span>
+                  {calendarType === 'gregorian' && <CheckCircle2 size={16} />}
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-3 pt-2">
+            {/* Visibility Mode Options Card */}
+            <div 
+              className="border rounded-3xl p-5 shadow-xs space-y-3"
+              style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+            >
+              <h3 className="font-extrabold text-base flex items-center gap-2 mb-2" style={{ color: theme.textColor }}>
+                <Shield size={20} style={{ color: primaryColor }} />
+                <span>إعدادات خصوصية الظهور</span>
+              </h3>
+
               {/* Option 1: Public with Name & Avatar */}
               <div
                 onClick={() => handlePrivacyChange('public')}
-                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                  userPrivacy === 'public'
-                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs'
-                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
-                }`}
+                className="p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs"
+                style={{
+                  backgroundColor: userPrivacy === 'public' ? `${primaryColor}10` : secondaryBg,
+                  borderColor: userPrivacy === 'public' ? primaryColor : cardBorder
+                }}
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                  >
                     <Eye size={20} />
                   </div>
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-                      الظهور بالاسم والصورة الرسمية (علني)
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      يظهر اسمك وصورتك في لائحة الشرف لتشجيع القراء والتنافس في الخيرات.
-                    </p>
-                  </div>
+                  <h4 className="font-bold text-xs sm:text-sm" style={{ color: theme.textColor }}>
+                    الظهور بالاسم والصورة الرسمية (علني)
+                  </h4>
                 </div>
                 {userPrivacy === 'public' && (
-                  <CheckCircle2 size={20} className="text-emerald-600 shrink-0 mt-1" />
+                  <CheckCircle2 size={20} style={{ color: primaryColor }} className="shrink-0" />
                 )}
               </div>
 
               {/* Option 2: Anonymous (فاعل خير) */}
               <div
                 onClick={() => handlePrivacyChange('anonymous')}
-                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                  userPrivacy === 'anonymous'
-                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs'
-                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
-                }`}
+                className="p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs"
+                style={{
+                  backgroundColor: userPrivacy === 'anonymous' ? `${primaryColor}10` : secondaryBg,
+                  borderColor: userPrivacy === 'anonymous' ? primaryColor : cardBorder
+                }}
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
                     <Shield size={20} />
                   </div>
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-                      الظهور كـ "فاعل خير" (مجهول)
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      تظهر صفحاتك وأجزاؤك في الترتيب ولكن يُحجب اسمك وصورتك ويظهر بدلاً منها "فاعل خير".
-                    </p>
-                  </div>
+                  <h4 className="font-bold text-xs sm:text-sm" style={{ color: theme.textColor }}>
+                    الظهور كـ "فاعل خير" (مجهول)
+                  </h4>
                 </div>
                 {userPrivacy === 'anonymous' && (
-                  <CheckCircle2 size={20} className="text-emerald-600 shrink-0 mt-1" />
+                  <CheckCircle2 size={20} style={{ color: primaryColor }} className="shrink-0" />
                 )}
               </div>
 
               {/* Option 3: Completely Hidden */}
               <div
                 onClick={() => handlePrivacyChange('hidden')}
-                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-start justify-between gap-3 ${
-                  userPrivacy === 'hidden'
-                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs'
-                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
-                }`}
+                className="p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs"
+                style={{
+                  backgroundColor: userPrivacy === 'hidden' ? `${primaryColor}10` : secondaryBg,
+                  borderColor: userPrivacy === 'hidden' ? primaryColor : cardBorder
+                }}
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-slate-500/10 text-slate-600 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
+                  >
                     <EyeOff size={20} />
                   </div>
-                  <div>
-                    <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-                      عدم الظهور نهائياً في القائمة (خاص)
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      لا تظهر إطلاقاً في لوحة المتصدرين العامة، مع استمرار تتبع وحفظ قراءتك لنفسك في تبويب إحصائياتي.
-                    </p>
-                  </div>
+                  <h4 className="font-bold text-xs sm:text-sm" style={{ color: theme.textColor }}>
+                    عدم الظهور نهائياً في القائمة (خاص)
+                  </h4>
                 </div>
                 {userPrivacy === 'hidden' && (
-                  <CheckCircle2 size={20} className="text-emerald-600 shrink-0 mt-1" />
+                  <CheckCircle2 size={20} style={{ color: primaryColor }} className="shrink-0" />
                 )}
               </div>
             </div>
