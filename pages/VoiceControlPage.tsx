@@ -26,6 +26,7 @@ const AVAILABLE_ACTIONS = [
     { id: 'open_adia', name: 'الادعيه / الادعيه' },
     { id: 'open_hajj_umrah', name: 'الحج والعمرة' },
     { id: 'open_asmaul_husna', name: 'أسماء الله الحسنى' },
+    { id: 'open_islamic_sites', name: 'مواقع إسلامية / مواقع اسلامية' },
     { id: 'open_daily_wird', name: 'الورد اليومي' },
     { id: 'open_memorization', name: 'التحفيظ' },
     { id: 'open_more', name: 'قائمة التطبيقات' },

@@ -1,25 +1,31 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  ArrowRight, Search, MessageSquare, Users, Ban, User, Edit3, 
+  Search, MessageSquare, Users, Ban, User, Edit3, 
   Sparkles, Globe, Shield, CheckCircle2, UserX, RefreshCw, Trash2, KeyRound, Copy,
-  BookOpen, Trophy
+  BookOpen, Trophy, Check, X, EyeOff, UserPlus, Clock, ShieldCheck
 } from 'lucide-react';
-import { communityService, CommunityUser, ChatConversation, ADMIN_USER_ID } from '../services/communityService';
+import { communityService, CommunityUser, ChatConversation, GroupChat, ADMIN_USER_ID } from '../services/communityService';
 import { SUPPORT_AVATAR_BASE64 } from '../src/supportAvatarBase64';
 import UsernameModal from '../components/Community/UsernameModal';
 import { AdminDashboardModal } from '../components/Community/AdminDashboardModal';
+import CreateGroupModal from '../components/Community/CreateGroupModal';
+import EditGroupModal from '../components/Community/EditGroupModal';
 import BottomBar from '../components/BottomBar';
+import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { useTheme } from '../context/ThemeContext';
+import { registerBackInterceptor } from '../hooks/useBackButton';
+import { useShowNewBadge } from '../utils/badgeManager';
 
 interface CommunityPageProps {
   onBack: () => void;
   onNavigate: (pageId: string, params?: any) => void;
-  initialTab?: 'users' | 'chats' | 'blocked';
+  initialTab?: 'users' | 'chats' | 'community' | 'blocked';
 }
 
 const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initialTab }) => {
   const { theme, themeKey } = useTheme();
+  const showNewBadge = useShowNewBadge();
   const isBlackTheme = theme.bgColor === '#000000';
   const primaryColor = isBlackTheme ? '#FFFFFF' : (theme.palette?.[0] || '#10b981');
   const primaryTextColor = isBlackTheme ? '#000000' : (theme.btnText || '#FFFFFF');
@@ -37,23 +43,36 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
 
   const userManuallySwitchedTabRef = React.useRef(false);
 
-  const [activeTab, setActiveTabState] = useState<'users' | 'chats' | 'blocked'>(() => {
-    if (initialTab && ['users', 'chats', 'blocked'].includes(initialTab)) {
+  const [activeTab, setActiveTabState] = useState<'users' | 'chats' | 'community' | 'blocked'>(() => {
+    if (initialTab && ['users', 'chats', 'community', 'blocked'].includes(initialTab)) {
       return initialTab;
     }
-    return communityService.getDefaultTab();
+    return communityService.getActiveTab();
   });
 
-  const setActiveTab = (tab: 'users' | 'chats' | 'blocked') => {
+  const [tabHistory, setTabHistory] = useState<('users' | 'chats' | 'community' | 'blocked')[]>(() => {
+    const initial = initialTab && ['users', 'chats', 'community', 'blocked'].includes(initialTab) 
+      ? initialTab 
+      : communityService.getActiveTab();
+    return [initial];
+  });
+
+  const setActiveTab = (tab: 'users' | 'chats' | 'community' | 'blocked') => {
     userManuallySwitchedTabRef.current = true;
+    if (tab === activeTab) return;
     setActiveTabState(tab);
     communityService.setActiveTab(tab);
+    setTabHistory(prev => [...prev, tab]);
   };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [users, setUsers] = useState<CommunityUser[]>([]);
   const [chats, setChats] = useState<ChatConversation[]>([]);
+  const [groups, setGroups] = useState<GroupChat[]>(() => communityService.getGroups());
+  const [pendingInvitations, setPendingInvitations] = useState<GroupChat[]>(() => communityService.getPendingGroupInvitations());
+  const [chattedPartners, setChattedPartners] = useState<CommunityUser[]>(() => communityService.getDirectChatPartners());
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [totalUsersCount, setTotalUsersCount] = useState<number>(() => {
     return communityService.getTotalRegisteredCount();
   });
@@ -63,6 +82,9 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
   const [currentUser, setCurrentUser] = useState<CommunityUser>(() => communityService.getCurrentUser());
 
   const [userToBlock, setUserToBlock] = useState<CommunityUser | null>(null);
+  const [groupToDelete, setGroupToDelete] = useState<GroupChat | null>(null);
+  const [groupToHide, setGroupToHide] = useState<GroupChat | null>(null);
+  const [groupToEdit, setGroupToEdit] = useState<GroupChat | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -79,13 +101,26 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
     const activeChats = communityService.getActiveConversations();
     setChats(activeChats);
 
+    const activeGroups = communityService.getGroups();
+    setGroups(activeGroups);
+
+    const invites = communityService.getPendingGroupInvitations();
+    setPendingInvitations(invites);
+
+    const partners = communityService.getDirectChatPartners();
+    setChattedPartners(partners);
+
     const count = communityService.getTotalRegisteredCount();
     setTotalUsersCount(count);
   };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await communityService.fetchLatestUsers();
+    await Promise.all([
+      communityService.fetchLatestUsers(),
+      communityService.fetchLatestGroups(),
+      communityService.fetchLatestMessages()
+    ]);
     loadData();
     setTimeout(() => setIsRefreshing(false), 500);
   };
@@ -100,9 +135,13 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
       loadData();
     });
 
+    communityService.fetchLatestGroups().then(() => {
+      loadData();
+    });
+
     communityService.fetchLatestMessages().then(() => {
       loadData();
-      if (!initialTab && !userManuallySwitchedTabRef.current) {
+      if (!initialTab && !userManuallySwitchedTabRef.current && communityService.getActiveTab() !== 'community') {
         setActiveTabState(communityService.getDefaultTab());
       }
     });
@@ -115,16 +154,20 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
 
     const presenceInterval = setInterval(() => {
       loadData();
-    }, 3500);
+    }, 12000);
 
     window.addEventListener('community_user_updated', handleUpdate);
     window.addEventListener('community_messages_updated', handleUpdate);
+    window.addEventListener('community_groups_updated', handleUpdate);
+    window.addEventListener('community_contacts_updated', handleUpdate);
     window.addEventListener('community_block_updated', handleUpdate);
 
     return () => {
       clearInterval(presenceInterval);
       window.removeEventListener('community_user_updated', handleUpdate);
       window.removeEventListener('community_messages_updated', handleUpdate);
+      window.removeEventListener('community_groups_updated', handleUpdate);
+      window.removeEventListener('community_contacts_updated', handleUpdate);
       window.removeEventListener('community_block_updated', handleUpdate);
     };
   }, [searchQuery]);
@@ -137,18 +180,81 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
   }, [searchQuery]);
 
   useEffect(() => {
-    if (!showProfileModal && !initialTab && !userManuallySwitchedTabRef.current) {
-      setActiveTabState(communityService.getDefaultTab());
+    if (initialTab && ['users', 'chats', 'community', 'blocked'].includes(initialTab)) {
+      setActiveTabState(initialTab);
+      communityService.setActiveTab(initialTab);
     }
-  }, [showProfileModal]);
+  }, [initialTab]);
+
+  useEffect(() => {
+    if (!showProfileModal && !initialTab && !userManuallySwitchedTabRef.current) {
+      const savedTab = communityService.getActiveTab();
+      if (savedTab) {
+        setActiveTabState(savedTab);
+      }
+    }
+  }, [showProfileModal, initialTab]);
 
   const handleStartChat = (partnerUserId: string) => {
     if (!communityService.isProfileComplete()) {
       setShowProfileModal(true);
       return;
     }
+    if (partnerUserId !== ADMIN_USER_ID) {
+      const friendship = communityService.getFriendshipStatus(partnerUserId);
+      if (friendship.status === 'rejected' && friendship.isRequester) {
+        showToast('تم رفض طلب الإضافة من قِبل هذا العضو. لا يمكن الدخول إلى صفحة الدردشة.');
+        return;
+      }
+    }
     communityService.setActiveTab(activeTab);
     onNavigate('direct-chat', { partnerUserId, returnTab: activeTab });
+  };
+
+  const handleSendAddRequest = async (targetUser: CommunityUser) => {
+    if (!communityService.isProfileComplete()) {
+      setShowProfileModal(true);
+      return;
+    }
+    try {
+      await communityService.sendFriendRequest(targetUser.userId);
+      loadData();
+      showToast(`تم إرسال طلب إضافة إلى ${targetUser.username} 🌿 يمكنك كتابة رسالة تعريفية واحدة.`);
+      handleStartChat(targetUser.userId);
+    } catch (err: any) {
+      showToast(err?.message || 'تعذر إرسال طلب الإضافة');
+    }
+  };
+
+  const handleMemberCardClick = async (targetUser: CommunityUser) => {
+    if (targetUser.userId === ADMIN_USER_ID) {
+      handleStartChat(targetUser.userId);
+      return;
+    }
+    const friendship = communityService.getFriendshipStatus(targetUser.userId);
+    if (friendship.status === 'accepted') {
+      handleStartChat(targetUser.userId);
+      return;
+    }
+    if (friendship.status === 'rejected' && friendship.isRequester) {
+      showToast('تم رفض طلب الإضافة من قِبل هذا العضو. لا يمكن الدخول إلى صفحة الدردشة.');
+      return;
+    }
+    if (friendship.status === 'pending') {
+      handleStartChat(targetUser.userId);
+      return;
+    }
+    // status === 'none'
+    await handleSendAddRequest(targetUser);
+  };
+
+  const handleStartGroupChat = (groupId: string) => {
+    if (!communityService.isProfileComplete()) {
+      setShowProfileModal(true);
+      return;
+    }
+    communityService.setActiveTab('community');
+    onNavigate('group-chat', { groupId, returnTab: 'community', initialTab: 'community' });
   };
 
   const confirmBlockUser = async () => {
@@ -188,11 +294,71 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
     });
   }, [chats, searchQuery]);
 
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery.trim()) return groups;
+    const q = searchQuery.toLowerCase().trim();
+    return groups.filter((g) => {
+      const name = (g.name || '').toLowerCase();
+      const desc = (g.description || '').toLowerCase();
+      const lastMsg = (g.lastMessage || '').toLowerCase();
+      const creator = (g.creatorName || '').toLowerCase();
+      return name.includes(q) || desc.includes(q) || lastMsg.includes(q) || creator.includes(q);
+    });
+  }, [groups, searchQuery]);
+
   const newMatchingFriends = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const existingPartnerIds = new Set(chats.map(c => c.partner.userId));
     return users.filter(u => !existingPartnerIds.has(u.userId) && u.userId !== currentUser.userId);
   }, [users, chats, searchQuery, currentUser.userId]);
+
+  // Back interceptor for device/phone back button
+  useEffect(() => {
+    const interceptor = () => {
+      // 1. Close profile modal if open
+      if (showProfileModal) {
+        if (!communityService.isProfileComplete()) {
+          onBack();
+        } else {
+          setShowProfileModal(false);
+        }
+        return true;
+      }
+      // 2. Close create group modal if open
+      if (showCreateGroupModal) {
+        setShowCreateGroupModal(false);
+        return true;
+      }
+      // 3. Close admin modal if open
+      if (showAdminModal) {
+        setShowAdminModal(false);
+        return true;
+      }
+      // 4. Cancel block confirmation banner if open
+      if (userToBlock) {
+        setUserToBlock(null);
+        return true;
+      }
+      // 5. Cancel group deletion / hide confirm if open
+      if (groupToDelete) {
+        setGroupToDelete(null);
+        return true;
+      }
+      if (groupToHide) {
+        setGroupToHide(null);
+        return true;
+      }
+      // 6. Clear search query if active
+      if (searchQuery.trim()) {
+        setSearchQuery('');
+        return true;
+      }
+      return false; // Let global handler navigate back to origin (home or more-menu)
+    };
+
+    const unregister = registerBackInterceptor(interceptor);
+    return unregister;
+  }, [showProfileModal, showCreateGroupModal, showAdminModal, userToBlock, groupToDelete, groupToHide, searchQuery]);
 
   if (showProfileModal) {
     return (
@@ -219,6 +385,66 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
     );
   }
 
+  const cleanGroupName = (name?: string): string => {
+    if (!name) return '';
+    return name.replace(/[\p{Extended_Pictographic}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim() || name;
+  };
+
+  const renderGroupAvatar = (grp: GroupChat) => {
+    if (grp.avatarUrl && grp.avatarUrl.trim()) {
+      const url = grp.avatarUrl.trim();
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image') || url.startsWith('/')) {
+        return <img src={url} alt={grp.name} className="w-full h-full object-cover" />;
+      }
+      return <span className="text-2xl leading-none select-none">{url}</span>;
+    }
+
+    const trailingEmojiMatch = grp.name?.match(/[\p{Extended_Pictographic}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]$/u);
+    if (trailingEmojiMatch) {
+      return <span className="text-2xl leading-none select-none">{trailingEmojiMatch[0]}</span>;
+    }
+
+    if (grp.groupId === 'group_default_quran_readers') {
+      return <span className="text-2xl leading-none select-none">📖</span>;
+    }
+    if (grp.groupId === 'group_default_tadabbur') {
+      return <span className="text-2xl leading-none select-none">🌿</span>;
+    }
+
+    return <Users size={22} />;
+  };
+
+  const communityTutorialSteps: TutorialStep[] = [
+    {
+      id: 'community-members',
+      title: 'قائمة الأعضاء',
+      text: 'استعراض قراء القرآن، والبحث بالاسم، وإرسال طلبات الإضافة والتواصل بكل سهولة.',
+      selector: '#community-tab-users',
+      icon: <UserPlus className="w-8 h-8 text-sky-400" />
+    },
+    {
+      id: 'community-chats',
+      title: 'المحادثات الخاصة',
+      text: 'مراسلة إخوانك والتواصل بالرسائل النصية والتسجيلات الصوتية ومشاركة الآيات الكريمة.',
+      selector: '#community-tab-chats',
+      icon: <MessageSquare className="w-8 h-8 text-teal-400" />
+    },
+    {
+      id: 'community-groups',
+      title: 'حلقات القرآن والمجموعات',
+      text: 'الانضمام إلى مجموعات تدارس القرآن الكريم أو إنشاء مجموعة جديدة وإدارتها كمنشئ.',
+      selector: '#community-tab-groups',
+      icon: <BookOpen className="w-8 h-8 text-amber-400" />
+    },
+    {
+      id: 'community-profile',
+      title: 'الملف الشخصي',
+      text: 'الضغط هنا لتعديل اسمك وصورتك ودولتك المعروضة في مجتمع التواصل متى شئت.',
+      selector: '#community-profile-pill',
+      icon: <ShieldCheck className="w-8 h-8 text-indigo-400" />
+    }
+  ];
+
   return (
     <div 
       className="h-screen max-h-screen h-[100dvh] w-full flex flex-col overflow-y-auto overscroll-contain transition-colors bg-transparent" 
@@ -231,27 +457,30 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
       }}
     >
       <div className="w-full px-2 sm:px-3">
-        {/* Top Navigation Bar: Quran Shortcut (Right), Profile Pill (Center), Home Shortcut (Left) */}
+        {/* Top Navigation Bar: Back & Quran Shortcut (Right), Profile Pill (Center), Ahl-al-Quran Shortcut (Left) */}
         <div className="flex items-center justify-between mb-3 px-1">
-          {/* Right Icon: Go directly to Holy Quran Page */}
-          <button
-            type="button"
-            onClick={() => onNavigate('quran')}
-            className="w-10 h-10 rounded-2xl border flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer flex-shrink-0"
-            style={{
-              backgroundColor: cardBg,
-              borderColor: cardBorder,
-              color: primaryColor
-            }}
-            title="صفحة القرآن الكريم"
-            aria-label="صفحة القرآن الكريم"
-          >
-            <BookOpen size={18} />
-          </button>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {/* Right Icon: Go directly to Holy Quran Page */}
+            <button
+              type="button"
+              onClick={() => onNavigate('quran')}
+              className="w-10 h-10 rounded-2xl border flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+              style={{
+                backgroundColor: cardBg,
+                borderColor: cardBorder,
+                color: primaryColor
+              }}
+              title="صفحة القرآن الكريم"
+              aria-label="صفحة القرآن الكريم"
+            >
+              <BookOpen size={18} />
+            </button>
+          </div>
 
           {/* Center: Current User Profile Pill (Click to edit) */}
           {currentUser.username ? (
             <div 
+              id="community-profile-pill"
               onClick={() => setShowProfileModal(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-sm overflow-hidden"
               style={{
@@ -280,7 +509,20 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
               </span>
             </div>
           ) : (
-            <div />
+            <div 
+              id="community-profile-pill"
+              onClick={() => setShowProfileModal(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-sm"
+              style={{
+                backgroundColor: `${primaryColor}15`,
+                borderColor: `${primaryColor}35`,
+                color: primaryColor
+              }}
+              title="تسجيل الملف الشخصي"
+            >
+              <User size={14} />
+              <span>تسجيل حسابي</span>
+            </div>
           )}
 
           {/* Left Icon: Go directly to Ahl Al-Quran Page */}
@@ -297,20 +539,23 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
             aria-label="صفحة أهل القرآن الكريم"
           >
             <Trophy size={18} />
-            <span className="absolute -top-1.5 -right-1 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded-full shadow-xs border border-white dark:border-slate-800 animate-bounce pointer-events-none">
-              جديد
-            </span>
+            {showNewBadge && (
+              <span className="absolute -top-1.5 -right-1 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded-full shadow-xs border border-white dark:border-slate-800 animate-bounce pointer-events-none">
+                جديد
+              </span>
+            )}
           </button>
         </div>
 
-        {/* Navigation Tabs (Equally divided 3 tabs: Members, Chats, Blocked) */}
+        {/* Navigation Tabs (Equally divided 4 tabs: Members, Chats, Community, Blocked) */}
         <div 
-          className="grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl border mb-3"
+          className="grid grid-cols-4 gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded-2xl border mb-3"
           style={{ backgroundColor: secondaryBg, borderColor: cardBorder }}
         >
           <button
+            id="community-tab-users"
             onClick={() => setActiveTab('users')}
-            className="w-full flex items-center justify-center py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all truncate"
+            className="w-full flex items-center justify-center py-2 sm:py-2.5 px-1 sm:px-2 rounded-xl text-xs sm:text-sm font-bold transition-all truncate cursor-pointer"
             style={{
               backgroundColor: activeTab === 'users' ? cardBg : 'transparent',
               color: activeTab === 'users' ? primaryColor : textMuted,
@@ -321,8 +566,9 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
           </button>
 
           <button
+            id="community-tab-chats"
             onClick={() => setActiveTab('chats')}
-            className="w-full flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all relative truncate"
+            className="w-full flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-2 rounded-xl text-xs sm:text-sm font-bold transition-all relative truncate cursor-pointer"
             style={{
               backgroundColor: activeTab === 'chats' ? cardBg : 'transparent',
               color: activeTab === 'chats' ? primaryColor : textMuted,
@@ -338,8 +584,30 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
           </button>
 
           <button
+            id="community-tab-groups"
+            onClick={() => setActiveTab('community')}
+            className="w-full flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 px-1 sm:px-2 rounded-xl text-xs sm:text-sm font-bold transition-all relative truncate cursor-pointer"
+            style={{
+              backgroundColor: activeTab === 'community' ? cardBg : 'transparent',
+              color: activeTab === 'community' ? primaryColor : textMuted,
+              boxShadow: activeTab === 'community' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+            }}
+          >
+            <span>المجتمع</span>
+            {pendingInvitations.length > 0 && (
+              <span 
+                className="px-1.5 py-0.5 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-white text-[10px] font-extrabold flex items-center justify-center leading-none shadow-sm animate-pulse"
+                title={`${pendingInvitations.length} دعوة جديدة`}
+              >
+                {pendingInvitations.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            id="community-tab-blocked"
             onClick={() => setActiveTab('blocked')}
-            className="w-full flex items-center justify-center py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all truncate"
+            className="w-full flex items-center justify-center py-2 sm:py-2.5 px-1 sm:px-2 rounded-xl text-xs sm:text-sm font-bold transition-all truncate cursor-pointer"
             style={{
               backgroundColor: activeTab === 'blocked' ? cardBg : 'transparent',
               color: activeTab === 'blocked' ? '#ef4444' : textMuted,
@@ -347,6 +615,9 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
             }}
           >
             <span>الحظر</span>
+            {blockedUsers.length > 0 && (
+              <span className="mr-0.5 text-[10px] opacity-75">({blockedUsers.length})</span>
+            )}
           </button>
         </div>
 
@@ -396,7 +667,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
 
 
         {/* Search Input & Refresh Button (Always available for both chats and users tabs to search for friends) */}
-        {(activeTab === 'chats' || activeTab === 'users') && (
+        {(activeTab === 'chats' || activeTab === 'users' || activeTab === 'community') && (
           <div className="flex items-center gap-2 mb-4">
             <div className="relative flex-1">
               <Search size={18} className="absolute right-3.5 top-1/2 -translate-y-1/2" style={{ color: textMuted }} />
@@ -404,7 +675,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ابحث عن أصدقاء وقُرّاء بالاسم أو الدولة أو كود الحساب..."
+                placeholder={activeTab === 'community' ? "ابحث في المحادثات الجماعية والمجموعات..." : "ابحث عن أصدقاء وقُرّاء بالاسم أو الدولة أو كود الحساب..."}
                 className="w-full pl-10 pr-10 py-2.5 rounded-2xl border text-sm font-medium focus:outline-none transition-all shadow-xs"
                 style={{
                   backgroundColor: cardBg,
@@ -472,7 +743,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                     key={u.userId}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    onClick={() => handleStartChat(u.userId)}
+                    onClick={() => handleMemberCardClick(u)}
                     className={`border rounded-2xl ${
                       isDense ? 'py-2.5 px-2.5 sm:px-3 gap-2' : 'py-3 px-4 gap-3'
                     } flex items-center justify-between shadow-xs hover:shadow-md transition-all cursor-pointer active:scale-[0.99] group`}
@@ -524,6 +795,115 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                         )}
                       </div>
                     </div>
+
+                    {/* Friend request / Chat action button */}
+                    <div className="shrink-0 mr-2" onClick={(e) => e.stopPropagation()}>
+                      {(() => {
+                        if (u.userId === ADMIN_USER_ID) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => handleStartChat(u.userId)}
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs active:scale-95 flex items-center gap-1 cursor-pointer"
+                              style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+                            >
+                              <MessageSquare size={13} />
+                              <span>محادثة</span>
+                            </button>
+                          );
+                        }
+
+                        const friendship = communityService.getFriendshipStatus(u.userId);
+
+                        if (friendship.status === 'accepted') {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => handleStartChat(u.userId)}
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs active:scale-95 flex items-center gap-1 cursor-pointer"
+                              style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+                            >
+                              <MessageSquare size={13} />
+                              <span>محادثة</span>
+                            </button>
+                          );
+                        }
+
+                        if (friendship.status === 'pending' && friendship.isRequester) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => handleStartChat(u.userId)}
+                              className="px-2.5 py-1.5 rounded-xl text-xs font-bold border border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400 active:scale-95 flex items-center gap-1 cursor-pointer"
+                              title="طلب الإضافة قيد الانتظار، اضغط للدخول وإرسال رسالة التعريف"
+                            >
+                              <Clock size={13} />
+                              <span>بانتظار القبول</span>
+                            </button>
+                          );
+                        }
+
+                        if (friendship.status === 'pending' && !friendship.isRequester) {
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  await communityService.acceptFriendRequest(u.userId);
+                                  loadData();
+                                  showToast(`تم قبول طلب إضافة ${u.username} بنجاح 🌿`);
+                                }}
+                                className="px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs active:scale-95 flex items-center justify-center cursor-pointer"
+                                style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+                              >
+                                <span>قبول</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  await communityService.rejectFriendRequest(u.userId);
+                                  loadData();
+                                  showToast('تم رفض طلب الإضافة');
+                                }}
+                                className="px-3 py-1.5 rounded-xl text-xs font-bold border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 active:scale-95 flex items-center justify-center cursor-pointer"
+                                style={{ backgroundColor: secondaryBg }}
+                              >
+                                <span>رفض</span>
+                              </button>
+                            </div>
+                          );
+                        }
+
+                        if (friendship.status === 'rejected' && friendship.isRequester) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                showToast('تم رفض طلب الإضافة من قِبل هذا العضو. لا يمكن الدخول إلى صفحة الدردشة.');
+                              }}
+                              className="px-2.5 py-1.5 rounded-xl text-xs font-bold border border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 cursor-not-allowed flex items-center gap-1"
+                              title="تم رفض طلب الإضافة"
+                            >
+                              <Ban size={12} />
+                              <span>تم الرفض</span>
+                            </button>
+                          );
+                        }
+
+                        // status === 'none'
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => handleSendAddRequest(u)}
+                            className="px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs active:scale-95 flex items-center gap-1.5 cursor-pointer transition-all hover:opacity-95"
+                            style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+                          >
+                            <UserPlus size={13} />
+                            <span>إضافة</span>
+                          </button>
+                        );
+                      })()}
+                    </div>
                   </motion.div>
                 );
               })
@@ -531,151 +911,497 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
           </div>
         )}
 
-        {/* Tab 2: Active Chats & Friends Search */}
+        {/* Tab 2: Individual / Direct Chats Only */}
         {activeTab === 'chats' && (
           <div className="space-y-2.5">
-            {filteredChats.length === 0 && newMatchingFriends.length === 0 ? (
+            {/* Quick Banner linking to Community Tab if user has pending group invitations */}
+            {pendingInvitations.length > 0 && (
               <div 
-                className="text-center py-12 rounded-3xl border p-6"
-                style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+                onClick={() => setActiveTab('community')}
+                className="p-3 sm:p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer mb-2 transition-all hover:opacity-95 shadow-xs"
+                style={{
+                  backgroundColor: `${primaryColor}12`,
+                  borderColor: `${primaryColor}35`
+                }}
               >
-                <MessageSquare size={40} className="mx-auto mb-2" style={{ color: textMuted }} />
-                <p className="text-sm font-bold" style={{ color: textColor }}>
-                  {searchQuery ? 'لا توجد محادثات أو أصدقاء مطابقون للبحث' : 'لا توجد محادثات نشطة حالياً'}
-                </p>
-                <p className="text-xs mt-1" style={{ color: textMuted }}>
-                  {searchQuery ? 'جرب البحث باسم أو كود حساب آخر' : 'اختر قارئاً من تبويب (الأعضاء) أو استخدم شريط البحث أعلاه لبدء محادثة'}
-                </p>
-              </div>
-            ) : (
-              <>
-                {filteredChats.map((chat) => {
-                  const isPartnerOnline = communityService.isUserOnline(chat.partner);
-                  return (
-                    <div
-                      key={chat.chatId}
-                      onClick={() => handleStartChat(chat.partner.userId)}
-                      className="border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs"
-                      style={{
-                        backgroundColor: cardBg,
-                        borderColor: cardBorder
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <div 
-                            className="w-12 h-12 rounded-full font-bold flex items-center justify-center border overflow-hidden"
-                            style={{
-                              backgroundColor: `${primaryColor}15`,
-                              borderColor: `${primaryColor}30`,
-                              color: primaryColor
-                            }}
-                          >
-                            {(chat.partner.userId === ADMIN_USER_ID ? SUPPORT_AVATAR_BASE64 : chat.partner.avatarUrl) ? (
-                              <img 
-                                src={chat.partner.userId === ADMIN_USER_ID ? SUPPORT_AVATAR_BASE64 : chat.partner.avatarUrl} 
-                                alt={chat.partner.username} 
-                                className="w-full h-full object-cover" 
-                                onError={(e) => {
-                                  if (chat.partner.userId === ADMIN_USER_ID) {
-                                    e.currentTarget.src = SUPPORT_AVATAR_BASE64;
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <User size={24} />
-                            )}
-                          </div>
-                          {isPartnerOnline ? (
-                            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" title="متصل الآن" />
-                          ) : (
-                            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white dark:border-slate-900 opacity-60" title="غير متصل" />
-                          )}
-                          {chat.unreadCount > 0 && (
-                            <div className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow">
-                              {chat.unreadCount}
-                            </div>
-                          )}
-                        </div>
-
-                        <div>
-                          <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: textColor }}>
-                            <span>{chat.partner.username}</span>
-                            <span className="text-xs font-normal" style={{ color: primaryColor }}>({chat.partner.country})</span>
-                          </h3>
-                          <p className="text-xs mt-0.5 line-clamp-1 font-medium" style={{ color: textMuted }}>
-                            {chat.lastMessage || 'بدء المحادثة'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <span className="text-[10px] font-medium" style={{ color: textMuted }}>
-                        {chat.lastMessageTime ? new Date(chat.lastMessageTime).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : ''}
-                      </span>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center flex-shrink-0">
+                    <Sparkles size={16} className="animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold" style={{ color: textColor }}>
+                      لديك ({pendingInvitations.length}) دعوة انضمام لمحادثة جماعية
                     </div>
-                  );
-                })}
+                    <div className="text-[10px]" style={{ color: textMuted }}>
+                      انقر هنا للانتقال إلى تبويب المجتمع للقبول أو الرفض
+                    </div>
+                  </div>
+                </div>
+                <span 
+                  className="px-2.5 py-1 rounded-xl text-xs font-bold shadow-xs flex-shrink-0"
+                  style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+                >
+                  عرض في المجتمع
+                </span>
+              </div>
+            )}
 
-                {/* Additional Friends Found Matching Search Query */}
-                {newMatchingFriends.length > 0 && (
-                  <div className="mt-4 pt-3 border-t" style={{ borderColor: cardBorder }}>
-                    <h4 className="text-xs font-bold mb-2 flex items-center gap-1.5 px-1" style={{ color: textMuted }}>
-                      <span>أصدقاء وقُرّاء متاحون لبدء المحادثة ({newMatchingFriends.length})</span>
-                    </h4>
-                    <div className="space-y-2">
-                      {newMatchingFriends.map(friend => (
+            {/* Direct Chats List */}
+            {filteredChats.length === 0 && newMatchingFriends.length === 0 ? (
+                  <div 
+                    className="text-center py-12 rounded-3xl border p-6"
+                    style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+                  >
+                    <MessageSquare size={40} className="mx-auto mb-2" style={{ color: textMuted }} />
+                    <p className="text-sm font-bold" style={{ color: textColor }}>
+                      {searchQuery ? 'لا توجد محادثات أو أصدقاء مطابقون للبحث' : 'لا توجد محادثات نشطة حالياً'}
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: textMuted }}>
+                      {searchQuery ? 'جرب البحث باسم أو كود حساب آخر' : 'اختر قارئاً من تبويب (الأعضاء) أو استخدم شريط البحث أعلاه لبدء محادثة'}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {filteredChats.map((chat) => {
+                      const isPartnerOnline = communityService.isUserOnline(chat.partner);
+                      return (
                         <div
-                          key={friend.userId}
-                          onClick={() => handleStartChat(friend.userId)}
-                          className="border rounded-2xl p-3 flex items-center justify-between cursor-pointer transition-all shadow-xs"
+                          key={chat.chatId}
+                          onClick={() => handleMemberCardClick(chat.partner)}
+                          className="border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs"
                           style={{
                             backgroundColor: cardBg,
                             borderColor: cardBorder
                           }}
                         >
                           <div className="flex items-center gap-3">
-                            <div 
-                              className="w-10 h-10 rounded-full font-bold flex items-center justify-center border overflow-hidden"
-                              style={{
-                                backgroundColor: `${primaryColor}15`,
-                                borderColor: `${primaryColor}30`,
-                                color: primaryColor
-                              }}
-                            >
-                              {friend.avatarUrl ? (
-                                <img src={friend.avatarUrl} alt={friend.username} className="w-full h-full object-cover" />
+                            <div className="relative">
+                              <div 
+                                className="w-12 h-12 rounded-full font-bold flex items-center justify-center border overflow-hidden"
+                                style={{
+                                  backgroundColor: `${primaryColor}15`,
+                                  borderColor: `${primaryColor}30`,
+                                  color: primaryColor
+                                }}
+                              >
+                                {(chat.partner.userId === ADMIN_USER_ID ? SUPPORT_AVATAR_BASE64 : chat.partner.avatarUrl) ? (
+                                  <img 
+                                    src={chat.partner.userId === ADMIN_USER_ID ? SUPPORT_AVATAR_BASE64 : chat.partner.avatarUrl} 
+                                    alt={chat.partner.username} 
+                                    className="w-full h-full object-cover" 
+                                    onError={(e) => {
+                                      if (chat.partner.userId === ADMIN_USER_ID) {
+                                        e.currentTarget.src = SUPPORT_AVATAR_BASE64;
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  <User size={24} />
+                                )}
+                              </div>
+                              {isPartnerOnline ? (
+                                <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" title="متصل الآن" />
                               ) : (
-                                <User size={20} />
+                                <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white dark:border-slate-900 opacity-60" title="غير متصل" />
+                              )}
+                              {chat.unreadCount > 0 && (
+                                <div className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow">
+                                  {chat.unreadCount}
+                                </div>
                               )}
                             </div>
+
                             <div>
-                              <div className="font-bold text-sm flex items-center gap-1.5" style={{ color: textColor }}>
-                                <span>{friend.username}</span>
-                                <span className="text-[11px] font-normal" style={{ color: primaryColor }}>({friend.country || 'دولة أخرى'})</span>
-                              </div>
-                              {friend.bio && (
-                                <p className="text-[11px] line-clamp-1" style={{ color: textMuted }}>{friend.bio}</p>
-                              )}
+                              <h3 className="font-bold text-sm flex items-center gap-2" style={{ color: textColor }}>
+                                <span>{chat.partner.username}</span>
+                                <span className="text-xs font-normal" style={{ color: primaryColor }}>({chat.partner.country})</span>
+                              </h3>
+                              <p className="text-xs mt-0.5 line-clamp-1 font-medium" style={{ color: textMuted }}>
+                                {chat.lastMessage || 'بدء المحادثة'}
+                              </p>
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStartChat(friend.userId);
-                            }}
-                            className="px-3 py-1.5 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 active:scale-95"
-                            style={{ backgroundColor: primaryColor, color: primaryTextColor }}
-                          >
-                            <MessageSquare size={13} />
-                            <span>محادثة</span>
-                          </button>
+
+                          <span className="text-[10px] font-medium" style={{ color: textMuted }}>
+                            {chat.lastMessageTime ? new Date(chat.lastMessageTime).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : ''}
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      );
+                    })}
+
+                    {/* Additional Friends Found Matching Search Query */}
+                    {newMatchingFriends.length > 0 && (
+                      <div className="mt-4 pt-3 border-t" style={{ borderColor: cardBorder }}>
+                        <h4 className="text-xs font-bold mb-2 flex items-center gap-1.5 px-1" style={{ color: textMuted }}>
+                          <span>أصدقاء وقُرّاء متاحون لبدء المحادثة ({newMatchingFriends.length})</span>
+                        </h4>
+                        <div className="space-y-2">
+                          {newMatchingFriends.map(friend => (
+                            <div
+                              key={friend.userId}
+                              onClick={() => handleMemberCardClick(friend)}
+                              className="border rounded-2xl p-3 flex items-center justify-between cursor-pointer transition-all shadow-xs"
+                              style={{
+                                backgroundColor: cardBg,
+                                borderColor: cardBorder
+                              }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div 
+                                  className="w-10 h-10 rounded-full font-bold flex items-center justify-center border overflow-hidden"
+                                  style={{
+                                    backgroundColor: `${primaryColor}15`,
+                                    borderColor: `${primaryColor}30`,
+                                    color: primaryColor
+                                  }}
+                                >
+                                  {friend.avatarUrl ? (
+                                    <img src={friend.avatarUrl} alt={friend.username} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <User size={20} />
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-sm flex items-center gap-1.5" style={{ color: textColor }}>
+                                    <span>{friend.username}</span>
+                                    <span className="text-[11px] font-normal" style={{ color: primaryColor }}>({friend.country || 'دولة أخرى'})</span>
+                                  </div>
+                                  {friend.bio && (
+                                    <p className="text-[11px] line-clamp-1" style={{ color: textMuted }}>{friend.bio}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                                {(() => {
+                                  const friendship = communityService.getFriendshipStatus(friend.userId);
+                                  if (friendship.status === 'accepted') {
+                                    return (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartChat(friend.userId)}
+                                        className="px-3 py-1.5 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 active:scale-95 cursor-pointer"
+                                        style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+                                      >
+                                        <MessageSquare size={13} />
+                                        <span>محادثة</span>
+                                      </button>
+                                    );
+                                  }
+                                  if (friendship.status === 'pending' && friendship.isRequester) {
+                                    return (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartChat(friend.userId)}
+                                        className="px-2.5 py-1.5 rounded-xl text-xs font-bold border border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400 active:scale-95 flex items-center gap-1 cursor-pointer"
+                                      >
+                                        <Clock size={13} />
+                                        <span>بانتظار القبول</span>
+                                      </button>
+                                    );
+                                  }
+                                  if (friendship.status === 'rejected' && friendship.isRequester) {
+                                    return (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          showToast('تم رفض طلب الإضافة من قِبل هذا العضو. لا يمكن الدخول إلى صفحة الدردشة.');
+                                        }}
+                                        className="px-2.5 py-1.5 rounded-xl text-xs font-bold border border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 cursor-not-allowed flex items-center gap-1"
+                                      >
+                                        <Ban size={12} />
+                                        <span>تم الرفض</span>
+                                      </button>
+                                    );
+                                  }
+                                  return (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSendAddRequest(friend)}
+                                      className="px-3 py-1.5 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 active:scale-95 cursor-pointer"
+                                      style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+                                    >
+                                      <UserPlus size={13} />
+                                      <span>إضافة</span>
+                                    </button>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
+          </div>
+        )}
+
+        {/* Tab 3: Community Tab (المجتمع - مخصص للمحادثات الجماعية) */}
+        {activeTab === 'community' && (
+          <div className="space-y-3">
+            {/* Header: Groups count & Create Group Button */}
+            <div className="flex items-center justify-between gap-2 p-1">
+              <div className="flex items-center gap-2">
+                <Users size={17} style={{ color: primaryColor }} />
+                <span className="text-xs sm:text-sm font-bold" style={{ color: textColor }}>
+                  المحادثات وحلقات المجتمع ({filteredGroups.length})
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!communityService.isProfileComplete()) {
+                    setShowProfileModal(true);
+                    return;
+                  }
+                  setShowCreateGroupModal(true);
+                }}
+                className="px-3.5 py-2 rounded-2xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 flex-shrink-0 active:scale-95 cursor-pointer"
+                style={{
+                  backgroundColor: primaryColor,
+                  color: primaryTextColor
+                }}
+                title="إنشاء محادثة جماعية جديدة"
+              >
+                <Users size={14} />
+                <span>+ إنشاء مجموعة</span>
+              </button>
+            </div>
+
+            {/* Pending Group Invitations Section */}
+            {pendingInvitations.length > 0 && (
+              <div className="space-y-2 mb-3">
+                <div className="flex items-center gap-1.5 px-1">
+                  <Sparkles size={14} className="text-amber-500 animate-pulse" />
+                  <span className="text-xs font-bold" style={{ color: textColor }}>
+                    دعوات الانضمام للمحادثات الجماعية ({pendingInvitations.length})
+                  </span>
+                </div>
+
+                {pendingInvitations.map(invitation => (
+                  <motion.div
+                    key={invitation.groupId}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3.5 sm:p-4 rounded-2xl border shadow-sm transition-all"
+                    style={{
+                      backgroundColor: cardBg,
+                      borderColor: `${primaryColor}40`,
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-11 h-11 rounded-2xl flex items-center justify-center border font-bold text-lg flex-shrink-0 shadow-inner"
+                        style={{
+                          backgroundColor: `${primaryColor}15`,
+                          borderColor: `${primaryColor}30`,
+                          color: primaryColor
+                        }}
+                      >
+                        {invitation.avatarUrl ? (
+                          <img src={invitation.avatarUrl} alt={invitation.name} className="w-full h-full object-cover rounded-2xl" />
+                        ) : (
+                          <Users size={20} />
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-xs sm:text-sm truncate" style={{ color: textColor }}>
+                            {invitation.name}
+                          </h4>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex-shrink-0">
+                            دعوة انضمام
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] mt-0.5 truncate" style={{ color: textMuted }}>
+                          تمت دعوتك بواسطة: <span className="font-bold" style={{ color: primaryColor }}>{invitation.creatorName || 'مستخدم المصحف'}</span>
+                          {invitation.description ? ` • ${invitation.description}` : ''}
+                        </p>
+
+                        <div className="text-[10px] mt-1" style={{ color: textMuted }}>
+                          الأعضاء الحاليون: {invitation.members?.length || 1}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons: Accept / Reject */}
+                    <div className="flex items-center gap-2 mt-3 pt-2.5 border-t" style={{ borderColor: cardBorder }}>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await communityService.acceptGroupInvitation(invitation.groupId);
+                          loadData();
+                          showToast(`تم الانضمام إلى "${invitation.name}" بنجاح 🌿`);
+                          handleStartGroupChat(invitation.groupId);
+                        }}
+                        className="flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+                        style={{
+                          backgroundColor: primaryColor,
+                          color: primaryTextColor
+                        }}
+                      >
+                        <Check size={14} />
+                        <span>قبول والانضمام</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await communityService.declineGroupInvitation(invitation.groupId);
+                          loadData();
+                          showToast('تم رفض دعوة الانضمام');
+                        }}
+                        className="py-2 px-3.5 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 active:scale-95 transition-all hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-500 cursor-pointer"
+                        style={{
+                          backgroundColor: secondaryBg,
+                          borderColor: cardBorder,
+                          color: textMuted
+                        }}
+                      >
+                        <X size={14} />
+                        <span>رفض</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* Groups List */}
+            {filteredGroups.length === 0 ? (
+              <div 
+                className="text-center py-10 rounded-3xl border p-6"
+                style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+              >
+                <Users size={40} className="mx-auto mb-2" style={{ color: textMuted }} />
+                <p className="text-sm font-bold" style={{ color: textColor }}>
+                  {searchQuery ? 'لا توجد مجموعات مطابقة للبحث' : 'لا توجد محادثات جماعية حالياً'}
+                </p>
+                <p className="text-xs mt-1" style={{ color: textMuted }}>
+                  اضغط على زر (+ إنشاء مجموعة) لبدء حلقة تواصل جديدة مع القراء
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateGroupModal(true)}
+                  className="mt-3 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm inline-flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                  style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+                >
+                  <Users size={14} />
+                  <span>إنشاء محادثة جماعية الآن</span>
+                </button>
+              </div>
+            ) : (
+              filteredGroups.map(grp => {
+                const isSystemDefaultGroup = grp.groupId === 'group_default_quran_readers' || grp.groupId === 'group_default_tadabbur';
+                const isCreator = communityService.isGroupCreator(grp, currentUser);
+                const canDelete = (isCreator && !isSystemDefaultGroup) || currentUser.userId === ADMIN_USER_ID;
+                const isCurrentMember = Array.isArray(grp.members) && grp.members.includes(currentUser.userId);
+                const hasLeftOrRemoved = !isSystemDefaultGroup && !isCreator && !isCurrentMember;
+                const hasPendingInvite = grp.invitedMembers?.includes(currentUser.userId) && !grp.members?.includes(currentUser.userId);
+
+                return (
+                  <div
+                    key={grp.groupId}
+                    onClick={() => handleStartGroupChat(grp.groupId)}
+                    className="border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition-all shadow-xs hover:shadow-md active:scale-[0.99]"
+                    style={{
+                      backgroundColor: cardBg,
+                      borderColor: isSystemDefaultGroup ? `${primaryColor}40` : (hasLeftOrRemoved ? '#f59e0b40' : cardBorder)
+                    }}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div 
+                        className="w-12 h-12 rounded-2xl font-bold flex items-center justify-center border overflow-hidden flex-shrink-0 text-xl shadow-inner"
+                        style={{
+                          backgroundColor: `${primaryColor}15`,
+                          borderColor: `${primaryColor}30`,
+                          color: primaryColor
+                        }}
+                      >
+                        {renderGroupAvatar(grp)}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-sm sm:text-base break-words whitespace-normal leading-snug" style={{ color: textColor }}>
+                            {cleanGroupName(grp.name)}
+                          </h3>
+                          {isSystemDefaultGroup ? (
+                            <span 
+                              className="text-[10px] px-2 py-0.5 rounded-full font-extrabold flex items-center"
+                              style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+                            >
+                              <span>حلقة عامة</span>
+                            </span>
+                          ) : hasLeftOrRemoved ? (
+                            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <span 
+                                className="text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                              >
+                                <span>عضو سابق / تمت المغادرة</span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setGroupToHide(grp)}
+                                className="w-6 h-6 rounded-lg flex items-center justify-center bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30 hover:bg-slate-500/25 active:scale-95 transition-all cursor-pointer"
+                                title="إزالة من صفحتي"
+                              >
+                                <EyeOff size={12} />
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                        <p className="text-xs mt-1 line-clamp-1 font-medium" style={{ color: hasLeftOrRemoved ? '#f59e0b' : textMuted }}>
+                          {hasLeftOrRemoved
+                            ? 'توقف ظهور الرسائل الجديدة لك في هذه المجموعة'
+                            : (!grp.lastMessage || grp.lastMessage.startsWith('تم إنشاء') || grp.lastMessage.includes('إنشاء المجموعة'))
+                              ? (grp.creatorName || grp.lastMessageSenderName || currentUser.username || 'عضو')
+                              : (grp.lastMessageSenderName ? `${grp.lastMessageSenderName}: ` : '') + grp.lastMessage}
+                        </p>
+                      </div>
+                    </div>
+
+                    {hasPendingInvite ? (
+                      <div className="flex items-center gap-1.5 flex-shrink-0 mr-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await communityService.acceptGroupInvitation(grp.groupId);
+                            loadData();
+                            showToast(`تم الانضمام إلى "${grp.name}" بنجاح 🌿`);
+                            handleStartGroupChat(grp.groupId);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl text-xs font-bold shadow-xs active:scale-95 flex items-center gap-1 cursor-pointer"
+                          style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+                        >
+                          <Check size={12} />
+                          <span>قبول</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await communityService.declineGroupInvitation(grp.groupId);
+                            loadData();
+                            showToast('تم رفض دعوة الانضمام');
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl text-xs font-bold border active:scale-95 text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+                          style={{ backgroundColor: secondaryBg, borderColor: cardBorder }}
+                        >
+                          <X size={12} />
+                          <span>رفض</span>
+                        </button>
+                      </div>
+                    ) : grp.lastMessageTime ? (
+                      <span className="text-[10px] font-medium flex-shrink-0 mr-2" style={{ color: textMuted }}>
+                        {new Date(grp.lastMessageTime).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    ) : null}
+                  </div>
+                );
+              })
             )}
           </div>
         )}
@@ -758,12 +1484,109 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
         )}
       </AnimatePresence>
 
-      {/* Secret Admin Dashboard Modal */}
-      <AdminDashboardModal
-        isOpen={showAdminModal}
-        onClose={() => setShowAdminModal(false)}
-        currentTheme={{ bg: theme.bgColor || '#0D1B2A', text: textColor }}
-      />
+      {/* Delete Group Confirmation Modal */}
+      <AnimatePresence>
+        {groupToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" dir="rtl" style={{ fontFamily: theme.font }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm rounded-3xl border shadow-2xl p-5 text-center space-y-3.5"
+              style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+            >
+              <div className="w-14 h-14 rounded-full bg-rose-500/15 text-rose-500 flex items-center justify-center mx-auto">
+                <Trash2 size={28} />
+              </div>
+              <h3 className="text-base font-bold text-rose-600 dark:text-rose-400">حذف المحادثة الجماعية نهائياً؟</h3>
+              <p className="text-xs leading-relaxed" style={{ color: textMuted }}>
+                أنت على وشك حذف مجموعة <strong>"{groupToDelete.name}"</strong> بشكل نهائي. سيتم حذف المجموعة ومسح كافة رسائلها لدى جميع المشتركين.
+              </p>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await communityService.deleteGroup(groupToDelete.groupId);
+                      showToast('تم حذف المحادثة الجماعية بنجاح');
+                      setGroupToDelete(null);
+                      communityService.setActiveTab('community');
+                      setActiveTabState('community');
+                      userManuallySwitchedTabRef.current = true;
+                      loadData();
+                    } catch (err: any) {
+                      showToast(err?.message || 'تعذر حذف المجموعة');
+                    }
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                >
+                  نعم، حذف المجموعة
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGroupToDelete(null)}
+                  className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer"
+                  style={{ backgroundColor: secondaryBg, borderColor: cardBorder, color: textColor }}
+                >
+                  تراجع
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Hide Group From My Page Modal */}
+      <AnimatePresence>
+        {groupToHide && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" dir="rtl" style={{ fontFamily: theme.font }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm rounded-3xl border shadow-2xl p-5 text-center space-y-3.5"
+              style={{ backgroundColor: cardBg, borderColor: cardBorder, color: textColor }}
+            >
+              <div className="w-14 h-14 rounded-full bg-slate-500/15 text-slate-500 flex items-center justify-center mx-auto">
+                <EyeOff size={28} />
+              </div>
+              <h3 className="text-base font-bold" style={{ color: textColor }}>إزالة المجموعة من صفحتك؟</h3>
+              <p className="text-xs leading-relaxed" style={{ color: textMuted }}>
+                هل تريد إزالة مجموعة <strong>"{groupToHide.name}"</strong> من صفحتك؟ لن تظهر لك في تبويب المجتمع بعد الآن، مع بقاء المجموعة لجميع المشتركين الآخرين.
+              </p>
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      if (groupToHide.members?.includes(currentUser.userId)) {
+                        await communityService.leaveGroup(groupToHide.groupId);
+                      }
+                      communityService.hideGroupFromMyPage(groupToHide.groupId);
+                      showToast('تمت إزالة المجموعة من صفحتك بنجاح');
+                      setGroupToHide(null);
+                      loadData();
+                    } catch (err: any) {
+                      showToast(err?.message || 'تعذر إزالة المجموعة');
+                    }
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                >
+                  نعم، إزالة من صفحتي
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGroupToHide(null)}
+                  className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer"
+                  style={{ backgroundColor: secondaryBg, borderColor: cardBorder, color: textColor }}
+                >
+                  تراجع
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Standard App Bottom Bar */}
       <BottomBar 
@@ -779,6 +1602,56 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
         }} 
         onThemesClick={() => {}} 
         showThemes={false} 
+      />
+
+      {/* Create Group Modal (rendered after BottomBar with high z-index) */}
+      <CreateGroupModal
+        isOpen={showCreateGroupModal}
+        onClose={() => setShowCreateGroupModal(false)}
+        availableUsers={chattedPartners}
+        onCreated={(newGroupId) => {
+          setShowCreateGroupModal(false);
+          loadData();
+          setActiveTab('community');
+          onNavigate('group-chat', { groupId: newGroupId, returnTab: 'community' });
+        }}
+      />
+
+      {/* Edit Group Modal */}
+      <EditGroupModal
+        isOpen={Boolean(groupToEdit)}
+        onClose={() => setGroupToEdit(null)}
+        group={groupToEdit}
+        onUpdated={(updatedGroup) => {
+          setGroupToEdit(null);
+          loadData();
+          showToast('تم حفظ تعديل اسم وصورة المجموعة بنجاح 🌿');
+        }}
+        onDelete={() => {
+          if (groupToEdit) {
+            const target = groupToEdit;
+            setGroupToEdit(null);
+            setGroupToDelete(target);
+          }
+        }}
+      />
+
+      {/* Secret Admin Dashboard Modal */}
+      <AdminDashboardModal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+        currentTheme={{ bg: theme.bgColor || '#0D1B2A', text: textColor }}
+      />
+
+      {/* Tutorial Overlay */}
+      <TutorialOverlay 
+        tutorialId="community-page-tutorial" 
+        steps={communityTutorialSteps} 
+        onStepChange={(stepId) => {
+          if (stepId === 'community-members') setActiveTab('users');
+          else if (stepId === 'community-chats') setActiveTab('chats');
+          else if (stepId === 'community-groups') setActiveTab('community');
+        }}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import { db } from '../lib/firebase';
 import { 
   collection, doc, setDoc, getDoc, getDocs, onSnapshot, 
-  updateDoc, deleteDoc 
+  updateDoc, deleteDoc, writeBatch, query, where 
 } from 'firebase/firestore';
 import { SUPPORT_AVATAR_BASE64 } from '../src/supportAvatarBase64';
 import { checkContentModeration } from '../utils/contentModerator';
@@ -90,9 +90,49 @@ export const ADMIN_USER: CommunityUser = {
   createdAt: new Date('2026-01-01').toISOString()
 };
 
+export type ContactRequestStatus = 'none' | 'pending' | 'accepted' | 'rejected';
+
 export interface ServerContact {
+  contactId?: string;
   userId: string;
   partnerId: string;
+  status?: ContactRequestStatus;
+  introMessage?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface GroupChat {
+  groupId: string;
+  name: string;
+  description?: string;
+  avatarUrl?: string;
+  createdBy: string;
+  creatorName?: string;
+  members: string[];
+  memberCount?: number;
+  invitedMembers?: string[];
+  rejectedMembers?: string[];
+  leftMembers?: string[];
+  memberExitTimes?: { [userId: string]: string };
+  lastMessage?: string;
+  lastMessageSenderName?: string;
+  lastMessageTime?: string;
+  createdAt: string;
+  isPublic?: boolean;
+}
+
+export interface GroupMessage {
+  messageId: string;
+  groupId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatarUrl?: string;
+  senderCountry?: string;
+  text: string;
+  verseData?: QuranVerseAttachment;
+  audioUrl?: string;
+  audioDuration?: number;
   createdAt: string;
 }
 
@@ -101,13 +141,22 @@ const STORAGE_KEY_USERS_ALL = 'mushaf_community_global_users_v9';
 const STORAGE_KEY_MESSAGES = 'mushaf_community_messages_v9';
 const STORAGE_KEY_BLOCKS = 'mushaf_community_blocks_v9';
 const STORAGE_KEY_CONTACTS = 'mushaf_community_contacts_v9';
+const STORAGE_KEY_GROUPS = 'mushaf_community_groups_v9';
+const STORAGE_KEY_GROUP_MESSAGES = 'mushaf_community_group_messages_v9';
+const STORAGE_KEY_HIDDEN_GROUPS = 'mushaf_community_hidden_groups_v9';
+const STORAGE_KEY_GROUP_EXIT_TIMES = 'mushaf_community_group_exit_times_v9';
 
 class CommunityService {
   private currentUser: CommunityUser | null = null;
   private usersMap: Map<string, CommunityUser> = new Map();
   private messagesList: ChatMessage[] = [];
+  private allServerMessagesMap: Map<string, ChatMessage> = new Map();
   private blocksList: BlockRecord[] = [];
   private serverContactsList: ServerContact[] = [];
+  private groupsList: GroupChat[] = [];
+  private groupMessagesList: GroupMessage[] = [];
+  private hiddenGroupsSet: Set<string> = new Set();
+  private groupExitTimesMap: Map<string, string> = new Map();
   private pollInterval: any = null;
   private heartbeatInterval: any = null;
 
@@ -118,6 +167,8 @@ class CommunityService {
     this.setupFirestoreListeners();
     this.setupPresenceLifecycle();
     this.fetchLatestUsers();
+    this.fetchLatestGroups();
+    this.fetchLatestGroupMessages();
     this.startPolling();
   }
 
@@ -694,6 +745,33 @@ class CommunityService {
       if (storedContacts) {
         this.serverContactsList = JSON.parse(storedContacts);
       }
+
+      const storedGroups = localStorage.getItem(STORAGE_KEY_GROUPS);
+      if (storedGroups) {
+        const parsed = JSON.parse(storedGroups);
+        this.groupsList = Array.isArray(parsed) ? parsed : [];
+      }
+      this.ensureStarterGroupsExist();
+
+      const storedGroupMsgs = localStorage.getItem(STORAGE_KEY_GROUP_MESSAGES);
+      if (storedGroupMsgs) {
+        this.groupMessagesList = JSON.parse(storedGroupMsgs);
+      }
+
+      const storedHidden = localStorage.getItem(STORAGE_KEY_HIDDEN_GROUPS);
+      if (storedHidden) {
+        try {
+          this.hiddenGroupsSet = new Set(JSON.parse(storedHidden));
+        } catch (e) {}
+      }
+
+      const storedExitTimes = localStorage.getItem(STORAGE_KEY_GROUP_EXIT_TIMES);
+      if (storedExitTimes) {
+        try {
+          const parsed = JSON.parse(storedExitTimes);
+          this.groupExitTimesMap = new Map(Object.entries(parsed));
+        } catch (e) {}
+      }
     } catch (e) {}
   }
 
@@ -703,10 +781,16 @@ class CommunityService {
       localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(this.messagesList));
       localStorage.setItem(STORAGE_KEY_BLOCKS, JSON.stringify(this.blocksList));
       localStorage.setItem(STORAGE_KEY_CONTACTS, JSON.stringify(this.serverContactsList));
+      localStorage.setItem(STORAGE_KEY_GROUPS, JSON.stringify(this.groupsList));
+      localStorage.setItem(STORAGE_KEY_GROUP_MESSAGES, JSON.stringify(this.groupMessagesList));
+      localStorage.setItem(STORAGE_KEY_HIDDEN_GROUPS, JSON.stringify(Array.from(this.hiddenGroupsSet)));
+      const exitObj: Record<string, string> = {};
+      this.groupExitTimesMap.forEach((v, k) => { exitObj[k] = v; });
+      localStorage.setItem(STORAGE_KEY_GROUP_EXIT_TIMES, JSON.stringify(exitObj));
     } catch (e) {}
   }
 
-  private activeTab: 'users' | 'chats' | 'blocked' = 'users';
+  private activeTab: 'users' | 'chats' | 'community' | 'blocked' = 'users';
 
   public hasUserAnyConversations(): boolean {
     const current = this.getCurrentUser();
@@ -722,21 +806,26 @@ class CommunityService {
     return this.hasUserAnyConversations() ? 'chats' : 'users';
   }
 
-  public getActiveTab(): 'users' | 'chats' | 'blocked' {
+  public getActiveTab(): 'users' | 'chats' | 'community' | 'blocked' {
+    if (this.activeTab && ['users', 'chats', 'community', 'blocked'].includes(this.activeTab)) {
+      return this.activeTab;
+    }
     try {
-      const saved = sessionStorage.getItem('community_active_tab') as any;
-      if (saved && ['users', 'chats', 'blocked'].includes(saved)) {
+      const saved = (sessionStorage.getItem('community_active_tab') || localStorage.getItem('community_active_tab')) as any;
+      if (saved && ['users', 'chats', 'community', 'blocked'].includes(saved)) {
         return saved;
       }
     } catch (e) {}
     return this.getDefaultTab();
   }
 
-  public setActiveTab(tab: 'users' | 'chats' | 'blocked') {
+  public setActiveTab(tab: 'users' | 'chats' | 'community' | 'blocked') {
     this.activeTab = tab;
     try {
       sessionStorage.setItem('community_active_tab', tab);
+      localStorage.setItem('community_active_tab', tab);
     } catch (e) {}
+    window.dispatchEvent(new CustomEvent('community_tab_changed', { detail: { tab } }));
   }
 
   public async clearAllServerData() {
@@ -761,6 +850,13 @@ class CommunityService {
         const contactsSnap = await getDocs(collection(db, 'contacts'));
         const contactDeletes = contactsSnap.docs.map((d) => deleteDoc(doc(db, 'contacts', d.id)));
         await Promise.all(contactDeletes);
+      } catch (e) {}
+
+      // Delete all ahl_al_quran_stats from Firestore
+      try {
+        const ahlSnap = await getDocs(collection(db, 'ahl_al_quran_stats'));
+        const ahlDeletes = ahlSnap.docs.map((d) => deleteDoc(doc(db, 'ahl_al_quran_stats', d.id)));
+        await Promise.all(ahlDeletes);
       } catch (e) {}
 
       // 4. Clear local memory and storage completely
@@ -829,14 +925,22 @@ class CommunityService {
 
   private startPolling() {
     if (this.pollInterval) clearInterval(this.pollInterval);
-    this.purgeExpiredServerMessages();
+    // Initial light fetch of contacts once on boot
     this.fetchLatestContacts();
-    this.pollInterval = setInterval(() => {
-      this.fetchLatestUsers();
-      this.fetchLatestMessages();
-      this.fetchLatestContacts();
+
+    // Background expiration cleanup after startup, then run once every 15 minutes
+    setTimeout(() => {
       this.purgeExpiredServerMessages();
-    }, 3000);
+    }, 6000);
+
+    // Light background sync interval (every 45s) for presence/heartbeat
+    this.pollInterval = setInterval(() => {
+      this.sendHeartbeat();
+      // Periodically clean expired messages every ~15 minutes
+      if (Math.random() < 0.05) {
+        this.purgeExpiredServerMessages();
+      }
+    }, 45000);
   }
 
   public async fetchLatestUsers(): Promise<CommunityUser[]> {
@@ -878,6 +982,7 @@ class CommunityService {
             this.logoutAccount();
           }
           this.usersMap.delete(id);
+          window.dispatchEvent(new CustomEvent('community_user_deleted', { detail: { userId: id } }));
         }
       }
 
@@ -941,10 +1046,18 @@ class CommunityService {
   public async saveChattedUser(userId: string, partnerId: string) {
     if (!userId || !partnerId || userId === partnerId) return;
     try {
-      const contactId = `${userId}_${partnerId}`;
+      const existing = this.serverContactsList.find(c => 
+        (c.userId === userId && c.partnerId === partnerId) ||
+        (c.userId === partnerId && c.partnerId === userId)
+      );
+      if (existing) return;
+
+      const sorted = [userId, partnerId].sort();
+      const contactId = `contact_${sorted[0]}_${sorted[1]}`;
       await setDoc(doc(db, 'contacts', contactId), {
         userId,
         partnerId,
+        status: 'accepted',
         createdAt: new Date().toISOString()
       }, { merge: true });
     } catch (e) {
@@ -961,12 +1074,17 @@ class CommunityService {
       snapshot.forEach((docSnap) => {
         const c = docSnap.data() as ServerContact;
         if (c && c.userId && c.partnerId) {
-          list.push(c);
+          list.push({
+            contactId: docSnap.id,
+            ...c,
+            status: c.status || 'accepted'
+          });
         }
       });
       this.serverContactsList = list;
       this.saveToLocalStorage();
       window.dispatchEvent(new CustomEvent('community_messages_updated'));
+      window.dispatchEvent(new CustomEvent('community_contacts_updated'));
     } catch (e) {
       console.warn('Error fetching server contacts:', e);
     }
@@ -978,6 +1096,7 @@ class CommunityService {
         snapshot.docChanges().forEach((change) => {
           if (change.type === 'removed') {
             this.usersMap.delete(change.doc.id);
+            window.dispatchEvent(new CustomEvent('community_user_deleted', { detail: { userId: change.doc.id } }));
           }
         });
 
@@ -999,16 +1118,22 @@ class CommunityService {
     try {
       onSnapshot(collection(db, 'messages'), (snapshot) => {
         const myId = this.getCurrentUser().userId;
-        const cutoffTime = Date.now() - (24 * 60 * 60 * 1000);
+
         snapshot.docChanges().forEach((change) => {
           const msg = change.doc.data() as ChatMessage;
-          if (msg && msg.messageId) {
-            const msgTime = new Date(msg.createdAt).getTime();
-            if (!isNaN(msgTime) && msgTime < cutoffTime) {
-              deleteDoc(doc(db, 'messages', change.doc.id)).catch(() => {});
-              return;
-            }
+          const msgId = msg?.messageId || change.doc.id;
 
+          if (change.type === 'removed') {
+            this.allServerMessagesMap.delete(msgId);
+            this.messagesList = this.messagesList.filter(m => m.messageId !== msgId);
+            return;
+          }
+
+          if (msg && msgId) {
+            this.allServerMessagesMap.set(msgId, { ...msg, messageId: msgId });
+          }
+
+          if (msg && msg.messageId) {
             if (change.type === 'added') {
               if (msg.recipientId === myId || msg.senderId === myId) {
                 const exists = this.messagesList.some(m => m.messageId === msg.messageId);
@@ -1060,13 +1185,58 @@ class CommunityService {
         snapshot.forEach((docSnap) => {
           const c = docSnap.data() as ServerContact;
           if (c && c.userId && c.partnerId) {
-            list.push(c);
+            list.push({
+              contactId: docSnap.id,
+              ...c,
+              status: c.status || 'accepted'
+            });
           }
         });
         this.serverContactsList = list;
         this.saveToLocalStorage();
         window.dispatchEvent(new CustomEvent('community_messages_updated'));
+        window.dispatchEvent(new CustomEvent('community_contacts_updated'));
       }, (err) => console.warn('Firestore Contacts Listener:', err));
+    } catch (e) {}
+
+    try {
+      onSnapshot(collection(db, 'group_chats'), (snapshot) => {
+        const list: GroupChat[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data() as GroupChat;
+          if (data && (data.groupId || docSnap.id)) {
+            list.push({ ...data, groupId: data.groupId || docSnap.id });
+          }
+        });
+        const map = new Map<string, GroupChat>();
+        this.getDefaultStarterGroups().forEach(g => map.set(g.groupId, g));
+        list.forEach(g => map.set(g.groupId, g));
+        this.groupsList = Array.from(map.values());
+        this.saveToLocalStorage();
+        window.dispatchEvent(new CustomEvent('community_groups_updated'));
+      }, (err) => console.warn('Firestore Group Chats Listener:', err));
+    } catch (e) {}
+
+    try {
+      onSnapshot(collection(db, 'group_messages'), (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          const msg = change.doc.data() as GroupMessage;
+          const msgId = msg?.messageId || change.doc.id;
+          if (change.type === 'removed') {
+            this.groupMessagesList = this.groupMessagesList.filter(m => m.messageId !== msgId);
+          } else if (msg && msgId) {
+            const cleanMsg = { ...msg, messageId: msgId };
+            const idx = this.groupMessagesList.findIndex(m => m.messageId === msgId);
+            if (idx >= 0) {
+              this.groupMessagesList[idx] = cleanMsg;
+            } else {
+              this.groupMessagesList.push(cleanMsg);
+            }
+          }
+        });
+        this.saveToLocalStorage();
+        window.dispatchEvent(new CustomEvent('community_group_messages_updated'));
+      }, (err) => console.warn('Firestore Group Messages Listener:', err));
     } catch (e) {}
   }
 
@@ -1116,6 +1286,12 @@ class CommunityService {
 
   public getTotalRegisteredCount(): number {
     return this.getOtherUsersCount();
+  }
+
+  public getAllUsers(): CommunityUser[] {
+    return Array.from(this.usersMap.values()).filter(u => 
+      u && u.userId && u.username && u.username.trim() && u.userId !== ADMIN_USER_ID
+    );
   }
 
   public getVisibleUsers(searchQuery: string = '', includeSelf: boolean = false): CommunityUser[] {
@@ -1327,6 +1503,23 @@ class CommunityService {
     const chatId = this.getChatId(current.userId, recipientId);
     const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 
+    // Check friendship/request status for direct 1-on-1 messages
+    if (recipientId !== ADMIN_USER_ID && current.userId !== ADMIN_USER_ID) {
+      const friendship = this.getFriendshipStatus(recipientId);
+      if (friendship.status === 'rejected' && friendship.isRequester) {
+        throw new Error('تم رفض طلب الإضافة من هذا العضو. لا يمكنك إرسال رسائل.');
+      }
+      if (friendship.status === 'none') {
+        throw new Error('يجب إرسال طلب إضافة أولاً قبل إرسال أي رسالة.');
+      }
+      if (friendship.status === 'pending' && friendship.isRequester) {
+        const sentCount = this.getSentMessagesCountToUser(recipientId);
+        if (sentCount >= 1) {
+          throw new Error('لا يمكنك إرسال أكثر من رسالة تعريفية واحدة حتى يتم قبول طلب الإضافة من العضو.');
+        }
+      }
+    }
+
     const newMsg: ChatMessage = {
       messageId: msgId,
       chatId,
@@ -1345,8 +1538,24 @@ class CommunityService {
     this.setTypingStatus(recipientId, false);
 
     // Save chatted user contact on server to keep history of who spoke with whom
-    this.saveChattedUser(current.userId, recipientId);
-    this.saveChattedUser(recipientId, current.userId);
+    if (recipientId === ADMIN_USER_ID || current.userId === ADMIN_USER_ID) {
+      this.saveChattedUser(current.userId, recipientId);
+      this.saveChattedUser(recipientId, current.userId);
+    } else {
+      const friendship = this.getFriendshipStatus(recipientId);
+      if (friendship.status === 'accepted') {
+        this.saveChattedUser(current.userId, recipientId);
+      } else if (friendship.status === 'pending' && friendship.contact) {
+        friendship.contact.introMessage = text.trim();
+        this.saveToLocalStorage();
+        try {
+          updateDoc(doc(db, 'contacts', friendship.contact.contactId || ''), {
+            introMessage: text.trim(),
+            updatedAt: new Date().toISOString()
+          }).catch(() => {});
+        } catch (e) {}
+      }
+    }
 
     try {
       const payload = this.cleanPayload(newMsg);
@@ -1427,28 +1636,35 @@ class CommunityService {
     });
 
     this.messagesList = this.messagesList.filter(m => !toDeleteMsgIds.has(m.messageId));
+    toDeleteMsgIds.forEach(id => this.allServerMessagesMap.delete(id));
     this.saveToLocalStorage();
 
     try {
-      const snap = await getDocs(collection(db, 'messages'));
-      const deletePromises: Promise<any>[] = [];
-      snap.forEach(docSnap => {
-        const data = docSnap.data() as ChatMessage;
-        if (
-          data && (
-            toDeleteMsgIds.has(docSnap.id) ||
-            data.chatId === chatId ||
-            data.chatId === adminChatId ||
-            (data.senderId === current.userId && data.recipientId === partnerUserId) ||
-            (data.senderId === partnerUserId && data.recipientId === current.userId) ||
-            (data.senderId === ADMIN_USER_ID && data.recipientId === partnerUserId) ||
-            (data.senderId === partnerUserId && data.recipientId === ADMIN_USER_ID)
-          )
-        ) {
-          deletePromises.push(deleteDoc(doc(db, 'messages', docSnap.id)).catch(() => {}));
-        }
+      const docRefsToDelete = new Map<string, any>();
+      toDeleteMsgIds.forEach(id => {
+        docRefsToDelete.set(`messages/${id}`, doc(db, 'messages', id));
       });
-      await Promise.allSettled(deletePromises);
+
+      const [chatSnap, adminChatSnap] = await Promise.allSettled([
+        getDocs(query(collection(db, 'messages'), where('chatId', '==', chatId))),
+        getDocs(query(collection(db, 'messages'), where('chatId', '==', adminChatId)))
+      ]);
+
+      if (chatSnap.status === 'fulfilled') {
+        chatSnap.value.docs.forEach(d => docRefsToDelete.set(d.ref.path, d.ref));
+      }
+      if (adminChatSnap.status === 'fulfilled') {
+        adminChatSnap.value.docs.forEach(d => docRefsToDelete.set(d.ref.path, d.ref));
+      }
+
+      const allRefs = Array.from(docRefsToDelete.values());
+      const CHUNK_SIZE = 400;
+      for (let i = 0; i < allRefs.length; i += CHUNK_SIZE) {
+        const batch = writeBatch(db);
+        const chunk = allRefs.slice(i, i + CHUNK_SIZE);
+        chunk.forEach(ref => batch.delete(ref));
+        await batch.commit();
+      }
     } catch (e) {
       console.warn('Error clearing conversation from Firestore:', e);
     }
@@ -1474,26 +1690,35 @@ class CommunityService {
     });
 
     this.messagesList = this.messagesList.filter(m => !toDeleteMsgIds.has(m.messageId));
+    toDeleteMsgIds.forEach(id => this.allServerMessagesMap.delete(id));
     this.saveToLocalStorage();
 
     try {
-      const snap = await getDocs(collection(db, 'messages'));
-      const deletePromises: Promise<any>[] = [];
-      snap.forEach(docSnap => {
-        const data = docSnap.data() as ChatMessage;
-        if (
-          data && (
-            toDeleteMsgIds.has(docSnap.id) ||
-            data.chatId === adminChatId ||
-            data.chatId === currentChatId ||
-            (data.senderId === ADMIN_USER_ID && data.recipientId === partnerUserId) ||
-            (data.senderId === partnerUserId && data.recipientId === ADMIN_USER_ID)
-          )
-        ) {
-          deletePromises.push(deleteDoc(doc(db, 'messages', docSnap.id)).catch(() => {}));
-        }
+      const docRefsToDelete = new Map<string, any>();
+      toDeleteMsgIds.forEach(id => {
+        docRefsToDelete.set(`messages/${id}`, doc(db, 'messages', id));
       });
-      await Promise.allSettled(deletePromises);
+
+      const [adminChatSnap, curChatSnap] = await Promise.allSettled([
+        getDocs(query(collection(db, 'messages'), where('chatId', '==', adminChatId))),
+        getDocs(query(collection(db, 'messages'), where('chatId', '==', currentChatId)))
+      ]);
+
+      if (adminChatSnap.status === 'fulfilled') {
+        adminChatSnap.value.docs.forEach(d => docRefsToDelete.set(d.ref.path, d.ref));
+      }
+      if (curChatSnap.status === 'fulfilled') {
+        curChatSnap.value.docs.forEach(d => docRefsToDelete.set(d.ref.path, d.ref));
+      }
+
+      const allRefs = Array.from(docRefsToDelete.values());
+      const CHUNK_SIZE = 400;
+      for (let i = 0; i < allRefs.length; i += CHUNK_SIZE) {
+        const batch = writeBatch(db);
+        const chunk = allRefs.slice(i, i + CHUNK_SIZE);
+        chunk.forEach(ref => batch.delete(ref));
+        await batch.commit();
+      }
     } catch (e) {
       console.warn('Error clearing support conversation from Firestore:', e);
     }
@@ -1584,120 +1809,322 @@ class CommunityService {
     return conversations.sort((a, b) => new Date(b.lastMessageTime || 0).getTime() - new Date(a.lastMessageTime || 0).getTime());
   }
 
+  public getTotalUnreadCount(): number {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return 0;
+
+    let total = 0;
+    this.messagesList.forEach(m => {
+      if (this.isViolationReportMessage(m)) return;
+      if (m.recipientId === current.userId && !m.isRead) {
+        if (!this.isBlockedMutually(m.senderId)) {
+          total += 1;
+        }
+      }
+    });
+
+    return total;
+  }
+
   public getRawContacts(): ServerContact[] {
     return this.serverContactsList;
   }
 
-  public async deleteUser(userId: string) {
-    try {
-      // 1. Delete from users collection (direct doc ID)
-      await deleteDoc(doc(db, 'users', userId)).catch(() => {});
-      
-      // Sweep any other user docs matching this userId
-      try {
-        const usersSnap = await getDocs(collection(db, 'users'));
-        const deletePromises: Promise<void>[] = [];
-        usersSnap.forEach((d) => {
-          const dData = d.data();
-          if (d.id === userId || dData?.userId === userId) {
-            deletePromises.push(deleteDoc(doc(db, 'users', d.id)).catch(() => {}));
-          }
-        });
-        await Promise.allSettled(deletePromises);
-      } catch (err) {}
-
-      // 2. Delete all their messages from Firestore
-      try {
-        const msgSnapshot = await getDocs(collection(db, 'messages'));
-        const deleteMsgPromises: Promise<void>[] = [];
-        msgSnapshot.forEach((docSnap) => {
-          const data = docSnap.data() as ChatMessage;
-          if (data && (data.senderId === userId || data.recipientId === userId)) {
-            deleteMsgPromises.push(deleteDoc(doc(db, 'messages', docSnap.id)).catch(() => {}));
-          }
-        });
-        await Promise.allSettled(deleteMsgPromises);
-      } catch (err) {}
-
-      // 3. Delete all contacts of theirs from Firestore
-      try {
-        const contactsSnapshot = await getDocs(collection(db, 'contacts'));
-        const deleteContactPromises: Promise<void>[] = [];
-        contactsSnapshot.forEach((docSnap) => {
-          const data = docSnap.data() as ServerContact;
-          if (data && (data.userId === userId || data.partnerId === userId)) {
-            deleteContactPromises.push(deleteDoc(doc(db, 'contacts', docSnap.id)).catch(() => {}));
-          }
-        });
-        await Promise.allSettled(deleteContactPromises);
-      } catch (err) {}
-
-      // 4. Delete all blocks of theirs from Firestore
-      try {
-        const blocksSnapshot = await getDocs(collection(db, 'blocks'));
-        const deleteBlockPromises: Promise<void>[] = [];
-        blocksSnapshot.forEach((docSnap) => {
-          const data = docSnap.data() as BlockRecord;
-          if (data && (data.blockerId === userId || data.blockedId === userId)) {
-            deleteBlockPromises.push(deleteDoc(doc(db, 'blocks', docSnap.id)).catch(() => {}));
-          }
-        });
-        await Promise.allSettled(deleteBlockPromises);
-      } catch (err) {}
-
-      // 5. Clean local state
-      this.usersMap.delete(userId);
-      this.messagesList = this.messagesList.filter(m => m.senderId !== userId && m.recipientId !== userId);
-      this.blocksList = this.blocksList.filter(b => b.blockerId !== userId && b.blockedId !== userId);
-      this.serverContactsList = this.serverContactsList.filter(c => c.userId !== userId && c.partnerId !== userId);
-      
-      // If deleted user was active current user, clear profile
-      if (this.currentUser && this.currentUser.userId === userId) {
-        this.logoutAccount();
-      }
-
-      // If impersonating this user, exit impersonation
-      if (this.isImpersonating()) {
-        const stored = localStorage.getItem('mushaf_community_original_owner');
-        if (stored) {
-          try {
-            const original = JSON.parse(stored);
-            if (original.userId === userId) {
-              localStorage.removeItem('mushaf_community_original_owner');
-            }
-          } catch (e) {}
-        }
-      }
-
-      this.saveToLocalStorage();
-      
-      // 6. Trigger events
-      window.dispatchEvent(new CustomEvent('community_user_updated'));
-      window.dispatchEvent(new CustomEvent('community_messages_updated'));
-      window.dispatchEvent(new CustomEvent('community_block_updated'));
-    } catch (e) {
-      console.error('Error deleting user from Firestore:', e);
+  // Get friendship / add request status between current user and partner
+  public getFriendshipStatus(partnerId: string): {
+    status: ContactRequestStatus;
+    isRequester: boolean;
+    contact?: ServerContact;
+  } {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId || !partnerId) {
+      return { status: 'none', isRequester: false };
     }
+
+    // Official support is always accepted
+    if (partnerId === ADMIN_USER_ID || current.userId === ADMIN_USER_ID) {
+      return { status: 'accepted', isRequester: false };
+    }
+
+    const contact = this.serverContactsList.find(c => 
+      (c.userId === current.userId && c.partnerId === partnerId) ||
+      (c.userId === partnerId && c.partnerId === current.userId)
+    );
+
+    if (!contact) {
+      return { status: 'none', isRequester: false };
+    }
+
+    const isRequester = contact.userId === current.userId;
+    const status: ContactRequestStatus = contact.status || 'accepted';
+
+    return { status, isRequester, contact };
   }
 
-  public async fetchAllServerMessages(): Promise<ChatMessage[]> {
+  // Count messages current user sent to this partner
+  public getSentMessagesCountToUser(partnerUserId: string): number {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return 0;
+    const chatId = this.getChatId(current.userId, partnerUserId);
+    return this.messagesList.filter(m => 
+      m.chatId === chatId && 
+      m.senderId === current.userId && 
+      !this.isViolationReportMessage(m)
+    ).length;
+  }
+
+  // Send add / friend request to a member
+  public async sendFriendRequest(targetUserId: string, introMessage?: string): Promise<ServerContact> {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) {
+      throw new Error('يرجى حفظ اسمك وبياناتك أولاً لإرسال طلب إضافة.');
+    }
+    if (targetUserId === current.userId) {
+      throw new Error('لا يمكنك إرسال طلب إضافة لنفسك.');
+    }
+
+    const sortedIds = [current.userId, targetUserId].sort();
+    const contactId = `contact_${sortedIds[0]}_${sortedIds[1]}`;
+    const now = new Date().toISOString();
+
+    const newContact: ServerContact = {
+      contactId,
+      userId: current.userId,
+      partnerId: targetUserId,
+      status: 'pending',
+      introMessage: introMessage || '',
+      createdAt: now,
+      updatedAt: now
+    };
+
+    // Replace old entry if any in local list
+    this.serverContactsList = this.serverContactsList.filter(c =>
+      !((c.userId === current.userId && c.partnerId === targetUserId) ||
+        (c.userId === targetUserId && c.partnerId === current.userId))
+    );
+    this.serverContactsList.unshift(newContact);
+    this.saveToLocalStorage();
+
     try {
-      const snapshot = await getDocs(collection(db, 'messages'));
-      const list: ChatMessage[] = [];
-      snapshot.forEach((docSnap) => {
-        const msg = docSnap.data() as ChatMessage;
-        if (msg && msg.messageId) {
-          list.push(msg);
+      await setDoc(doc(db, 'contacts', contactId), newContact, { merge: true });
+    } catch (e) {
+      console.warn('Error saving friend request to Firestore:', e);
+    }
+
+    window.dispatchEvent(new CustomEvent('community_contacts_updated'));
+    window.dispatchEvent(new CustomEvent('community_messages_updated'));
+    return newContact;
+  }
+
+  // Accept incoming friend request
+  public async acceptFriendRequest(partnerUserId: string): Promise<void> {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return;
+
+    const contact = this.serverContactsList.find(c => 
+      (c.userId === current.userId && c.partnerId === partnerUserId) ||
+      (c.userId === partnerUserId && c.partnerId === current.userId)
+    );
+
+    const now = new Date().toISOString();
+    if (contact) {
+      contact.status = 'accepted';
+      contact.updatedAt = now;
+    }
+
+    const sortedIds = [current.userId, partnerUserId].sort();
+    const contactId = contact?.contactId || `contact_${sortedIds[0]}_${sortedIds[1]}`;
+
+    this.saveToLocalStorage();
+
+    try {
+      await setDoc(doc(db, 'contacts', contactId), {
+        userId: contact?.userId || partnerUserId,
+        partnerId: contact?.partnerId || current.userId,
+        status: 'accepted',
+        updatedAt: now
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Error accepting friend request in Firestore:', e);
+    }
+
+    window.dispatchEvent(new CustomEvent('community_contacts_updated'));
+    window.dispatchEvent(new CustomEvent('community_messages_updated'));
+  }
+
+  // Reject incoming friend request
+  public async rejectFriendRequest(partnerUserId: string): Promise<void> {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return;
+
+    const contact = this.serverContactsList.find(c => 
+      (c.userId === current.userId && c.partnerId === partnerUserId) ||
+      (c.userId === partnerUserId && c.partnerId === current.userId)
+    );
+
+    const now = new Date().toISOString();
+    if (contact) {
+      contact.status = 'rejected';
+      contact.updatedAt = now;
+    }
+
+    const sortedIds = [current.userId, partnerUserId].sort();
+    const contactId = contact?.contactId || `contact_${sortedIds[0]}_${sortedIds[1]}`;
+
+    this.saveToLocalStorage();
+
+    try {
+      await setDoc(doc(db, 'contacts', contactId), {
+        userId: contact?.userId || partnerUserId,
+        partnerId: contact?.partnerId || current.userId,
+        status: 'rejected',
+        updatedAt: now
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Error rejecting friend request in Firestore:', e);
+    }
+
+    window.dispatchEvent(new CustomEvent('community_contacts_updated'));
+    window.dispatchEvent(new CustomEvent('community_messages_updated'));
+  }
+
+  // Get pending friend requests received by current user
+  public getPendingFriendRequests(): { user: CommunityUser; contact: ServerContact }[] {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return [];
+
+    const list: { user: CommunityUser; contact: ServerContact }[] = [];
+    this.serverContactsList.forEach(c => {
+      if (c.partnerId === current.userId && c.status === 'pending') {
+        const u = this.getUserById(c.userId);
+        if (u) {
+          list.push({ user: u, contact: c });
+        }
+      }
+    });
+    return list;
+  }
+
+  public async deleteUser(userId: string): Promise<void> {
+    if (!userId) return;
+
+    // 1. Instant Optimistic local state purge (0ms delay)
+    this.usersMap.delete(userId);
+    this.messagesList = this.messagesList.filter(m => m.senderId !== userId && m.recipientId !== userId);
+    this.blocksList = this.blocksList.filter(b => b.blockerId !== userId && b.blockedId !== userId);
+    this.serverContactsList = this.serverContactsList.filter(c => c.userId !== userId && c.partnerId !== userId);
+    
+    // Purge from allServerMessagesMap cache
+    for (const [mId, msg] of Array.from(this.allServerMessagesMap.entries())) {
+      if (msg.senderId === userId || msg.recipientId === userId) {
+        this.allServerMessagesMap.delete(mId);
+      }
+    }
+
+    // If deleted user was active current user, clear profile
+    if (this.currentUser && this.currentUser.userId === userId) {
+      this.logoutAccount();
+    }
+
+    // If impersonating this user, exit impersonation
+    if (this.isImpersonating()) {
+      const stored = localStorage.getItem('mushaf_community_original_owner');
+      if (stored) {
+        try {
+          const original = JSON.parse(stored);
+          if (original.userId === userId) {
+            localStorage.removeItem('mushaf_community_original_owner');
+          }
+        } catch (e) {}
+      }
+    }
+
+    this.saveToLocalStorage();
+
+    // 2. High-speed targeted parallel queries & single atomic batch delete in Firestore
+    try {
+      const docRefsToDelete = new Map<string, any>();
+
+      // Target the user document directly and their Ahl Al-Quran stats document
+      docRefsToDelete.set(`users/${userId}`, doc(db, 'users', userId));
+      docRefsToDelete.set(`ahl_al_quran_stats/${userId}`, doc(db, 'ahl_al_quran_stats', userId));
+
+      // Targeted parallel queries strictly matching this user's data (no full DB scans!)
+      const queries = [
+        getDocs(query(collection(db, 'messages'), where('senderId', '==', userId))),
+        getDocs(query(collection(db, 'messages'), where('recipientId', '==', userId))),
+        getDocs(query(collection(db, 'contacts'), where('userId', '==', userId))),
+        getDocs(query(collection(db, 'contacts'), where('partnerId', '==', userId))),
+        getDocs(query(collection(db, 'blocks'), where('blockerId', '==', userId))),
+        getDocs(query(collection(db, 'blocks'), where('blockedId', '==', userId)))
+      ];
+
+      const queryResults = await Promise.allSettled(queries);
+      queryResults.forEach((res) => {
+        if (res.status === 'fulfilled' && res.value && res.value.docs) {
+          res.value.docs.forEach((docSnap) => {
+            docRefsToDelete.set(docSnap.ref.path, docSnap.ref);
+          });
         }
       });
-      return list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+      // Commit all deletions atomically using writeBatch in chunks of up to 400 docs
+      const allRefs = Array.from(docRefsToDelete.values());
+      const CHUNK_SIZE = 400;
+      for (let i = 0; i < allRefs.length; i += CHUNK_SIZE) {
+        const batch = writeBatch(db);
+        const chunk = allRefs.slice(i, i + CHUNK_SIZE);
+        chunk.forEach((ref) => batch.delete(ref));
+        await batch.commit();
+      }
+    } catch (e) {
+      console.error('Error during batch deleteUser in Firestore:', e);
+      // Fallback single doc delete in case of any network or index glitch
+      try {
+        await deleteDoc(doc(db, 'users', userId));
+      } catch (err) {}
+      try {
+        await deleteDoc(doc(db, 'ahl_al_quran_stats', userId));
+      } catch (err) {}
+    }
+
+    // 3. Dispatch events once at the end
+    window.dispatchEvent(new CustomEvent('community_user_deleted', { detail: { userId } }));
+    window.dispatchEvent(new CustomEvent('community_user_updated'));
+    window.dispatchEvent(new CustomEvent('community_messages_updated'));
+    window.dispatchEvent(new CustomEvent('community_block_updated'));
+  }
+
+  public async fetchAllServerMessages(forceRefresh: boolean = false): Promise<ChatMessage[]> {
+    if (!forceRefresh && this.allServerMessagesMap.size > 0) {
+      return Array.from(this.allServerMessagesMap.values()).sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    }
+
+    try {
+      const snapshot = await getDocs(collection(db, 'messages'));
+      this.allServerMessagesMap.clear();
+      snapshot.forEach((docSnap) => {
+        const msg = docSnap.data() as ChatMessage;
+        const mId = msg?.messageId || docSnap.id;
+        if (msg && mId) {
+          this.allServerMessagesMap.set(mId, { ...msg, messageId: mId });
+        }
+      });
+      return Array.from(this.allServerMessagesMap.values()).sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
     } catch (e) {
       console.warn('Error fetching all server messages:', e);
-      return [];
+      return Array.from(this.allServerMessagesMap.values());
     }
   }
 
   public async deleteServerMessage(messageId: string) {
+    this.allServerMessagesMap.delete(messageId);
+    this.messagesList = this.messagesList.filter(m => m.messageId !== messageId);
+    this.saveToLocalStorage();
     try {
       await deleteDoc(doc(db, 'messages', messageId));
     } catch (e) {
@@ -1886,6 +2313,902 @@ class CommunityService {
     } catch (e) {
       console.warn('Error marking admin messages as read:', e);
     }
+  }
+
+  // ==========================================
+  // --- Group Chat Methods (المحادثات الجماعية) ---
+  // ==========================================
+
+  public getDefaultStarterGroups(): GroupChat[] {
+    return [
+      {
+        groupId: 'group_default_quran_readers',
+        name: 'حلقة أهل القرآن العامة 📖',
+        description: 'ملتقى مبارك لمدارسة وتلاوة القرآن الكريم وتبادل الفوائد القرآنية بين جميع أفراد المجتمع.',
+        avatarUrl: '',
+        createdBy: ADMIN_USER_ID,
+        creatorName: 'المشرف العام',
+        members: [ADMIN_USER_ID],
+        memberCount: 256,
+        invitedMembers: [],
+        rejectedMembers: [],
+        lastMessage: 'مرحباً بكم في حلقة أهل القرآن العامة 📖، نسأل الله أن يجمعنا على كتابه الكريم.',
+        lastMessageSenderName: 'المشرف العام',
+        lastMessageTime: '2025-01-01T00:00:00.000Z',
+        createdAt: '2025-01-01T00:00:00.000Z',
+        isPublic: true
+      },
+      {
+        groupId: 'group_default_tadabbur',
+        name: 'مجلس الذكر وتدبر الآيات 🌿',
+        description: 'مجلس إيماني لتدبر معاني الآيات العظيمة، واستنباط الهدايات والخواطر الإيمانية النافعة.',
+        avatarUrl: '',
+        createdBy: ADMIN_USER_ID,
+        creatorName: 'المشرف العام',
+        members: [ADMIN_USER_ID],
+        memberCount: 189,
+        invitedMembers: [],
+        rejectedMembers: [],
+        lastMessage: 'أهلاً بكم في مجلس الذكر وتدبر الآيات 🌿، شاركونا نفحات وتدبرات كتاب الله.',
+        lastMessageSenderName: 'المشرف العام',
+        lastMessageTime: '2025-01-01T00:00:00.000Z',
+        createdAt: '2025-01-01T00:00:00.000Z',
+        isPublic: true
+      }
+    ];
+  }
+
+  public ensureStarterGroupsExist(): void {
+    const starters = this.getDefaultStarterGroups();
+    starters.forEach(sg => {
+      const idx = this.groupsList.findIndex(g => g.groupId === sg.groupId);
+      if (idx === -1) {
+        this.groupsList.push(sg);
+      } else {
+        // Ensure name and public flags are preserved
+        this.groupsList[idx].isPublic = true;
+        if (!this.groupsList[idx].name || this.groupsList[idx].name.length < 3) {
+          this.groupsList[idx].name = sg.name;
+        }
+      }
+    });
+  }
+
+  public async fetchLatestGroups(): Promise<GroupChat[]> {
+    try {
+      this.ensureStarterGroupsExist();
+
+      const snapshot = await getDocs(collection(db, 'group_chats'));
+      const firestoreList: GroupChat[] = [];
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data() as GroupChat;
+        if (data && (data.groupId || docSnap.id)) {
+          firestoreList.push({ ...data, groupId: data.groupId || docSnap.id });
+        }
+      });
+
+      const map = new Map<string, GroupChat>();
+      // 1. Starter groups first
+      this.getDefaultStarterGroups().forEach(g => map.set(g.groupId, g));
+      // 2. Authoritative Firestore groups
+      firestoreList.forEach(g => map.set(g.groupId, g));
+
+      this.groupsList = Array.from(map.values());
+      this.saveToLocalStorage();
+      window.dispatchEvent(new CustomEvent('community_groups_updated'));
+    } catch (e) {
+      console.warn('Error fetching group chats from Firestore:', e);
+    }
+    return this.groupsList;
+  }
+
+  public async fetchLatestGroupMessages(groupId?: string): Promise<GroupMessage[]> {
+    try {
+      const snapshot = await getDocs(collection(db, 'group_messages'));
+      const list: GroupMessage[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data() as GroupMessage;
+        if (data && (data.messageId || docSnap.id) && data.groupId) {
+          list.push({ ...data, messageId: data.messageId || docSnap.id });
+        }
+      });
+
+      this.groupMessagesList = list;
+      this.saveToLocalStorage();
+      window.dispatchEvent(new CustomEvent('community_group_messages_updated', { detail: { groupId } }));
+    } catch (e) {
+      console.warn('Error fetching group messages:', e);
+    }
+    return groupId ? this.getGroupMessages(groupId) : this.groupMessagesList;
+  }
+
+  public recordExitTime(groupId: string, userId: string, exitTimeIso?: string): void {
+    if (!groupId || !userId) return;
+    const time = exitTimeIso || new Date().toISOString();
+    this.groupExitTimesMap.set(`${groupId}_${userId}`, time);
+    this.saveToLocalStorage();
+  }
+
+  public getMemberExitTime(groupId: string, userId?: string): string | undefined {
+    const uid = userId || this.getCurrentUser()?.userId;
+    if (!uid) return undefined;
+
+    const local = this.groupExitTimesMap.get(`${groupId}_${uid}`);
+    if (local) return local;
+
+    const group = this.getGroupById(groupId);
+    if (group?.memberExitTimes && group.memberExitTimes[uid]) {
+      return group.memberExitTimes[uid];
+    }
+
+    return undefined;
+  }
+
+  public hasUserLeftOrBeenRemoved(group: GroupChat, userId?: string): boolean {
+    if (!group) return false;
+    // Default starter groups are open to all
+    if (group.groupId === 'group_default_quran_readers' || group.groupId === 'group_default_tadabbur') {
+      return false;
+    }
+    const uid = userId || this.getCurrentUser()?.userId;
+    if (!uid) return false;
+
+    // Creator is never considered removed
+    if (group.createdBy === uid) return false;
+
+    if (Array.isArray(group.leftMembers) && group.leftMembers.includes(uid)) return true;
+    if (group.memberExitTimes && group.memberExitTimes[uid]) return true;
+    if (this.groupExitTimesMap.has(`${group.groupId}_${uid}`)) return true;
+
+    return false;
+  }
+
+  public hideGroupFromMyPage(groupId: string): void {
+    if (groupId === 'group_default_quran_readers' || groupId === 'group_default_tadabbur') {
+      return; // Starter groups CAN NEVER be hidden!
+    }
+    const current = this.getCurrentUser();
+    if (!current?.userId) return;
+
+    this.hiddenGroupsSet.add(`${groupId}_${current.userId}`);
+    this.saveToLocalStorage();
+    window.dispatchEvent(new CustomEvent('community_groups_updated'));
+  }
+
+  public isGroupHiddenForUser(groupId: string, userId?: string): boolean {
+    if (groupId === 'group_default_quran_readers' || groupId === 'group_default_tadabbur') {
+      return false; // Starter groups are ALWAYS visible!
+    }
+    const uid = userId || this.getCurrentUser()?.userId;
+    if (!uid) return false;
+    return this.hiddenGroupsSet.has(`${groupId}_${uid}`);
+  }
+
+  public unhideGroupForUser(groupId: string): void {
+    const current = this.getCurrentUser();
+    if (!current?.userId) return;
+
+    this.hiddenGroupsSet.delete(`${groupId}_${current.userId}`);
+    this.saveToLocalStorage();
+    window.dispatchEvent(new CustomEvent('community_groups_updated'));
+  }
+
+  public getGroups(): GroupChat[] {
+    const current = this.getCurrentUser();
+    this.ensureStarterGroupsExist();
+
+    return this.groupsList.filter(g => {
+      // 1. Starter public groups ALWAYS appear for ALL members - NEVER HIDDEN!
+      if (g.groupId === 'group_default_quran_readers' || g.groupId === 'group_default_tadabbur') {
+        return true;
+      }
+
+      if (!current || !current.userId) return false;
+
+      // 2. If user explicitly removed / hid this group from their page, DO NOT show it in community tab
+      if (this.isGroupHiddenForUser(g.groupId, current.userId)) {
+        return false;
+      }
+
+      // If user explicitly rejected invitation, don't show it
+      const isRejected = Array.isArray(g.rejectedMembers) && g.rejectedMembers.includes(current.userId);
+      if (isRejected) return false;
+
+      // 3. User is creator, member, invited, or has left/been removed (and hasn't hidden it yet)
+      const isCreator = this.isGroupCreator(g, current);
+      const isMember = Array.isArray(g.members) && g.members.includes(current.userId);
+      const isInvited = Array.isArray(g.invitedMembers) && g.invitedMembers.includes(current.userId);
+      const hasLeftOrRemoved = this.hasUserLeftOrBeenRemoved(g, current.userId);
+
+      if (g.isPublic) return true;
+
+      return isCreator || isMember || isInvited || hasLeftOrRemoved;
+    }).sort((a, b) => new Date(b.lastMessageTime || b.createdAt || 0).getTime() - new Date(a.lastMessageTime || a.createdAt || 0).getTime());
+  }
+
+  public getGroupById(groupId: string): GroupChat | undefined {
+    this.ensureStarterGroupsExist();
+    return this.groupsList.find(g => g.groupId === groupId);
+  }
+
+  // Get members with whom the current user had previous 1-on-1 chats
+  public getDirectChatPartners(): CommunityUser[] {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return [];
+
+    const partnerIds = new Set<string>();
+
+    // 1. From messages list
+    this.messagesList.forEach(m => {
+      if (this.isViolationReportMessage(m)) return;
+      if (m.senderId === current.userId && m.recipientId && m.recipientId !== current.userId) {
+        partnerIds.add(m.recipientId);
+      } else if (m.recipientId === current.userId && m.senderId && m.senderId !== current.userId) {
+        partnerIds.add(m.senderId);
+      }
+    });
+
+    // 2. From contacts list
+    this.serverContactsList.forEach(c => {
+      if (c.userId === current.userId && c.partnerId && c.partnerId !== current.userId) {
+        partnerIds.add(c.partnerId);
+      }
+    });
+
+    // Exclude current user & official support
+    partnerIds.delete(current.userId);
+    partnerIds.delete(ADMIN_USER_ID);
+
+    const partners: CommunityUser[] = [];
+    partnerIds.forEach(id => {
+      if (this.isBlockedMutually(id)) return;
+      const u = this.usersMap.get(id);
+      if (u) {
+        partners.push(u);
+      } else {
+        partners.push({
+          userId: id,
+          username: 'مستخدم المصحف',
+          country: 'غير محدد',
+          isOnline: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+    });
+
+    return partners;
+  }
+
+  // Get pending invitations for the current user
+  public getPendingGroupInvitations(): GroupChat[] {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return [];
+
+    return this.groupsList.filter(g => {
+      const isInvited = Array.isArray(g.invitedMembers) && g.invitedMembers.includes(current.userId);
+      const isMember = Array.isArray(g.members) && g.members.includes(current.userId);
+      const isRejected = Array.isArray(g.rejectedMembers) && g.rejectedMembers.includes(current.userId);
+      return isInvited && !isMember && !isRejected;
+    });
+  }
+
+  // Accept group invitation
+  public async acceptGroupInvitation(groupId: string): Promise<void> {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return;
+
+    const group = this.getGroupById(groupId);
+    if (!group) return;
+
+    const members = new Set<string>(group.members || []);
+    members.add(current.userId);
+    group.members = Array.from(members);
+    group.memberCount = members.size;
+
+    if (group.invitedMembers) {
+      group.invitedMembers = group.invitedMembers.filter(id => id !== current.userId);
+    }
+    if (group.rejectedMembers) {
+      group.rejectedMembers = group.rejectedMembers.filter(id => id !== current.userId);
+    }
+
+    this.saveToLocalStorage();
+
+    try {
+      await updateDoc(doc(db, 'group_chats', groupId), {
+        members: group.members,
+        memberCount: group.memberCount,
+        invitedMembers: group.invitedMembers || [],
+        rejectedMembers: group.rejectedMembers || []
+      });
+    } catch (e) {
+      try {
+        await setDoc(doc(db, 'group_chats', groupId), this.cleanPayload(group), { merge: true });
+      } catch (err) {}
+    }
+
+    window.dispatchEvent(new CustomEvent('community_groups_updated'));
+  }
+
+  // Decline / Reject group invitation
+  public async declineGroupInvitation(groupId: string): Promise<void> {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return;
+
+    const group = this.getGroupById(groupId);
+    if (!group) return;
+
+    if (group.invitedMembers) {
+      group.invitedMembers = group.invitedMembers.filter(id => id !== current.userId);
+    }
+    const rejected = new Set<string>(group.rejectedMembers || []);
+    rejected.add(current.userId);
+    group.rejectedMembers = Array.from(rejected);
+
+    // Also remove from members just in case
+    if (group.members) {
+      group.members = group.members.filter(id => id !== current.userId);
+      group.memberCount = group.members.length;
+    }
+
+    this.saveToLocalStorage();
+
+    try {
+      await updateDoc(doc(db, 'group_chats', groupId), {
+        members: group.members || [],
+        memberCount: group.memberCount || 0,
+        invitedMembers: group.invitedMembers || [],
+        rejectedMembers: group.rejectedMembers || []
+      });
+    } catch (e) {
+      try {
+        await setDoc(doc(db, 'group_chats', groupId), this.cleanPayload(group), { merge: true });
+      } catch (err) {}
+    }
+
+    window.dispatchEvent(new CustomEvent('community_groups_updated'));
+  }
+
+  public async createGroup(
+    name: string,
+    description: string = '',
+    invitedMemberIds: string[] = [],
+    avatarUrl?: string,
+    isPublic: boolean = false
+  ): Promise<GroupChat> {
+    const current = this.getCurrentUser();
+    if (!this.isProfileComplete()) {
+      throw new Error('يرجى حفظ اسمك وبيانات ملفك الشخصي أولاً قبل إنشاء محادثة جماعية.');
+    }
+    const rawName = (name || '').trim();
+    // Strip emojis from the name text so the icon remains purely as the group's avatar/icon
+    const cleanName = rawName.replace(/[\p{Extended_Pictographic}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim() || rawName;
+    if (cleanName.length < 2) {
+      throw new Error('يرجى كتابة اسم مناسب للمحادثة الجماعية (حرفين على الأقل).');
+    }
+
+    const uniqueInvited = Array.from(new Set(invitedMemberIds)).filter(id => id && id !== current.userId);
+
+    const groupId = 'group_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
+    const newGroup: GroupChat = {
+      groupId,
+      name: cleanName,
+      description: description.trim(),
+      avatarUrl: (avatarUrl && avatarUrl.trim()) ? avatarUrl.trim() : '📖',
+      createdBy: current.userId,
+      creatorName: current.username,
+      members: [current.userId],
+      memberCount: 1,
+      invitedMembers: uniqueInvited,
+      rejectedMembers: [],
+      lastMessage: '',
+      lastMessageSenderName: current.username,
+      lastMessageTime: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      isPublic
+    };
+
+    this.groupsList.unshift(newGroup);
+    this.saveToLocalStorage();
+
+    try {
+      const payload = this.cleanPayload(newGroup);
+      await setDoc(doc(db, 'group_chats', groupId), payload);
+    } catch (e: any) {
+      console.warn('Error saving group to firestore:', e);
+    }
+
+    window.dispatchEvent(new CustomEvent('community_groups_updated'));
+
+    // Send direct invitation message to each invited member
+    if (uniqueInvited.length > 0) {
+      for (const invitedId of uniqueInvited) {
+        try {
+          const inviteText = `السلام عليكم ورحمة الله، أدعوك للانضمام إلى مجموعة "${cleanName}". يمكنك قبول الدعوة من قسم المجموعات بالضغط على قبول والانضمام 🌿`;
+          this.sendMessage(invitedId, inviteText).catch(() => {});
+        } catch (err) {
+          console.warn('Error sending invite message:', err);
+        }
+      }
+    }
+
+    return newGroup;
+  }
+
+  public cleanGroupName(name?: string): string {
+    if (!name) return '';
+    return name.replace(/[\p{Extended_Pictographic}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim() || name;
+  }
+
+  public async updateGroup(
+    groupId: string,
+    updates: { name?: string; avatarUrl?: string; description?: string }
+  ): Promise<GroupChat> {
+    const current = this.getCurrentUser();
+    const group = this.getGroupById(groupId);
+    if (!group) {
+      throw new Error('المجموعة غير موجودة.');
+    }
+
+    if (!this.isGroupCreator(group, current)) {
+      throw new Error('فقط منشئ المجموعة يمكنه تعديل بيانات المجموعة.');
+    }
+
+    const firestoreUpdates: Record<string, any> = {};
+
+    if (updates.name !== undefined) {
+      const rawName = (updates.name || '').trim();
+      const cleanName = rawName.replace(/[\p{Extended_Pictographic}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim() || rawName;
+      if (cleanName.length < 2) {
+        throw new Error('يرجى كتابة اسم مناسب للمحادثة الجماعية (حرفين على الأقل).');
+      }
+      group.name = cleanName;
+      firestoreUpdates.name = cleanName;
+    }
+
+    if (updates.avatarUrl !== undefined) {
+      const cleanAvatar = updates.avatarUrl.trim() || '📖';
+      group.avatarUrl = cleanAvatar;
+      firestoreUpdates.avatarUrl = cleanAvatar;
+    }
+
+    if (updates.description !== undefined) {
+      const cleanDesc = updates.description.trim();
+      group.description = cleanDesc;
+      firestoreUpdates.description = cleanDesc;
+    }
+
+    this.saveToLocalStorage();
+
+    try {
+      await updateDoc(doc(db, 'group_chats', groupId), firestoreUpdates);
+    } catch (e: any) {
+      try {
+        await setDoc(doc(db, 'group_chats', groupId), this.cleanPayload(group), { merge: true });
+      } catch (err: any) {
+        console.warn('Error updating group in firestore:', err);
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent('community_groups_updated', { detail: { groupId } }));
+    return group;
+  }
+
+  public async joinGroup(groupId: string): Promise<void> {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return;
+
+    const group = this.getGroupById(groupId);
+    if (!group) return;
+
+    // Check if user rejected
+    if (group.rejectedMembers && group.rejectedMembers.includes(current.userId)) {
+      return;
+    }
+
+    const members = new Set<string>(group.members || []);
+    if (!members.has(current.userId)) {
+      members.add(current.userId);
+      group.members = Array.from(members);
+      group.memberCount = members.size;
+      if (group.invitedMembers) {
+        group.invitedMembers = group.invitedMembers.filter(id => id !== current.userId);
+      }
+      this.saveToLocalStorage();
+
+      try {
+        await updateDoc(doc(db, 'group_chats', groupId), {
+          members: group.members,
+          memberCount: group.members.length,
+          invitedMembers: group.invitedMembers || []
+        });
+      } catch (e) {
+        try {
+          await setDoc(doc(db, 'group_chats', groupId), this.cleanPayload(group), { merge: true });
+        } catch (err) {}
+      }
+
+      window.dispatchEvent(new CustomEvent('community_groups_updated'));
+    }
+  }
+
+  public async leaveGroup(groupId: string): Promise<void> {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return;
+
+    const group = this.getGroupById(groupId);
+    if (!group) return;
+
+    // Starter groups cannot be left
+    if (group.groupId === 'group_default_quran_readers' || group.groupId === 'group_default_tadabbur') {
+      return;
+    }
+
+    const nowIso = new Date().toISOString();
+    const members = new Set<string>(group.members || []);
+    members.delete(current.userId);
+    group.members = Array.from(members);
+    group.memberCount = members.size;
+
+    if (!group.leftMembers) group.leftMembers = [];
+    if (!group.leftMembers.includes(current.userId)) {
+      group.leftMembers.push(current.userId);
+    }
+    if (!group.memberExitTimes) group.memberExitTimes = {};
+    group.memberExitTimes[current.userId] = nowIso;
+
+    this.recordExitTime(groupId, current.userId, nowIso);
+    this.saveToLocalStorage();
+
+    try {
+      await updateDoc(doc(db, 'group_chats', groupId), {
+        members: group.members,
+        memberCount: group.members.length,
+        leftMembers: group.leftMembers,
+        memberExitTimes: group.memberExitTimes
+      });
+    } catch (e) {
+      try {
+        await setDoc(doc(db, 'group_chats', groupId), this.cleanPayload(group), { merge: true });
+      } catch (err) {}
+    }
+
+    window.dispatchEvent(new CustomEvent('community_groups_updated'));
+    window.dispatchEvent(new CustomEvent('community_group_messages_updated', { detail: { groupId } }));
+  }
+
+  public async addMemberToGroup(groupId: string, targetUserId: string): Promise<void> {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return;
+
+    const group = this.getGroupById(groupId);
+    if (!group) return;
+
+    const isCreator = group.createdBy === current.userId;
+    const isAdmin = current.userId === ADMIN_USER_ID;
+
+    if (!isCreator && !isAdmin) {
+      throw new Error('لا يحق إلا لمنشئ المجموعة فقط إضافة ودعوة أصدقاء للمجموعة.');
+    }
+
+    if (group.members && group.members.includes(targetUserId)) {
+      throw new Error('المستخدم عضو بالفعل في هذه المجموعة.');
+    }
+
+    if (!group.invitedMembers) {
+      group.invitedMembers = [];
+    }
+
+    if (!group.invitedMembers.includes(targetUserId)) {
+      group.invitedMembers.push(targetUserId);
+    }
+
+    if (group.rejectedMembers) {
+      group.rejectedMembers = group.rejectedMembers.filter(id => id !== targetUserId);
+    }
+    if (group.leftMembers) {
+      group.leftMembers = group.leftMembers.filter(id => id !== targetUserId);
+    }
+    if (group.memberExitTimes) {
+      delete group.memberExitTimes[targetUserId];
+    }
+    this.groupExitTimesMap.delete(`${groupId}_${targetUserId}`);
+
+    this.saveToLocalStorage();
+
+    try {
+      await updateDoc(doc(db, 'group_chats', groupId), {
+        invitedMembers: group.invitedMembers || [],
+        rejectedMembers: group.rejectedMembers || [],
+        leftMembers: group.leftMembers || [],
+        memberExitTimes: group.memberExitTimes || {}
+      });
+    } catch (e) {
+      try {
+        await setDoc(doc(db, 'group_chats', groupId), this.cleanPayload(group), { merge: true });
+      } catch (err) {}
+    }
+
+    // Send direct invitation message to the target user
+    try {
+      const cleanName = this.cleanGroupName(group.name);
+      const inviterName = current.username || 'أحد الأعضاء';
+      const inviteText = `السلام عليكم ورحمة الله، أدعوك للانضمام إلى مجموعة "${cleanName}". يمكنك قبول الدعوة بالضغط على "قبول والانضمام" في قسم المجموعات 🌿`;
+      this.sendMessage(targetUserId, inviteText).catch(() => {});
+    } catch (err) {
+      console.warn('Failed to send private invitation message to user:', err);
+    }
+
+    window.dispatchEvent(new CustomEvent('community_groups_updated'));
+  }
+
+  public async removeMemberFromGroup(groupId: string, targetUserId: string): Promise<void> {
+    const current = this.getCurrentUser();
+    if (!current || !current.userId) return;
+
+    const group = this.getGroupById(groupId);
+    if (!group) return;
+
+    if (group.createdBy !== current.userId && current.userId !== ADMIN_USER_ID) {
+      throw new Error('فقط منشئ المجموعة أو الإدارة يمكنه إزالة أعضاء.');
+    }
+
+    if (targetUserId === group.createdBy) {
+      throw new Error('لا يمكن إزالة منشئ المجموعة.');
+    }
+
+    const nowIso = new Date().toISOString();
+    const members = new Set<string>(group.members || []);
+    members.delete(targetUserId);
+    group.members = Array.from(members);
+    group.memberCount = members.size;
+
+    if (group.invitedMembers) {
+      group.invitedMembers = group.invitedMembers.filter(id => id !== targetUserId);
+    }
+
+    if (!group.leftMembers) group.leftMembers = [];
+    if (!group.leftMembers.includes(targetUserId)) {
+      group.leftMembers.push(targetUserId);
+    }
+    if (!group.memberExitTimes) group.memberExitTimes = {};
+    group.memberExitTimes[targetUserId] = nowIso;
+
+    this.recordExitTime(groupId, targetUserId, nowIso);
+    this.saveToLocalStorage();
+
+    try {
+      await updateDoc(doc(db, 'group_chats', groupId), {
+        members: group.members,
+        memberCount: group.members.length,
+        invitedMembers: group.invitedMembers || [],
+        leftMembers: group.leftMembers,
+        memberExitTimes: group.memberExitTimes
+      });
+    } catch (e) {
+      try {
+        await setDoc(doc(db, 'group_chats', groupId), this.cleanPayload(group), { merge: true });
+      } catch (err) {}
+    }
+
+    window.dispatchEvent(new CustomEvent('community_groups_updated'));
+    window.dispatchEvent(new CustomEvent('community_group_messages_updated', { detail: { groupId } }));
+  }
+
+  public isCurrentUserAdmin(): boolean {
+    const current = this.getCurrentUser();
+    return !!(current && current.userId === ADMIN_USER_ID);
+  }
+
+  public isGroupCreator(group?: GroupChat | null, user?: CommunityUser | null): boolean {
+    if (!group) return false;
+    const current = user || this.getCurrentUser();
+    if (!current || !current.userId) return false;
+
+    // Admin can delete any non-starter group
+    if (current.userId === ADMIN_USER_ID) return true;
+
+    // Starter groups cannot be deleted by normal users
+    if (group.groupId === 'group_default_quran_readers' || group.groupId === 'group_default_tadabbur') {
+      return false;
+    }
+
+    const curId = String(current.userId || '').trim();
+    const curName = String(current.username || '').trim().toLowerCase();
+    const grpCreatorId = String(group.createdBy || '').trim();
+    const grpCreatorName = String(group.creatorName || '').trim().toLowerCase();
+
+    // Match by creator userId
+    if (grpCreatorId && grpCreatorId === curId) return true;
+    // Match by creator username
+    if (grpCreatorName && curName && grpCreatorName === curName) return true;
+    // Fallback if createdBy is empty or first member is user
+    if (!grpCreatorId && Array.isArray(group.members) && group.members[0] === curId) return true;
+
+    return false;
+  }
+
+  public async deleteGroup(groupId: string): Promise<void> {
+    const current = this.getCurrentUser();
+    const group = this.getGroupById(groupId);
+    if (!group) return;
+
+    if (!this.isGroupCreator(group, current)) {
+      throw new Error('فقط منشئ المجموعة يمكنه حذف هذه المجموعة.');
+    }
+
+    // 1. Remove from in-memory state
+    this.groupsList = this.groupsList.filter(g => g.groupId !== groupId);
+    this.groupMessagesList = this.groupMessagesList.filter(m => m.groupId !== groupId);
+    this.saveToLocalStorage();
+
+    // 2. Delete the group document from Firestore
+    try {
+      await deleteDoc(doc(db, 'group_chats', groupId));
+    } catch (e) {
+      console.warn('Error deleting group from Firestore:', e);
+    }
+
+    // 3. Delete all associated messages from Firestore
+    try {
+      const q = query(collection(db, 'group_messages'), where('groupId', '==', groupId));
+      const snap = await getDocs(q);
+      const deletePromises = snap.docs.map(d => deleteDoc(d.ref));
+      await Promise.all(deletePromises);
+    } catch (e) {
+      console.warn('Error deleting group messages from Firestore:', e);
+    }
+
+    // 4. Dispatch events to notify all active components
+    window.dispatchEvent(new CustomEvent('community_groups_updated'));
+    window.dispatchEvent(new CustomEvent('community_group_messages_updated', { detail: { groupId } }));
+  }
+
+  public getGroupMessages(groupId: string): GroupMessage[] {
+    // 1. Starter public groups: ALWAYS accessible to ALL users with ALL messages!
+    if (groupId === 'group_default_quran_readers' || groupId === 'group_default_tadabbur') {
+      return this.groupMessagesList
+        .filter(m => m.groupId === groupId)
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    }
+
+    const current = this.getCurrentUser();
+    const group = this.getGroupById(groupId);
+
+    // If user has left or was removed from this custom group:
+    if (current?.userId && group && !this.isGroupCreator(group, current) && current.userId !== ADMIN_USER_ID) {
+      const isMember = Array.isArray(group.members) && group.members.includes(current.userId);
+      if (!isMember) {
+        let exitTime = this.getMemberExitTime(groupId, current.userId);
+        if (!exitTime) {
+          const nowIso = new Date().toISOString();
+          this.recordExitTime(groupId, current.userId, nowIso);
+          exitTime = nowIso;
+        }
+        const exitTimeMs = new Date(exitTime).getTime();
+        return this.groupMessagesList
+          .filter(m => {
+            if (m.groupId !== groupId) return false;
+            // Do NOT show any messages sent AFTER exit time!
+            const msgTime = new Date(m.createdAt).getTime();
+            return msgTime <= exitTimeMs;
+          })
+          .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      }
+    }
+
+    return this.groupMessagesList
+      .filter(m => m.groupId === groupId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }
+
+  public async sendGroupMessage(
+    groupId: string,
+    text: string,
+    verseData?: QuranVerseAttachment,
+    audioUrl?: string,
+    audioDuration?: number
+  ): Promise<GroupMessage> {
+    const current = this.getCurrentUser();
+    if (!this.isProfileComplete()) {
+      throw new Error('يرجى حفظ اسمك وبيانات ملفك الشخصي أولاً قبل إرسال الرسائل.');
+    }
+
+    const isStarter = groupId === 'group_default_quran_readers' || groupId === 'group_default_tadabbur';
+    const group = this.getGroupById(groupId);
+    if (!isStarter && group) {
+      const isMember = Array.isArray(group.members) && group.members.includes(current.userId);
+      const isCreator = this.isGroupCreator(group, current);
+      if (!isMember && !isCreator) {
+        throw new Error('لا يمكنك إرسال رسائل جديدة لأنك لست عضواً في هذه المجموعة.');
+      }
+    }
+
+    const checkText = (text || '') + (verseData?.customNote ? ' ' + verseData.customNote : '');
+    const modResult = checkContentModeration(checkText);
+    if (modResult.isViolating) {
+      throw new Error('عفواً، تحتوي الرسالة على كلمات غير لائقة مخالفة لشروط الاستخدام.');
+    }
+
+    const messageId = 'gmsg_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
+    const newMsg: GroupMessage = {
+      messageId,
+      groupId,
+      senderId: current.userId,
+      senderName: current.username,
+      senderAvatarUrl: current.avatarUrl,
+      senderCountry: current.country,
+      text: text.trim(),
+      verseData,
+      audioUrl,
+      audioDuration,
+      createdAt: new Date().toISOString()
+    };
+
+    this.groupMessagesList.push(newMsg);
+
+    if (group) {
+      group.lastMessage = text.trim() || (verseData ? `آية من سورة ${verseData.surahName}` : 'مقطع صوتي 🎙️');
+      group.lastMessageSenderName = current.username;
+      group.lastMessageTime = newMsg.createdAt;
+      if (!group.members) group.members = [];
+      if (!group.members.includes(current.userId)) {
+        group.members.push(current.userId);
+        group.memberCount = group.members.length;
+      }
+    }
+
+    this.saveToLocalStorage();
+
+    try {
+      const payload = this.cleanPayload(newMsg);
+      await setDoc(doc(db, 'group_messages', messageId), payload);
+
+      if (group) {
+        await updateDoc(doc(db, 'group_chats', groupId), {
+          lastMessage: group.lastMessage,
+          lastMessageSenderName: group.lastMessageSenderName,
+          lastMessageTime: group.lastMessageTime,
+          members: group.members,
+          memberCount: group.memberCount || group.members.length
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Error sending group message to Firestore:', e);
+    }
+
+    window.dispatchEvent(new CustomEvent('community_group_messages_updated', { detail: { groupId } }));
+    window.dispatchEvent(new CustomEvent('community_groups_updated'));
+
+    return newMsg;
+  }
+
+  public async deleteGroupMessage(messageId: string): Promise<void> {
+    const msg = this.groupMessagesList.find(m => m.messageId === messageId);
+    const groupId = msg?.groupId;
+
+    this.groupMessagesList = this.groupMessagesList.filter(m => m.messageId !== messageId);
+    this.saveToLocalStorage();
+
+    try {
+      await deleteDoc(doc(db, 'group_messages', messageId));
+    } catch (e) {}
+
+    window.dispatchEvent(new CustomEvent('community_group_messages_updated', { detail: { groupId } }));
+  }
+
+  public async clearGroupMessages(groupId: string): Promise<void> {
+    this.groupMessagesList = this.groupMessagesList.filter(m => m.groupId !== groupId);
+    this.saveToLocalStorage();
+
+    try {
+      const q = query(collection(db, 'group_messages'), where('groupId', '==', groupId));
+      const snap = await getDocs(q);
+      snap.forEach(d => deleteDoc(d.ref).catch(() => {}));
+    } catch (e) {}
+
+    window.dispatchEvent(new CustomEvent('community_group_messages_updated', { detail: { groupId } }));
   }
 }
 

@@ -12,6 +12,7 @@ import { QuranDownloadModal } from '../components/QuranReader/DownloadModals';
 import ReciterSelectModal from '../components/QuranReader/ReciterSelectModal';
 import Toast from '../components/QuranReader/Toast';
 import { memorizationService, MemorizedRange } from '../services/memorizationService';
+import { useShowNewBadge } from '../utils/badgeManager';
 import './QuranReader.css';
 
 interface MemorizationProps {
@@ -48,22 +49,13 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
     const [savedSession, setSavedSession] = useState<any>(null);
     const [activePicker, setActivePicker] = useState<'range' | 'ayah' | 'pause' | 'reader' | 'fromSurah' | 'fromAyah' | 'toSurah' | 'toAyah' | null>(null);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
-    const [showNewBadge, setShowNewBadge] = useState(false);
+    const showNewBadge = useShowNewBadge();
     const [toast, setToast] = useState<{ show: boolean; message: string }>({ show: false, message: '' });
 
     const showToast = (message: string) => {
         setToast({ show: true, message });
         setTimeout(() => setToast({ show: false, message: '' }), 3000);
     };
-
-    useEffect(() => {
-        const count = parseInt(localStorage.getItem('apps_page_opens_count') || '0');
-        if (count <= 10) {
-            setShowNewBadge(true);
-        } else {
-            setShowNewBadge(false);
-        }
-    }, []);
 
     useEffect(() => {
         // Stop audio when unmounting Memorization page

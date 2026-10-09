@@ -90,28 +90,38 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
         }
     };
 
-    const loadData = async () => {
-        const uList = await communityService.fetchLatestUsers();
+    const loadDebounceTimerRef = React.useRef<any>(null);
+
+    const loadData = async (forceServerFetch = false) => {
+        const uList = communityService.getAllUsers();
         // Remove official Admin from regular list
         const filteredUsers = uList.filter(u => u.userId !== ADMIN_USER_ID);
         setUsers(filteredUsers);
         setContacts(communityService.getRawContacts());
         
-        const msgs = await communityService.fetchAllServerMessages();
+        const msgs = await communityService.fetchAllServerMessages(forceServerFetch);
         setServerMessages(msgs);
+    };
+
+    const debouncedLoadData = () => {
+        if (loadDebounceTimerRef.current) clearTimeout(loadDebounceTimerRef.current);
+        loadDebounceTimerRef.current = setTimeout(() => {
+            loadData(false);
+        }, 250);
     };
 
     useEffect(() => {
         if (isOpen) {
-            loadData();
+            loadData(true);
             
-            const handleUserUpdate = () => loadData();
-            const handleMsgUpdate = () => loadData();
+            const handleUserUpdate = () => debouncedLoadData();
+            const handleMsgUpdate = () => debouncedLoadData();
 
             window.addEventListener('community_user_updated', handleUserUpdate);
             window.addEventListener('community_messages_updated', handleMsgUpdate);
 
             return () => {
+                if (loadDebounceTimerRef.current) clearTimeout(loadDebounceTimerRef.current);
                 window.removeEventListener('community_user_updated', handleUserUpdate);
                 window.removeEventListener('community_messages_updated', handleMsgUpdate);
             };
@@ -174,17 +184,24 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
         if (!userToDeleteConfirm) return;
         setIsDeleting(true);
         try {
+            const targetUid = userToDeleteConfirm.userId;
             const uName = userToDeleteConfirm.username || 'القارئ';
-            await communityService.deleteUser(userToDeleteConfirm.userId);
+
+            // Optimistically remove user and messages from modal state immediately (0ms delay)
+            setUsers(prev => prev.filter(u => u.userId !== targetUid));
+            setServerMessages(prev => prev.filter(m => m.senderId !== targetUid && m.recipientId !== targetUid));
             setUserToDeleteConfirm(null);
             setSelectedInspectorUser(null);
             setSelectedViolatorUserId(null);
             setSelectedUserForSupport(null);
-            await loadData();
+
+            // Execute high-speed batch deletion in Firestore
+            await communityService.deleteUser(targetUid);
             showAdminToast(`تم حذف حساب القارئ "${uName}" بنجاح ✅`);
         } catch (e) {
             console.error('Error deleting user:', e);
             showAdminToast('حدث خطأ أثناء محاولة الحذف، يرجى المحاولة ثانية');
+            loadData(true);
         } finally {
             setIsDeleting(false);
         }

@@ -1,6 +1,6 @@
 import { db } from '../lib/firebase';
 import { 
-  collection, doc, getDoc, setDoc, onSnapshot 
+  collection, doc, getDoc, getDocs, setDoc, deleteDoc, onSnapshot 
 } from 'firebase/firestore';
 import { communityService, CommunityUser } from './communityService';
 import { gregorianMonths, hijriMonths } from '../data/calendarData';
@@ -36,8 +36,9 @@ export interface MonthOption {
   isCurrent: boolean;
 }
 
-const STORAGE_KEY_LOCAL_STATS = 'mushaf_ahl_al_quran_cache_v1';
+const STORAGE_KEY_LOCAL_STATS = 'mushaf_ahl_al_quran_cache_v2';
 const STORAGE_KEY_PRIVACY = 'mushaf_ahl_al_quran_privacy_pref_v1';
+const STORAGE_KEY_WIPE_V2 = 'mushaf_ahl_al_quran_wiped_v2';
 
 class AhlAlQuranService {
   private recordsCache: Map<string, AhlAlQuranUserRecord> = new Map();
@@ -47,8 +48,38 @@ class AhlAlQuranService {
   private listeners: Set<(records: AhlAlQuranUserRecord[]) => void> = new Set();
 
   constructor() {
+    // One-time total wipe per user request to start leaderboard completely fresh and empty
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('mushaf_ahl_al_quran_cache_v1');
+        localStorage.removeItem('mushaf_ahl_al_quran_stats');
+        localStorage.removeItem('ahl_al_quran_stats');
+
+        if (!localStorage.getItem(STORAGE_KEY_WIPE_V2)) {
+          localStorage.removeItem(STORAGE_KEY_LOCAL_STATS);
+          localStorage.setItem(STORAGE_KEY_WIPE_V2, 'true');
+        }
+      }
+    } catch (e) {}
+
     this.loadFromLocalStorage();
     this.initFirestoreListener();
+    this.setupCommunityListeners();
+  }
+
+  private setupCommunityListeners() {
+    if (typeof window === 'undefined') return;
+
+    window.addEventListener('community_user_deleted', (e: any) => {
+      const deletedId = e.detail?.userId;
+      if (deletedId) {
+        this.deleteUserStatsLocally(deletedId);
+      }
+    });
+
+    window.addEventListener('community_user_updated', () => {
+      this.cleanupDeletedUsers();
+    });
   }
 
   // --- Hijri & Gregorian Date Utilities ---
@@ -431,8 +462,8 @@ class AhlAlQuranService {
     isCurrentUser: boolean;
     isAnonymous: boolean;
   }[] {
-    const allUsers: CommunityUser[] = communityService.getVisibleUsers('', true);
-    const userProfileMap = new Map<string, CommunityUser>(allUsers.map(u => [u.userId, u]));
+    const curUser = communityService.getCurrentUser();
+    const isCurSetup = communityService.isProfileSetup();
 
     const results: Array<{
       record: AhlAlQuranUserRecord;
@@ -445,19 +476,26 @@ class AhlAlQuranService {
     }> = [];
 
     for (const [uid, record] of Array.from(this.recordsCache.entries())) {
-      // 1. Privacy filter: Hidden users do not appear unless it's the current user themselves viewing
       const isCur = currentUserId === uid;
+      
+      // CRITICAL REQUIREMENT:
+      // When a user is deleted from the community, and they were in the ranking,
+      // they MUST be automatically removed from the ranking because their account no longer exists.
+      const userProfile = communityService.getUserById(uid);
+      const isCurValid = isCur && isCurSetup && !!curUser?.userId;
+
+      if (!userProfile && !isCurValid) {
+        // User account does not exist in community anymore - purge from cache
+        this.recordsCache.delete(uid);
+        continue;
+      }
+
+      // 1. Privacy filter: Hidden users do not appear unless it's the current user themselves viewing
       if (record.privacyMode === 'hidden' && !isCur) {
         continue;
       }
 
-      // 2. Filter: other users must have a record or profile
-      const userProfile = userProfileMap.get(uid);
-      if (!isCur && !userProfile && !record.username) {
-        continue;
-      }
-
-      // 3. Stats for the given monthKey
+      // 2. Stats for the given monthKey
       let pages = 0;
       let khatmas = 0;
 
@@ -477,8 +515,8 @@ class AhlAlQuranService {
       const isAnon = record.privacyMode === 'anonymous' && !isCur;
       const displayName = isAnon 
         ? 'فاعل خير (قارئ للقرآن)' 
-        : (userProfile?.username || record.username || (isCur ? 'قارئ المصحف (أنت)' : 'قارئ المصحف'));
-      const displayAvatar = isAnon ? undefined : (userProfile?.avatarUrl || record.avatarUrl);
+        : (userProfile?.username || (isCur ? (curUser?.username || 'قارئ المصحف (أنت)') : record.username || 'قارئ المصحف'));
+      const displayAvatar = isAnon ? undefined : (userProfile?.avatarUrl || (isCur ? curUser?.avatarUrl : record.avatarUrl));
 
       results.push({
         record,
@@ -504,6 +542,65 @@ class AhlAlQuranService {
       rank: index + 1,
       formattedProgress: this.formatAjzaAndPages(item.pages)
     }));
+  }
+
+  // --- User deletion & ranking cleanup methods ---
+
+  public deleteUserStatsLocally(userId: string): void {
+    if (!userId) return;
+    if (this.recordsCache.has(userId)) {
+      this.recordsCache.delete(userId);
+      this.saveToLocalStorage();
+      this.notifyListeners();
+    }
+  }
+
+  public async deleteUserStats(userId: string): Promise<void> {
+    if (!userId) return;
+    this.deleteUserStatsLocally(userId);
+    try {
+      await deleteDoc(doc(db, 'ahl_al_quran_stats', userId));
+    } catch (e) {
+      console.warn('Error deleting ahl_al_quran_stats for user in Firestore:', e);
+    }
+  }
+
+  public cleanupDeletedUsers(): void {
+    let changed = false;
+    const cur = communityService.getCurrentUser();
+    const isCurSetup = communityService.isProfileSetup();
+
+    for (const uid of Array.from(this.recordsCache.keys())) {
+      const existsInCommunity = !!communityService.getUserById(uid) || (uid === cur?.userId && isCurSetup);
+      if (!existsInCommunity) {
+        this.recordsCache.delete(uid);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.saveToLocalStorage();
+      this.notifyListeners();
+      try {
+        window.dispatchEvent(new CustomEvent('ahl_al_quran_updated'));
+      } catch (e) {}
+    }
+  }
+
+  public async resetAllRankings(): Promise<void> {
+    this.recordsCache.clear();
+    this.saveToLocalStorage();
+    this.notifyListeners();
+    try {
+      const snapshot = await getDocs(collection(db, 'ahl_al_quran_stats'));
+      const deletes = snapshot.docs.map(d => deleteDoc(doc(db, 'ahl_al_quran_stats', d.id)));
+      await Promise.all(deletes);
+    } catch (e) {
+      console.warn('Error resetting all rankings:', e);
+    }
+    try {
+      window.dispatchEvent(new CustomEvent('ahl_al_quran_updated'));
+    } catch (e) {}
   }
 
   // --- Firestore Integration & Real-time Listeners ---
@@ -558,14 +655,23 @@ class AhlAlQuranService {
       this.unsubscribeFirestore = onSnapshot(collection(db, 'ahl_al_quran_stats'), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           const data = change.doc.data() as AhlAlQuranUserRecord;
-          if (data && data.userId) {
+          const uid = data?.userId || change.doc.id;
+          if (uid) {
             if (change.type === 'removed') {
-              this.recordsCache.delete(data.userId);
+              this.recordsCache.delete(uid);
             } else {
-              this.recordsCache.set(data.userId, {
-                ...data,
-                monthlyStats: data.monthlyStats || {}
-              });
+              // Ensure user account actually exists in the community before caching
+              const userProfile = communityService.getUserById(uid);
+              const curUid = communityService.getCurrentUser()?.userId;
+              if (userProfile || (uid === curUid && communityService.isProfileSetup())) {
+                this.recordsCache.set(uid, {
+                  ...data,
+                  userId: uid,
+                  monthlyStats: data.monthlyStats || {}
+                });
+              } else {
+                this.recordsCache.delete(uid);
+              }
             }
           }
         });

@@ -16,6 +16,12 @@ service cloud.firestore {
     match /ahl_al_quran_stats/{userId} {
       allow read, write: if true;
     }
+    match /group_chats/{groupId} {
+      allow read, write: if true;
+    }
+    match /group_messages/{messageId} {
+      allow read, write: if true;
+    }
     match /{document=**} {
       allow read, write: if true;
     }

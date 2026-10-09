@@ -1,15 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowRight, Send, Smile, MoreVertical, Trash2, Check, 
   CheckCheck, Ban, User, Sparkles, AlertCircle, BookOpen, Play, Pause, CheckCircle2,
-  Mic, Volume2, Loader2
+  Mic, Volume2, Loader2, UserPlus, Clock, X
 } from 'lucide-react';
 import { communityService, CommunityUser, ChatMessage, QuranVerseAttachment, ADMIN_USER_ID } from '../services/communityService';
 import { SUPPORT_AVATAR_BASE64 } from '../src/supportAvatarBase64';
 import EmojiPicker from '../components/Community/EmojiPicker';
 import QuranVerseModal from '../components/Community/QuranVerseModal';
 import { Capacitor } from '@capacitor/core';
+import { registerBackInterceptor } from '../hooks/useBackButton';
 
 interface DirectChatPageProps {
   partnerUserId: string;
@@ -18,7 +19,7 @@ interface DirectChatPageProps {
 }
 
 // Frame overlay component for Chat Verse Cards
-const FrameOverlay: React.FC<{ frameType?: string; frameColor?: string }> = ({ frameType, frameColor = '#FFD700' }) => {
+export const FrameOverlay: React.FC<{ frameType?: string; frameColor?: string }> = ({ frameType, frameColor = '#FFD700' }) => {
   if (!frameType || frameType === 'none') return null;
 
   if (frameType === 'double') {
@@ -78,7 +79,7 @@ const FrameOverlay: React.FC<{ frameType?: string; frameColor?: string }> = ({ f
 };
 
 // Render exact matching Quran Verse Attachment inside chat message
-const ChatQuranCard: React.FC<{
+export const ChatQuranCard: React.FC<{
   verseData: QuranVerseAttachment;
   playingAudioUrl: string | null;
   onToggleAudio: (url?: string) => void;
@@ -215,7 +216,7 @@ const ChatQuranCard: React.FC<{
 };
 
 // Voice message player for chat messages
-const ChatMessageAudioPlayer: React.FC<{
+export const ChatMessageAudioPlayer: React.FC<{
   audioUrl: string;
   isMe: boolean;
   audioDuration?: number;
@@ -403,6 +404,7 @@ const ChatMessageAudioPlayer: React.FC<{
 const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, onNavigate }) => {
   const currentUser = communityService.getCurrentUser();
   const [partner, setPartner] = useState<CommunityUser | null>(null);
+  const [friendship, setFriendship] = useState(() => communityService.getFriendshipStatus(partnerUserId));
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -428,6 +430,8 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const menuContainerRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const menuDropdownRef = useRef<HTMLDivElement>(null);
   const emojiPickerContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<any>(null);
   const isFirstLoadRef = useRef<boolean>(true);
@@ -446,13 +450,19 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
     };
   }, []);
 
-  // Global click & touch outside listeners in capture phase to guarantee immediate closing
+  // Global click & touch outside listeners to guarantee immediate closing when tapping or clicking anywhere on screen
   useEffect(() => {
     if (!showMenu && !showEmojiPicker) return;
 
-    const handleGlobalClickOutside = (event: MouseEvent | TouchEvent) => {
+    const handleGlobalClickOutside = (event: MouseEvent | TouchEvent | PointerEvent) => {
       const target = event.target as Node;
-      if (showMenu && menuContainerRef.current && !menuContainerRef.current.contains(target)) {
+      if (showMenu) {
+        if (menuDropdownRef.current && menuDropdownRef.current.contains(target)) {
+          return;
+        }
+        if (menuButtonRef.current && menuButtonRef.current.contains(target)) {
+          return;
+        }
         setShowMenu(false);
       }
       if (showEmojiPicker && emojiPickerContainerRef.current && !emojiPickerContainerRef.current.contains(target)) {
@@ -460,14 +470,60 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
       }
     };
 
-    document.addEventListener('mousedown', handleGlobalClickOutside, true);
+    document.addEventListener('pointerdown', handleGlobalClickOutside, true);
     document.addEventListener('touchstart', handleGlobalClickOutside, true);
+    document.addEventListener('mousedown', handleGlobalClickOutside, true);
 
     return () => {
-      document.removeEventListener('mousedown', handleGlobalClickOutside, true);
+      document.removeEventListener('pointerdown', handleGlobalClickOutside, true);
       document.removeEventListener('touchstart', handleGlobalClickOutside, true);
+      document.removeEventListener('mousedown', handleGlobalClickOutside, true);
     };
   }, [showMenu, showEmojiPicker]);
+
+  // Back interceptor for device/phone back button (Capacitor/Android & browser back)
+  useEffect(() => {
+    const interceptor = () => {
+      // 1. Close verse modal
+      if (showVerseModal) {
+        setShowVerseModal(false);
+        return true;
+      }
+      // 2. Close emoji picker
+      if (showEmojiPicker) {
+        setShowEmojiPicker(false);
+        return true;
+      }
+      // 3. Close 3-dots top menu
+      if (showMenu) {
+        setShowMenu(false);
+        return true;
+      }
+      // 4. Close confirmation modals
+      if (showBlockModal) {
+        setShowBlockModal(false);
+        return true;
+      }
+      if (showDeleteReadModal) {
+        setShowDeleteReadModal(false);
+        return true;
+      }
+      if (showClearModal) {
+        setShowClearModal(false);
+        return true;
+      }
+      if (selectedMsgId) {
+        setSelectedMsgId(null);
+        return true;
+      }
+      // 5. Exit chat to previous screen (Community Page)
+      onBack();
+      return true;
+    };
+
+    const unregister = registerBackInterceptor(interceptor);
+    return unregister;
+  }, [showVerseModal, showEmojiPicker, showMenu, showBlockModal, showDeleteReadModal, showClearModal, selectedMsgId, onBack]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -516,6 +572,9 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
     const blocked = communityService.isBlockedMutually(partnerUserId);
     setIsBlocked(blocked);
 
+    const fStatus = communityService.getFriendshipStatus(partnerUserId);
+    setFriendship(fStatus);
+
     const chatMsgs = communityService.getMessagesForChat(partnerUserId);
     
     setMessages(prev => {
@@ -551,6 +610,8 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
       loadData(true);
     };
 
+    window.addEventListener('community_contacts_updated', handleUpdate);
+
     const presenceInterval = setInterval(() => {
       // Periodic presence refresh without force scrolling
       loadData(false);
@@ -564,6 +625,7 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
       clearInterval(presenceInterval);
       window.removeEventListener('community_messages_updated', handleUpdate);
       window.removeEventListener('community_block_updated', handleUpdate);
+      window.removeEventListener('community_contacts_updated', handleUpdate);
       window.removeEventListener('community_user_updated', handleUpdate);
     };
   }, [partnerUserId]);
@@ -856,6 +918,41 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
 
   const isPartnerTyping = partner?.typingToUserId === currentUser.userId;
 
+  const isPendingAsRequester = Boolean(friendship.status === 'pending' && friendship.isRequester);
+  const isPendingAsReceiver = Boolean(friendship.status === 'pending' && !friendship.isRequester);
+  const isRejectedAsRequester = Boolean(friendship.status === 'rejected' && friendship.isRequester);
+
+  const mySentMessagesCount = useMemo(() => {
+    return messages.filter(m => m.senderId === currentUser.userId && !communityService.isViolationReportMessage(m)).length;
+  }, [messages, currentUser.userId]);
+
+  const isIntroMessageSent = isPendingAsRequester && mySentMessagesCount >= 1;
+  const canSendIntroMessage = isPendingAsRequester && mySentMessagesCount === 0;
+
+  if (isRejectedAsRequester) {
+    return (
+      <div className="h-[100dvh] max-h-[100dvh] overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col items-center justify-center p-6 text-center font-sans" dir="rtl">
+        <div className="w-16 h-16 rounded-3xl bg-rose-500/10 text-rose-500 flex items-center justify-center mb-4 border border-rose-500/20 shadow-inner">
+          <Ban size={36} />
+        </div>
+        <h3 className="font-bold text-base mb-1.5">
+          تم رفض طلب الإضافة
+        </h3>
+        <p className="text-xs max-w-sm mb-6 leading-relaxed text-slate-500 dark:text-slate-400">
+          قام العضو برفض طلب الإضافة. لا يمكن الدخول إلى صفحة الدردشة أو إرسال رسائل طالما لم يتم قبول الإضافة.
+        </p>
+        <button
+          type="button"
+          onClick={onBack}
+          className="px-6 py-2.5 rounded-2xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-2"
+        >
+          <ArrowRight size={16} />
+          <span>العودة لصفحة المجتمع</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="h-[100dvh] max-h-[100dvh] overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex flex-col font-sans" dir="rtl">
       {/* Header */}
@@ -917,8 +1014,10 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
         {/* Menu Options */}
         <div className="relative" ref={menuContainerRef}>
           <button
+            ref={menuButtonRef}
             onClick={() => setShowMenu(prev => !prev)}
-            className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative z-50"
+            className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative z-50 cursor-pointer"
+            title="خيارات إضافية"
           >
             <MoreVertical size={20} />
           </button>
@@ -930,8 +1029,11 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
                 <div 
                   className="fixed inset-0 z-40 bg-transparent cursor-default" 
                   onClick={() => setShowMenu(false)} 
+                  onTouchStart={() => setShowMenu(false)}
+                  onPointerDown={() => setShowMenu(false)}
                 />
                 <motion.div
+                  ref={menuDropdownRef}
                   initial={{ opacity: 0, scale: 0.9, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9, y: 10 }}
@@ -987,6 +1089,95 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
         <div className="shrink-0 bg-rose-500/10 border-b border-rose-500/20 px-4 py-2.5 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center justify-center gap-2">
           <AlertCircle size={16} />
           <span>تم حظر التواصل مع هذا المستخدم</span>
+        </div>
+      )}
+
+      {/* Notice Banner if pending as receiver (with Accept / Reject actions) */}
+      {!isBlocked && isPendingAsReceiver && (
+        <div className="shrink-0 bg-emerald-500/10 border-b border-emerald-500/25 px-4 py-3 text-xs font-bold shadow-xs">
+          <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <UserPlus size={16} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-slate-900 dark:text-white">أرسل لك {partner?.username} طلب إضافة ومحادثة 🌿</span>
+                <p className="text-[11px] font-normal text-slate-500 dark:text-slate-400 truncate">
+                  {friendship.contact?.introMessage ? `رسالة التعريف: «${friendship.contact.introMessage}»` : 'هل ترغب في قبول الطلب لبدء التواصل؟'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={async () => {
+                  await communityService.acceptFriendRequest(partnerUserId);
+                  setFriendship(communityService.getFriendshipStatus(partnerUserId));
+                  showToast('تم قبول طلب الإضافة بنجاح 🌿');
+                }}
+                className="flex-1 sm:flex-initial px-4 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-sm active:scale-95 cursor-pointer"
+              >
+                <span>قبول</span>
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await communityService.rejectFriendRequest(partnerUserId);
+                  showToast('تم رفض طلب الإضافة');
+                  onBack();
+                }}
+                className="flex-1 sm:flex-initial px-4 py-1.5 rounded-xl text-xs font-bold border border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 active:scale-95 flex items-center justify-center cursor-pointer"
+              >
+                <span>رفض</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notice Banner if pending as requester */}
+      {!isBlocked && isPendingAsRequester && (
+        <div className={`shrink-0 border-b px-4 py-2.5 text-xs font-bold flex items-center justify-between gap-2 ${
+          isIntroMessageSent 
+            ? 'bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400'
+            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+        }`}>
+          <div className="max-w-3xl mx-auto flex items-center gap-2 w-full">
+            {isIntroMessageSent ? (
+              <>
+                <Clock size={16} className="shrink-0 text-amber-500" />
+                <span>تم إرسال رسالة التعريف بنجاح. خانة الكتابة معطلة حتى يقبل {partner?.username} طلب الإضافة ⏳</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={16} className="shrink-0 text-emerald-500" />
+                <span>طلب الإضافة قيد الانتظار. مسموح لك بإرسال رسالة واحدة فقط للتعريف بنفسك حتى يتم قبول الطلب 🌿</span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Notice Banner if none and not admin */}
+      {!isBlocked && friendship.status === 'none' && partnerUserId !== ADMIN_USER_ID && (
+        <div className="shrink-0 bg-blue-500/10 border-b border-blue-500/20 px-4 py-2.5 text-blue-700 dark:text-blue-300 text-xs font-bold">
+          <div className="max-w-3xl mx-auto flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <UserPlus size={16} className="shrink-0" />
+              <span>لبدء المحادثة، يجب إرسال طلب إضافة أولاً 🌿</span>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                await communityService.sendFriendRequest(partnerUserId);
+                setFriendship(communityService.getFriendshipStatus(partnerUserId));
+                showToast('تم إرسال طلب الإضافة 🌿 يمكنك الآن كتابة رسالة تعريفية واحدة.');
+              }}
+              className="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold active:scale-95 cursor-pointer"
+            >
+              إرسال طلب إضافة
+            </button>
+          </div>
         </div>
       )}
 
@@ -1178,17 +1369,18 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
               <button
                 type="button"
                 onClick={() => setShowVerseModal(true)}
-                className="p-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-2xl transition-colors flex items-center gap-1 font-bold text-xs shrink-0"
+                disabled={isBlocked || isIntroMessageSent || (friendship.status === 'none' && partnerUserId !== ADMIN_USER_ID)}
+                className="p-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-2xl transition-colors flex items-center justify-center shrink-0 disabled:opacity-40"
                 title="مشاركة آية قرآنية"
               >
                 <BookOpen size={18} />
-                <span className="hidden sm:inline">آية</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="p-3 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+                disabled={isBlocked || isIntroMessageSent || (friendship.status === 'none' && partnerUserId !== ADMIN_USER_ID)}
+                className="p-3 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 disabled:opacity-40"
               >
                 <Smile size={20} />
               </button>
@@ -1197,8 +1389,18 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
                 type="text"
                 value={inputText}
                 onChange={handleInputChange}
-                disabled={isBlocked}
-                placeholder={isBlocked ? 'التواصل معطل بسبب الحظر' : 'اكتب رسالة مباركة...'}
+                disabled={isBlocked || isIntroMessageSent || (friendship.status === 'none' && partnerUserId !== ADMIN_USER_ID)}
+                placeholder={
+                  isBlocked
+                    ? 'التواصل معطل بسبب الحظر'
+                    : isIntroMessageSent
+                      ? 'بانتظار قبول طلب الإضافة لمواصلة المحادثة...'
+                      : canSendIntroMessage
+                        ? 'اكتب رسالة للتعريف بنفسك (رسالة واحدة فقط)...'
+                        : (friendship.status === 'none' && partnerUserId !== ADMIN_USER_ID)
+                          ? 'يجب إرسال طلب إضافة أولاً...'
+                          : 'اكتب رسالة مباركة...'
+                }
                 className="flex-1 px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white disabled:opacity-50"
               />
 
@@ -1207,7 +1409,7 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
                 <button
                   type="button"
                   onClick={startRecording}
-                  disabled={isBlocked}
+                  disabled={isBlocked || isIntroMessageSent || (friendship.status === 'none' && partnerUserId !== ADMIN_USER_ID)}
                   className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center shrink-0 disabled:opacity-40"
                   title="تسجيل صوتي"
                 >
@@ -1216,7 +1418,7 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
               ) : (
                 <button
                   type="submit"
-                  disabled={!inputText.trim() || isBlocked}
+                  disabled={!inputText.trim() || isBlocked || isIntroMessageSent || (friendship.status === 'none' && partnerUserId !== ADMIN_USER_ID)}
                   className="p-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white rounded-2xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center shrink-0"
                 >
                   <Send size={18} className="rotate-180" />

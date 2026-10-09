@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, Play, Pause, Volume2, Type, Image as ImageIcon, 
   FileText, Palette, LayoutTemplate, Check, Share2, Copy, 
-  Minus, Plus, CheckCircle2, Send, ArrowRight, Search, Sparkles
+  Minus, Plus, CheckCircle2, Send, ArrowRight, Search
 } from 'lucide-react';
 import { safeHtml2Canvas, renderQuranCardToCanvas } from '../../utils/canvasHelper';
 import { Share as CapacitorShare } from '@capacitor/share';
@@ -148,21 +148,21 @@ quranData.surahs.forEach((s: any) => {
 });
 
 const QUICK_SUGGESTIONS = [
-  { label: 'سورة الفاتحة 📖', surah: 1, ayah: 1 },
-  { label: 'آية الكرسي 🌟', surah: 2, ayah: 255 },
-  { label: 'خواتيم البقرة 🕊️', surah: 2, ayah: 285 },
-  { label: 'سورة الكهف 🌿', surah: 18, ayah: 1 },
-  { label: 'سورة يس 💎', surah: 36, ayah: 1 },
-  { label: 'سورة الرحمن 🌸', surah: 55, ayah: 1 },
-  { label: 'سورة الملك 👑', surah: 67, ayah: 1 },
-  { label: 'سورة الإخلاص 🤍', surah: 112, ayah: 1 },
+  { label: 'سورة الفاتحة', surah: 1, ayah: 1 },
+  { label: 'آية الكرسي', surah: 2, ayah: 255 },
+  { label: 'خواتيم البقرة', surah: 2, ayah: 285 },
+  { label: 'سورة الكهف', surah: 18, ayah: 1 },
+  { label: 'سورة يس', surah: 36, ayah: 1 },
+  { label: 'سورة الرحمن', surah: 55, ayah: 1 },
+  { label: 'سورة الملك', surah: 67, ayah: 1 },
+  { label: 'سورة الإخلاص', surah: 112, ayah: 1 },
 ];
 
 const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSendVerse }) => {
   const [step, setStep] = useState<'search' | 'customize'>('search');
   const [quranSearchQuery, setQuranSearchQuery] = useState('');
   const [browseSurah, setBrowseSurah] = useState<number>(1);
-  const [searchMode, setSearchMode] = useState<'search' | 'browse'>('browse');
+  const [searchMode, setSearchMode] = useState<'search' | 'browse'>('search');
 
   const [shareType, setShareType] = useState<'text' | 'image' | 'page' | 'audio'>('page');
   const [selectedSurah, setSelectedSurah] = useState<number>(1);
@@ -187,12 +187,12 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
   const previewCardRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset to search step on open
+  // Reset to search step on open, default to direct search results tab
   useEffect(() => {
     if (isOpen) {
       setStep('search');
       setQuranSearchQuery('');
-      setSearchMode('browse');
+      setSearchMode('search');
     }
   }, [isOpen]);
 
@@ -464,8 +464,7 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
                 >
                   <X size={18} />
                 </button>
-                <h3 className="text-sm font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
-                  <Search size={16} />
+                <h3 className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
                   <span>البحث في القرآن الكريم واختيار آية</span>
                 </h3>
                 <div className="w-6" />
@@ -503,7 +502,7 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
                         : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
-                    🔍 نتائج البحث المباشر {quranSearchQuery ? `(${searchResults.length})` : ''}
+                    نتائج البحث المباشر {quranSearchQuery ? `(${searchResults.length})` : ''}
                   </button>
                   <button
                     onClick={() => setSearchMode('browse')}
@@ -513,7 +512,7 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
                         : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
-                    📖 تصفح السور والآيات
+                    تصفح السور والآيات
                   </button>
                 </div>
               </div>
@@ -524,8 +523,7 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
                   <>
                     {quranSearchQuery.trim() === '' ? (
                       <div>
-                        <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5 px-1">
-                          <Sparkles size={14} className="text-amber-500" />
+                        <div className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 px-1">
                           <span>آيات وسور مقترحة ومباركة:</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
@@ -533,10 +531,9 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
                             <button
                               key={idx}
                               onClick={() => handleSelectAyahForCustomization(item.surah, item.ayah)}
-                              className="p-2.5 bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border border-slate-200 dark:border-slate-700/80 hover:border-emerald-500/40 rounded-2xl text-right text-xs font-bold text-slate-800 dark:text-slate-200 transition-all flex items-center justify-between group active:scale-98"
+                              className="p-2.5 bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border border-slate-200 dark:border-slate-700/80 hover:border-emerald-500/40 rounded-2xl text-center text-xs font-bold text-slate-800 dark:text-slate-200 transition-all flex items-center justify-center active:scale-98"
                             >
                               <span>{item.label}</span>
-                              <ArrowRight size={14} className="text-slate-400 group-hover:text-emerald-500 rotate-180 transition-colors" />
                             </button>
                           ))}
                         </div>
