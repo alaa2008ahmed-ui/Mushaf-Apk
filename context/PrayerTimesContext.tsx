@@ -592,7 +592,8 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                     'adhan_v4_takbeer1', 'adhan_v4_takbeer2', 'adhan_v4_takbeer3',
                     'adhan_v4_takbeer4', 'adhan_v4_takbeer5', 'adhan_v4_takbeer6',
                     'adhan_v4_azan1', 'adhan_v4_azan2', 'adhan_v4_azan3', 'adhan_v4_azan4',
-                    'adhan_v4_salah', 'adhan_v4_shahadah', 'adhan_v4_silent'
+                    'adhan_v4_salah', 'adhan_v4_shahadah', 'adhan_v4_silent',
+                    'adhan_v5_salah'
                 ];
                 const existingChannels = await LocalNotifications.listChannels();
                 const existingIds = new Set((existingChannels?.channels || []).map((c: any) => c.id));
@@ -722,7 +723,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                                 toneName.includes('صلاه') || 
                                 toneName.toLowerCase().includes('salah')
                             ) {
-                                soundFileName = 'salah.mp3';
+                                soundFileName = 'takbeer1.mp3';
                             } else if (
                                 rawPath.includes('shahadah') || 
                                 toneName === 'الشهادة' || 
@@ -1270,7 +1271,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                                         toneName.includes('صلاه') || 
                                         toneName.toLowerCase().includes('salah')
                                     ) {
-                                        soundFileName = 'salah.mp3';
+                                        soundFileName = 'takbeer1.mp3';
                                     } else if (
                                         rawPath.includes('shahadah') || 
                                         toneName === 'الشهادة' || 

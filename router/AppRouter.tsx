@@ -28,6 +28,9 @@ import GroupChatPage from '../pages/GroupChatPage';
 import AhlAlQuranPage from '../pages/AhlAlQuranPage';
 import OthersPage from '../pages/OthersPage';
 import IslamicSitesPage from '../pages/IslamicSitesPage';
+import QuranRadiosPage from '../pages/QuranRadiosPage';
+import FiqhWorshipPage from '../pages/FiqhWorshipPage';
+import PropheticSeerahPage from '../pages/PropheticSeerahPage';
 
 interface AppRouterProps {
     page: string;
@@ -98,6 +101,13 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
         return <OthersPage onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} />;
       case 'islamic-sites':
         return <IslamicSitesPage onBack={onBack} onNavigate={onNavigate} />;
+      case 'quran-radios':
+      case 'radio':
+        return <QuranRadiosPage onBack={onBack} onNavigate={onNavigate} navParams={navParams} />;
+      case 'fiqh-worship':
+        return <FiqhWorshipPage onBack={onBack} onNavigate={onNavigate} navParams={navParams} />;
+      case 'prophetic-seerah':
+        return <PropheticSeerahPage onBack={onBack} onNavigate={onNavigate} navParams={navParams} />;
       case 'home':
       default:
         return <MainMenu onNavigate={onNavigate} onOpenThemes={onOpenThemes} onOpenSideMenu={onOpenSideMenu} />;

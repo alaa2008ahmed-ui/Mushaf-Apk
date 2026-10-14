@@ -31,6 +31,9 @@ const ALL_MENU_ITEMS = [
     { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-14", colorIndex: 0 },
     { id: 'islamic-sites', label: "🌐 مواقع إسلامية", className: "col-span-2 h-14", colorIndex: 0 },
+    { id: 'quran-radios', label: "📻 إذاعات القرآن المباشرة", className: "col-span-2 h-14", colorIndex: 0 },
+    { id: 'fiqh-worship', label: "🕌 فقه العبادات المصور", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'prophetic-seerah', label: "📜 السيرة والخط الزمني", className: "col-span-1 h-14", colorIndex: 0 },
 ];
 
 interface MoreMenuPageProps {
@@ -72,7 +75,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                     <div className="main-layout px-4 flex flex-col" style={{ fontFamily: theme.font }}>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-5 w-full max-w-sm mx-auto mt-6">
                             {ALL_MENU_ITEMS.map((item, idx) => {
-                                const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna', 'community', 'ahl-al-quran', 'others', 'islamic-sites'].includes(item.id);
+                                const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna', 'community', 'ahl-al-quran', 'others', 'islamic-sites', 'quran-radios', 'fiqh-worship', 'prophetic-seerah'].includes(item.id);
                                 const isDefault = themeKey === 'default';
                                 const isBlackTheme = theme.bgColor === '#000000';
                                 const primaryColor = isDefault 
@@ -84,7 +87,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                 const buttonBorder = isDefault 
                                     ? '2px solid #000000' 
                                     : (isBlackTheme ? '1px solid rgba(255, 255, 255, 0.2)' : theme.btnBorder);
-                                const isNew = showNewBadges && ['memorization', 'community', 'ahl-al-quran', 'others', 'islamic-sites'].includes(item.id);
+                                const isNew = showNewBadges && ['memorization', 'community', 'ahl-al-quran', 'others', 'islamic-sites', 'quran-radios', 'fiqh-worship', 'prophetic-seerah'].includes(item.id);
                                 
                                 return (
                                     <div

@@ -32,5 +32,8 @@ export const navItems = [
   { id: 'listen', title: "الاستماع للقرآن", icon: ListenIcon },
   { id: 'calendar', title: "التقويم", icon: CalendarIcon },
   { id: 'nawawi', title: 'الأربعون النووية', icon: HisnMuslimIcon },
-  { id: 'tajweed-education', title: 'تعليم التجويد', icon: TajweedIcon }
+  { id: 'tajweed-education', title: 'تعليم التجويد', icon: TajweedIcon },
+  { id: 'quran-radios', title: 'إذاعات القرآن المباشرة', icon: RadioIcon },
+  { id: 'fiqh-worship', title: 'فقه العبادات المصور', icon: HisnMuslimIcon },
+  { id: 'prophetic-seerah', title: 'السيرة والخط الزمني', icon: HisnMuslimIcon }
 ];

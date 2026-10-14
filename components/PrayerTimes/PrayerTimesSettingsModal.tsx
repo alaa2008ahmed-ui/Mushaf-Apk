@@ -84,12 +84,18 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
     setTempAutoSilentDuration
 }) => {
     const [hasDndPermission, setHasDndPermission] = useState(true);
+    // Local string state to handle manual typing seamlessly across Android APK and web
+    const [offsetInputValue, setOffsetInputValue] = useState<string>(() => String(tempOffset));
 
     useEffect(() => {
         if (isOpen && Capacitor.getPlatform() === 'android') {
             isDndPermissionGranted().then(setHasDndPermission);
         }
     }, [isOpen]);
+
+    useEffect(() => {
+        setOffsetInputValue(String(tempOffset));
+    }, [tempOffset, currentEditingKey]);
 
     if (!isOpen || !currentEditingKey) return null;
 
@@ -143,6 +149,60 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
     const modalBorderColor = cardBorderColor || (isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : primaryColor));
     const totalPreviewOffset = tempOffset + (isSummerTime ? 60 : 0);
     const isSunrise = currentEditingKey === 'Sunrise';
+
+    const handleOffsetFocus = () => {
+        setOffsetInputValue('');
+    };
+
+    const handleOffsetClick = () => {
+        setOffsetInputValue('');
+    };
+
+    const handleOffsetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let raw = e.target.value;
+        // Normalize Arabic-Indic digits (٠-٩, ۰-۹) and various unicode minus signs
+        raw = raw
+            .replace(/[٠-٩]/g, (d) => (d.charCodeAt(0) - 1632).toString())
+            .replace(/[۰-۹]/g, (d) => (d.charCodeAt(0) - 1776).toString())
+            .replace(/[−–—]/g, '-');
+
+        if (raw === '' || raw === '-') {
+            setOffsetInputValue(raw);
+            setTempOffset(0);
+            return;
+        }
+
+        // Match integer (optionally starting with -)
+        const match = raw.match(/^-?\d*/);
+        if (match && match[0] !== '') {
+            const valStr = match[0];
+            setOffsetInputValue(valStr);
+            const parsed = parseInt(valStr, 10);
+            if (!isNaN(parsed)) {
+                const clamped = Math.max(-720, Math.min(720, parsed));
+                setTempOffset(clamped);
+            }
+        } else {
+            setOffsetInputValue(raw);
+        }
+    };
+
+    const handleOffsetBlur = () => {
+        if (offsetInputValue === '' || offsetInputValue === '-') {
+            setOffsetInputValue('0');
+            setTempOffset(0);
+        } else {
+            const parsed = parseInt(offsetInputValue, 10);
+            if (isNaN(parsed)) {
+                setOffsetInputValue('0');
+                setTempOffset(0);
+            } else {
+                const clamped = Math.max(-720, Math.min(720, parsed));
+                setOffsetInputValue(String(clamped));
+                setTempOffset(clamped);
+            }
+        }
+    };
 
     const handleDirectTimeChange = (newTimeStr: string) => {
         if (!newTimeStr || !times[currentEditingKey]) return;
@@ -217,15 +277,19 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                                 <div className="flex items-center justify-center gap-1 mt-1" dir="rtl">
                                     <span className="text-[10px] font-bold" style={{ color: secondaryColor }}>الفارق:</span>
                                     <input
-                                        type="number"
-                                        value={tempOffset}
-                                        onChange={(e) => {
-                                            const val = parseInt(e.target.value, 10);
-                                            setTempOffset(isNaN(val) ? 0 : val);
-                                        }}
-                                        className="w-14 text-center text-xs font-black py-0.5 px-1 rounded-md bg-black/5 dark:bg-white/10 border border-black/15 dark:border-white/20 en-digits focus:outline-hidden"
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="[0-9\-]*"
+                                        dir="ltr"
+                                        value={offsetInputValue}
+                                        onFocus={handleOffsetFocus}
+                                        onClick={handleOffsetClick}
+                                        onChange={handleOffsetChange}
+                                        onBlur={handleOffsetBlur}
+                                        className="w-14 text-center text-xs font-black py-0.5 px-1 rounded-md bg-black/5 dark:bg-white/10 border border-black/15 dark:border-white/20 en-digits focus:outline-hidden cursor-text"
                                         style={{ color: primaryColor }}
                                         title="تعديل الفارق بالدقائق يدويًا"
+                                        placeholder="0"
                                     />
                                     <span className="text-[10px] font-bold" style={{ color: secondaryColor }}>د</span>
                                 </div>

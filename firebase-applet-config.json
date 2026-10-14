@@ -1,12 +1,12 @@
 {
-  "projectId": "fiery-fiber-8gtt6",
-  "appId": "1:481202471400:web:626c696b52f40a9b1ee45d",
-  "apiKey": "AIzaSyDpuBsFbew8QGUJ6zLyFgoEfx2FUdlbaRM",
-  "authDomain": "fiery-fiber-8gtt6.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-remixquran112-fda91048-6443-4701-9d5d-65dc953f9efb",
-  "storageBucket": "fiery-fiber-8gtt6.firebasestorage.app",
-  "messagingSenderId": "481202471400",
+  "projectId": "gen-lang-client-0271095818",
+  "appId": "1:245814295876:web:b3443c1f34781d0e7beb11",
+  "apiKey": "AIzaSyBOOi1shTd0gdtF2rpmmRzSsErrjVQW6K8",
+  "authDomain": "gen-lang-client-0271095818.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-remixremixquran1-60d12264-7f05-4526-9067-953337382ad4",
+  "storageBucket": "gen-lang-client-0271095818.firebasestorage.app",
+  "messagingSenderId": "245814295876",
   "measurementId": "",
-  "oAuthClientId": "481202471400-5pobuosvt8qbe6hvacef770bas3jjcou.apps.googleusercontent.com",
+  "oAuthClientId": "245814295876-jnv8cbhbdd9mc0bv9ta8bqd312lhjd57.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

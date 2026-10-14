@@ -57,7 +57,8 @@ public class MainActivity extends BridgeActivity {
                 "adhan_v4_takbeer1", "adhan_v4_takbeer2", "adhan_v4_takbeer3",
                 "adhan_v4_takbeer4", "adhan_v4_takbeer5", "adhan_v4_takbeer6",
                 "adhan_v4_azan1", "adhan_v4_azan2", "adhan_v4_azan3", "adhan_v4_azan4",
-                "adhan_v4_salah", "adhan_v4_shahadah", "adhan_v4_silent"
+                "adhan_v4_salah", "adhan_v4_shahadah", "adhan_v4_silent",
+                "adhan_v5_salah"
             };
             for (String oldId : legacyChannels) {
                 try {
@@ -83,7 +84,6 @@ public class MainActivity extends BridgeActivity {
                 {"adhan_v5_azan2", "أذان الصلوات (أذان 2)", "azan2"},
                 {"adhan_v5_azan3", "أذان الصلوات (أذان 3)", "azan3"},
                 {"adhan_v5_azan4", "أذان الصلوات (أذان 4)", "azan4"},
-                {"adhan_v5_salah", "أذان الصلوات (الصلاة)", "salah"},
                 {"adhan_v5_shahadah", "أذان الصلوات (الشهادة)", "shahadah"},
 
                 // Short gentle chime alerts (Preparation, Iqama, Silent Mode, Night, Athkar)

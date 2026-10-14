@@ -78,6 +78,9 @@ const ALL_POSSIBLE_ITEMS = [
     { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-10", colorIndex: 1 },
     { id: 'ahl-al-quran', label: "🏆 أهل القرآن", className: "col-span-2 h-10", colorIndex: 1 },
     { id: 'community', label: "💬 مجتمع التواصل", className: "col-span-2 h-10", colorIndex: 0 },
+    { id: 'quran-radios', label: "📻 إذاعات القرآن المباشرة", className: "col-span-2 h-10", colorIndex: 0 },
+    { id: 'fiqh-worship', label: "🕌 فقه العبادات المصور", className: "col-span-1 h-10", colorIndex: 0 },
+    { id: 'prophetic-seerah', label: "📜 السيرة والخط الزمني", className: "col-span-1 h-10", colorIndex: 0 },
     { id: 'more', label: "قائمة التطبيقات", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
 ];
 
