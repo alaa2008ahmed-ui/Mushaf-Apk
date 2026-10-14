@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Bell, Check, X, Smartphone, AppWindow, VolumeX, Clock, Shuffle } from 'lucide-react';
 import { toArabic } from './constants';
 import { usePrayerTimes } from '../../context/PrayerTimesContext';
@@ -207,7 +207,6 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                             <p className="text-[11px] opacity-80 text-center mb-2">
                                 إشعارات تظهر على شاشة الهاتف حتى لو كان التطبيق مغلقاً
                             </p>
-
                             <div className="space-y-2">
                                 <h4 className="font-bold text-sm mb-2 opacity-90">أوقات الليل</h4>
                                 {[

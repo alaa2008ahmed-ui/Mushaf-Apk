@@ -1,5 +1,6 @@
 import React from 'react';
 import ThemePageLock from '../ThemePageLock';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface TasbeehHeaderProps {
     title: string;
@@ -7,6 +8,10 @@ interface TasbeehHeaderProps {
 }
 
 const TasbeehHeader: React.FC<TasbeehHeaderProps> = ({ title, subtitle }) => {
+    const { t } = useLanguage();
+    const localizedTitle = (title === 'السبحة الإلكترونية' || title === 'السبحة') ? t('page.tasbeeh_title', title) : title;
+    const localizedSubtitle = subtitle.includes('أضف أذكارك') ? t('page.tasbeeh_subtitle', subtitle) : subtitle;
+
     return (
         <header className="app-top-bar">
             <div className="app-top-bar__inner">
@@ -15,10 +20,10 @@ const TasbeehHeader: React.FC<TasbeehHeaderProps> = ({ title, subtitle }) => {
                         <ThemePageLock />
                     </div>
                     <h1 className="app-top-bar__title text-2xl font-kufi">
-                        {title}
+                        {localizedTitle}
                     </h1>
                 </div>
-                <p className="app-top-bar__subtitle">{subtitle}</p>
+                <p className="app-top-bar__subtitle">{localizedSubtitle}</p>
             </div>
         </header>
     );

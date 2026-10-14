@@ -6,6 +6,7 @@ import AdkarHeader from '../components/AdkarSabahMasaa/AdkarHeader';
 import DhikrCard from '../components/HisnAlmuslim/DhikrCard';
 import ZoomModal from '../components/AdkarSabahMasaa/ZoomModal';
 import { useTheme } from '../context/ThemeContext';
+import { useHabitTracker } from '../hooks/useHabitTracker';
 import { motion, AnimatePresence } from 'motion/react';
 
 const ADHKAR_STATUS_KEY = 'sabah_masaa_status_v1';
@@ -82,6 +83,16 @@ function AdkarSabahMasaa({ onBack, onNavigate }) {
 
     const handleDecrement = (globalIndex) => {
         if (zoomedDhikr) return;
+        
+        const dhikr = mergedAdhkar[globalIndex];
+        if (dhikr) {
+            if (dhikr.category === 'أذكار الصباح' || adhkarTab === 'morning') {
+                useHabitTracker.getState().recordAdhkarRead('sabah');
+            } else if (dhikr.category === 'أذكار المساء' || adhkarTab === 'evening') {
+                useHabitTracker.getState().recordAdhkarRead('masaa');
+            }
+        }
+
         if (adhkarCounts[globalIndex] === 0) return;
 
         setAdhkarCounts(prev => ({

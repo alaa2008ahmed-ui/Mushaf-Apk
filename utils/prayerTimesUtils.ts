@@ -48,8 +48,22 @@ export const getMediaURL = (s: string) => {
     if (s.startsWith('file://')) {
         return Capacitor.convertFileSrc(s);
     }
-    // For bundled assets starting with '/', return as is so the WebView loads them from its local server
-    return s;
+    if (s.startsWith('data:') || s.startsWith('blob:') || s.startsWith('http://') || s.startsWith('https://')) {
+        return s;
+    }
+    // Handle standalone filenames like "salah.mp3" or "salah"
+    let cleanPath = s;
+    if (!cleanPath.includes('/')) {
+        const withExt = cleanPath.endsWith('.mp3') ? cleanPath : `${cleanPath}.mp3`;
+        cleanPath = `/assets/audio/${withExt}`;
+    } else if (!cleanPath.startsWith('/')) {
+        cleanPath = `/${cleanPath}`;
+    }
+    // For bundled assets starting with '/', resolve with window.location.origin if available
+    if (typeof window !== 'undefined' && window.location && window.location.origin) {
+        return `${window.location.origin}${cleanPath}`;
+    }
+    return cleanPath;
 };
 
 // Global audio instance for previewing tones
@@ -64,7 +78,17 @@ export const playNotificationSound = (source: string) => {
 
     try {
         previewAudio = new Audio(mediaUrl);
-        previewAudio.play().catch(e => console.error("Audio play failed:", e));
+        previewAudio.volume = 1.0;
+        previewAudio.play().catch(e => {
+            console.error("Audio play failed on resolved mediaUrl:", e);
+            if (mediaUrl !== source) {
+                try {
+                    previewAudio = new Audio(source);
+                    previewAudio.volume = 1.0;
+                    previewAudio.play().catch(err => console.error("Audio play fallback also failed:", err));
+                } catch (err2) {}
+            }
+        });
     } catch (e) {
         console.error("Failed to play notification sound with HTML5 Audio:", e);
     }

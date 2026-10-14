@@ -20,6 +20,10 @@ interface ThemeContextType {
     isPageLocked: boolean;
     isQuranPage: boolean;
     currentPage: string;
+    customBg?: {
+        url: string;
+        isVideo: boolean;
+    };
     togglePageLock: () => void;
     applyPresetTheme: (themeKey: string) => void;
     setCustomBackground: (dataUrl: string, isVideo: boolean) => void;
@@ -66,14 +70,19 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
             const modeSuffix = (currentPage && currentPage.includes('landscape')) ? '_h' : '_v';
             const savedQuranTheme = localStorage.getItem('current_theme_id' + modeSuffix);
             if (savedQuranTheme && presetThemes[savedQuranTheme]) return savedQuranTheme;
-            return settings.pageThemes[pageKey] || 'default';
+            return settings.pageThemes?.['quran'] || 'default';
         }
 
         if (pageKey === 'home') {
             return settings.themeKey || 'default';
         }
 
-        return settings.pageThemes[pageKey] || settings.themeKey || 'default';
+        const isLocked = settings.lockedPages?.includes(pageKey);
+        if (isLocked && settings.pageThemes[pageKey]) {
+            return settings.pageThemes[pageKey];
+        }
+
+        return settings.themeKey || 'default';
     }, [settings, currentPage]);
 
     const theme = useMemo(() => {
@@ -149,26 +158,34 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         let nextSettings = { ...settings };
 
         if (pageKey === 'home' || !isLocked) {
-            // Changing theme for all UNLOCKED pages
+            // Changing theme for all UNLOCKED pages (excluding Quran)
             nextSettings.themeKey = key;
             
-            // Sync all unlocked pages that have specific theme entries
+            // Sync all unlocked pages that have specific theme entries (skip Quran)
             const nextPageThemes = { ...settings.pageThemes };
             Object.keys(nextPageThemes).forEach(pk => {
-                if (!settings.lockedPages?.includes(pk)) {
+                if (pk !== 'quran' && !settings.lockedPages?.includes(pk)) {
                     nextPageThemes[pk] = key;
                 }
             });
             
-            // Ensure the current page is updated if not home
-            if (pageKey !== 'home') {
+            // Ensure the current page is updated if not home and not Quran
+            if (pageKey !== 'home' && pageKey !== 'quran') {
                 nextPageThemes[pageKey] = key;
             }
             
             nextSettings.pageThemes = nextPageThemes;
+
+            // Quran has its own separate themes and is never overwritten here
         } else {
             // Updating only the current LOCKED page
             nextSettings.pageThemes = { ...settings.pageThemes, [pageKey]: key };
+            if (pageKey === 'quran') {
+                try {
+                    const modeSuffix = (currentPage && currentPage.includes('landscape')) ? '_h' : '_v';
+                    localStorage.setItem('current_theme_id' + modeSuffix, key);
+                } catch (e) {}
+            }
         }
         
         saveSettings(nextSettings);
@@ -377,6 +394,7 @@ export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
         isPageLocked,
         isQuranPage,
         currentPage,
+        customBg: settings.customBg,
         togglePageLock,
         applyPresetTheme,
         setCustomBackground,

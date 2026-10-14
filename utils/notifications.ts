@@ -54,10 +54,12 @@ export const setupNotifications = async (settings?: PhoneNotificationSettings) =
         }
     }
 
-    // Clear existing notifications to avoid duplicates
+    // Clear ONLY existing athkar/dua notifications (IDs < 1000 or >= 9000)
+    // CRITICAL: NEVER cancel prayer notifications (IDs 1000..8999)!
     const pending = await LocalNotifications.getPending();
-    if (pending.notifications.length > 0) {
-        await LocalNotifications.cancel({ notifications: pending.notifications });
+    const athkarPending = pending.notifications.filter(n => n.id < 1000 || n.id >= 9000);
+    if (athkarPending.length > 0) {
+        await LocalNotifications.cancel({ notifications: athkarPending });
     }
 
     const notificationsToSchedule: any[] = [];
@@ -67,6 +69,19 @@ export const setupNotifications = async (settings?: PhoneNotificationSettings) =
         const parts = timeStr.split(':').map(Number);
         return { hour: parts[0] || 0, minute: parts[1] || 0 };
     };
+
+    // Ensure Android notification channel exists with high importance and gentle chime sound
+    try {
+      await LocalNotifications.createChannel({
+        id: 'athkar_v3_chime_channel',
+        name: 'أذكار وتنبيهات عامة',
+        description: 'قناة تنبيهات أذكار الصباح والمساء والسنن والأدعية بنغمة قصيرة وخفيفة',
+        importance: 5,
+        sound: 'chime.mp3',
+        vibration: true,
+        visibility: 1
+      });
+    } catch (e) {}
 
     // 1. Regular Notifications
     const regularConfigs = [
@@ -81,12 +96,16 @@ export const setupNotifications = async (settings?: PhoneNotificationSettings) =
         const setting = activeSettings[conf.key as keyof PhoneNotificationSettings] as { enabled: boolean; time: string };
         if (setting && setting.enabled) {
             const { hour, minute } = parseTime(setting.time);
+            
+            // Primary daily recurring schedule
             notificationsToSchedule.push({
                 title: conf.title,
                 body: getRandomAthkar().text,
                 id: conf.id,
                 schedule: { on: { hour, minute }, allowWhileIdle: true, repeats: true },
-                extra: { page: conf.page },
+                channelId: 'athkar_v3_chime_channel',
+                sound: 'chime.mp3',
+                extra: { page: conf.page, playSound: true, soundFile: 'chime.mp3' },
                 smallIcon: 'ic_stat_name',
             });
         }
@@ -100,7 +119,9 @@ export const setupNotifications = async (settings?: PhoneNotificationSettings) =
         body: 'قال رسول الله ﷺ: "من قرأ سورة الكهف في يوم الجمعة أضاء له من النور ما بين الجمعتين".',
         id: 6,
         schedule: { on: { weekday: 6, hour, minute }, allowWhileIdle: true, repeats: true }, // Friday is 6
-        extra: { page: 'quran', params: { surah: 18 } },
+        channelId: 'athkar_v3_chime_channel',
+        sound: 'chime.mp3',
+        extra: { page: 'quran', params: { surah: 18 }, playSound: true, soundFile: 'chime.mp3' },
         smallIcon: 'ic_stat_name',
       });
     }
@@ -134,7 +155,9 @@ export const setupNotifications = async (settings?: PhoneNotificationSettings) =
                             body: athkar.text,
                             id: 100 + day * 50 + i, // Offset IDs to avoid collision
                             schedule: { at: scheduleDate, allowWhileIdle: true },
-                            extra: { page: 'sabah-masaa' },
+                            channelId: 'athkar_v3_chime_channel',
+                            sound: 'chime.mp3',
+                            extra: { page: 'sabah-masaa', playSound: true, soundFile: 'chime.mp3' },
                             smallIcon: 'ic_stat_name',
                         });
                     }
@@ -163,7 +186,9 @@ export const setupNotifications = async (settings?: PhoneNotificationSettings) =
         body: 'غداً أول أيام شهر رمضان المبارك. قم بتجهيز الورد الشهري الخاص بك الآن.',
         id: 50,
         schedule: { at: dayBeforeRamadan.toDate(), allowWhileIdle: true },
-        extra: { page: 'daily-wird' },
+        channelId: 'athkar_v3_chime_channel',
+        sound: 'chime.mp3',
+        extra: { page: 'daily-wird', playSound: true, soundFile: 'chime.mp3' },
         smallIcon: 'ic_stat_name',
       });
     } catch (e) {}
@@ -181,7 +206,9 @@ export const setupNotifications = async (settings?: PhoneNotificationSettings) =
         body: 'وُلِدَ الهُدى فَالكائِناتُ ضِياءُ.. نبارك لكم ذكرى مولد خير الأنام محمد ﷺ.',
         id: 51,
         schedule: { at: mawlidDate.toDate(), allowWhileIdle: true },
-        extra: { page: 'home' },
+        channelId: 'athkar_v3_chime_channel',
+        sound: 'chime.mp3',
+        extra: { page: 'home', playSound: true, soundFile: 'chime.mp3' },
         smallIcon: 'ic_stat_name',
       });
     } catch (e) {}

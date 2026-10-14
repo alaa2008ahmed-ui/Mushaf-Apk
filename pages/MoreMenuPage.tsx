@@ -4,9 +4,14 @@ import { useTheme } from '../context/ThemeContext';
 import InteractiveBackground from '../components/InteractiveBackground';
 import NavButton from '../components/MainMenu/NavButton';
 import { motion } from 'motion/react';
+import { useShowNewBadge } from '../utils/badgeManager';
+import { useLanguage } from '../context/LanguageContext';
 
 const ALL_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-14", colorIndex: 0 },
+    { id: 'community', label: "💬 مجتمع التواصل", className: "col-span-2 h-14", colorIndex: 0 },
+    { id: 'ahl-al-quran', label: "🏆 أهل القرآن", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'others', label: "✨ الرقية الشرعية", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'adia', label: "🤲 الأدعية", className: "col-span-1 h-14", colorIndex: 1 },
@@ -25,6 +30,7 @@ const ALL_MENU_ITEMS = [
     { id: 'memorization', label: "🧠 التحفيظ", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-14", colorIndex: 0 },
+    { id: 'islamic-sites', label: "🌐 مواقع إسلامية", className: "col-span-2 h-14", colorIndex: 0 },
 ];
 
 interface MoreMenuPageProps {
@@ -35,30 +41,16 @@ import ThemePageLock from '../components/ThemePageLock';
 
 const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
     const { theme, themeKey, togglePageLock, isPageLocked } = useTheme();
-    const [showNewBadges, setShowNewBadges] = useState(false);
+    const showNewBadges = useShowNewBadge();
+    const { t, translateMenuItem } = useLanguage();
+
     const [visibleItems, setVisibleItems] = useState<string[]>(() => {
         const savedVisible = localStorage.getItem('visibleMenuItems');
         return savedVisible ? JSON.parse(savedVisible) : ALL_MENU_ITEMS.map(i => i.id);
     });
 
-    useEffect(() => {
-        const currentOpens = parseInt(localStorage.getItem('app_opens_count_new') || '1');
-        if (currentOpens <= 5) {
-            setShowNewBadges(true);
-        }
-    }, []);
-
     const getPrimaryColor = (itemId: string, index: number) => {
-        // تخصيص اللون البنفسجي للأزرار المطلوبة
-        if (['quran', 'listen', 'prayer-times'].includes(itemId)) {
-            return '#8B5CF6'; // اللون البنفسجي
-        }
-
-        if (themeKey === 'olive_grove') {
-            return ['daily-wird', 'memorization', 'voice-control'].includes(itemId) 
-                ? '#4D7C0F' : '#65A30D';
-        }
-        return theme.palette[index] || theme.palette[0];
+        return index === 0 ? theme.palette[0] : (theme.palette[1] || theme.palette[0]);
     };
 
     return (
@@ -71,21 +63,28 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                             <div className="absolute left-0">
                                 <ThemePageLock />
                             </div>
-                            <h1 className="app-top-bar__title text-2xl font-kufi">قائمة التطبيقات</h1>
+                            <h1 className="app-top-bar__title text-2xl font-kufi">{t('page.more_menu_title', 'قائمة التطبيقات')}</h1>
                         </div>
-                        <p className="app-top-bar__subtitle">تصفح جميع أقسام التطبيق</p>
+                        <p className="app-top-bar__subtitle">{t('page.more_menu_subtitle', 'تصفح جميع أقسام التطبيق')}</p>
                     </div>
                 </header>
                 <div className="flex-1 overflow-y-auto pb-32 hide-scrollbar">
                     <div className="main-layout px-4 flex flex-col" style={{ fontFamily: theme.font }}>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-5 w-full max-w-sm mx-auto mt-6">
                             {ALL_MENU_ITEMS.map((item, idx) => {
-                                const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna'].includes(item.id);
+                                const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna', 'community', 'ahl-al-quran', 'others', 'islamic-sites'].includes(item.id);
                                 const isDefault = themeKey === 'default';
                                 const isBlackTheme = theme.bgColor === '#000000';
-                                const primaryColor = isBlackTheme ? '#000000' : (isDefault ? '#FFFFFF' : getPrimaryColor(item.id, item.colorIndex));
-                                const textColor = isBlackTheme ? '#FFFFFF' : (isDefault ? '#000000' : theme.btnText);
-                                const isNew = showNewBadges && ['daily-wird', 'memorization', 'voice-control', 'asmaul-husna', 'habit-tracker'].includes(item.id);
+                                const primaryColor = isDefault 
+                                    ? '#FFFFFF' 
+                                    : (isBlackTheme 
+                                        ? (item.colorIndex === 0 ? (theme.palette[0] || '#1E293B') : (theme.palette[1] || '#374151'))
+                                        : getPrimaryColor(item.id, item.colorIndex));
+                                const textColor = isDefault ? '#000000' : (isBlackTheme ? '#FFFFFF' : (theme.btnText || '#FFFFFF'));
+                                const buttonBorder = isDefault 
+                                    ? '2px solid #000000' 
+                                    : (isBlackTheme ? '1px solid rgba(255, 255, 255, 0.2)' : theme.btnBorder);
+                                const isNew = showNewBadges && ['memorization', 'community', 'ahl-al-quran', 'others', 'islamic-sites'].includes(item.id);
                                 
                                 return (
                                     <div
@@ -94,15 +93,15 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                         style={{ visibility: isVisible ? 'visible' : 'hidden' }}
                                     >
                                         <NavButton
-                                            label={item.label}
+                                            label={translateMenuItem(item.id, item.label)}
                                             onClick={() => onNavigate(item.id, { from: 'more-menu' })}
                                             className="w-full h-full"
                                             color={primaryColor}
                                             showNewBadge={isNew}
-                                            badgeText="جديد"
+                                            badgeText={t('common.new', 'جديد')}
                                             isGlass={isBlackTheme ? false : (isDefault ? false : theme.isGlass)}
                                             btnText={textColor}
-                                            border={isBlackTheme ? '1px solid #333333' : (isDefault ? '2px solid #000000' : undefined)}
+                                            border={buttonBorder}
                                         />
                                         {item.id === 'quran' && (
                                             <button
@@ -112,14 +111,14 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                                 }}
                                                 className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full w-9 h-9 flex items-center justify-center z-[20] transition-all shadow-xl border"
                                                 style={{ 
-                                                    backgroundColor: isBlackTheme ? '#000000' : (themeKey === 'default' ? '#ffffff' : (theme.isGlass ? 'rgba(255, 255, 255, 0.2)' : (theme.palette[1] || '#8B5CF6'))),
+                                                    backgroundColor: isBlackTheme ? '#1E293B' : (themeKey === 'default' ? '#ffffff' : (theme.isGlass ? 'rgba(255, 255, 255, 0.2)' : (theme.palette[1] || theme.palette[0]))),
                                                     color: isBlackTheme ? '#ffffff' : (themeKey === 'default' ? '#000000' : '#ffffff'),
-                                                    borderColor: isBlackTheme ? '#333333' : (themeKey === 'default' ? '#000000' : (theme.isGlass ? 'rgba(255, 255, 255, 0.3)' : 'transparent')),
+                                                    borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.2)' : (themeKey === 'default' ? '#000000' : (theme.isGlass ? 'rgba(255, 255, 255, 0.3)' : 'transparent')),
                                                     backdropFilter: theme.isGlass ? 'blur(4px)' : 'none',
                                                     WebkitBackdropFilter: theme.isGlass ? 'blur(4px)' : 'none',
                                                     borderWidth: (isBlackTheme || themeKey === 'default') ? '2px' : '1px'
                                                 }}
-                                                title="وضع العرض"
+                                                title={t('common.landscape_mode', 'وضع العرض')}
                                             >
                                                 <i className="fa-solid fa-arrows-rotate text-lg"></i>
                                             </button>

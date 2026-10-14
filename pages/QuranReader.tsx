@@ -15,7 +15,6 @@ import { KeepAwake } from '@capacitor-community/keep-awake';
 import BookmarksModal from '../components/QuranReader/BookmarksModal';
 import MushafPage from '../components/QuranReader/MushafPage';
 import VerticalReadingView from '../components/QuranReader/VerticalReadingView';
-import HorizontalPagingView from '../components/QuranReader/HorizontalPagingView';
 import SurahDesignPickerModal from '../components/QuranReader/SurahDesignPickerModal';
 import Toast from '../components/QuranReader/Toast';
 import TafseerModal from '../components/QuranReader/TafseerModal';
@@ -34,6 +33,7 @@ import QuranHeader from '../components/QuranReader/QuranHeader';
 import QuranFooter from '../components/QuranReader/QuranFooter';
 import FloatingMenu from '../components/QuranReader/FloatingMenu';
 import AyahContextMenu from '../components/QuranReader/AyahContextMenu';
+import { ahlAlQuranService } from '../services/ahlAlQuranService';
 import ShareAyahModal from '../components/QuranReader/ShareAyahModal';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { MousePointer2, Move, ZoomIn, Grid, Mic, Bookmark, Home, Share2, BookOpen, Trophy, Play, Menu, Palette } from 'lucide-react';
@@ -44,6 +44,7 @@ import { registerBackInterceptor } from '../hooks/useBackButton';
 import { parseVoiceCommand, normalizeArabic } from '../utils/voiceParser';
 import { useTheme } from '../context/ThemeContext';
 import { useAudioStore } from '../hooks/useAudioStore';
+import { useHabitTracker } from '../hooks/useHabitTracker';
 import { App as CapacitorApp } from '@capacitor/app';
 
 declare var window: any;
@@ -418,7 +419,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 let key = '';
                 if (isWirdMode) key = `_wird_${orient}`;
                 else if (isMemorizationMode) key = `_memorization_${orient}`;
-                else if (readingMode === 'mushaf' || readingMode === 'mushaf_paging') key = `_${orient}`;
+                else if (readingMode === 'mushaf') key = `_${orient}`;
                 else key = `_${readingMode}_${orient}`;
 
                 const saved = localStorage.getItem(`last_pos${key}`);
@@ -479,7 +480,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             let key = '';
             if (isWirdMode) key = `_wird_${orient}`;
             else if (isMemorizationMode) key = `_memorization_${orient}`;
-            else if (readingMode === 'mushaf' || readingMode === 'mushaf_paging') key = `_${orient}`;
+            else if (readingMode === 'mushaf') key = `_${orient}`;
             else key = `_${readingMode}_${orient}`;
 
             const saved = localStorage.getItem(`last_pos${key}`);
@@ -492,6 +493,15 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         } catch(e) {}
         return { s: 1, a: 1 };
     });
+
+    // Auto-sync pages read with Habit Tracker (مربّي العبادات)
+    useEffect(() => {
+        if (!currentAyah?.s || !currentAyah?.a || !quranData?.surahs) return;
+        const pageNum = quranData.surahs[currentAyah.s - 1]?.ayahs[currentAyah.a - 1]?.page;
+        if (pageNum && pageNum >= 1 && pageNum <= 604) {
+            useHabitTracker.getState().recordQuranPageRead(pageNum);
+        }
+    }, [currentAyah.s, currentAyah.a, quranData]);
 
     const recordedAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -1236,7 +1246,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const lastNotifiedJuz = useRef<number | null>(null);
     const [bookmarks, setBookmarks] = useState(() => {
         const mode = initialLandscape ? '_h' : '_v';
-        const bSuffix = (localIsMemorizationMode ? `_memorization_${mode}` : isWirdMode ? `_wird_${mode}` : (readingMode === 'mushaf' || readingMode === 'mushaf_paging') ? mode : `_${readingMode}_${mode}`);
+        const bSuffix = (localIsMemorizationMode ? `_memorization_${mode}` : isWirdMode ? `_wird_${mode}` : readingMode === 'mushaf' ? mode : `_${readingMode}_${mode}`);
         return JSON.parse(localStorage.getItem('quran_bookmarks_list' + bSuffix) || '[]');
     });
 
@@ -1985,16 +1995,17 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                                 isSessionFinishedRef.current = true;
                                 stopAudio();
                                 localStorage.removeItem('memorization_session_v1');
-                                showToast('انتهت جلسة التحفيظ');
+                                showToast('انتهت جلسة التحفيظ والمراجعة');
                                 if (memSettings.testAfterSession) {
-                                    showToast('حان وقت الاختبار!');
+                                    setShowReviewTest(true);
+                                } else {
+                                    // Auto-return to memorization page
+                                    setTimeout(() => {
+                                        if (!isMountedRef.current) return;
+                                        if (onBack) handleHomeClick();
+                                        else if (onNavigate) onNavigate('memorization');
+                                    }, 1500);
                                 }
-                                // Auto-return to memorization page
-                                setTimeout(() => {
-                                    if (!isMountedRef.current) return;
-                                    if (onBack) handleHomeClick();
-                                    else if (onNavigate) onNavigate('memorization');
-                                }, 1500);
                             }
                         } else {
                             playNextAyahRef.current();
@@ -2670,7 +2681,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
             const { scrollTop, scrollHeight, clientHeight } = contentEl;
 
-            if (readingMode === 'mushaf' || readingMode === 'mushaf_paging') {
+            if (readingMode === 'mushaf') {
                 if (scrollTop < 500) {
                     setVisiblePages(prev => {
                         if (prev.length === 0) return prev;
@@ -2847,6 +2858,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         setLastInteractionType('page');
         
         const targetPageNum = pageNum;
+        useHabitTracker.getState().recordQuranPageRead(targetPageNum);
         
         const pageData = getPageData(targetPageNum);
         if (pageData && pageData.length > 0) {
@@ -3437,7 +3449,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     };
 
     const getToolbarStyle = (type: string, defaultBg: string, defaultText: string, defaultBorder: string) => {
-        const isBlackTheme = currentTheme?.bg === '#000000';
+        const isBlackTheme = currentTheme?.bg === '#000000' && currentTheme?.id !== 'deep_black';
         if (isBlackTheme && type === 'btn-home') {
             return {
                 backgroundColor: '#000000',
@@ -3564,6 +3576,98 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const currentPageNumber = quranData?.surahs[currentAyah.s - 1]?.ayahs.find((ay:any) => ay.numberInSurah === currentAyah.a)?.page || 1;
     const tafseerName = TAFSEERS.find(t => t.id === settings.tafseer)?.name || 'التفسير';
 
+    // Smart Real-Time Page Reading Tracker for Ahl Al-Quran Leaderboard
+    const pageDwellSecondsRef = useRef<Record<number, number>>({});
+    const lastCreditedTimestampMapRef = useRef<Map<number, number>>(new Map());
+
+    const getCurrentlyVisiblePage = useCallback((): number => {
+        const content = mushafContentRef.current;
+        if (content && readingMode === 'mushaf') {
+            const pages = content.querySelectorAll('.mushaf-page');
+            if (pages.length > 0) {
+                const containerRect = content.getBoundingClientRect();
+                const focalY = containerRect.top + containerRect.height * 0.40;
+
+                let bestPage = 0;
+                let closestDist = Infinity;
+
+                for (let i = 0; i < pages.length; i++) {
+                    const pageEl = pages[i] as HTMLElement;
+                    const rect = pageEl.getBoundingClientRect();
+                    const pageNum = parseInt(pageEl.dataset.page || pageEl.id.replace('page-', ''), 10);
+                    if (!pageNum || pageNum < 1 || pageNum > 604) continue;
+
+                    if (rect.top <= focalY && rect.bottom >= focalY) {
+                        return pageNum;
+                    }
+
+                    const pageCenter = rect.top + rect.height / 2;
+                    const dist = Math.abs(pageCenter - focalY);
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        bestPage = pageNum;
+                    }
+                }
+
+                if (bestPage >= 1 && bestPage <= 604) {
+                    return bestPage;
+                }
+            }
+        }
+
+        // Fallback for non-mushaf mode or before DOM layout
+        if (currentAyahRef.current?.s && quranData?.surahs) {
+            const s = currentAyahRef.current.s;
+            const a = currentAyahRef.current.a;
+            const pg = quranData.surahs[s - 1]?.ayahs?.find((ay: any) => ay.numberInSurah === a)?.page;
+            if (pg && pg >= 1 && pg <= 604) return pg;
+        }
+
+        return currentPageNumber || 1;
+    }, [currentPageNumber, quranData, readingMode]);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            if (typeof document !== 'undefined' && document.hidden) return;
+            const isModalOpen = activeModals.length > 0 || tafseerInfo.isOpen || tafseerSelectionInfo.isOpen;
+            if (isModalOpen) return;
+
+            const visiblePage = getCurrentlyVisiblePage();
+            if (!visiblePage || visiblePage < 1 || visiblePage > 604) return;
+
+            const now = Date.now();
+            const lastCredited = lastCreditedTimestampMapRef.current.get(visiblePage) || 0;
+            // Prevent duplicate crediting of same page within 45 seconds
+            if (now - lastCredited < 45000) return;
+
+            const currentSecs = (pageDwellSecondsRef.current[visiblePage] || 0) + 1;
+            pageDwellSecondsRef.current[visiblePage] = currentSecs;
+
+            // 8 seconds threshold: allows normal calm reading, tadabbur, manual scroll and auto-scroll
+            const REQUIRED_SECONDS = 8;
+            if (currentSecs >= REQUIRED_SECONDS) {
+                const isAutoScroll = autoScrollStateRef.current.isActive && !autoScrollStateRef.current.isPaused;
+                const scrollMinutes = parseInt(String(settingsRef.current.scrollMinutes), 10) || 20;
+                const isAudioPlaying = isPlayingRef.current;
+
+                ahlAlQuranService.validateAndRecordPage(visiblePage, currentSecs, {
+                    isAutoScroll,
+                    scrollMinutes,
+                    isPlayingAudio: isAudioPlaying
+                }).then(result => {
+                    if (result.success) {
+                        lastCreditedTimestampMapRef.current.set(visiblePage, Date.now());
+                        pageDwellSecondsRef.current[visiblePage] = 0;
+                    }
+                });
+            }
+        }, 1000);
+
+        return () => {
+            clearInterval(timer);
+        };
+    }, [getCurrentlyVisiblePage, activeModals.length, tafseerInfo.isOpen, tafseerSelectionInfo.isOpen]);
+
     const renderPlayButtonIcon = () => {
         const iconColor = currentTheme.barText || '#000000';
         if (isAudioLoading) return <i className="fa-solid fa-spinner fa-spin text-xl" style={{ color: iconColor }}></i>;
@@ -3668,45 +3772,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
-                {readingMode === 'mushaf_paging' ? (
-                    <div className="w-full h-full">
-                        <HorizontalPagingView
-                            currentPage={currentPageNumber}
-                            onPageChange={(page) => {
-                                for (let s = 1; s <= 114; s++) {
-                                    const surah = quranJsonData.surahs[s-1];
-                                    for (let a = 1; a <= surah.ayahs.length; a++) {
-                                        if (surah.ayahs[a-1].page === page) {
-                                            if (s !== currentAyahRef.current.s || a !== currentAyahRef.current.a) {
-                                                setCurrentAyah({ s, a });
-                                                localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a })); 
-                                                localStorage.setItem("last_read_ayah_global", JSON.stringify({ s, a, ts: Date.now() }));
-                                                window.dispatchEvent(new Event('last_read_update'));
-                                            }
-                                            return;
-                                        }
-                                    }
-                                }
-                            }}
-                            settings={ayahContextMenu.isOpen ? { ...settings, ...ayahContextMenu.tempSettings } : settings}
-                            currentTheme={currentTheme}
-                            highlightedAyahId={highlightedAyahId}
-                            onAyahClick={handleAyahTextClick}
-                            onVerseClick={handleVerseClick}
-                            onVerseLongPress={handleVerseLongPress}
-                            onAyahLongPress={handleAyahLongPress}
-                            onInteractionStart={handleInteractionStart}
-                            onInteractionEnd={handleInteractionEnd}
-                            hideVerses={isHideMode}
-                            memorizationSettings={localMemorizationSettings}
-                            isPlaying={isPlaying}
-                            isRecording={isRecording}
-                            revealedAyahs={revealedAyahs}
-                            tempRevealedAyah={tempRevealedAyah}
-                            onSurahHeaderLongPress={() => setIsSurahDesignPickerOpen(true)}
-                        />
-                    </div>
-                ) : readingMode === 'mushaf' ? (
+                {readingMode === 'mushaf' ? (
                     <div id="pages-container" className="full-mushaf-container">
                     {sortedVisiblePages.map(pageNum => {
                         const displaySettings = ayahContextMenu.isOpen ? { ...settings, ...ayahContextMenu.tempSettings } : settings;
@@ -3816,13 +3882,6 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 handleAutoScrollButtonPointerLeave={handleAutoScrollButtonPointerLeave}
                 autoScrollState={autoScrollState}
                 onBack={handleHomeClick}
-                fitToScreen={settings.fitToScreen}
-                toggleFitToScreen={() => {
-                    const newFit = !settings.fitToScreen;
-                    setSettings(p => ({...p, fitToScreen: newFit}));
-                    localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify({...settings, fitToScreen: newFit}));
-                    window.dispatchEvent(new Event('settings-change'));
-                }}
             />
             {isAutoScrollSettingsOpen && (
             <AutoScrollSettingsModal
@@ -4093,10 +4152,9 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     onComplete={(success) => {
                         setShowReviewTest(false);
                         if (success) {
-                            showToast('أحسنت! لقد نجحت في الاختبار');
-                            // Update review schedule if in review mode
-                            if (localMemorizationSettings.isReviewMode) {
-                                // We need the range ID, but for now let's just show success
+                            showToast('أحسنت! لقد نجحت في الاختبار وجرى تحديث جدول المراجعة 🎉');
+                            if (localMemorizationSettings?.rangeId) {
+                                memorizationService.updateReviewStatus(localMemorizationSettings.rangeId);
                             }
                         } else {
                             showToast('تحتاج لمزيد من المراجعة، حاول مرة أخرى');
