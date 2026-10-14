@@ -67,13 +67,10 @@ export const ThemesSidebar: React.FC<ThemesSidebarProps> = ({ isOpen, onClose })
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          {/* Transparent clickaway backdrop without any dimming/tint */}
+          <div
             onClick={onClose}
-            className="fixed inset-0 z-[1200] bg-black/25 backdrop-blur-[1px] cursor-pointer"
+            className="fixed inset-0 z-[1200] bg-transparent cursor-pointer"
             style={{ position: 'fixed' }}
           />
 
@@ -84,7 +81,7 @@ export const ThemesSidebar: React.FC<ThemesSidebarProps> = ({ isOpen, onClose })
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-            className="w-[84px] sm:w-[94px] shadow-2xl flex flex-col rounded-l-2xl rounded-r-none border-y-2 border-l-2 border-r-0 overflow-hidden"
+            className="w-[88px] sm:w-[98px] shadow-2xl flex flex-col rounded-l-2xl rounded-r-none border-y-2 border-l-2 border-r-0 overflow-hidden"
             dir="rtl"
             style={{
               position: 'fixed',
@@ -110,7 +107,7 @@ export const ThemesSidebar: React.FC<ThemesSidebarProps> = ({ isOpen, onClose })
                 title="تخصيص خلفية مخصصة"
                 aria-label="تخصيص خلفية مخصصة"
               >
-                <Image className="w-4 h-4 text-blue-500" />
+                <Image className="w-4 h-4 text-blue-600 font-bold" />
               </button>
 
               <button
@@ -120,7 +117,7 @@ export const ThemesSidebar: React.FC<ThemesSidebarProps> = ({ isOpen, onClose })
                 title="استعادة الخلفية"
                 aria-label="استعادة الخلفية"
               >
-                <RotateCcw className="w-4 h-4 text-amber-500" />
+                <RotateCcw className="w-4 h-4 text-amber-600 font-bold" />
               </button>
 
               <button
@@ -130,7 +127,7 @@ export const ThemesSidebar: React.FC<ThemesSidebarProps> = ({ isOpen, onClose })
                 title="الثيم الافتراضي"
                 aria-label="الثيم الافتراضي"
               >
-                <Sparkles className="w-4 h-4 text-emerald-500" />
+                <Sparkles className="w-4 h-4 text-emerald-600 font-bold" />
               </button>
             </div>
 
@@ -143,9 +140,9 @@ export const ThemesSidebar: React.FC<ThemesSidebarProps> = ({ isOpen, onClose })
               onChange={handleBgUpload} 
             />
 
-            {/* Scrollable Theme Circles (فقط دوائر الثيمات بدون أي نصوص) */}
+            {/* Scrollable Theme Circles */}
             <div className="flex-1 overflow-y-auto p-2 pb-2.5 scrollbar-hide relative z-10 bg-white">
-              <div className="grid grid-cols-2 gap-y-3.5 gap-x-1.5 place-items-center py-2">
+              <div className="grid grid-cols-2 gap-y-3.5 gap-x-2 place-items-center py-2">
                 {Object.entries(presetThemes).map(([key, t]: [string, any]) => {
                   const isSelected = themeKey === key;
                   const circleBg = getThemeCircleColor(key, t);
@@ -155,29 +152,29 @@ export const ThemesSidebar: React.FC<ThemesSidebarProps> = ({ isOpen, onClose })
                       key={key}
                       type="button"
                       onClick={() => applyPresetTheme(key)}
-                      className="flex items-center justify-center p-0.5 group transition-transform active:scale-90 cursor-pointer rounded-full"
+                      className="flex items-center justify-center p-1 group transition-transform active:scale-90 cursor-pointer rounded-full"
                       title={t.name}
                       aria-label={t.name}
                     >
                       <div
-                        className={`w-[22px] h-[22px] rounded-full border-[1.5px] transition-all flex items-center justify-center relative shadow-sm ${
+                        className={`w-[26px] h-[26px] rounded-full border-2 transition-all flex items-center justify-center relative shadow-md ${
                           isSelected
-                            ? 'scale-110 shadow-md'
-                            : 'border-slate-300 hover:border-slate-400 hover:scale-110'
+                            ? 'scale-110 shadow-lg'
+                            : 'border-slate-300 hover:border-slate-500 hover:scale-110'
                         }`}
                         style={{
                           backgroundColor: circleBg,
                           borderColor: isSelected
                             ? themeBorderColor
-                            : undefined,
+                            : '#cbd5e1',
                           boxShadow: isSelected
-                            ? `0 0 0 1.5px #FFFFFF, 0 0 0 3px ${themeBorderColor}`
-                            : undefined
+                            ? `0 0 0 1.5px #FFFFFF, 0 0 0 3.5px ${themeBorderColor}`
+                            : '0 2px 4px rgba(0,0,0,0.1)'
                         }}
                       >
                         {isSelected && (
                           <div
-                            className="w-1.5 h-1.5 rounded-full shadow-sm"
+                            className="w-2 h-2 rounded-full shadow-sm"
                             style={{
                               backgroundColor:
                                 key === 'deep_black' || key === 'kaaba_kiswa'

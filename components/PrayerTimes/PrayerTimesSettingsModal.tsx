@@ -196,17 +196,17 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                                         {formatTime12_EN(applyOffset(times[currentEditingKey], totalPreviewOffset))}
                                     </span>
                                     <div className="relative flex items-center">
-                                        <input 
-                                            type="time" 
-                                            value={applyOffset(times[currentEditingKey], totalPreviewOffset)}
-                                            onChange={(e) => handleDirectTimeChange(e.target.value)}
-                                            className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
-                                            title="تعديل الوقت مباشرة"
-                                        />
                                         <button 
                                             type="button" 
-                                            className="w-5 h-5 rounded-md bg-black/5 dark:bg-white/10 flex items-center justify-center text-[11px] opacity-70 group-hover:opacity-100 cursor-pointer pointer-events-none"
+                                            onClick={() => {
+                                                const newTime = prompt('أدخل وقت الأذان الجديد (مثال: 04:30):', formatTime12_EN(applyOffset(times[currentEditingKey], totalPreviewOffset)));
+                                                if (newTime) {
+                                                    handleDirectTimeChange(newTime);
+                                                }
+                                            }}
+                                            className="w-5 h-5 rounded-md bg-black/5 dark:bg-white/10 flex items-center justify-center text-[11px] opacity-70 hover:opacity-100 cursor-pointer"
                                             style={{ color: primaryColor }}
+                                            title="تعديل الوقت يدويًا"
                                         >
                                             <i className="fa-regular fa-clock"></i>
                                         </button>
