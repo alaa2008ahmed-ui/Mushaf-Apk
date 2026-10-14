@@ -66,26 +66,69 @@ export const getMediaURL = (s: string) => {
     return cleanPath;
 };
 
-// Global audio instance for previewing tones
+// Global audio instance for playing and previewing tones
 let previewAudio: HTMLAudioElement | null = null;
+let currentAudioSource: string | null = null;
+let lastPlayTimestamp = 0;
 
 export const playNotificationSound = (source: string) => {
     if (!source || source === 'none') return;
+
+    const now = Date.now();
+    // Prevent duplicate playback if the exact same sound is already playing and was triggered recently (< 4s)
+    if (previewAudio && !previewAudio.paused && currentAudioSource === source && (now - lastPlayTimestamp) < 4000) {
+        console.log(`[playNotificationSound] Ignored duplicate playback request for: ${source}`);
+        return;
+    }
+
     const mediaUrl = getMediaURL(source);
     
-    // Stop any currently playing preview
+    // Stop any currently playing audio cleanly before starting new one
     stopNotificationSound();
 
+    lastPlayTimestamp = now;
+    currentAudioSource = source;
+
     try {
-        previewAudio = new Audio(mediaUrl);
-        previewAudio.volume = 1.0;
-        previewAudio.play().catch(e => {
-            console.error("Audio play failed on resolved mediaUrl:", e);
-            if (mediaUrl !== source) {
+        const audio = new Audio(mediaUrl);
+        audio.volume = 1.0;
+        previewAudio = audio;
+
+        audio.onended = () => {
+            if (previewAudio === audio) {
+                previewAudio = null;
+                currentAudioSource = null;
+            }
+        };
+
+        audio.play().catch(e => {
+            // If the audio was interrupted or stopped deliberately via pause(), do NOT execute fallback
+            if (e && (e.name === 'AbortError' || e.message?.includes('interrupted') || e.message?.includes('pause'))) {
+                return;
+            }
+
+            console.warn("Audio play failed on resolved mediaUrl:", e);
+
+            // Only attempt fallback if this audio instance is still the active one
+            if (previewAudio === audio && mediaUrl !== source) {
                 try {
-                    previewAudio = new Audio(source);
-                    previewAudio.volume = 1.0;
-                    previewAudio.play().catch(err => console.error("Audio play fallback also failed:", err));
+                    const fallbackAudio = new Audio(source);
+                    fallbackAudio.volume = 1.0;
+                    previewAudio = fallbackAudio;
+
+                    fallbackAudio.onended = () => {
+                        if (previewAudio === fallbackAudio) {
+                            previewAudio = null;
+                            currentAudioSource = null;
+                        }
+                    };
+
+                    fallbackAudio.play().catch(err => {
+                        if (err && (err.name === 'AbortError' || err.message?.includes('interrupted'))) {
+                            return;
+                        }
+                        console.error("Audio play fallback also failed:", err);
+                    });
                 } catch (err2) {}
             }
         });
@@ -96,9 +139,14 @@ export const playNotificationSound = (source: string) => {
 
 export const stopNotificationSound = () => {
     if (previewAudio) {
-        previewAudio.pause();
-        previewAudio.currentTime = 0;
+        try {
+            previewAudio.pause();
+            previewAudio.currentTime = 0;
+            previewAudio.src = '';
+            previewAudio.load();
+        } catch (e) {}
         previewAudio = null;
+        currentAudioSource = null;
     }
 };
 

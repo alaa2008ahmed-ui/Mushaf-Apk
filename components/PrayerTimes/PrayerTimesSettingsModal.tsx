@@ -535,7 +535,7 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                             <div className="flex items-center justify-between pt-1.5 border-t border-black/10 dark:border-white/10" dir="rtl">
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-[10px] opacity-60">المدة:</span>
-                                    {[20, 30, 45].map((duration) => {
+                                    {[10, 15, 20].map((duration) => {
                                         const isSelected = tempAutoSilentDuration === duration;
                                         return (
                                             <button

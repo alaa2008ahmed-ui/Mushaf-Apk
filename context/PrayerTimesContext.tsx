@@ -75,7 +75,7 @@ const DEFAULT_CONFIG: PrayerConfig = {
     nightNotifications: { firstThird: true, midnight: true, lastThird: true },
     preAthanReminder: { enabled: false, minutes: 15 },
     autoSilent: false,
-    autoSilentDuration: 30,
+    autoSilentDuration: 15,
     iqamaReminder: { enabled: false, minutes: 15 }
 };
 
@@ -243,16 +243,16 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             for (const key of prayerKeys) {
                 // Determine if auto-silent is enabled for this prayer
                 let isSilentEnabled = false;
-                let duration = 30;
+                let duration = 15;
 
                 if (config.prayerAutoSilent?.[key] !== undefined) {
                     // Per-prayer override takes precedence
                     isSilentEnabled = !!config.prayerAutoSilent[key].enabled;
-                    duration = config.prayerAutoSilent[key].duration || 30;
+                    duration = config.prayerAutoSilent[key].duration || 15;
                 } else if (config.autoSilent) {
                     // Global is ON: applies to all prayers
                     isSilentEnabled = true;
-                    duration = config.autoSilentDuration || 30;
+                    duration = config.autoSilentDuration || 15;
                 }
 
                 if (!isSilentEnabled) continue;
@@ -859,16 +859,16 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                     }
                 }
 
-                // 4. Auto Silent Mode Window Scheduling (الصامت القاتل / التلقائي)
+                // 4. Auto Silent Mode Window Scheduling (الصامت التلقائي)
                 let isSilentEnabled = false;
-                let silentDuration = 30;
+                let silentDuration = 15;
 
                 if (config.prayerAutoSilent?.[key] !== undefined) {
                     isSilentEnabled = !!config.prayerAutoSilent[key].enabled;
-                    silentDuration = config.prayerAutoSilent[key].duration || 30;
+                    silentDuration = config.prayerAutoSilent[key].duration || 15;
                 } else if (config.autoSilent) {
                     isSilentEnabled = true;
-                    silentDuration = config.autoSilentDuration || 30;
+                    silentDuration = config.autoSilentDuration || 15;
                 }
 
                 if (isSilentEnabled && key !== 'Sunrise') {
@@ -1229,8 +1229,11 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             }
 
             // --- LIVE FOREGROUND ALERT & AUDIO PLAYBACK ENGINE ---
-            // Triggers Adhan and Chime reminders whenever the app is OPEN
+            // On Web: Triggers Adhan and Chime reminders whenever the app is OPEN
+            // On Native Android: The native NotificationChannel already plays the audio reliably with USAGE_ALARM,
+            // so we do not play HTML5 audio here on native to avoid hearing two overlapping sounds at once.
             if (Object.keys(times).length > 0) {
+                const isNative = Capacitor.isNativePlatform();
                 const dayStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
                 const prayerCheckKeys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
                 const supportsDST = checkSupportsDST(config.location?.combinedCode, config.location?.fullCountry);
@@ -1291,8 +1294,12 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                                 }
                             }
                             if (canPlay) {
-                                console.log(`[Foreground Adhan] Playing live adhan tone: ${soundFileName} for ${key}`);
-                                playNotificationSound(`/assets/audio/${soundFileName}`);
+                                if (!isNative) {
+                                    console.log(`[Foreground Adhan] Playing web live adhan tone: ${soundFileName} for ${key}`);
+                                    playNotificationSound(`/assets/audio/${soundFileName}`);
+                                } else {
+                                    console.log(`[Native Adhan] Adhan tone handled natively by Android notification channel for ${key}`);
+                                }
                             }
                         }
                     }
@@ -1314,8 +1321,10 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                         const preAlertKey = `${dayStr}_pre_${key}`;
                         if (preDiffMs >= 0 && preDiffMs <= 45000 && !triggeredAlertsRef.current.has(preAlertKey)) {
                             triggeredAlertsRef.current.add(preAlertKey);
-                            console.log(`[Foreground Alert] Playing gentle chime for pre-adhan ${key}`);
-                            playNotificationSound('/assets/audio/chime.mp3');
+                            if (!isNative) {
+                                console.log(`[Foreground Alert] Playing gentle chime for pre-adhan ${key}`);
+                                playNotificationSound('/assets/audio/chime.mp3');
+                            }
                         }
                     }
 
@@ -1336,20 +1345,22 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                         const iqamaAlertKey = `${dayStr}_iqama_${key}`;
                         if (iqamaDiffMs >= 0 && iqamaDiffMs <= 45000 && !triggeredAlertsRef.current.has(iqamaAlertKey)) {
                             triggeredAlertsRef.current.add(iqamaAlertKey);
-                            console.log(`[Foreground Alert] Playing gentle chime for iqama ${key}`);
-                            playNotificationSound('/assets/audio/chime.mp3');
+                            if (!isNative) {
+                                console.log(`[Foreground Alert] Playing gentle chime for iqama ${key}`);
+                                playNotificationSound('/assets/audio/chime.mp3');
+                            }
                         }
                     }
 
                     // 4. Live Auto-Silent Mode (chime.mp3)
                     let isSilentEnabled = false;
-                    let silentDuration = 30;
+                    let silentDuration = 15;
                     if (config.prayerAutoSilent?.[key] !== undefined) {
                         isSilentEnabled = !!config.prayerAutoSilent[key].enabled;
-                        silentDuration = config.prayerAutoSilent[key].duration || 30;
+                        silentDuration = config.prayerAutoSilent[key].duration || 15;
                     } else if (config.autoSilent) {
                         isSilentEnabled = true;
-                        silentDuration = config.autoSilentDuration || 30;
+                        silentDuration = config.autoSilentDuration || 15;
                     }
 
                     if (isSilentEnabled && key !== 'Sunrise') {
@@ -1359,8 +1370,10 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                         const silentAlertKey = `${dayStr}_silent_${key}`;
                         if (silentDiffMs >= 0 && silentDiffMs <= 45000 && !triggeredAlertsRef.current.has(silentAlertKey)) {
                             triggeredAlertsRef.current.add(silentAlertKey);
-                            console.log(`[Foreground Alert] Playing gentle chime for auto-silent ${key}`);
-                            playNotificationSound('/assets/audio/chime.mp3');
+                            if (!isNative) {
+                                console.log(`[Foreground Alert] Playing gentle chime for auto-silent ${key}`);
+                                playNotificationSound('/assets/audio/chime.mp3');
+                            }
                             setDeviceSilentNow(true, prayerNamesAr[key] || key);
                         }
                     }

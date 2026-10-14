@@ -5,13 +5,14 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 
 interface ShareOptions {
     text: string;
+    title?: string;
     source?: string;
     category?: string;
     theme: any;
     setToastMessage?: (msg: string) => void;
 }
 
-export const shareAsImage = async ({ text, source, category, theme, setToastMessage }: ShareOptions) => {
+export const shareAsImage = async ({ text, title, source, category, theme, setToastMessage }: ShareOptions) => {
     if (setToastMessage) setToastMessage('جاري تجهيز الصورة...');
 
     // Use a unique ID for the container to avoid conflicts
@@ -36,22 +37,27 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
         container.style.top = '-9999px';
         container.style.width = '800px'; 
         container.style.direction = 'rtl';
-        container.style.backgroundColor = '#ffffff'; // Ensure a opaque background for the wrapper
+        container.style.backgroundColor = '#ffffff'; // Ensure an opaque background for the wrapper
         
         // Use theme palette or defaults
         const primaryColor = theme?.palette?.[0] || '#4CAF50';
         const secondaryColor = theme?.palette?.[1] || '#2E7D32';
 
+        // Adaptive font sizing based on text length
+        const textLen = (text || '').length;
+        const fontSize = textLen > 350 ? '20px' : textLen > 200 ? '24px' : textLen > 100 ? '28px' : '34px';
+        const lineHeight = textLen > 350 ? '1.6' : textLen > 200 ? '1.7' : '1.8';
+
         // Create content
         container.innerHTML = `
             <div id="share-card" style="
                 background: linear-gradient(135deg, ${primaryColor}, ${secondaryColor});
-                padding: 24px;
+                padding: 28px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                min-height: 400px;
+                min-height: 420px;
                 position: relative;
                 color: white;
                 text-align: center;
@@ -72,7 +78,7 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                 <!-- Inner Decorative Frame -->
                 <div style="
                     border: 2px solid rgba(255,255,255,0.3);
-                    padding: 40px;
+                    padding: 36px 32px;
                     border-radius: 20px;
                     background: rgba(255,255,255,0.15);
                     width: 100%;
@@ -83,12 +89,29 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                     letter-spacing: 0;
                     word-spacing: 0;
                 ">
+                    ${title ? `
+                        <div style="
+                            font-size: 28px;
+                            font-weight: 800;
+                            margin-bottom: 22px;
+                            padding-bottom: 14px;
+                            border-bottom: 2px solid rgba(255,255,255,0.3);
+                            color: #fef08a;
+                            font-family: 'Cairo', 'Amiri', sans-serif;
+                            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                            letter-spacing: 0.5px;
+                        ">
+                            ${title}
+                        </div>
+                    ` : ''}
+
                     <div style="
-                        font-size: 34px;
-                        line-height: 1.8;
-                        margin-bottom: 30px;
+                        font-size: ${fontSize};
+                        line-height: ${lineHeight};
+                        margin-bottom: 24px;
                         font-family: inherit;
                         text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                        white-space: pre-line;
                     ">
                         ${text.replace(/\n/g, '<br/>')}
                     </div>
@@ -99,13 +122,13 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                             align-items: center;
                             justify-content: center;
                             gap: 10px;
-                            margin-top: 20px;
-                            padding-top: 20px;
+                            margin-top: 18px;
+                            padding-top: 18px;
                             border-top: 1px solid rgba(255,255,255,0.2);
                         ">
                             <span style="
-                                font-size: 18px;
-                                opacity: 0.9;
+                                font-size: 17px;
+                                opacity: 0.95;
                                 font-weight: bold;
                                 font-family: 'Cairo', sans-serif;
                             ">
@@ -116,12 +139,12 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
                     
                     <!-- Brand Footer -->
                     <div style="
-                        margin-top: ${(category || source) ? '15px' : '30px'};
-                        font-size: 20px;
+                        margin-top: ${(category || source) ? '14px' : '24px'};
+                        font-size: 19px;
                         font-weight: bold;
-                        opacity: 0.9;
+                        opacity: 0.95;
                         font-family: inherit;
-                        ${!(category || source) ? 'padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);' : ''}
+                        ${!(category || source) ? 'padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.2);' : ''}
                     ">
                         مصحف أحمد وليلى
                     </div>
@@ -160,7 +183,7 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
             });
 
             await Share.share({
-                title: 'مشاركة',
+                title: title || 'مشاركة',
                 url: savedFile.uri, 
                 dialogTitle: 'مشاركة عبر'
             });
@@ -168,12 +191,12 @@ export const shareAsImage = async ({ text, source, category, theme, setToastMess
             try {
                 const response = await fetch(dataUrl);
                 const blob = await response.blob();
-                const file = new File([blob], 'dhikr.jpg', { type: 'image/jpeg' });
+                const file = new File([blob], 'mushaf_card.jpg', { type: 'image/jpeg' });
                 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({
                         files: [file],
-                        title: 'مشاركة'
+                        title: title || 'مشاركة'
                     });
                 } else {
                     await downloadFile(dataUrl, setToastMessage);

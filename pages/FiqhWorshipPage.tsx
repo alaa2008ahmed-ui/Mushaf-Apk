@@ -92,29 +92,13 @@ const FiqhWorshipPage: React.FC<FiqhWorshipPageProps> = ({ onBack, onNavigate, n
             {/* Header */}
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-between w-full">
-                        <div className="w-10 flex items-center">
-                            <ThemePageLock />
-                        </div>
-
-                        <div className="flex-1 text-center px-2">
-                            <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi">
-                                فقه العبادات المصور
-                            </h1>
-                            <p className="app-top-bar__subtitle text-xs sm:text-sm">
-                                دليل عملي لصفة الصلاة والوضوء وسجود السهو والطهارة
-                            </p>
-                        </div>
-
-                        <div className="w-10 flex items-center justify-end">
-                            <button
-                                onClick={() => setFontSizeScale(prev => prev === 1 ? 1.15 : prev === 1.15 ? 1.3 : 1)}
-                                className="w-9 h-9 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 flex items-center justify-center text-xs font-bold"
-                                title="تكبير الخط"
-                            >
-                                <i className="fa-solid fa-font"></i>
-                            </button>
-                        </div>
+                    <div className="text-center w-full">
+                        <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi">
+                            فقه العبادات
+                        </h1>
+                        <p className="app-top-bar__subtitle text-xs sm:text-sm">
+                            دليل عملي لصفة الصلاة والوضوء وسجود السهو والطهارة
+                        </p>
                     </div>
                 </div>
             </header>

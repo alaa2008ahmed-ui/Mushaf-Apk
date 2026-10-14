@@ -44,21 +44,21 @@ const Calculators: React.FC<CalculatorsProps> = ({ onBack , onNavigate }) => {
             </header>
 
             {/* Tabs */}
-            <div className="flex px-2 sm:px-4 pt-4 gap-1.5 sm:gap-2 font-cairo z-10">
+            <div className="flex px-2 sm:px-4 pt-2.5 sm:pt-3 gap-1.5 sm:gap-2 font-cairo z-10">
                 {[
-                    { id: 'zakat', label: language === 'en' ? 'Zakat' : 'الزكاة', icon: 'fa-coins' },
-                    { id: 'mawarith', label: language === 'en' ? 'Mawarith' : 'المواريث', icon: 'fa-scale-balanced' },
-                    { id: 'kaffarat', label: language === 'en' ? 'Kaffarat' : 'الكفارات', icon: 'fa-hand-holding-heart' },
-                    { id: 'fitr-udhiyah', label: language === 'en' ? 'Fitr & Udhiyah' : 'فطر وأضحية', icon: 'fa-wheat-awn' }
+                    { id: 'zakat', label: language === 'en' ? 'Zakat' : 'الزكاة' },
+                    { id: 'mawarith', label: language === 'en' ? 'Mawarith' : 'المواريث' },
+                    { id: 'kaffarat', label: language === 'en' ? 'Kaffarat' : 'الكفارات' },
+                    { id: 'fitr-udhiyah', label: language === 'en' ? 'Fitr & Udhiyah' : 'فطر وأضحية' }
                 ].map(tab => (
                     <button 
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
-                        className={`flex-1 py-2 sm:py-3 px-1 sm:px-2 rounded-t-xl font-bold transition-all duration-300 flex flex-col items-center gap-1 cursor-pointer
+                        className={`flex-1 py-1.5 sm:py-2 px-1 sm:px-2 rounded-t-xl font-bold transition-all duration-300 flex items-center justify-center cursor-pointer
                             ${activeTab === tab.id 
                                 ? (isDefaultTheme 
-                                    ? 'bg-black text-white scale-105 origin-bottom shadow-lg' 
-                                    : (isBlackTheme ? 'bg-white text-black scale-105 origin-bottom shadow-lg' : 'bg-primary text-white shadow-[0_-4px_10px_rgba(16,185,129,0.2)] scale-105 origin-bottom')
+                                    ? 'bg-black text-white scale-105 origin-bottom shadow-md' 
+                                    : (isBlackTheme ? 'bg-white text-black scale-105 origin-bottom shadow-md' : 'bg-primary text-white shadow-[0_-4px_10px_rgba(16,185,129,0.2)] scale-105 origin-bottom')
                                   ) 
                                 : (isDefaultTheme 
                                     ? 'bg-white text-black shadow-sm opacity-80 hover:opacity-100' 
@@ -70,8 +70,7 @@ const Calculators: React.FC<CalculatorsProps> = ({ onBack , onNavigate }) => {
                             borderStyle: 'solid',
                         }}
                     >
-                        <i className={`fa-solid ${tab.icon} ${activeTab === tab.id ? 'text-base sm:text-lg' : 'text-sm sm:text-base'}`}></i>
-                        <span className="text-[11px] sm:text-sm whitespace-nowrap">{tab.label}</span>
+                        <span className="text-xs sm:text-sm whitespace-nowrap">{tab.label}</span>
                     </button>
                 ))}
             </div>

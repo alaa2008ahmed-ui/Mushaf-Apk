@@ -258,31 +258,13 @@ const QuranRadiosPage: React.FC<QuranRadiosPageProps> = ({ onBack, onNavigate, n
             {/* Header */}
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-between w-full">
-                        <div className="w-10 flex items-center">
-                            <ThemePageLock />
-                        </div>
-
-                        <div className="flex-1 text-center px-2">
-                            <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi">
-                                إذاعات القرآن الكريم
-                            </h1>
-                            <p className="app-top-bar__subtitle text-xs sm:text-sm">
-                                بث مباشر عالي النقاء لكبرى الإذاعات الرسمية وكبار القراء
-                            </p>
-                        </div>
-
-                        <div className="w-10 flex items-center justify-end">
-                            <button
-                                onClick={() => setShowSleepModal(true)}
-                                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-                                    sleepTimerMinutes ? 'bg-amber-500 text-white shadow-md' : 'bg-black/5 dark:bg-white/10 hover:bg-black/10'
-                                }`}
-                                title="مؤقت النوم"
-                            >
-                                <i className="fa-solid fa-moon text-sm"></i>
-                            </button>
-                        </div>
+                    <div className="text-center w-full">
+                        <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi">
+                            إذاعات القرآن الكريم
+                        </h1>
+                        <p className="app-top-bar__subtitle text-xs sm:text-sm">
+                            بث مباشر عالي النقاء لكبرى الإذاعات الرسمية وكبار القراء
+                        </p>
                     </div>
                 </div>
             </header>
@@ -338,7 +320,17 @@ const QuranRadiosPage: React.FC<QuranRadiosPageProps> = ({ onBack, onNavigate, n
                                 </div>
 
                                 {/* Controls */}
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2.5">
+                                    <button
+                                        onClick={() => setShowSleepModal(true)}
+                                        className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all active:scale-90 ${
+                                            sleepTimerMinutes ? 'bg-amber-500 text-white border-amber-500 shadow-md' : 'border-black/10 dark:border-white/10 opacity-70 hover:opacity-100'
+                                        }`}
+                                        title={sleepTimerMinutes ? `مؤقت النوم نشط (${formatTime(sleepTimerSecondsLeft || 0)})` : 'ضبط مؤقت النوم'}
+                                    >
+                                        <i className="fa-solid fa-moon text-sm"></i>
+                                    </button>
+
                                     <button
                                         onClick={() => toggleFavorite(currentRadio.id)}
                                         className="w-10 h-10 rounded-full border flex items-center justify-center transition-transform active:scale-90"

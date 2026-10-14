@@ -5,6 +5,7 @@ import ThemePageLock from '../components/ThemePageLock';
 import { useTheme } from '../context/ThemeContext';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'framer-motion';
+import { shareAsImage } from '../utils/shareAsImage';
 
 interface PropheticSeerahPageProps {
     onBack: () => void;
@@ -19,6 +20,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [selectedMilestone, setSelectedMilestone] = useState<SeerahMilestone | null>(null);
     const [toastMessage, setToastMessage] = useState<string>('');
+    const [isSharing, setIsSharing] = useState<boolean>(false);
 
     const isBlackTheme = theme.bgColor === '#000000';
     const isDefaultTheme = themeKey === 'default';
@@ -51,7 +53,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
     };
 
     const handleCopyMilestone = (m: SeerahMilestone) => {
-        const text = `📜 *${m.title}* (${m.yearHijri ? `${m.yearHijri} / ` : ''}${m.yearGregorian})\n📍 *المكان:* ${m.location}\n👤 *عمر النبي ﷺ:* ${m.ageOfProphet}\n\n📖 *الخلاصة:* ${m.summary}\n\n💡 *العبر والدروس:*\n${m.lessons.map(l => `• ${l}`).join('\n')}\n\nمشارك من تطبيق مصحف أحمد وليلى`;
+        const text = `📜 *${m.title}* (${m.yearHijri ? `${m.yearHijri} / ` : ''}${m.yearGregorian})\n📍 *المكان:* ${m.location}\n👤 *عمر النبي ﷺ:* ${m.ageOfProphet}\n\n📖 *الخلاصة:* ${m.summary}\n\n💡 *العِبر والدروس:*\n${m.lessons.map(l => `• ${l}`).join('\n')}\n\nمشارك من تطبيق مصحف أحمد وليلى`;
         navigator.clipboard.writeText(text).then(() => {
             showToast('تم نسخ محطة السيرة بنجاح');
         }).catch(() => {
@@ -59,7 +61,36 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
         });
     };
 
-    const handleShareMilestone = (m: SeerahMilestone) => {
+    // Share as rich image card (invoking native apps menu / Web Share)
+    const handleShareCardImage = async (m: SeerahMilestone, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        if (isSharing) return;
+        setIsSharing(true);
+        try {
+            const cardTitle = m.title;
+            const topLessons = m.lessons.slice(0, 3).map((l, i) => `${i + 1}. ${l}`).join('\n');
+            const cardBody = `${m.summary}\n\n💡 من أبرز الدروس والعِبر المستفادة:\n${topLessons}`;
+            const cardCategory = `${m.eraLabel} • ${m.location}`;
+            const cardSource = `${m.yearHijri ? `${m.yearHijri} • ` : ''}${m.yearGregorian} | عمر النبي ﷺ: ${m.ageOfProphet}`;
+
+            await shareAsImage({
+                title: cardTitle,
+                text: cardBody,
+                category: cardCategory,
+                source: cardSource,
+                theme,
+                setToastMessage
+            });
+        } catch (error) {
+            console.error('Error sharing seerah card as image:', error);
+            showToast('تعذر مشاركة البطاقة كصورة');
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
+    // Text share fallback
+    const handleShareText = (m: SeerahMilestone) => {
         const text = `📜 *${m.title}* (${m.yearHijri ? `${m.yearHijri} / ` : ''}${m.yearGregorian})\n📍 *المكان:* ${m.location}\n👤 *عمر النبي ﷺ:* ${m.ageOfProphet}\n\n📖 *الخلاصة:* ${m.summary}\n\n💡 *العبر والدروس:*\n${m.lessons.map(l => `• ${l}`).join('\n')}\n\nمشارك من تطبيق مصحف أحمد وليلى`;
         if (navigator.share) {
             navigator.share({
@@ -78,7 +109,9 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
             searchQuery.trim() === '' ||
             m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             m.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            m.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
             m.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (m.keyFigures && m.keyFigures.some(k => k.toLowerCase().includes(searchQuery.toLowerCase()))) ||
             m.lessons.some(l => l.toLowerCase().includes(searchQuery.toLowerCase()));
         return matchesEra && matchesSearch;
     });
@@ -162,7 +195,8 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
 
                                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
+                                            <i className={selectedMilestone.icon}></i>
                                             {selectedMilestone.badge}
                                         </span>
                                         <span className="text-xs opacity-75 font-bold">
@@ -192,16 +226,40 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                 </div>
                             </div>
 
+                            {/* Key Figures Tags if Available */}
+                            {selectedMilestone.keyFigures && selectedMilestone.keyFigures.length > 0 && (
+                                <div 
+                                    className="p-4 rounded-3xl themed-card border shadow-xs space-y-2"
+                                    style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
+                                >
+                                    <h4 className="text-xs font-bold font-kufi flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                                        <i className="fa-solid fa-users text-xs"></i>
+                                        شخصيات وأعلام بارزة في هذه المحطة:
+                                    </h4>
+                                    <div className="flex flex-wrap gap-1.5 pt-1">
+                                        {selectedMilestone.keyFigures.map((person, idx) => (
+                                            <span 
+                                                key={idx} 
+                                                className="text-[11px] font-bold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 flex items-center gap-1.5"
+                                            >
+                                                <i className="fa-solid fa-user text-[9px] opacity-60"></i>
+                                                {person}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Full Narrative Details */}
                             <div 
-                                className="p-5 rounded-3xl themed-card border shadow-sm space-y-3"
+                                className="p-5 sm:p-6 rounded-3xl themed-card border shadow-sm space-y-3"
                                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                             >
                                 <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                                     <i className="fa-solid fa-book-open"></i>
-                                    أحداث المحطة وتفاصيلها
+                                    أحداث المحطة وتفاصيلها الموثقة
                                 </h3>
-                                <p className="text-sm sm:text-base leading-relaxed opacity-90 font-medium">
+                                <p className="text-sm sm:text-base leading-relaxed opacity-90 font-medium whitespace-pre-line">
                                     {selectedMilestone.details}
                                 </p>
                             </div>
@@ -214,7 +272,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     <i className="fa-solid fa-lightbulb"></i>
                                     العِبر والدروس الإيمانية المستفادة
                                 </h3>
-                                <div className="space-y-2">
+                                <div className="space-y-2.5">
                                     {selectedMilestone.lessons.map((lesson, idx) => (
                                         <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm leading-relaxed">
                                             <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 font-bold text-[11px] mt-0.5">
@@ -229,9 +287,9 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                             {/* Proof Quote */}
                             {selectedMilestone.proof && (
                                 <div className="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs">
-                                    <span className="font-bold opacity-75 block mb-1 text-blue-500 flex items-center gap-1.5">
+                                    <span className="font-bold opacity-75 block mb-1.5 text-blue-500 flex items-center gap-1.5">
                                         <i className="fa-solid fa-quote-right"></i>
-                                        شاهد من القرآن الكريم أو السنة:
+                                        شاهد من القرآن الكريم أو السنة الشريفة:
                                     </span>
                                     <p className="italic opacity-90 leading-relaxed font-semibold">
                                         {selectedMilestone.proof}
@@ -239,24 +297,44 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                 </div>
                             )}
 
-                            {/* Quick Actions & Navigation Between Milestones */}
-                            <div className="flex items-center justify-between gap-2 pt-2">
+                            {/* Action Buttons: Share As Image Card & Text */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
                                 <button
-                                    onClick={() => handleShareMilestone(selectedMilestone)}
-                                    className="px-4 py-2.5 rounded-2xl border text-xs font-bold flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition-all shadow-xs"
+                                    onClick={() => handleShareCardImage(selectedMilestone)}
+                                    disabled={isSharing}
+                                    className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 hover:opacity-95 active:scale-95 transition-all shadow-md"
+                                >
+                                    {isSharing ? (
+                                        <>
+                                            <i className="fa-solid fa-circle-notch fa-spin text-xs"></i>
+                                            جاري تجهيز الصورة...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="fa-solid fa-image text-xs"></i>
+                                            مشاركة كبطاقة صورة
+                                        </>
+                                    )}
+                                </button>
+
+                                <button
+                                    onClick={() => handleShareText(selectedMilestone)}
+                                    className="py-3 px-4 rounded-2xl border text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all shadow-xs"
                                     style={{ borderColor: cardBorderColor }}
+                                    title="مشاركة عبر البرامج كنص"
                                 >
                                     <i className="fa-solid fa-share-nodes text-xs"></i>
-                                    مشاركة كبطاقة ملهمة
+                                    مشاركة نصية
                                 </button>
 
                                 <button
                                     onClick={() => handleCopyMilestone(selectedMilestone)}
-                                    className="px-4 py-2.5 rounded-2xl border text-xs font-bold flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition-all shadow-xs"
+                                    className="py-3 px-3.5 rounded-2xl border text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all shadow-xs"
                                     style={{ borderColor: cardBorderColor }}
+                                    title="نسخ النص للحافظة"
                                 >
                                     <i className="fa-regular fa-copy text-xs"></i>
-                                    نسخ النص
+                                    نسخ
                                 </button>
                             </div>
 
@@ -309,7 +387,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                             type="text"
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            placeholder="ابحث في أحداث السيرة، المعارك، الأماكن والعبر..."
+                                            placeholder="ابحث في أحداث السيرة، المعارك، الشخصيات، الأماكن والعِبر..."
                                             className="w-full pl-8 pr-9 py-2 text-xs sm:text-sm rounded-xl border bg-black/5 dark:bg-white/5 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                             style={{ borderColor: 'var(--card-border)', color: theme.textColor }}
                                         />
@@ -329,7 +407,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
                                     {[
                                         { id: 'all', label: 'كامل السيرة (الكل)', icon: 'fa-timeline' },
-                                        { id: 'pre-prophethood', label: 'ما قبل البعثة', icon: 'fa-baby' },
+                                        { id: 'pre-prophethood', label: 'ما قبل البعثة وحال العرب', icon: 'fa-earth-americas' },
                                         { id: 'makki', label: 'العهد المكي', icon: 'fa-book-quran' },
                                         { id: 'early-madani', label: 'العهد المدني الأول', icon: 'fa-mosque' },
                                         { id: 'late-madani', label: 'الفتوحات وحجة الوداع', icon: 'fa-kaaba' },
@@ -356,7 +434,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
 
                             {/* Timeline Items */}
                             <div className="relative border-r-2 border-emerald-500/30 pr-4 sm:pr-6 space-y-4 mr-2 sm:mr-3">
-                                {filteredMilestones.map((m, idx) => (
+                                {filteredMilestones.map((m) => (
                                     <div 
                                         key={m.id}
                                         onClick={() => setSelectedMilestone(m)}
@@ -374,7 +452,8 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                         >
                                             <div className="flex flex-wrap items-center justify-between gap-1.5">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                                        <i className={m.icon}></i>
                                                         {m.badge}
                                                     </span>
                                                     <span className="text-[11px] font-mono font-bold opacity-75">
@@ -382,10 +461,19 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                                     </span>
                                                 </div>
 
-                                                <span className="text-[11px] opacity-60 flex items-center gap-1">
-                                                    <i className="fa-solid fa-location-dot text-[10px] text-emerald-500"></i>
-                                                    {m.location}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={(e) => handleShareCardImage(m, e)}
+                                                        title="مشاركة كبطاقة صورة"
+                                                        className="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center text-xs transition-colors"
+                                                    >
+                                                        <i className="fa-solid fa-image"></i>
+                                                    </button>
+                                                    <span className="text-[11px] opacity-60 flex items-center gap-1">
+                                                        <i className="fa-solid fa-location-dot text-[10px] text-emerald-500"></i>
+                                                        {m.location}
+                                                    </span>
+                                                </div>
                                             </div>
 
                                             <h3 className="font-bold text-base font-kufi group-hover:text-emerald-500 transition-colors">
@@ -397,7 +485,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                             </p>
 
                                             <div className="flex items-center justify-between text-xs pt-1 border-t opacity-75" style={{ borderColor: 'var(--card-border)' }}>
-                                                <span>عمر النبي: {m.ageOfProphet}</span>
+                                                <span>عمر النبي ﷺ: {m.ageOfProphet}</span>
                                                 <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                                                     عرض العِبر والتفاصيل
                                                     <i className="fa-solid fa-arrow-left text-[10px]"></i>

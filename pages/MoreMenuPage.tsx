@@ -32,7 +32,7 @@ const ALL_MENU_ITEMS = [
     { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-14", colorIndex: 0 },
     { id: 'islamic-sites', label: "🌐 مواقع إسلامية", className: "col-span-2 h-14", colorIndex: 0 },
     { id: 'quran-radios', label: "📻 إذاعات القرآن المباشرة", className: "col-span-2 h-14", colorIndex: 0 },
-    { id: 'fiqh-worship', label: "🕌 فقه العبادات المصور", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'fiqh-worship', label: "🕌 فقه العبادات", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'prophetic-seerah', label: "📜 السيرة والخط الزمني", className: "col-span-1 h-14", colorIndex: 0 },
 ];
 

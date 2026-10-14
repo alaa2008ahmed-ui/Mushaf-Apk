@@ -76,7 +76,7 @@ function PrayerTimes({ onBack, onNavigate }) {
     const [tempPreReminderEnabled, setTempPreReminderEnabled] = useState(false);
     const [tempPreReminderMinutes, setTempPreReminderMinutes] = useState(15);
     const [tempAutoSilentEnabled, setTempAutoSilentEnabled] = useState(false);
-    const [tempAutoSilentDuration, setTempAutoSilentDuration] = useState(30);
+    const [tempAutoSilentDuration, setTempAutoSilentDuration] = useState(15);
     const [searchInput, setSearchInput] = useState("");
     const searchIconRef = useRef(null);
     const [toastMessage, setToastMessage] = useState('');
@@ -226,10 +226,10 @@ function PrayerTimes({ onBack, onNavigate }) {
         const prayerSilent = config.prayerAutoSilent?.[key];
         if (prayerSilent) {
             setTempAutoSilentEnabled(prayerSilent.enabled);
-            setTempAutoSilentDuration(prayerSilent.duration || 30);
+            setTempAutoSilentDuration(prayerSilent.duration || 15);
         } else {
             setTempAutoSilentEnabled(!!config.autoSilent);
-            setTempAutoSilentDuration(config.autoSilentDuration || 30);
+            setTempAutoSilentDuration(config.autoSilentDuration || 15);
         }
 
         setIsModalOpen(true);
@@ -554,7 +554,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                 tempPreReminderMinutes={tempPreReminderMinutes}
                 setTempPreReminderMinutes={setTempPreReminderMinutes}
                 isGlobalAutoSilentActive={!!config.autoSilent}
-                globalAutoSilentDuration={config.autoSilentDuration || 30}
+                globalAutoSilentDuration={config.autoSilentDuration || 15}
                 tempAutoSilentEnabled={tempAutoSilentEnabled}
                 setTempAutoSilentEnabled={setTempAutoSilentEnabled}
                 tempAutoSilentDuration={tempAutoSilentDuration}

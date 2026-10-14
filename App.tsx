@@ -35,7 +35,6 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   // Track app launch count for "جديد" badge (1 count per launch, max 10 times)
-  recordAppLaunch();
   useEffect(() => {
     recordAppLaunch();
   }, []);
@@ -237,22 +236,10 @@ function App() {
         }
       });
 
-      let lastForegroundPlayTime = 0;
-      let lastForegroundPlayFile = '';
-
       receivedListener = LocalNotifications.addListener('localNotificationReceived', (notification) => {
-        const soundFile = notification.extra?.soundFile || 
-          (notification.sound ? (notification.sound.endsWith('.mp3') ? notification.sound : `${notification.sound}.mp3`) : null);
-
-        if (soundFile) {
-          const now = Date.now();
-          if (now - lastForegroundPlayTime < 5000 && lastForegroundPlayFile === soundFile) {
-            return; // Prevent duplicate playback within 5 seconds
-          }
-          lastForegroundPlayTime = now;
-          lastForegroundPlayFile = soundFile;
-          playNotificationSound(`/assets/audio/${soundFile}`);
-        }
+        // The Android operating system already plays the tone natively through the NotificationChannel.
+        // Never play HTML5 audio here, which was causing the tone to play twice at the same time.
+        console.log('[Notification] Received notification natively:', notification.id, notification.title);
       });
     }
 
