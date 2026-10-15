@@ -291,10 +291,10 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             setIsPrayerSilentActive(foundActive);
             setActiveSilentPrayerName(activeName);
             if (foundActive) {
-                // If this is the exact starting minute of Iqama, delay hardware muting slightly to let the chime sound finish ringing
+                // If this is the starting minute of Iqama, delay hardware muting by 20 seconds to let the Iqama chime sound finish ringing completely
                 setTimeout(() => {
                     setDeviceSilentNow(true, activeName);
-                }, 5000);
+                }, 20000);
             } else {
                 setDeviceSilentNow(false);
             }
@@ -888,15 +888,18 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
 
                 if (isSilentEnabled && key !== 'Sunrise') {
                     const iqamaOffset = config.iqamaOffsets?.[key] !== undefined ? config.iqamaOffsets[key] : (config.iqamaReminder?.minutes ?? 15);
-                    const silentStart = new Date(prayerDate.getTime() + iqamaOffset * 60000);
+                    // Crucial fix: Delay auto-silent activation by 20 seconds after Iqama time
+                    // so the user hears the Iqama alert chime sound loud and clear before the phone enters silent mode.
+                    const silentStartDelayMs = isIqamaReminderEnabled ? 20000 : 5000;
+                    const silentStart = new Date(prayerDate.getTime() + iqamaOffset * 60000 + silentStartDelayMs);
                     const silentEnd = new Date(silentStart.getTime() + silentDuration * 60000);
 
                     // A. Visible notification at Silent Mode Start
                     if (silentStart > new Date()) {
                         const silentStartNotifId = 7000 + (day * 10) + prayerKeys.indexOf(key) + 1;
-                        // Avoid playing double chime sound if Iqama reminder is already alerting at the exact same minute
-                        const isIqamaAlertingAtSameTime = isIqamaReminderEnabled && Math.abs(silentStart.getTime() - (prayerDate.getTime() + iqamaMinutes * 60000)) < 60000;
-                        const shouldPlaySilentChime = !isIqamaAlertingAtSameTime;
+                        // Avoid playing double chime sound if Iqama reminder already alerted 20s prior
+                        const isIqamaAlertingBefore = isIqamaReminderEnabled && Math.abs(silentStart.getTime() - (prayerDate.getTime() + iqamaMinutes * 60000)) < 60000;
+                        const shouldPlaySilentChime = !isIqamaAlertingBefore;
 
                         notificationsToSchedule.push({
                             id: silentStartNotifId,
@@ -925,7 +928,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                         });
                     }
 
-                    // C. Device hardware ringer muting window
+                    // C. Device hardware ringer muting window (scheduled 20s after Iqama)
                     if (silentStart.getTime() + silentDuration * 60000 > Date.now()) {
                         silentWindowsToSchedule.push({
                             id: 7000 + (day * 10) + prayerKeys.indexOf(key) + 1,
@@ -1391,7 +1394,9 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
 
                     if (isSilentEnabled && key !== 'Sunrise') {
                         const iqamaOffset = config.iqamaOffsets?.[key] !== undefined ? config.iqamaOffsets[key] : (config.iqamaReminder?.minutes ?? 15);
-                        const silentStartObj = new Date(prayerTimeObj.getTime() + iqamaOffset * 60000);
+                        // Delay auto-silent start by 20 seconds so Iqama reminder chime finishes playing
+                        const silentDelayMs = isIqamaEnabled ? 20000 : 5000;
+                        const silentStartObj = new Date(prayerTimeObj.getTime() + iqamaOffset * 60000 + silentDelayMs);
                         const silentDiffMs = now.getTime() - silentStartObj.getTime();
                         const silentAlertKey = `${dayStr}_silent_${key}`;
                         if (silentDiffMs >= 0 && silentDiffMs <= 45000 && !triggeredAlertsRef.current.has(silentAlertKey)) {

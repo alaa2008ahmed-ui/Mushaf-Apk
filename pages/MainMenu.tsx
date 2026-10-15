@@ -26,6 +26,7 @@ import { Share as CapacitorShare } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import moment from 'moment-hijri';
 import TopLeadersCard from '../components/MainMenu/TopLeadersCard';
+import HabitTrackerCard from '../components/MainMenu/HabitTrackerCard';
 
 const ISLAMIC_EVENTS = [
     { day: 1, month: 1, name: "رأس السنة الهجرية" },
@@ -745,6 +746,12 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                           theme={theme}
                           onNavigate={onNavigate}
                           setToastMessage={setToastMessage}
+                      />
+
+                      {/* بطاقة مربي العبادات (إنجاز اليوم وملخص الأيام السابقة بالنسبة المئوية) */}
+                      <HabitTrackerCard
+                          theme={theme}
+                          onNavigate={onNavigate}
                       />
 
                       {/* On This Day Card */}

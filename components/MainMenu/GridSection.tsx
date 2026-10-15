@@ -152,7 +152,7 @@ const GridSection: React.FC<GridSectionProps> = ({
         }
     };
 
-    const isBlackTheme = theme.bgColor === '#000000';
+    const isBlackTheme = theme.bgColor === '#000000' || themeKey === 'deep_black' || theme.name === 'اسود' || theme.name === 'black';
 
     // Dynamic colors for community and ahl-al-quran round icons based on current theme
     const communityBg = isBlackTheme 
@@ -202,13 +202,13 @@ const GridSection: React.FC<GridSectionProps> = ({
                 const isBottomBar = item.id === 'prophetic-seerah' || item.id === 'more';
                 const isVisible = isBottomBar ? true : visibleItems.includes(item.id);
                 const isGreen = GREEN_ITEMS.includes(item.id);
-                const buttonColor = themeKey === 'default'
-                    ? (isGreen ? '#059669' : '#8B5CF6')
-                    : (isBlackTheme 
-                        ? (isGreen ? (theme.palette[0] || '#1E293B') : (theme.palette[1] || '#374151'))
+                const buttonColor = isBlackTheme
+                    ? '#000000'
+                    : (themeKey === 'default'
+                        ? (isGreen ? '#059669' : '#8B5CF6')
                         : (isGreen ? theme.palette[0] : (theme.palette[1] || theme.palette[0] || '#8B5CF6')));
-                const textColor = isBlackTheme ? '#FFFFFF' : (theme.btnText || '#FFFFFF');
-                const buttonBorder = isBlackTheme ? '1px solid rgba(255, 255, 255, 0.2)' : theme.btnBorder;
+                const textColor = '#FFFFFF';
+                const buttonBorder = isBlackTheme ? '1px solid rgba(255, 255, 255, 0.25)' : theme.btnBorder;
 
                 return (
                     <motion.div
@@ -336,8 +336,8 @@ const GridSection: React.FC<GridSectionProps> = ({
                                         }}
                                         className="rounded-full w-[26px] h-[26px] flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95 shadow-md border border-white/30 select-none"
                                         style={{ 
-                                            backgroundColor: isBlackTheme ? '#FFFFFF' : (theme.isGlass ? 'rgba(255, 255, 255, 0.25)' : (theme.palette[1] || '#9333ea')),
-                                            color: isBlackTheme ? '#000000' : '#ffffff',
+                                            backgroundColor: isBlackTheme ? '#1F2937' : (theme.isGlass ? 'rgba(255, 255, 255, 0.25)' : (theme.palette[1] || '#9333ea')),
+                                            color: isBlackTheme ? '#FFFFFF' : '#ffffff',
                                             backdropFilter: theme.isGlass ? 'blur(4px)' : 'none',
                                             WebkitBackdropFilter: theme.isGlass ? 'blur(4px)' : 'none'
                                         }}
@@ -392,8 +392,8 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 label="السيرة والخط الزمني" 
                                 onClick={() => !isEditMode && onNavigate('prophetic-seerah')} 
                                 className="w-full h-full shadow-lg"
-                                color={themeKey === 'default' ? '#059669' : (isBlackTheme ? (theme.palette[0] || '#1E293B') : (theme.palette[0] || '#059669'))} 
-                                border={isBlackTheme ? '1px solid rgba(255, 255, 255, 0.2)' : theme.btnBorder} 
+                                color={isBlackTheme ? '#000000' : (themeKey === 'default' ? '#059669' : (theme.palette[0] || '#059669'))} 
+                                border={isBlackTheme ? '1px solid rgba(255, 255, 255, 0.25)' : theme.btnBorder} 
                                 isEditMode={false}
                                 isGlass={theme.isGlass}
                                 btnText={isBlackTheme ? '#FFFFFF' : (theme.btnText || '#FFFFFF')}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { 
     PROPHETIC_SEERAH_DATA, 
     PROPHETIC_STANCES_DATA, 
@@ -10,6 +10,7 @@ import ThemePageLock from '../components/ThemePageLock';
 import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { shareAsImage } from '../utils/shareAsImage';
+import { registerBackInterceptor } from '../hooks/useBackButton';
 
 interface PropheticSeerahPageProps {
     onBack?: () => void;
@@ -38,8 +39,13 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
             : (theme.palette?.[0] || theme.accent || '#000000'));
     const primaryColor = isDeepBlack ? '#FFFFFF' : (theme.palette?.[0] || '#059669');
 
+    // Scroll container refs
+    const mainScrollRef = useRef<HTMLElement | null>(null);
+    const zoomScrollRef = useRef<HTMLDivElement | null>(null);
+
     // Tabs: 'timeline' (43 milestones), 'stances' (Immortal Stances), 'lineage' (Noble Lineage)
     const [activeTab, setActiveTab] = useState<'timeline' | 'stances' | 'lineage'>('timeline');
+    const [tabHistory, setTabHistory] = useState<Array<'timeline' | 'stances' | 'lineage'>>(['timeline']);
 
     // Sub-tab for Lineage View
     const [lineageTab, setLineageTab] = useState<'tree' | 'mother' | 'names' | 'nurses' | 'characteristics' | 'virtues'>('tree');
@@ -70,10 +76,57 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
         setTimeout(() => setToastMessage(''), 2800);
     };
 
-    // Scroll to top on tab or selection change
+    // Scroll to top helper
+    const scrollToTop = useCallback(() => {
+        if (mainScrollRef.current) {
+            mainScrollRef.current.scrollTop = 0;
+        }
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    }, []);
+
+    // Ensure the page always opens from the very top on any card/tab selection
+    useLayoutEffect(() => {
+        scrollToTop();
+    }, [selectedMilestone?.id, selectedStance?.id, activeTab, lineageTab, scrollToTop]);
+
     useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [activeTab, selectedMilestone, selectedStance, lineageTab]);
+        scrollToTop();
+        const timer = setTimeout(scrollToTop, 30);
+        return () => clearTimeout(timer);
+    }, [selectedMilestone?.id, selectedStance?.id, activeTab, lineageTab, scrollToTop]);
+
+    useLayoutEffect(() => {
+        if (zoomedCard && zoomScrollRef.current) {
+            zoomScrollRef.current.scrollTop = 0;
+        }
+    }, [zoomedCard]);
+
+    const handleSelectMilestone = (m: SeerahMilestone) => {
+        setSelectedMilestone(m);
+        scrollToTop();
+    };
+
+    const handleSelectStance = (s: PropheticStance) => {
+        setSelectedStance(s);
+        scrollToTop();
+    };
+
+    const handleOpenZoomCard = (card: ZoomedCardData) => {
+        setZoomedCard(card);
+        setTimeout(() => {
+            if (zoomScrollRef.current) {
+                zoomScrollRef.current.scrollTop = 0;
+            }
+        }, 0);
+    };
+
+    const switchTab = (tab: 'timeline' | 'stances' | 'lineage') => {
+        if (tab === activeTab) return;
+        setActiveTab(tab);
+        setSearchQuery('');
+        setTabHistory(prev => [...prev.filter(t => t !== tab), tab]);
+        scrollToTop();
+    };
 
     // Copy Milestone with ALL newly added data
     const handleCopyMilestone = (m: SeerahMilestone) => {
@@ -329,21 +382,82 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [zoomedCard]);
 
-    const handleBackClick = () => {
+    const handleBackClick = useCallback(() => {
         if (zoomedCard) {
             setZoomedCard(null);
             return;
         }
         if (selectedMilestone) {
             setSelectedMilestone(null);
-        } else if (selectedStance) {
+            scrollToTop();
+            return;
+        }
+        if (selectedStance) {
             setSelectedStance(null);
-        } else if (onBack) {
+            scrollToTop();
+            return;
+        }
+        if (tabHistory.length > 1) {
+            const nextHistory = [...tabHistory];
+            nextHistory.pop();
+            const prevTab = nextHistory[nextHistory.length - 1] || 'timeline';
+            setTabHistory(nextHistory);
+            setActiveTab(prevTab);
+            scrollToTop();
+            return;
+        }
+        if (activeTab !== 'timeline') {
+            setActiveTab('timeline');
+            setTabHistory(['timeline']);
+            scrollToTop();
+            return;
+        }
+        if (onBack) {
             onBack();
         } else {
             onNavigate('home');
         }
-    };
+    }, [zoomedCard, selectedMilestone, selectedStance, tabHistory, activeTab, onBack, onNavigate, scrollToTop]);
+
+    // Handle Phone / Hardware / Gesture Back Button
+    useEffect(() => {
+        const interceptor = () => {
+            if (zoomedCard) {
+                setZoomedCard(null);
+                return true;
+            }
+            if (selectedMilestone) {
+                setSelectedMilestone(null);
+                scrollToTop();
+                return true;
+            }
+            if (selectedStance) {
+                setSelectedStance(null);
+                scrollToTop();
+                return true;
+            }
+            if (tabHistory.length > 1) {
+                const nextHistory = [...tabHistory];
+                nextHistory.pop();
+                const prevTab = nextHistory[nextHistory.length - 1] || 'timeline';
+                setTabHistory(nextHistory);
+                setActiveTab(prevTab);
+                scrollToTop();
+                return true;
+            }
+            if (activeTab !== 'timeline') {
+                setActiveTab('timeline');
+                setTabHistory(['timeline']);
+                scrollToTop();
+                return true;
+            }
+            // At root of PropheticSeerahPage -> let global back button exit to previous page / home
+            return false;
+        };
+
+        const unregister = registerBackInterceptor(interceptor);
+        return unregister;
+    }, [zoomedCard, selectedMilestone, selectedStance, tabHistory, activeTab, scrollToTop]);
 
     return (
         <div 
@@ -428,10 +542,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                         style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                     >
                         <button
-                            onClick={() => {
-                                setActiveTab('timeline');
-                                setSearchQuery('');
-                            }}
+                            onClick={() => switchTab('timeline')}
                             className={`flex-1 py-2 px-2.5 rounded-xl text-xs sm:text-sm font-bold font-kufi transition-all flex items-center justify-center text-center ${
                                 activeTab === 'timeline'
                                     ? 'bg-emerald-600 text-white shadow-sm'
@@ -447,10 +558,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                         </button>
 
                         <button
-                            onClick={() => {
-                                setActiveTab('stances');
-                                setSearchQuery('');
-                            }}
+                            onClick={() => switchTab('stances')}
                             className={`flex-1 py-2 px-2.5 rounded-xl text-xs sm:text-sm font-bold font-kufi transition-all flex items-center justify-center text-center ${
                                 activeTab === 'stances'
                                     ? 'bg-emerald-600 text-white shadow-sm'
@@ -466,10 +574,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                         </button>
 
                         <button
-                            onClick={() => {
-                                setActiveTab('lineage');
-                                setSearchQuery('');
-                            }}
+                            onClick={() => switchTab('lineage')}
                             className={`flex-1 py-2 px-2.5 rounded-xl text-xs sm:text-sm font-bold font-kufi transition-all flex items-center justify-center text-center ${
                                 activeTab === 'lineage'
                                     ? 'bg-emerald-600 text-white shadow-sm'
@@ -488,7 +593,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
             )}
 
             {/* Main Content Body */}
-            <main className="flex-1 overflow-y-auto hide-scrollbar px-4 pt-2 pb-6">
+            <main ref={mainScrollRef} className="flex-1 overflow-y-auto hide-scrollbar px-4 pt-2 pb-6">
                 <AnimatePresence mode="wait">
                     {/* 1. Milestone Detail View */}
                     {selectedMilestone ? (
@@ -845,7 +950,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                             <div className="grid grid-cols-2 gap-3 pt-3">
                                 {prevMilestone ? (
                                     <button
-                                        onClick={() => setSelectedMilestone(prevMilestone)}
+                                        onClick={() => handleSelectMilestone(prevMilestone)}
                                         className="p-3 rounded-2xl border text-right transition-all active:scale-95 shadow-sm hover:border-emerald-500"
                                         style={{ borderColor: cardBorderColor }}
                                     >
@@ -858,7 +963,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
 
                                 {nextMilestone ? (
                                     <button
-                                        onClick={() => setSelectedMilestone(nextMilestone)}
+                                        onClick={() => handleSelectMilestone(nextMilestone)}
                                         className="p-3 rounded-2xl border text-right transition-all active:scale-95 shadow-sm hover:border-emerald-500"
                                         style={{ borderColor: cardBorderColor }}
                                     >
@@ -1631,7 +1736,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                 {filteredStances.map((stance) => (
                                     <div
                                         key={stance.id}
-                                        onClick={() => setSelectedStance(stance)}
+                                        onClick={() => handleSelectStance(stance)}
                                         className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl themed-card border shadow-sm hover:shadow-md transition-all space-y-2.5 cursor-pointer relative overflow-hidden group active:scale-99"
                                         style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                                     >
@@ -1785,7 +1890,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                 {filteredMilestones.map((milestone, idx) => (
                                     <div
                                         key={milestone.id}
-                                        onClick={() => setSelectedMilestone(milestone)}
+                                        onClick={() => handleSelectMilestone(milestone)}
                                         className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl themed-card border shadow-sm hover:shadow-md transition-all space-y-2.5 cursor-pointer relative overflow-hidden group active:scale-99 mr-2"
                                         style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                                     >
@@ -1961,7 +2066,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                             </div>
 
                             {/* Content Container */}
-                            <div className="overflow-y-auto hide-scrollbar flex-1 py-4 text-right">
+                            <div ref={zoomScrollRef} className="overflow-y-auto hide-scrollbar flex-1 py-4 text-right">
                                 {Array.isArray(zoomedCard.content) ? (
                                     <div className="space-y-3">
                                         {zoomedCard.content.map((item, idx) => (

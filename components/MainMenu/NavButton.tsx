@@ -39,6 +39,8 @@ const NavButton: React.FC<NavButtonProps> = ({
 }) => {
     const rankColor = rankBadge !== undefined && rankBadge !== null ? getAhlAlQuranRankColor(rankBadge) : null;
 
+    const isBlackButton = color === '#000000' || color?.toLowerCase() === '#000000' || color === '#111111' || color === '#0a0a0a' || color === '#121212';
+
     return (
         <div className={`h-full ${className} relative group`} data-id={dataId}>
             <motion.button 
@@ -51,12 +53,12 @@ const NavButton: React.FC<NavButtonProps> = ({
                     backgroundColor: isGlass ? (color ? `${color}55` : 'rgba(255, 255, 255, 0.25)') : color, 
                     backdropFilter: isGlass ? 'blur(12px) saturate(180%)' : 'none',
                     WebkitBackdropFilter: isGlass ? 'blur(12px) saturate(180%)' : 'none',
-                    color: btnText || '#FFFFFF',
-                    border: border || (isGlass ? (color ? `1px solid ${color}80` : '1px solid rgba(255, 255, 255, 0.4)') : '1px solid rgba(255,255,255,0.1)'),
+                    color: isBlackButton ? '#FFFFFF' : (btnText || '#FFFFFF'),
+                    border: border || (isBlackButton ? '1px solid rgba(255, 255, 255, 0.25)' : (isGlass ? (color ? `1px solid ${color}80` : '1px solid rgba(255, 255, 255, 0.4)') : '1px solid rgba(255,255,255,0.1)')),
                     boxShadow: isGlass 
                         ? (color ? `0 6px 0 ${color}40, 0 8px 24px 0 rgba(0,0,0,0.1)` : '0 8px 32px 0 rgba(31, 38, 135, 0.07)') 
-                        : `0 6px 0 ${color}90, 0 10px 15px rgba(0,0,0,0.15)`,
-                    textShadow: isGlass ? 'none' : '0 1px 2px rgba(0,0,0,0.1)',
+                        : (isBlackButton ? '0 5px 0 #2a2a2a, 0 8px 16px rgba(0,0,0,0.5)' : `0 6px 0 ${color}90, 0 10px 15px rgba(0,0,0,0.15)`),
+                    textShadow: isGlass ? 'none' : (isBlackButton ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 2px rgba(0,0,0,0.1)'),
                     textRendering: 'optimizeLegibility',
                     WebkitFontSmoothing: 'antialiased'
                 }}
@@ -73,7 +75,7 @@ const NavButton: React.FC<NavButtonProps> = ({
 
                 {/* Active mask */}
                 {!isEditMode && (
-                    <div className="absolute inset-0 rounded-2xl bg-black opacity-0 group-active:opacity-10 transition-opacity"></div>
+                    <div className={`absolute inset-0 rounded-2xl ${isBlackButton ? 'bg-white' : 'bg-black'} opacity-0 group-active:opacity-10 transition-opacity`}></div>
                 )}
             </motion.button>
             
