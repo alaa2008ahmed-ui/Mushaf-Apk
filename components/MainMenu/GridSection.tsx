@@ -184,8 +184,17 @@ const GridSection: React.FC<GridSectionProps> = ({
         return str.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu, '').replace(/^[\s✨📖🎧⏱️🧭🕌🤲🛡️☀️📅🕋📿💬🏆🧠🎯🌐🧮📚📜🎙️🔍📥]+/gu, '').trim();
     };
 
-    // Exact green items: Row 1, Row 2, Row 5, and 'prophetic-seerah' / 'more' button
-    const GREEN_ITEMS = ['quran', 'listen', 'prayer-times', 'qibla', 'salah-adhkar', 'community', 'ahl-al-quran', 'prophetic-seerah', 'more'];
+    // Exact green items: Row 1, Row 2, Row 5, Row 8, and 'prophetic-seerah' / 'more' button
+    const GREEN_ITEMS = [
+        'quran', 'listen', 
+        'prayer-times', 'qibla', 'salah-adhkar', 
+        'community', 'ahl-al-quran', 
+        'nawawi', 'voice-control', 'asmaul-husna',
+        'prophetic-seerah', 'more'
+    ];
+
+    // Items that display the "جديد" (New) badge based on app launch tracking
+    const NEW_BADGE_ITEMS = ['community', 'ahl-al-quran', 'islamic-sites', 'others', 'prophetic-seerah'];
 
     return (
         <div className="grid grid-cols-6 gap-x-2 sm:gap-x-2.5 gap-y-2.5 w-full max-w-sm mx-auto flex-grow content-center relative mt-0 pb-3" dir="rtl">
@@ -259,7 +268,8 @@ const GridSection: React.FC<GridSectionProps> = ({
                                         onResize={(e) => handleResize(item.id, e)}
                                         isGlass={theme.isGlass}
                                         btnText={textColor}
-                                        showNewBadge={false}
+                                        showNewBadge={showNewBadges}
+                                        badgeText={t('common.new', 'جديد')}
                                     />
                                 </div>
                                 <VoiceControlToggle />
@@ -308,7 +318,8 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 onResize={(e) => handleResize(item.id, e)}
                                 isGlass={theme.isGlass}
                                 btnText={textColor}
-                                showNewBadge={false}
+                                showNewBadge={showNewBadges && NEW_BADGE_ITEMS.includes(item.id)}
+                                badgeText={t('common.new', 'جديد')}
                                 leftAction={item.id === 'quran' && !isEditMode ? (
                                     <div
                                         role="button"
@@ -386,7 +397,8 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 isEditMode={false}
                                 isGlass={theme.isGlass}
                                 btnText={isBlackTheme ? '#FFFFFF' : (theme.btnText || '#FFFFFF')}
-                                showNewBadge={false}
+                                showNewBadge={showNewBadges}
+                                badgeText={t('common.new', 'جديد')}
                             />
                         </div>
                         <VoiceControlToggle />

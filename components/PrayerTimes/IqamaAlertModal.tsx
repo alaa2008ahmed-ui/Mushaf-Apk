@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Volume2, Check, X } from 'lucide-react';
 import { playNotificationSound } from '../../utils/prayerTimesUtils';
 
@@ -15,8 +15,13 @@ interface IqamaAlertModalProps {
 export const IqamaAlertModal: React.FC<IqamaAlertModalProps> = ({ alert, onDismiss }) => {
     if (!alert) return null;
 
+    useEffect(() => {
+        // Automatically play the chime sound when Iqama alert modal appears
+        playNotificationSound('/assets/audio/chime.mp3', true);
+    }, [alert.prayerKey, alert.timeStr]);
+
     const handleReplay = () => {
-        playNotificationSound('/assets/audio/chime.mp3');
+        playNotificationSound('/assets/audio/chime.mp3', true);
     };
 
     return (

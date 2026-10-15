@@ -73,7 +73,7 @@ const ToneSelector: React.FC<ToneSelectorProps> = ({
 
     return (
         <div>
-            <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-center" style={{ color: secondaryColor }}>
+            <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-center" style={{ color: isBlackTheme ? '#FFFFFF' : secondaryColor }}>
                 نغمة التنبيه
             </label>
             
@@ -84,16 +84,16 @@ const ToneSelector: React.FC<ToneSelectorProps> = ({
                 className="w-full flex items-center justify-between themed-bg-alt p-3 rounded-2xl shadow-xs transition-all cursor-pointer font-bold text-xs sm:text-sm hover:opacity-90"
                 style={{ 
                     border: `2px solid ${itemBorderColor}`,
-                    color: primaryColor
+                    color: isBlackTheme ? '#FFFFFF' : primaryColor
                 }}
             >
                 <div className="flex items-center gap-2.5 min-w-0">
-                    <Volume2 className="w-4 h-4 shrink-0" style={{ color: primaryColor }} />
+                    <Volume2 className="w-4 h-4 shrink-0" style={{ color: isBlackTheme ? '#FFFFFF' : primaryColor }} />
                     <span className="truncate">{selectedName}</span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 opacity-70">
-                    <span className="text-[10px] font-medium hidden sm:inline">تغيير</span>
-                    <ChevronDown className="w-4 h-4" />
+                    <span className="text-[10px] font-medium hidden sm:inline" style={{ color: isBlackTheme ? '#FFFFFF' : undefined }}>تغيير</span>
+                    <ChevronDown className="w-4 h-4" style={{ color: isBlackTheme ? '#FFFFFF' : undefined }} />
                 </div>
             </button>
 
@@ -107,7 +107,7 @@ const ToneSelector: React.FC<ToneSelectorProps> = ({
             />
 
             {selectValue === 'custom' && currentTone && (
-                <p className="text-center text-[10px] mt-1 truncate" style={{ color: secondaryColor }}>
+                <p className="text-center text-[10px] mt-1 truncate" style={{ color: isBlackTheme ? '#FFFFFF' : secondaryColor }}>
                     الملف الحالي: {currentTone.name}
                 </p>
             )}
@@ -122,8 +122,8 @@ const ToneSelector: React.FC<ToneSelectorProps> = ({
                     <div 
                         className="rounded-[2.5rem] w-full max-w-xs sm:max-w-sm max-h-[85vh] flex flex-col p-5 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
                         style={{ 
-                            backgroundColor: 'var(--modal-bg, #ffffff)', 
-                            color: 'var(--modal-text, #000000)',
+                            backgroundColor: isBlackTheme ? '#000000' : 'var(--modal-bg, #ffffff)', 
+                            color: isBlackTheme ? '#ffffff' : 'var(--modal-text, #000000)',
                             border: `2px solid ${itemBorderColor}`
                         }}
                         onClick={(e) => e.stopPropagation()}
@@ -131,11 +131,11 @@ const ToneSelector: React.FC<ToneSelectorProps> = ({
                         {/* Modal Header */}
                         <div 
                             className="flex justify-between items-center mb-4 pb-2 border-b shrink-0"
-                            style={{ borderColor: 'var(--card-border, #e5e7eb)' }}
+                            style={{ borderColor: isBlackTheme ? '#333333' : 'var(--card-border, #e5e7eb)' }}
                         >
                             <div className="flex items-center gap-2">
-                                <Music className="w-4 h-4" style={{ color: primaryColor }} />
-                                <h3 className="font-black text-sm sm:text-base font-kufi" style={{ color: primaryColor }}>
+                                <Music className="w-4 h-4" style={{ color: isBlackTheme ? '#FFFFFF' : primaryColor }} />
+                                <h3 className="font-black text-sm sm:text-base font-kufi" style={{ color: isBlackTheme ? '#FFFFFF' : primaryColor }}>
                                     اختر نغمة التنبيه
                                 </h3>
                             </div>
@@ -143,7 +143,7 @@ const ToneSelector: React.FC<ToneSelectorProps> = ({
                                 type="button"
                                 onClick={() => setIsModalOpen(false)} 
                                 className="hover:text-red-500 transition-colors cursor-pointer p-1 rounded-full"
-                                style={{ color: secondaryColor }}
+                                style={{ color: isBlackTheme ? '#FFFFFF' : secondaryColor }}
                                 title="إغلاق"
                             >
                                 <X className="w-5 h-5" />

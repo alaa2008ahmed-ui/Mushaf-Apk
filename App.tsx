@@ -97,7 +97,7 @@ function App() {
       clearSearchCache();
     }
     const currentPage = history[history.length - 1];
-    if (currentPage === 'home' || currentPage === 'more-menu') {
+    if (currentPage === 'home') {
       setLastMenuPage(currentPage);
     }
 
@@ -127,38 +127,26 @@ function App() {
     const validPages = [
       'home', 'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'qibla', 
-      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'more-menu', 'daily-wird', 'memorization',
+      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'daily-wird', 'memorization',
       'phone-notifications', 'search', 'asmaul-husna', 'habit-tracker', 'community', 'direct-chat', 'group-chat', 'ahl-al-quran', 'others', 'islamic-sites',
       'prophetic-seerah'
     ];
 
     if (pageId === 'phone-notifications') {
       setNavParams({ openModal: 'notification-settings-modal' });
-      setHistory(prev => {
-        const fromMore = params?.from === 'more-menu' || prev.includes('more-menu');
-        return fromMore ? ['home', 'more-menu', 'quran'] : ['home', 'quran'];
-      });
+      setHistory(['home', 'quran']);
       return;
     }
 
     if (pageId === 'settings') {
       setNavParams({ openModal: 'settings-modal' });
-      setHistory(prev => {
-        const fromMore = params?.from === 'more-menu' || prev.includes('more-menu');
-        return fromMore ? ['home', 'more-menu', 'quran'] : ['home', 'quran'];
-      });
+      setHistory(['home', 'quran']);
       return;
     }
 
     if (pageId === 'home') {
       setHistory(['home']);
       setNavParams(null);
-      return;
-    }
-
-    if (pageId === 'more-menu') {
-      setNavParams(params || null);
-      setHistory(['home', 'more-menu']);
       return;
     }
 
@@ -174,8 +162,7 @@ function App() {
           if (communityIdx !== -1) {
             return [...prev.slice(0, communityIdx + 1), pageId];
           }
-          const fromMore = params?.from === 'more-menu' || prev.includes('more-menu');
-          return fromMore ? ['home', 'more-menu', 'community', pageId] : ['home', 'community', pageId];
+          return ['home', 'community', pageId];
         }
 
         // 2. Monthly Prayer Times inside Prayer Times
@@ -184,8 +171,7 @@ function App() {
           if (prayerIdx !== -1) {
             return [...prev.slice(0, prayerIdx + 1), pageId];
           }
-          const fromMore = params?.from === 'more-menu' || prev.includes('more-menu');
-          return fromMore ? ['home', 'more-menu', 'prayer-times', pageId] : ['home', 'prayer-times', pageId];
+          return ['home', 'prayer-times', pageId];
         }
 
         // 3. Quran Landscape
@@ -194,26 +180,7 @@ function App() {
           if (quranIdx !== -1) {
             return [...prev.slice(0, quranIdx + 1), pageId];
           }
-          const fromMore = params?.from === 'more-menu' || current === 'more-menu';
-          return fromMore ? ['home', 'more-menu', pageId] : ['home', pageId];
-        }
-
-        // Standard page navigation:
-        // Distinguish whether opened from more-menu (قائمة التطبيقات) or home (الصفحة الرئيسية)
-        const fromMore = params?.from === 'more-menu' || current === 'more-menu';
-        const fromHome = params?.from === 'home' || current === 'home';
-
-        if (fromMore) {
-          return ['home', 'more-menu', pageId];
-        }
-
-        if (fromHome) {
           return ['home', pageId];
-        }
-
-        // Default: respect if user was browsing inside more-menu
-        if (prev.includes('more-menu')) {
-          return ['home', 'more-menu', pageId];
         }
 
         return ['home', pageId];
@@ -242,7 +209,7 @@ function App() {
 
       receivedListener = LocalNotifications.addListener('localNotificationReceived', (notification) => {
         if (notification.extra?.type === 'iqama') {
-          playNotificationSound('/assets/audio/chime.mp3');
+          playNotificationSound('/assets/audio/chime.mp3', true);
         }
         console.log('[Notification] Received notification natively:', notification.id, notification.title);
       });
@@ -320,7 +287,6 @@ function App() {
     else if (action === 'open_quran' || (action === 'ui_click' && params?.label?.includes('مصحف'))) handleNavigate('quran');
     else if (action === 'open_voice_control' || (action === 'ui_click' && params?.label?.includes('تحكم صوتي'))) handleNavigate('voice-control');
     else if (action === 'open_ahl_al_quran' || (action === 'ui_click' && params?.label?.includes('اهل القران'))) handleNavigate('ahl-al-quran');
-    else if (action === 'open_more' || (action === 'ui_click' && params?.label?.includes('مزيد'))) handleNavigate('more-menu');
     else if (action === 'set_orientation_horizontal' || action === 'set_orientation_vertical') {
       window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
     }

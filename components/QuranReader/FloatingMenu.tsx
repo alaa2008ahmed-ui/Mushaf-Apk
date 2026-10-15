@@ -102,11 +102,6 @@ interface FloatingMenuProps {
 
 const ALL_SHORTCUTS = [
   {
-    id: "more-menu",
-    label: "قائمة التطبيقات",
-    icon: <Grid size={18} />,
-  },
-  {
     id: "quran-download-parent",
     label: "تحميل القرآن",
     icon: <Download size={18} />,
@@ -128,7 +123,6 @@ const ALL_SHORTCUTS = [
 ];
 
 const DEFAULT_SHORTCUTS = [
-  "more-menu",
   "quran-download-parent",
   "tafseer-download",
   "interface-customization",
@@ -320,13 +314,6 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
       text: "الوصول السريع للآيات التي قمت بحفظها.",
       selector: '[data-id="menu-item-bookmarks"]',
       icon: <Bookmark className="w-8 h-8 text-white" />,
-    },
-    {
-      id: "floating-menu-more-menu",
-      title: "قائمة التطبيقات",
-      text: "يمكنك الانتقال مباشرة الى قائمة التطبيقات والاختيار منها",
-      selector: '[data-id="menu-item-more-menu"]',
-      icon: <Grid className="w-8 h-8 text-white" />,
     },
     {
       id: "floating-menu-quran-download",

@@ -440,7 +440,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
         setTabHistory(['users']);
         return true;
       }
-      return false; // Let global handler navigate back to origin (home or more-menu)
+      return false; // Let global handler navigate back to origin (home)
     };
 
     const unregister = registerBackInterceptor(interceptor);
@@ -543,9 +543,9 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)'
       }}
     >
-      {/* الشريط العلوي المدمج */}
-      <header className="app-top-bar !min-h-0 py-1.5 shadow-sm">
-        <div className="app-top-bar__inner !min-h-0 !py-1 !max-w-4xl">
+      {/* الشريط العلوي */}
+      <header className="app-top-bar">
+        <div className="app-top-bar__inner">
           <div className="flex items-center justify-between w-full min-h-[44px] gap-2">
             {/* جهة اليمين: سهم الرجوع للخلف + اختصار القرآن الكريم */}
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -647,11 +647,6 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                 aria-label="صفحة أهل القرآن الكريم"
               >
                 <Trophy size={18} />
-                {showNewBadge && (
-                  <span className="absolute -top-1.5 -right-1 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded-full shadow-xs border border-white dark:border-slate-800 animate-bounce pointer-events-none">
-                    جديد
-                  </span>
-                )}
               </button>
               <ThemePageLock />
               <button

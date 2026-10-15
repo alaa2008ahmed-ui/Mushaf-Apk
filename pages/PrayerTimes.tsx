@@ -33,8 +33,8 @@ function PrayerTimes({ onBack, onNavigate }) {
     } = usePrayerTimes();
 
     const isDefaultTheme = themeKey === 'default' || !themeKey || theme.name?.includes('الافتراضي') || theme.name === 'Default';
-    const isBlackAndWhite = themeKey === 'deep_black';
-    const isBlackTheme = theme.bgColor === '#000000' || theme.name === 'أبيض وأسود' || themeKey === 'deep_black';
+    const isBlackAndWhite = themeKey === 'deep_black' || theme.name === 'اسود';
+    const isBlackTheme = theme.bgColor === '#000000' || theme.name === 'أبيض وأسود' || theme.name === 'اسود' || themeKey === 'deep_black';
     const primaryColor = isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]));
     const secondaryColor = isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[1]));
     const topBarTextColor = isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : (theme.topBarText || (isBlackAndWhite ? '#FFFFFF' : theme.palette[0])));
@@ -382,28 +382,28 @@ function PrayerTimes({ onBack, onNavigate }) {
                                         window.open(url, '_blank');
                                     }
                                 }}
-                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
+                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer`}
                                 style={{ 
-                                    color: primaryColor, 
+                                    color: isBlackTheme ? '#FFFFFF' : primaryColor, 
                                     border: `1.5px solid ${cardBorderColor}`,
-                                    backgroundColor: isDefaultTheme ? '#FFFFFF' : undefined 
+                                    backgroundColor: isDefaultTheme ? '#FFFFFF' : (isBlackTheme ? '#111111' : undefined) 
                                 }}
                             >
-                                <MapPin size={18} className="shrink-0" />
-                                <span className="truncate whitespace-nowrap">المساجد القريبة</span>
+                                <MapPin size={18} className="shrink-0" style={{ color: isBlackTheme ? '#FFFFFF' : primaryColor }} />
+                                <span className="truncate whitespace-nowrap" style={{ color: isBlackTheme ? '#FFFFFF' : primaryColor }}>المساجد القريبة</span>
                             </button>
                              <button
                                 onClick={() => onNavigate('monthly-prayer-times')}
                                 id="monthly-times-btn"
-                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5`}
+                                className={`${isDefaultTheme ? 'bg-white' : 'themed-card'} flex-1 rounded-xl p-3 flex items-center justify-center gap-1.5 shadow-sm font-bold text-[13px] active:scale-95 transition-all hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer`}
                                 style={{ 
-                                    color: secondaryColor, 
+                                    color: isBlackTheme ? '#FFFFFF' : secondaryColor, 
                                     border: `1.5px solid ${cardBorderColor}`,
-                                    backgroundColor: isDefaultTheme ? '#FFFFFF' : undefined 
+                                    backgroundColor: isDefaultTheme ? '#FFFFFF' : (isBlackTheme ? '#111111' : undefined) 
                                 }}
                             >
-                                <Calendar size={18} className="shrink-0" />
-                                <span className="truncate whitespace-nowrap">المواقيت الشهرية</span>
+                                <Calendar size={18} className="shrink-0" style={{ color: isBlackTheme ? '#FFFFFF' : secondaryColor }} />
+                                <span className="truncate whitespace-nowrap" style={{ color: isBlackTheme ? '#FFFFFF' : secondaryColor }}>المواقيت الشهرية</span>
                             </button>
                         </div>
 
@@ -416,6 +416,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                             secondaryColor={secondaryColor}
                             cardBorderColor={cardBorderColor}
                             isDefaultTheme={isDefaultTheme}
+                            isBlackTheme={isBlackTheme}
                         />
                     </div>
                     
@@ -522,7 +523,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                         })}
                     </div>
                     
-                    <p className="text-center text-sm mt-3 opacity-70" style={{ color: secondaryColor }}>
+                    <p className="text-center text-sm mt-3 opacity-90" style={{ color: isBlackTheme ? '#FFFFFF' : secondaryColor }}>
                         (يجب تفعيل الموقع للهاتف لحساب الموقع بدقه)
                     </p>
                 </div>
@@ -536,6 +537,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                 primaryColor={primaryColor}
                 secondaryColor={secondaryColor}
                 isBlackAndWhite={isBlackAndWhite}
+                isBlackTheme={isBlackTheme}
                 cardBorderColor={cardBorderColor}
                 isDefaultTheme={isDefaultTheme}
                 closeModal={closeModal}

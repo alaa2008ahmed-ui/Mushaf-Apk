@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Bell, Check, X, Smartphone, AppWindow, VolumeX, Clock, Shuffle, Volume2 } from 'lucide-react';
+import { Bell, Check, X, Smartphone, AppWindow, VolumeX, Clock, Shuffle } from 'lucide-react';
 import { toArabic } from './constants';
 import { usePrayerTimes } from '../../context/PrayerTimesContext';
 import { setupNotifications } from '../../utils/notifications';
-import { playNotificationSound } from '../../utils/prayerTimesUtils';
 import { useNotificationSettings, PhoneNotificationSettings } from '../../hooks/useNotificationSettings';
 
 interface NotificationSettingsModalProps {
@@ -208,87 +207,6 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                             <p className="text-[11px] opacity-80 text-center mb-2">
                                 إشعارات تظهر على شاشة الهاتف حتى لو كان التطبيق مغلقاً
                             </p>
-
-                            {/* تنبيه إقامة الصلاة */}
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between mb-1" dir="rtl">
-                                    <h4 className="font-bold text-sm opacity-90 flex items-center gap-1.5">
-                                        <span>🕌</span>
-                                        <span>تنبيه إقامة الصلاة</span>
-                                    </h4>
-                                    <button
-                                        type="button"
-                                        onClick={() => playNotificationSound('/assets/audio/chime.mp3')}
-                                        className="text-xs px-2.5 py-1 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 flex items-center gap-1 font-bold cursor-pointer transition-colors"
-                                        style={{ color: 'var(--qr-accent)' }}
-                                        title="معاينة نغمة الإقامة الهادئة"
-                                    >
-                                        <Volume2 className="w-3.5 h-3.5" />
-                                        <span>معاينة النغمة</span>
-                                    </button>
-                                </div>
-                                <div 
-                                    className={`p-3 rounded-xl border-2 transition-all ${
-                                        (config.iqamaReminder?.enabled !== false) 
-                                        ? 'themed-card-bg shadow-sm' 
-                                        : 'bg-black/5 dark:bg-white/10 border-transparent opacity-70'
-                                    }`}
-                                    style={{ borderColor: (config.iqamaReminder?.enabled !== false) ? 'var(--qr-accent)' : undefined }}
-                                    dir="rtl"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div 
-                                            className="flex items-center gap-2 cursor-pointer flex-1"
-                                            onClick={() => {
-                                                const currentEnabled = config.iqamaReminder?.enabled !== false;
-                                                const currentMins = config.iqamaReminder?.minutes || 15;
-                                                updateConfig({
-                                                    iqamaReminder: { enabled: !currentEnabled, minutes: currentMins }
-                                                });
-                                                showToast(!currentEnabled ? 'تم تفعيل تنبيه إقامة الصلاة' : 'تم تعطيل تنبيه إقامة الصلاة');
-                                            }}
-                                        >
-                                            <div className="w-5 h-5 rounded-full flex items-center justify-center transition-colors" style={{ backgroundColor: (config.iqamaReminder?.enabled !== false) ? 'var(--qr-accent)' : 'rgba(0,0,0,0.1)', color: (config.iqamaReminder?.enabled !== false) ? 'var(--qr-accent-text, #fff)' : 'transparent' }}>
-                                                {(config.iqamaReminder?.enabled !== false) && <Check className="w-3 h-3" />}
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-sm">تنبيه صوتي ومرئي للإقامة</span>
-                                                <span className="text-[10px] opacity-80">إشعار ونغمة هادئة على الهاتف عند حان وقت إقامة الصلاة</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {(config.iqamaReminder?.enabled !== false) && (
-                                        <div className="mt-3 pt-2.5 border-t border-black/10 dark:border-white/10 flex items-center justify-between" dir="rtl">
-                                            <span className="text-xs opacity-75 font-bold">وقت التنبيه بعد الأذان:</span>
-                                            <div className="flex items-center gap-1.5">
-                                                {[10, 15, 20].map((m) => {
-                                                    const isSel = (config.iqamaReminder?.minutes || 15) === m;
-                                                    return (
-                                                        <button
-                                                            key={m}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                updateConfig({
-                                                                    iqamaReminder: { enabled: true, minutes: m }
-                                                                });
-                                                                showToast(`تم ضبط الإقامة بعد ${m} دقيقة`);
-                                                            }}
-                                                            className={`px-2.5 py-0.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                                                                isSel 
-                                                                ? 'text-white shadow-xs' 
-                                                                : 'bg-black/5 dark:bg-white/10 opacity-80 hover:opacity-100'
-                                                            }`}
-                                                            style={isSel ? { backgroundColor: 'var(--qr-accent)' } : undefined}
-                                                        >
-                                                            {m} دقائق
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
 
                             <div className="space-y-2">
                                 <h4 className="font-bold text-sm mb-2 opacity-90">أوقات الليل</h4>

@@ -151,13 +151,14 @@ const PrayerTimesHeader: React.FC<PrayerTimesHeaderProps> = ({
     return (
         <header className="app-top-bar app-top-bar--prayer">
             <div className="app-top-bar__inner">
-                <div className="flex items-center justify-between w-full min-h-[48px] gap-1 sm:gap-2">
+                <div className="flex items-center justify-between w-full min-h-[44px] gap-1 sm:gap-2">
                     {/* سهم الرجوع للخلف على يمين النص بالشريط العلوي مع زر تحديث الموقع */}
-                    <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 z-10">
+                    <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 z-10" style={{ color: topBarTextColor || undefined }}>
                         {onBack && (
                             <button
                                 onClick={onBack}
                                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                style={{ color: topBarTextColor || undefined }}
                                 title="رجوع للخلف"
                                 aria-label="رجوع للخلف"
                             >
@@ -168,6 +169,7 @@ const PrayerTimesHeader: React.FC<PrayerTimesHeaderProps> = ({
                             id="location-refresh-btn"
                             onClick={handleRefreshLocation}
                             className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                            style={{ color: topBarTextColor || undefined }}
                             title="تحديث الموقع"
                             aria-label="تحديث الموقع"
                         >
@@ -217,11 +219,12 @@ const PrayerTimesHeader: React.FC<PrayerTimesHeaderProps> = ({
                     </div>
 
                     {/* أيقونات اليسار: قفل الثيم والإعدادات والصفحة الرئيسية */}
-                    <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 z-10">
+                    <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 z-10" style={{ color: topBarTextColor || undefined }}>
                         <ThemePageLock />
                         <button
                             onClick={onOpenNotifications}
                             className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                            style={{ color: topBarTextColor || undefined }}
                             title={t('sidemenu.settings', 'الإعدادات')}
                             aria-label={t('sidemenu.settings', 'الإعدادات')}
                         >
@@ -231,6 +234,7 @@ const PrayerTimesHeader: React.FC<PrayerTimesHeaderProps> = ({
                             <button
                                 onClick={onHome}
                                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                style={{ color: topBarTextColor || undefined }}
                                 title="الصفحة الرئيسية"
                                 aria-label="الصفحة الرئيسية"
                             >

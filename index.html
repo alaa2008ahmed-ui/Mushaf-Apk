@@ -114,13 +114,13 @@
       .app-top-bar__title { font-weight: 800; letter-spacing: 0.03em; }
       .app-top-bar__subtitle { font-size: 0.85rem; opacity: 0.9; }
 
-      /* Exception: Prayer Times Top Bar retains original height & subtitle */
+      /* Prayer Times Top Bar resized to match other pages (reduced by 25% to 67px) while retaining subtitle */
       .app-top-bar.app-top-bar--prayer {
-          min-height: 90px !important;
+          min-height: 67px !important;
       }
       .app-top-bar.app-top-bar--prayer .app-top-bar__inner {
-          min-height: 70px !important;
-          padding: 0.5rem 1.25rem !important;
+          min-height: 52px !important;
+          padding: 0.25rem 1.25rem !important;
       }
 
       /* Hide subtitles on all pages except prayer times */
@@ -142,7 +142,7 @@
       .themed-card:hover { background-color: var(--card-bg-hover); }
       .themed-text { color: var(--text-color); }
       .themed-text-muted { color: var(--text-color-muted); }
-      .themed-bg-alt { background-color: var(--card-bg) }
+      .themed-bg-alt { background-color: var(--card-bg); color: var(--text-color); }
 
       .prayer-card { height: 75px; border-radius: 18px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; transition: all 0.3s ease; position: relative; }
 

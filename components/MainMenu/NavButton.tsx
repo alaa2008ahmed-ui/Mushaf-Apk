@@ -83,9 +83,10 @@ const NavButton: React.FC<NavButtonProps> = ({
                 </div>
             )}
             
-            {rankColor && rankBadge !== null && rankBadge !== undefined ? (
+            {/* شارة الترتيب لأهل القرآن */}
+            {rankColor && rankBadge !== null && rankBadge !== undefined && (
                 <div 
-                    className="absolute -top-2 -right-1 bg-white text-[11px] sm:text-xs font-black min-w-[20px] h-5 px-1.5 rounded-full z-20 shadow-lg border-2 flex items-center justify-center pointer-events-none"
+                    className={`absolute -top-2 ${showNewBadge ? '-left-1' : '-right-1'} bg-white text-[11px] sm:text-xs font-black min-w-[20px] h-5 px-1.5 rounded-full z-20 shadow-lg border-2 flex items-center justify-center pointer-events-none`}
                     style={{ 
                         color: rankColor.textColor,
                         borderColor: rankColor.borderColor,
@@ -95,19 +96,23 @@ const NavButton: React.FC<NavButtonProps> = ({
                 >
                     {rankBadge}
                 </div>
-            ) : unreadBadgeCount !== undefined && unreadBadgeCount > 0 ? (
+            )}
+
+            {/* شارة الرسائل غير المقروءة لمجتمع التواصل */}
+            {unreadBadgeCount !== undefined && unreadBadgeCount > 0 && (
                 <div 
-                    className="absolute -top-2 -right-1 bg-red-600 text-white text-[10px] sm:text-xs font-black min-w-[20px] h-5 px-1.5 rounded-full z-20 shadow-lg border-2 border-white flex items-center justify-center animate-pulse pointer-events-none"
+                    className={`absolute -top-2 ${showNewBadge ? '-left-1' : '-right-1'} bg-red-600 text-white text-[10px] sm:text-xs font-black min-w-[20px] h-5 px-1.5 rounded-full z-20 shadow-lg border-2 border-white flex items-center justify-center animate-pulse pointer-events-none`}
                     style={{ backgroundColor: '#DC2626' }}
                 >
                     {unreadBadgeCount > 99 ? '+99' : unreadBadgeCount}
                 </div>
-            ) : (
-                showNewBadge && (
-                    <div className="absolute -top-2 -right-1 bg-yellow-400 text-black text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full z-20 shadow-lg border border-white animate-bounce pointer-events-none">
-                        {badgeText}
-                    </div>
-                )
+            )}
+
+            {/* شارة جديد */}
+            {showNewBadge && (
+                <div className="absolute -top-2 -right-1 bg-yellow-400 text-black text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full z-20 shadow-lg border border-white animate-bounce pointer-events-none">
+                    {badgeText}
+                </div>
             )}
             
             {isEditMode && (

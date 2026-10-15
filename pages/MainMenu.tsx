@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Share as CapacitorShare } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import moment from 'moment-hijri';
+import TopLeadersCard from '../components/MainMenu/TopLeadersCard';
 
 const ISLAMIC_EVENTS = [
     { day: 1, month: 1, name: "رأس السنة الهجرية" },
@@ -61,7 +62,7 @@ const APP_SHARE_TEXT = `🕋✨ التحديث الأكبر لتطبيق "مصح
 
 🤍 شاركه مع أهلك وأصحابك.. فالدال على الخير كفاعله، واجعله صدقة جارية لك ولوالديك. 🤲🌱`;
 
-const CURRENT_LAYOUT_VERSION = 'v2026_row8_seerah_bar_v3';
+const CURRENT_LAYOUT_VERSION = 'v2026_row8_seerah_bar_v4';
 
 const ALL_POSSIBLE_ITEMS = [
     // الصف الاول : بطاقه القران الكريم + بطاقه الاستماع للقران باللون الاخضر
@@ -90,10 +91,10 @@ const ALL_POSSIBLE_ITEMS = [
     { id: 'others', label: "الرقية الشرعية", className: "col-span-2 h-11", colorIndex: 1 },
     { id: 'islamic-sites', label: "مواقع إسلامية", className: "col-span-2 h-11", colorIndex: 1 },
     { id: 'calculators', label: "الحاسبة الشرعية", className: "col-span-2 h-11", colorIndex: 1 },
-    // الصف الثامن : الاربعون النوويه + التحكم الصوتى + اسماء الله الحسنى باللون البنفسجي
-    { id: 'nawawi', label: "الأربعون النووية", className: "col-span-2 h-11", colorIndex: 1 },
-    { id: 'voice-control', label: "التحكم الصوتي", className: "col-span-2 h-11", colorIndex: 1 },
-    { id: 'asmaul-husna', label: "أسماء الله الحسنى", className: "col-span-2 h-11", colorIndex: 1 },
+    // الصف الثامن : الاربعون النوويه + التحكم الصوتى + اسماء الله الحسنى باللون الأخضر
+    { id: 'nawawi', label: "الأربعون النووية", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'voice-control', label: "التحكم الصوتي", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'asmaul-husna', label: "أسماء الله الحسنى", className: "col-span-2 h-11", colorIndex: 0 },
     // صف السيرة والخط الزمني مع أيقونات مجتمع التواصل وأهل القرآن والواتساب والتحكم الصوتي
     { id: 'prophetic-seerah', label: "السيرة والخط الزمني", className: "col-span-6 h-10 flex justify-center", colorIndex: 0 },
 ];
@@ -125,10 +126,10 @@ const DEFAULT_MENU_ITEMS = [
     { id: 'others', label: "الرقية الشرعية", className: "col-span-2 h-11", colorIndex: 1 },
     { id: 'islamic-sites', label: "مواقع إسلامية", className: "col-span-2 h-11", colorIndex: 1 },
     { id: 'calculators', label: "الحاسبة الشرعية", className: "col-span-2 h-11", colorIndex: 1 },
-    // الصف الثامن : الاربعون النوويه + التحكم الصوتى + اسماء الله الحسنى باللون البنفسجي
-    { id: 'nawawi', label: "الأربعون النووية", className: "col-span-2 h-11", colorIndex: 1 },
-    { id: 'voice-control', label: "التحكم الصوتي", className: "col-span-2 h-11", colorIndex: 1 },
-    { id: 'asmaul-husna', label: "أسماء الله الحسنى", className: "col-span-2 h-11", colorIndex: 1 },
+    // الصف الثامن : الاربعون النوويه + التحكم الصوتى + اسماء الله الحسنى باللون الأخضر
+    { id: 'nawawi', label: "الأربعون النووية", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'voice-control', label: "التحكم الصوتي", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'asmaul-husna', label: "أسماء الله الحسنى", className: "col-span-2 h-11", colorIndex: 0 },
     // صف السيرة والخط الزمني مع أيقونات مجتمع التواصل وأهل القرآن والواتساب والتحكم الصوتي باللون الأخضر
     { id: 'prophetic-seerah', label: "السيرة والخط الزمني", className: "col-span-6 h-10 flex justify-center", colorIndex: 0 },
 ];
@@ -140,6 +141,11 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     return verses[randomIndex];
   });
   const { theme, themeKey } = useTheme();
+  const isBlackTheme = themeKey === 'deep_black' || theme.bgColor === '#000000' || theme.name === 'اسود' || theme.name === 'black';
+  const cardHeaderColor = isBlackTheme ? '#FFFFFF' : theme.palette[0];
+  const cardBorderColor = isBlackTheme ? '#FFFFFF' : theme.palette[0];
+  const cardButtonColor = isBlackTheme ? '#FFFFFF' : theme.palette[0];
+  const cardButtonTextColor = isBlackTheme ? '#000000' : '#FFFFFF';
   const [visibleItems, setVisibleItems] = useState<string[]>(() => {
     const savedVersion = localStorage.getItem('menu_layout_version_v2');
     if (savedVersion !== CURRENT_LAYOUT_VERSION) {
@@ -628,11 +634,13 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
           isThemesSidebarOpen ? 'opacity-0 pointer-events-none scale-0 invisible' : 'opacity-100 scale-100 visible'
         }`}
         style={{
-          color: (theme.palette?.[2] && theme.palette[2] !== theme.palette[0] && theme.palette[2] !== theme.palette[1]) 
-            ? theme.palette[2] 
-            : (theme.accent && theme.accent !== theme.palette[0] && theme.accent !== theme.palette[1]) 
-              ? theme.accent 
-              : (theme.isDark ? '#FFFFFF' : '#000000')
+          color: isBlackTheme
+            ? '#FFFFFF'
+            : (theme.palette?.[2] && theme.palette[2] !== theme.palette[0] && theme.palette[2] !== theme.palette[1]) 
+              ? theme.palette[2] 
+              : (theme.accent && theme.accent !== theme.palette[0] && theme.accent !== theme.palette[1]) 
+                ? theme.accent 
+                : (theme.isDark ? '#FFFFFF' : '#000000')
         }}
         title="الثيمات والمظهر"
         aria-label="الثيمات والمظهر"
@@ -692,8 +700,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                     visibleItems={visibleItems}
                     isEditMode={isEditMode}
                     onNavigate={(id) => {
-                        if (id === 'more') onNavigate('more-menu');
-                        else onNavigate(id, { from: 'home' });
+                        onNavigate(id, { from: 'home' });
                     }}
                     theme={theme}
                     themeKey={themeKey}
@@ -707,43 +714,49 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                       {/* Prayer Status Cards */}
                       <div 
                           className="p-2 rounded-2xl shadow-lg border-2 transition-all duration-300" 
-                          style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
+                          style={{ borderColor: cardBorderColor, backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
                       >
                           <div className="grid grid-cols-3 gap-2">
                            {/* Right Card: Previous Prayer */}
                            <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border-2 transition-all" 
-                                style={{ borderColor: `${theme.palette[0]}33` }}>
+                                style={{ borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.3)' : `${theme.palette[0]}33` }}>
                                <span className="text-[10px] opacity-70 font-bold mb-0.5">السابقة</span>
-                               <span className="text-base font-black truncate w-full" style={{ color: theme.textColor }}>{prevSalah}</span>
+                               <span className="text-base font-black truncate w-full" style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor }}>{prevSalah}</span>
                            </div>
 
                            {/* Middle Card: Remaining Time */}
                            <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-md border-2 relative overflow-hidden" 
-                                style={{ borderColor: theme.palette[0] }}>
+                                style={{ borderColor: cardBorderColor }}>
                                <span className="text-[10px] opacity-70 font-bold mb-0.5">متبقي</span>
-                               <span className="text-base font-mono font-black tracking-wider" style={{ color: theme.textColor }}>{prayerCountdown}</span>
+                               <span className="text-base font-mono font-black tracking-wider" style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor }}>{prayerCountdown}</span>
                            </div>
 
                            {/* Left Card: Next Prayer */}
                            <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border-2 transition-all"
-                                style={{ borderColor: `${theme.palette[0]}33` }}>
+                                style={{ borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.3)' : `${theme.palette[0]}33` }}>
                                <span className="text-[10px] opacity-70 font-bold mb-0.5">القادمة</span>
-                               <span className="text-base font-black truncate w-full" style={{ color: theme.textColor }}>{nextSalah}</span>
+                               <span className="text-base font-black truncate w-full" style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor }}>{nextSalah}</span>
                            </div>
                           </div>
                       </div>
 
+                      {/* بطاقة متصدري أهل القرآن (المراكز الثلاثة الأولى) */}
+                      <TopLeadersCard 
+                          theme={theme}
+                          onNavigate={onNavigate}
+                          setToastMessage={setToastMessage}
+                      />
 
                       {/* On This Day Card */}
                       {onThisDayEvent && (
                           <div 
                               className="w-full mt-1 py-4 px-5 rounded-2xl shadow-lg border-2 relative overflow-hidden flex flex-col gap-3 cursor-pointer"
-                              style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
+                              style={{ borderColor: cardBorderColor, backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
                               dir="rtl"
                               onClick={() => setShowExpandedEventsModal(true)}
                           >
                               <div className="flex items-center justify-between z-10 w-full relative">
-                                  <div className="flex items-center gap-2" style={{ color: theme.palette[0] }}>
+                                  <div className="flex items-center gap-2" style={{ color: cardHeaderColor }}>
                                       <i className="fa-solid fa-calendar-day text-base"></i>
                                       <span className="text-[11px] font-bold font-kufi">حدث في مثل هذا اليوم</span>
                                   </div>
@@ -752,7 +765,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           onClick={handleNextEvent}
                                           className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                                           title="حدث آخر"
-                                          style={{ color: theme.palette[0] }}
+                                          style={{ color: cardHeaderColor }}
                                       >
                                           <i className="fa-solid fa-rotate-right text-xs"></i>
                                       </button>
@@ -760,7 +773,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           onClick={handleCopyHighlight}
                                           className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                                           title="نسخ"
-                                          style={{ color: theme.palette[0] }}
+                                          style={{ color: cardHeaderColor }}
                                       >
                                           <i className="fa-regular fa-copy text-xs"></i>
                                       </button>
@@ -768,21 +781,21 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           onClick={handleShareHighlight}
                                           className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                                           title="مشاركة"
-                                          style={{ color: theme.palette[0] }}
+                                          style={{ color: cardHeaderColor }}
                                       >
                                           <i className="fa-solid fa-share-nodes text-xs"></i>
                                       </button>
                                   </div>
                               </div>
                               <div className="flex flex-col gap-3 w-full relative z-10">
-                                  <div className="flex flex-row items-center justify-center gap-3 w-full py-2 px-3 rounded-xl bg-black/5 dark:bg-white/5" style={{ color: theme.textColor }}>
-                                      <span className="text-[10px] font-bold opacity-80">{onThisDayEvent.dateStr}</span>
+                                  <div className="flex flex-row items-center justify-center gap-3 w-full py-2 px-3 rounded-xl bg-black/5 dark:bg-white/5" style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor }}>
+                                      <span className="text-[10px] font-bold opacity-80" style={{ color: isBlackTheme ? '#FFFFFF' : undefined }}>{onThisDayEvent.dateStr}</span>
                                       <div className="w-[1px] h-4 bg-black/20 dark:bg-white/20"></div>
-                                      <span className="text-base font-black font-kufi leading-none">{toArabic(onThisDayEvent.year)}</span>
+                                      <span className="text-base font-black font-kufi leading-none" style={{ color: isBlackTheme ? '#FFFFFF' : undefined }}>{toArabic(onThisDayEvent.year)}</span>
                                       <div className="w-[1px] h-4 bg-black/20 dark:bg-white/20"></div>
-                                      <span className="text-[10px] font-bold opacity-80">ميلادي</span>
+                                      <span className="text-[10px] font-bold opacity-80" style={{ color: isBlackTheme ? '#FFFFFF' : undefined }}>ميلادي</span>
                                   </div>
-                                  <p className="text-sm text-justify leading-relaxed break-words font-hafs font-bold" style={{ color: theme.textColor }}>
+                                  <p className="text-sm text-justify leading-relaxed break-words font-hafs font-bold" style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor }}>
                                       {onThisDayEvent.text}
                                   </p>
                               </div>
@@ -793,12 +806,12 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                       {upcomingEvents.length > 0 && (
                           <div 
                               className="w-full mt-2 py-4 px-5 rounded-2xl shadow-lg border-2 relative overflow-hidden flex flex-col gap-3 cursor-pointer"
-                              style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
+                              style={{ borderColor: cardBorderColor, backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
                               dir="rtl"
                               onClick={() => setShowExpandedUpcomingEventModal(true)}
                           >
                               <div className="flex items-center justify-between z-10 w-full relative mb-1.5">
-                                  <div className="flex items-center gap-2" style={{ color: theme.palette[0] }}>
+                                  <div className="flex items-center gap-2" style={{ color: cardHeaderColor }}>
                                       <i className="fa-solid fa-moon text-base"></i>
                                       <span className="text-[11px] font-bold font-kufi">
                                           المناسبات الإسلامية
@@ -812,7 +825,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           }}
                                           className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                                           title="المناسبة السابقة"
-                                          style={{ color: theme.palette[0] }}
+                                          style={{ color: cardHeaderColor }}
                                       >
                                           <i className="fa-solid fa-chevron-right text-xs"></i>
                                       </button>
@@ -823,7 +836,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           }}
                                           className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                                           title="المناسبة التالية"
-                                          style={{ color: theme.palette[0] }}
+                                          style={{ color: cardHeaderColor }}
                                       >
                                           <i className="fa-solid fa-chevron-left text-xs"></i>
                                       </button>
@@ -831,7 +844,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           onClick={handleCopyUpcomingEvent}
                                           className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                                           title="نسخ"
-                                          style={{ color: theme.palette[0] }}
+                                          style={{ color: cardHeaderColor }}
                                       >
                                           <i className="fa-regular fa-copy text-xs"></i>
                                       </button>
@@ -839,7 +852,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                           onClick={handleShareUpcomingEvent}
                                           className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                                           title="مشاركة"
-                                          style={{ color: theme.palette[0] }}
+                                          style={{ color: cardHeaderColor }}
                                       >
                                           <i className="fa-solid fa-share-nodes text-xs"></i>
                                       </button>
@@ -849,26 +862,26 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                               <div className="flex flex-col gap-3 w-full relative z-10">
                                   {upcomingEvents[eventIndex] && (
                                       <div className="flex flex-col gap-2 w-full">
-                                          <div className="flex flex-row items-center justify-center gap-2.5 w-full py-1.5 px-2 rounded-xl bg-black/5 dark:bg-white/5" style={{ color: theme.textColor }}>
+                                          <div className="flex flex-row items-center justify-center gap-2.5 w-full py-1.5 px-2 rounded-xl bg-black/5 dark:bg-white/5" style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor }}>
                                               {upcomingEvents[eventIndex].isToday ? (
-                                                  <span className="text-base font-black font-kufi leading-none" style={{ color: theme.palette[0] }}>اليوم</span>
+                                                  <span className="text-base font-black font-kufi leading-none" style={{ color: cardHeaderColor }}>اليوم</span>
                                               ) : (
                                                   <>
-                                                      <span className="text-xs font-bold opacity-80">{upcomingEvents[eventIndex].daysRemaining > 0 ? 'باقي' : 'مر عليها'}</span>
+                                                      <span className="text-xs font-bold opacity-80" style={{ color: isBlackTheme ? '#FFFFFF' : undefined }}>{upcomingEvents[eventIndex].daysRemaining > 0 ? 'باقي' : 'مر عليها'}</span>
                                                       <div className="w-[1px] h-3 bg-black/20 dark:bg-white/20"></div>
-                                                      <span className="text-base font-black font-kufi leading-none" style={{ color: theme.palette[0] }}>
+                                                      <span className="text-base font-black font-kufi leading-none" style={{ color: cardHeaderColor }}>
                                                           {toArabic(Math.abs(upcomingEvents[eventIndex].daysRemaining))}
                                                       </span>
                                                       <div className="w-[1px] h-3 bg-black/20 dark:bg-white/20"></div>
-                                                      <span className="text-xs font-bold opacity-80">يوم</span>
+                                                      <span className="text-xs font-bold opacity-80" style={{ color: isBlackTheme ? '#FFFFFF' : undefined }}>يوم</span>
                                                   </>
                                               )}
                                           </div>
-                                          <div className="flex flex-col text-center gap-1" style={{ color: theme.textColor }}>
+                                          <div className="flex flex-col text-center gap-1" style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor }}>
                                               <p className="text-sm leading-tight break-words font-kufi font-bold">
                                                   {upcomingEvents[eventIndex].name}
                                               </p>
-                                              <div className="flex flex-row items-center justify-center gap-2 opacity-60 text-[10px] font-bold">
+                                              <div className="flex flex-row items-center justify-center gap-2 opacity-60 text-[10px] font-bold" style={{ color: isBlackTheme ? '#FFFFFF' : undefined }}>
                                                   <span>{upcomingEvents[eventIndex].dateStr}</span>
                                                   <span className="opacity-40">•</span>
                                                   <span>{upcomingEvents[eventIndex].gregorianDateStr}</span>
@@ -883,15 +896,15 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                       {/* Web App Link Card */}
                       <div 
                           className="w-full mt-3 py-2 px-3 rounded-2xl shadow-lg border-2 relative flex flex-col gap-1"
-                          style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
+                          style={{ borderColor: cardBorderColor, backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
                           dir="rtl"
                       >
-                          <div className="flex items-center gap-2 z-10 w-full relative" style={{ color: theme.palette[0] }}>
+                          <div className="flex items-center gap-2 z-10 w-full relative" style={{ color: cardHeaderColor }}>
                               <i className="fa-solid fa-globe text-xs"></i>
                               <span className="text-[11px] font-bold font-kufi">تصفح التطبيق</span>
                           </div>
                           
-                          <p className="text-sm font-bold opacity-80 leading-relaxed" style={{ color: theme.textColor }}>
+                          <p className="text-sm font-bold opacity-80 leading-relaxed" style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor }}>
                               لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط
                           </p>
 
@@ -900,8 +913,8 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                   onClick={() => window.open('https://mushaf-ahmed-laila.vercel.app/', '_blank')}
                                   className="py-1.5 px-3 rounded-xl font-bold text-[10px] text-center flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
                                   style={{ 
-                                      backgroundColor: theme.palette[0], 
-                                      color: (theme.palette[0]?.toLowerCase() === '#ffffff' || theme.palette[0]?.toLowerCase() === 'white') ? '#000000' : '#ffffff' 
+                                      backgroundColor: cardButtonColor, 
+                                      color: cardButtonTextColor 
                                   }}
                               >
                                   <i className="fa-solid fa-arrow-up-right-from-square"></i>
@@ -922,7 +935,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                   }}
                                   className="w-8 h-8 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
                                   title="نسخ الرابط"
-                                  style={{ color: theme.palette[0] }}
+                                  style={{ color: cardHeaderColor }}
                               >
                                   <i className="fa-regular fa-copy text-sm"></i>
                               </button>
@@ -967,7 +980,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                                   }}
                                   className="w-8 h-8 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
                                   title="مشاركة الرابط"
-                                  style={{ color: theme.palette[0] }}
+                                  style={{ color: cardHeaderColor }}
                               >
                                   <i className="fa-solid fa-share-nodes text-sm"></i>
                               </button>
@@ -977,22 +990,22 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                       {/* App Share Card */}
                       <div 
                           className="w-full mt-2 py-1.5 px-4 rounded-2xl shadow-lg border-2 relative flex flex-col gap-0.5 overflow-hidden"
-                          style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
+                          style={{ borderColor: cardBorderColor, backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
                           dir="rtl"
                       >
-                          <div className="flex items-center gap-2 z-10 w-full relative" style={{ color: theme.palette[0] }}>
+                          <div className="flex items-center gap-2 z-10 w-full relative" style={{ color: cardHeaderColor }}>
                               <i className="fa-solid fa-share-nodes text-xs"></i>
                               <span className="text-[11px] font-bold font-kufi">شارك التطبيق</span>
                           </div>
                           
-                          <p className="text-sm font-bold opacity-80 leading-tight" style={{ color: theme.textColor }}>
+                          <p className="text-sm font-bold opacity-80 leading-tight" style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor }}>
                               اذا اعجبك التطبيق قم بنشره على وسائل التواصل ليكون لك الاجر ولمن تحب ان شاء الله .
                           </p>
 
                           <div className="flex items-center justify-center gap-6">
                               {[
-                                  { icon: 'fa-regular fa-copy', label: 'نسخ', color: theme.palette[0], action: 'copy' },
-                                  { icon: 'fa-solid fa-share-nodes', label: 'مشاركة', color: theme.palette[0], action: 'share' }
+                                  { icon: 'fa-regular fa-copy', label: 'نسخ', color: cardHeaderColor, action: 'copy' },
+                                  { icon: 'fa-solid fa-share-nodes', label: 'مشاركة', color: cardHeaderColor, action: 'share' }
                               ].map((item, index) => (
                                   <button 
                                       key={index}

@@ -15,7 +15,6 @@ import QuranReader from '../pages/QuranReader';
 import QuranDownload from '../pages/QuranDownload';
 import Calculators from '../pages/Calculators';
 import VoiceControlPage from '../pages/VoiceControlPage';
-import MoreMenuPage from '../pages/MoreMenuPage';
 import MonthlyPrayerTimes from '../pages/MonthlyPrayerTimes';
 import DailyWird from '../pages/DailyWird';
 import Memorization from '../pages/Memorization';
@@ -75,8 +74,6 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
         return <Calculators onBack={onBack} onNavigate={onNavigate} />;
       case 'voice-control':
         return <VoiceControlPage onBack={onBack} onNavigate={onNavigate} />;
-      case 'more-menu':
-        return <MoreMenuPage onBack={onBack} onNavigate={onNavigate} />;
       case 'daily-wird':
         return <DailyWird onBack={onBack} onNavigate={onNavigate} />;
       case 'memorization':

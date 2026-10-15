@@ -340,9 +340,28 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
         };
     }, [isContinuousPlay, handleNextSurah]);
 
-    const showToast = (message: string) => {
+    const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const showToast = useCallback((message: string) => {
+        if (toastTimerRef.current) {
+            clearTimeout(toastTimerRef.current);
+        }
         setToast({ show: true, message });
-    };
+        toastTimerRef.current = setTimeout(() => {
+            setToast({ show: false, message: '' });
+        }, 2500);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+        };
+    }, []);
+
+    const handleCloseToast = useCallback(() => {
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+        setToast({ show: false, message: '' });
+    }, []);
 
     const isCurrentFavorite = useMemo(() => {
         return favorites.some(f => f.reciterId === reciterId && f.surahNumber === surahNumber);
@@ -628,19 +647,31 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
                         style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                     >
                         <div className="flex items-center justify-between">
-                            <label htmlFor="continuous-play-toggle" className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textColor }}>
+                            <label htmlFor="continuous-play-toggle" className="font-bold text-sm flex items-center gap-2" style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor }}>
                                 <i className="fa-solid fa-repeat" style={{ color: (themeKey === 'default' || isBlackTheme) ? (isBlackTheme ? '#FFFFFF' : '#000000') : theme.palette[0] }}></i>
                                 <span>تشغيل متواصل</span>
                             </label>
                             <button
                                 id="continuous-play-toggle"
                                 onClick={() => setIsContinuousPlay(prev => !prev)}
-                                className={`relative w-12 h-7 rounded-full transition-colors`}
-                                style={{ backgroundColor: isContinuousPlay ? (themeKey === 'default' ? '#000000' : (isBlackTheme ? '#FFFFFF' : theme.palette[0])) : theme.cardBorder }}
+                                className="relative w-12 h-7 rounded-full transition-colors cursor-pointer"
+                                style={{ 
+                                    backgroundColor: isContinuousPlay 
+                                        ? (isBlackTheme ? '#FFFFFF' : (themeKey === 'default' ? '#000000' : theme.palette[0])) 
+                                        : (isBlackTheme ? '#222222' : (theme.cardBorder || '#d1d5db')),
+                                    border: isBlackTheme ? '1.5px solid #FFFFFF' : 'none'
+                                }}
                                 aria-checked={isContinuousPlay}
                                 role="switch"
                             >
-                                <span className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ease-in-out ${isContinuousPlay ? 'left-6' : 'left-1'}`}></span>
+                                <span 
+                                    className={`absolute top-1 w-5 h-5 rounded-full shadow-md transition-all duration-300 ease-in-out ${isContinuousPlay ? 'left-6' : 'left-1'}`}
+                                    style={{
+                                        backgroundColor: isBlackTheme 
+                                            ? (isContinuousPlay ? '#000000' : '#FFFFFF') 
+                                            : '#FFFFFF'
+                                    }}
+                                ></span>
                             </button>
                         </div>
 
@@ -648,7 +679,7 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
 
                         <button 
                             onClick={() => setShowDownloadModal(true)} 
-                            className="w-full flex justify-between items-center group"
+                            className="w-full flex justify-between items-center group cursor-pointer"
                         >
                             <div className="flex items-center gap-2">
                                 <i className="fa-solid fa-download" style={{ color: (themeKey === 'default' || isBlackTheme) ? (isBlackTheme ? '#FFFFFF' : '#000000') : theme.palette[0] }}></i>
@@ -657,7 +688,6 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
                             <i className="fa-solid fa-chevron-left opacity-30 group-hover:opacity-100 transition-opacity"></i>
                         </button>
                     </div>
-                    <p className="text-xs text-center mt-2" style={{ color: theme.textColor, opacity: 0.6 }}>ملاحظة: لا تعمل هذه الصفحة إلا إذا كنت متصلاً بالإنترنت، ويفضل الواي فاي.</p>
                 </div>
 
                 {/* قسم المفضلات المحفوظة (حتى 10 سور وقراء) */}
@@ -756,6 +786,11 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
                     </div>
                 </div>
 
+                {/* ملاحظة الصفحة في آخر الصفحة بعد بطاقة المفضلة */}
+                <p className="text-xs text-center mt-3 mb-1 px-3" style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor, opacity: 0.65 }}>
+                    ملاحظة: لا تعمل هذه الصفحة إلا إذا كنت متصلاً بالإنترنت، ويفضل الواي فاي.
+                </p>
+
                 <div className="w-full h-6 shrink-0"></div>
             </main>
 
@@ -792,7 +827,7 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
             <Toast 
                 show={toast.show} 
                 message={toast.message} 
-                onClose={() => setToast({ ...toast, show: false })} 
+                onClose={handleCloseToast} 
             />
         </div>
     );

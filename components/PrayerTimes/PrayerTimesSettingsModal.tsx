@@ -15,6 +15,7 @@ interface PrayerTimesSettingsModalProps {
     isBlackAndWhite: boolean;
     cardBorderColor?: string;
     isDefaultTheme?: boolean;
+    isBlackTheme?: boolean;
     closeModal: () => void;
     tempOffset: number;
     setTempOffset: React.Dispatch<React.SetStateAction<number>>;
@@ -50,9 +51,10 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
     isOpen,
     currentEditingKey,
     prayerNamesAr,
-    primaryColor,
-    secondaryColor,
+    primaryColor: propPrimaryColor,
+    secondaryColor: propSecondaryColor,
     isBlackAndWhite,
+    isBlackTheme,
     cardBorderColor,
     isDefaultTheme,
     closeModal,
@@ -147,7 +149,10 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
         }
     };
 
-    const modalBorderColor = cardBorderColor || (isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : primaryColor));
+    const isEffectiveBlack = isBlackTheme || isBlackAndWhite;
+    const primaryColor = isEffectiveBlack ? '#FFFFFF' : propPrimaryColor;
+    const secondaryColor = isEffectiveBlack ? '#FFFFFF' : propSecondaryColor;
+    const modalBorderColor = cardBorderColor || (isDefaultTheme ? '#000000' : (isEffectiveBlack ? '#FFFFFF' : primaryColor));
     const totalPreviewOffset = tempOffset + (isSummerTime ? 60 : 0);
     const isSunrise = currentEditingKey === 'Sunrise';
 
@@ -319,7 +324,7 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                         primaryColor={primaryColor}
                         cardBorderColor={cardBorderColor}
                         isDefaultTheme={isDefaultTheme}
-                        isBlackTheme={isBlackAndWhite}
+                        isBlackTheme={isEffectiveBlack}
                     />
 
                     {/* 1. تنبيه الاستعداد للصلاة */}
@@ -333,24 +338,26 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                                     className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors shrink-0 ${
                                         tempPreReminderEnabled ? '' : 'bg-gray-300 dark:bg-gray-600'
                                     }`}
-                                    style={{ backgroundColor: tempPreReminderEnabled ? primaryColor : undefined }}
+                                    style={{ backgroundColor: tempPreReminderEnabled ? (isEffectiveBlack ? '#FFFFFF' : primaryColor) : undefined }}
                                     title="تنبيه الاستعداد"
                                 >
                                     <div
-                                        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                                            tempPreReminderEnabled ? '-translate-x-5' : 'translate-x-0'
+                                        className={`w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                                            tempPreReminderEnabled 
+                                                ? (isEffectiveBlack ? 'bg-black -translate-x-5' : 'bg-white -translate-x-5') 
+                                                : 'bg-white translate-x-0'
                                         }`}
                                     />
                                 </button>
 
-                                {/* Title & Badge (No icon, No subtext) */}
+                                {/* Title & Badge */}
                                 <div className="min-w-0 flex-1 text-right flex items-center justify-start gap-1.5 flex-wrap" dir="rtl">
-                                    <span className="font-bold text-xs">تنبيه الاستعداد</span>
+                                    <span className="font-bold text-xs" style={{ color: isEffectiveBlack ? '#FFFFFF' : undefined }}>تنبيه الاستعداد</span>
                                     <span 
                                         className="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-colors"
                                         style={{
-                                            backgroundColor: `${primaryColor}18`,
-                                            color: primaryColor
+                                            backgroundColor: isEffectiveBlack ? 'rgba(255,255,255,0.18)' : `${primaryColor}18`,
+                                            color: isEffectiveBlack ? '#FFFFFF' : primaryColor
                                         }}
                                     >
                                         قبل {tempPreReminderMinutes}د
@@ -361,7 +368,7 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                             {/* Duration options and +/- buttons */}
                             <div className="flex items-center justify-between pt-1.5 border-t border-black/10 dark:border-white/10" dir="rtl">
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] opacity-60">الوقت:</span>
+                                    <span className="text-[10px] opacity-80" style={{ color: isEffectiveBlack ? '#FFFFFF' : undefined }}>الوقت:</span>
                                     {[10, 15, 20].map((mins) => {
                                         const isSelected = tempPreReminderMinutes === mins;
                                         return (
@@ -372,12 +379,14 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                                                 className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
                                                     isSelected
                                                         ? 'shadow-xs'
-                                                        : 'bg-black/5 dark:bg-white/10 opacity-80 hover:opacity-100'
+                                                        : 'bg-black/5 dark:bg-white/10 opacity-90 hover:opacity-100'
                                                 }`}
                                                 style={isSelected ? {
-                                                    backgroundColor: primaryColor,
-                                                    color: isBlackAndWhite ? '#000000' : '#ffffff'
-                                                } : undefined}
+                                                    backgroundColor: isEffectiveBlack ? '#FFFFFF' : primaryColor,
+                                                    color: isEffectiveBlack ? '#000000' : '#ffffff'
+                                                } : {
+                                                    color: isEffectiveBlack ? '#FFFFFF' : undefined
+                                                }}
                                             >
                                                 {mins}د
                                             </button>
@@ -420,24 +429,26 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                                     className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors shrink-0 ${
                                         tempIqamaEnabled ? '' : 'bg-gray-300 dark:bg-gray-600'
                                     }`}
-                                    style={{ backgroundColor: tempIqamaEnabled ? primaryColor : undefined }}
+                                    style={{ backgroundColor: tempIqamaEnabled ? (isEffectiveBlack ? '#FFFFFF' : primaryColor) : undefined }}
                                     title="تفعيل/تعطيل تنبيه الإقامة"
                                 >
                                     <div
-                                        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                                            tempIqamaEnabled ? '-translate-x-5' : 'translate-x-0'
+                                        className={`w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                                            tempIqamaEnabled 
+                                                ? (isEffectiveBlack ? 'bg-black -translate-x-5' : 'bg-white -translate-x-5') 
+                                                : 'bg-white translate-x-0'
                                         }`}
                                     />
                                 </button>
 
-                                {/* Title & Badge (No icon, No subtext) */}
+                                {/* Title & Badge */}
                                 <div className="min-w-0 flex-1 text-right flex items-center justify-start gap-1.5 flex-wrap" dir="rtl">
-                                    <span className="font-bold text-xs">تنبيه الإقامة</span>
+                                    <span className="font-bold text-xs" style={{ color: isEffectiveBlack ? '#FFFFFF' : undefined }}>تنبيه الإقامة</span>
                                     <span 
                                         className="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-colors"
                                         style={{
-                                            backgroundColor: `${primaryColor}18`,
-                                            color: primaryColor
+                                            backgroundColor: isEffectiveBlack ? 'rgba(255,255,255,0.18)' : `${primaryColor}18`,
+                                            color: isEffectiveBlack ? '#FFFFFF' : primaryColor
                                         }}
                                     >
                                         بعد {tempIqama}د
@@ -456,10 +467,10 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                                 </button>
                             </div>
 
-                            {/* Duration options (10, 15, 20 only) and inline +/- */}
+                            {/* Duration options and inline +/- */}
                             <div className="flex items-center justify-between pt-1.5 border-t border-black/10 dark:border-white/10" dir="rtl">
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] opacity-60">المدة:</span>
+                                    <span className="text-[10px] opacity-80" style={{ color: isEffectiveBlack ? '#FFFFFF' : undefined }}>المدة:</span>
                                     {[10, 15, 20].map((mins) => {
                                         const isSelected = tempIqama === mins;
                                         return (
@@ -470,12 +481,14 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                                                 className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
                                                     isSelected
                                                         ? 'shadow-xs'
-                                                        : 'bg-black/5 dark:bg-white/10 opacity-80 hover:opacity-100'
+                                                        : 'bg-black/5 dark:bg-white/10 opacity-90 hover:opacity-100'
                                                 }`}
                                                 style={isSelected ? {
-                                                    backgroundColor: primaryColor,
-                                                    color: isBlackAndWhite ? '#000000' : '#ffffff'
-                                                } : undefined}
+                                                    backgroundColor: isEffectiveBlack ? '#FFFFFF' : primaryColor,
+                                                    color: isEffectiveBlack ? '#000000' : '#ffffff'
+                                                } : {
+                                                    color: isEffectiveBlack ? '#FFFFFF' : undefined
+                                                }}
                                             >
                                                 {mins}د
                                             </button>
@@ -518,24 +531,26 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                                     className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors shrink-0 ${
                                         tempAutoSilentEnabled ? '' : 'bg-gray-300 dark:bg-gray-600'
                                     }`}
-                                    style={{ backgroundColor: tempAutoSilentEnabled ? primaryColor : undefined }}
+                                    style={{ backgroundColor: tempAutoSilentEnabled ? (isEffectiveBlack ? '#FFFFFF' : primaryColor) : undefined }}
                                     title="الصامت التلقائي"
                                 >
                                     <div
-                                        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                                            tempAutoSilentEnabled ? '-translate-x-5' : 'translate-x-0'
+                                        className={`w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                                            tempAutoSilentEnabled 
+                                                ? (isEffectiveBlack ? 'bg-black -translate-x-5' : 'bg-white -translate-x-5') 
+                                                : 'bg-white translate-x-0'
                                         }`}
                                     />
                                 </button>
 
-                                {/* Title & Badge (No icon, No subtext) */}
+                                {/* Title & Badge */}
                                 <div className="min-w-0 flex-1 text-right flex items-center justify-start gap-1.5 flex-wrap" dir="rtl">
-                                    <span className="font-bold text-xs">الصامت التلقائي</span>
+                                    <span className="font-bold text-xs" style={{ color: isEffectiveBlack ? '#FFFFFF' : undefined }}>الصامت التلقائي</span>
                                     <span 
                                         className="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-colors"
                                         style={{
-                                            backgroundColor: `${primaryColor}18`,
-                                            color: primaryColor
+                                            backgroundColor: isEffectiveBlack ? 'rgba(255,255,255,0.18)' : `${primaryColor}18`,
+                                            color: isEffectiveBlack ? '#FFFFFF' : primaryColor
                                         }}
                                     >
                                         {tempAutoSilentDuration}د
@@ -546,7 +561,7 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                             {/* Duration options and +/- buttons */}
                             <div className="flex items-center justify-between pt-1.5 border-t border-black/10 dark:border-white/10" dir="rtl">
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] opacity-60">المدة:</span>
+                                    <span className="text-[10px] opacity-80" style={{ color: isEffectiveBlack ? '#FFFFFF' : undefined }}>المدة:</span>
                                     {[10, 15, 20].map((duration) => {
                                         const isSelected = tempAutoSilentDuration === duration;
                                         return (
@@ -557,12 +572,14 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                                                 className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
                                                     isSelected
                                                         ? 'shadow-xs'
-                                                        : 'bg-black/5 dark:bg-white/10 opacity-80 hover:opacity-100'
+                                                        : 'bg-black/5 dark:bg-white/10 opacity-90 hover:opacity-100'
                                                 }`}
                                                 style={isSelected ? {
-                                                    backgroundColor: primaryColor,
-                                                    color: isBlackAndWhite ? '#000000' : '#ffffff'
-                                                } : undefined}
+                                                    backgroundColor: isEffectiveBlack ? '#FFFFFF' : primaryColor,
+                                                    color: isEffectiveBlack ? '#000000' : '#ffffff'
+                                                } : {
+                                                    color: isEffectiveBlack ? '#FFFFFF' : undefined
+                                                }}
                                             >
                                                 {duration}د
                                             </button>
@@ -609,7 +626,7 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                                             }, 1500);
                                         }}
                                         className="text-[10px] font-bold px-2 py-1 rounded-lg text-white shrink-0 cursor-pointer shadow-xs active:scale-95"
-                                        style={{ backgroundColor: primaryColor }}
+                                        style={{ backgroundColor: isEffectiveBlack ? '#FFFFFF' : primaryColor, color: isEffectiveBlack ? '#000000' : '#FFFFFF' }}
                                     >
                                         منح الإذن
                                     </button>
@@ -620,7 +637,7 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                 </div>
 
                 {/* Save button */}
-                <button onClick={saveUserConfig} className="w-full mt-4 text-white py-3 sm:py-3.5 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all shrink-0 cursor-pointer" style={{backgroundColor: primaryColor, color: isBlackAndWhite ? '#000' : '#FFF'}}>حفظ التغييرات</button>
+                <button onClick={saveUserConfig} className="w-full mt-4 text-white py-3 sm:py-3.5 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all shrink-0 cursor-pointer" style={{backgroundColor: isEffectiveBlack ? '#FFFFFF' : primaryColor, color: isEffectiveBlack ? '#000000' : '#FFF'}}>حفظ التغييرات</button>
             </div>
         </div>
     );

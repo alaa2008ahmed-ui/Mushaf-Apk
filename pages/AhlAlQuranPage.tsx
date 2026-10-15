@@ -176,7 +176,7 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
         setShowUsernameModal(false);
         return true;
       }
-      return false; // Let global handler navigate back to origin (home or more-menu)
+      return false; // Let global handler navigate back to origin (home)
     };
 
     const unregister = registerBackInterceptor(interceptor);

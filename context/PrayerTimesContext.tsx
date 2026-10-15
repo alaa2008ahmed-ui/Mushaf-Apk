@@ -291,7 +291,10 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             setIsPrayerSilentActive(foundActive);
             setActiveSilentPrayerName(activeName);
             if (foundActive) {
-                setDeviceSilentNow(true, activeName);
+                // If this is the exact starting minute of Iqama, delay hardware muting slightly to let the chime sound finish ringing
+                setTimeout(() => {
+                    setDeviceSilentNow(true, activeName);
+                }, 5000);
             } else {
                 setDeviceSilentNow(false);
             }
@@ -667,7 +670,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                             name: ac.name,
                             description: ac.desc,
                             importance: 5,
-                            sound: 'chime',
+                            sound: 'chime.mp3',
                             vibration: true,
                             visibility: 1
                         });
@@ -864,7 +867,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                             body: `أقيمت الصلاة.. استووا وتراصوا واعتدلوا أثابكم الله 🤲`,
                             schedule: { at: iqamaPrayerDate, allowWhileIdle: true },
                             channelId: 'iqama_v4_chime_channel',
-                            sound: 'chime',
+                            sound: 'chime.mp3',
                             smallIcon: 'ic_stat_name',
                             extra: { type: 'iqama', prayer: key, playSound: true, soundFile: 'chime.mp3' }
                         });
@@ -1363,7 +1366,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                             triggeredAlertsRef.current.add(iqamaAlertKey);
                             console.log(`[Iqama Alert] Playing gentle chime and showing visual alert for ${key}`);
                             // Play audio on all platforms (web + phone foreground)
-                            playNotificationSound('/assets/audio/chime.mp3');
+                            playNotificationSound('/assets/audio/chime.mp3', true);
                             // Trigger in-app visual alert
                             const iqamaFormatted = applyOffset(times[key], totalOffset + iqamaMinutes);
                             setActiveIqamaAlert({
