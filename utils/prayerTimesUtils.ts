@@ -75,15 +75,20 @@ export const playNotificationSound = (source: string) => {
     if (!source || source === 'none') return;
 
     const now = Date.now();
-    // Prevent duplicate playback if the exact same sound is already playing and was triggered recently (< 4s)
-    if (previewAudio && !previewAudio.paused && currentAudioSource === source && (now - lastPlayTimestamp) < 4000) {
+    // Prevent duplicate playback: If ANY sound was triggered less than 1500ms ago, ignore
+    if (now - lastPlayTimestamp < 1500) {
+        console.log(`[playNotificationSound] Ignored rapid duplicate playback (${now - lastPlayTimestamp}ms ago): ${source}`);
+        return;
+    }
+    // If the exact same sound was triggered less than 4000ms ago, ignore
+    if (currentAudioSource === source && (now - lastPlayTimestamp) < 4000) {
         console.log(`[playNotificationSound] Ignored duplicate playback request for: ${source}`);
         return;
     }
 
     const mediaUrl = getMediaURL(source);
     
-    // Stop any currently playing audio cleanly before starting new one
+    // Stop and fully unload any currently playing audio cleanly before starting new one
     stopNotificationSound();
 
     lastPlayTimestamp = now;
@@ -108,6 +113,15 @@ export const playNotificationSound = (source: string) => {
             }
 
             console.warn("Audio play failed on resolved mediaUrl:", e);
+
+            // Clean up the initial audio element before attempting fallback so two streams never play
+            try {
+                audio.pause();
+                audio.currentTime = 0;
+                audio.src = '';
+                audio.removeAttribute('src');
+                audio.load();
+            } catch (ignored) {}
 
             // Only attempt fallback if this audio instance is still the active one
             if (previewAudio === audio && mediaUrl !== source) {
@@ -143,6 +157,7 @@ export const stopNotificationSound = () => {
             previewAudio.pause();
             previewAudio.currentTime = 0;
             previewAudio.src = '';
+            previewAudio.removeAttribute('src');
             previewAudio.load();
         } catch (e) {}
         previewAudio = null;

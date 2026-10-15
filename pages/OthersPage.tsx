@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'framer-motion';
-import BottomBar from '../components/BottomBar';
 import ThemePageLock from '../components/ThemePageLock';
 import { useTheme } from '../context/ThemeContext';
 import { shareAsImage } from '../utils/shareAsImage';
@@ -1186,19 +1185,43 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
 
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden relative bg-transparent" style={{ fontFamily: theme.font }}>
-      {/* Top Header with Back Button to Apps List */}
+      {/* Top Header with Back Button and Home Button */}
       <header className="app-top-bar z-20 shrink-0">
         <div className="app-top-bar__inner">
-          <div className="relative flex items-center justify-between w-full">
-            <div className="w-10" />
-            <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi text-center flex-1" style={{ color: theme.textColor }}>
-              الرقية الشرعية
-            </h1>
-            <div className="shrink-0 w-10">
+          <div className="relative flex items-center justify-center w-full min-h-[44px]">
+            {/* سهم الرجوع للخلف على يمين النص */}
+            <div className="absolute right-0 flex items-center">
+              <button
+                onClick={onBack}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                title="رجوع للخلف"
+                aria-label="رجوع للخلف"
+              >
+                <i className="fa-solid fa-arrow-right text-xl"></i>
+              </button>
+            </div>
+
+            {/* عنوان الصفحة في الوسط */}
+            <div className="text-center px-12">
+              <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi">
+                الرقية الشرعية
+              </h1>
+            </div>
+
+            {/* أيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية */}
+            <div className="absolute left-0 flex items-center gap-1">
               <ThemePageLock />
+              <button
+                onClick={() => onNavigate('home')}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                title="الصفحة الرئيسية"
+                aria-label="الصفحة الرئيسية"
+              >
+                <i className="fa-solid fa-house text-xl"></i>
+              </button>
             </div>
           </div>
-          <p className="app-top-bar__subtitle text-xs" style={{ color: theme.textColor + 'aa' }}>
+          <p className="app-top-bar__subtitle text-center">
             الآيات والتحصينات النبوية الصحيحة من العين والحسد والمس
           </p>
         </div>
@@ -1233,7 +1256,7 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
 
       {/* Main Container */}
       <main className="w-full flex-1 overflow-y-auto px-4 pt-0 pb-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-right pt-2 pb-28" dir="rtl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-right pt-2 pb-6" dir="rtl">
           <AnimatePresence mode="wait">
             {/* TABS 1 & 2: QURANIC / SUNNAH / FAVORITES / ALL LISTS */}
             {activeTab !== 'guide' && (
@@ -1585,13 +1608,7 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
         </div>
       )}
 
-      {/* Bottom Nav Bar - showThemes={false} to delete Themes toggles */}
-      <BottomBar 
-        onHomeClick={onBack} 
-        onThemesClick={onOpenThemes || (() => {})} 
-        showHome={true} 
-        showThemes={false} 
-      />
+
     </div>
   );
 };

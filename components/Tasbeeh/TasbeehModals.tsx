@@ -26,6 +26,7 @@ interface TasbeehModalsProps {
     handleSetSkin: (skin: 'modern' | 'classic' | 'beads') => void;
     themeKey?: string;
     cardBorderColor?: string;
+    onNavigate?: (pageId: string, params?: any) => void;
 }
 
 const TasbeehModals: React.FC<TasbeehModalsProps> = ({
@@ -34,7 +35,8 @@ const TasbeehModals: React.FC<TasbeehModalsProps> = ({
     activePhrase, setActivePhrase, handleReset, colorOptions,
     handleSetCounterColor, counterColor, theme, dailyStats, skin, handleSetSkin,
     themeKey = 'default',
-    cardBorderColor
+    cardBorderColor,
+    onNavigate
 }) => {
     const isBlackTheme = theme.bgColor === '#000000';
     const isDefaultTheme = themeKey === 'default' || !themeKey;
@@ -164,6 +166,7 @@ const TasbeehModals: React.FC<TasbeehModalsProps> = ({
                 dailyStats={dailyStats}
                 theme={theme}
                 themeKey={themeKey}
+                onNavigate={onNavigate}
             />
         </>
     );

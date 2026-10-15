@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, FC } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import ThemePageLock from '../components/ThemePageLock';
 import { umrahSteps, hajjTypes, hajjTamattuPlan, hajjIfradPlan, hajjQiranPlan, hajjGeneralInfo, allDuaas, homeScreenAdditions } from '../data/hajjUmrahData';
@@ -335,7 +334,7 @@ function HajjUmrah({ onBack, onNavigate }) {
         }
     };
 
-    const handleHomeClick = () => {
+    const handleBack = () => {
         if (selectedDetail) {
             setSelectedDetail(null);
         } else if (zoomedDuaa) {
@@ -345,6 +344,19 @@ function HajjUmrah({ onBack, onNavigate }) {
         } else {
             onBack();
         }
+    };
+
+    const handleGoHome = () => {
+        if (selectedDetail) {
+            setSelectedDetail(null);
+        }
+        if (zoomedDuaa) {
+            setZoomedDuaa(null);
+        }
+        if (screen !== 'home') {
+            setScreen('home');
+        }
+        onNavigate('home');
     };
 
     const getScreenTitle = () => {
@@ -373,26 +385,49 @@ function HajjUmrah({ onBack, onNavigate }) {
         <div className="h-screen flex flex-col bg-transparent">
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-center w-full">
-                        <div className="absolute left-0">
-                            {screen === 'home' && <ThemePageLock />}
+                    <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                        {/* سهم الرجوع للخلف على يمين النص */}
+                        <div className="absolute right-0 flex items-center">
+                            <button
+                                onClick={handleBack}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="رجوع للخلف"
+                                aria-label="رجوع للخلف"
+                            >
+                                <i className="fa-solid fa-arrow-right text-xl"></i>
+                            </button>
                         </div>
-                        <h1 className="app-top-bar__title text-2xl font-kufi">
-                            {getScreenTitle()}
-                        </h1>
+
+                        {/* عنوان الصفحة في الوسط */}
+                        <div className="text-center px-12">
+                            <h1 className="app-top-bar__title text-2xl font-kufi">
+                                {getScreenTitle()}
+                            </h1>
+                        </div>
+
+                        {/* أيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية */}
+                        <div className="absolute left-0 flex items-center gap-1">
+                            {screen === 'home' && <ThemePageLock />}
+                            <button
+                                onClick={handleGoHome}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="الصفحة الرئيسية"
+                                aria-label="الصفحة الرئيسية"
+                            >
+                                <i className="fa-solid fa-house text-xl"></i>
+                            </button>
+                        </div>
                     </div>
-                    <p className="app-top-bar__subtitle">
+                    <p className="app-top-bar__subtitle text-center">
                         {getScreenSubtitle()}
                     </p>
                 </div>
             </header>
 
-            <main className="w-full max-w-4xl mx-auto px-4 pt-0 flex-1 overflow-y-auto pb-2">
+            <main className="w-full max-w-4xl mx-auto px-4 pt-0 flex-1 overflow-y-auto pb-6">
                 {renderScreen()}
-                <div className="w-full h-24 shrink-0"></div>
+                <div className="w-full h-6 shrink-0"></div>
             </main>
-
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
 
             {selectedDetail && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 overflow-hidden" onClick={() => setSelectedDetail(null)}>

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import InteractiveBackground from '../components/InteractiveBackground';
 import NavButton from '../components/MainMenu/NavButton';
 import { motion } from 'motion/react';
 import { useShowNewBadge } from '../utils/badgeManager';
 import { useLanguage } from '../context/LanguageContext';
+import ThemePageLock from '../components/ThemePageLock';
 
 const ALL_MENU_ITEMS = [
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-14", colorIndex: 0 },
@@ -31,16 +31,13 @@ const ALL_MENU_ITEMS = [
     { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-14", colorIndex: 0 },
     { id: 'islamic-sites', label: "🌐 مواقع إسلامية", className: "col-span-2 h-14", colorIndex: 0 },
-    { id: 'quran-radios', label: "📻 إذاعات القرآن المباشرة", className: "col-span-2 h-14", colorIndex: 0 },
-    { id: 'fiqh-worship', label: "🕌 فقه العبادات", className: "col-span-1 h-14", colorIndex: 0 },
-    { id: 'prophetic-seerah', label: "📜 السيرة والخط الزمني", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'prophetic-seerah', label: "📜 السيرة والخط الزمني", className: "col-span-2 h-14", colorIndex: 0 },
 ];
 
 interface MoreMenuPageProps {
     onNavigate: (pageId: string, params?: any) => void;
     onBack: () => void;
 }
-import ThemePageLock from '../components/ThemePageLock';
 
 const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
     const { theme, themeKey, togglePageLock, isPageLocked } = useTheme();
@@ -60,22 +57,50 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
         <div id="more-menu-container">
             <InteractiveBackground />
             <div className="h-screen w-full flex flex-col overflow-hidden">
-                <header className="app-top-bar">
+                <header className="app-top-bar shrink-0">
                     <div className="app-top-bar__inner">
-                        <div className="relative flex items-center justify-center w-full">
-                            <div className="absolute left-0">
-                                <ThemePageLock />
+                        <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                            {/* سهم الرجوع للخلف على يمين النص */}
+                            <div className="absolute right-0 flex items-center">
+                                <button
+                                    onClick={onBack}
+                                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                    title="رجوع للخلف"
+                                    aria-label="رجوع للخلف"
+                                >
+                                    <i className="fa-solid fa-arrow-right text-xl"></i>
+                                </button>
                             </div>
-                            <h1 className="app-top-bar__title text-2xl font-kufi">{t('page.more_menu_title', 'قائمة التطبيقات')}</h1>
+
+                            {/* عنوان الصفحة في الوسط */}
+                            <div className="text-center px-12">
+                                <h1 className="app-top-bar__title text-2xl font-kufi">{t('page.more_menu_title', 'قائمة التطبيقات')}</h1>
+                            </div>
+
+                            {/* أيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية */}
+                            <div className="absolute left-0 flex items-center gap-1">
+                                <ThemePageLock />
+                                <button
+                                    onClick={() => onNavigate('home')}
+                                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                    title="الصفحة الرئيسية"
+                                    aria-label="الصفحة الرئيسية"
+                                >
+                                    <i className="fa-solid fa-house text-xl"></i>
+                                </button>
+                            </div>
                         </div>
                         <p className="app-top-bar__subtitle">{t('page.more_menu_subtitle', 'تصفح جميع أقسام التطبيق')}</p>
                     </div>
                 </header>
-                <div className="flex-1 overflow-y-auto pb-32 hide-scrollbar">
+                <div 
+                    className="flex-1 overflow-y-auto pb-8 hide-scrollbar"
+                    style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)' }}
+                >
                     <div className="main-layout px-4 flex flex-col" style={{ fontFamily: theme.font }}>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-5 w-full max-w-sm mx-auto mt-6">
                             {ALL_MENU_ITEMS.map((item, idx) => {
-                                const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna', 'community', 'ahl-al-quran', 'others', 'islamic-sites', 'quran-radios', 'fiqh-worship', 'prophetic-seerah'].includes(item.id);
+                                const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna', 'community', 'ahl-al-quran', 'others', 'islamic-sites', 'prophetic-seerah'].includes(item.id);
                                 const isDefault = themeKey === 'default';
                                 const isBlackTheme = theme.bgColor === '#000000';
                                 const primaryColor = isDefault 
@@ -87,7 +112,7 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                 const buttonBorder = isDefault 
                                     ? '2px solid #000000' 
                                     : (isBlackTheme ? '1px solid rgba(255, 255, 255, 0.2)' : theme.btnBorder);
-                                const isNew = showNewBadges && ['memorization', 'community', 'ahl-al-quran', 'others', 'islamic-sites', 'quran-radios', 'fiqh-worship', 'prophetic-seerah'].includes(item.id);
+                                const isNew = showNewBadges && ['memorization', 'community', 'ahl-al-quran', 'others', 'islamic-sites', 'prophetic-seerah'].includes(item.id);
                                 
                                 return (
                                     <div
@@ -133,8 +158,6 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                     </div>
                 </div>
             </div>
-
-            <BottomBar onHomeClick={() => onNavigate('home')} onThemesClick={() => {}} showThemes={false} />
         </div>
     );
 };

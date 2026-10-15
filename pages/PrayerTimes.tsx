@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import { prayerNamesAr, internetTones } from '../data/prayerTimesData';
 import { usePrayerTimes, copyAssetToDevice } from '../context/PrayerTimesContext';
@@ -162,7 +161,7 @@ function PrayerTimes({ onBack, onNavigate }) {
         return unregister;
     }, [isModalOpen, isNotifModalOpen]);
 
-    const handleHomeClick = () => {
+    const handleBack = () => {
         if (isModalOpen) {
             closeModal();
         } else if (isNotifModalOpen) {
@@ -170,6 +169,12 @@ function PrayerTimes({ onBack, onNavigate }) {
         } else {
             onBack();
         }
+    };
+
+    const handleGoHome = () => {
+        if (isModalOpen) closeModal();
+        if (isNotifModalOpen) setIsNotifModalOpen(false);
+        onNavigate('home');
     };
 
     const handleRefreshLocation = async () => {
@@ -344,6 +349,8 @@ function PrayerTimes({ onBack, onNavigate }) {
                 fullCountry={config.location.fullCountry}
                 combinedCode={config.location.combinedCode}
                 topBarTextColor={topBarTextColor}
+                onBack={handleBack}
+                onHome={handleGoHome}
             />
 
             <main className="flex-1 overflow-y-auto hide-scrollbar px-2 pb-1">
@@ -572,11 +579,10 @@ function PrayerTimes({ onBack, onNavigate }) {
             )}
 
             {toastMessage && (
-                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-[100]">
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-[100]">
                     {toastMessage}
                 </div>
             )}
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
             <TutorialOverlay tutorialId="prayer-times-tutorial" steps={prayerTutorialSteps} />
         </div>
     );

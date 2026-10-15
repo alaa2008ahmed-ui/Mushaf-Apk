@@ -142,7 +142,10 @@ export const ThemesSidebar: React.FC<ThemesSidebarProps> = ({ isOpen, onClose })
 
             {/* Scrollable Theme Circles */}
             <div className="flex-1 overflow-y-auto p-2 pb-2.5 scrollbar-hide relative z-10 bg-white">
-              <div className="grid grid-cols-2 gap-y-3.5 gap-x-2 place-items-center py-2">
+              <div 
+                className="grid grid-cols-2 gap-y-[10.7px] gap-x-2 place-items-center py-2"
+                style={{ rowGap: '10.7px' }}
+              >
                 {Object.entries(presetThemes).map(([key, t]: [string, any]) => {
                   const isSelected = themeKey === key;
                   const circleBg = getThemeCircleColor(key, t);
@@ -157,19 +160,16 @@ export const ThemesSidebar: React.FC<ThemesSidebarProps> = ({ isOpen, onClose })
                       aria-label={t.name}
                     >
                       <div
-                        className={`w-[26px] h-[26px] rounded-full border-2 transition-all flex items-center justify-center relative shadow-md ${
+                        className={`w-[26px] h-[26px] rounded-full border-0 transition-all flex items-center justify-center relative ${
                           isSelected
                             ? 'scale-110 shadow-lg'
-                            : 'border-slate-300 hover:border-slate-500 hover:scale-110'
+                            : 'hover:scale-110 shadow-md'
                         }`}
                         style={{
                           backgroundColor: circleBg,
-                          borderColor: isSelected
-                            ? themeBorderColor
-                            : '#cbd5e1',
                           boxShadow: isSelected
-                            ? `0 0 0 1.5px #FFFFFF, 0 0 0 3.5px ${themeBorderColor}`
-                            : '0 2px 4px rgba(0,0,0,0.1)'
+                            ? '0 4px 8px rgba(0,0,0,0.25)'
+                            : '0 2px 4px rgba(0,0,0,0.12)'
                         }}
                       >
                         {isSelected && (

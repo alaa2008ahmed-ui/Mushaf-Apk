@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import BottomBar from '../components/BottomBar';
 import ThemePageLock from '../components/ThemePageLock';
 import { useTheme } from '../context/ThemeContext';
 import { SURAH_LIST, RECITERS } from '../data/listenQuranData';
@@ -61,6 +60,15 @@ function formatTime(seconds) {
     return toArabicNumerals(`${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
 }
 
+interface ListenFavorite {
+    id: string;
+    reciterId: string;
+    reciterName: string;
+    surahNumber: number;
+    surahName: string;
+    createdAt: number;
+}
+
 function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
     const { theme, themeKey } = useTheme();
     const isBlackTheme = theme.bgColor === '#000000';
@@ -83,6 +91,28 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
     const [showDownloadModal, setShowDownloadModal] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '' });
     const [reciterSurahs, setReciterSurahs] = useState<Record<string, number[]>>({});
+
+    // قائمة المفضلات المحفوظة (حتى 10 تلاوات)
+    const [favorites, setFavorites] = useState<ListenFavorite[]>(() => {
+        try {
+            const saved = localStorage.getItem('listen_quran_favorites_v1');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) return parsed.slice(0, 10);
+            }
+        } catch (e) {
+            console.error('Failed to load favorites', e);
+        }
+        return [];
+    });
+
+    useEffect(() => {
+        try {
+            localStorage.setItem('listen_quran_favorites_v1', JSON.stringify(favorites));
+        } catch (e) {
+            console.error('Failed to save favorites', e);
+        }
+    }, [favorites]);
 
     const getAvailableSurahs = useCallback((id: string) => {
         const rName = RECITERS.find(r => r.id === id)?.name;
@@ -179,12 +209,19 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
         }
     }, []);
 
-    const handleHomeClick = useCallback(() => {
+    const handleBack = useCallback(() => {
         if (showReciterModal) { setShowReciterModal(false); }
         else if (showSurahModal) { setShowSurahModal(false); }
         else if (showDownloadModal) { setShowDownloadModal(false); }
         else { onBack(); }
     }, [showReciterModal, showSurahModal, showDownloadModal, onBack]);
+
+    const handleGoHome = useCallback(() => {
+        if (showReciterModal) { setShowReciterModal(false); }
+        if (showSurahModal) { setShowSurahModal(false); }
+        if (showDownloadModal) { setShowDownloadModal(false); }
+        onNavigate('home');
+    }, [showReciterModal, showSurahModal, showDownloadModal, onNavigate]);
 
     useEffect(() => {
         const interceptor = () => {
@@ -305,6 +342,47 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
 
     const showToast = (message: string) => {
         setToast({ show: true, message });
+    };
+
+    const isCurrentFavorite = useMemo(() => {
+        return favorites.some(f => f.reciterId === reciterId && f.surahNumber === surahNumber);
+    }, [favorites, reciterId, surahNumber]);
+
+    const handleToggleFavorite = () => {
+        const currentReciter = RECITERS.find(r => r.id === reciterId)?.name || 'غير معروف';
+        const currentSurah = SURAH_LIST.find(s => s.number === surahNumber)?.name || 'غير معروفة';
+
+        if (isCurrentFavorite) {
+            setFavorites(prev => prev.filter(f => !(f.reciterId === reciterId && f.surahNumber === surahNumber)));
+            showToast(`تمت إزالة سورة ${currentSurah} من المفضلة`);
+        } else {
+            if (favorites.length >= 10) {
+                showToast('الحد الأقصى للمفضلة هو ١٠ تلاوات');
+                return;
+            }
+            const newFav: ListenFavorite = {
+                id: `${reciterId}_${surahNumber}`,
+                reciterId,
+                reciterName: currentReciter,
+                surahNumber,
+                surahName: currentSurah,
+                createdAt: Date.now()
+            };
+            setFavorites(prev => [newFav, ...prev]);
+            showToast(`تمت إضافة سورة ${currentSurah} (${currentReciter}) إلى المفضلة`);
+        }
+    };
+
+    const handleSelectFavorite = (fav: ListenFavorite) => {
+        setReciterId(fav.reciterId);
+        setSurahNumber(fav.surahNumber);
+        showToast(`تم اختيار سورة ${fav.surahName} بصوت القارئ ${fav.reciterName}`);
+    };
+
+    const handleRemoveFavorite = (favId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setFavorites(prev => prev.filter(f => f.id !== favId));
+        showToast('تمت الإزالة من المفضلة');
     };
 
     useEffect(() => {
@@ -442,15 +520,49 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
                     }
                 `}</style>
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-center w-full">
-                        <div className="absolute left-0">
-                            <ThemePageLock />
+                    <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                        {/* سهم الرجوع للخلف على يمين النص */}
+                        <div className="absolute right-0 flex items-center">
+                            <button
+                                onClick={handleBack}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="رجوع للخلف"
+                                aria-label="رجوع للخلف"
+                            >
+                                <i className="fa-solid fa-arrow-right text-xl"></i>
+                            </button>
                         </div>
-                        <h1 className="app-top-bar__title text-2xl font-kufi">
-                            الاستماع للقرآن
-                        </h1>
+
+                        {/* عنوان الصفحة في الوسط */}
+                        <div className="text-center px-20 sm:px-24">
+                            <h1 className="app-top-bar__title text-2xl font-kufi">
+                                الاستماع للقرآن
+                            </h1>
+                        </div>
+
+                        {/* أيقونة المفضلة وأيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية */}
+                        <div className="absolute left-0 flex items-center gap-1">
+                            <ThemePageLock />
+                            <button
+                                type="button"
+                                onClick={handleToggleFavorite}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title={isCurrentFavorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}
+                                aria-label="المفضلة"
+                            >
+                                <i className={`text-xl transition-all ${isCurrentFavorite ? 'fa-solid fa-heart text-red-500 scale-110' : 'fa-regular fa-heart opacity-75 hover:opacity-100 hover:text-red-500'}`} style={isCurrentFavorite ? {} : { color: theme.textColor }}></i>
+                            </button>
+                            <button
+                                onClick={handleGoHome}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="الصفحة الرئيسية"
+                                aria-label="الصفحة الرئيسية"
+                            >
+                                <i className="fa-solid fa-house text-xl"></i>
+                            </button>
+                        </div>
                     </div>
-                    <p className="app-top-bar__subtitle">تلاوات عطرة من أشهر القراء</p>
+                    <p className="app-top-bar__subtitle text-center">تلاوات عطرة من أشهر القراء</p>
                 </div>
             </header>
 
@@ -548,10 +660,105 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
                     </div>
                     <p className="text-xs text-center mt-2" style={{ color: theme.textColor, opacity: 0.6 }}>ملاحظة: لا تعمل هذه الصفحة إلا إذا كنت متصلاً بالإنترنت، ويفضل الواي فاي.</p>
                 </div>
-                <div className="w-full h-24 shrink-0"></div>
-            </main>
 
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={onOpenThemes} showThemes={false} />
+                {/* قسم المفضلات المحفوظة (حتى 10 سور وقراء) */}
+                <div className="pt-2 pb-2 flex-shrink-0 space-y-3">
+                    <div 
+                        className="themed-card rounded-2xl p-4 space-y-3 transition-all"
+                        style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <i className="fa-solid fa-heart text-red-500 text-sm"></i>
+                                <span className="font-bold text-sm" style={{ color: theme.textColor }}>
+                                    المفضلات المحفوظة
+                                </span>
+                            </div>
+                            <span 
+                                className="text-xs px-2.5 py-0.5 rounded-full font-bold shadow-xs"
+                                style={{ 
+                                    backgroundColor: (themeKey === 'default' || isBlackTheme) ? (isBlackTheme ? '#FFFFFF20' : '#00000015') : `${theme.palette[0]}20`,
+                                    color: (themeKey === 'default' || isBlackTheme) ? (isBlackTheme ? '#FFFFFF' : '#000000') : theme.palette[0]
+                                }}
+                            >
+                                {toArabicNumerals(favorites.length)} / ١٠
+                            </span>
+                        </div>
+
+                        {favorites.length === 0 ? (
+                            <div className="text-center py-5 px-3 opacity-60">
+                                <i className="fa-regular fa-heart text-3xl mb-2.5 block opacity-40"></i>
+                                <p className="text-xs leading-relaxed font-medium">
+                                    لا توجد مفضلات محفوظة حتى الآن.<br />
+                                    اختر قارئاً وسورة واضغط على أيقونة القلب بالأعلى لحفظها هنا لسهولة الرجوع إليها (حتى ١٠ مفضلات).
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {favorites.map((fav) => {
+                                    const isSelected = fav.reciterId === reciterId && fav.surahNumber === surahNumber;
+                                    return (
+                                        <div
+                                            key={fav.id}
+                                            onClick={() => handleSelectFavorite(fav)}
+                                            className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all active:scale-[0.99] ${isSelected ? 'shadow-xs' : 'hover:opacity-90'}`}
+                                            style={{
+                                                backgroundColor: isSelected 
+                                                    ? ((themeKey === 'default' || isBlackTheme) ? (isBlackTheme ? '#FFFFFF15' : '#0000000c') : `${theme.palette[0]}15`)
+                                                    : 'transparent',
+                                                borderColor: isSelected 
+                                                    ? ((themeKey === 'default' || isBlackTheme) ? (isBlackTheme ? '#FFFFFF' : '#000000') : theme.palette[0])
+                                                    : 'rgba(150, 150, 150, 0.2)',
+                                                borderWidth: isSelected ? '1.5px' : '1px'
+                                            }}
+                                            title="اضغط للاستماع"
+                                        >
+                                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                                <div 
+                                                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-bold text-xs"
+                                                    style={{
+                                                        backgroundColor: (themeKey === 'default' || isBlackTheme) ? (isBlackTheme ? '#FFFFFF20' : '#00000010') : `${theme.palette[0]}20`,
+                                                        color: (themeKey === 'default' || isBlackTheme) ? (isBlackTheme ? '#FFFFFF' : '#000000') : theme.palette[0]
+                                                    }}
+                                                >
+                                                    {toArabicNumerals(fav.surahNumber)}
+                                                </div>
+                                                <div className="truncate text-right">
+                                                    <div className="text-xs font-bold truncate" style={{ color: theme.textColor }}>
+                                                        سورة {fav.surahName}
+                                                    </div>
+                                                    <div className="text-[11px] opacity-65 truncate font-medium">
+                                                        القارئ: {fav.reciterName}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-1.5 shrink-0 mr-2">
+                                                {isSelected && (
+                                                    <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                                                        {isPlaying ? 'قيد التشغيل' : 'المحددة'}
+                                                    </span>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleRemoveFavorite(fav.id, e)}
+                                                    className="w-8 h-8 rounded-full flex items-center justify-center opacity-50 hover:opacity-100 hover:text-red-500 transition-all cursor-pointer"
+                                                    title="حذف من المفضلة"
+                                                    aria-label="حذف"
+                                                >
+                                                    <i className="fa-regular fa-trash-can text-xs"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="w-full h-6 shrink-0"></div>
+            </main>
 
             {showReciterModal && (
                 <ReciterSelectModal

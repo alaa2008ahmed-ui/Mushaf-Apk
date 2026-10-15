@@ -13,6 +13,7 @@ export const internetTones = [
     { name: "تكبيرة 5", path: "/assets/audio/takbeer5.mp3" },
     { name: "تكبيرة 6", path: "/assets/audio/takbeer6.mp3" },
     { name: "الشهادة", path: "/assets/audio/shahadah.mp3" },
+    { name: "الصلاة", path: "/assets/audio/salah.mp3" },
 ];
 
 export const ADHAN_CHANNELS_CONFIG = [
@@ -27,4 +28,5 @@ export const ADHAN_CHANNELS_CONFIG = [
     { id: 'adhan_v5_azan3', sound: 'azan3.mp3', raw: 'azan3', name: 'أذان الصلوات (أذان 3)' },
     { id: 'adhan_v5_azan4', sound: 'azan4.mp3', raw: 'azan4', name: 'أذان الصلوات (أذان 4)' },
     { id: 'adhan_v5_shahadah', sound: 'shahadah.mp3', raw: 'shahadah', name: 'أذان الصلوات (الشهادة)' },
+    { id: 'adhan_v5_salah', sound: 'salah.mp3', raw: 'salah', name: 'أذان الصلوات (الصلاة)' },
 ];

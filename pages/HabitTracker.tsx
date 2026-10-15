@@ -5,7 +5,6 @@ import moment from 'moment-hijri';
 import { useHabitTracker, DailyRecord, HabitCategory, defaultRecord, CustomHabit } from '../hooks/useHabitTracker';
 import { useTheme } from '../context/ThemeContext';
 import ThemePageLock from '../components/ThemePageLock';
-import BottomBar from '../components/BottomBar';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -553,18 +552,41 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack , onNavigate }) => {
     <div className={`h-screen h-[100dvh] max-h-screen max-h-[100dvh] flex flex-col bg-transparent relative overflow-hidden`} dir="rtl">
       <header className="app-top-bar shrink-0">
           <div className="app-top-bar__inner">
-              <div className="relative flex items-center justify-center w-full">
-                  <div className="absolute left-0">
-                    <ThemePageLock />
+              <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                  {/* سهم الرجوع للخلف على يمين النص */}
+                  <div className="absolute right-0 flex items-center">
+                      <button
+                          onClick={handleHomeClick}
+                          className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                          title="رجوع للخلف"
+                          aria-label="رجوع للخلف"
+                      >
+                          <i className="fa-solid fa-arrow-right text-xl"></i>
+                      </button>
                   </div>
-                  <h1 className="app-top-bar__title text-2xl font-kufi">
-                      مربّي العبادات
-                  </h1>
+
+                  {/* عنوان الصفحة في الوسط */}
+                  <div className="text-center px-12">
+                      <h1 className="app-top-bar__title text-2xl font-kufi">
+                          مربّي العبادات
+                      </h1>
+                  </div>
+
+                  {/* أيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية */}
+                  <div className="absolute left-0 flex items-center gap-1">
+                      <ThemePageLock />
+                      <button
+                          onClick={() => onNavigate('home')}
+                          className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                          title="الصفحة الرئيسية"
+                          aria-label="الصفحة الرئيسية"
+                      >
+                          <i className="fa-solid fa-house text-xl"></i>
+                      </button>
+                  </div>
               </div>
-              <p className="app-top-bar__subtitle flex items-center justify-center gap-1.5 flex-wrap">
-                  <span>متابعة الطاعات والسنن اليومية</span>
-                  <span className="opacity-50">•</span>
-                  <span className="font-bold opacity-90">{selectedDayName}، {selectedFormattedDate}</span>
+              <p className="app-top-bar__subtitle text-center">
+                  متابعة الطاعات والسنن اليومية
               </p>
           </div>
       </header>
@@ -572,7 +594,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack , onNavigate }) => {
       {/* Content */}
       <main 
         className="w-full flex-1 min-h-0 overflow-y-auto px-4 pt-2 overscroll-contain"
-        style={{ paddingBottom: 'calc(65px + 1cm + env(safe-area-inset-bottom, 0px))' }}
+        style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
       >
         
         {/* Past Day Notice Banner */}
@@ -1014,7 +1036,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack , onNavigate }) => {
             onClick={() => {
               const next = !autoSyncEnabled;
               setAutoSyncEnabled(next);
-              showTrackerToast(next ? 'تم تفعيل الربط التلقائي مع القرآن والأذكار والأدعية ⚡' : 'تم تعطيل وفك الربط بين الصفحات 🔒');
+              showTrackerToast(next ? 'تم تفعيل الربط التلقائي مع القرآن والأذكار والأدعية ⚡' : 'تم تعطيل وفك الربط بين الصفحات ������');
             }}
             className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
               autoSyncEnabled ? (isBlackTheme ? 'bg-white' : 'bg-emerald-600') : 'bg-gray-300 dark:bg-gray-600'
@@ -1039,9 +1061,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack , onNavigate }) => {
         </div>
       </main>
 
-      <div className="shrink-0 z-30">
-        <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
-      </div>
+
 
       <TutorialOverlay tutorialId="habit-tracker-tutorial" steps={habitTrackerTutorialSteps} />
 
@@ -1095,6 +1115,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack , onNavigate }) => {
             isBlackTheme={isBlackTheme}
             onClose={() => setShowCustomHabitModal(false)}
             onAdded={(title) => showTrackerToast(`تمت إضافة "${title}" بنجاح 🌿`)}
+            onNavigate={onNavigate}
           />
         )}
       </AnimatePresence>

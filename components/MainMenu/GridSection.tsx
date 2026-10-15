@@ -298,7 +298,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 onResize={(e) => handleResize(item.id, e)}
                                 isGlass={theme.isGlass}
                                 btnText={textColor}
-                                showNewBadge={showNewBadges && ['memorization', 'ahl-al-quran', 'others', 'islamic-sites', 'quran-radios', 'fiqh-worship', 'prophetic-seerah'].includes(item.id)}
+                                showNewBadge={showNewBadges && ['memorization', 'ahl-al-quran', 'others', 'islamic-sites', 'prophetic-seerah'].includes(item.id)}
                                 badgeText={t('common.new', 'جديد')}
                                 unreadBadgeCount={item.id === 'community' ? unreadCommunityCount : undefined}
                             />

@@ -1,5 +1,5 @@
+// HisnAlmuslim component
 import React, { useState, useEffect, useRef } from 'react';
-import BottomBar from '../components/BottomBar';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import HisnHeader from '../components/HisnAlmuslim/HisnHeader';
 import CategoryList from '../components/HisnAlmuslim/CategoryList';
@@ -109,7 +109,7 @@ function HisnAlmuslim({ onBack, onNavigate }) {
         return unregister;
     }, [selectedCategory, zoomedItem]);
 
-    const handleHomeClick = () => {
+    const handleBack = () => {
         if (zoomedItem) {
             setZoomedItem(null);
         } else if (selectedCategory) {
@@ -119,15 +119,27 @@ function HisnAlmuslim({ onBack, onNavigate }) {
         }
     };
 
+    const handleGoHome = () => {
+        if (zoomedItem) {
+            setZoomedItem(null);
+        }
+        if (selectedCategory) {
+            setSelectedCategory(null);
+        }
+        onNavigate('home');
+    };
+
     return (
         <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: theme.bgColor }}>
             <HisnHeader 
                 title={selectedCategory ? selectedCategory.title : 'حصن المسلم'} 
                 subtitle={selectedCategory ? `أذكار ${selectedCategory.title}` : 'استعرض أبواب وأذكار حصن المسلم بسهولة.'} 
                 showThemePageLock={!selectedCategory}
+                onBack={handleBack}
+                onHome={handleGoHome}
             />
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar relative mx-auto w-full max-w-lg px-4 pb-4">
+            <main className="flex-1 overflow-y-auto hide-scrollbar relative mx-auto w-full max-w-lg px-4 pb-6">
                 <div>
                     {selectedCategory ? (
                         <CategoryDetail 
@@ -144,13 +156,11 @@ function HisnAlmuslim({ onBack, onNavigate }) {
                         />
                     )}
                 </div>
-                <div className="shrink-0 w-full h-32"></div>
+                <div className="shrink-0 w-full h-8"></div>
             </main>
 
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
-
             {/* Floating Menu & FAB */}
-            <div className="fixed bottom-20 right-4 z-[90] flex flex-col items-end">
+            <div className="fixed bottom-6 right-4 z-[90] flex flex-col items-end">
                 <AnimatePresence>
                     {isMenuOpen && (
                         <motion.div

@@ -4,7 +4,6 @@ import { motion } from 'motion/react';
 import { useVoiceControl, VoiceCommand } from '../context/VoiceControlContext';
 import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, RotateCcw, ChevronRight, WifiOff, BookOpen } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-import BottomBar from '../components/BottomBar';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 
 import ThemePageLock from '../components/ThemePageLock';
@@ -151,13 +150,38 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
         <div className="h-screen flex flex-col bg-transparent overflow-hidden">
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-center w-full">
-                        <div className="absolute left-0">
-                            <ThemePageLock />
+                    <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                        {/* سهم الرجوع للخلف على يمين النص */}
+                        <div className="absolute right-0 flex items-center">
+                            <button
+                                onClick={onBack}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="رجوع للخلف"
+                                aria-label="رجوع للخلف"
+                            >
+                                <i className="fa-solid fa-arrow-right text-xl"></i>
+                            </button>
                         </div>
-                        <h1 className="app-top-bar__title text-2xl font-kufi">التحكم الصوتي</h1>
+
+                        {/* عنوان الصفحة في الوسط */}
+                        <div className="text-center px-12">
+                            <h1 className="app-top-bar__title text-2xl font-kufi">التحكم الصوتي</h1>
+                        </div>
+
+                        {/* أيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية */}
+                        <div className="absolute left-0 flex items-center gap-1">
+                            <ThemePageLock />
+                            <button
+                                onClick={() => onNavigate('home')}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="الصفحة الرئيسية"
+                                aria-label="الصفحة الرئيسية"
+                            >
+                                <i className="fa-solid fa-house text-xl"></i>
+                            </button>
+                        </div>
                     </div>
-                    <p className="app-top-bar__subtitle">إدارة الأوامر الصوتية الذكية</p>
+                    <p className="app-top-bar__subtitle text-center">إدارة الأوامر الصوتية الذكية</p>
                 </div>
             </header>
 
@@ -344,11 +368,10 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                             </ul>
                         </div>
                     </div>
-                    <div className="shrink-0 w-full h-32"></div>
+                    <div className="shrink-0 w-full h-6"></div>
                 </div>
             </main>
 
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
             <TutorialOverlay tutorialId="voice-control-tutorial" steps={voiceControlTutorialSteps} />
         </div>
     );

@@ -5,7 +5,7 @@ import {
     Home, BookOpen, Headphones, Clock, Calendar, Brain, 
     Mic, Settings, Palette, MessageCircle, X, ChevronLeft,
     Menu, Info, HelpCircle, Star, Type, Bell, Compass, Search, Trophy,
-    Radio, BookMarked, ScrollText
+    ScrollText
 } from 'lucide-react';
 import TutorialOverlay, { TutorialStep } from './Tutorial/TutorialOverlay';
 import { THEMES } from './QuranReader/constants';
@@ -55,8 +55,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
     const menuItems = [
         { id: 'community', label: t('menu.community', 'مجتمع التواصل'), icon: MessageCircle, color: '#10b981', description: t('sidemenu.community_desc', 'التواصل والمحادثات مع القراء والحفاظ من جميع أنحاء العالم.') },
         { id: 'ahl-al-quran', label: t('menu.ahl_al_quran', 'أهل القرآن (لوحة الشرف)'), icon: Trophy, color: '#f59e0b', description: t('sidemenu.ahl_al_quran_desc', 'لوحة صدارة وتنافس محمود لقراء القرآن الكريم مع تحديث شهري للأجزاء والختمات.') },
-        { id: 'quran-radios', label: t('menu.quran_radios', 'إذاعات القرآن المباشرة'), icon: Radio, color: '#06b6d4', description: 'البث الحي المباشر لكبرى إذاعات القرآن الرسمية وكبار القراء.' },
-        { id: 'fiqh-worship', label: t('menu.fiqh_worship', 'فقه العبادات'), icon: BookMarked, color: '#10b981', description: 'دليل عملي لصفة الصلاة والوضوء وسجود السهو والطهارة.' },
         { id: 'prophetic-seerah', label: t('menu.prophetic_seerah', 'السيرة والخط الزمني'), icon: ScrollText, color: '#f59e0b', description: 'خط زمني تفاعلي لمحطات السيرة العطرة والعبر المستفادة.' },
         { id: 'search', label: t('sidemenu.search', 'البحث المتقدم'), icon: Search, color: '#14b8a6', description: t('sidemenu.search_desc', 'البحث عن آية، أو دعاء، أو أذكار.') },
         { id: 'habit-tracker', label: t('menu.habit_tracker', 'مربّي العبادات'), icon: Calendar, color: '#ec4899', description: t('sidemenu.habit_tracker_desc', 'متابعة الصلاة وتلاوة القرآن والأذكار والأهداف اليومية.') },
@@ -177,7 +175,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className="font-bold text-[15px]">{item.label}</span>
-                                            {showNewBadges && (item.id === 'community' || item.id === 'ahl-al-quran' || item.id === 'quran-radios' || item.id === 'fiqh-worship' || item.id === 'prophetic-seerah') && (
+                                            {showNewBadges && (item.id === 'community' || item.id === 'ahl-al-quran' || item.id === 'prophetic-seerah') && (
                                                 <span className="bg-yellow-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-xs border border-white dark:border-slate-800">
                                                     {t('common.new', 'جديد')}
                                                 </span>

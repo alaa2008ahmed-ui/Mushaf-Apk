@@ -6,7 +6,6 @@ import { quranData as quranJsonData } from '../utils/quranData';
 const quranData = { data: quranJsonData };
 import { SURAH_NAMES_AR, MEMORIZATION_READERS } from '../components/QuranReader/constants';
 import { registerBackInterceptor } from '../hooks/useBackButton';
-import BottomBar from '../components/BottomBar';
 import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { QuranDownloadModal } from '../components/QuranReader/DownloadModals';
 import ReciterSelectModal from '../components/QuranReader/ReciterSelectModal';
@@ -313,14 +312,40 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
             <div className="relative z-10 flex flex-col h-full">
                 <header className="app-top-bar shrink-0 relative z-10" style={{ backgroundColor: 'var(--qr-bar-bg)', borderBottom: '1px solid var(--qr-bar-border)' }}>
                     <div className="app-top-bar__inner">
-                        <div className="relative flex items-center justify-center w-full">
-                            <div className="absolute left-0">
-                                <ThemePageLock />
+                        <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                            {/* سهم الرجوع للخلف على يمين النص */}
+                            <div className="absolute right-0 flex items-center">
+                                <button
+                                    onClick={handleHomeClick}
+                                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                    title="رجوع للخلف"
+                                    aria-label="رجوع للخلف"
+                                >
+                                    <i className="fa-solid fa-arrow-right text-xl"></i>
+                                </button>
                             </div>
-                            <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2" style={{ color: 'var(--qr-bar-text)' }}>
-                                التحفيظ
-                            </h1>
+
+                            {/* عنوان الصفحة في الوسط */}
+                            <div className="text-center px-12">
+                                <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2" style={{ color: 'var(--qr-bar-text)' }}>
+                                    التحفيظ
+                                </h1>
+                            </div>
+
+                            {/* أيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية */}
+                            <div className="absolute left-0 flex items-center gap-1">
+                                <ThemePageLock />
+                                <button
+                                    onClick={() => onNavigate('home')}
+                                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                    title="الصفحة الرئيسية"
+                                    aria-label="الصفحة الرئيسية"
+                                >
+                                    <i className="fa-solid fa-house text-xl"></i>
+                                </button>
+                            </div>
                         </div>
+                        <p className="app-top-bar__subtitle text-center">تكرار ومراجعة آيات كتاب الله المتقن</p>
                     </div>
                 </header>
 
@@ -656,13 +681,11 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                             </div>
                         </div>
                     )}
-                    <div className="shrink-0 w-full h-32"></div>
+                    <div className="shrink-0 w-full h-6"></div>
                 </main>
 
                 {/* Removed fixed Start Button container to keep it in scrollable area or just before bottom bar */}
             </div>
-            
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
 
             {/* Help Modal */}
             {showHelpModal && (

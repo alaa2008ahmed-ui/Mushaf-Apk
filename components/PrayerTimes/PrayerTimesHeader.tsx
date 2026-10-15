@@ -9,6 +9,8 @@ interface PrayerTimesHeaderProps {
     fullCountry: string;
     combinedCode?: string;
     topBarTextColor: string;
+    onBack?: () => void;
+    onHome?: () => void;
 }
 
 const PrayerTimesHeader: React.FC<PrayerTimesHeaderProps> = ({
@@ -17,23 +19,67 @@ const PrayerTimesHeader: React.FC<PrayerTimesHeaderProps> = ({
     cityGov,
     fullCountry,
     combinedCode,
-    topBarTextColor
+    topBarTextColor,
+    onBack,
+    onHome
 }) => {
     const { t } = useLanguage();
 
     return (
         <header className="app-top-bar">
             <div className="app-top-bar__inner">
-                <div className="relative flex items-center justify-center min-h-[40px]">
-                    <div className="absolute left-0 flex items-center">
-                        <ThemePageLock />
-                        <i onClick={onOpenNotifications} className="text-xl cursor-pointer fa-solid fa-gear p-2 opacity-80 hover:opacity-100" title={t('sidemenu.settings', 'الإعدادات')}></i>
-                    </div>
-                    <h1 className="app-top-bar__title text-base sm:text-lg md:text-xl font-kufi truncate px-14 sm:px-20">
-                        {cityGov}
-                    </h1>
+                <div className="relative flex items-center justify-center min-h-[44px]">
+                    {/* سهم الرجوع للخلف على يمين النص بالشريط العلوي مع زر تحديث الموقع */}
                     <div className="absolute right-0 flex items-center gap-1">
-                         <i id="location-refresh-btn" onClick={handleRefreshLocation} className="text-xl cursor-pointer active:rotate-180 duration-700 fa-solid fa-location-crosshairs p-2 opacity-80 hover:opacity-100"></i>
+                        {onBack && (
+                            <button
+                                onClick={onBack}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="رجوع للخلف"
+                                aria-label="رجوع للخلف"
+                            >
+                                <i className="fa-solid fa-arrow-right text-xl"></i>
+                            </button>
+                        )}
+                        <button
+                            id="location-refresh-btn"
+                            onClick={handleRefreshLocation}
+                            className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                            title="تحديث الموقع"
+                            aria-label="تحديث الموقع"
+                        >
+                            <i className="text-lg active:rotate-180 duration-700 fa-solid fa-location-crosshairs"></i>
+                        </button>
+                    </div>
+
+                    {/* عنوان الصفحة في الوسط */}
+                    <div className="text-center px-24">
+                        <h1 className="app-top-bar__title text-base sm:text-lg md:text-xl font-kufi truncate">
+                            {cityGov}
+                        </h1>
+                    </div>
+
+                    {/* أيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية مع الإعدادات وقفل الثيم */}
+                    <div className="absolute left-0 flex items-center gap-1">
+                        <ThemePageLock />
+                        <button
+                            onClick={onOpenNotifications}
+                            className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                            title={t('sidemenu.settings', 'الإعدادات')}
+                            aria-label={t('sidemenu.settings', 'الإعدادات')}
+                        >
+                            <i className="text-lg fa-solid fa-gear"></i>
+                        </button>
+                        {onHome && (
+                            <button
+                                onClick={onHome}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="الصفحة الرئيسية"
+                                aria-label="الصفحة الرئيسية"
+                            >
+                                <i className="fa-solid fa-house text-xl"></i>
+                            </button>
+                        )}
                     </div>
                 </div>
                  <div className="app-top-bar__subtitle flex items-center justify-center gap-1.5" dir="rtl">

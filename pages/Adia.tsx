@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import ThemePageLock from '../components/ThemePageLock';
 import { ALL_DUAA, DUAA_CATEGORIES } from '../data/adiaData';
@@ -12,7 +11,12 @@ import { useHabitTracker } from '../hooks/useHabitTracker';
 const ADIA_STATUS_KEY = 'adia_status_v1';
 const toArabicNumerals = (num: number) => String(num).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
 
-function Adia({ onBack, onNavigate }) {
+interface AdiaProps {
+    onBack: () => void;
+    onNavigate: (page: string, params?: any) => void;
+}
+
+function Adia({ onBack, onNavigate }: AdiaProps) {
     const { theme, themeKey } = useTheme();
     const isBlackTheme = theme.bgColor === '#000000';
     const isDefaultTheme = themeKey === 'default';
@@ -108,12 +112,19 @@ function Adia({ onBack, onNavigate }) {
         setZoomedDuaa(null);
     };
 
-    const handleHomeClick = () => {
+    const handleBack = () => {
         if (zoomedDuaa) {
             setZoomedDuaa(null);
         } else {
             onBack();
         }
+    };
+
+    const handleGoHome = () => {
+        if (zoomedDuaa) {
+            setZoomedDuaa(null);
+        }
+        onNavigate('home');
     };
 
     const toggleFavorite = (id: string, e: React.MouseEvent) => {
@@ -203,15 +214,40 @@ function Adia({ onBack, onNavigate }) {
         <div className="h-screen flex flex-col bg-transparent relative">
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-center w-full">
-                        <div className="absolute left-0">
-                            <ThemePageLock />
+                    <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                        {/* سهم الرجوع للخلف على يمين النص */}
+                        <div className="absolute right-0 flex items-center">
+                            <button
+                                onClick={handleBack}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="رجوع للخلف"
+                                aria-label="رجوع للخلف"
+                            >
+                                <i className="fa-solid fa-arrow-right text-xl"></i>
+                            </button>
                         </div>
-                        <h1 className="app-top-bar__title text-2xl font-kufi">
-                            الأدعية المأثورة
-                        </h1>
+
+                        {/* عنوان الصفحة في الوسط */}
+                        <div className="text-center px-12">
+                            <h1 className="app-top-bar__title text-2xl font-kufi">
+                                الأدعية المأثورة
+                            </h1>
+                        </div>
+
+                        {/* أيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية */}
+                        <div className="absolute left-0 flex items-center gap-1">
+                            <ThemePageLock />
+                            <button
+                                onClick={handleGoHome}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="الصفحة الرئيسية"
+                                aria-label="الصفحة الرئيسية"
+                            >
+                                <i className="fa-solid fa-house text-xl"></i>
+                            </button>
+                        </div>
                     </div>
-                    <p className="app-top-bar__subtitle">
+                    <p className="app-top-bar__subtitle text-center">
                         باقات من الذكر والمناجاة
                     </p>
                 </div>
@@ -351,7 +387,7 @@ function Adia({ onBack, onNavigate }) {
                         initial={{ opacity: 0, y: 50, x: '-50%' }}
                         animate={{ opacity: 1, y: 0, x: '-50%' }}
                         exit={{ opacity: 0, y: 50, x: '-50%' }}
-                        className="fixed bottom-24 left-1/2 z-[200] bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg font-bold text-sm text-center whitespace-nowrap flex items-center gap-2"
+                        className="fixed bottom-8 left-1/2 z-[200] bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg font-bold text-sm text-center whitespace-nowrap flex items-center gap-2"
                     >
                         <i className="fa-solid fa-check text-green-400"></i>
                         {toastMessage}
@@ -360,7 +396,7 @@ function Adia({ onBack, onNavigate }) {
             </AnimatePresence>
 
             {/* Floating Menu & FAB */}
-            <div className="fixed bottom-20 right-4 z-[90] flex flex-col items-end">
+            <div className="fixed bottom-6 right-4 z-[90] flex flex-col items-end">
                 <AnimatePresence>
                     {isMenuOpen && (
                         <motion.div
@@ -423,8 +459,6 @@ function Adia({ onBack, onNavigate }) {
                     <i className={`fa-solid ${isMenuOpen ? 'fa-times' : 'fa-list-ul'} text-xl`}></i>
                 </button>
             </div>
-
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
 
             {zoomedDuaa && (
                 <div className="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center p-4 backdrop-blur-sm" onClick={closeZoomModal}>

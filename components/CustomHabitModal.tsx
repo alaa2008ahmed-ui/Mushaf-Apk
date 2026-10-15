@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Sparkles, Check, ChevronRight } from 'lucide-react';
 import { useHabitTracker } from '../hooks/useHabitTracker';
 import { useTheme } from '../context/ThemeContext';
-import BottomBar from './BottomBar';
 
 interface CustomHabitModalProps {
   hexColor: string;
   isBlackTheme: boolean;
   onClose: () => void;
   onAdded?: (habitTitle: string) => void;
+  onNavigate?: (pageId: string, params?: any) => void;
 }
 
 const ICONS_LIST = ['🌙', '☀️', '📖', '🤲', '📿', '💧', '🕌', '🤍', '⭐', '🤝', '🌿', '🕊️'];
@@ -28,7 +28,8 @@ export const CustomHabitModal: React.FC<CustomHabitModalProps> = ({
   hexColor,
   isBlackTheme,
   onClose,
-  onAdded
+  onAdded,
+  onNavigate
 }) => {
   const { theme, themeKey } = useTheme();
   const isDarkBlack = theme.bgColor === '#000000' || theme.name === 'أبيض وأسود' || themeKey === 'deep_black' || isBlackTheme;
@@ -89,11 +90,41 @@ export const CustomHabitModal: React.FC<CustomHabitModalProps> = ({
         {/* Full Screen Top Header */}
         <header className="app-top-bar shrink-0">
           <div className="app-top-bar__inner">
-            <div className="relative flex items-center justify-center w-full px-2">
-              <div className="text-center w-full">
+            <div className="relative flex items-center justify-center w-full min-h-[44px]">
+              {/* سهم الرجوع للخلف على يمين النص */}
+              <div className="absolute right-0 flex items-center">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                  title="رجوع للخلف"
+                  aria-label="رجوع للخلف"
+                >
+                  <i className="fa-solid fa-arrow-right text-xl"></i>
+                </button>
+              </div>
+
+              {/* عنوان الصفحة في الوسط */}
+              <div className="text-center px-12">
                 <h1 className="app-top-bar__title text-xl font-kufi">
                   إضافة عبادة
                 </h1>
+              </div>
+
+              {/* أيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية */}
+              <div className="absolute left-0 flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    if (onNavigate) onNavigate('home');
+                  }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                  title="الصفحة الرئيسية"
+                  aria-label="الصفحة الرئيسية"
+                >
+                  <i className="fa-solid fa-house text-xl"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -102,7 +133,7 @@ export const CustomHabitModal: React.FC<CustomHabitModalProps> = ({
         {/* Scrollable Form Body */}
         <main 
           className="flex-1 overflow-y-auto px-4 pt-3 max-w-lg mx-auto w-full overscroll-contain"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' }}
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)' }}
         >
           <form onSubmit={handleSave} className="space-y-4">
             
@@ -267,9 +298,6 @@ export const CustomHabitModal: React.FC<CustomHabitModalProps> = ({
             </div>
           </form>
         </main>
-
-        {/* Bottom Bar with Home button */}
-        <BottomBar onHomeClick={onClose} onThemesClick={() => {}} showThemes={false} />
       </motion.div>
     </AnimatePresence>
   );
