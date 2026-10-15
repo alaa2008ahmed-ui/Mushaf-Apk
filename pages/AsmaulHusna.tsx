@@ -243,7 +243,6 @@ const AsmaulHusna: React.FC<{ onBack: () => void, onNavigate: (id: string, param
                             </button>
                         </div>
                     </div>
-                    <p className="app-top-bar__subtitle text-center text-xs">٩٩ اسمًا من أحصاها دخل الجنة</p>
                 </div>
             </header>
 

@@ -264,9 +264,6 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
               </button>
             </div>
           </div>
-          <p className="app-top-bar__subtitle text-center">
-            لوحة المتصدرين وإنجازات قراء كتاب الله الكريم
-          </p>
         </div>
       </header>
 

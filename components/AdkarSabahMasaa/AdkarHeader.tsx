@@ -54,7 +54,6 @@ const AdkarHeader: React.FC<AdkarHeaderProps> = ({ title, subtitle, onBack, onHo
                         )}
                     </div>
                 </div>
-                <p className="app-top-bar__subtitle text-center">{localizedSubtitle}</p>
             </div>
         </header>
     );

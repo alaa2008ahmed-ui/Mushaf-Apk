@@ -560,7 +560,6 @@ const Nawawi = ({ onBack, onNavigate }: { onBack: () => void; onNavigate?: (id: 
                             </button>
                         </div>
                     </div>
-                    <p className="app-top-bar__subtitle text-center">متن الأربعين حديثًا مع الفوائد والشرح المختصر</p>
                 </div>
             </header>
 

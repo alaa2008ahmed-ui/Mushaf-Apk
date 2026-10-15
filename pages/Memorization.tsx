@@ -345,7 +345,6 @@ const Memorization: React.FC<MemorizationProps> = ({ onBack, onNavigate }) => {
                                 </button>
                             </div>
                         </div>
-                        <p className="app-top-bar__subtitle text-center">تكرار ومراجعة آيات كتاب الله المتقن</p>
                     </div>
                 </header>
 

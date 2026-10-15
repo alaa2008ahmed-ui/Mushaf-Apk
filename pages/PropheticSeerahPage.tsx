@@ -18,6 +18,15 @@ interface PropheticSeerahPageProps {
     onOpenThemes?: () => void;
 }
 
+interface ZoomedCardData {
+    title: string;
+    subtitle?: string;
+    badge?: string;
+    icon?: string;
+    content: string | string[];
+    isVerseOrProof?: boolean;
+}
+
 const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNavigate, onOpenThemes }) => {
     const { theme, themeKey } = useTheme();
     const isDefaultTheme = themeKey === 'default' || !themeKey || theme.name?.includes('الافتراضي') || theme.name === 'Default';
@@ -38,6 +47,10 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
     // Selected Milestone or Stance for Detailed Modal/View
     const [selectedMilestone, setSelectedMilestone] = useState<SeerahMilestone | null>(null);
     const [selectedStance, setSelectedStance] = useState<PropheticStance | null>(null);
+
+    // Zoom Modal State for Cards
+    const [zoomedCard, setZoomedCard] = useState<ZoomedCardData | null>(null);
+    const [zoomFontSize, setZoomFontSize] = useState<number>(24);
 
     // Timeline Filter
     const [activeEraFilter, setActiveEraFilter] = useState<string>('all');
@@ -305,7 +318,22 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
         ? PROPHETIC_SEERAH_DATA[currentMilestoneIndex + 1] 
         : null;
 
+    // Close zoom modal on Escape key
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && zoomedCard) {
+                setZoomedCard(null);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [zoomedCard]);
+
     const handleBackClick = () => {
+        if (zoomedCard) {
+            setZoomedCard(null);
+            return;
+        }
         if (selectedMilestone) {
             setSelectedMilestone(null);
         } else if (selectedStance) {
@@ -389,17 +417,6 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                             </button>
                         </div>
                     </div>
-                    <p className={`app-top-bar__subtitle text-center truncate ${selectedMilestone || selectedStance ? 'text-[10px] mt-0.5' : ''}`}>
-                        {selectedMilestone
-                            ? `${selectedMilestone.eraLabel} • ${selectedMilestone.location}`
-                            : selectedStance
-                            ? `${selectedStance.categoryBadge}`
-                            : activeTab === 'timeline'
-                            ? '43 محطة تاريخية موثقة من المولد الشريف إلى الوفاة'
-                            : activeTab === 'stances'
-                            ? 'أعظم مواقف الرحمة والشجاعة والحلم والعدالة'
-                            : 'سلسلة طاهرة وصولاً إلى إسماعيل وإبراهيم عليهما السلام'}
-                    </p>
                 </div>
             </header>
 
@@ -503,9 +520,27 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                         </span>
                                     </div>
 
-                                    <div className="flex items-center gap-1.5 text-xs opacity-80">
-                                        <i className="fa-solid fa-location-dot text-emerald-500"></i>
-                                        <span>{selectedMilestone.location}</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1.5 text-xs opacity-80">
+                                            <i className="fa-solid fa-location-dot text-emerald-500"></i>
+                                            <span>{selectedMilestone.location}</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoomedCard({
+                                                title: selectedMilestone.title,
+                                                subtitle: `${selectedMilestone.eraLabel} • ${selectedMilestone.location}`,
+                                                badge: selectedMilestone.badge,
+                                                icon: selectedMilestone.icon,
+                                                content: `${selectedMilestone.summary}\n\n• التاريخ والزمن: ${selectedMilestone.yearHijri ? `${selectedMilestone.yearHijri} • ` : ''}${selectedMilestone.yearGregorian}\n• عمر النبي ﷺ: ${selectedMilestone.ageOfProphet}`
+                                            })}
+                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                            style={{ color: 'var(--text-color)' }}
+                                            title="تكبير"
+                                            aria-label="تكبير"
+                                        >
+                                            <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                        </button>
                                     </div>
                                 </div>
 
@@ -531,10 +566,28 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     className="p-4 rounded-3xl themed-card border shadow-xs space-y-2"
                                     style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                                 >
-                                    <h4 className="text-xs font-bold font-kufi flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                                        <i className="fa-solid fa-users text-xs"></i>
-                                        شخصيات وأعلام بارزة في هذه المحطة:
-                                    </h4>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h4 className="text-xs font-bold font-kufi flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                                            <i className="fa-solid fa-users text-xs"></i>
+                                            شخصيات وأعلام بارزة في هذه المحطة:
+                                        </h4>
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoomedCard({
+                                                title: 'شخصيات وأعلام بارزة في هذه المحطة',
+                                                subtitle: selectedMilestone.title,
+                                                badge: selectedMilestone.badge,
+                                                icon: 'fa-solid fa-users',
+                                                content: selectedMilestone.keyFigures.map(person => `• ${person}`).join('\n')
+                                            })}
+                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                            style={{ color: 'var(--text-color)' }}
+                                            title="تكبير"
+                                            aria-label="تكبير"
+                                        >
+                                            <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                        </button>
+                                    </div>
                                     <div className="flex flex-wrap gap-1.5 pt-1">
                                         {selectedMilestone.keyFigures.map((person, idx) => (
                                             <span 
@@ -554,10 +607,28 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                 className="p-5 sm:p-6 rounded-3xl themed-card border shadow-sm space-y-3"
                                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                             >
-                                <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                                    <i className="fa-solid fa-book-open"></i>
-                                    أحداث المحطة وتفاصيلها الموثقة
-                                </h3>
+                                <div className="flex items-center justify-between gap-2">
+                                    <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                                        <i className="fa-solid fa-book-open"></i>
+                                        أحداث المحطة وتفاصيلها الموثقة
+                                    </h3>
+                                    <button
+                                        type="button"
+                                        onClick={() => setZoomedCard({
+                                            title: 'أحداث المحطة وتفاصيلها الموثقة',
+                                            subtitle: selectedMilestone.title,
+                                            badge: selectedMilestone.badge,
+                                            icon: 'fa-solid fa-book-open',
+                                            content: selectedMilestone.details
+                                        })}
+                                        className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                        style={{ color: 'var(--text-color)' }}
+                                        title="تكبير"
+                                        aria-label="تكبير"
+                                    >
+                                        <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                    </button>
+                                </div>
                                 <p className="text-sm sm:text-base leading-relaxed opacity-90 font-medium whitespace-pre-line">
                                     {selectedMilestone.details}
                                 </p>
@@ -569,10 +640,28 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     className="p-5 rounded-3xl themed-card border shadow-sm space-y-2.5 bg-blue-500/5"
                                     style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                                 >
-                                    <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                                        <i className="fa-solid fa-chess"></i>
-                                        الأثر الاستراتيجي والتحول التاريخي
-                                    </h3>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                                            <i className="fa-solid fa-chess"></i>
+                                            الأثر الاستراتيجي والتحول التاريخي
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoomedCard({
+                                                title: 'الأثر الاستراتيجي والتحول التاريخي',
+                                                subtitle: selectedMilestone.title,
+                                                badge: selectedMilestone.badge,
+                                                icon: 'fa-solid fa-chess',
+                                                content: selectedMilestone.strategicImpact!
+                                            })}
+                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                            style={{ color: 'var(--text-color)' }}
+                                            title="تكبير"
+                                            aria-label="تكبير"
+                                        >
+                                            <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                        </button>
+                                    </div>
                                     <p className="text-xs sm:text-sm leading-relaxed opacity-95 font-semibold">
                                         {selectedMilestone.strategicImpact}
                                     </p>
@@ -585,10 +674,28 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     className="p-5 rounded-3xl themed-card border shadow-sm space-y-2.5 bg-amber-500/5"
                                     style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                                 >
-                                    <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-amber-600 dark:text-amber-400">
-                                        <i className="fa-solid fa-hand-holding-heart"></i>
-                                        معجزات وأدعية وبركات ارتبطت بالمحطة
-                                    </h3>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                                            <i className="fa-solid fa-hand-holding-heart"></i>
+                                            معجزات وأدعية وبركات ارتبطت بالمحطة
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoomedCard({
+                                                title: 'معجزات وأدعية وبركات ارتبطت بالمحطة',
+                                                subtitle: selectedMilestone.title,
+                                                badge: selectedMilestone.badge,
+                                                icon: 'fa-solid fa-hand-holding-heart',
+                                                content: selectedMilestone.propheticMiraclesOrDuas!
+                                            })}
+                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                            style={{ color: 'var(--text-color)' }}
+                                            title="تكبير"
+                                            aria-label="تكبير"
+                                        >
+                                            <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                        </button>
+                                    </div>
                                     <p className="text-xs sm:text-sm leading-relaxed opacity-95 font-medium">
                                         {selectedMilestone.propheticMiraclesOrDuas}
                                     </p>
@@ -601,10 +708,28 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     className="p-5 rounded-3xl themed-card border shadow-sm space-y-2.5 bg-purple-500/5"
                                     style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                                 >
-                                    <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-purple-600 dark:text-purple-400">
-                                        <i className="fa-solid fa-compass"></i>
-                                        أسرار ولطائف تاريخية وحكم نبوية خفية
-                                    </h3>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                                            <i className="fa-solid fa-compass"></i>
+                                            أسرار ولطائف تاريخية وحكم نبوية خفية
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoomedCard({
+                                                title: 'أسرار ولطائف تاريخية وحكم نبوية خفية',
+                                                subtitle: selectedMilestone.title,
+                                                badge: selectedMilestone.badge,
+                                                icon: 'fa-solid fa-compass',
+                                                content: selectedMilestone.historicalSecrets!
+                                            })}
+                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                            style={{ color: 'var(--text-color)' }}
+                                            title="تكبير"
+                                            aria-label="تكبير"
+                                        >
+                                            <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                        </button>
+                                    </div>
                                     <p className="text-xs sm:text-sm leading-relaxed opacity-95 font-medium">
                                         {selectedMilestone.historicalSecrets}
                                     </p>
@@ -616,10 +741,28 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                 className="p-5 rounded-3xl themed-card border shadow-sm space-y-3 bg-emerald-500/5"
                                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                             >
-                                <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                                    <i className="fa-solid fa-lightbulb"></i>
-                                    العِبر والدروس الإيمانية والعملية
-                                </h3>
+                                <div className="flex items-center justify-between gap-2">
+                                    <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                                        <i className="fa-solid fa-lightbulb"></i>
+                                        العِبر والدروس الإيمانية والعملية
+                                    </h3>
+                                    <button
+                                        type="button"
+                                        onClick={() => setZoomedCard({
+                                            title: 'العِبر والدروس الإيمانية والعملية',
+                                            subtitle: selectedMilestone.title,
+                                            badge: selectedMilestone.badge,
+                                            icon: 'fa-solid fa-lightbulb',
+                                            content: selectedMilestone.lessons
+                                        })}
+                                        className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                        style={{ color: 'var(--text-color)' }}
+                                        title="تكبير"
+                                        aria-label="تكبير"
+                                    >
+                                        <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                    </button>
+                                </div>
                                 <div className="space-y-2.5">
                                     {selectedMilestone.lessons.map((lesson, idx) => (
                                         <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm leading-relaxed">
@@ -638,10 +781,29 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     className="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border text-xs"
                                     style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                                 >
-                                    <span className="font-bold opacity-75 block mb-1.5 text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-kufi">
-                                        <i className="fa-solid fa-quote-right"></i>
-                                        شاهد من القرآن الكريم أو السنة الشريفة:
-                                    </span>
+                                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                                        <span className="font-bold opacity-75 text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-kufi">
+                                            <i className="fa-solid fa-quote-right"></i>
+                                            شاهد من القرآن الكريم أو السنة الشريفة:
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoomedCard({
+                                                title: 'شاهد من القرآن الكريم أو السنة الشريفة',
+                                                subtitle: selectedMilestone.title,
+                                                badge: selectedMilestone.badge,
+                                                icon: 'fa-solid fa-quote-right',
+                                                content: (selectedMilestone.versesOrHadiths || selectedMilestone.proof)!,
+                                                isVerseOrProof: true
+                                            })}
+                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                            style={{ color: 'var(--text-color)' }}
+                                            title="تكبير"
+                                            aria-label="تكبير"
+                                        >
+                                            <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                        </button>
+                                    </div>
                                     <p className="italic opacity-90 leading-relaxed font-semibold">
                                         {selectedMilestone.versesOrHadiths || selectedMilestone.proof}
                                     </p>
@@ -726,9 +888,27 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                         <i className={selectedStance.icon}></i>
                                         {selectedStance.categoryBadge}
                                     </span>
-                                    {selectedStance.year && (
-                                        <span className="text-xs font-bold opacity-75">{selectedStance.year}</span>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {selectedStance.year && (
+                                            <span className="text-xs font-bold opacity-75">{selectedStance.year}</span>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoomedCard({
+                                                title: selectedStance.title,
+                                                subtitle: selectedStance.categoryBadge,
+                                                badge: selectedStance.categoryBadge,
+                                                icon: selectedStance.icon,
+                                                content: `«${selectedStance.quote}»\n\n${selectedStance.situation}`
+                                            })}
+                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                            style={{ color: 'var(--text-color)' }}
+                                            title="تكبير"
+                                            aria-label="تكبير"
+                                        >
+                                            <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <h2 className="text-xl sm:text-2xl font-bold font-kufi text-emerald-600 dark:text-emerald-400">
@@ -752,10 +932,28 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                 className="p-5 rounded-3xl themed-card border shadow-sm space-y-2.5"
                                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                             >
-                                <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                                    <i className="fa-solid fa-scroll"></i>
-                                    السياق وتفاصيل الموقف
-                                </h3>
+                                <div className="flex items-center justify-between gap-2">
+                                    <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                                        <i className="fa-solid fa-scroll"></i>
+                                        السياق وتفاصيل الموقف
+                                    </h3>
+                                    <button
+                                        type="button"
+                                        onClick={() => setZoomedCard({
+                                            title: 'السياق وتفاصيل الموقف',
+                                            subtitle: selectedStance.title,
+                                            badge: selectedStance.categoryBadge,
+                                            icon: 'fa-solid fa-scroll',
+                                            content: selectedStance.situation
+                                        })}
+                                        className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                        style={{ color: 'var(--text-color)' }}
+                                        title="تكبير"
+                                        aria-label="تكبير"
+                                    >
+                                        <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                    </button>
+                                </div>
                                 <p className="text-sm sm:text-base leading-relaxed opacity-90 font-medium whitespace-pre-line">
                                     {selectedStance.situation}
                                 </p>
@@ -767,10 +965,28 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     className="p-5 rounded-3xl themed-card border shadow-sm space-y-2.5 bg-emerald-500/5"
                                     style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                                 >
-                                    <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                                        <i className="fa-solid fa-comments"></i>
-                                        نص المحاورة والحوار النبوي الشريف
-                                    </h3>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                                            <i className="fa-solid fa-comments"></i>
+                                            نص المحاورة والحوار النبوي الشريف
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoomedCard({
+                                                title: 'نص المحاورة والحوار النبوي الشريف',
+                                                subtitle: selectedStance.title,
+                                                badge: selectedStance.categoryBadge,
+                                                icon: 'fa-solid fa-comments',
+                                                content: selectedStance.detailedDialogue!
+                                            })}
+                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                            style={{ color: 'var(--text-color)' }}
+                                            title="تكبير"
+                                            aria-label="تكبير"
+                                        >
+                                            <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                        </button>
+                                    </div>
                                     <p className="text-xs sm:text-sm leading-relaxed opacity-95 font-semibold whitespace-pre-line">
                                         {selectedStance.detailedDialogue}
                                     </p>
@@ -783,10 +999,28 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     className="p-5 rounded-3xl themed-card border shadow-sm space-y-2.5 bg-blue-500/5"
                                     style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                                 >
-                                    <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                                        <i className="fa-solid fa-brain"></i>
-                                        التحليل النفسي والتربوي والقيادي للموقف
-                                    </h3>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                                            <i className="fa-solid fa-brain"></i>
+                                            التحليل النفسي والتربوي والقيادي للموقف
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoomedCard({
+                                                title: 'التحليل النفسي والتربوي والقيادي للموقف',
+                                                subtitle: selectedStance.title,
+                                                badge: selectedStance.categoryBadge,
+                                                icon: 'fa-solid fa-brain',
+                                                content: selectedStance.psychologicalAnalysis!
+                                            })}
+                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                            style={{ color: 'var(--text-color)' }}
+                                            title="تكبير"
+                                            aria-label="تكبير"
+                                        >
+                                            <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                        </button>
+                                    </div>
                                     <p className="text-xs sm:text-sm leading-relaxed opacity-95 font-medium">
                                         {selectedStance.psychologicalAnalysis}
                                     </p>
@@ -799,10 +1033,28 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     className="p-5 rounded-3xl themed-card border shadow-sm space-y-2.5 bg-purple-500/5"
                                     style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                                 >
-                                    <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-purple-600 dark:text-purple-400">
-                                        <i className="fa-solid fa-globe"></i>
-                                        إسقاط الموقف على واقعنا المعاصر وحياتنا اليومية
-                                    </h3>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                                            <i className="fa-solid fa-globe"></i>
+                                            إسقاط الموقف على واقعنا المعاصر وحياتنا اليومية
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoomedCard({
+                                                title: 'إسقاط الموقف على واقعنا المعاصر وحياتنا اليومية',
+                                                subtitle: selectedStance.title,
+                                                badge: selectedStance.categoryBadge,
+                                                icon: 'fa-solid fa-globe',
+                                                content: selectedStance.contemporaryReflection!
+                                            })}
+                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                            style={{ color: 'var(--text-color)' }}
+                                            title="تكبير"
+                                            aria-label="تكبير"
+                                        >
+                                            <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                        </button>
+                                    </div>
                                     <p className="text-xs sm:text-sm leading-relaxed opacity-95 font-medium">
                                         {selectedStance.contemporaryReflection}
                                     </p>
@@ -815,10 +1067,28 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     className="p-5 rounded-3xl themed-card border shadow-sm space-y-2.5 bg-amber-500/5"
                                     style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                                 >
-                                    <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-amber-600 dark:text-amber-400">
-                                        <i className="fa-solid fa-check-to-slot"></i>
-                                        خطوات وتطبيقات عملية للاقتداء بالخلق النبوي
-                                    </h3>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                                            <i className="fa-solid fa-check-to-slot"></i>
+                                            خطوات وتطبيقات عملية للاقتداء بالخلق النبوي
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setZoomedCard({
+                                                title: 'خطوات وتطبيقات عملية للاقتداء بالخلق النبوي',
+                                                subtitle: selectedStance.title,
+                                                badge: selectedStance.categoryBadge,
+                                                icon: 'fa-solid fa-check-to-slot',
+                                                content: selectedStance.practicalApplication!
+                                            })}
+                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                            style={{ color: 'var(--text-color)' }}
+                                            title="تكبير"
+                                            aria-label="تكبير"
+                                        >
+                                            <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                        </button>
+                                    </div>
                                     <p className="text-xs sm:text-sm leading-relaxed opacity-95 font-medium whitespace-pre-line">
                                         {selectedStance.practicalApplication}
                                     </p>
@@ -830,10 +1100,28 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                 className="p-5 rounded-3xl themed-card border shadow-sm space-y-2.5 bg-emerald-500/5"
                                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                             >
-                                <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                                    <i className="fa-solid fa-lightbulb"></i>
-                                    القيمة الإنسانية والعِبرة الخالدة
-                                </h3>
+                                <div className="flex items-center justify-between gap-2">
+                                    <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                                        <i className="fa-solid fa-lightbulb"></i>
+                                        القيمة الإنسانية والعِبرة الخالدة
+                                    </h3>
+                                    <button
+                                        type="button"
+                                        onClick={() => setZoomedCard({
+                                            title: 'القيمة الإنسانية والعِبرة الخالدة',
+                                            subtitle: selectedStance.title,
+                                            badge: selectedStance.categoryBadge,
+                                            icon: 'fa-solid fa-lightbulb',
+                                            content: selectedStance.moralLesson
+                                        })}
+                                        className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                        style={{ color: 'var(--text-color)' }}
+                                        title="تكبير"
+                                        aria-label="تكبير"
+                                    >
+                                        <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                    </button>
+                                </div>
                                 <p className="text-sm sm:text-base leading-relaxed font-semibold">
                                     {selectedStance.moralLesson}
                                 </p>
@@ -844,10 +1132,29 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                 className="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border text-xs"
                                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                             >
-                                <span className="font-bold opacity-75 block mb-1 text-blue-500 flex items-center gap-1.5 font-kufi">
-                                    <i className="fa-solid fa-check-double"></i>
-                                    التوثيق والمصدر:
-                                </span>
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                    <span className="font-bold opacity-75 text-blue-500 flex items-center gap-1.5 font-kufi">
+                                        <i className="fa-solid fa-check-double"></i>
+                                        التوثيق والمصدر:
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setZoomedCard({
+                                            title: 'التوثيق والمصدر',
+                                            subtitle: selectedStance.title,
+                                            badge: selectedStance.categoryBadge,
+                                            icon: 'fa-solid fa-check-double',
+                                            content: selectedStance.proof,
+                                            isVerseOrProof: true
+                                        })}
+                                        className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer shrink-0"
+                                        style={{ color: 'var(--text-color)' }}
+                                        title="تكبير"
+                                        aria-label="تكبير"
+                                    >
+                                        <i className="fa-solid fa-magnifying-glass-plus text-xs"></i>
+                                    </button>
+                                </div>
                                 <p className="opacity-90 leading-relaxed font-semibold">
                                     {selectedStance.proof}
                                 </p>
@@ -1346,6 +1653,24 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                                     <i className="fa-regular fa-copy"></i>
                                                 </button>
                                                 <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setZoomedCard({
+                                                            title: stance.title,
+                                                            subtitle: stance.categoryBadge,
+                                                            badge: stance.categoryBadge,
+                                                            icon: stance.icon,
+                                                            content: `«${stance.quote}»\n\n${stance.situation}`
+                                                        });
+                                                    }}
+                                                    title="تكبير"
+                                                    aria-label="تكبير"
+                                                    className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 flex items-center justify-center text-xs transition-colors opacity-70 hover:opacity-100"
+                                                    style={{ color: 'var(--text-color)' }}
+                                                >
+                                                    <i className="fa-solid fa-magnifying-glass-plus"></i>
+                                                </button>
+                                                <button
                                                     onClick={(e) => handleShareStanceImage(stance, e)}
                                                     title="مشاركة الموقف كبطاقة صورة"
                                                     className="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center text-xs transition-colors"
@@ -1488,6 +1813,24 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                                     <i className="fa-regular fa-copy"></i>
                                                 </button>
                                                 <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setZoomedCard({
+                                                            title: milestone.title,
+                                                            subtitle: `${milestone.eraLabel} • ${milestone.location}`,
+                                                            badge: milestone.badge,
+                                                            icon: milestone.icon,
+                                                            content: `${milestone.summary}\n\n• التاريخ والزمن: ${milestone.yearHijri ? `${milestone.yearHijri} • ` : ''}${milestone.yearGregorian}\n• عمر النبي ﷺ: ${milestone.ageOfProphet}`
+                                                        });
+                                                    }}
+                                                    title="تكبير"
+                                                    aria-label="تكبير"
+                                                    className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 flex items-center justify-center text-xs transition-colors opacity-70 hover:opacity-100"
+                                                    style={{ color: 'var(--text-color)' }}
+                                                >
+                                                    <i className="fa-solid fa-magnifying-glass-plus"></i>
+                                                </button>
+                                                <button
                                                     onClick={(e) => handleShareCardImage(milestone, e)}
                                                     title="مشاركة المحطة كبطاقة صورة"
                                                     className="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 flex items-center justify-center text-xs transition-colors"
@@ -1542,7 +1885,140 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                 </AnimatePresence>
             </main>
 
+            {/* Zoom Modal - Matches identical style & behavior of Adhkar & Duas pages */}
+            <AnimatePresence>
+                {zoomedCard && (
+                    <div 
+                        className="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center p-3 sm:p-4 backdrop-blur-sm"
+                        onClick={() => setZoomedCard(null)}
+                    >
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="p-5 sm:p-7 rounded-3xl w-full max-w-2xl text-center relative shadow-2xl border-2 flex flex-col max-h-[90vh]"
+                            style={{ 
+                                fontFamily: theme.font,
+                                backgroundColor: isDeepBlack ? '#111827' : (theme.cardBg || '#ffffff'),
+                                color: theme.textColor || (isDeepBlack ? '#ffffff' : '#1f2937'),
+                                borderColor: cardBorderColor
+                            }}
+                            onClick={e => e.stopPropagation()}
+                            dir="rtl"
+                        >
+                            {/* Header: Title, Subtitle, Font size controls & Close */}
+                            <div className="flex items-center justify-between pb-3 border-b shrink-0 gap-2" style={{ borderColor: 'var(--card-border)' }}>
+                                <div className="text-right flex items-center gap-2.5 min-w-0">
+                                    {zoomedCard.icon && (
+                                        <div className="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                            <i className={`${zoomedCard.icon} text-sm`}></i>
+                                        </div>
+                                    )}
+                                    <div className="truncate">
+                                        <h3 className="text-base sm:text-lg font-bold font-kufi text-emerald-600 dark:text-emerald-400 truncate">
+                                            {zoomedCard.title}
+                                        </h3>
+                                        {zoomedCard.subtitle && (
+                                            <p className="text-[11px] opacity-70 font-sans truncate">
+                                                {zoomedCard.subtitle}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
 
+                                {/* Font Size controls (A- / A+) and Close (X) */}
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl">
+                                        <button 
+                                            type="button"
+                                            onClick={() => setZoomFontSize(prev => Math.min(prev + 2, 40))}
+                                            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                            title="تكبير الخط"
+                                            aria-label="تكبير الخط"
+                                        >
+                                            A+
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setZoomFontSize(prev => Math.max(prev - 2, 18))}
+                                            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                            title="تصغير الخط"
+                                            aria-label="تصغير الخط"
+                                        >
+                                            A-
+                                        </button>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setZoomedCard(null)}
+                                        className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer"
+                                        title="إغلاق"
+                                        aria-label="إغلاق"
+                                    >
+                                        <i className="fa-solid fa-xmark text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Content Container */}
+                            <div className="overflow-y-auto hide-scrollbar flex-1 py-4 text-right">
+                                {Array.isArray(zoomedCard.content) ? (
+                                    <div className="space-y-3">
+                                        {zoomedCard.content.map((item, idx) => (
+                                            <div key={idx} className="flex items-start gap-3 p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border" style={{ borderColor: 'var(--card-border)' }}>
+                                                <span className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 font-bold text-xs mt-0.5">
+                                                    {idx + 1}
+                                                </span>
+                                                <p 
+                                                    className="flex-1 font-medium leading-relaxed font-amiri"
+                                                    style={{ fontSize: `${zoomFontSize}px` }}
+                                                >
+                                                    {item}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p 
+                                        className={`leading-loose font-medium select-text whitespace-pre-line ${
+                                            zoomedCard.isVerseOrProof ? 'font-quran' : 'font-amiri'
+                                        }`}
+                                        style={{ fontSize: `${zoomFontSize}px` }}
+                                    >
+                                        {zoomedCard.content}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Footer Buttons */}
+                            <div className="pt-3 border-t flex items-center gap-2 shrink-0" style={{ borderColor: 'var(--card-border)' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const textToCopy = Array.isArray(zoomedCard.content) 
+                                            ? zoomedCard.content.map((item, i) => `${i + 1}. ${item}`).join('\n')
+                                            : zoomedCard.content;
+                                        navigator.clipboard.writeText(textToCopy);
+                                        showToast('تم نسخ النص بنجاح');
+                                    }}
+                                    className="flex-1 py-3 rounded-xl font-bold border text-sm flex items-center justify-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+                                    style={{ borderColor: cardBorderColor }}
+                                >
+                                    <i className="fa-regular fa-copy text-xs"></i>
+                                    نسخ النص
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={() => setZoomedCard(null)} 
+                                    className="flex-1 py-3 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 transition-all cursor-pointer text-sm"
+                                >
+                                    إغلاق
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

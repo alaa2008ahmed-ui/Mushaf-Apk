@@ -45,6 +45,7 @@ public class MainActivity extends BridgeActivity {
                 "pre_adhan_alarm_channel",
                 "iqama_reminder_channel",
                 "iqama_alarm_channel",
+                "iqama_v3_chime_channel",
                 "prayer_silent_channel",
                 "night_times_channel",
                 "night_times_alarm_channel",
@@ -88,7 +89,7 @@ public class MainActivity extends BridgeActivity {
 
                 // Short gentle chime alerts (Preparation, Iqama, Silent Mode, Night, Athkar)
                 {"pre_adhan_v3_chime_channel", "تنبيه الاستعداد للصلاة", "chime"},
-                {"iqama_v3_chime_channel", "تنبيه إقامة الصلاة", "chime"},
+                {"iqama_v4_chime_channel", "تنبيه إقامة الصلاة", "chime"},
                 {"prayer_silent_v3_chime_channel", "الصامت التلقائي للصلاة", "chime"},
                 {"night_times_v3_chime_channel", "تنبيهات أوقات الليل", "chime"},
                 {"athkar_v3_chime_channel", "أذكار وتنبيهات عامة", "chime"}

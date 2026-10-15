@@ -139,9 +139,6 @@ const IslamicSitesPage: React.FC<IslamicSitesPageProps> = ({ onBack, onNavigate 
                             </button>
                         </div>
                     </div>
-                    <p className="app-top-bar__subtitle text-center text-xs sm:text-sm">
-                        {selectedSite ? selectedSite.category : 'دليل المواقع والمنصات الإسلامية الموثوقة'}
-                    </p>
                 </div>
             </header>
 

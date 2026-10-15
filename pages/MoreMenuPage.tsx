@@ -8,27 +8,29 @@ import { useLanguage } from '../context/LanguageContext';
 import ThemePageLock from '../components/ThemePageLock';
 
 const ALL_MENU_ITEMS = [
+    // الصفحات القديمة الأساسية (الأقدم أولاً)
     { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-14", colorIndex: 0 },
-    { id: 'community', label: "💬 مجتمع التواصل", className: "col-span-2 h-14", colorIndex: 0 },
-    { id: 'ahl-al-quran', label: "🏆 أهل القرآن", className: "col-span-1 h-14", colorIndex: 0 },
-    { id: 'others', label: "✨ الرقية الشرعية", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'qibla', label: "🧭 القبلة", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "col-span-1 h-14", colorIndex: 0 },
     { id: 'adia', label: "🤲 الأدعية", className: "col-span-1 h-14", colorIndex: 1 },
-    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "col-span-1 h-14", colorIndex: 1 },
-    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "col-span-1 h-14", colorIndex: 1 },
     { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "col-span-1 h-14", colorIndex: 1 },
-    { id: 'tasbeeh', label: "📿 السبحة", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "col-span-1 h-14", colorIndex: 1 },
     { id: 'calendar', label: "📅 التقويم", className: "col-span-1 h-14", colorIndex: 1 },
-    { id: 'qibla', label: "🧭 القبلة", className: "col-span-1 h-14", colorIndex: 1 },
-    { id: 'nawawi', label: "📚 الأربعون النووية", className: "col-span-1 h-14", colorIndex: 1 },
     { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'tasbeeh', label: "📿 السبحة", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'nawawi', label: "📚 الأربعون النووية", className: "col-span-1 h-14", colorIndex: 1 },
     { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "col-span-1 h-14", colorIndex: 1 },
-    // الصفحات الجديدة في نهاية القائمة
-    { id: 'daily-wird', label: "📅 الورد اليومي", className: "col-span-1 h-14", colorIndex: 0 },
-    { id: 'habit-tracker', label: "🎯 مربّي العبادات", className: "col-span-1 h-14", colorIndex: 0 },
-    { id: 'memorization', label: "🧠 التحفيظ", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'others', label: "✨ الرقية الشرعية", className: "col-span-1 h-14", colorIndex: 0 },
+
+    // الصفحات المضافة لاحقاً والأحدث (الأحدث بالأسفل)
     { id: 'voice-control', label: "🎙️ التحكم الصوتي", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'community', label: "💬 مجتمع التواصل", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'ahl-al-quran', label: "🏆 أهل القرآن", className: "col-span-1 h-14", colorIndex: 0 },
+    { id: 'daily-wird', label: "📅 الورد اليومي", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'habit-tracker', label: "🎯 مربّي العبادات", className: "col-span-1 h-14", colorIndex: 1 },
+    { id: 'memorization', label: "🧠 التحفيظ", className: "col-span-2 h-14", colorIndex: 1 },
     { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-14", colorIndex: 0 },
     { id: 'islamic-sites', label: "🌐 مواقع إسلامية", className: "col-span-2 h-14", colorIndex: 0 },
     { id: 'prophetic-seerah', label: "📜 السيرة والخط الزمني", className: "col-span-2 h-14", colorIndex: 0 },
@@ -44,12 +46,10 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
     const showNewBadges = useShowNewBadge();
     const { t, translateMenuItem } = useLanguage();
 
-    const [visibleItems, setVisibleItems] = useState<string[]>(() => {
-        const savedVisible = localStorage.getItem('visibleMenuItems');
-        return savedVisible ? JSON.parse(savedVisible) : ALL_MENU_ITEMS.map(i => i.id);
-    });
-
     const getPrimaryColor = (itemId: string, index: number) => {
+        if (themeKey === 'default') {
+            return index === 0 ? '#059669' : '#8B5CF6';
+        }
         return index === 0 ? theme.palette[0] : (theme.palette[1] || theme.palette[0]);
     };
 
@@ -90,7 +90,6 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                 </button>
                             </div>
                         </div>
-                        <p className="app-top-bar__subtitle">{t('page.more_menu_subtitle', 'تصفح جميع أقسام التطبيق')}</p>
                     </div>
                 </header>
                 <div 
@@ -100,25 +99,21 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                     <div className="main-layout px-4 flex flex-col" style={{ fontFamily: theme.font }}>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-5 w-full max-w-sm mx-auto mt-6">
                             {ALL_MENU_ITEMS.map((item, idx) => {
-                                const isVisible = visibleItems.includes(item.id) || ['daily-wird', 'memorization', 'voice-control', 'habit-tracker', 'asmaul-husna', 'community', 'ahl-al-quran', 'others', 'islamic-sites', 'prophetic-seerah'].includes(item.id);
                                 const isDefault = themeKey === 'default';
                                 const isBlackTheme = theme.bgColor === '#000000';
                                 const primaryColor = isDefault 
-                                    ? '#FFFFFF' 
+                                    ? (item.colorIndex === 0 ? '#059669' : '#8B5CF6') 
                                     : (isBlackTheme 
                                         ? (item.colorIndex === 0 ? (theme.palette[0] || '#1E293B') : (theme.palette[1] || '#374151'))
                                         : getPrimaryColor(item.id, item.colorIndex));
-                                const textColor = isDefault ? '#000000' : (isBlackTheme ? '#FFFFFF' : (theme.btnText || '#FFFFFF'));
-                                const buttonBorder = isDefault 
-                                    ? '2px solid #000000' 
-                                    : (isBlackTheme ? '1px solid rgba(255, 255, 255, 0.2)' : theme.btnBorder);
+                                const textColor = isBlackTheme ? '#FFFFFF' : (theme.btnText || '#FFFFFF');
+                                const buttonBorder = isBlackTheme ? '1px solid rgba(255, 255, 255, 0.2)' : theme.btnBorder;
                                 const isNew = showNewBadges && ['memorization', 'community', 'ahl-al-quran', 'others', 'islamic-sites', 'prophetic-seerah'].includes(item.id);
                                 
                                 return (
                                     <div
                                         key={item.id}
                                         className={`${item.className} relative`}
-                                        style={{ visibility: isVisible ? 'visible' : 'hidden' }}
                                     >
                                         <NavButton
                                             label={translateMenuItem(item.id, item.label)}
@@ -130,27 +125,34 @@ const MoreMenuPage: React.FC<MoreMenuPageProps> = ({ onNavigate, onBack }) => {
                                             isGlass={isBlackTheme ? false : (isDefault ? false : theme.isGlass)}
                                             btnText={textColor}
                                             border={buttonBorder}
+                                            leftAction={item.id === 'quran' ? (
+                                                <div
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onNavigate('quran-landscape');
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.stopPropagation();
+                                                            onNavigate('quran-landscape');
+                                                        }
+                                                    }}
+                                                    className="rounded-full w-[28px] h-[28px] flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95 shadow-md border border-white/30 select-none"
+                                                    style={{ 
+                                                        backgroundColor: isBlackTheme ? '#1E293B' : (themeKey === 'default' ? '#8B5CF6' : (theme.isGlass ? 'rgba(255, 255, 255, 0.25)' : (theme.palette[1] || theme.palette[0]))),
+                                                        color: '#ffffff',
+                                                        backdropFilter: theme.isGlass ? 'blur(4px)' : 'none',
+                                                        WebkitBackdropFilter: theme.isGlass ? 'blur(4px)' : 'none'
+                                                    }}
+                                                    title={t('common.landscape_mode', 'وضع العرض')}
+                                                    aria-label={t('common.landscape_mode', 'وضع العرض')}
+                                                >
+                                                    <i className="fa-solid fa-arrows-rotate text-[13px] pointer-events-none"></i>
+                                                </div>
+                                            ) : undefined}
                                         />
-                                        {item.id === 'quran' && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onNavigate('quran-landscape');
-                                                }}
-                                                className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full w-9 h-9 flex items-center justify-center z-[20] transition-all shadow-xl border"
-                                                style={{ 
-                                                    backgroundColor: isBlackTheme ? '#1E293B' : (themeKey === 'default' ? '#ffffff' : (theme.isGlass ? 'rgba(255, 255, 255, 0.2)' : (theme.palette[1] || theme.palette[0]))),
-                                                    color: isBlackTheme ? '#ffffff' : (themeKey === 'default' ? '#000000' : '#ffffff'),
-                                                    borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.2)' : (themeKey === 'default' ? '#000000' : (theme.isGlass ? 'rgba(255, 255, 255, 0.3)' : 'transparent')),
-                                                    backdropFilter: theme.isGlass ? 'blur(4px)' : 'none',
-                                                    WebkitBackdropFilter: theme.isGlass ? 'blur(4px)' : 'none',
-                                                    borderWidth: (isBlackTheme || themeKey === 'default') ? '2px' : '1px'
-                                                }}
-                                                title={t('common.landscape_mode', 'وضع العرض')}
-                                            >
-                                                <i className="fa-solid fa-arrows-rotate text-lg"></i>
-                                            </button>
-                                        )}
                                     </div>
                                 );
                             })}

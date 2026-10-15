@@ -418,9 +418,6 @@ function HajjUmrah({ onBack, onNavigate }) {
                             </button>
                         </div>
                     </div>
-                    <p className="app-top-bar__subtitle text-center">
-                        {getScreenSubtitle()}
-                    </p>
                 </div>
             </header>
 

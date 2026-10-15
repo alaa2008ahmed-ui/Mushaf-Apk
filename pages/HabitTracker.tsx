@@ -585,9 +585,6 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack , onNavigate }) => {
                       </button>
                   </div>
               </div>
-              <p className="app-top-bar__subtitle text-center">
-                  متابعة الطاعات والسنن اليومية
-              </p>
           </div>
       </header>
 
@@ -1036,7 +1033,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack , onNavigate }) => {
             onClick={() => {
               const next = !autoSyncEnabled;
               setAutoSyncEnabled(next);
-              showTrackerToast(next ? 'تم تفعيل الربط التلقائي مع القرآن والأذكار والأدعية ⚡' : 'تم تعطيل وفك الربط بين الصفحات ������');
+              showTrackerToast(next ? 'تم تفعيل الربط التلقائي مع القرآن والأذكار والأدعية ⚡' : 'تم تعطيل وفك الربط بين الصفحات 🔒');
             }}
             className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
               autoSyncEnabled ? (isBlackTheme ? 'bg-white' : 'bg-emerald-600') : 'bg-gray-300 dark:bg-gray-600'

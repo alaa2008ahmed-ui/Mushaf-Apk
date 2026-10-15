@@ -61,9 +61,6 @@ const Calculators: React.FC<CalculatorsProps> = ({ onBack , onNavigate }) => {
                             </button>
                         </div>
                     </div>
-                    <p className="app-top-bar__subtitle text-center">
-                        {t('page.calculators_subtitle', 'زكاة، مواريث، كفارات، فطر وأضحية')}
-                    </p>
                 </div>
             </header>
 

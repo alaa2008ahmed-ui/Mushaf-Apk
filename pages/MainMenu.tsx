@@ -61,40 +61,76 @@ const APP_SHARE_TEXT = `🕋✨ التحديث الأكبر لتطبيق "مصح
 
 🤍 شاركه مع أهلك وأصحابك.. فالدال على الخير كفاعله، واجعله صدقة جارية لك ولوالديك. 🤲🌱`;
 
+const CURRENT_LAYOUT_VERSION = 'v2026_row8_seerah_bar_v3';
+
 const ALL_POSSIBLE_ITEMS = [
-    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
-    { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
-    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "h-10", colorIndex: 1 },
-    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-10", colorIndex: 1 },
-    { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "h-10", colorIndex: 1 },
-    { id: 'tasbeeh', label: "📿 السبحة", className: "h-10", colorIndex: 1 },
-    { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 1 },
-    { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
-    { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
-    { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
-    { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
-    { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-10", colorIndex: 1 },
-    { id: 'ahl-al-quran', label: "🏆 أهل القرآن", className: "col-span-2 h-10", colorIndex: 1 },
-    { id: 'community', label: "💬 مجتمع التواصل", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'prophetic-seerah', label: "📜 السيرة والخط الزمني", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'more', label: "قائمة التطبيقات", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
+    // الصف الاول : بطاقه القران الكريم + بطاقه الاستماع للقران باللون الاخضر
+    { id: 'quran', label: "القرآن الكريم", className: "col-span-3 h-11", colorIndex: 0 },
+    { id: 'listen', label: "الاستماع للقرآن", className: "col-span-3 h-11", colorIndex: 0 },
+    // الصف الثانى : بطاقه مواقيت الصلاه + القبله + اذكار الصلاه باللون الاخضر
+    { id: 'prayer-times', label: "مواقيت الصلاة", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'qibla', label: "القبلة", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'salah-adhkar', label: "أذكار الصلاة", className: "col-span-2 h-11", colorIndex: 0 },
+    // الصف الثالث : بطاقه الادعيه + حصن المسلم + الاذكار باللون البنفسجى
+    { id: 'adia', label: "الأدعية", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'hisn-muslim', label: "حصن المسلم", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'sabah-masaa', label: "الأذكار", className: "col-span-2 h-11", colorIndex: 1 },
+    // الصف الرابع : بطاقه التقويم + الحج والعمرة + السبحه باللون البنفسجى
+    { id: 'calendar', label: "التقويم", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'hajj-umrah', label: "الحج والعمرة", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'tasbeeh', label: "السبحة", className: "col-span-2 h-11", colorIndex: 1 },
+    // الصف الخامس : مجتمع التواصل + اهل القران باللون الاخضر
+    { id: 'community', label: "مجتمع التواصل", className: "col-span-3 h-11", colorIndex: 0 },
+    { id: 'ahl-al-quran', label: "أهل القرآن", className: "col-span-3 h-11", colorIndex: 0 },
+    // الصف السادس : الورد اليومى + التحفيظ + مربى العبادات باللون البنفسجى
+    { id: 'daily-wird', label: "الورد اليومي", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'memorization', label: "التحفيظ", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'habit-tracker', label: "مربّي العبادات", className: "col-span-2 h-11", colorIndex: 1 },
+    // الصف السابع : الرقيه الشرعيه + مواقع اسلاميه + الحاسبه الشرعيه باللون البنفسجى
+    { id: 'others', label: "الرقية الشرعية", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'islamic-sites', label: "مواقع إسلامية", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'calculators', label: "الحاسبة الشرعية", className: "col-span-2 h-11", colorIndex: 1 },
+    // الصف الثامن : الاربعون النوويه + التحكم الصوتى + اسماء الله الحسنى باللون البنفسجي
+    { id: 'nawawi', label: "الأربعون النووية", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'voice-control', label: "التحكم الصوتي", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'asmaul-husna', label: "أسماء الله الحسنى", className: "col-span-2 h-11", colorIndex: 1 },
+    // صف السيرة والخط الزمني مع أيقونات مجتمع التواصل وأهل القرآن والواتساب والتحكم الصوتي
+    { id: 'prophetic-seerah', label: "السيرة والخط الزمني", className: "col-span-6 h-10 flex justify-center", colorIndex: 0 },
 ];
 
 const DEFAULT_MENU_ITEMS = [
-    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
-    { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
-    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "h-10", colorIndex: 1 },
-    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-10", colorIndex: 1 },
-    { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "h-10", colorIndex: 1 },
-    { id: 'tasbeeh', label: "📿 السبحة", className: "h-10", colorIndex: 1 },
-    { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 1 },
-    { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
-    { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
-    { id: 'more', label: "قائمة التطبيقات", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
+    // الصف الاول : بطاقه القران الكريم + بطاقه الاستماع للقران باللون الاخضر
+    { id: 'quran', label: "القرآن الكريم", className: "col-span-3 h-11", colorIndex: 0 },
+    { id: 'listen', label: "الاستماع للقرآن", className: "col-span-3 h-11", colorIndex: 0 },
+    // الصف الثانى : بطاقه مواقيت الصلاه + القبله + اذكار الصلاه باللون الاخضر
+    { id: 'prayer-times', label: "مواقيت الصلاة", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'qibla', label: "القبلة", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'salah-adhkar', label: "أذكار الصلاة", className: "col-span-2 h-11", colorIndex: 0 },
+    // الصف الثالث : بطاقه الادعيه + حصن المسلم + الاذكار باللون البنفسجى
+    { id: 'adia', label: "الأدعية", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'hisn-muslim', label: "حصن المسلم", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'sabah-masaa', label: "الأذكار", className: "col-span-2 h-11", colorIndex: 1 },
+    // الصف الرابع : بطاقه التقويم + الحج والعمرة + السبحه باللون البنفسجى
+    { id: 'calendar', label: "التقويم", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'hajj-umrah', label: "الحج والعمرة", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'tasbeeh', label: "السبحة", className: "col-span-2 h-11", colorIndex: 1 },
+    // الصف الخامس : مجتمع التواصل + اهل القران باللون الاخضر
+    { id: 'community', label: "مجتمع التواصل", className: "col-span-3 h-11", colorIndex: 0 },
+    { id: 'ahl-al-quran', label: "أهل القرآن", className: "col-span-3 h-11", colorIndex: 0 },
+    // الصف السادس : الورد اليومى + التحفيظ + مربى العبادات باللون البنفسجى
+    { id: 'daily-wird', label: "الورد اليومي", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'memorization', label: "التحفيظ", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'habit-tracker', label: "مربّي العبادات", className: "col-span-2 h-11", colorIndex: 1 },
+    // الصف السابع : الرقيه الشرعيه + مواقع اسلاميه + الحاسبه الشرعيه باللون البنفسجى
+    { id: 'others', label: "الرقية الشرعية", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'islamic-sites', label: "مواقع إسلامية", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'calculators', label: "الحاسبة الشرعية", className: "col-span-2 h-11", colorIndex: 1 },
+    // الصف الثامن : الاربعون النوويه + التحكم الصوتى + اسماء الله الحسنى باللون البنفسجي
+    { id: 'nawawi', label: "الأربعون النووية", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'voice-control', label: "التحكم الصوتي", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'asmaul-husna', label: "أسماء الله الحسنى", className: "col-span-2 h-11", colorIndex: 1 },
+    // صف السيرة والخط الزمني مع أيقونات مجتمع التواصل وأهل القرآن والواتساب والتحكم الصوتي باللون الأخضر
+    { id: 'prophetic-seerah', label: "السيرة والخط الزمني", className: "col-span-6 h-10 flex justify-center", colorIndex: 0 },
 ];
 
 function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
@@ -105,11 +141,14 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   });
   const { theme, themeKey } = useTheme();
   const [visibleItems, setVisibleItems] = useState<string[]>(() => {
+    const savedVersion = localStorage.getItem('menu_layout_version_v2');
+    if (savedVersion !== CURRENT_LAYOUT_VERSION) {
+        return DEFAULT_MENU_ITEMS.map(i => i.id);
+    }
     const savedVisible = localStorage.getItem('visibleMenuItems');
     if (savedVisible) {
         try {
-            const parsed = JSON.parse(savedVisible);
-            return parsed.filter((id: string) => id !== 'habit-tracker');
+            return JSON.parse(savedVisible);
         } catch (e) {
             return DEFAULT_MENU_ITEMS.map(i => i.id);
         }
@@ -117,19 +156,17 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     return DEFAULT_MENU_ITEMS.map(i => i.id);
   });
   const [menuItems, setMenuItems] = useState(() => {
+    const savedVersion = localStorage.getItem('menu_layout_version_v2');
+    if (savedVersion !== CURRENT_LAYOUT_VERSION) {
+        localStorage.setItem('menu_layout_version_v2', CURRENT_LAYOUT_VERSION);
+        localStorage.setItem('menuLayout', JSON.stringify(DEFAULT_MENU_ITEMS));
+        localStorage.setItem('visibleMenuItems', JSON.stringify(DEFAULT_MENU_ITEMS.map(i => i.id)));
+        return DEFAULT_MENU_ITEMS;
+    }
     const savedLayout = localStorage.getItem('menuLayout');
     if (savedLayout) {
         try {
-            const parsed = JSON.parse(savedLayout);
-            const filtered = parsed
-                .filter((item: any) => item.id !== 'habit-tracker')
-                .map((item: any) => {
-                    let updated = { ...item };
-                    if (updated.customColor) delete updated.customColor;
-                    if (updated.id === 'more') updated.label = "قائمة التطبيقات";
-                    return updated;
-                });
-            return filtered;
+            return JSON.parse(savedLayout);
         } catch (e) {
             return DEFAULT_MENU_ITEMS;
         }
@@ -497,56 +534,13 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   const { prev: prevSalah, next: nextSalah, remaining: prayerCountdown } = getSalahStats();
 
   useEffect(() => {
-    // Check if we need to update layout in storage (migration/fix)
-    const savedLayout = localStorage.getItem('menuLayout');
-    if (savedLayout) {
-        try {
-            const parsed = JSON.parse(savedLayout);
-            let changed = false;
-            const updated = parsed.map((item: any) => {
-                let currentItem = { ...item };
-                if (currentItem.customColor) {
-                    delete currentItem.customColor;
-                    changed = true;
-                }
-                if (currentItem.id === 'more') {
-                    if (currentItem.label && (currentItem.label.includes('✨') || currentItem.label !== "قائمة التطبيقات")) {
-                        changed = true;
-                        currentItem.label = "قائمة التطبيقات";
-                    }
-                    if (!currentItem.className.includes('flex justify-center')) {
-                        changed = true;
-                        currentItem.className = currentItem.className + " flex justify-center";
-                    }
-                }
-                if (currentItem.className) {
-                    const newClass = currentItem.className.replace(/h-\d+/g, (match) => {
-                        if (match === 'h-12') return 'h-12';
-                        return 'h-10';
-                    });
-                    if (currentItem.className !== newClass) {
-                        changed = true;
-                        currentItem.className = newClass;
-                    }
-                }
-                return currentItem;
-            });
-            
-            if (changed) {
-                const filtered = updated.filter((item: any) => item.id !== 'habit-tracker');
-                localStorage.setItem('menuLayout', JSON.stringify(filtered));
-                setMenuItems(filtered);
-            } else {
-                // Always ensure habit-tracker is removed
-                const filtered = updated.filter((item: any) => item.id !== 'habit-tracker');
-                if (filtered.length !== updated.length) {
-                    localStorage.setItem('menuLayout', JSON.stringify(filtered));
-                    setMenuItems(filtered);
-                }
-            }
-        } catch (e) {
-            // Error handled in initializer
-        }
+    const savedVersion = localStorage.getItem('menu_layout_version_v2');
+    if (savedVersion !== CURRENT_LAYOUT_VERSION) {
+        localStorage.setItem('menu_layout_version_v2', CURRENT_LAYOUT_VERSION);
+        localStorage.setItem('menuLayout', JSON.stringify(DEFAULT_MENU_ITEMS));
+        localStorage.setItem('visibleMenuItems', JSON.stringify(DEFAULT_MENU_ITEMS.map(i => i.id)));
+        setMenuItems(DEFAULT_MENU_ITEMS);
+        setVisibleItems(DEFAULT_MENU_ITEMS.map(i => i.id));
     }
   }, []);
 
@@ -611,7 +605,10 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
   const handleResetLayout = () => {
       setMenuItems(DEFAULT_MENU_ITEMS);
-      localStorage.removeItem('menuLayout');
+      localStorage.setItem('menu_layout_version_v2', CURRENT_LAYOUT_VERSION);
+      localStorage.setItem('menuLayout', JSON.stringify(DEFAULT_MENU_ITEMS));
+      localStorage.setItem('visibleMenuItems', JSON.stringify(DEFAULT_MENU_ITEMS.map(i => i.id)));
+      setVisibleItems(DEFAULT_MENU_ITEMS.map(i => i.id));
       setIsEditMode(false);
       if (navigator.vibrate) navigator.vibrate(50);
   };

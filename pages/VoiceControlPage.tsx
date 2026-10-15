@@ -181,7 +181,6 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                             </button>
                         </div>
                     </div>
-                    <p className="app-top-bar__subtitle text-center">إدارة الأوامر الصوتية الذكية</p>
                 </div>
             </header>
 

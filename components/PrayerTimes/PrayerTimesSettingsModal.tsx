@@ -4,6 +4,7 @@ import ToneSelector from './ToneSelector';
 import { Capacitor } from '@capacitor/core';
 import { isDndPermissionGranted, requestDndPermission } from '../../utils/silentMode';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { playNotificationSound } from '../../utils/prayerTimesUtils';
 
 interface PrayerTimesSettingsModalProps {
     isOpen: boolean;
@@ -442,6 +443,17 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
                                         بعد {tempIqama}د
                                     </span>
                                 </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => playNotificationSound('/assets/audio/chime.mp3')}
+                                    className="px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer shrink-0"
+                                    title="معاينة صوت تنبيه الإقامة"
+                                    style={{ color: primaryColor }}
+                                >
+                                    <i className="fa-solid fa-volume-high text-[9px]"></i>
+                                    <span>صوت التنبيه</span>
+                                </button>
                             </div>
 
                             {/* Duration options (10, 15, 20 only) and inline +/- */}

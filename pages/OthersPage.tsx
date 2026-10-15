@@ -1221,9 +1221,6 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
               </button>
             </div>
           </div>
-          <p className="app-top-bar__subtitle text-center">
-            الآيات والتحصينات النبوية الصحيحة من العين والحسد والمس
-          </p>
         </div>
       </header>
 

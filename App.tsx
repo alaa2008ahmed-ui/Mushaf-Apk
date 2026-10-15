@@ -23,6 +23,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { clearSearchCache } from './pages/GlobalSearch';
 import { playNotificationSound } from './utils/prayerTimesUtils';
+import IqamaAlertModal from './components/PrayerTimes/IqamaAlertModal';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import { APP_VERSION, REMOTE_VERSION_URL, GOOGLE_PLAY_URL } from './constants';
 import UpdateNotificationModal from './components/UpdateNotificationModal';
@@ -231,14 +232,18 @@ function App() {
       listener = LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
         const page = notificationAction.notification.extra?.page;
         const params = notificationAction.notification.extra?.params;
+        const type = notificationAction.notification.extra?.type;
         if (page) {
           handleNavigate(page, params);
+        } else if (type === 'iqama') {
+          handleNavigate('prayer-times');
         }
       });
 
       receivedListener = LocalNotifications.addListener('localNotificationReceived', (notification) => {
-        // The Android operating system already plays the tone natively through the NotificationChannel.
-        // Never play HTML5 audio here, which was causing the tone to play twice at the same time.
+        if (notification.extra?.type === 'iqama') {
+          playNotificationSound('/assets/audio/chime.mp3');
+        }
         console.log('[Notification] Received notification natively:', notification.id, notification.title);
       });
     }
@@ -398,6 +403,7 @@ function AppContent({
 }: any) {
   const { setCurrentPage: setVoicePage } = useVoiceControl();
   const { theme, themeKey, applyPresetTheme, setCurrentPage: setThemePage } = useTheme();
+  const { activeIqamaAlert, dismissIqamaAlert } = usePrayerTimes();
 
   useEffect(() => {
     setVoicePage(page);
@@ -494,6 +500,13 @@ function AppContent({
       <RateUs />
       <MawlidNotification />
       <InAppChatNotification currentPage={page} navParams={navParams} onNavigate={handleNavigate} />
+
+      {activeIqamaAlert && (
+        <IqamaAlertModal
+          alert={activeIqamaAlert}
+          onDismiss={dismissIqamaAlert}
+        />
+      )}
     </div>
   );
 }

@@ -206,11 +206,6 @@ function Qibla({ onBack, onNavigate }) {
                             </button>
                         </div>
                     </div>
-                    <p className="app-top-bar__subtitle text-center">
-                        {config?.location?.cityGov 
-                            ? (language === 'en' ? `Based on your location: ${config.location.cityGov}` : `حسب موقعك في: ${config.location.cityGov}`)
-                            : t('page.qibla_subtitle', 'تحديد اتجاه القبلة بدقة')}
-                    </p>
                 </div>
             </header>
 

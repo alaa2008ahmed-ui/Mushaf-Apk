@@ -247,9 +247,6 @@ function Adia({ onBack, onNavigate }: AdiaProps) {
                             </button>
                         </div>
                     </div>
-                    <p className="app-top-bar__subtitle text-center">
-                        باقات من الذكر والمناجاة
-                    </p>
                 </div>
             </header>
 

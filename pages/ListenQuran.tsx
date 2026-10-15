@@ -562,7 +562,6 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
                             </button>
                         </div>
                     </div>
-                    <p className="app-top-bar__subtitle text-center">تلاوات عطرة من أشهر القراء</p>
                 </div>
             </header>
 

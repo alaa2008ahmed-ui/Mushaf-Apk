@@ -156,9 +156,6 @@ export const TasbeehChartModal: React.FC<TasbeehChartModalProps> = ({
                                 </button>
                             </div>
                         </div>
-                        <p className="app-top-bar__subtitle truncate text-center">
-                            تطور التسبيحات
-                        </p>
                     </div>
                 </header>
 

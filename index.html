@@ -84,7 +84,7 @@
           border-bottom: 2px solid var(--bottom-bar-border, #334155);
           position: sticky; top: 0; z-index: 40;
           padding-top: env(safe-area-inset-top);
-          min-height: 90px;
+          min-height: 67px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -102,17 +102,31 @@
           width: 100%;
           max-width: 900px; 
           margin: 0 auto; 
-          padding: 0.5rem 1.25rem; 
+          padding: 0.25rem 1.25rem; 
           display: flex; 
           flex-direction: column; 
           gap: 0.1rem; 
           text-align: center; 
           justify-content: center;
           height: 100%;
-          min-height: 70px;
+          min-height: 52px;
       }
       .app-top-bar__title { font-weight: 800; letter-spacing: 0.03em; }
       .app-top-bar__subtitle { font-size: 0.85rem; opacity: 0.9; }
+
+      /* Exception: Prayer Times Top Bar retains original height & subtitle */
+      .app-top-bar.app-top-bar--prayer {
+          min-height: 90px !important;
+      }
+      .app-top-bar.app-top-bar--prayer .app-top-bar__inner {
+          min-height: 70px !important;
+          padding: 0.5rem 1.25rem !important;
+      }
+
+      /* Hide subtitles on all pages except prayer times */
+      .app-top-bar:not(.app-top-bar--prayer) .app-top-bar__subtitle {
+          display: none !important;
+      }
       .hide-scrollbar::-webkit-scrollbar { display: none; }
       .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       .app-bottom-bar {

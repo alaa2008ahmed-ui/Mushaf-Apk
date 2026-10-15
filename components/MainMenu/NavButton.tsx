@@ -17,6 +17,7 @@ interface NavButtonProps {
     unreadBadgeCount?: number;
     rankBadge?: number | null;
     dataId?: string;
+    leftAction?: React.ReactNode;
 }
 
 const NavButton: React.FC<NavButtonProps> = ({ 
@@ -33,7 +34,8 @@ const NavButton: React.FC<NavButtonProps> = ({
     badgeText = 'جديد',
     unreadBadgeCount,
     rankBadge,
-    dataId
+    dataId,
+    leftAction
 }) => {
     const rankColor = rankBadge !== undefined && rankBadge !== null ? getAhlAlQuranRankColor(rankBadge) : null;
 
@@ -44,7 +46,7 @@ const NavButton: React.FC<NavButtonProps> = ({
                 whileTap={!isEditMode ? { scale: 0.98, y: 2 } : {}}
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 onClick={onClick} 
-                className={`w-full rounded-2xl p-1.5 font-bold relative text-[13px] h-full flex items-center justify-center text-center ${isEditMode ? 'cursor-move animate-pulse opacity-80' : ''}`}
+                className={`w-full rounded-2xl p-1 sm:p-1.5 font-bold relative text-[10px] min-[360px]:text-[10.5px] min-[400px]:text-[11px] min-[430px]:text-[11.5px] h-full flex items-center justify-center text-center ${isEditMode ? 'cursor-move animate-pulse opacity-80' : ''}`}
                 style={{ 
                     backgroundColor: isGlass ? (color ? `${color}55` : 'rgba(255, 255, 255, 0.25)') : color, 
                     backdropFilter: isGlass ? 'blur(12px) saturate(180%)' : 'none',
@@ -65,7 +67,7 @@ const NavButton: React.FC<NavButtonProps> = ({
                     <div className="absolute inset-x-0 top-0 h-[1px] bg-white/20 rounded-t-2xl"></div>
                 )}
                 
-                <span className="relative z-10 font-kufi whitespace-nowrap">
+                <span className={`relative z-10 font-kufi whitespace-nowrap overflow-hidden text-ellipsis max-w-full ${leftAction ? 'pl-8 pr-2' : 'px-0.5'}`}>
                     {label}
                 </span>
 
@@ -74,6 +76,12 @@ const NavButton: React.FC<NavButtonProps> = ({
                     <div className="absolute inset-0 rounded-2xl bg-black opacity-0 group-active:opacity-10 transition-opacity"></div>
                 )}
             </motion.button>
+            
+            {leftAction && (
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center pointer-events-auto">
+                    {leftAction}
+                </div>
+            )}
             
             {rankColor && rankBadge !== null && rankBadge !== undefined ? (
                 <div 

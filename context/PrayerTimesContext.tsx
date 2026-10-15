@@ -61,6 +61,8 @@ interface PrayerTimesContextType {
     updateConfig: (newConfig: Partial<PrayerConfig>) => void;
     isPrayerSilentActive?: boolean;
     activeSilentPrayerName?: string;
+    activeIqamaAlert?: { prayerKey: string; prayerName: string; minutes: number; timeStr: string } | null;
+    dismissIqamaAlert?: () => void;
 }
 
 // --- Default Configuration ---
@@ -76,7 +78,7 @@ const DEFAULT_CONFIG: PrayerConfig = {
     preAthanReminder: { enabled: false, minutes: 15 },
     autoSilent: false,
     autoSilentDuration: 15,
-    iqamaReminder: { enabled: false, minutes: 15 }
+    iqamaReminder: { enabled: true, minutes: 15 }
 };
 
 
@@ -195,9 +197,17 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
         try {
             const saved = localStorage.getItem('prayerFinal_v34');
             if (saved) {
-                return { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
+                const parsed = JSON.parse(saved);
+                return { 
+                    ...DEFAULT_CONFIG, 
+                    ...parsed,
+                    iqamaReminder: {
+                        enabled: parsed.iqamaReminder?.enabled !== undefined ? parsed.iqamaReminder.enabled : true,
+                        minutes: parsed.iqamaReminder?.minutes || 15
+                    }
+                };
             }
-            // Migrate from v33 ensuring new default: preAthanReminder, autoSilent, iqamaReminder are false
+            // Migrate from v33 ensuring iqamaReminder defaults to enabled
             const oldSaved = localStorage.getItem('prayerFinal_v33');
             if (oldSaved) {
                 const parsed = JSON.parse(oldSaved);
@@ -206,7 +216,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                     ...parsed,
                     preAthanReminder: { enabled: false, minutes: parsed.preAthanReminder?.minutes || 15 },
                     autoSilent: false,
-                    iqamaReminder: { enabled: false, minutes: parsed.iqamaReminder?.minutes || 15 }
+                    iqamaReminder: { enabled: true, minutes: parsed.iqamaReminder?.minutes || 15 }
                 };
             }
             return DEFAULT_CONFIG;
@@ -222,6 +232,8 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
     const [countdown, setCountdown] = useState("00:00:00");
     const [isPrayerSilentActive, setIsPrayerSilentActive] = useState(false);
     const [activeSilentPrayerName, setActiveSilentPrayerName] = useState('');
+    const [activeIqamaAlert, setActiveIqamaAlert] = useState<{ prayerKey: string; prayerName: string; minutes: number; timeStr: string } | null>(null);
+    const dismissIqamaAlert = useCallback(() => setActiveIqamaAlert(null), []);
     const triggeredAlertsRef = React.useRef<Set<string>>(new Set());
 
     // Check if phone/app should be automatically silent during prayer time
@@ -568,6 +580,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                     'pre_adhan_alarm_channel',
                     'iqama_reminder_channel',
                     'iqama_alarm_channel',
+                    'iqama_v3_chime_channel',
                     'prayer_silent_channel',
                     'night_times_channel',
                     'night_times_alarm_channel',
@@ -614,7 +627,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                                 name: chan.name,
                                 description: `نغمة إشعار الأذان: ${chan.name}`,
                                 importance: 5,
-                                sound: chan.sound,
+                                sound: chan.raw || chan.sound,
                                 vibration: true,
                                 visibility: 1
                             });
@@ -641,7 +654,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 // Short gentle chime channels for all reminders
                 const alertChannels = [
                     { id: 'pre_adhan_v3_chime_channel', name: 'تنبيه الاستعداد للصلاة', desc: 'نغمة تنبيه قصيرة وخفيفة للاستعداد والوضوء قبل الأذان' },
-                    { id: 'iqama_v3_chime_channel', name: 'تنبيه إقامة الصلاة', desc: 'نغمة تنبيه قصيرة وخفيفة عند حلول موعد إقامة الصلاة' },
+                    { id: 'iqama_v4_chime_channel', name: 'تنبيه إقامة الصلاة', desc: 'نغمة تنبيه وإشعار مرئي عند حلول موعد إقامة الصلاة' },
                     { id: 'prayer_silent_v3_chime_channel', name: 'الصامت التلقائي للصلاة', desc: 'تنبيه قصير عند تفعيل أو إنهاء وضع الصامت للصلاة' },
                     { id: 'night_times_v3_chime_channel', name: 'تنبيهات أوقات الليل', desc: 'إشعارات لأوقات أول الليل، منتصف الليل، والثلث الأخير' },
                     { id: 'athkar_v3_chime_channel', name: 'أذكار وتنبيهات عامة', desc: 'قناة تنبيهات أذكار الصباح والمساء والسنن والأدعية' },
@@ -654,7 +667,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                             name: ac.name,
                             description: ac.desc,
                             importance: 5,
-                            sound: 'chime.mp3',
+                            sound: 'chime',
                             vibration: true,
                             visibility: 1
                         });
@@ -830,14 +843,14 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 // 3. Iqama Reminder Notification (تنبيه الإقامة)
-                let isIqamaReminderEnabled = false;
+                let isIqamaReminderEnabled = true;
                 let iqamaMinutes = config.iqamaOffsets?.[key] || 15;
 
                 if (config.prayerIqamaReminders?.[key] !== undefined) {
-                    isIqamaReminderEnabled = !!config.prayerIqamaReminders[key].enabled;
+                    isIqamaReminderEnabled = config.prayerIqamaReminders[key].enabled !== false;
                     iqamaMinutes = config.prayerIqamaReminders[key].minutes ?? (config.iqamaOffsets?.[key] || 15);
-                } else if (config.iqamaReminder?.enabled) {
-                    isIqamaReminderEnabled = true;
+                } else if (config.iqamaReminder !== undefined) {
+                    isIqamaReminderEnabled = config.iqamaReminder.enabled !== false;
                     iqamaMinutes = config.iqamaReminder.minutes ?? (config.iqamaOffsets?.[key] || 15);
                 }
 
@@ -850,8 +863,8 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                             title: `🕌 حان الآن موعد إقامة صلاة ${prayerNamesAr[key]}`,
                             body: `أقيمت الصلاة.. استووا وتراصوا واعتدلوا أثابكم الله 🤲`,
                             schedule: { at: iqamaPrayerDate, allowWhileIdle: true },
-                            channelId: 'iqama_v3_chime_channel',
-                            sound: 'chime.mp3',
+                            channelId: 'iqama_v4_chime_channel',
+                            sound: 'chime',
                             smallIcon: 'ic_stat_name',
                             extra: { type: 'iqama', prayer: key, playSound: true, soundFile: 'chime.mp3' }
                         });
@@ -1332,13 +1345,13 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                     }
 
                     // 3. Live Iqama Reminder (chime.mp3)
-                    let isIqamaEnabled = false;
+                    let isIqamaEnabled = true;
                     let iqamaMinutes = config.iqamaOffsets?.[key] || 15;
                     if (config.prayerIqamaReminders?.[key] !== undefined) {
-                        isIqamaEnabled = !!config.prayerIqamaReminders[key].enabled;
+                        isIqamaEnabled = config.prayerIqamaReminders[key].enabled !== false;
                         iqamaMinutes = config.prayerIqamaReminders[key].minutes ?? (config.iqamaOffsets?.[key] || 15);
-                    } else if (config.iqamaReminder?.enabled) {
-                        isIqamaEnabled = true;
+                    } else if (config.iqamaReminder !== undefined) {
+                        isIqamaEnabled = config.iqamaReminder.enabled !== false;
                         iqamaMinutes = config.iqamaReminder.minutes ?? (config.iqamaOffsets?.[key] || 15);
                     }
 
@@ -1348,10 +1361,17 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                         const iqamaAlertKey = `${dayStr}_iqama_${key}`;
                         if (iqamaDiffMs >= 0 && iqamaDiffMs <= 45000 && !triggeredAlertsRef.current.has(iqamaAlertKey)) {
                             triggeredAlertsRef.current.add(iqamaAlertKey);
-                            if (!isNative) {
-                                console.log(`[Foreground Alert] Playing gentle chime for iqama ${key}`);
-                                playNotificationSound('/assets/audio/chime.mp3');
-                            }
+                            console.log(`[Iqama Alert] Playing gentle chime and showing visual alert for ${key}`);
+                            // Play audio on all platforms (web + phone foreground)
+                            playNotificationSound('/assets/audio/chime.mp3');
+                            // Trigger in-app visual alert
+                            const iqamaFormatted = applyOffset(times[key], totalOffset + iqamaMinutes);
+                            setActiveIqamaAlert({
+                                prayerKey: key,
+                                prayerName: prayerNamesAr[key] || key,
+                                minutes: iqamaMinutes,
+                                timeStr: iqamaFormatted
+                            });
                         }
                     }
 
@@ -1421,7 +1441,8 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
         <PrayerTimesContext.Provider value={{ 
             times, dates, nextPrayer, countdown, config, setConfig, 
             refreshLocation, manualSearch, updateConfig,
-            isPrayerSilentActive, activeSilentPrayerName
+            isPrayerSilentActive, activeSilentPrayerName,
+            activeIqamaAlert, dismissIqamaAlert
         }}>
             {children}
         </PrayerTimesContext.Provider>

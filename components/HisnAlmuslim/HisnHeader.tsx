@@ -55,9 +55,6 @@ const HisnHeader: React.FC<HisnHeaderProps> = ({ title, subtitle, showThemePageL
                         )}
                     </div>
                 </div>
-                <p className="app-top-bar__subtitle text-center">
-                    {localizedSubtitle}
-                </p>
             </div>
         </header>
     );

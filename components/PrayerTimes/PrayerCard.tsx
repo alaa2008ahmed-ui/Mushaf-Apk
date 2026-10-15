@@ -109,18 +109,21 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
             </div>
 
             {/* Bottom: Iqama */}
-            <div className="w-full flex justify-center items-center pb-2.5 -translate-y-1.5 min-h-[18px] z-0 relative">
+            <div className="w-full flex justify-center items-center pb-2.5 -translate-y-1.5 min-h-[18px] z-0 relative pointer-events-auto">
                 {prayerKey !== 'Sunrise' && iqamaTime && !iqamaTime.includes('--') ? (
-                    <span 
-                        className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap leading-none" 
+                    <button 
+                        type="button"
+                        onClick={() => openSettings(prayerKey)}
+                        className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap leading-none cursor-pointer hover:opacity-90 active:scale-95 transition-all flex items-center gap-1" 
                         style={{
                             color: isNextPrayer ? nextPrayerBorderColor : secondaryColor, 
                             backgroundColor: isNextPrayer ? (isDefaultTheme ? '#dcfce7' : `${nextPrayerBorderColor}20`) : (isBlackAndWhite ? '#333' : (isDefaultTheme ? '#f3f4f6' : themePalette1 + '1A')), 
                             borderColor: activeBorderColor
                         }}
+                        title="تخصيص وقت ونغمة الإقامة"
                     >
-                        إقامة {formatTime12_clean(iqamaTime)}
-                    </span>
+                        <span>إقامة {formatTime12_clean(iqamaTime)}</span>
+                    </button>
                 ) : (
                     <div className="h-1" />
                 )}

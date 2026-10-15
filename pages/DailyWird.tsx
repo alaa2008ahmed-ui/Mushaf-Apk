@@ -981,7 +981,6 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
               </button>
             </div>
           </div>
-          <p className="app-top-bar__subtitle text-center">تابع ختمتك للقرآن الكريم</p>
         </div>
       </header>
 

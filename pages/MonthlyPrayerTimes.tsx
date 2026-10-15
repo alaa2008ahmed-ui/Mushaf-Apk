@@ -315,9 +315,6 @@ export default function MonthlyPrayerTimes({ onBack, onNavigate }: { onBack: () 
                             مواقيت الشهر
                         </h1>
                     </div>
-                    <p className="app-top-bar__subtitle font-bold">
-                        {config.location.cityGov}
-                    </p>
                 </div>
             </header>
 

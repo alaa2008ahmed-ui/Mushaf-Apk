@@ -54,7 +54,6 @@ const TasbeehHeader: React.FC<TasbeehHeaderProps> = ({ title, subtitle, onBack, 
                         )}
                     </div>
                 </div>
-                <p className="app-top-bar__subtitle text-center">{localizedSubtitle}</p>
             </div>
         </header>
     );

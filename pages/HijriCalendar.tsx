@@ -931,7 +931,6 @@ function HijriCalendar({ onBack , onNavigate }: { onBack: () => void, onNavigate
                             </button>
                         </div>
                     </div>
-                    <p className="app-top-bar__subtitle text-center shrink-0">الميلادي والهجري في مكان واحد</p>
                 </div>
             </header>
 
