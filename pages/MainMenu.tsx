@@ -227,6 +227,14 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => {
+      setToastMessage('');
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
+
+  useEffect(() => {
     const handleResize = () => {
       setIsLandscape(window.innerWidth > window.innerHeight);
       const guideBtn = document.getElementById('guide-help-btn');
@@ -744,7 +752,6 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                       <TawafCounterCard 
                           theme={theme}
                           onNavigate={onNavigate}
-                          setToastMessage={setToastMessage}
                       />
 
                       {/* بطاقة متصدري أهل القرآن (المراكز الثلاثة الأولى) */}

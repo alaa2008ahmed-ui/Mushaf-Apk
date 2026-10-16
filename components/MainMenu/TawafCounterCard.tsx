@@ -5,10 +5,9 @@ import { getTawafCounterState, saveTawafCounterState, subscribeTawafCounter, Taw
 interface TawafCounterCardProps {
   theme: any;
   onNavigate?: (pageId: string, params?: any) => void;
-  setToastMessage?: (msg: string) => void;
 }
 
-export const TawafCounterCard: React.FC<TawafCounterCardProps> = ({ theme, setToastMessage }) => {
+export const TawafCounterCard: React.FC<TawafCounterCardProps> = ({ theme }) => {
   const [state, setState] = useState<TawafCounterState>(getTawafCounterState());
 
   useEffect(() => {
@@ -48,6 +47,9 @@ export const TawafCounterCard: React.FC<TawafCounterCardProps> = ({ theme, setTo
 
   const handleReset = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(30); } catch {}
+    }
     saveTawafCounterState(prev => {
       if (prev.activeTab === 'tawaf') {
         return { ...prev, tawafCount: 0 };
@@ -55,9 +57,6 @@ export const TawafCounterCard: React.FC<TawafCounterCardProps> = ({ theme, setTo
         return { ...prev, saiCount: 0 };
       }
     });
-    if (setToastMessage) {
-      setToastMessage(state.activeTab === 'tawaf' ? 'تمت إعادة ضبط أشواط الطواف' : 'تمت إعادة ضبط أشواط السعي');
-    }
   };
 
   const handleSwitchTab = (tab: 'tawaf' | 'sai', e?: React.MouseEvent) => {
