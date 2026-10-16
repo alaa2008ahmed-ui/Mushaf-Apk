@@ -1,12 +1,12 @@
 {
-  "projectId": "dialy-sales",
-  "appId": "1:900314310640:web:566a671c9684cbad231f35",
-  "apiKey": "AIzaSyBXp4xCa0bpa8ruNmT6DKZDW2qt0KeIMDg",
-  "authDomain": "dialy-sales.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-remixremixremixq-288201ac-a5fe-4888-b4e3-0224ec0571eb",
-  "storageBucket": "dialy-sales.firebasestorage.app",
-  "messagingSenderId": "900314310640",
+  "projectId": "gen-lang-client-0993630458",
+  "appId": "1:177769815354:web:57f54cddcfc52aae874403",
+  "apiKey": "AIzaSyDrZzuuSUQQwyIL7yCvf5FMV3HNzRTRsXY",
+  "authDomain": "gen-lang-client-0993630458.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-remixremixremixr-472252d3-4ec3-4053-b890-6540d391a024",
+  "storageBucket": "gen-lang-client-0993630458.firebasestorage.app",
+  "messagingSenderId": "177769815354",
   "measurementId": "",
-  "oAuthClientId": "900314310640-aakjat6siqgbgg1ddv54ajh8f30rc34o.apps.googleusercontent.com",
+  "oAuthClientId": "177769815354-2ucjml2bkkea8omjj42eo91blvpile5d.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

@@ -26,6 +26,7 @@ import { Capacitor } from '@capacitor/core';
 import moment from 'moment-hijri';
 import TopLeadersCard from '../components/MainMenu/TopLeadersCard';
 import HabitTrackerCard from '../components/MainMenu/HabitTrackerCard';
+import TawafCounterCard from '../components/MainMenu/TawafCounterCard';
 
 const ISLAMIC_EVENTS = [
     { day: 1, month: 1, name: "رأس السنة الهجرية" },
@@ -738,6 +739,13 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                            </div>
                           </div>
                       </div>
+
+                      {/* بطاقة عداد الطواف والسعي - تظهر تحت بطاقة الصلاة مباشرة عند تفعيلها */}
+                      <TawafCounterCard 
+                          theme={theme}
+                          onNavigate={onNavigate}
+                          setToastMessage={setToastMessage}
+                      />
 
                       {/* بطاقة متصدري أهل القرآن (المراكز الثلاثة الأولى) */}
                       <TopLeadersCard 

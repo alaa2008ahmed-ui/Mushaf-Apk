@@ -13,11 +13,7 @@ import {
   Heart, FileText, Shield, Globe, Calculator, Sparkles,
   CheckCircle2, Crown, RotateCw, Minus, ArrowUpRight, ChevronLeft, ChevronRight, Info
 } from 'lucide-react';
-import { usePrayerTimes } from '../context/PrayerTimesContext';
 import { toArabic } from '../components/QuranReader/constants';
-import VerseSection from '../components/MainMenu/VerseSection';
-import FloatingNeonTicker from '../components/FloatingNeonTicker';
-import { verses } from '../data/mainMenuData';
 import { ButtonExplanationModal, ButtonExplanationData } from '../components/PageGuide/ButtonExplanationModal';
 import { PageMockupDispatcher } from '../components/PageGuide/PageVisualMockups';
 
@@ -119,56 +115,6 @@ export const PageGuide: React.FC<PageGuideProps> = ({
 
   const selectedGuide = selectedPageId ? getPageButtonsGuide(selectedPageId) : null;
 
-  const [currentVerse, setCurrentVerse] = useState(() => {
-    const randomIndex = Math.floor(Math.random() * verses.length);
-    return verses[randomIndex];
-  });
-
-  const [verseFontSize] = useState(() => {
-    const saved = localStorage.getItem('mainMenuVerseFontSize');
-    return saved ? parseFloat(saved) : 1.15;
-  });
-
-  const [verseSettings] = useState(() => {
-    const saved = localStorage.getItem('mainMenuVerseSettings');
-    return saved ? JSON.parse(saved) : {
-      fontFamily: theme?.font || 'Amiri',
-      bgColor: 'transparent',
-      textColor: theme?.textColor || '#1f2937'
-    };
-  });
-
-  const handleNextVerse = () => {
-    const currentIndex = verses.findIndex(v => v.text === currentVerse.text);
-    const nextIndex = (currentIndex + 1) % verses.length;
-    setCurrentVerse(verses[nextIndex]);
-  };
-
-  const { times, nextPrayer, countdown } = usePrayerTimes();
-  const getSalahStats = () => {
-    if (!nextPrayer || !times || Object.keys(times).length === 0) {
-      return { prev: 'العصر', next: 'المغرب', remaining: '01:25:40' };
-    }
-    const salahKeys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-    let nextIndex = salahKeys.indexOf(nextPrayer.key);
-    if (nextPrayer.key === 'Sunrise') nextIndex = 1;
-    const prevIndex = (nextIndex - 1 + salahKeys.length) % salahKeys.length;
-    const actualNextIndex = nextIndex % salahKeys.length;
-    const prayerNamesAr: Record<string, string> = {
-      Fajr: 'الفجر',
-      Sunrise: 'الشروق',
-      Dhuhr: 'الظهر',
-      Asr: 'العصر',
-      Maghrib: 'المغرب',
-      Isha: 'العشاء'
-    };
-    return {
-      prev: prayerNamesAr[salahKeys[prevIndex]] || 'العصر',
-      next: prayerNamesAr[salahKeys[actualNextIndex]] || 'المغرب',
-      remaining: countdown || '01:25:40'
-    };
-  };
-  const { prev: prevSalah, next: nextSalah, remaining: prayerCountdown } = getSalahStats();
 
   const handleBack = () => {
     if (selectedPageId) {
@@ -618,6 +564,19 @@ export const PageGuide: React.FC<PageGuideProps> = ({
                   <Compass size={20} />
                 </div>
               )}
+
+              {(selectedPageId === 'community' || selectedPageId === 'side-community') && (
+                <div 
+                  className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer text-emerald-600 dark:text-emerald-400"
+                  onClick={() => setInspectedElement({
+                    title: 'زر فتح المصحف الشريف من المجتمع',
+                    purpose: 'يتيح لك الانتقال السريع للمصحف لقراءة القرآن أو مشاركة آية مباشرة داخل محادثات المجتمع.'
+                  })}
+                  title="صفحة القرآن الكريم"
+                >
+                  <BookOpen size={20} />
+                </div>
+              )}
             </div>
 
             {/* عنوان الصفحة في الوسط مطابق 100% للصورة */}
@@ -649,6 +608,19 @@ export const PageGuide: React.FC<PageGuideProps> = ({
                   <Heart size={18} className="text-red-500 fill-current" />
                   <span>الاستماع للقرآن</span>
                 </h1>
+              ) : selectedPageId === 'community' || selectedPageId === 'side-community' ? (
+                /* في صفحة مجتمع التواصل: لا يوجد نص "مجتمع التواصل" في الشريط العلوي نهائياً بل شارة الملف الشخصي */
+                <div 
+                  className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl border border-black/20 dark:border-white/20 text-xs font-bold cursor-pointer hover:opacity-90 shadow-xs max-w-[200px] sm:max-w-[260px] mx-auto"
+                  onClick={() => setInspectedElement({
+                    title: 'شارة الملف الشخصي والدولة',
+                    purpose: 'تعرض اسم حسابك وصورتك وعلم دولتك، وبالنقر عليها تفتح نافذة تعديل بياناتك الشخصية.'
+                  })}
+                >
+                  <div className="w-5 h-5 rounded-full bg-slate-300 dark:bg-slate-700 flex items-center justify-center text-[10px]">👤</div>
+                  <span className="truncate max-w-[120px] sm:max-w-[160px]">مستخدم المصحف</span>
+                  <span>🌐</span>
+                </div>
               ) : (
                 <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate max-w-[240px] sm:max-w-md mx-auto">
                   {selectedPageId 
@@ -664,7 +636,6 @@ export const PageGuide: React.FC<PageGuideProps> = ({
                         'sabah-masaa': 'أذكار الصباح',
                         'calendar': 'التقويم',
                         'hajj-umrah': 'الحج والعمرة',
-                        'community': 'مجتمع التواصل',
                         'ahl-al-quran': 'أهل القرآن الكريم',
                         'daily-wird': 'الورد اليومي',
                         'memorization': 'التحفيظ والمراجعة',
@@ -676,7 +647,6 @@ export const PageGuide: React.FC<PageGuideProps> = ({
                         'voice-control': 'التحكم الصوتي',
                         'asmaul-husna': 'أسماء الله الحسنى',
                         'prophetic-seerah': 'السيرة والخط الزمني',
-                        'side-community': 'مجتمع التواصل',
                         'side-whatsapp': 'تواصل واتساب',
                         'side-voice': 'التحكم الصوتي',
                         'side-ahl-al-quran': 'أهل القرآن الكريم'
@@ -692,40 +662,20 @@ export const PageGuide: React.FC<PageGuideProps> = ({
               {selectedPageId === 'tasbeeh' ? (
                 <ThemePageLock />
               ) : selectedPageId === 'community' || selectedPageId === 'side-community' ? (
-                /* في صفحة المجتمع: أيقونة المصحف + شارة المستخدم + الكأس + المنزل */
+                /* في صفحة المجتمع: الكأس + المنزل */
                 <div className="flex items-center gap-1">
                   <div 
-                    className="w-8 h-8 rounded-full border border-black/10 flex items-center justify-center cursor-pointer"
-                    onClick={() => setInspectedElement({
-                      title: 'زر فتح المصحف الشريف من المجتمع',
-                      purpose: 'يتيح لك الانتقال السريع للمصحف لقراءة القرآن أو مشاركة آية مباشرة داخل محادثات المجتمع.'
-                    })}
-                  >
-                    <BookOpen size={16} />
-                  </div>
-                  <div 
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-black/20 dark:border-white/20 text-[11px] font-bold cursor-pointer"
-                    onClick={() => setInspectedElement({
-                      title: 'شارة الملف الشخصي والدولة',
-                      purpose: 'تعرض اسم حسابك وصورتك وعلم دولتك، وبالنقر عليها تفتح نافذة تعديل بياناتك الشخصية.'
-                    })}
-                  >
-                    <div className="w-5 h-5 rounded-full bg-slate-300 flex items-center justify-center text-[10px]">👤</div>
-                    <span>مستخدم افتراضي</span>
-                    <span>🌐</span>
-                  </div>
-                  <div 
-                    className="w-8 h-8 rounded-full border border-black/10 flex items-center justify-center text-amber-500 cursor-pointer"
+                    className="w-9 h-9 rounded-full border border-black/10 dark:border-white/10 flex items-center justify-center text-amber-500 cursor-pointer"
                     onClick={() => setInspectedElement({
                       title: 'زر لوحة المتصدرين (الكأس)',
                       purpose: 'يفتح لوحة شرف متصدري قراءة القرآن الكريم ونشاط المجتمع لهذا الشهر.'
                     })}
                   >
-                    <Trophy size={16} />
+                    <Trophy size={18} />
                   </div>
                   <button
                     onClick={handleGoHome}
-                    className="w-8 h-8 rounded-full flex items-center justify-center"
+                    className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
                     title="الصفحة الرئيسية"
                   >
                     <i className="fa-solid fa-house text-base"></i>
@@ -824,39 +774,36 @@ export const PageGuide: React.FC<PageGuideProps> = ({
           {!selectedPageId && (
             <div className="w-full max-w-sm sm:max-w-md mx-auto flex flex-col gap-3 pb-8" dir="rtl">
 
-              {/* الآية القرآنية الكريمة - مطابقة تماماً للصفحة الرئيسية */}
+              {/* بطاقة معلومات دليل صفحات التطبيق بدلاً من الآية والعنوان والدعاء */}
               <div 
-                id="verse-section" 
-                className="w-full cursor-pointer transition-transform active:scale-[0.99]" 
-                onClick={handleNextVerse}
-                title="اضغط لتغيير الآية"
+                className="w-full rounded-2xl p-4 sm:p-5 text-center transition-all select-none flex flex-col items-center justify-center gap-2 relative shadow-md border"
+                style={{
+                  backgroundColor: cardBg,
+                  borderColor: cardBorderColor,
+                  color: textColor
+                }}
               >
-                <VerseSection 
-                  currentVerse={currentVerse}
-                  verseFontSize={verseFontSize}
-                  theme={theme}
-                  verseSettings={verseSettings}
-                />
-              </div>
-
-              {/* عنوان التطبيق: مصحف أحمد وليلى - مطابق للصفحة الرئيسية */}
-              <div className="w-full text-center select-none pt-0.5">
                 <h1 
-                  id="app-title" 
-                  className="text-3xl sm:text-4xl font-black tracking-tight" 
-                  style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor }}
+                  className="text-2xl sm:text-3xl font-black tracking-tight"
+                  style={{ color: isBlackTheme ? '#FFFFFF' : (theme.palette?.[0] || theme.textColor) }}
                 >
-                  مُصْحَفُ أَحْمَدَ وَلَيْلَى
+                  مصحف أحمد وليلى
                 </h1>
-              </div>
-
-              {/* الدعاء والشريط الإعلاني المتحرك */}
-              <div className="relative z-10 text-center select-none -mt-1 mb-1">
-                <div className="relative min-h-[32px] max-w-sm mx-auto flex items-center justify-center px-4">
-                  <p className="text-[15px] font-black" style={{ color: isBlackTheme ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#4D7C0F' : theme.textColor)) }}>
-                    نرجوا الدعاء لهم بالرحمة والمغفرة
-                  </p>
-                  <FloatingNeonTicker />
+                <p 
+                  className="text-sm sm:text-base font-bold opacity-90"
+                  style={{ color: textColor }}
+                >
+                  شرح كامل لجميع صفحات التطبيق
+                </p>
+                <div 
+                  className="mt-1 px-3.5 py-1 rounded-full text-xs sm:text-sm font-semibold border flex items-center justify-center gap-1.5 shadow-sm"
+                  style={{
+                    backgroundColor: isBlackTheme ? '#18181b' : (theme.palette?.[0] ? `${theme.palette[0]}15` : '#10b98115'),
+                    borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.2)' : (theme.palette?.[0] ? `${theme.palette[0]}40` : '#10b98140'),
+                    color: isBlackTheme ? '#FFFFFF' : (theme.palette?.[0] || '#059669')
+                  }}
+                >
+                  <span>مصمم التطبيق : علاء احمد المرشدى</span>
                 </div>
               </div>
 
@@ -980,234 +927,6 @@ export const PageGuide: React.FC<PageGuideProps> = ({
                   })}
                 </div>
               </div>
-
-              {/* بطاقة حالة ومواقيت الصلاة */}
-              <div 
-                className="p-2 rounded-2xl shadow-md border-2 transition-all duration-300"
-                style={{ borderColor: cardBorderColor, backgroundColor: isBlackTheme ? '#141414' : (theme?.cardBg || 'rgba(255, 255, 255, 0.8)') }}
-              >
-                <div className="grid grid-cols-3 gap-2">
-                  {/* الصلاة السابقة */}
-                  <div className="py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border-2 transition-all" style={{ borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.3)' : `${theme.palette?.[0] || '#10b981'}33`, backgroundColor: cardBg }}>
-                    <span className="text-[10px] opacity-70 font-bold mb-0.5">السابقة</span>
-                    <span className="text-sm sm:text-base font-black truncate w-full" style={{ color: textColor }}>{prevSalah}</span>
-                  </div>
-
-                  {/* الوقت المتبقي */}
-                  <div className="py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-md border-2 relative overflow-hidden" style={{ borderColor: cardBorderColor, backgroundColor: cardBg }}>
-                    <span className="text-[10px] opacity-70 font-bold mb-0.5">متبقي</span>
-                    <span className="text-sm sm:text-base font-mono font-black tracking-wider" style={{ color: textColor }}>{prayerCountdown}</span>
-                  </div>
-
-                  {/* الصلاة القادمة */}
-                  <div className="py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border-2 transition-all" style={{ borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.3)' : `${theme.palette?.[0] || '#10b981'}33`, backgroundColor: cardBg }}>
-                    <span className="text-[10px] opacity-70 font-bold mb-0.5">القادمة</span>
-                    <span className="text-sm sm:text-base font-black truncate w-full" style={{ color: textColor }}>{nextSalah}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* بطاقة متصدري أهل القرآن */}
-              <div 
-                className="p-3 rounded-2xl shadow-md border-2 flex flex-col gap-2.5"
-                style={{ borderColor: cardBorderColor, backgroundColor: isBlackTheme ? '#141414' : (theme?.cardBg || 'rgba(255, 255, 255, 0.8)') }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5" style={{ color: primaryAccent }}>
-                    <Trophy className="w-4 h-4 text-amber-500" />
-                    <span className="text-xs font-black font-kufi">متصدرو أهل القرآن</span>
-                  </div>
-                  <span className="text-[10px] font-bold opacity-70">المراكز الثلاثة الأولى</span>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 pt-1">
-                  {/* المركز الثاني */}
-                  <div className="p-2 rounded-xl border flex flex-col items-center text-center gap-1" style={{ borderColor: isBlackTheme ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.08)', backgroundColor: cardBg }}>
-                    <span className="w-5 h-5 rounded-full bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-white text-[10px] font-black flex items-center justify-center">2#</span>
-                    <span className="text-xs font-bold truncate w-full" style={{ color: textColor }}>المتسابق الثاني</span>
-                    <span className="text-[10px] opacity-70 font-mono">٤٢٠ صفحة</span>
-                  </div>
-
-                  {/* المركز الأول */}
-                  <div className="p-2 rounded-xl border-2 flex flex-col items-center text-center gap-1 relative shadow-sm" style={{ borderColor: '#f59e0b', backgroundColor: cardBg }}>
-                    <Crown className="w-4 h-4 text-amber-500" />
-                    <span className="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center justify-center -mt-1">1#</span>
-                    <span className="text-xs font-black truncate w-full" style={{ color: textColor }}>المتصدر الأول</span>
-                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 font-mono">ختمتان • ٦٠٤ ص</span>
-                  </div>
-
-                  {/* المركز الثالث */}
-                  <div className="p-2 rounded-xl border flex flex-col items-center text-center gap-1" style={{ borderColor: isBlackTheme ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.08)', backgroundColor: cardBg }}>
-                    <span className="w-5 h-5 rounded-full bg-amber-700 text-white text-[10px] font-black flex items-center justify-center">3#</span>
-                    <span className="text-xs font-bold truncate w-full" style={{ color: textColor }}>المتسابق الثالث</span>
-                    <span className="text-[10px] opacity-70 font-mono">٣١٠ صفحات</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* بطاقة مربّي العبادات */}
-              <div 
-                className="p-3.5 rounded-2xl shadow-md border-2 flex flex-col gap-3"
-                style={{ borderColor: cardBorderColor, backgroundColor: isBlackTheme ? '#141414' : (theme?.cardBg || 'rgba(255, 255, 255, 0.8)') }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2" style={{ color: primaryAccent }}>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <span className="text-xs font-black font-kufi">مربي العبادات</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                      إنجاز اليوم
-                    </span>
-                  </div>
-                  <span className="text-xs font-black font-mono text-emerald-600 dark:text-emerald-400">85%</span>
-                </div>
-
-                {/* شريط الإنجاز */}
-                <div className="w-full h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                  <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: '85%' }} />
-                </div>
-
-                {/* مقارنة الأيام السابقة */}
-                <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-black/5 dark:border-white/5">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[10px] opacity-70 font-bold">اليوم</span>
-                    <span className="text-xs font-black text-emerald-500 font-mono">85%</span>
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[10px] opacity-70 font-bold">أمس</span>
-                    <span className="text-xs font-black text-emerald-500 font-mono">100%</span>
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[10px] opacity-70 font-bold">قبل أمس</span>
-                    <span className="text-xs font-black text-emerald-500 font-mono">92%</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* بطاقة حدث في مثل هذا اليوم */}
-              <div 
-                className="p-3.5 rounded-2xl shadow-md border-2 flex flex-col gap-2.5"
-                style={{ borderColor: cardBorderColor, backgroundColor: isBlackTheme ? '#141414' : (theme?.cardBg || 'rgba(255, 255, 255, 0.8)') }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2" style={{ color: primaryAccent }}>
-                    <Calendar className="w-4 h-4" />
-                    <span className="text-xs font-bold font-kufi">حدث في مثل هذا اليوم</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 opacity-70">
-                    <div className="p-1 rounded bg-black/5 dark:bg-white/5"><RotateCw className="w-3 h-3" /></div>
-                    <div className="p-1 rounded bg-black/5 dark:bg-white/5"><Copy className="w-3 h-3" /></div>
-                    <div className="p-1 rounded bg-black/5 dark:bg-white/5"><Share2 className="w-3 h-3" /></div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center gap-3 py-1.5 px-3 rounded-xl bg-black/5 dark:bg-white/5 text-xs font-bold font-kufi" style={{ color: textColor }}>
-                  <span>١٥ أكتوبر</span>
-                  <span className="opacity-30">•</span>
-                  <span>٦٣٦ ميلادي</span>
-                </div>
-
-                <p className="text-xs sm:text-sm font-hafs font-bold text-justify leading-relaxed" style={{ color: textColor }}>
-                  وقوع معركة اليرموك الخالدة بقيادة سيف الله المسلول خالد بن الوليد رضي الله عنه، والتي كانت فاتحة لتحرير بلاد الشام.
-                </p>
-              </div>
-
-              {/* بطاقة المناسبات الإسلامية */}
-              <div 
-                className="p-3.5 rounded-2xl shadow-md border-2 flex flex-col gap-2.5"
-                style={{ borderColor: cardBorderColor, backgroundColor: isBlackTheme ? '#141414' : (theme?.cardBg || 'rgba(255, 255, 255, 0.8)') }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2" style={{ color: primaryAccent }}>
-                    <Moon className="w-4 h-4" />
-                    <span className="text-xs font-bold font-kufi">المناسبات الإسلامية</span>
-                  </div>
-                  <div className="flex items-center gap-1 opacity-70">
-                    <div className="p-1 rounded bg-black/5 dark:bg-white/5"><ChevronRight className="w-3 h-3" /></div>
-                    <div className="p-1 rounded bg-black/5 dark:bg-white/5"><ChevronLeft className="w-3 h-3" /></div>
-                    <div className="p-1 rounded bg-black/5 dark:bg-white/5"><Copy className="w-3 h-3" /></div>
-                    <div className="p-1 rounded bg-black/5 dark:bg-white/5"><Share2 className="w-3 h-3" /></div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center gap-2 py-1 px-3 rounded-xl bg-black/5 dark:bg-white/5">
-                  <span className="text-xs font-bold opacity-80" style={{ color: textColor }}>باقي</span>
-                  <span className="text-base font-black font-kufi" style={{ color: primaryAccent }}>٥</span>
-                  <span className="text-xs font-bold opacity-80" style={{ color: textColor }}>أيام</span>
-                </div>
-
-                <div className="text-center flex flex-col gap-1">
-                  <p className="text-sm font-kufi font-black" style={{ color: textColor }}>
-                    ليلة الإسراء والمعراج المباركة
-                  </p>
-                  <span className="text-[10px] font-bold opacity-60" style={{ color: textColor }}>
-                    ٢٧ رجب ١٤٤٧ هـ • ٢٧ يناير ٢٠٢٦ م
-                  </span>
-                </div>
-              </div>
-
-              {/* بطاقة تصفح التطبيق */}
-              <div 
-                className="p-3 rounded-2xl shadow-md border-2 flex flex-col gap-2"
-                style={{ borderColor: cardBorderColor, backgroundColor: isBlackTheme ? '#141414' : (theme?.cardBg || 'rgba(255, 255, 255, 0.8)') }}
-              >
-                <div className="flex items-center gap-2" style={{ color: primaryAccent }}>
-                  <Globe className="w-4 h-4" />
-                  <span className="text-xs font-bold font-kufi">تصفح التطبيق</span>
-                </div>
-                <p className="text-xs font-bold opacity-80 leading-relaxed" style={{ color: textColor }}>
-                  لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط
-                </p>
-                <div className="flex items-center justify-center gap-3 pt-1">
-                  <div 
-                    className="py-1.5 px-3 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm"
-                    style={{ backgroundColor: primaryAccent, color: '#ffffff' }}
-                  >
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                    <span>فتح الرابط</span>
-                  </div>
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 opacity-80">
-                    <Copy className="w-3.5 h-3.5" />
-                  </div>
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 opacity-80">
-                    <Share2 className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-              </div>
-
-              {/* بطاقة شارك التطبيق */}
-              <div 
-                className="p-3 rounded-2xl shadow-md border-2 flex flex-col gap-2"
-                style={{ borderColor: cardBorderColor, backgroundColor: isBlackTheme ? '#141414' : (theme?.cardBg || 'rgba(255, 255, 255, 0.8)') }}
-              >
-                <div className="flex items-center gap-2" style={{ color: primaryAccent }}>
-                  <Share2 className="w-4 h-4" />
-                  <span className="text-xs font-bold font-kufi">شارك التطبيق</span>
-                </div>
-                <p className="text-xs font-bold opacity-80 leading-relaxed" style={{ color: textColor }}>
-                  اذا اعجبك التطبيق قم بنشره على وسائل التواصل ليكون لك الاجر ولمن تحب ان شاء الله .
-                </p>
-                <div className="flex items-center justify-center gap-6 pt-1">
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/5 dark:bg-white/5 text-xs font-bold opacity-80">
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>نسخ</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/5 dark:bg-white/5 text-xs font-bold opacity-80">
-                    <Share2 className="w-3.5 h-3.5" />
-                    <span>مشاركة</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* بطاقة الدعاء لوالدي التطبيق */}
-              <div 
-                className="py-3 px-4 rounded-2xl shadow-md border-2 text-center flex flex-col items-center justify-center"
-                style={{ borderColor: cardBorderColor, backgroundColor: isBlackTheme ? '#141414' : (theme?.cardBg || 'rgba(255, 255, 255, 0.8)') }}
-              >
-                <p className="text-sm sm:text-base font-bold font-kufi leading-relaxed" style={{ color: isBlackTheme ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : primaryAccent) }}>
-                  اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
-                </p>
-              </div>
-
             </div>
           )}
 

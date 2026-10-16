@@ -128,10 +128,7 @@ function PrayerTimes({ onBack, onNavigate }) {
     const handleRefreshLocation = async () => {
         showToast("جاري تحديد الموقع واستعادة المواقيت الأصلية...");
         try {
-            updateConfig({
-                prayerOffsets: { Fajr: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0, Sunrise: 0 }
-            });
-            await refreshLocation();
+            await refreshLocation(true);
             showToast("تم تحديد الموقع واستعادة المواقيت الأصلية تلقائياً");
         } catch (e) {
             console.error(e);
@@ -144,6 +141,7 @@ function PrayerTimes({ onBack, onNavigate }) {
         if (searchIconRef.current) searchIconRef.current.className = 'fa-solid fa-spinner fa-spin';
         try {
             await manualSearch(searchInput);
+            showToast("تم تحديد المدينة بنجاح واستعادة المواقيت الأصلية");
         } catch(e) { 
             console.error(e); 
             showToast("حدث خطأ أثناء البحث أو لم يتم العثور على نتائج.");
@@ -215,6 +213,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                 }
             }
         });
+        showToast("تم حفظ تعديل وقت الصلاة بنجاح");
         setIsModalOpen(false);
     };
 

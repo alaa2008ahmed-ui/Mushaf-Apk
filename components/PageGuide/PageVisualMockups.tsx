@@ -1288,30 +1288,51 @@ export const ListenQuranMockup: React.FC<PageMockupProps> = ({
         className="p-4 rounded-2xl border-2 shadow-xs flex flex-col gap-3"
         style={{ backgroundColor: isBlackTheme ? '#141414' : '#ffffff', borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.4)' : '#000000', color: textColor }}
       >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold opacity-60">متوقف</span>
-          <div className="flex items-center gap-1.5 font-black text-sm font-kufi">
-            <span>مؤقت النوم</span>
-            <span>🌙</span>
+        <Hotspot onClick={() => onInspect({
+          title: 'بطاقة مؤقت النوم الذكي',
+          purpose: 'ميزة مريحة لإيقاف صوت التلاوة تلقائياً عند النوم؛ تتيح لك الاستماع للتلاوة بخشوع في الفراش مع ضبط وقت محدد لإغلاق الصوت أو إيقافه فور انتهاء السورة تلقائياً لتوفير شحن بطارية هاتفك.'
+        })}>
+          <div className="flex items-center justify-between cursor-pointer">
+            <span className="text-xs font-bold opacity-60">متوقف</span>
+            <div className="flex items-center gap-1.5 font-black text-sm font-kufi">
+              <span>مؤقت النوم</span>
+              <span>🌙</span>
+            </div>
           </div>
-        </div>
+        </Hotspot>
 
-        <div className="grid grid-cols-4 gap-1.5 text-center text-xs font-bold">
-          <span className="p-2 rounded-xl border">15 دقيقة</span>
-          <span className="p-2 rounded-xl border">30 دقيقة</span>
-          <span className="p-2 rounded-xl border">60 دقيقة</span>
-          <span className="p-2 rounded-xl border truncate">آخر السورة</span>
-        </div>
+        <Hotspot onClick={() => onInspect({
+          title: 'خيارات مؤقت النوم (15 • 30 • 60 دقيقة • آخر السورة)',
+          purpose: 'أزرار سريعة جاهزة لتحديد وقت إيقاف التلاوة بلمسة واحدة: إما بعد 15 دقيقة، أو 30 دقيقة، أو 60 دقيقة، أو إيقاف التلاوة تلقائياً عند اكتمال وانتهاء السورة الحالية.'
+        })}>
+          <div className="grid grid-cols-4 gap-1.5 text-center text-xs font-bold cursor-pointer">
+            <span className="p-2 rounded-xl border hover:bg-black/5 dark:hover:bg-white/5 transition-colors">15 دقيقة</span>
+            <span className="p-2 rounded-xl border hover:bg-black/5 dark:hover:bg-white/5 transition-colors">30 دقيقة</span>
+            <span className="p-2 rounded-xl border hover:bg-black/5 dark:hover:bg-white/5 transition-colors">60 دقيقة</span>
+            <span className="p-2 rounded-xl border truncate hover:bg-black/5 dark:hover:bg-white/5 transition-colors">آخر السورة</span>
+          </div>
+        </Hotspot>
 
         <div className="flex items-center justify-between gap-2 pt-1">
-          <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg border flex items-center justify-center font-bold">-</span>
-            <span className="text-xs font-bold px-3 py-1.5 rounded-lg border">15 دقيقة</span>
-            <span className="w-8 h-8 rounded-lg border flex items-center justify-center font-bold">+</span>
-          </div>
-          <button className="py-2 px-4 rounded-xl bg-black text-white dark:bg-white dark:text-black font-bold text-xs">
-            بدء المؤقت
-          </button>
+          <Hotspot onClick={() => onInspect({
+            title: 'أزرار ضبط وتعديل الدقائق (+ و -)',
+            purpose: 'تتيح لك زيادة أو تقليل دقائق مؤقت النوم بدقة بالسحب أو النقر لتحديد أي مدة مخصصة تناسب وقت نومك واسترخائك.'
+          })}>
+            <div className="flex items-center gap-2 cursor-pointer">
+              <span className="w-8 h-8 rounded-lg border flex items-center justify-center font-bold hover:bg-black/5">-</span>
+              <span className="text-xs font-bold px-3 py-1.5 rounded-lg border">15 دقيقة</span>
+              <span className="w-8 h-8 rounded-lg border flex items-center justify-center font-bold hover:bg-black/5">+</span>
+            </div>
+          </Hotspot>
+
+          <Hotspot onClick={() => onInspect({
+            title: 'زر بدء / إيقاف مؤقت النوم',
+            purpose: 'يقوم بتفعيل العد التنازلي لإيقاف صوت التلاوة تلقائياً عند انتهاء الوقت، والنقر عليه مرة أخرى أثناء عمل المؤقت يقوم بإلغائه وإعادة ضبطه.'
+          })}>
+            <div className="py-2 px-4 rounded-xl bg-black text-white dark:bg-white dark:text-black font-bold text-xs cursor-pointer text-center hover:opacity-90 transition-opacity">
+              بدء المؤقت
+            </div>
+          </Hotspot>
         </div>
       </div>
 
@@ -1320,21 +1341,38 @@ export const ListenQuranMockup: React.FC<PageMockupProps> = ({
         className="p-4 rounded-2xl border-2 shadow-xs flex flex-col gap-3 text-xs sm:text-sm font-bold"
         style={{ backgroundColor: isBlackTheme ? '#141414' : '#ffffff', borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.4)' : '#000000', color: textColor }}
       >
-        <div className="flex items-center justify-between">
-          <div className="w-10 h-5 bg-black dark:bg-white rounded-full relative p-0.5"><div className="w-4 h-4 bg-white dark:bg-black rounded-full"></div></div>
-          <span>تكرار نفس السورة بعد انتهائها</span>
-        </div>
-        <div className="flex items-center justify-between opacity-60">
-          <div className="w-10 h-5 bg-black/20 dark:bg-white/20 rounded-full relative p-0.5"><div className="w-4 h-4 bg-white rounded-full ml-auto"></div></div>
-          <span>تشغيل متواصل (الانتقال للسورة التالية)</span>
-        </div>
-        <div className="flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/5">
-          <ChevronLeft size={16} className="opacity-60" />
-          <div className="flex items-center gap-1.5">
-            <span>تحميل المصحف</span>
-            <Download size={16} />
+        <Hotspot onClick={() => onInspect({
+          title: 'مفتاح تكرار نفس السورة تلقائياً',
+          purpose: 'مفتاح تبديل لتكرار السورة الحالية تلقائياً وبشكل مستمر بمجرد انتهائها، وهو خيار مثالي لحفظ ومراجعة السورة وتكرار الاستماع إليها.'
+        })}>
+          <div className="flex items-center justify-between cursor-pointer">
+            <div className="w-10 h-5 bg-black dark:bg-white rounded-full relative p-0.5"><div className="w-4 h-4 bg-white dark:bg-black rounded-full"></div></div>
+            <span>تكرار نفس السورة بعد انتهائها</span>
           </div>
-        </div>
+        </Hotspot>
+
+        <Hotspot onClick={() => onInspect({
+          title: 'مفتاح التشغيل المتواصل (السورة التالية)',
+          purpose: 'مفتاح تبديل لتشغيل السور التالية تباعاً في ترتيب المصحف الشريف فور انتهاء السورة الحالية دون توقف، للاستماع إلى أجزاء القرآن كاملة دون لمس الهاتف.'
+        })}>
+          <div className="flex items-center justify-between opacity-75 cursor-pointer">
+            <div className="w-10 h-5 bg-black/20 dark:bg-white/20 rounded-full relative p-0.5"><div className="w-4 h-4 bg-white rounded-full ml-auto"></div></div>
+            <span>تشغيل متواصل (الانتقال للسورة التالية)</span>
+          </div>
+        </Hotspot>
+
+        <Hotspot onClick={() => onInspect({
+          title: 'زر تحميل المصحف والتلاوات',
+          purpose: 'ينقلك مباشرة إلى صفحة تحميل سور القرآن الكريم بصوت قارئك المفضل وتخزينها على جهازك لتستمع إليها أينما كنت بدون اتصال بالإنترنت.'
+        })}>
+          <div className="flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/5 cursor-pointer hover:opacity-85">
+            <ChevronLeft size={16} className="opacity-60" />
+            <div className="flex items-center gap-1.5">
+              <span>تحميل المصحف</span>
+              <Download size={16} />
+            </div>
+          </div>
+        </Hotspot>
       </div>
 
       {/* 6. بطاقة المفضلات المحفوظة */}
@@ -1342,21 +1380,43 @@ export const ListenQuranMockup: React.FC<PageMockupProps> = ({
         className="p-4 rounded-2xl border-2 shadow-xs flex flex-col gap-2.5"
         style={{ backgroundColor: isBlackTheme ? '#141414' : '#ffffff', borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.4)' : '#000000', color: textColor }}
       >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold opacity-60">1 / 10</span>
-          <div className="flex items-center gap-1 font-black text-sm font-kufi">
-            <span>المفضلات المحفوظة</span>
-            <span className="text-red-500">❤️</span>
+        <Hotspot onClick={() => onInspect({
+          title: 'بطاقة المفضلات المحفوظة',
+          purpose: 'قائمة سريعة تتسع لحفظ حتى 10 سور مع كبار القراء المفضلين لكل سورة، لتشغيل تلاواتك المفضلة بلمسة واحدة دون الحاجة للبحث المتكرر في القوائم.'
+        })}>
+          <div className="flex items-center justify-between cursor-pointer">
+            <span className="text-xs font-bold opacity-60">1 / 10</span>
+            <div className="flex items-center gap-1 font-black text-sm font-kufi">
+              <span>المفضلات المحفوظة</span>
+              <span className="text-red-500">❤️</span>
+            </div>
           </div>
-        </div>
+        </Hotspot>
 
         <div className="p-3 rounded-xl border flex items-center justify-between text-xs font-bold">
-          <Trash2 size={16} className="opacity-50 text-red-500" />
-          <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 text-[10px]">المحددة</span>
-          <div className="text-right">
-            <h5 className="font-black text-sm">سورة الفاتحة</h5>
-            <span className="text-[11px] opacity-70">القارئ: إبراهيم الأخضر</span>
-          </div>
+          <Hotspot onClick={() => onInspect({
+            title: 'زر حذف السورة من المفضلة',
+            purpose: 'يحذف هذه السورة والقارئ من قائمة المفضلات لإفساح المجال لإضافة سور وقراء آخرين.'
+          })}>
+            <div className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+              <Trash2 size={16} className="opacity-70 text-red-500 hover:opacity-100" />
+            </div>
+          </Hotspot>
+
+          <Hotspot 
+            className="flex-1 flex items-center justify-between px-2 cursor-pointer"
+            onClick={() => onInspect({
+              title: 'تشغيل السورة المفضلة مباشرة',
+              purpose: 'بالنقر على أي سورة في قائمة المفضلات، يتم تحديد السورة والقارئ فوراً وبدء التلاوة الصوتية مباشرة.'
+            })}
+          >
+            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 text-[10px]">المحددة</span>
+            <div className="text-right">
+              <h5 className="font-black text-sm">سورة الفاتحة</h5>
+              <span className="text-[11px] opacity-70">القارئ: إبراهيم الأخضر</span>
+            </div>
+          </Hotspot>
+
           <span className="w-6 h-6 rounded-full border flex items-center justify-center text-[10px]">1</span>
         </div>
       </div>
@@ -1523,59 +1583,61 @@ export const AhlAlQuranMockup: React.FC<PageMockupProps> = ({
 
 // =============================================================
 // =============================================================
-// 12. صفحة القرآن الكريم (MushafPage & QuranReader) - مطابقة تماماً للصورة الأصلية
+// 12. صفحة القرآن الكريم (MushafPage & QuranReader) - مطابقة تماماً للمصحف الأصلي
 // =============================================================
 
-// مكوّن فاصل ورقم الآية الذهبي مع الرقم الأخضر المطابق تماماً للصورة
+// مكوّن فاصل ورقم الآية القرآني المطابق لمصحف التطبيق الأصلي
 const ExactAyahMarker: React.FC<{ num: string }> = ({ num }) => (
-  <span className="inline-flex items-center justify-center mx-1 align-middle select-none">
-    <span className="relative inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8">
-      <svg className="w-full h-full" viewBox="0 0 32 32" fill="none">
-        {/* القوس الأيمن المذهب مع الزهرة */}
-        <path d="M10 7 C6 11 6 21 10 25" stroke="#d97706" strokeWidth="2.2" strokeLinecap="round" />
-        <path d="M6 16 L3 16 M6 13 L6 19" stroke="#d97706" strokeWidth="1.6" />
-        <circle cx="6" cy="16" r="1.5" fill="#f59e0b" />
-        {/* القوس الأيسر المذهب مع الزهرة */}
-        <path d="M22 7 C26 11 26 21 22 25" stroke="#d97706" strokeWidth="2.2" strokeLinecap="round" />
-        <path d="M26 16 L29 16 M26 13 L26 19" stroke="#d97706" strokeWidth="1.6" />
-        <circle cx="26" cy="16" r="1.5" fill="#f59e0b" />
-      </svg>
-      {/* الرقم العربي القرآني باللون الأخضر التيركوازي */}
-      <span className="absolute inset-0 flex items-center justify-center text-[#0d9488] font-black text-sm font-amiri" style={{ transform: 'translateY(-1px)' }}>
-        {num}
-      </span>
-    </span>
+  <span className="verse-container inline-flex items-center mx-1 cursor-pointer select-none font-amiri align-middle">
+    <span className="verse-bracket text-[#059669] dark:text-[#34d399] font-bold text-[0.88em]">﴿</span>
+    <span className="verse-num-inner text-[#b91c1c] dark:text-[#f87171] font-black text-[0.88em] px-0.5">{num}</span>
+    <span className="verse-bracket text-[#059669] dark:text-[#34d399] font-bold text-[0.88em]">﴾</span>
   </span>
 );
 
 export const QuranReaderMockup: React.FC<PageMockupProps> = ({
-  onInspect
+  onInspect, isBlackTheme
 }) => {
+  const bgColor = isBlackTheme ? '#121212' : '#ffffff';
+  const pageTextColor = isBlackTheme ? '#ffffff' : '#000000';
+  const frameBorderColor = isBlackTheme ? 'rgba(255, 255, 255, 0.4)' : '#000000';
+  const surahHeaderBg = isBlackTheme ? '#1e1e1e' : '#ffffff';
+
   return (
-    <div className="w-full max-w-sm sm:max-w-md mx-auto flex flex-col bg-white text-black border-2 border-black rounded-2xl overflow-hidden shadow-2xl select-none font-amiri" dir="rtl">
+    <div 
+      className="w-full max-w-sm sm:max-w-md mx-auto flex flex-col rounded-2xl overflow-hidden shadow-2xl select-none font-amiri border-2 transition-colors" 
+      style={{ backgroundColor: bgColor, color: pageTextColor, borderColor: frameBorderColor }}
+      dir="rtl"
+    >
       
-      {/* 1. الشريط العلوي (مطابق تماماً للصورة) */}
-      <div className="w-full h-14 bg-white border-b-2 border-black flex items-center justify-between px-3 shrink-0">
-        
+      {/* 1. الشريط العلوي (مطابق تماماً للشريط العلوي للمصحف) */}
+      <div 
+        className="w-full h-14 border-b-2 flex items-center justify-between px-3 shrink-0"
+        style={{ borderColor: frameBorderColor, backgroundColor: bgColor }}
+      >
         {/* زر القائمة الجانبية (يمين) */}
         <Hotspot onClick={() => onInspect({
-          title: 'زر القائمة الجانبية (Menu Drawer)',
-          singleClickAction: 'يفتح القائمة الجانبية الشاملة لاختيار أنماط القراءة الأربعة (المصحف، التفسير، معاني الكلمات، الترجمة)، وتنزيل التلاوات والتفاسير، وضبط خيارات القراءة.',
-          longPressAction: 'يفتح مباشرة نافذة تخصيص مظهر وثيم المصحف للاختيار السريع بين الوضع النهاري، والوضع الليلي، والوضع الأسود الداكن لتوفير راحة العين أثناء التلاوة.'
+          title: 'زر القائمة الجانبية',
+          purpose: 'يفتح القائمة الجانبية للمصحف الشريف لاختيار أنماط القراءة (المصحف، التفسير، معاني المفردات، الترجمة)، وتخصيص المظهر والثيمات، واختيار القراء، والخطوط، والتحميلات، والبحث في القرآن، وإعدادات المصحف.'
         })}>
-          <div className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center bg-white hover:bg-gray-100 transition-colors cursor-pointer">
-            <Menu size={22} color="#000000" strokeWidth={2.4} />
+          <div 
+            className="w-10 h-10 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer hover:opacity-80"
+            style={{ borderColor: frameBorderColor, backgroundColor: bgColor }}
+          >
+            <Menu size={20} color={pageTextColor} strokeWidth={2.4} />
           </div>
         </Hotspot>
 
         {/* زر اسم السورة ورقم الآية والجزء (المنتصف) */}
         <Hotspot className="flex-1 min-w-0 mx-2" onClick={() => onInspect({
           title: 'زر اسم السورة ورقم الآية والجزء',
-          singleClickAction: 'يفتح فهرس القرآن الكريم الشامل (السور والأجزاء والأحزاب) للبحث والانتقال السريع لأي سورة أو جزء أو حزب تريده في المصحف الشريف.',
-          longPressAction: 'ينقلك مباشرة إلى الآية الأولى من السورة الحالية لإعادة قراءتها من بدايتها أو مراجعة حفظها من أولها.'
+          purpose: 'يعرض اسم السورة الحالية ورقم الآية ورقم الجزء، وعند النقر عليه يفتح فهرس القرآن الكريم الشامل (السور، الأجزاء، والأحزاب) للبحث والانتقال السريع لأي موضع في المصحف.'
         })}>
-          <div className="h-10 rounded-xl border-2 border-black flex items-center justify-center px-2 bg-white hover:bg-gray-50 transition-colors cursor-pointer">
-            <span className="text-xs sm:text-sm font-bold text-black truncate tracking-wide font-sans">
+          <div 
+            className="h-10 rounded-xl border-2 flex items-center justify-center px-2 transition-colors cursor-pointer hover:opacity-85"
+            style={{ borderColor: frameBorderColor, backgroundColor: bgColor }}
+          >
+            <span className="text-xs sm:text-sm font-bold truncate tracking-wide font-sans" style={{ color: pageTextColor }}>
               ١ - سورة الفاتحة - ايه ١ - جزء ١
             </span>
           </div>
@@ -1583,305 +1645,336 @@ export const QuranReaderMockup: React.FC<PageMockupProps> = ({
 
         {/* زر ورقم الصفحة (يسار المنتصف) */}
         <Hotspot onClick={() => onInspect({
-          title: 'زر ورقم الصفحة (الانتقال لصفحة محددة)',
-          singleClickAction: 'يعرض رقم الصفحة الحالية (١)، وبالنقر عليه يتحول إلى خانة إدخال رقمية لتكتب أي رقم صفحة من 1 إلى 604 للقفز إليها فوراً.',
-          longPressAction: 'يعرض تفاصيل وموضع الصفحة الحالية ضمن أجزاء وأحزاب وأرباع القرآن الكريم، مع إمكانية التنقل السريع للربع أو الحزب التالي.'
+          title: 'زر ورقم الصفحة',
+          purpose: 'يعرض رقم الصفحة الحالية، وعند النقر عليه يتحول إلى خانة إدخال رقمية تتيح لك كتابة أي رقم صفحة من 1 إلى 604 والانتقال إليها فوراً.'
         })}>
-          <div className="w-10 h-10 rounded-xl border-2 border-black flex items-center justify-center font-black text-base bg-white hover:bg-gray-50 transition-colors cursor-pointer text-black">
+          <div 
+            className="w-10 h-10 rounded-xl border-2 flex items-center justify-center font-black text-base transition-colors cursor-pointer hover:opacity-85"
+            style={{ borderColor: frameBorderColor, backgroundColor: bgColor, color: pageTextColor }}
+          >
             ١
           </div>
         </Hotspot>
 
-        {/* زر تشغيل التلاوة الصوتية (يسار - الدائرة السوداء بالمثلث الأبيض) */}
-        <Hotspot className="mr-2" onClick={() => onInspect({
-          title: 'زر تشغيل التلاوة الصوتية (الصوت)',
-          singleClickAction: 'يبدأ تشغيل التلاوة الصوتية للآيات بصوت القارئ المفضل مع تظليل الآية المقروءة كلمة بكلمة، والضغط عليه مرة أخرى يقوم بإيقاف التلاوة مؤقتاً والاحتفاظ بموضع الآية.',
-          longPressAction: 'يفتح مباشرة نافذة اختيار القارئ من بين كبار قراء العالم الإسلامي (عبد الباسط عبد الصمد، محمد صديق المنشاوي، محمود خليل الحصري، مشاري العفاسي، ماهر المعيقلي، وغيرهم) دون الحاجة لدخول الإعدادات.'
+        {/* زر تشغيل التلاوة الصوتية (يسار) */}
+        <Hotspot className="mr-1" onClick={() => onInspect({
+          title: 'زر التلاوة الصوتية',
+          singleClickAction: 'تشغيل أو إيقاف التلاوة الصوتية للآيات بصوت القارئ المختار مع تظليل الآية المقروءة.',
+          longPressAction: 'الضغط المطول يفتح مباشرة نافذة اختيار القارئ من بين نخبة كبار قراء العالم الإسلامي دون الحاجة لدخول الإعدادات.'
         })}>
-          <div className="w-10 h-10 rounded-full border-2 border-black flex items-center justify-center bg-white hover:scale-105 transition-transform cursor-pointer">
-            <div className="w-7 h-7 rounded-full bg-black flex items-center justify-center pl-0.5">
-              <Play size={14} fill="#ffffff" color="#ffffff" />
+          <div 
+            className="w-10 h-10 rounded-full border-2 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform"
+            style={{ borderColor: frameBorderColor, backgroundColor: bgColor }}
+          >
+            <div 
+              className="w-7 h-7 rounded-full flex items-center justify-center pl-0.5"
+              style={{ backgroundColor: isBlackTheme ? '#ffffff' : '#000000' }}
+            >
+              <Play size={14} fill={isBlackTheme ? '#000000' : '#ffffff'} color={isBlackTheme ? '#000000' : '#ffffff'} />
             </div>
           </div>
         </Hotspot>
 
       </div>
 
-      {/* 2. ترويسة سورة الفاتحة (مطابقة تماماً للصورة) */}
-      <div className="w-full px-3 pt-3">
-        <Hotspot onClick={() => onInspect({
-          title: 'ترويسة سورة الفاتحة (اسم السورة وعدد آياتها ونوعها)',
-          singleClickAction: 'تفتح بطاقة معلومات شاملة عن سورة الفاتحة توضح: نوعها (مكية)، عدد آياتها (٧)، عدد كلماتها وحروفها، ترتيب نزولها، وأبرز مقاصدها وفضائلها.',
-          longPressAction: 'يفتح منتقي تصاميم وبراويز السور لاختيار الشكل الزخرفي والمحرابي المفضل لترويسة السور من بين تصاميم عثمانية وإسلامية متنوعة.'
-        })}>
-          <div className="w-full h-12 rounded-xl border-2 border-black flex items-center justify-between px-4 bg-white hover:bg-gray-50 transition-colors cursor-pointer">
-            {/* يمين: عدد الآيات */}
-            <span className="font-bold text-black text-sm sm:text-base font-amiri">
-              ٧ آيات
-            </span>
+      {/* 2. جسم صفحة المصحف الشريف بإطارها المزدوج وتصميمها الأصلي 100% */}
+      <div className="p-2 sm:p-3">
+        <div 
+          className="rounded-xl border-[3.5px] border-double p-3 sm:p-4 flex flex-col items-center shadow-inner"
+          style={{ borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.5)' : '#000000' }}
+        >
+          {/* ترويسة سورة الفاتحة (Surah Header Design 1) */}
+          <Hotspot 
+            className="w-full mb-3"
+            onClick={() => onInspect({
+              title: 'ترويسة السورة',
+              longPressAction: 'الضغط المطول على ترويسة السورة يفتح منتقي تصاميم وبراويز السور لاختيار الشكل الزخرفي والمحرابي المفضل لترويسة السور من بين تصاميم عثمانية وإسلامية متنوعة.'
+            })}
+          >
+            <div 
+              className="relative h-13 sm:h-14 w-full flex items-center justify-between px-3 sm:px-5 rounded-md border-[2.5px] overflow-hidden shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
+              style={{ 
+                backgroundColor: surahHeaderBg,
+                borderColor: frameBorderColor
+              }}
+            >
+              {/* يمين: عدد الآيات */}
+              <span className="font-bold text-xs sm:text-sm font-amiri z-10" style={{ color: pageTextColor }}>
+                ٧ آيات
+              </span>
 
-            {/* منتصف: كبسولة اسم السورة */}
-            <div className="px-6 sm:px-8 py-0.5 rounded-full border-2 border-black bg-white">
-              <h2 className="font-bold text-black text-base sm:text-lg font-amiri">
-                سُورَةُ ٱلْفَاتِحَةِ
-              </h2>
+              {/* منتصف: كبسولة اسم السورة البيضاوية */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div 
+                  className="relative h-9 px-6 sm:px-10 flex items-center justify-center border-2 shadow-xs"
+                  style={{ 
+                    borderRadius: '50px',
+                    backgroundColor: surahHeaderBg,
+                    borderColor: frameBorderColor
+                  }}
+                >
+                  <h2 className="text-sm sm:text-base font-black whitespace-nowrap font-amiri" style={{ color: pageTextColor, transform: 'translateY(-2px)' }}>
+                    سُورَةُ ٱلْفَاتِحَةِ
+                  </h2>
+                </div>
+              </div>
+
+              {/* يسار: نوع السورة */}
+              <span className="font-bold text-xs sm:text-sm font-amiri z-10" style={{ color: pageTextColor }}>
+                مَكِّيَّةٌ
+              </span>
             </div>
-
-            {/* يسار: نوع السورة */}
-            <span className="font-bold text-black text-sm sm:text-base font-amiri">
-              مكية
-            </span>
-          </div>
-        </Hotspot>
-      </div>
-
-      {/* 3. نص القرآن الكريم لسورة الفاتحة (مطابق تماماً لأسطر وألوان الصورة المرفقة) */}
-      <div className="w-full px-4 py-4 flex flex-col items-center justify-center text-center font-amiri text-xl sm:text-[23px] leading-[2.7] text-black">
-        
-        {/* السطر الأول: البسملة الخضراء + علامة ١ + الحمد لله رب */}
-        <div className="w-full flex items-center justify-center flex-wrap gap-1">
-          <Hotspot onClick={() => onInspect({
-            title: 'البسملة الشريفة والآية الأولى',
-            singleClickAction: 'تحديد وتظليل البسملة لمتابعة القراءة، مع خيارات إظهار/إخفاء شريط الأدوات العلوي والسفلي.',
-            longPressAction: 'فتح قائمة سياق الآية للاستماع إليها بصوت القارئ أو فتح تفسير البسملة الشريفة وأسرارها.'
-          })}>
-            <span className="text-[#0d9488] font-bold cursor-pointer hover:opacity-85">
-              بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-            </span>
           </Hotspot>
 
-          <Hotspot onClick={() => onInspect({
-            title: 'فاصل ورقم الآية (١)',
-            singleClickAction: 'فتح قائمة خيارات الآية (الاستماع للتلاوة، فتح التفسير الميسر، مشاركة الآية، حفظ علامة مرجعية).',
-            longPressAction: 'فتح قائمة كتب التفاسير السبعة المعتمدة لاختيار المرجع المفضل (ابن كثير، السعدي، الجلالين...).'
-          })}>
-            <span className="cursor-pointer hover:scale-110 inline-block transition-transform">
+          {/* نص سورة الفاتحة الكامل بالرسم العثماني المطابق للمصحف الأصلي */}
+          <div 
+            className="w-full text-center font-amiri text-lg sm:text-[21px] leading-[2.5] sm:leading-[2.7] py-2 px-1 tracking-normal"
+            style={{ color: pageTextColor }}
+          >
+            {/* الآية 1: البسملة */}
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'نص الآية الكريمة',
+                singleClickAction: 'تظليل الآية الكريمة ومتابعة القراءة، وإظهار أو إخفاء أشرطة الأدوات العلوية والسفلية، وإيقاف أو استئناف التمرير التلقائي.',
+                longPressAction: 'الضغط المطول يفتح قائمة سياق الآية لمشاركتها كبطاقة دعوية راقية أو نسخ النص العثماني وقراءة التفسير الميسر.'
+              })}
+            >
+              <span className="cursor-pointer hover:opacity-75 transition-opacity font-bold text-[#059669] dark:text-[#34d399]">
+                بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+              </span>
+            </Hotspot>
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'فاصل ورقم الآية (١)',
+                singleClickAction: 'النقر يفتح تفسير الآية الكريمة الميسر لشرح معاني الكلمات وأسباب النزول وبيان المعنى الإجمالي.',
+                longPressAction: 'الضغط المطول يفتح نافذة اختيار كتب التفاسير المعتمدة للتبديل بين كتب التفسير (ابن كثير، السعدي، الجلالين، القرطبي، الطبري، البغوي، والميسر).'
+              })}
+            >
               <ExactAyahMarker num="١" />
-            </span>
-          </Hotspot>
+            </Hotspot>{' '}
 
-          <Hotspot onClick={() => onInspect({
-            title: 'نص الآية الكريمة (الحمد لله رب)',
-            singleClickAction: 'تحديد وتظليل الآية الكريمة بلون مميز لمتابعة القراءة والختمة دون تشتت.',
-            longPressAction: 'فتح قائمة سياق الآية لتخصيص الآية وألوان تظليلها، أو نسخها، أو الانتقال لتفسيرها.'
-          })}>
-            <span className="text-black font-bold cursor-pointer hover:opacity-80">
-              ٱلْحَمْدُ لِلَّهِ رَبِّ
-            </span>
-          </Hotspot>
-        </div>
-
-        {/* السطر الثاني: العالمين ٢ الرحمن الرحيم ٣ ملك يوم */}
-        <div className="w-full flex items-center justify-center flex-wrap gap-1">
-          <Hotspot onClick={() => onInspect({
-            title: 'نص الآية الكريمة (العالمين)',
-            singleClickAction: 'تحديد وتظليل الآية لمتابعة القراءة بسلاسة وتحديد موضع الوقف.',
-            longPressAction: 'فتح قائمة سياق الآية للاستماع إليها أو نسخها أو فتح التفسير الميسر.'
-          })}>
-            <span className="text-black font-bold cursor-pointer hover:opacity-80">
-              ٱلْعَـٰلَمِينَ
-            </span>
-          </Hotspot>
-
-          <Hotspot onClick={() => onInspect({
-            title: 'فاصل ورقم الآية (٢)',
-            singleClickAction: 'فتح قائمة خيارات الآية (الاستماع للتلاوة، فتح التفسير الميسر، مشاركة الآية، حفظ علامة مرجعية).',
-            longPressAction: 'فتح قائمة كتب التفاسير السبعة المعتمدة لاختيار المرجع المفضل (ابن كثير، السعدي، الجلالين...).'
-          })}>
-            <span className="cursor-pointer hover:scale-110 inline-block transition-transform">
+            {/* الآية 2: الحمد لله رب العالمين */}
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'نص الآية الكريمة',
+                singleClickAction: 'تظليل الآية الكريمة ومتابعة القراءة، وإظهار أو إخفاء أشرطة الأدوات العلوية والسفلية، وإيقاف أو استئناف التمرير التلقائي.',
+                longPressAction: 'الضغط المطول يفتح قائمة سياق الآية لمشاركتها كبطاقة دعوية راقية أو نسخ النص العثماني وقراءة التفسير الميسر.'
+              })}
+            >
+              <span className="cursor-pointer hover:opacity-75 transition-opacity">
+                ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ
+              </span>
+            </Hotspot>
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'فاصل ورقم الآية (٢)',
+                singleClickAction: 'النقر يفتح تفسير الآية الكريمة الميسر لشرح معاني الكلمات وأسباب النزول وبيان المعنى الإجمالي.',
+                longPressAction: 'الضغط المطول يفتح نافذة اختيار كتب التفاسير المعتمدة للتبديل بين كتب التفسير (ابن كثير، السعدي، الجلالين، القرطبي، الطبري، البغوي، والميسر).'
+              })}
+            >
               <ExactAyahMarker num="٢" />
-            </span>
-          </Hotspot>
+            </Hotspot>{' '}
 
-          <Hotspot onClick={() => onInspect({
-            title: 'نص الآية الكريمة (الرحمن الرحيم)',
-            singleClickAction: 'تحديد وتظليل الآية وإظهار/إخفاء أشرطة الأدوات العلوية والسفلية للقراءة بملء الشاشة.',
-            longPressAction: 'فتح قائمة سياق الآية لبدء التلاوة الصوتية منها أو نسخ نصها العثماني.'
-          })}>
-            <span className="text-black font-bold cursor-pointer hover:opacity-80">
-              ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-            </span>
-          </Hotspot>
-
-          <Hotspot onClick={() => onInspect({
-            title: 'فاصل ورقم الآية (٣)',
-            singleClickAction: 'فتح قائمة خيارات الآية (الاستماع للتلاوة، فتح التفسير الميسر، مشاركة الآية، حفظ علامة مرجعية).',
-            longPressAction: 'فتح قائمة كتب التفاسير السبعة المعتمدة لاختيار المرجع المفضل (ابن كثير، السعدي، الجلالين...).'
-          })}>
-            <span className="cursor-pointer hover:scale-110 inline-block transition-transform">
+            {/* الآية 3: الرحمن الرحيم */}
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'نص الآية الكريمة',
+                singleClickAction: 'تظليل الآية الكريمة ومتابعة القراءة، وإظهار أو إخفاء أشرطة الأدوات العلوية والسفلية، وإيقاف أو استئناف التمرير التلقائي.',
+                longPressAction: 'الضغط المطول يفتح قائمة سياق الآية لمشاركتها كبطاقة دعوية راقية أو نسخ النص العثماني وقراءة التفسير الميسر.'
+              })}
+            >
+              <span className="cursor-pointer hover:opacity-75 transition-opacity">
+                ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+              </span>
+            </Hotspot>
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'فاصل ورقم الآية (٣)',
+                singleClickAction: 'النقر يفتح تفسير الآية الكريمة الميسر لشرح معاني الكلمات وأسباب النزول وبيان المعنى الإجمالي.',
+                longPressAction: 'الضغط المطول يفتح نافذة اختيار كتب التفاسير المعتمدة للتبديل بين كتب التفسير (ابن كثير، السعدي، الجلالين، القرطبي، الطبري، البغوي، والميسر).'
+              })}
+            >
               <ExactAyahMarker num="٣" />
-            </span>
-          </Hotspot>
+            </Hotspot>{' '}
 
-          <Hotspot onClick={() => onInspect({
-            title: 'نص الآية الكريمة (ملك يوم)',
-            singleClickAction: 'تظليل الآية ومتابعة القراءة بدون انقطاع.',
-            longPressAction: 'فتح خيارات التفسير وقراءة معاني الكلمات القرآنية الغريبة.'
-          })}>
-            <span className="text-black font-bold cursor-pointer hover:opacity-80">
-              مَلِكِ يَوْمِ
-            </span>
-          </Hotspot>
-        </div>
-
-        {/* السطر الثالث: الدين ٤ إياك نعبد وإياك نستعين */}
-        <div className="w-full flex items-center justify-center flex-wrap gap-1">
-          <Hotspot onClick={() => onInspect({
-            title: 'نص الآية الكريمة (الدين)',
-            singleClickAction: 'تحديد الآية وتظليلها بلون التتبع أثناء القراءة.',
-            longPressAction: 'فتح قائمة سياق الآية الشاملة.'
-          })}>
-            <span className="text-black font-bold cursor-pointer hover:opacity-80">
-              ٱلدِّينِ
-            </span>
-          </Hotspot>
-
-          <Hotspot onClick={() => onInspect({
-            title: 'فاصل ورقم الآية (٤)',
-            singleClickAction: 'فتح قائمة خيارات الآية (الاستماع للتلاوة، فتح التفسير الميسر، مشاركة الآية، حفظ علامة مرجعية).',
-            longPressAction: 'فتح قائمة كتب التفاسير السبعة المعتمدة لاختيار المرجع المفضل (ابن كثير، السعدي، الجلالين...).'
-          })}>
-            <span className="cursor-pointer hover:scale-110 inline-block transition-transform">
+            {/* الآية 4: مالك يوم الدين */}
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'نص الآية الكريمة',
+                singleClickAction: 'تظليل الآية الكريمة ومتابعة القراءة، وإظهار أو إخفاء أشرطة الأدوات العلوية والسفلية، وإيقاف أو استئناف التمرير التلقائي.',
+                longPressAction: 'الضغط المطول يفتح قائمة سياق الآية لمشاركتها كبطاقة دعوية راقية أو نسخ النص العثماني وقراءة التفسير الميسر.'
+              })}
+            >
+              <span className="cursor-pointer hover:opacity-75 transition-opacity">
+                مَـٰلِكِ يَوْمِ ٱلدِّينِ
+              </span>
+            </Hotspot>
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'فاصل ورقم الآية (٤)',
+                singleClickAction: 'النقر يفتح تفسير الآية الكريمة الميسر لشرح معاني الكلمات وأسباب النزول وبيان المعنى الإجمالي.',
+                longPressAction: 'الضغط المطول يفتح نافذة اختيار كتب التفاسير المعتمدة للتبديل بين كتب التفسير (ابن كثير، السعدي، الجلالين، القرطبي، الطبري، البغوي، والميسر).'
+              })}
+            >
               <ExactAyahMarker num="٤" />
-            </span>
-          </Hotspot>
+            </Hotspot>{' '}
 
-          <Hotspot onClick={() => onInspect({
-            title: 'نص الآية الكريمة (إياك نعبد وإياك نستعين)',
-            singleClickAction: 'تحديد وتظليل الآية وإيقاف/استئناف التمرير التلقائي الذكي.',
-            longPressAction: 'فتح قائمة سياق الآية لمشاركتها كبطاقة دعوية أو نسخ نصها.'
-          })}>
-            <span className="text-black font-bold cursor-pointer hover:opacity-80">
-              إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ
-            </span>
-          </Hotspot>
-        </div>
-
-        {/* السطر الرابع: ٥ اهدنا الصراط المستقيم ٦ صراط الذين */}
-        <div className="w-full flex items-center justify-center flex-wrap gap-1">
-          <Hotspot onClick={() => onInspect({
-            title: 'فاصل ورقم الآية (٥)',
-            singleClickAction: 'فتح قائمة خيارات الآية (الاستماع للتلاوة، فتح التفسير الميسر، مشاركة الآية، حفظ علامة مرجعية).',
-            longPressAction: 'فتح قائمة كتب التفاسير السبعة المعتمدة لاختيار المرجع المفضل (ابن كثير، السعدي، الجلالين...).'
-          })}>
-            <span className="cursor-pointer hover:scale-110 inline-block transition-transform">
+            {/* الآية 5: إياك نعبد وإياك نستعين */}
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'نص الآية الكريمة',
+                singleClickAction: 'تظليل الآية الكريمة ومتابعة القراءة، وإظهار أو إخفاء أشرطة الأدوات العلوية والسفلية، وإيقاف أو استئناف التمرير التلقائي.',
+                longPressAction: 'الضغط المطول يفتح قائمة سياق الآية لمشاركتها كبطاقة دعوية راقية أو نسخ النص العثماني وقراءة التفسير الميسر.'
+              })}
+            >
+              <span className="cursor-pointer hover:opacity-75 transition-opacity">
+                إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ
+              </span>
+            </Hotspot>
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'فاصل ورقم الآية (٥)',
+                singleClickAction: 'النقر يفتح تفسير الآية الكريمة الميسر لشرح معاني الكلمات وأسباب النزول وبيان المعنى الإجمالي.',
+                longPressAction: 'الضغط المطول يفتح نافذة اختيار كتب التفاسير المعتمدة للتبديل بين كتب التفسير (ابن كثير، السعدي، الجلالين، القرطبي، الطبري، البغوي، والميسر).'
+              })}
+            >
               <ExactAyahMarker num="٥" />
-            </span>
-          </Hotspot>
+            </Hotspot>{' '}
 
-          <Hotspot onClick={() => onInspect({
-            title: 'نص الآية الكريمة (اهدنا الصراط المستقيم)',
-            singleClickAction: 'تحديد وتظليل الآية الكريمة بمحاذاة القراءة والتلاوة الصوتية.',
-            longPressAction: 'فتح قائمة سياق الآية لبدء الاستماع إليها بصوت القارئ المفضل.'
-          })}>
-            <span className="text-black font-bold cursor-pointer hover:opacity-80">
-              ٱهْدِنَا ٱلصِّرَٰطَ ٱلْمُسْتَقِيمَ
-            </span>
-          </Hotspot>
-
-          <Hotspot onClick={() => onInspect({
-            title: 'فاصل ورقم الآية (٦)',
-            singleClickAction: 'فتح قائمة خيارات الآية (الاستماع للتلاوة، فتح التفسير الميسر، مشاركة الآية، حفظ علامة مرجعية).',
-            longPressAction: 'فتح قائمة كتب التفاسير السبعة المعتمدة لاختيار المرجع المفضل (ابن كثير، السعدي، الجلالين...).'
-          })}>
-            <span className="cursor-pointer hover:scale-110 inline-block transition-transform">
+            {/* الآية 6: اهدنا الصراط المستقيم */}
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'نص الآية الكريمة',
+                singleClickAction: 'تظليل الآية الكريمة ومتابعة القراءة، وإظهار أو إخفاء أشرطة الأدوات العلوية والسفلية، وإيقاف أو استئناف التمرير التلقائي.',
+                longPressAction: 'الضغط المطول يفتح قائمة سياق الآية لمشاركتها كبطاقة دعوية راقية أو نسخ النص العثماني وقراءة التفسير الميسر.'
+              })}
+            >
+              <span className="cursor-pointer hover:opacity-75 transition-opacity">
+                ٱهْدِنَا ٱلصِّرَٰطَ ٱلْمُسْتَقِيمَ
+              </span>
+            </Hotspot>
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'فاصل ورقم الآية (٦)',
+                singleClickAction: 'النقر يفتح تفسير الآية الكريمة الميسر لشرح معاني الكلمات وأسباب النزول وبيان المعنى الإجمالي.',
+                longPressAction: 'الضغط المطول يفتح نافذة اختيار كتب التفاسير المعتمدة للتبديل بين كتب التفسير (ابن كثير، السعدي، الجلالين، القرطبي، الطبري، البغوي، والميسر).'
+              })}
+            >
               <ExactAyahMarker num="٦" />
-            </span>
-          </Hotspot>
+            </Hotspot>{' '}
 
-          <Hotspot onClick={() => onInspect({
-            title: 'نص الآية الكريمة (صراط الذين)',
-            singleClickAction: 'تحديد الآية ومتابعة القراءة بتركيز.',
-            longPressAction: 'فتح قائمة التفسير ومعاني الكلمات.'
-          })}>
-            <span className="text-black font-bold cursor-pointer hover:opacity-80">
-              صِرَٰطَ ٱلَّذِينَ
-            </span>
-          </Hotspot>
-        </div>
-
-        {/* السطر الخامس: أنعمت عليهم غير المغضوب عليهم ولا */}
-        <div className="w-full flex items-center justify-center flex-wrap">
-          <Hotspot onClick={() => onInspect({
-            title: 'نص الآية الكريمة (أنعمت عليهم غير المغضوب عليهم ولا)',
-            singleClickAction: 'تظليل الآية الكريمة ومتابعة القراءة وإظهار أو إخفاء أشرطة الأدوات.',
-            longPressAction: 'فتح قائمة سياق الآية لمشاركتها كبطاقة دعوية راقية أو نسخ النص العثماني.'
-          })}>
-            <span className="text-black font-bold cursor-pointer hover:opacity-80">
-              أَنْعَمْتَ عَلَيْهِمْ غَيْرِ ٱلْمَغْضُوبِ عَلَيْهِمْ وَلَا
-            </span>
-          </Hotspot>
-        </div>
-
-        {/* السطر السادس: الضالين ٧ */}
-        <div className="w-full flex items-center justify-center flex-wrap gap-1">
-          <Hotspot onClick={() => onInspect({
-            title: 'نص الآية الكريمة ختام الفاتحة (الضالين)',
-            singleClickAction: 'تحديد وتظليل نهاية سورة الفاتحة والدعاء بعدها (آمين).',
-            longPressAction: 'فتح قائمة سياق الآية وقراءة التفسير الميسر لخاتمة السورة.'
-          })}>
-            <span className="text-black font-bold cursor-pointer hover:opacity-80">
-              ٱلضَّالِّينَ
-            </span>
-          </Hotspot>
-
-          <Hotspot onClick={() => onInspect({
-            title: 'فاصل ورقم الآية (٧)',
-            singleClickAction: 'فتح قائمة خيارات الآية (الاستماع للتلاوة، فتح التفسير الميسر، مشاركة الآية، حفظ علامة مرجعية).',
-            longPressAction: 'فتح قائمة كتب التفاسير السبعة المعتمدة لاختيار المرجع المفضل (ابن كثير، السعدي، الجلالين...).'
-          })}>
-            <span className="cursor-pointer hover:scale-110 inline-block transition-transform">
+            {/* الآية 7: صراط الذين أنعمت عليهم غير المغضوب عليهم ولا الضالين */}
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'نص الآية الكريمة',
+                singleClickAction: 'تظليل الآية الكريمة ومتابعة القراءة، وإظهار أو إخفاء أشرطة الأدوات العلوية والسفلية، وإيقاف أو استئناف التمرير التلقائي.',
+                longPressAction: 'الضغط المطول يفتح قائمة سياق الآية لمشاركتها كبطاقة دعوية راقية أو نسخ النص العثماني وقراءة التفسير الميسر.'
+              })}
+            >
+              <span className="cursor-pointer hover:opacity-75 transition-opacity">
+                صِرَٰطَ ٱلَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ ٱلْمَغْضُوبِ عَلَيْهِمْ وَلَا ٱلضَّآلِّينَ
+              </span>
+            </Hotspot>
+            <Hotspot 
+              className="inline"
+              onClick={() => onInspect({
+                title: 'فاصل ورقم الآية (٧)',
+                singleClickAction: 'النقر يفتح تفسير الآية الكريمة الميسر لشرح معاني الكلمات وأسباب النزول وبيان المعنى الإجمالي.',
+                longPressAction: 'الضغط المطول يفتح نافذة اختيار كتب التفاسير المعتمدة للتبديل بين كتب التفسير (ابن كثير، السعدي، الجلالين، القرطبي، الطبري، البغوي، والميسر).'
+              })}
+            >
               <ExactAyahMarker num="٧" />
-            </span>
+            </Hotspot>
+          </div>
+
+          {/* تذييل الصفحة ورقمها مطابق لمصحف التطبيق الأصلي */}
+          <Hotspot
+            onClick={() => onInspect({
+              title: 'رقم الصفحة وتذييل المصحف الشريف',
+              purpose: 'يعرض رقم الصفحة الحالية (١) ضمن إطار مقوس مذهب، مع الخط الفاصل الجمالي المطابق لمصاحف المدينة المنورة وتصميم التطبيق الأصيل.'
+            })}
+          >
+            <div className="flex flex-col items-center justify-center pt-2 pb-1 cursor-pointer">
+              <div className="flex items-center justify-center font-amiri text-lg">
+                <span className="text-[#d97706] font-normal mx-0.5">﴿</span>
+                <span className="text-[#1d4ed8] dark:text-[#60a5fa] font-bold mx-0.5">١</span>
+                <span className="text-[#d97706] font-normal mx-0.5">﴾</span>
+              </div>
+              <div className="w-24 h-[2px] bg-[#d97706] opacity-80 rounded mt-1"></div>
+            </div>
           </Hotspot>
         </div>
-
       </div>
 
-      {/* 4. الشريط السفلي (مطابق تماماً للصورة) */}
-      <div className="w-full h-16 bg-white border-t-2 border-black flex items-center justify-around px-4 shrink-0">
-        
-        {/* زر الرئيسية - المنزل (أقصى اليسار كما بالصورة) */}
+      {/* 3. الشريط السفلي (مطابق تماماً للشريط السفلي للمصحف الأصلي) */}
+      <div 
+        className="w-full h-16 border-t-2 flex items-center justify-around px-4 shrink-0"
+        style={{ borderColor: frameBorderColor, backgroundColor: bgColor }}
+      >
+        {/* زر المشاركة (أقصى اليمين في المصحف الأصلي) */}
         <Hotspot onClick={() => onInspect({
-          title: 'زر الصفحة الرئيسية (المنزل)',
-          singleClickAction: 'يعيدك مباشرة إلى الشاشة الرئيسية للتطبيق مع حفظ موضع قراءتك الحالي تلقائياً لاستئناف القراءة لاحقاً.',
-          longPressAction: 'ينقلك مباشرة إلى صفحة الورد اليومي ومتابعة ختمات القرآن الكريم لحفظ تقدمك اليومي والاطلاع على جدول الإنجاز.'
+          title: 'زر مشاركة الآية كبطاقة دعوية',
+          purpose: 'يفتح محرر تصميم الآيات المذهب الفخم لتحويل الآية القرآنية إلى بطاقة دعوية أنيقة مع اختيار الخلفية والإطار والخط لمشاركتها عبر الواتساب ووسائل التواصل.'
         })}>
-          <div className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center bg-white hover:bg-gray-100 transition-colors cursor-pointer">
-            <Home size={22} color="#000000" strokeWidth={2.2} />
-          </div>
-        </Hotspot>
-
-        {/* زر التمرير التلقائي (السهم لأسفل) */}
-        <Hotspot onClick={() => onInspect({
-          title: 'زر التمرير التلقائي الذكي (Auto-Scroll)',
-          singleClickAction: 'يقوم بتحريك وتقليب أسطر وصفحات المصحف تلقائياً بشكل انسيابي هادئ لتتمكن من القراءة بدون لمس الشاشة نهائياً.',
-          longPressAction: 'يفتح نافذة إعدادات وسرعة التمرير التلقائي لزيادة أو تقليل سرعة نزول وانسياب الصفحات لتناسب سرعة قراءتك تماماً.'
-        })}>
-          <div className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center bg-white hover:bg-gray-100 transition-colors cursor-pointer">
-            <ChevronDown size={26} color="#000000" strokeWidth={2.4} />
+          <div 
+            className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer hover:opacity-80"
+            style={{ borderColor: frameBorderColor, backgroundColor: bgColor }}
+          >
+            <Share2 size={22} color={pageTextColor} strokeWidth={2.2} />
           </div>
         </Hotspot>
 
         {/* زر العلامة المرجعية */}
         <Hotspot onClick={() => onInspect({
-          title: 'زر العلامة المرجعية (Bookmark)',
+          title: 'زر العلامة المرجعية',
           singleClickAction: 'يحفظ علامة مرجعية فورية وسريعة على الآية والصفحة الحالية بضغطة واحدة، ليثبت موضع وقوفك في الختمة.',
           longPressAction: 'يفتح سجل وقائمة جميع الإشارات المرجعية والفواصل المحفوظة مسبقاً، مع تاريخ ووقت كل علامة، للانتقال المباشر لأي علامة أو حذفها.'
         })}>
-          <div className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center bg-white hover:bg-gray-100 transition-colors cursor-pointer">
-            <Bookmark size={22} color="#000000" strokeWidth={2.2} />
+          <div 
+            className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer hover:opacity-80"
+            style={{ borderColor: frameBorderColor, backgroundColor: bgColor }}
+          >
+            <Bookmark size={22} color={pageTextColor} strokeWidth={2.2} />
           </div>
         </Hotspot>
 
-        {/* زر المشاركة (أقصى اليمين كما بالصورة) */}
+        {/* زر التمرير التلقائي (السهم لأسفل) */}
         <Hotspot onClick={() => onInspect({
-          title: 'زر مشاركة الآية كبطاقة دعوية (Share)',
-          singleClickAction: 'يفتح محرر تصميم الآيات المذهب الفخم لتحويل الآية القرآنية إلى بطاقة دعوية أنيقة مع اختيار الخلفية والإطار لمشاركتها عبر الواتساب ووسائل التواصل.',
-          longPressAction: 'يقوم بنسخ نص الآية الكريمة بالرسم العثماني وعلامات الوقف ورقم الآية واسم السورة مباشرة إلى الحافظة لمشاركتها كنص سريع.'
+          title: 'زر التمرير التلقائي الذكي',
+          singleClickAction: 'يقوم بتحريك وتقليب أسطر وصفحات المصحف تلقائياً بشكل انسيابي هادئ لتتمكن من القراءة بدون لمس الشاشة نهائياً.',
+          longPressAction: 'يفتح نافذة إعدادات وسرعة التمرير التلقائي لزيادة أو تقليل سرعة نزول وانسياب الصفحات لتناسب سرعة قراءتك تماماً.'
         })}>
-          <div className="w-11 h-11 rounded-full border-2 border-black flex items-center justify-center bg-white hover:bg-gray-100 transition-colors cursor-pointer">
-            <Share2 size={22} color="#000000" strokeWidth={2.2} />
+          <div 
+            className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer hover:opacity-80"
+            style={{ borderColor: frameBorderColor, backgroundColor: bgColor }}
+          >
+            <ChevronDown size={26} color={pageTextColor} strokeWidth={2.4} />
+          </div>
+        </Hotspot>
+
+        {/* زر الرئيسية - المنزل (أقصى اليسار في المصحف الأصلي) */}
+        <Hotspot onClick={() => onInspect({
+          title: 'زر الصفحة الرئيسية',
+          purpose: 'يعيدك مباشرة إلى الشاشة الرئيسية للتطبيق مع حفظ موضع قراءتك الحالي تلقائياً لاستئناف القراءة في أي وقت.'
+        })}>
+          <div 
+            className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer hover:opacity-80"
+            style={{ borderColor: frameBorderColor, backgroundColor: bgColor }}
+          >
+            <Home size={22} color={pageTextColor} strokeWidth={2.2} />
           </div>
         </Hotspot>
 

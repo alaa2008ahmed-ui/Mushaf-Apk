@@ -56,7 +56,7 @@ interface PrayerTimesContextType {
     countdown: string;
     config: PrayerConfig;
     setConfig: React.Dispatch<React.SetStateAction<PrayerConfig>>;
-    refreshLocation: () => Promise<void>;
+    refreshLocation: (isManualUserAction?: boolean) => Promise<void>;
     manualSearch: (query: string) => Promise<void>;
     updateConfig: (newConfig: Partial<PrayerConfig>) => void;
     isPrayerSilentActive?: boolean;
@@ -68,7 +68,7 @@ interface PrayerTimesContextType {
 // --- Default Configuration ---
 const DEFAULT_CONFIG: PrayerConfig = {
     iqamaOffsets: { Fajr: 20, Dhuhr: 15, Asr: 15, Maghrib: 10, Isha: 15 },
-    prayerOffsets: { Fajr: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 },
+    prayerOffsets: { Fajr: 0, Sunrise: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 },
     tones: {},
     mutedPrayers: { Sunrise: true },
     location: { cityGov: "الدمام - الشرقية", fullCountry: "المملكة العربية السعودية", combinedCode: "+966013", lat: 26.4207, lng: 50.0888 },
@@ -201,6 +201,10 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 return { 
                     ...DEFAULT_CONFIG, 
                     ...parsed,
+                    prayerOffsets: {
+                        ...DEFAULT_CONFIG.prayerOffsets,
+                        ...(parsed.prayerOffsets || {})
+                    },
                     iqamaReminder: {
                         enabled: parsed.iqamaReminder?.enabled !== undefined ? parsed.iqamaReminder.enabled : true,
                         minutes: parsed.iqamaReminder?.minutes || 15
@@ -214,6 +218,10 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 return {
                     ...DEFAULT_CONFIG,
                     ...parsed,
+                    prayerOffsets: {
+                        ...DEFAULT_CONFIG.prayerOffsets,
+                        ...(parsed.prayerOffsets || {})
+                    },
                     preAthanReminder: { enabled: false, minutes: parsed.preAthanReminder?.minutes || 15 },
                     autoSilent: false,
                     iqamaReminder: { enabled: true, minutes: parsed.iqamaReminder?.minutes || 15 }
@@ -307,10 +315,23 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
 
     // --- Save Config ---
     useEffect(() => {
-        localStorage.setItem('prayerFinal_v34', JSON.stringify(config));
-        // Re-calculate times when config changes (e.g. location)
-        fetchTimesForLocation(config.location);
+        try {
+            localStorage.setItem('prayerFinal_v34', JSON.stringify(config));
+        } catch (e) {}
     }, [config]);
+
+    // Re-calculate times only when coordinates actually change
+    const prevLocationCoordsRef = React.useRef({ lat: config.location?.lat, lng: config.location?.lng });
+    useEffect(() => {
+        if (
+            config.location && 
+            (prevLocationCoordsRef.current.lat !== config.location.lat || 
+             prevLocationCoordsRef.current.lng !== config.location.lng)
+        ) {
+            prevLocationCoordsRef.current = { lat: config.location.lat, lng: config.location.lng };
+            fetchTimesForLocation(config.location);
+        }
+    }, [config.location]);
 
     // --- Calculation Logic ---
     const fetchTimesForLocation = useCallback(async (locationData: any) => {
@@ -404,9 +425,9 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
         } catch(e) { console.error("Failed to calculate prayer times:", e); }
     }, []);
 
-    const refreshLocation = useCallback(async () => {
+    const refreshLocation = useCallback(async (isManualUserAction: boolean = false) => {
         return new Promise<void>(async (resolve, reject) => {
-            const resetOffsets = { Fajr: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0, Sunrise: 0 };
+            const resetOffsets = { Fajr: 0, Sunrise: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 };
             const fetchByIP = async () => {
                 const fallbacks = [
                     {
@@ -451,7 +472,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                             setConfig(prev => ({ 
                                 ...prev, 
                                 location: newLoc,
-                                prayerOffsets: resetOffsets
+                                ...(isManualUserAction ? { prayerOffsets: resetOffsets } : {})
                             }));
                             resolve();
                             return;
@@ -460,8 +481,9 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                         console.warn(`IP location fetch failed for ${service.url}:`, e);
                     }
                 }
-                // Even if location lookup fails, reset prayerOffsets as requested
-                setConfig(prev => ({ ...prev, prayerOffsets: resetOffsets }));
+                if (isManualUserAction) {
+                    setConfig(prev => ({ ...prev, prayerOffsets: resetOffsets }));
+                }
                 reject(new Error("Failed to fetch location by IP from all services"));
             };
 
@@ -519,7 +541,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 setConfig(prev => ({ 
                     ...prev, 
                     location: newLoc,
-                    prayerOffsets: resetOffsets
+                    ...(isManualUserAction ? { prayerOffsets: resetOffsets } : {})
                 }));
                 resolve();
             } catch (err) {
@@ -545,7 +567,13 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                     combinedCode: countryInfo.combinedCode,
                     lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon)
                 };
-                setConfig(prev => ({ ...prev, location: newLocation }));
+                const resetOffsets = { Fajr: 0, Sunrise: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 };
+                // Condition 2: Searching for any other city resets prayer offsets back to defaults
+                setConfig(prev => ({ 
+                    ...prev, 
+                    location: newLocation,
+                    prayerOffsets: resetOffsets 
+                }));
             } else {
                 throw new Error("لم يتم العثور على نتائج");
             }
@@ -555,7 +583,13 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const updateConfig = useCallback((newConfig: Partial<PrayerConfig>) => {
-        setConfig(prev => ({ ...prev, ...newConfig }));
+        setConfig(prev => {
+            const updated = { ...prev, ...newConfig };
+            try {
+                localStorage.setItem('prayerFinal_v34', JSON.stringify(updated));
+            } catch (e) {}
+            return updated;
+        });
     }, []);
 
     // --- Notification & Auto-Silent Scheduling ---
@@ -1442,8 +1476,15 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 setDates(prayerData.dates);
             } catch(e) {}
         }
-        refreshLocation().catch(() => {});
-    }, [refreshLocation]);
+        if (config.location) {
+            fetchTimesForLocation(config.location);
+        }
+        // Only auto-locate on very first app launch if no saved config exists
+        const saved = localStorage.getItem('prayerFinal_v34') || localStorage.getItem('prayerFinal_v33');
+        if (!saved) {
+            refreshLocation(false).catch(() => {});
+        }
+    }, [fetchTimesForLocation, refreshLocation]);
 
     return (
         <PrayerTimesContext.Provider value={{ 

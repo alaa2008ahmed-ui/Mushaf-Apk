@@ -222,10 +222,14 @@ function App() {
     let receivedListener: any = null;
     if (Capacitor.isNativePlatform()) {
       listener = LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
-        const page = notificationAction.notification.extra?.page;
-        const params = notificationAction.notification.extra?.params;
-        const type = notificationAction.notification.extra?.type;
-        if (page) {
+        const extra = notificationAction.notification.extra;
+        const page = extra?.page;
+        const params = extra?.params;
+        const type = extra?.type;
+        const occasionId = extra?.occasionId;
+        if (occasionId) {
+          window.dispatchEvent(new CustomEvent('show-islamic-occasion-alert', { detail: { occasionId } }));
+        } else if (page) {
           handleNavigate(page, params);
         } else if (type === 'iqama') {
           handleNavigate('prayer-times');
@@ -233,8 +237,14 @@ function App() {
       });
 
       receivedListener = LocalNotifications.addListener('localNotificationReceived', (notification) => {
-        if (notification.extra?.type === 'iqama') {
+        const extra = notification.extra;
+        if (extra?.type === 'iqama') {
           playNotificationSound('/assets/audio/chime.mp3', true);
+        } else if (extra?.playSound && extra?.soundFile) {
+          playNotificationSound(extra.soundFile, true);
+        }
+        if (extra?.occasionId) {
+          window.dispatchEvent(new CustomEvent('show-islamic-occasion-alert', { detail: { occasionId: extra.occasionId } }));
         }
         console.log('[Notification] Received notification natively:', notification.id, notification.title);
       });

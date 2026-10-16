@@ -70,7 +70,7 @@ export const setupNotifications = async (settings?: PhoneNotificationSettings) =
         return { hour: parts[0] || 0, minute: parts[1] || 0 };
     };
 
-    // Ensure Android notification channel exists with high importance and gentle chime sound
+    // Ensure Android notification channels exist with high importance and respective sounds
     try {
       await LocalNotifications.createChannel({
         id: 'athkar_v3_chime_channel',
@@ -78,6 +78,36 @@ export const setupNotifications = async (settings?: PhoneNotificationSettings) =
         description: 'قناة تنبيهات أذكار الصباح والمساء والسنن والأدعية بنغمة قصيرة وخفيفة',
         importance: 5,
         sound: 'chime.mp3',
+        vibration: true,
+        visibility: 1
+      });
+
+      await LocalNotifications.createChannel({
+        id: 'islamic_eid_channel',
+        name: 'تكبيرات وأعياد المسلمين',
+        description: 'قناة تنبيهات عيدي الفطر والأضحى المبارك بصوت تكبيرات العيد',
+        importance: 5,
+        sound: 'takbeer1.mp3',
+        vibration: true,
+        visibility: 1
+      });
+
+      await LocalNotifications.createChannel({
+        id: 'islamic_mawlid_channel',
+        name: 'المولد النبوي الشريف',
+        description: 'قناة تنبيهات ذكرى المولد النبوي الشريف بنغمة الصلاة على النبي ﷺ',
+        importance: 5,
+        sound: 'salah.mp3',
+        vibration: true,
+        visibility: 1
+      });
+
+      await LocalNotifications.createChannel({
+        id: 'islamic_newyear_channel',
+        name: 'رأس السنة الهجرية',
+        description: 'قناة تنبيهات حلول العام الهجري الجديد',
+        importance: 5,
+        sound: 'takbeer1.mp3',
         vibration: true,
         visibility: 1
       });
@@ -166,7 +196,78 @@ export const setupNotifications = async (settings?: PhoneNotificationSettings) =
         }
     }
 
-    // Specials
+    // Helper to calculate the next annual occurrence of a Hijri date (month is 1-indexed: 1 = Muharram, 12 = Dhu al-Hijjah)
+    const getNextHijriDate = (month1Indexed: number, day: number, hour: number = 8, minute: number = 0) => {
+      const now = moment();
+      const currentYear = now.iYear();
+      let target = moment(`${currentYear}/${month1Indexed}/${day} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`, 'iYYYY/iM/iD HH:mm:ss');
+      if (target.isSameOrBefore(now)) {
+        target = moment(`${currentYear + 1}/${month1Indexed}/${day} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`, 'iYYYY/iM/iD HH:mm:ss');
+      }
+      return target.toDate();
+    };
+
+    // 1. رأس السنة الهجرية الجديدة (1 محرم) بنغمة مباركة
+    try {
+      const newYearDate = getNextHijriDate(1, 1, 8, 0);
+      notificationsToSchedule.push({
+        title: 'عام هجري جديد مبارك',
+        body: 'كل عام وأنتم بخير بمناسبة حلول العام الهجري الجديد، نسأل الله أن يجعله عام خير وبركة وتوفيق وسلام.',
+        id: 54,
+        schedule: { at: newYearDate, allowWhileIdle: true },
+        channelId: 'islamic_newyear_channel',
+        sound: 'takbeer1.mp3',
+        extra: { page: 'home', playSound: true, soundFile: '/assets/audio/takbeer1.mp3', occasionId: 54 },
+        smallIcon: 'ic_stat_name',
+      });
+    } catch (e) {}
+
+    // 2. المولد النبوي الشريف (12 ربيع الأول) بنغمة الصلاة على النبي ﷺ
+    try {
+      const mawlidDate = getNextHijriDate(3, 12, 8, 0);
+      notificationsToSchedule.push({
+        title: 'مولد الهدى ﷺ',
+        body: 'وُلِدَ الهُدى فَالكَائِنَاتُ ضِيَاءُ.. نبارك لكم ذكرى مولد الحبيب المصطفى محمد ﷺ، صلّوا عليه وسلّموا تسليماً.',
+        id: 51,
+        schedule: { at: mawlidDate, allowWhileIdle: true },
+        channelId: 'islamic_mawlid_channel',
+        sound: 'salah.mp3',
+        extra: { page: 'home', playSound: true, soundFile: '/assets/audio/salah.mp3', occasionId: 51 },
+        smallIcon: 'ic_stat_name',
+      });
+    } catch (e) {}
+
+    // 3. عيد الفطر المبارك (1 شوال) بتكبيرات العيد المبارك
+    try {
+      const eidFitrDate = getNextHijriDate(10, 1, 6, 30);
+      notificationsToSchedule.push({
+        title: 'عيد فطر مبارك تقبل الله طاعتكم',
+        body: 'الله أكبر الله أكبر لا إله إلا الله، الله أكبر الله أكبر ولله الحمد.. تقبل الله منا ومنكم صالح الأعمال وكل عام وأنتم بخير.',
+        id: 52,
+        schedule: { at: eidFitrDate, allowWhileIdle: true },
+        channelId: 'islamic_eid_channel',
+        sound: 'takbeer1.mp3',
+        extra: { page: 'home', playSound: true, soundFile: '/assets/audio/takbeer1.mp3', occasionId: 52 },
+        smallIcon: 'ic_stat_name',
+      });
+    } catch (e) {}
+
+    // 4. عيد الأضحى المبارك (10 ذو الحجة) بتكبيرات الحج والعيد
+    try {
+      const eidAdhaDate = getNextHijriDate(12, 10, 6, 30);
+      notificationsToSchedule.push({
+        title: 'عيد أضحى مبارك وكل عام وأنتم بخير',
+        body: 'لبيك اللهم لبيك، لبيك لا شريك لك لبيك.. نسأل الله أن يتقبل منكم صالح الأعمال ويجعل أيامكم كلها أعياداً وبركة وفرحاً.',
+        id: 53,
+        schedule: { at: eidAdhaDate, allowWhileIdle: true },
+        channelId: 'islamic_eid_channel',
+        sound: 'takbeer1.mp3',
+        extra: { page: 'home', playSound: true, soundFile: '/assets/audio/takbeer1.mp3', occasionId: 53 },
+        smallIcon: 'ic_stat_name',
+      });
+    } catch (e) {}
+
+    // 5. الاستعداد لرمضان المبارك (ليلة رمضان)
     try {
       const currentHijriYear = moment().iYear();
       const currentHijriMonth = moment().iMonth();
@@ -189,26 +290,6 @@ export const setupNotifications = async (settings?: PhoneNotificationSettings) =
         channelId: 'athkar_v3_chime_channel',
         sound: 'chime.mp3',
         extra: { page: 'daily-wird', playSound: true, soundFile: 'chime.mp3' },
-        smallIcon: 'ic_stat_name',
-      });
-    } catch (e) {}
-
-    try {
-      const currentHijriYear = moment().iYear();
-      const currentHijriMonth = moment().iMonth();
-      const currentHijriDay = moment().iDate();
-      let targetYear = currentHijriYear;
-      if (currentHijriMonth > 2 || (currentHijriMonth === 2 && currentHijriDay >= 12)) targetYear += 1;
-      const mawlidDate = moment(`${targetYear}/3/12`, 'iYYYY/iM/iD');
-      mawlidDate.hour(8).minute(0).second(0).millisecond(0);
-      notificationsToSchedule.push({
-        title: 'مولد الهدى ﷺ',
-        body: 'وُلِدَ الهُدى فَالكائِناتُ ضِياءُ.. نبارك لكم ذكرى مولد خير الأنام محمد ﷺ.',
-        id: 51,
-        schedule: { at: mawlidDate.toDate(), allowWhileIdle: true },
-        channelId: 'athkar_v3_chime_channel',
-        sound: 'chime.mp3',
-        extra: { page: 'home', playSound: true, soundFile: 'chime.mp3' },
         smallIcon: 'ic_stat_name',
       });
     } catch (e) {}

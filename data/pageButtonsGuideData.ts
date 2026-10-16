@@ -37,20 +37,20 @@ export const PAGES_BUTTONS_GUIDE: PageButtonsGuide[] = [
         visualType: 'pill-button',
         iconColor: '#f59e0b',
         label: 'النص القرآني',
-        purpose: 'يفتح فوراً قائمة سياق الآية (Ayah Context Menu) مباشرة فوق موضع إصبعك لتخصيص الآية وألوان تظليلها، أو نسخها، أو الانتقال لتفسيرها، أو تشغيل التلاوة بدءاً منها.'
+        purpose: 'يفتح مباشرة قائمة سياق الآية لتخصيص الآية ولون تظليلها، أو نسخها بالرسم العثماني، أو فتح تفسيرها، أو تشغيل التلاوة الصوتية بدءاً منها.'
       },
       {
         id: 'verse_num_single_click',
-        name: 'الضغط بنقرة واحدة على رقم الآية',
+        name: 'الضغط بنقرة واحدة على فاصل ورقم الآية',
         icon: 'fa-solid fa-circle-dot',
         visualType: 'counter-button',
         iconColor: '#3b82f6',
         label: 'رقم الآية',
-        purpose: 'يفتح قائمة خيارات الآية الشاملة وتشمل: الاستماع لصوت الآية بصوت القارئ المختار، فتح التفسير الميسر، نسخ الآية بالرسم العثماني، مشاركة الآية كبطاقة مذهبة راقية، وحفظ إشارة مرجعية.'
+        purpose: 'يفتح فوراً نافذة تفسير الآية الكريمة الميسر لقراءة شرح معاني الكلمات وأسباب النزول وبيان المعنى الإجمالي للآية.'
       },
       {
         id: 'verse_num_long_press',
-        name: 'الضغط المطول على رقم الآية',
+        name: 'الضغط المطول على فاصل ورقم الآية',
         icon: 'fa-solid fa-circle-dot',
         visualType: 'counter-button',
         iconColor: '#8b5cf6',
@@ -59,7 +59,7 @@ export const PAGES_BUTTONS_GUIDE: PageButtonsGuide[] = [
       },
       {
         id: 'play_audio_single_click',
-        name: 'زر التلاوة (نقرة واحدة)',
+        name: 'زر التلاوة الصوتية (نقرة واحدة)',
         icon: 'fa-solid fa-play',
         visualType: 'circle-button',
         iconColor: '#10b981',
@@ -68,7 +68,7 @@ export const PAGES_BUTTONS_GUIDE: PageButtonsGuide[] = [
       },
       {
         id: 'play_audio_long_press',
-        name: 'زر التلاوة (ضغط مطول)',
+        name: 'زر التلاوة الصوتية (ضغط مطول)',
         icon: 'fa-solid fa-play',
         visualType: 'circle-button',
         iconColor: '#ec4899',
@@ -112,22 +112,13 @@ export const PAGES_BUTTONS_GUIDE: PageButtonsGuide[] = [
         purpose: 'يفتح سجل وقائمة جميع الإشارات المرجعية والفواصل المحفوظة مسبقاً، مع تاريخ ووقت كل علامة، للانتقال المباشر لأي علامة أو حذفها.'
       },
       {
-        id: 'surah_header_single_click',
-        name: 'ترويسة السورة (نقرة واحدة)',
-        icon: 'fa-solid fa-circle-info',
-        visualType: 'card-button',
-        iconColor: '#14b8a6',
-        label: 'اسم السورة',
-        purpose: 'بالنقر على اسم وبرواز السورة تفتح بطاقة معلومات شاملة توضح: نوع السورة (مكية أم مدنية)، عدد آياتها، عدد كلماتها وحروفها، ترتيب نزولها، وأبرز مقاصدها.'
-      },
-      {
         id: 'surah_header_long_press',
         name: 'ترويسة السورة (ضغط مطول)',
-        icon: 'fa-solid fa-circle-info',
+        icon: 'fa-solid fa-palette',
         visualType: 'card-button',
         iconColor: '#d97706',
         label: 'اسم السورة',
-        purpose: 'يفتح منتقي تصاميم وبراويز السور لاختيار الشكل الزخرفي والمحرابي المفضل لترويسة السورة من بين تصاميم عثمانية وإسلامية متنوعة.'
+        purpose: 'الضغط المطول على ترويسة السورة يفتح منتقي تصاميم وبراويز السور لاختيار الشكل الزخرفي والمحرابي المفضل لترويسة السورة من بين تصاميم عثمانية وإسلامية متنوعة.'
       },
       {
         id: 'header_page_input',
@@ -136,7 +127,7 @@ export const PAGES_BUTTONS_GUIDE: PageButtonsGuide[] = [
         visualType: 'counter-button',
         iconColor: '#3b82f6',
         label: 'رقم الصفحة',
-        purpose: 'يعرض رقم الصفحة الحالية، وعند النقر عليه يتحول لخانة إدخال رقمية لتكتب أي رقم صفحة تريده (من 1 إلى 604) والانتقال إليها فوراً.'
+        purpose: 'يعرض رقم الصفحة الحالية، وعند النقر عليه يتحول لخانة إدخال رقمية تتيح لك كتابة أي رقم صفحة (من 1 إلى 604) والانتقال إليها فوراً.'
       },
       {
         id: 'header_surah_name_btn',
@@ -157,8 +148,17 @@ export const PAGES_BUTTONS_GUIDE: PageButtonsGuide[] = [
         purpose: 'يفتح محرر تصميم الآيات المذهب الفخم لتحويل الآية إلى بطاقة دعوية أنيقة مع اختيار الخلفية والإطار لمشاركتها عبر الواتساب ووسائل التواصل.'
       },
       {
+        id: 'btn_home',
+        name: 'زر الصفحة الرئيسية',
+        icon: 'fa-solid fa-house',
+        visualType: 'circle-button',
+        iconColor: '#10b981',
+        label: '',
+        purpose: 'يعيدك مباشرة إلى الشاشة الرئيسية للتطبيق مع حفظ موضع قراءتك الحالي تلقائياً لاستئناف القراءة في أي وقت.'
+      },
+      {
         id: 'pinch_to_zoom',
-        name: 'التكبير والتصغير بإصبعين (Pinch to Zoom)',
+        name: 'التكبير والتصغير بإصبعين على الشاشة',
         icon: 'fa-solid fa-magnifying-glass-plus',
         visualType: 'pill-button',
         iconColor: '#8b5cf6',
@@ -167,12 +167,12 @@ export const PAGES_BUTTONS_GUIDE: PageButtonsGuide[] = [
       },
       {
         id: 'sidebar_menu_btn',
-        name: 'زر القائمة والشريط الجانبي (Sidebar Drawer)',
+        name: 'زر القائمة والشريط الجانبي',
         icon: 'fa-solid fa-bars',
         visualType: 'circle-button',
         iconColor: '#10b981',
         label: '',
-        purpose: 'يفتح القائمة الجانبية الكاملة للمصحف الشريف، والتي تتيح الوصول لجميع أدوات وإعدادات وأقسام المصحف الذكية.'
+        purpose: 'يفتح القائمة الجانبية الكاملة للمصحف الشريف، والتي تتيح الوصول لجميع أوضاع القراءة، والمظهر، والقراء، ونوع الخط، والتحميلات، والبحث الشامل، وإعدادات المصحف.'
       },
       {
         id: 'sidebar_reading_modes',
@@ -255,13 +255,31 @@ export const PAGES_BUTTONS_GUIDE: PageButtonsGuide[] = [
     pageName: 'الاستماع للقرآن',
     buttons: [
       {
+        id: 'reciter_modal',
+        name: 'قائمة اختيار القارئ الصوتي',
+        icon: 'fa-solid fa-headphones',
+        visualType: 'pill-button',
+        iconColor: '#8b5cf6',
+        label: 'اختيار القارئ',
+        purpose: 'يفتح قائمة مشاهير القراء لاختيار الشيخ المفضل والاستماع لتلاوته بروايات مختلفة مع إمكانية البحث السريع باسم القارئ.'
+      },
+      {
+        id: 'surah_select_modal',
+        name: 'قائمة اختيار السورة القرآنية',
+        icon: 'fa-solid fa-book-quran',
+        visualType: 'pill-button',
+        iconColor: '#10b981',
+        label: 'اختيار السورة',
+        purpose: 'تفتح فهرس سور القرآن الكريم الـ 114 لاختيار أي سورة للاستماع إليها مباشرة مع بيان رقمها وعدد آياتها.'
+      },
+      {
         id: 'listen_play_pause',
         name: 'زر تشغيل / إيقاف التلاوة',
         icon: 'fa-solid fa-play',
         visualType: 'circle-button',
         iconColor: '#10b981',
         label: 'تشغيل / إيقاف',
-        purpose: 'يبدأ تشغيل التلاوة الصوتية للسورة المختارة أو يوقفها مؤقتاً مع تذكر موضع التوقف تلقائياً.'
+        purpose: 'يبدأ تشغيل التلاوة الصوتية للسورة المختارة أو يوقفها مؤقتاً مع تذكر موضع التوقف بدقة.'
       },
       {
         id: 'next_surah',
@@ -291,26 +309,8 @@ export const PAGES_BUTTONS_GUIDE: PageButtonsGuide[] = [
         purpose: 'يمكنك سحب مؤشر الشريط للتقديم أو الترجيع لأي دقيقة وثانية تريدها داخل السورة بدقة.'
       },
       {
-        id: 'reciter_modal',
-        name: 'زر قائمة واختيار القراء',
-        icon: 'fa-solid fa-headphones',
-        visualType: 'pill-button',
-        iconColor: '#8b5cf6',
-        label: 'اختيار القارئ',
-        purpose: 'يفتح قائمة مشاهير القراء لاختيار الشيخ المفضل والاستماع لتلاوته بروايات مختلفة مع إمكانية البحث السريع باسم القارئ.'
-      },
-      {
-        id: 'sleep_timer',
-        name: 'مؤقت النوم الذكي (Sleep Timer)',
-        icon: 'fa-solid fa-moon',
-        visualType: 'pill-button',
-        iconColor: '#f59e0b',
-        label: 'مؤقت النوم',
-        purpose: 'يتيح تحديد وقت لإيقاف صوت التلاوة تلقائياً مثل 15 أو 30 أو 60 دقيقة أو عند نهاية السورة، مع أزرار (+) و (-) لتعديل الدقائق لنوم هادئ على القرآن.'
-      },
-      {
         id: 'repeat_toggle',
-        name: 'زر تكرار السورة والتلاوة',
+        name: 'زر تكرار السورة الحالية',
         icon: 'fa-solid fa-repeat',
         visualType: 'circle-button',
         iconColor: '#ec4899',
@@ -318,13 +318,67 @@ export const PAGES_BUTTONS_GUIDE: PageButtonsGuide[] = [
         purpose: 'إعادة تشغيل السورة الحالية تلقائياً بمجرد انتهائها دون توقف لتثبيت الحفظ والمراجعة ومداومة الاستماع.'
       },
       {
-        id: 'playback_speed',
-        name: 'زر سرعة التلاوة (0.75x • 1x • 1.25x • 1.5x)',
-        icon: 'fa-solid fa-gauge',
+        id: 'continuous_play_toggle',
+        name: 'زر التشغيل المتواصل للمصحف',
+        icon: 'fa-solid fa-forward',
+        visualType: 'toggle-button',
+        iconColor: '#3b82f6',
+        label: 'تشغيل متواصل',
+        purpose: 'ينتقل تلقائياً لتشغيل السور التالية تباعاً فور انتهاء السورة الحالية لتستمع إلى أجزاء وسور المصحف متواصلة دون انقطاع.'
+      },
+      {
+        id: 'sleep_timer',
+        name: 'بطاقة مؤقت النوم الذكي',
+        icon: 'fa-solid fa-moon',
+        visualType: 'card-button',
+        iconColor: '#f59e0b',
+        label: 'مؤقت النوم',
+        purpose: 'يتيح تحديد وقت لإيقاف صوت التلاوة تلقائياً مثل 15 أو 30 أو 60 دقيقة أو عند نهاية السورة، لنوم هادئ على آيات القرآن دون استنزاف بطارية الهاتف.'
+      },
+      {
+        id: 'sleep_timer_controls',
+        name: 'أزرار ضبط دقائق مؤقت النوم (+ و -)',
+        icon: 'fa-solid fa-plus-minus',
         visualType: 'pill-button',
-        iconColor: '#06b6d4',
-        label: 'سرعة الصوت',
-        purpose: 'التحكم في سرعة التلاوة لتسريع الاستماع أثناء المراجعة السريعة أو إبطائه لتدبر أحكام التجويد ومخارج الحروف.'
+        iconColor: '#f59e0b',
+        label: '+ / -',
+        purpose: 'تتيح لك زيادة أو تقليل دقائق مؤقت النوم بدقة حسب رغبتك قبل تفعيل المؤقت.'
+      },
+      {
+        id: 'sleep_timer_toggle_btn',
+        name: 'زر بدء / إيقاف مؤقت النوم',
+        icon: 'fa-solid fa-clock',
+        visualType: 'circle-button',
+        iconColor: '#f59e0b',
+        label: 'بدء المؤقت',
+        purpose: 'يبدأ العد التنازلي لإيقاف الصوت تلقائياً، والضغط عليه مرة أخرى أثناء عمل المؤقت يقوم بإلغائه وإعادة ضبطه.'
+      },
+      {
+        id: 'download_quran_btn',
+        name: 'زر تحميل المصحف والتلاوات',
+        icon: 'fa-solid fa-cloud-arrow-down',
+        visualType: 'pill-button',
+        iconColor: '#059669',
+        label: 'تحميل المصحف',
+        purpose: 'ينقلك مباشرة لصفحة تحميل سور القرآن الكريم بصوت القارئ المختار لتخزينها على هاتفك والاستماع إليها في أي وقت دون اتصال بالإنترنت.'
+      },
+      {
+        id: 'favorites_list_card',
+        name: 'بطاقة وقائمة المفضلات المحفوظة',
+        icon: 'fa-solid fa-heart',
+        visualType: 'card-button',
+        iconColor: '#ef4444',
+        label: 'المفضلات (حتى 10)',
+        purpose: 'قائمة سريعة تتسع لحفظ حتى 10 سور مع القراء المفضلين لكل سورة، تتيح لك تشغيل تلاوتك المفضلة فوراً بلمسة واحدة.'
+      },
+      {
+        id: 'delete_favorite_btn',
+        name: 'زر حذف السورة من المفضلة',
+        icon: 'fa-solid fa-trash-can',
+        visualType: 'circle-button',
+        iconColor: '#ef4444',
+        label: 'حذف',
+        purpose: 'يتيح لك إزالة أي سورة محفوظة من قائمة المفضلات لإفساح المجال لسور وقراء آخرين.'
       }
     ]
   },
