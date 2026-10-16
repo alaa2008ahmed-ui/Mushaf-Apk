@@ -7,7 +7,6 @@ import {
     Menu, Info, HelpCircle, Star, Type, Bell, Compass, Search, Trophy,
     ScrollText
 } from 'lucide-react';
-import TutorialOverlay, { TutorialStep } from './Tutorial/TutorialOverlay';
 import { THEMES } from './QuranReader/constants';
 import { useShowNewBadge } from '../utils/badgeManager';
 import { useLanguage } from '../context/LanguageContext';
@@ -53,6 +52,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
     };
 
     const menuItems = [
+        { id: 'page-guide', label: 'دليل صفحات التطبيق', icon: HelpCircle, color: '#059669', description: 'شرح وافٍ ومبسط لجميع خدمات وصفحات ومميزات التطبيق.' },
         { id: 'community', label: t('menu.community', 'مجتمع التواصل'), icon: MessageCircle, color: '#10b981', description: t('sidemenu.community_desc', 'التواصل والمحادثات مع القراء والحفاظ من جميع أنحاء العالم.') },
         { id: 'ahl-al-quran', label: t('menu.ahl_al_quran', 'أهل القرآن (لوحة الشرف)'), icon: Trophy, color: '#f59e0b', description: t('sidemenu.ahl_al_quran_desc', 'لوحة صدارة وتنافس محمود لقراء القرآن الكريم مع تحديث شهري للأجزاء والختمات.') },
         { id: 'prophetic-seerah', label: t('menu.prophetic_seerah', 'السيرة والخط الزمني'), icon: ScrollText, color: '#f59e0b', description: 'خط زمني تفاعلي لمحطات السيرة العطرة والعبر المستفادة.' },
@@ -72,43 +72,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
         { id: 'settings', label: t('sidemenu.settings', 'الإعدادات'), icon: Settings, color: '#6366f1', description: t('sidemenu.settings_desc', 'التحكم الكامل بالتطبيق من داخل هذا الزر') },
         { id: 'themes', label: t('sidemenu.themes', 'الثيمات'), icon: Palette, color: '#f43f5e', description: t('sidemenu.themes_desc', 'تغيير ألوان ومظهر التطبيق بالكامل.') },
         { id: 'whatsapp', label: t('sidemenu.whatsapp', 'تواصل معنا'), icon: MessageCircle, color: '#22c55e', description: t('sidemenu.whatsapp_desc', 'تواصل مباشر معنا للاقتراحات أو الدعم الفني.') },
-    ];
-
-    const sideMenuTutorialSteps: TutorialStep[] = [
-        {
-            id: 'side-menu-welcome',
-            title: 'القائمة الجانبية الشاملة',
-            text: 'توفر لك هذه القائمة وصولاً سريعاً لجميع أقسام التطبيق من أي مكان. يمكنك التنقل بين القرآن، الأذكار، والمواقيت بضغطة واحدة.',
-            icon: <Menu className="w-8 h-8 text-white" />
-        },
-        ...menuItems.map(item => ({
-            id: `tutorial-${item.id}`,
-            title: item.label,
-            text: item.description,
-            selector: `[data-id="side-menu-${item.id}"]`,
-            icon: <item.icon size={32} className="text-white" />
-        })),
-        {
-            id: 'tutorial-about',
-            title: 'عن التطبيق',
-            text: 'تعرف على فريق العمل، الإصدار الحالي، وأهداف هذا المشروع المبارك.',
-            selector: '[data-id="side-menu-about"]',
-            icon: <Info size={32} className="text-white" />
-        },
-        {
-            id: 'tutorial-help',
-            title: 'المساعدة',
-            text: 'هل لديك استفسار؟ هنا تجد إجابات لأكثر الأسئلة شيوعاً ودليل الاستخدام.',
-            selector: '[data-id="side-menu-help"]',
-            icon: <HelpCircle size={32} className="text-white" />
-        },
-        {
-            id: 'tutorial-rate',
-            title: 'تقييمنا',
-            text: 'رأيك يهمنا جداً! تقييمك للتطبيق يساعدنا على الوصول لعدد أكبر من المسلمين وتطوير الخدمات.',
-            selector: '[data-id="side-menu-rate"]',
-            icon: <Star size={32} className="text-white" />
-        }
     ];
 
     return (
@@ -204,7 +167,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
                                 </div>
                             </div>
                         </motion.div>
-                        <TutorialOverlay tutorialId="side-menu-tutorial" steps={sideMenuTutorialSteps} />
                     </>
                 )}
             </AnimatePresence>

@@ -309,7 +309,7 @@ export default function MonthlyPrayerTimes({ onBack, onNavigate }: { onBack: () 
                             <button 
                                 onClick={handleExportPDF}
                                 disabled={isExporting}
-                                className="h-9 px-2.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer border"
+                                className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer border"
                                 style={{ 
                                     borderColor: isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : primaryColor),
                                     color: topBarTextColor,
@@ -318,14 +318,13 @@ export default function MonthlyPrayerTimes({ onBack, onNavigate }: { onBack: () 
                                 title="تصدير ملف PDF"
                                 aria-label="تصدير ملف PDF"
                             >
-                                <FileText size={16} />
-                                <span>{isExporting ? '...' : 'PDF'}</span>
+                                <FileText size={18} className={isExporting ? 'animate-pulse' : ''} />
                             </button>
                         </div>
 
                         {/* عنوان الصفحة في الوسط */}
-                        <div className="text-center px-24">
-                            <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi truncate">
+                        <div className="text-center px-16 min-w-0">
+                            <h1 className="app-top-bar__title text-base sm:text-lg font-kufi truncate">
                                 مواقيت الشهر
                             </h1>
                         </div>

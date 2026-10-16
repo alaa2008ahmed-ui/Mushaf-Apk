@@ -541,8 +541,8 @@ const Nawawi = ({ onBack, onNavigate }: { onBack: () => void; onNavigate?: (id: 
                         </div>
 
                         {/* عنوان الصفحة في الوسط */}
-                        <div className="text-center px-12">
-                            <h1 className="app-top-bar__title text-2xl font-kufi">
+                        <div className="text-center px-12 min-w-0">
+                            <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">
                                 الأربعون النووية
                             </h1>
                         </div>
@@ -621,8 +621,8 @@ const Nawawi = ({ onBack, onNavigate }: { onBack: () => void; onNavigate?: (id: 
                                             }}
                                             className="flex-1 py-1 px-2 rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 hover:scale-105 active:scale-95"
                                             style={{
-                                                backgroundColor: isDefaultTheme ? '#00000010' : (color + '15'),
-                                                color: isDefaultTheme ? '#000000' : color
+                                                backgroundColor: isDefaultTheme ? '#00000010' : (isBlackTheme ? 'rgba(255, 255, 255, 0.12)' : (color + '15')),
+                                                color: isDefaultTheme ? '#000000' : (isBlackTheme ? '#FFFFFF' : color)
                                             }}
                                             title="عرض الفوائد والشرح"
                                         >
@@ -630,7 +630,7 @@ const Nawawi = ({ onBack, onNavigate }: { onBack: () => void; onNavigate?: (id: 
                                             <span>الفوائد والشرح</span>
                                         </button>
                                         <div className="w-5 h-5 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
-                                            <ArrowLeft className="w-3 h-3" style={{ color: isDefaultTheme ? '#000000' : color }} />
+                                            <ArrowLeft className="w-3 h-3" style={{ color: isDefaultTheme ? '#000000' : (isBlackTheme ? '#FFFFFF' : color) }} />
                                         </div>
                                     </div>
                                 </div>

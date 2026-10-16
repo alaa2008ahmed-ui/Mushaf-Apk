@@ -1154,7 +1154,14 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
 
   const getTabStyle = (active: boolean) => {
     if (active) {
-      const isWhiteBg = isBlackTheme || 
+      if (isBlackTheme) {
+        return {
+          backgroundColor: '#FFFFFF',
+          color: '#000000',
+          borderColor: '#FFFFFF'
+        };
+      }
+      const isWhiteBg = 
         theme.palette[0]?.toLowerCase() === '#ffffff' || 
         theme.palette[0]?.toLowerCase() === 'white' || 
         theme.palette[0]?.toLowerCase() === '#fff';
@@ -1168,7 +1175,7 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
     return {
       backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.5)',
       color: theme.textColor,
-      borderColor: theme.palette[0] + '33'
+      borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.2)' : theme.palette[0] + '33'
     };
   };
 
@@ -1202,8 +1209,8 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
             </div>
 
             {/* عنوان الصفحة في الوسط */}
-            <div className="text-center px-12">
-              <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi">
+            <div className="text-center px-12 min-w-0">
+              <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">
                 الرقية الشرعية
               </h1>
             </div>

@@ -12,7 +12,6 @@ import { AdminDashboardModal } from '../components/Community/AdminDashboardModal
 import CreateGroupModal from '../components/Community/CreateGroupModal';
 import EditGroupModal from '../components/Community/EditGroupModal';
 import ThemePageLock from '../components/ThemePageLock';
-import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { useTheme } from '../context/ThemeContext';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { useShowNewBadge } from '../utils/badgeManager';
@@ -502,37 +501,6 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
     return <Users size={22} />;
   };
 
-  const communityTutorialSteps: TutorialStep[] = [
-    {
-      id: 'community-chats',
-      title: 'الأصدقاء',
-      text: 'مراسلة إخوانك والتواصل بالرسائل النصية والتسجيلات الصوتية ومشاركة الآيات الكريمة.',
-      selector: '#community-tab-chats',
-      icon: <MessageSquare className="w-8 h-8 text-teal-400" />
-    },
-    {
-      id: 'community-groups',
-      title: 'حلقات القرآن والمجموعات',
-      text: 'الانضمام إلى مجموعات تدارس القرآن الكريم أو إنشاء مجموعة جديدة وإدارتها كمنشئ.',
-      selector: '#community-tab-groups',
-      icon: <BookOpen className="w-8 h-8 text-amber-400" />
-    },
-    {
-      id: 'community-members',
-      title: 'قائمة الأعضاء',
-      text: 'استعراض قراء القرآن، والبحث بالاسم، وإرسال طلبات الإضافة والتواصل بكل سهولة.',
-      selector: '#community-tab-users',
-      icon: <UserPlus className="w-8 h-8 text-sky-400" />
-    },
-    {
-      id: 'community-profile',
-      title: 'الملف الشخصي',
-      text: 'الضغط هنا لتعديل اسمك وصورتك ودولتك المعروضة في مجتمع التواصل متى شئت.',
-      selector: '#community-profile-pill',
-      icon: <ShieldCheck className="w-8 h-8 text-indigo-400" />
-    }
-  ];
-
   return (
     <div 
       className="h-screen max-h-screen h-[100dvh] w-full flex flex-col overflow-y-auto overscroll-contain transition-colors bg-transparent relative" 
@@ -561,18 +529,14 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
               <button
                 type="button"
                 onClick={() => onNavigate('quran')}
-                className="w-10 h-10 rounded-2xl border flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
                 style={{
-                  backgroundColor: cardBg,
-                  borderColor: cardBorder,
-                  borderWidth: '1.5px',
-                  borderStyle: 'solid',
                   color: primaryColor
                 }}
                 title="صفحة القرآن الكريم"
                 aria-label="صفحة القرآن الكريم"
               >
-                <BookOpen size={18} />
+                <BookOpen size={20} />
               </button>
             </div>
 
@@ -582,7 +546,7 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                 <div 
                   id="community-profile-pill"
                   onClick={() => setShowProfileModal(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-sm overflow-hidden max-w-full"
+                  className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl border font-bold cursor-pointer transition-all active:scale-95 shadow-sm overflow-hidden max-w-[200px] sm:max-w-[260px]"
                   style={{
                     backgroundColor: `${primaryColor}15`,
                     borderColor: cardBorder,
@@ -602,12 +566,23 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                       <User size={13} />
                     )}
                   </div>
-                  <span className="truncate max-w-[110px] sm:max-w-[150px]" style={{ color: textColor }}>{currentUser.username}</span>
                   <span 
-                    className="text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0"
-                    style={{ backgroundColor: `${primaryColor}25`, color: primaryColor }}
+                    className="whitespace-nowrap font-bold text-center select-none"
+                    style={{ 
+                      color: textColor,
+                      fontSize: (() => {
+                        const len = (currentUser.username || '').trim().length;
+                        if (len <= 7) return '13px';
+                        if (len <= 11) return '12px';
+                        if (len <= 15) return '11px';
+                        if (len <= 20) return '10px';
+                        if (len <= 26) return '9px';
+                        return '8px';
+                      })(),
+                      lineHeight: 1.2
+                    }}
                   >
-                    {currentUser.country || '🌍'}
+                    {currentUser.username}
                   </span>
                 </div>
               ) : (
@@ -635,18 +610,14 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
               <button
                 type="button"
                 onClick={() => onNavigate('ahl-al-quran')}
-                className="w-10 h-10 rounded-2xl border flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer relative"
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer relative"
                 style={{
-                  backgroundColor: cardBg,
-                  borderColor: cardBorder,
-                  borderWidth: '1.5px',
-                  borderStyle: 'solid',
                   color: '#f59e0b'
                 }}
                 title="صفحة أهل القرآن الكريم"
                 aria-label="صفحة أهل القرآن الكريم"
               >
-                <Trophy size={18} />
+                <Trophy size={20} />
               </button>
               <ThemePageLock />
               <button
@@ -1667,17 +1638,6 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
         onClose={() => setShowAdminModal(false)}
         currentTheme={{ bg: theme.bgColor || '#0D1B2A', text: textColor }}
         onNavigate={onNavigate}
-      />
-
-      {/* Tutorial Overlay */}
-      <TutorialOverlay 
-        tutorialId="community-page-tutorial" 
-        steps={communityTutorialSteps} 
-        onStepChange={(stepId) => {
-          if (stepId === 'community-members') setActiveTab('users');
-          else if (stepId === 'community-chats') setActiveTab('chats');
-          else if (stepId === 'community-groups') setActiveTab('community');
-        }}
       />
     </div>
   );

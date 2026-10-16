@@ -105,8 +105,8 @@ export const CustomHabitModal: React.FC<CustomHabitModalProps> = ({
               </div>
 
               {/* عنوان الصفحة في الوسط */}
-              <div className="text-center px-12">
-                <h1 className="app-top-bar__title text-xl font-kufi">
+              <div className="text-center px-12 min-w-0">
+                <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">
                   إضافة عبادة
                 </h1>
               </div>
@@ -282,7 +282,7 @@ export const CustomHabitModal: React.FC<CustomHabitModalProps> = ({
               <motion.button
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-white shadow-md flex items-center justify-center gap-2"
+                className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm shadow-md flex items-center justify-center gap-2 ${isDarkBlack ? 'text-black' : 'text-white'}`}
                 style={{ backgroundColor: hexColor }}
               >
                 <Plus className="w-4 h-4" />

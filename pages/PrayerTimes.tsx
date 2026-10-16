@@ -9,8 +9,7 @@ import PrayerTimesHeader from '../components/PrayerTimes/PrayerTimesHeader';
 import PrayerTimesDateSearch from '../components/PrayerTimes/PrayerTimesDateSearch';
 import NextPrayerCard from '../components/PrayerTimes/NextPrayerCard';
 import NotificationSettingsModal from '../components/QuranReader/NotificationSettingsModal';
-import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
-import { MapPin, Search, Clock, Bell, Calendar, Palette } from 'lucide-react';
+import { MapPin, Calendar, Bell } from 'lucide-react';
 import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import {
@@ -85,57 +84,6 @@ function PrayerTimes({ onBack, onNavigate }) {
     const supportsDST = checkSupportsDST(config.location.combinedCode, config.location.fullCountry);
     const isSummerTimeActive = config.isSummerTime && supportsDST;
 
-    const prayerTutorialSteps: TutorialStep[] = [
-        {
-            id: 'location-refresh',
-            title: 'تحديد الموقع الجغرافي',
-            text: 'اضغط هنا لتحديث موقعك الحالي عبر الـ GPS. هذا يضمن لك الحصول على مواقيت صلاة دقيقة جداً متوافقة مع مكان تواجدك الفعلي، وهو أمر حيوي خاصة عند السفر أو التنقل بين المدن.',
-            selector: '#location-refresh-btn',
-            icon: <MapPin className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'date-search',
-            title: 'البحث العالمي عن المواقيت',
-            text: 'هل تود معرفة مواقيت الصلاة في مدينة أخرى؟ استخدم شريط البحث الذكي هذا للبحث عن أي مدينة حول العالم. سيعرض لك التطبيق المواقيت الخاصة بها فوراً مع إمكانية حفظها كموقع افتراضي.',
-            selector: '#search-input-container',
-            icon: <Search className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'next-prayer',
-            title: 'عداد الصلاة',
-            text: 'هذا القسم هو رفيقك لتنظيم وقتك؛ فهو يعرض اسم الصلاة القادمة مع عد تنازلي دقيق بالثواني.',
-            selector: '#next-prayer-countdown-container',
-            icon: <Clock className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'night-times',
-            title: 'أوقات قيام الليل والتهجد',
-            text: 'للمهتمين بقيام الليل، يوفر التطبيق حساباً دقيقاً لمنتصف الليل والثلث الأخير (وقت النزول الإلهي). يمكنك تفعيل تنبيهات خاصة لهذه الأوقات لتعينك على صلاة التهجد والاستغفار بالأسحار.',
-            selector: '#night-times-container',
-            icon: <Bell className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'prayer-settings',
-            title: 'التحكم في الأذان',
-            text: 'لكل صلاة إعدادات مستقلة؛ يمكنك تفعيل الأذان الكامل، أو التنبيه فقط، أو كتم الصوت. كما يمكنك الضغط على "تخصيص" لاختيار صوت المؤذن المفضل لديك (مثل الحرم المكي أو المدني) وضبط دقائق التنبيه قبل الصلاة.',
-            selector: '#prayer-actions-container',
-            icon: <Bell className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'monthly-times',
-            title: 'إمساكية الشهر الكاملة',
-            text: 'اضغط هنا لعرض جدول كامل لمواقيت الصلاة طوال الشهر الحالي. هذا يساعدك في التخطيط لعباداتك، ومعرفة مواعيد السحور والإفطار في أيام الصيام.',
-            selector: '#monthly-times-btn',
-            icon: <Calendar className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'android-widget',
-            title: 'تطبيق مصغر لشاشة الهاتف',
-            text: 'الآن أصبح بإمكانك وضع تطبيق مصغر (Widget) لمواقيت الصلاة على شاشة هاتفك الرئيسية، لمعرفة مواقيت الصلاة مباشرة ومتابعة ميعاد الصلاة القادمة والعد التنازلي لها دون الحاجة لفتح التطبيق.',
-            icon: <Clock className="w-8 h-8 text-white" />
-        }
-    ];
-    
     useEffect(() => {
         if (toastMessage) {
             const timer = setTimeout(() => setToastMessage(''), 3000);
@@ -585,7 +533,6 @@ function PrayerTimes({ onBack, onNavigate }) {
                     {toastMessage}
                 </div>
             )}
-            <TutorialOverlay tutorialId="prayer-times-tutorial" steps={prayerTutorialSteps} />
         </div>
     );
 }

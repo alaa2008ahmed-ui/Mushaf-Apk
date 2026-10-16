@@ -14,7 +14,6 @@ import {
 } from '../services/ahlAlQuranService';
 import { communityService } from '../services/communityService';
 import UsernameModal from '../components/Community/UsernameModal';
-import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import ThemePageLock from '../components/ThemePageLock';
 
 interface AhlAlQuranPageProps {
@@ -183,30 +182,6 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
     return unregister;
   }, [isArchiveDropdownOpen, showUsernameModal]);
 
-  const ahlAlQuranTutorialSteps: TutorialStep[] = [
-    {
-      id: 'ahl-leaderboard',
-      title: 'لوحة المتصدرين',
-      text: 'ترتيب شهري وتنافس شريف بين القراء حسب عدد الصفحات والختمات مع تمييز الأوائل بالتيجان والأوسمة.',
-      selector: '#ahl-tab-leaderboard',
-      icon: <Crown className="w-8 h-8 text-amber-300" />
-    },
-    {
-      id: 'ahl-stats',
-      title: 'إحصائياتي الشخصية',
-      text: 'متابعة إنجازك القرآني وترتيبك وعدد الصفحات المقروءة ونسبة تقدمك في الختمة بدقة.',
-      selector: '#ahl-tab-mystats',
-      icon: <BookOpen className="w-8 h-8 text-sky-400" />
-    },
-    {
-      id: 'ahl-privacy',
-      title: 'الخصوصية والظهور',
-      text: 'التحكم في ظهور اسمك وبياناتك في قائمة المتصدرين أو القراءة كفاعل خير بكل أمان.',
-      selector: '#ahl-tab-privacy',
-      icon: <Shield className="w-8 h-8 text-purple-400" />
-    }
-  ];
-
   return (
     <div 
       className="h-screen max-h-screen h-[100dvh] w-full flex flex-col overflow-y-auto overscroll-contain transition-colors bg-transparent"
@@ -235,8 +210,8 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
             </div>
 
             {/* عنوان الصفحة في الوسط */}
-            <div className="text-center px-20 sm:px-24">
-              <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi">
+            <div className="text-center px-16 sm:px-20 min-w-0">
+              <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">
                 أهل القرآن الكريم
               </h1>
             </div>
@@ -1009,18 +984,6 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
           setIsProfileComplete(communityService.isProfileComplete());
           setCurrentUser(communityService.getCurrentUser());
           showToast('مرحباً بك! تم تسجيل حسابك بنجاح وأصبحت الآن ضمن أهل القرآن 🌸');
-        }}
-      />
-
-
-      {/* Tutorial Overlay */}
-      <TutorialOverlay 
-        tutorialId="ahl-al-quran-tutorial" 
-        steps={ahlAlQuranTutorialSteps} 
-        onStepChange={(stepId) => {
-          if (stepId === 'ahl-leaderboard') switchTab('leaderboard');
-          else if (stepId === 'ahl-stats') switchTab('my_stats');
-          else if (stepId === 'ahl-privacy') switchTab('privacy');
         }}
       />
     </div>

@@ -6,7 +6,6 @@ import { useHabitTracker, DailyRecord, HabitCategory, defaultRecord, CustomHabit
 import { useTheme } from '../context/ThemeContext';
 import ThemePageLock from '../components/ThemePageLock';
 import { registerBackInterceptor } from '../hooks/useBackButton';
-import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import Confetti from 'react-dom-confetti';
@@ -496,58 +495,6 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack , onNavigate }) => {
     );
   }
 
-  const habitTrackerTutorialSteps: TutorialStep[] = [
-    {
-        id: 'habit-welcome',
-        title: 'مرحباً بك في مربّي العبادات',
-        text: 'هذا القسم مصمم خصيصاً ليساعدك على بناء عادات إيمانية قوية والمحافظة على طاعاتك اليومية بكل سهولة ويسر.',
-        position: { top: '60%' },
-        icon: <Heart className="w-8 h-8 text-white" />
-    },
-    {
-        id: 'habit-progress',
-        title: 'إنجازك اليومي والسنوي',
-        text: 'هنا ترى ملخص إنجازك اليومي، ومخطط الحرارة الذي يوضح استمراريتك طوال الشهر. كل مربع ملون يمثل يوماً مليئاً بالطاعات.',
-        selector: '#daily-achievement-card',
-        icon: <CheckCircle className="w-8 h-8 text-white" />
-    },
-    {
-        id: 'habit-weekly',
-        title: 'بطاقة الإنجاز الأسبوعية',
-        text: 'صدر بطاقة حصاد أسبوعك الإيماني كصورة جميلة بجودة عالية أو انسخ ملخصها وشاركها مع الأهل والأصدقاء للتشجيع والتنافس في الخير.',
-        selector: '#weekly-card-btn',
-        icon: <Award className="w-8 h-8 text-white" />
-    },
-    {
-        id: 'habit-fajr',
-        title: 'الفرائض والسنن',
-        text: 'يمكنك هنا تسجيل صلواتك الخمس، مع إمكانية متابعة السنن الرواتب لكل صلاة بشكل منفصل لزيادة الأجر.',
-        selector: '#prayer-card-fajr',
-        icon: <Clock className="w-8 h-8 text-white" />
-    },
-    {
-        id: 'habit-quran',
-        title: 'الورد القرآني',
-        text: 'لا تنسَ نصيبك من كتاب الله؛ سجل عدد الصفحات التي قرأتها اليوم وتابع تقدمك في الورد اليومي.',
-        selector: '#quran-habit-section',
-        icon: <BookOpen className="w-8 h-8 text-white" />
-    },
-    {
-        id: 'habit-custom',
-        title: 'العبادات المخصصة',
-        text: 'يمكنك إضافة عباداتك الخاصة (كصيام الاثنين والخميس أو ركعتي الضحى وبر الوالدين) لتتابع استمراريتك وتدخل في حساب إنجازك اليومي والأسبوعي.',
-        selector: '#custom-habits-section',
-        icon: <Star className="w-8 h-8 text-white" />
-    },
-    {
-        id: 'habit-streaks',
-        title: 'أوسمة الاستمرارية',
-        text: 'عندما تحافظ على عبادة معينة لـ 7 أيام متتالية، ستحصل على وسام تقديري تشجيعاً لك على المداومة. "أحب الأعمال إلى الله أدومها وإن قل".',
-        position: { top: '70%' },
-        icon: <Medal className="w-8 h-8 text-white" />
-    }
-  ];
-
   return (
     <div className={`h-screen h-[100dvh] max-h-screen max-h-[100dvh] flex flex-col bg-transparent relative overflow-hidden`} dir="rtl">
       <header className="app-top-bar shrink-0">
@@ -566,8 +513,8 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack , onNavigate }) => {
                   </div>
 
                   {/* عنوان الصفحة في الوسط */}
-                  <div className="text-center px-12">
-                      <h1 className="app-top-bar__title text-2xl font-kufi">
+                  <div className="text-center px-12 min-w-0">
+                      <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">
                           مربّي العبادات
                       </h1>
                   </div>
@@ -896,7 +843,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack , onNavigate }) => {
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowCustomHabitModal(true)}
-          className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm text-white transition-opacity hover:opacity-90"
+          className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm transition-opacity hover:opacity-90 ${isBlackTheme ? 'text-black' : 'text-white'}`}
           style={{ backgroundColor: hexColor }}
         >
           <Plus className="w-3.5 h-3.5" />
@@ -1057,10 +1004,6 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ onBack , onNavigate }) => {
            </p>
         </div>
       </main>
-
-
-
-      <TutorialOverlay tutorialId="habit-tracker-tutorial" steps={habitTrackerTutorialSteps} />
 
       {/* Streak Achievement Modal */}
       <AnimatePresence>

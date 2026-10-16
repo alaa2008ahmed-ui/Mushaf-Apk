@@ -4,8 +4,6 @@ import { motion } from 'motion/react';
 import { useVoiceControl, VoiceCommand } from '../context/VoiceControlContext';
 import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, RotateCcw, ChevronRight, WifiOff, BookOpen } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
-
 import ThemePageLock from '../components/ThemePageLock';
 
 const AVAILABLE_ACTIONS = [
@@ -120,31 +118,6 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
         }
     };
 
-    const voiceControlTutorialSteps: TutorialStep[] = [
-        {
-            id: 'voice-welcome',
-            title: 'التحكم الصوتي الذكي',
-            text: 'مرحباً بك في عالم التحكم الصوتي. هذه الميزة تتيح لك التحدث مع التطبيق كما تتحدث مع صديقك. يمكنك طلب أي شيء من التطبيق باللغة العربية الفصحى أو العامية المصرية، وسيفهمك المساعد الذكي وينفذ طلبك فوراً.',
-            position: { top: '60%' },
-            icon: <Mic className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'voice-toggle',
-            title: 'تفعيل الاستماع المستمر',
-            text: 'هذا الزر هو مفتاح التحكم؛ عند تفعيله، سيظل التطبيق في حالة "استماع" دائمة لأوامرك. يمكنك وضعه بجانبك أثناء القراءة وقول "الآية التالية" أو "شغل التفسير" دون الحاجة للمس الهاتف إطلاقاً.',
-            selector: '#voice-toggle-btn',
-            icon: <Mic className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'voice-commands-list',
-            title: 'أمثلة للأوامر الصوتية',
-            text: 'هنا تجد دليلاً شاملاً للأوامر: يمكنك قول "افتح سورة الكهف"، "مواقيت الصلاة في القاهرة"، "شغل أذكار الصباح"، أو حتى "غير الثيم للوضع الليلي". استكشف القائمة لتتعرف على قدرات المساعد الصوتي المذهلة.',
-            selector: '#commands-list-container',
-            position: { top: '65%' },
-            icon: <ChevronRight className="w-8 h-8 text-white" />
-        }
-    ];
-
     return (
         <div className="h-screen flex flex-col bg-transparent overflow-hidden">
             <header className="app-top-bar">
@@ -163,8 +136,8 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                         </div>
 
                         {/* عنوان الصفحة في الوسط */}
-                        <div className="text-center px-12">
-                            <h1 className="app-top-bar__title text-2xl font-kufi">التحكم الصوتي</h1>
+                        <div className="text-center px-12 min-w-0">
+                            <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">التحكم الصوتي</h1>
                         </div>
 
                         {/* أيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية */}
@@ -368,8 +341,6 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                     <div className="shrink-0 w-full h-6"></div>
                 </div>
             </main>
-
-            <TutorialOverlay tutorialId="voice-control-tutorial" steps={voiceControlTutorialSteps} />
         </div>
     );
 };

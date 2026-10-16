@@ -399,8 +399,8 @@ function HajjUmrah({ onBack, onNavigate }) {
                         </div>
 
                         {/* عنوان الصفحة في الوسط */}
-                        <div className="text-center px-12">
-                            <h1 className="app-top-bar__title text-2xl font-kufi">
+                        <div className="text-center px-12 min-w-0">
+                            <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">
                                 {getScreenTitle()}
                             </h1>
                         </div>

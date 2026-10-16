@@ -120,8 +120,8 @@ const IslamicSitesPage: React.FC<IslamicSitesPageProps> = ({ onBack, onNavigate 
                         </div>
 
                         {/* عنوان الصفحة في الوسط */}
-                        <div className="text-center px-12">
-                            <h1 className="app-top-bar__title text-xl sm:text-2xl font-kufi">
+                        <div className="text-center px-12 min-w-0">
+                            <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">
                                 {selectedSite ? selectedSite.name.replace(/^موقع\s+/, '') : 'مواقع إسلامية'}
                             </h1>
                         </div>

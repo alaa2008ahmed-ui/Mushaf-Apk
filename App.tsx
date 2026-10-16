@@ -9,7 +9,7 @@ import { useWakeLock } from './hooks/useWakeLock';
 import { useBackButton } from './hooks/useBackButton';
 import { App as CapacitorApp } from '@capacitor/app';
 import { PrayerTimesProvider } from './context/PrayerTimesContext';
-import { VoiceControlProvider } from './context/VoiceControlContext';
+import { VoiceControlProvider, useVoiceControl } from './context/VoiceControlContext';
 import { TutorialProvider } from './context/TutorialContext';
 import SideMenu from './components/SideMenu';
 import MawlidNotification from './components/MawlidNotification';
@@ -29,6 +29,7 @@ import { APP_VERSION, REMOTE_VERSION_URL, GOOGLE_PLAY_URL } from './constants';
 import UpdateNotificationModal from './components/UpdateNotificationModal';
 import { InAppChatNotification } from './components/InAppChatNotification';
 import { recordAppLaunch } from './utils/badgeManager';
+import FloatingHelpButton from './components/FloatingHelpButton';
 
 // --- Main App Component ---
 function App() {
@@ -129,7 +130,7 @@ function App() {
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'qibla', 
       'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'daily-wird', 'memorization',
       'phone-notifications', 'search', 'asmaul-husna', 'habit-tracker', 'community', 'direct-chat', 'group-chat', 'ahl-al-quran', 'others', 'islamic-sites',
-      'prophetic-seerah'
+      'prophetic-seerah', 'page-guide'
     ];
 
     if (pageId === 'phone-notifications') {
@@ -180,7 +181,31 @@ function App() {
           if (quranIdx !== -1) {
             return [...prev.slice(0, quranIdx + 1), pageId];
           }
+          if (params?.isWird) {
+            const wirdIdx = prev.lastIndexOf('daily-wird');
+            if (wirdIdx !== -1) {
+              return [...prev.slice(0, wirdIdx + 1), pageId];
+            }
+            return ['home', 'daily-wird', pageId];
+          }
           return ['home', pageId];
+        }
+
+        // 4. Quran from Daily Wird
+        if (pageId === 'quran') {
+          if (params?.isWird) {
+            const wirdIdx = prev.lastIndexOf('daily-wird');
+            if (wirdIdx !== -1) {
+              return [...prev.slice(0, wirdIdx + 1), pageId];
+            }
+            return ['home', 'daily-wird', pageId];
+          }
+          return ['home', pageId];
+        }
+
+        // 5. Daily Wird
+        if (pageId === 'daily-wird') {
+          return ['home', 'daily-wird'];
         }
 
         return ['home', pageId];
@@ -466,6 +491,7 @@ function AppContent({
       <RateUs />
       <MawlidNotification />
       <InAppChatNotification currentPage={page} navParams={navParams} onNavigate={handleNavigate} />
+      <FloatingHelpButton currentPage={page} onClick={() => handleNavigate('page-guide')} />
 
       {activeIqamaAlert && (
         <IqamaAlertModal
@@ -476,8 +502,5 @@ function AppContent({
     </div>
   );
 }
-
-import { useVoiceControl } from './context/VoiceControlContext';
-import { useTutorial } from './context/TutorialContext';
 
 export default App;
