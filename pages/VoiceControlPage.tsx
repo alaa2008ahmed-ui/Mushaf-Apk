@@ -4,9 +4,6 @@ import { motion } from 'motion/react';
 import { useVoiceControl, VoiceCommand } from '../context/VoiceControlContext';
 import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, RotateCcw, ChevronRight, WifiOff, BookOpen } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-import BottomBar from '../components/BottomBar';
-import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
-
 import ThemePageLock from '../components/ThemePageLock';
 
 const AVAILABLE_ACTIONS = [
@@ -26,10 +23,10 @@ const AVAILABLE_ACTIONS = [
     { id: 'open_adia', name: 'الادعيه / الادعيه' },
     { id: 'open_hajj_umrah', name: 'الحج والعمرة' },
     { id: 'open_asmaul_husna', name: 'أسماء الله الحسنى' },
+    { id: 'open_islamic_sites', name: 'مواقع إسلامية / مواقع اسلامية' },
     { id: 'open_daily_wird', name: 'الورد اليومي' },
     { id: 'open_memorization', name: 'التحفيظ' },
-    { id: 'open_more', name: 'قائمة التطبيقات' },
-    { id: 'open_nawawi', name: 'الاربعون النوويه / الاربعون النوويه' },
+    { id: 'open_nawawi', name: 'الأربعون النووية / الاربعون النوويه' },
     { id: 'go_back', name: 'رجوع' },
     { id: 'exit_app', name: 'خروج' },
     { id: 'increase_font', name: 'تكبير الخط / تكبير' },
@@ -54,6 +51,14 @@ const AVAILABLE_ACTIONS = [
 
 const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: string) => void }> = ({ onBack, onNavigate }) => {
     const { theme, themeKey } = useTheme();
+    const isDefaultTheme = themeKey === 'default' || !themeKey || theme.name?.includes('الافتراضي') || theme.name === 'Default';
+    const isBlackTheme = theme.bgColor === '#000000' || theme.name === 'أبيض وأسود' || themeKey === 'deep_black';
+    const cardBorderColor = isDefaultTheme 
+      ? '#000000' 
+      : (isBlackTheme 
+          ? '#FFFFFF' 
+          : (theme.palette?.[0] || theme.accent || '#000000'));
+
     const { 
         isEnabled, 
         setIsEnabled, 
@@ -113,49 +118,51 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
         }
     };
 
-    const voiceControlTutorialSteps: TutorialStep[] = [
-        {
-            id: 'voice-welcome',
-            title: 'التحكم الصوتي الذكي',
-            text: 'مرحباً بك في عالم التحكم الصوتي. هذه الميزة تتيح لك التحدث مع التطبيق كما تتحدث مع صديقك. يمكنك طلب أي شيء من التطبيق باللغة العربية الفصحى أو العامية المصرية، وسيفهمك المساعد الذكي وينفذ طلبك فوراً.',
-            position: { top: '60%' },
-            icon: <Mic className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'voice-toggle',
-            title: 'تفعيل الاستماع المستمر',
-            text: 'هذا الزر هو مفتاح التحكم؛ عند تفعيله، سيظل التطبيق في حالة "استماع" دائمة لأوامرك. يمكنك وضعه بجانبك أثناء القراءة وقول "الآية التالية" أو "شغل التفسير" دون الحاجة للمس الهاتف إطلاقاً.',
-            selector: '#voice-toggle-btn',
-            icon: <Mic className="w-8 h-8 text-white" />
-        },
-        {
-            id: 'voice-commands-list',
-            title: 'أمثلة للأوامر الصوتية',
-            text: 'هنا تجد دليلاً شاملاً للأوامر: يمكنك قول "افتح سورة الكهف"، "مواقيت الصلاة في القاهرة"، "شغل أذكار الصباح"، أو حتى "غير الثيم للوضع الليلي". استكشف القائمة لتتعرف على قدرات المساعد الصوتي المذهلة.',
-            selector: '#commands-list-container',
-            position: { top: '65%' },
-            icon: <ChevronRight className="w-8 h-8 text-white" />
-        }
-    ];
-
     return (
         <div className="h-screen flex flex-col bg-transparent overflow-hidden">
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-center w-full">
-                        <div className="absolute left-0">
-                            <ThemePageLock />
+                    <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                        {/* سهم الرجوع للخلف على يمين النص */}
+                        <div className="absolute right-0 flex items-center">
+                            <button
+                                onClick={onBack}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="رجوع للخلف"
+                                aria-label="رجوع للخلف"
+                            >
+                                <i className="fa-solid fa-arrow-right text-xl"></i>
+                            </button>
                         </div>
-                        <h1 className="app-top-bar__title text-2xl font-kufi">التحكم الصوتي</h1>
+
+                        {/* عنوان الصفحة في الوسط */}
+                        <div className="text-center px-12 min-w-0">
+                            <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">التحكم الصوتي</h1>
+                        </div>
+
+                        {/* أيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية */}
+                        <div className="absolute left-0 flex items-center gap-1">
+                            <ThemePageLock />
+                            <button
+                                onClick={() => onNavigate('home')}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="الصفحة الرئيسية"
+                                aria-label="الصفحة الرئيسية"
+                            >
+                                <i className="fa-solid fa-house text-xl"></i>
+                            </button>
+                        </div>
                     </div>
-                    <p className="app-top-bar__subtitle">إدارة الأوامر الصوتية الذكية</p>
                 </div>
             </header>
 
             <main className="w-full flex-1 flex flex-col items-center overflow-hidden px-4 pb-4">
                 <div className="w-full max-w-lg flex-1 overflow-y-auto hide-scrollbar pb-6 space-y-6">
                     {/* Merged Status & Settings Section */}
-                    <div className="themed-card p-4 space-y-4 relative">
+                    <div 
+                        className="themed-card p-4 space-y-4 relative border"
+                        style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
+                    >
                         {toastMessage && (
                             <motion.div 
                                 initial={{ opacity: 0, y: -20 }}
@@ -195,14 +202,15 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                                 <motion.div 
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="p-3 rounded-xl bg-black/5 w-full text-center italic font-bold text-base border border-black/5"
+                                    className="p-3 rounded-xl bg-black/5 w-full text-center italic font-bold text-base border"
+                                    style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                                 >
                                     "{transcript}"
                                 </motion.div>
                             )}
                         </div>
 
-                        <div className="h-px bg-black/5 w-full"></div>
+                        <div className="h-px w-full" style={{ backgroundColor: cardBorderColor, opacity: 0.2 }}></div>
 
                         {/* Toggle Section */}
                         <div className="flex items-center justify-between">
@@ -221,8 +229,12 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                     </div>
 
                     {/* Instructions Section */}
-                    <div id="commands-list-container" className="themed-card p-6 space-y-6">
-                        <h3 className="font-bold text-lg flex items-center gap-2 border-b pb-2">
+                    <div 
+                        id="commands-list-container" 
+                        className="themed-card p-6 space-y-6 border"
+                        style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
+                    >
+                        <h3 className="font-bold text-lg flex items-center gap-2 border-b pb-2" style={{ borderColor: cardBorderColor }}>
                             <ChevronRight className="w-5 h-5 text-primary" />
                             دليل التحكم الصوتي الشامل
                         </h3>
@@ -249,8 +261,7 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                                     <li>"فتح التحكم الصوتي" / "التحكم الصوتى": للانتقال لإعدادات التحكم الصوتي.</li>
                                     <li>"فتح الادعيه" / "الادعيه": لفتح صفحة الادعيه.</li>
                                     <li>"فتح الحج والعمرة" / "الحج والعمرة": لفتح صفحه الحج والعمرة.</li>
-                                    <li>"فتح قائمة التطبيقات" / "قائمة التطبيقات": لفتح صفحة قائمة التطبيقات (من الصفحة الرئيسية).</li>
-                                    <li>"فتح الاربعون النوويه" / "الاربعون النوويه": لفتح صفحة الاربعون النوويه.</li>
+                                    <li>"فتح الأربعون النووية" / "الاربعون النوويه": لفتح صفحة الأربعون النووية.</li>
                                     <li>"رجوع": للعودة الى الصفحه السابقة.</li>
                                     <li>"خروج": لإغلاق التطبيق.</li>
                                 </ul>
@@ -293,14 +304,20 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                                 </ul>
                             </section>
 
-                            <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 text-xs italic">
+                            <div 
+                                className="p-4 rounded-xl bg-amber-500/5 border text-xs italic"
+                                style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
+                            >
                                 * نصيحة: لا تقلق بشأن التشكيل أو "ال" التعريف، النظام ذكي بما يكفي ليفهم "البقرة" أو "بقرة" بنفس الدقة.
                             </div>
                         </div>
                     </div>
 
                     {/* Offline Warning & Settings Section */}
-                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col gap-3">
+                    <div 
+                        className="p-4 rounded-2xl bg-amber-500/10 border flex flex-col gap-3"
+                        style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
+                    >
                         <div className="flex items-start gap-3">
                             <WifiOff className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
                             <div>
@@ -310,7 +327,7 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                                 </p>
                             </div>
                         </div>
-                        <div className="mt-2 pt-3 border-t border-amber-500/20">
+                        <div className="mt-2 pt-3 border-t" style={{ borderColor: cardBorderColor, opacity: 0.25 }}>
                             <h4 className="font-bold text-amber-700 text-sm mb-2">لتشغيل التحكم الصوتي بدون إنترنت (أوفلاين):</h4>
                             <p className="text-xs text-amber-700/80 leading-relaxed mb-3">
                                 يجب التأكد من تحميل حزمة اللغة العربية للتعرف على الصوت في إعدادات نظام أندرويد لضمان عمل التطبيق بكفاءة في وضع الأوفلاين:
@@ -321,12 +338,9 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                             </ul>
                         </div>
                     </div>
-                    <div className="shrink-0 w-full h-32"></div>
+                    <div className="shrink-0 w-full h-6"></div>
                 </div>
             </main>
-
-            <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />
-            <TutorialOverlay tutorialId="voice-control-tutorial" steps={voiceControlTutorialSteps} />
         </div>
     );
 };

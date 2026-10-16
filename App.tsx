@@ -9,7 +9,7 @@ import { useWakeLock } from './hooks/useWakeLock';
 import { useBackButton } from './hooks/useBackButton';
 import { App as CapacitorApp } from '@capacitor/app';
 import { PrayerTimesProvider } from './context/PrayerTimesContext';
-import { VoiceControlProvider } from './context/VoiceControlContext';
+import { VoiceControlProvider, useVoiceControl } from './context/VoiceControlContext';
 import { TutorialProvider } from './context/TutorialContext';
 import SideMenu from './components/SideMenu';
 import MawlidNotification from './components/MawlidNotification';
@@ -22,14 +22,24 @@ import { setupNotifications } from './utils/notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { clearSearchCache } from './pages/GlobalSearch';
+import { playNotificationSound } from './utils/prayerTimesUtils';
+import IqamaAlertModal from './components/PrayerTimes/IqamaAlertModal';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import { APP_VERSION, REMOTE_VERSION_URL, GOOGLE_PLAY_URL } from './constants';
 import UpdateNotificationModal from './components/UpdateNotificationModal';
+import { InAppChatNotification } from './components/InAppChatNotification';
+import { recordAppLaunch } from './utils/badgeManager';
+import FloatingHelpButton from './components/FloatingHelpButton';
 
 // --- Main App Component ---
 function App() {
   const { theme, applyPresetTheme, setCurrentPage } = useTheme();
   const [showSplash, setShowSplash] = useState(true);
+
+  // Track app launch count for "جديد" badge (1 count per launch, max 10 times)
+  useEffect(() => {
+    recordAppLaunch();
+  }, []);
   const [history, setHistory] = useState(['home']);
   const [navParams, setNavParams] = useState<any>(null);
   const [lastMenuPage, setLastMenuPage] = useState('home');
@@ -88,7 +98,7 @@ function App() {
       clearSearchCache();
     }
     const currentPage = history[history.length - 1];
-    if (currentPage === 'home' || currentPage === 'more-menu') {
+    if (currentPage === 'home') {
       setLastMenuPage(currentPage);
     }
 
@@ -118,63 +128,24 @@ function App() {
     const validPages = [
       'home', 'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'qibla', 
-      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'more-menu', 'daily-wird', 'memorization',
-      'phone-notifications', 'search', 'asmaul-husna', 'habit-tracker'
+      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'daily-wird', 'memorization',
+      'phone-notifications', 'search', 'asmaul-husna', 'habit-tracker', 'community', 'direct-chat', 'group-chat', 'ahl-al-quran', 'others', 'islamic-sites',
+      'prophetic-seerah', 'page-guide'
     ];
 
     if (pageId === 'phone-notifications') {
       setNavParams({ openModal: 'notification-settings-modal' });
-      setHistory(prev => [...prev, 'quran']);
+      setHistory(['home', 'quran']);
       return;
     }
 
     if (pageId === 'settings') {
       setNavParams({ openModal: 'settings-modal' });
-      setHistory(prev => [...prev, 'quran']);
+      setHistory(['home', 'quran']);
       return;
     }
 
     if (pageId === 'home') {
-      // 0. If force is true, reset to home
-      if (params?.force) {
-        setHistory(['home']);
-        setNavParams(null);
-        return;
-      }
-
-      // Logic for home button:
-      // 1. If currently in quran, go back (one step)
-      const current = history[history.length - 1];
-      if (current === 'quran' || current === 'quran-landscape') {
-        setHistory(prev => (prev.length > 1 ? prev.slice(0, -1) : prev));
-        return;
-      }
-      
-      // 2. If we are in more-menu, home should take us back to home
-      if (current === 'more-menu') {
-        setHistory(['home']);
-        setNavParams(null);
-        return;
-      }
-
-      // 3. Return to last menu
-      if (lastMenuPage === 'more-menu') {
-        const moreMenuIndex = history.lastIndexOf('more-menu');
-        if (moreMenuIndex !== -1) {
-          setHistory(prev => prev.slice(0, moreMenuIndex + 1));
-          return;
-        }
-      }
-
-      const quranIndex = history.lastIndexOf('quran');
-      const quranLandscapeIndex = history.lastIndexOf('quran-landscape');
-      const targetIndex = Math.max(quranIndex, quranLandscapeIndex);
-      
-      if (targetIndex !== -1 && targetIndex < history.length - 1) {
-        setHistory(prev => prev.slice(0, targetIndex + 1));
-        return;
-      }
-
       setHistory(['home']);
       setNavParams(null);
       return;
@@ -184,34 +155,97 @@ function App() {
       setNavParams(params || null);
       setHistory(prev => {
         const current = prev[prev.length - 1];
-        
-        // If we are navigating to the same page, do nothing
         if (current === pageId) return prev;
 
-        return [...prev, pageId];
+        // 1. Direct or Group Chat inside Community
+        if (pageId === 'direct-chat' || pageId === 'group-chat') {
+          const communityIdx = prev.lastIndexOf('community');
+          if (communityIdx !== -1) {
+            return [...prev.slice(0, communityIdx + 1), pageId];
+          }
+          return ['home', 'community', pageId];
+        }
+
+        // 2. Monthly Prayer Times inside Prayer Times
+        if (pageId === 'monthly-prayer-times') {
+          const prayerIdx = prev.lastIndexOf('prayer-times');
+          if (prayerIdx !== -1) {
+            return [...prev.slice(0, prayerIdx + 1), pageId];
+          }
+          return ['home', 'prayer-times', pageId];
+        }
+
+        // 3. Quran Landscape
+        if (pageId === 'quran-landscape') {
+          const quranIdx = prev.lastIndexOf('quran');
+          if (quranIdx !== -1) {
+            return [...prev.slice(0, quranIdx + 1), pageId];
+          }
+          if (params?.isWird) {
+            const wirdIdx = prev.lastIndexOf('daily-wird');
+            if (wirdIdx !== -1) {
+              return [...prev.slice(0, wirdIdx + 1), pageId];
+            }
+            return ['home', 'daily-wird', pageId];
+          }
+          return ['home', pageId];
+        }
+
+        // 4. Quran from Daily Wird
+        if (pageId === 'quran') {
+          if (params?.isWird) {
+            const wirdIdx = prev.lastIndexOf('daily-wird');
+            if (wirdIdx !== -1) {
+              return [...prev.slice(0, wirdIdx + 1), pageId];
+            }
+            return ['home', 'daily-wird', pageId];
+          }
+          return ['home', pageId];
+        }
+
+        // 5. Daily Wird
+        if (pageId === 'daily-wird') {
+          return ['home', 'daily-wird'];
+        }
+
+        return ['home', pageId];
       });
     } else {
       alert(`التنقل إلى قسم "${pageId}" قيد الإنشاء.`);
     }
-  }, [history, lastMenuPage]);
+  }, []);
 
   useEffect(() => {
     setupNotifications();
 
     let listener: any = null;
+    let receivedListener: any = null;
     if (Capacitor.isNativePlatform()) {
       listener = LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
         const page = notificationAction.notification.extra?.page;
         const params = notificationAction.notification.extra?.params;
+        const type = notificationAction.notification.extra?.type;
         if (page) {
           handleNavigate(page, params);
+        } else if (type === 'iqama') {
+          handleNavigate('prayer-times');
         }
+      });
+
+      receivedListener = LocalNotifications.addListener('localNotificationReceived', (notification) => {
+        if (notification.extra?.type === 'iqama') {
+          playNotificationSound('/assets/audio/chime.mp3', true);
+        }
+        console.log('[Notification] Received notification natively:', notification.id, notification.title);
       });
     }
 
     return () => {
       if (listener) {
         listener.then((l: any) => l.remove());
+      }
+      if (receivedListener) {
+        receivedListener.then((l: any) => l.remove());
       }
     };
   }, [handleNavigate]);
@@ -232,7 +266,9 @@ function App() {
   }, []);
 
   const navigateBack = useCallback(() => {
-    setHistory(prev => (prev.length > 1 ? prev.slice(0, -1) : prev));
+    setHistory(prev => {
+      return (prev.length > 1 ? prev.slice(0, -1) : prev);
+    });
   }, []);
 
   const handleVoiceAction = useCallback((action: string, text: string, params?: any) => {
@@ -269,11 +305,13 @@ function App() {
     else if (action === 'open_calendar' || (action === 'ui_click' && params?.label?.includes('تقويم'))) handleNavigate('calendar');
     else if (action === 'open_hajj_umrah' || (action === 'ui_click' && params?.label?.includes('حج'))) handleNavigate('hajj-umrah');
     else if (action === 'open_asmaul_husna' || (action === 'ui_click' && params?.label?.includes('اسماء الله'))) handleNavigate('asmaul-husna');
+    else if (action === 'open_islamic_sites' || (action === 'ui_click' && params?.label?.includes('مواقع'))) handleNavigate('islamic-sites');
+    else if (action === 'open_seerah' || (action === 'ui_click' && params?.label?.includes('سيره'))) handleNavigate('prophetic-seerah');
     else if (action === 'open_daily_wird' || (action === 'ui_click' && params?.label?.includes('ورد'))) handleNavigate('daily-wird');
     else if (action === 'open_memorization' || (action === 'ui_click' && params?.label?.includes('تحفيظ'))) handleNavigate('memorization');
     else if (action === 'open_quran' || (action === 'ui_click' && params?.label?.includes('مصحف'))) handleNavigate('quran');
     else if (action === 'open_voice_control' || (action === 'ui_click' && params?.label?.includes('تحكم صوتي'))) handleNavigate('voice-control');
-    else if (action === 'open_more' || (action === 'ui_click' && params?.label?.includes('مزيد'))) handleNavigate('more-menu');
+    else if (action === 'open_ahl_al_quran' || (action === 'ui_click' && params?.label?.includes('اهل القران'))) handleNavigate('ahl-al-quran');
     else if (action === 'set_orientation_horizontal' || action === 'set_orientation_vertical') {
       window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
     }
@@ -356,6 +394,7 @@ function AppContent({
 }: any) {
   const { setCurrentPage: setVoicePage } = useVoiceControl();
   const { theme, themeKey, applyPresetTheme, setCurrentPage: setThemePage } = useTheme();
+  const { activeIqamaAlert, dismissIqamaAlert } = usePrayerTimes();
 
   useEffect(() => {
     setVoicePage(page);
@@ -451,11 +490,17 @@ function AppContent({
       
       <RateUs />
       <MawlidNotification />
+      <InAppChatNotification currentPage={page} navParams={navParams} onNavigate={handleNavigate} />
+      <FloatingHelpButton currentPage={page} onClick={() => handleNavigate('page-guide')} />
+
+      {activeIqamaAlert && (
+        <IqamaAlertModal
+          alert={activeIqamaAlert}
+          onDismiss={dismissIqamaAlert}
+        />
+      )}
     </div>
   );
 }
-
-import { useVoiceControl } from './context/VoiceControlContext';
-import { useTutorial } from './context/TutorialContext';
 
 export default App;

@@ -1,15 +1,23 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import ThemePageLock from '../components/ThemePageLock';
 import { baseAthkar, specialZikr, prayerOptions, fajrDhikr, fajrMaghribDhikr } from '../data/athkarAlSalahData';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'motion/react';
 import { shareAsImage } from '../utils/shareAsImage';
+import { playTTS, stopTTS, subscribeTTS } from '../utils/ttsEngine';
+import { useHabitTracker } from '../hooks/useHabitTracker';
 
-const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { zikr: any; theme: any; onDecrement: () => void; onZoom: () => void; setToastMessage: (msg: string) => void }) => {
+const SalahZikrCard = ({ zikr, theme, themeKey, onDecrement, onZoom, setToastMessage }: { zikr: any; theme: any; themeKey?: string; onDecrement: () => void; onZoom: () => void; setToastMessage: (msg: string) => void }) => {
+    const isBlackTheme = theme.bgColor === '#000000';
+    const isDefaultTheme = themeKey === 'default';
+    const cardBorderColor = isDefaultTheme 
+        ? '#000000' 
+        : (isBlackTheme 
+            ? '#FFFFFF' 
+            : (theme.palette?.[0] || '#000000'));
     const [isFav, setIsFav] = useState(false);
+    const [playingText, setPlayingText] = useState<string | null>(null);
     const isFinished = zikr.currentCount === 0;
     const textClass = zikr.isQuran ? 'font-amiri text-2xl text-center leading-relaxed' : 'text-lg leading-loose font-medium';
 
@@ -17,6 +25,16 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
         const favs = JSON.parse(localStorage.getItem('favorite_dhikr') || '[]');
         setIsFav(favs.includes(zikr.text));
     }, [zikr.text]);
+
+    useEffect(() => {
+        const unsubscribe = subscribeTTS(setPlayingText);
+        return () => {
+            unsubscribe();
+            stopTTS();
+        };
+    }, []);
+
+    const isPlaying = playingText === zikr.text;
 
     const toggleFav = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -31,8 +49,21 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
         setIsFav(!isFav);
     };
 
+    const handlePlayAudio = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        playTTS(zikr.text, { onToast: setToastMessage, categoryId: 'hisn_25' });
+    };
+
     return (
-        <div className={`themed-card p-5 pb-2 rounded-2xl border relative overflow-hidden group mb-4 transition-all duration-300 ${isFinished ? 'opacity-60' : ''}`} onClick={onDecrement}>
+        <div 
+            className={`themed-card p-5 pb-2 rounded-2xl border relative overflow-hidden group mb-4 transition-all duration-300 ${isFinished ? 'opacity-60' : ''}`} 
+            onClick={onDecrement}
+            style={{
+                borderColor: cardBorderColor,
+                borderWidth: '1.5px',
+                borderStyle: 'solid'
+            }}
+        >
             <div className="flex justify-between items-start mb-2">
                 <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold shadow-sm" style={{backgroundColor: theme.palette[1]+'30', color: theme.palette[1]}}>{zikr.note}</span>
                 <div className={`count-badge w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-md transform transition-transform`} style={isFinished ? {backgroundColor: 'var(--badge-finished-bg)', color: 'var(--badge-finished-text)'} : {backgroundImage: `linear-gradient(to bottom right, ${theme.palette[0]}, ${theme.palette[1]})`, color: theme.textColor}}>
@@ -47,7 +78,7 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
                     <i className={`fa-heart ${isFav ? 'fa-solid text-red-500' : 'fa-regular text-gray-500 dark:text-gray-400'}`}></i>
                 </button>
                 <div className="flex gap-2">
-                   <button onClick={(e) => { e.stopPropagation(); onZoom(); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                   <button onClick={(e) => { e.stopPropagation(); onZoom(); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" title="تكبير">
                        <i className="fa-solid fa-magnifying-glass-plus"></i>
                    </button>
                    <button onClick={(e) => {
@@ -55,7 +86,7 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
                        const tempDiv = document.createElement("div");
                        tempDiv.innerHTML = zikr.text;
                        navigator.clipboard.writeText(tempDiv.textContent || tempDiv.innerText || "");
-                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" title="نسخ">
                        <i className="fa-regular fa-copy"></i>
                    </button>
                    <button onClick={async (e) => {
@@ -67,8 +98,16 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
                            theme,
                            setToastMessage
                        });
-                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" title="مشاركة">
                        <i className="fa-solid fa-share-nodes"></i>
+                   </button>
+                   <button 
+                       onClick={handlePlayAudio} 
+                       className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" 
+                       style={{ color: isPlaying ? '#ef4444' : 'inherit' }}
+                       title={isPlaying ? "إيقاف الاستماع" : "استماع صوتي"}
+                   >
+                       <i className={`fa-solid ${isPlaying ? 'fa-circle-pause text-red-500 animate-pulse' : 'fa-volume-high'}`}></i>
                    </button>
                 </div>
             </div>
@@ -78,9 +117,20 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
     );
 };
 
-function AthkarAlSalah({ onBack, onNavigate }) {
+interface AthkarAlSalahProps {
+    onBack: () => void;
+    onNavigate: (page: string, params?: any) => void;
+}
+
+function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
     const { theme, themeKey } = useTheme();
     const isBlackTheme = theme.bgColor === '#000000';
+    const isDefaultTheme = themeKey === 'default';
+    const cardBorderColor = isDefaultTheme 
+        ? '#000000' 
+        : (isBlackTheme 
+            ? '#FFFFFF' 
+            : (theme.palette?.[0] || '#000000'));
     const [currentPrayer, setCurrentPrayer] = useState(null);
     const [athkarList, setAthkarList] = useState([]);
     const [zoomedZikr, setZoomedZikr] = useState(null);
@@ -170,9 +220,11 @@ function AthkarAlSalah({ onBack, onNavigate }) {
         const listWithCounts = currentAthkarData.map(z => ({ ...z, currentCount: z.count }));
         setAthkarList(listWithCounts);
         setCurrentPrayer({ id: prayerId, title: titleText });
+        useHabitTracker.getState().recordAdhkarRead('salah');
     };
 
     const handleDecrement = (zikrId) => {
+        useHabitTracker.getState().recordAdhkarRead('salah');
         setAthkarList(prevList =>
             prevList.map(zikr =>
                 zikr.id === zikrId && zikr.currentCount > 0
@@ -182,7 +234,7 @@ function AthkarAlSalah({ onBack, onNavigate }) {
         );
     };
 
-    const handleHomeClick = () => {
+    const handleBack = () => {
         if (zoomedZikr) {
             setZoomedZikr(null);
         } else if (isFavoritesView) {
@@ -192,6 +244,13 @@ function AthkarAlSalah({ onBack, onNavigate }) {
         } else {
             onBack();
         }
+    };
+
+    const handleGoHome = () => {
+        if (zoomedZikr) setZoomedZikr(null);
+        if (isFavoritesView) setIsFavoritesView(false);
+        if (currentPrayer) setCurrentPrayer(null);
+        onNavigate('home');
     };
 
     const allPossibleAthkar = [
@@ -206,19 +265,39 @@ function AthkarAlSalah({ onBack, onNavigate }) {
         <div className="h-screen flex flex-col overflow-hidden bg-transparent">
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-center w-full">
-                        <div className="absolute left-0">
-                            <ThemePageLock />
+                    <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                        {/* زر الرجوع للخلف على يمين النص بالشريط العلوي */}
+                        <div className="absolute right-0 flex items-center">
+                            <button
+                                onClick={handleBack}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="رجوع للخلف"
+                                aria-label="رجوع للخلف"
+                            >
+                                <i className="fa-solid fa-arrow-right text-xl"></i>
+                            </button>
                         </div>
-                        <h1 className="app-top-bar__title text-2xl font-kufi">
-                            {currentPrayer ? currentPrayer.title : (isFavoritesView ? "الأذكار المفضلة" : "أذكار الصلوات")}
-                        </h1>
+
+                        {/* عنوان الصفحة في الوسط */}
+                        <div className="text-center px-12 min-w-0">
+                            <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">
+                                {currentPrayer ? currentPrayer.title : (isFavoritesView ? "الأذكار المفضلة" : "أذكار الصلوات")}
+                            </h1>
+                        </div>
+
+                        {/* زر الهوم على يسار النص بالشريط العلوي */}
+                        <div className="absolute left-0 flex items-center gap-1">
+                            <ThemePageLock />
+                            <button
+                                onClick={handleGoHome}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title="الصفحة الرئيسية"
+                                aria-label="الصفحة الرئيسية"
+                            >
+                                <i className="fa-solid fa-house text-xl"></i>
+                            </button>
+                        </div>
                     </div>
-                    <p className="app-top-bar__subtitle px-4">
-                        {currentPrayer 
-                            ? `أذكار ما بعد صلاة ${currentPrayer.title.split(' ')[2] || currentPrayer.title}` 
-                            : (isFavoritesView ? "أذكارك التي اخترتها للوصول السريع" : "أذكار ما بعد الصلاة مع عدّاد تفاعلي وتنقل سهل بين")}
-                    </p>
                 </div>
             </header>
 
@@ -232,7 +311,10 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                                         key={zikr.id} 
                                         zikr={zikr} 
                                         theme={theme} 
-                                        onDecrement={() => {}} 
+                                        themeKey={themeKey}
+                                        onDecrement={() => {
+                                            useHabitTracker.getState().recordAdhkarRead('salah');
+                                        }} 
                                         onZoom={() => setZoomedZikr(zikr)} 
                                         setToastMessage={setToastMessage}
                                     />
@@ -250,8 +332,14 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                         <div id="prayersMenu" className="space-y-4">
                             {prayerOptions.map(prayer => (
                                  <div key={prayer.id} onClick={() => openPrayer(prayer.id, `أذكار ${prayer.title}`)} 
-                                      className={`themed-card p-4 rounded-xl shadow-sm border-r-4 flex items-center justify-between cursor-pointer active:scale-95 transition`}
-                                      style={{ borderRightColor: prayer.color === 'primary' ? theme.palette[0] : theme.palette[1] }}>
+                                      className={`themed-card p-4 rounded-xl shadow-sm border border-r-4 flex items-center justify-between cursor-pointer active:scale-95 transition`}
+                                      style={{ 
+                                          borderColor: cardBorderColor,
+                                          borderWidth: '1.5px',
+                                          borderStyle: 'solid',
+                                          borderRightWidth: '4px',
+                                          borderRightColor: prayer.color === 'primary' ? theme.palette[0] : theme.palette[1] 
+                                      }}>
                                     <div className="flex items-center gap-4">
                                         <div className={`w-12 h-12 rounded-full flex items-center justify-center ${themeKey === 'default' ? 'shadow-inner border border-black/5' : ''}`} 
                                              style={{
@@ -270,8 +358,14 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                         </div>
                         <div className="mt-auto pt-6">
                             <div 
-                                className="themed-card p-4 rounded-xl border-t-4"
-                                style={{ borderColor: theme.palette[0] }}
+                                className="themed-card p-4 rounded-xl border border-t-4"
+                                style={{ 
+                                    borderColor: cardBorderColor,
+                                    borderWidth: '1.5px',
+                                    borderStyle: 'solid',
+                                    borderTopWidth: '4px',
+                                    borderTopColor: theme.palette[0] 
+                                }}
                             >
                                 <h3 className="font-bold text-sm mb-3 text-center" style={{ color: theme.palette[1] }}>
                                     <i className="fa-solid fa-mosque text-xs ml-2"></i> سنن الصلوات (الرواتب)
@@ -324,8 +418,14 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                             </div>
 
                             <div 
-                                className="themed-card p-4 rounded-xl border-t-4 mt-4"
-                                style={{ borderColor: theme.palette[1] }}
+                                className="themed-card p-4 rounded-xl border border-t-4 mt-4"
+                                style={{ 
+                                    borderColor: cardBorderColor,
+                                    borderWidth: '1.5px',
+                                    borderStyle: 'solid',
+                                    borderTopWidth: '4px',
+                                    borderTopColor: theme.palette[1] 
+                                }}
                             >
                                 <h3 className="font-bold text-sm mb-3 text-center" style={{ color: theme.palette[0] }}>
                                     <i className="fa-solid fa-scroll text-xs ml-2"></i> أحاديث في فضل السنن
@@ -400,6 +500,7 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                                 key={zikr.id} 
                                 zikr={zikr} 
                                 theme={theme} 
+                                themeKey={themeKey}
                                 onDecrement={() => handleDecrement(zikr.id)} 
                                 onZoom={() => setZoomedZikr(zikr)} 
                                 setToastMessage={setToastMessage}
@@ -410,10 +511,8 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                 <div className="shrink-0 w-full h-32"></div>
             </main>
 
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
-
             {/* Floating Menu & FAB */}
-            <div className="fixed bottom-20 right-4 z-[90] flex flex-col items-end">
+            <div className="fixed bottom-6 right-4 z-[90] flex flex-col items-end">
                 <AnimatePresence>
                     {isMenuOpen && (
                         <motion.div
@@ -432,7 +531,7 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                                 المفضلة
                                 <i className="fa-solid fa-heart text-xs opacity-70"></i>
                             </button>
-                            <div className="h-px bg-black/5 dark:bg-white/5 my-1 mx-2" />
+                            <div className="h-px bg-black/5 dark:bg-white/10 my-1 mx-2" />
                             {prayerOptions.map(prayer => (
                                 <button 
                                     key={prayer.id}
@@ -490,7 +589,7 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 50 }}
-                        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[101] bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 whitespace-nowrap border border-white/10"
+                        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[101] bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 whitespace-nowrap border border-white/10"
                     >
                         <i className="fa-solid fa-spinner fa-spin text-primary" style={{ color: theme.palette[0] }}></i>
                         {toastMessage}

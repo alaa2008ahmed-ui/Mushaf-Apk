@@ -15,13 +15,20 @@ import QuranReader from '../pages/QuranReader';
 import QuranDownload from '../pages/QuranDownload';
 import Calculators from '../pages/Calculators';
 import VoiceControlPage from '../pages/VoiceControlPage';
-import MoreMenuPage from '../pages/MoreMenuPage';
 import MonthlyPrayerTimes from '../pages/MonthlyPrayerTimes';
 import DailyWird from '../pages/DailyWird';
 import Memorization from '../pages/Memorization';
 import GlobalSearch from '../pages/GlobalSearch';
 import AsmaulHusna from '../pages/AsmaulHusna';
 import HabitTracker from '../pages/HabitTracker';
+import CommunityPage from '../pages/CommunityPage';
+import DirectChatPage from '../pages/DirectChatPage';
+import GroupChatPage from '../pages/GroupChatPage';
+import AhlAlQuranPage from '../pages/AhlAlQuranPage';
+import OthersPage from '../pages/OthersPage';
+import IslamicSitesPage from '../pages/IslamicSitesPage';
+import PropheticSeerahPage from '../pages/PropheticSeerahPage';
+import PageGuide from '../pages/PageGuide';
 
 interface AppRouterProps {
     page: string;
@@ -35,9 +42,9 @@ interface AppRouterProps {
 const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenThemes, onOpenSideMenu, navParams }) => {
     switch(page) {
       case 'quran':
-        return <QuranReader page={page} onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} initialLandscape={false} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} navParams={navParams} />;
+        return <QuranReader page={page} onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} initialLandscape={false} initialSurah={navParams?.surah ?? navParams?.initialSurah} initialAyah={navParams?.ayah ?? navParams?.initialAyah} initialPage={navParams?.page ?? navParams?.initialPage} isWirdMode={navParams?.isWird ?? navParams?.isWirdMode} isMemorizationMode={navParams?.isMemorization ?? navParams?.isMemorizationMode} memorizationSettings={navParams?.memorizationSettings} navParams={navParams} />;
       case 'quran-landscape':
-        return <QuranReader page={page} onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} initialLandscape={true} initialSurah={navParams?.surah} initialAyah={navParams?.ayah} initialPage={navParams?.page} isWirdMode={navParams?.isWird} isMemorizationMode={navParams?.isMemorization} memorizationSettings={navParams?.memorizationSettings} navParams={navParams} />;
+        return <QuranReader page={page} onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} initialLandscape={true} initialSurah={navParams?.surah ?? navParams?.initialSurah} initialAyah={navParams?.ayah ?? navParams?.initialAyah} initialPage={navParams?.page ?? navParams?.initialPage} isWirdMode={navParams?.isWird ?? navParams?.isWirdMode} isMemorizationMode={navParams?.isMemorization ?? navParams?.isMemorizationMode} memorizationSettings={navParams?.memorizationSettings} navParams={navParams} />;
       case 'quran-download':
         return <QuranDownload onBack={onBack} onNavigate={onNavigate} />;
       case 'salah-adhkar':
@@ -68,8 +75,6 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
         return <Calculators onBack={onBack} onNavigate={onNavigate} />;
       case 'voice-control':
         return <VoiceControlPage onBack={onBack} onNavigate={onNavigate} />;
-      case 'more-menu':
-        return <MoreMenuPage onBack={onBack} onNavigate={onNavigate} />;
       case 'daily-wird':
         return <DailyWird onBack={onBack} onNavigate={onNavigate} />;
       case 'memorization':
@@ -80,6 +85,22 @@ const AppRouter: React.FC<AppRouterProps> = ({ page, onBack, onNavigate, onOpenT
         return <AsmaulHusna onBack={onBack} onNavigate={onNavigate} />;
       case 'habit-tracker':
         return <HabitTracker onBack={onBack} onNavigate={onNavigate} />;
+      case 'community':
+        return <CommunityPage onBack={onBack} onNavigate={onNavigate} initialTab={navParams?.initialTab || navParams?.returnTab} />;
+      case 'direct-chat':
+        return <DirectChatPage partnerUserId={navParams?.partnerUserId || ''} onBack={onBack} onNavigate={onNavigate} />;
+      case 'group-chat':
+        return <GroupChatPage groupId={navParams?.groupId || ''} onBack={onBack} onNavigate={onNavigate} />;
+      case 'ahl-al-quran':
+        return <AhlAlQuranPage onBack={onBack} onNavigate={onNavigate} />;
+      case 'others':
+        return <OthersPage onBack={onBack} onNavigate={onNavigate} onOpenThemes={onOpenThemes} />;
+      case 'islamic-sites':
+        return <IslamicSitesPage onBack={onBack} onNavigate={onNavigate} />;
+      case 'prophetic-seerah':
+        return <PropheticSeerahPage onBack={onBack} onNavigate={onNavigate} navParams={navParams} />;
+      case 'page-guide':
+        return <PageGuide onBack={onBack} onNavigate={onNavigate} initialPageKey={navParams?.initialPageKey} />;
       case 'home':
       default:
         return <MainMenu onNavigate={onNavigate} onOpenThemes={onOpenThemes} onOpenSideMenu={onOpenSideMenu} />;
