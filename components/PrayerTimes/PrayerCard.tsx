@@ -84,7 +84,7 @@ const PrayerCard: React.FC<PrayerCardProps> = ({
                             onClick={() => togglePrayerSound(prayerKey)} 
                             className={`toggle-dot ${isMuted ? 'bg-red-500' : (isBlackTheme ? 'bg-white' : (isNextPrayer ? 'bg-emerald-500' : 'bg-green-500'))} cursor-pointer transition-transform active:scale-90`} 
                             style={{borderColor: isBlackTheme ? '#FFFFFF' : activeBorderColor, width: '15px', height: '15px', borderRadius: '50%', borderWidth: '1.5px', borderStyle: 'solid'}}
-                            title={isMuted ? "مكتوم (معطل)" : "مفعل"}
+                            title={isMuted ? "تم إيقاف التنبيهات والإشعارات تماماً (معطل)" : "التنبيهات والإشعارات مفعلة (أخضر)"}
                         ></div>
                         <button onClick={() => openSettings(prayerKey)} className="text-sm opacity-85 hover:opacity-100 p-0.5 transition-opacity" style={{ color: isBlackTheme ? '#FFFFFF' : activeTextColor }} title="تخصيص"><i className="fa-solid fa-sliders"></i></button>
                     </div>

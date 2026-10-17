@@ -111,7 +111,18 @@
           height: 100%;
           min-height: 52px;
       }
-      .app-top-bar__title { font-weight: 800; letter-spacing: 0.03em; }
+      .app-top-bar__title { 
+          font-weight: 800; 
+          letter-spacing: 0.02em; 
+          font-size: 1.15rem; 
+          line-height: 1.3;
+          max-width: 100%;
+      }
+      @media (min-width: 640px) {
+          .app-top-bar__title {
+              font-size: 1.25rem;
+          }
+      }
       .app-top-bar__subtitle { font-size: 0.85rem; opacity: 0.9; }
 
       /* Prayer Times Top Bar resized to match other pages (reduced by 25% to 67px) while retaining subtitle */
@@ -283,8 +294,8 @@
         });
     })();
 </script>
-  <script type="module" crossorigin src="/assets/index-Ta59fnFI.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-XhURckGO.css">
+  <script type="module" crossorigin src="/assets/index-RXfQeAtb.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BtXCBpSw.css">
 </head>
 <body>
     <video id="video-background" autoplay muted loop playsinline preload="auto" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; display: none;"></video>

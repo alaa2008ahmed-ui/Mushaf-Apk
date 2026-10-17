@@ -301,7 +301,7 @@ function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar relative max-w-md mx-auto w-full px-4 pb-4 flex flex-col">
+            <main className="flex-1 overflow-y-auto hide-scrollbar relative max-w-md mx-auto w-full px-4 pt-2 pb-4 flex flex-col">
                 {isFavoritesView ? (
                     <div className="space-y-4">
                         {favoriteAthkar.length > 0 ? (

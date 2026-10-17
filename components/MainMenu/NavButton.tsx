@@ -18,6 +18,7 @@ interface NavButtonProps {
     rankBadge?: number | null;
     dataId?: string;
     leftAction?: React.ReactNode;
+    onBadgeClick?: () => void;
 }
 
 const NavButton: React.FC<NavButtonProps> = ({ 
@@ -35,7 +36,8 @@ const NavButton: React.FC<NavButtonProps> = ({
     unreadBadgeCount,
     rankBadge,
     dataId,
-    leftAction
+    leftAction,
+    onBadgeClick
 }) => {
     const rankColor = rankBadge !== undefined && rankBadge !== null ? getAhlAlQuranRankColor(rankBadge) : null;
 
@@ -112,7 +114,18 @@ const NavButton: React.FC<NavButtonProps> = ({
 
             {/* شارة جديد */}
             {showNewBadge && (
-                <div className="absolute -top-2 -right-1 bg-yellow-400 text-black text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full z-20 shadow-lg border border-white animate-bounce pointer-events-none">
+                <div 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (onBadgeClick) {
+                            onBadgeClick();
+                        } else {
+                            onClick();
+                        }
+                    }}
+                    className="absolute -top-2 -right-1 bg-yellow-400 text-black text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full z-20 shadow-lg border border-white animate-bounce cursor-pointer select-none"
+                    title={badgeText}
+                >
                     {badgeText}
                 </div>
             )}

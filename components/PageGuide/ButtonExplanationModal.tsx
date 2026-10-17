@@ -145,7 +145,7 @@ export const ButtonExplanationModal: React.FC<ButtonExplanationModalProps> = ({
             >
               <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-black text-sm">
                 <span className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-xs">👆</span>
-                <span>نقرة واحدة (ضغطة سريعة)</span>
+                <span>نقرة واحدة</span>
               </div>
               <p className="text-sm font-semibold leading-relaxed text-gray-800 dark:text-gray-100">
                 {singleClick}
@@ -164,7 +164,7 @@ export const ButtonExplanationModal: React.FC<ButtonExplanationModalProps> = ({
             >
               <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-black text-sm">
                 <span className="w-6 h-6 rounded-full bg-amber-500/20 flex items-center justify-center text-xs">⏱️</span>
-                <span>الضغط المطول (Long Press)</span>
+                <span>الضغط المطول</span>
               </div>
               <p className="text-sm font-semibold leading-relaxed text-gray-800 dark:text-gray-100">
                 {longPress}

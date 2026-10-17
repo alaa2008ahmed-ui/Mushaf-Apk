@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { shareAsImage } from '../utils/shareAsImage';
 import { motion, AnimatePresence } from 'framer-motion';
+import { markPageAsSeen } from '../utils/badgeManager';
 
 interface IslamicSitesPageProps {
     onBack: () => void;
@@ -16,6 +17,10 @@ const IslamicSitesPage: React.FC<IslamicSitesPageProps> = ({ onBack, onNavigate 
     const [selectedSite, setSelectedSite] = useState<IslamicSite | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [toastMessage, setToastMessage] = useState('');
+
+    useEffect(() => {
+        markPageAsSeen('islamic-sites');
+    }, []);
 
     const isBlackTheme = theme.bgColor === '#000000';
     const isDefaultTheme = themeKey === 'default';

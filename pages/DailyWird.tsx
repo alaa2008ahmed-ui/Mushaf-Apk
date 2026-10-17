@@ -667,7 +667,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   const renderProfileSelector = () => {
     if (allSettings.length === 0) return null;
     return (
-      <div className="relative mb-6">
+      <div className="relative mb-3">
         <button 
           onClick={() => setShowProfileMenu(!showProfileMenu)}
           className="w-full p-4 rounded-2xl border flex items-center justify-between transition-all"
@@ -887,8 +887,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
 
             {/* عنوان الصفحة في الوسط */}
             <div className="text-center px-12 min-w-0">
-              <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi flex items-center justify-center gap-2 truncate">
-                <span>📅</span>
+              <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">
                 الورد اليومي
               </h1>
             </div>
@@ -909,12 +908,12 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         </div>
       </header>
 
-      <main className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 flex flex-col items-center ${isInputFocused ? 'justify-start' : 'justify-center'}`}>
-        <div className="w-full max-w-md pb-10">
+      <main className="flex-1 min-h-0 overflow-y-auto px-4 pt-3 pb-6 flex flex-col items-center justify-start">
+        <div className="w-full max-w-md pb-6">
           {!showSettings && renderProfileSelector()}
           {showSettings || !settings ? renderSettings() : renderProgress()}
         </div>
-        <div className="shrink-0 w-full h-6"></div>
+        <div className="shrink-0 w-full h-4"></div>
       </main>
 
       {renderDeleteConfirmModal()}

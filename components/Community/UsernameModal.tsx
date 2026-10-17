@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   User, Check, Sparkles, ArrowRight, Camera as CameraIcon, Trash2, 
   Loader2, KeyRound, Copy, LogIn, Lock, CheckCircle2, Shield,
-  BookOpen, Trophy
+  BookOpen, Trophy, AlertCircle
 } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
@@ -11,7 +11,7 @@ import { communityService, CommunityUser } from '../../services/communityService
 import { registerBackInterceptor } from '../../hooks/useBackButton';
 import { AvatarCropperModal } from './AvatarCropperModal';
 import ThemePageLock from '../ThemePageLock';
-import { useShowNewBadge } from '../../utils/badgeManager';
+import { useShowNewBadge, markPageAsSeen } from '../../utils/badgeManager';
 import { useTheme } from '../../context/ThemeContext';
 
 interface UsernameModalProps {
@@ -103,13 +103,168 @@ const COUNTRIES = [
   'دولة أخرى / كتابة يدوية ✍️'
 ];
 
-const PRESET_AVATARS = [
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
-  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150'
+export interface AvatarOption {
+  url: string;
+  category: 'realistic' | 'cartoon' | 'avatar3d' | 'islamic';
+  label: string;
+}
+
+export const AVATAR_OPTIONS: AvatarOption[] = [
+  // 1. الصور الحالية (الواقعية الـ 5 الأصلية)
+  { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', category: 'realistic', label: 'شاب مبتسم' },
+  { url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', category: 'realistic', label: 'رجل بنظارة' },
+  { url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', category: 'realistic', label: 'فتاة هادئة' },
+  { url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150', category: 'realistic', label: 'شاب ببدلة' },
+  { url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', category: 'realistic', label: 'فتاة مبتسمة' },
+
+  // صور واقعية إضافية
+  { url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150', category: 'realistic', label: 'شاب وقور' },
+  { url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150', category: 'realistic', label: 'شابة هادئة' },
+  { url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150', category: 'realistic', label: 'ابتسامة مشرقة' },
+  { url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', category: 'realistic', label: 'فتاة بشوشة' },
+  { url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150', category: 'realistic', label: 'شاب معاصر' },
+
+  // 2. صور كرتونية ورسوم متحركة (Cartoon & Anime)
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad&backgroundColor=b6e3f4', category: 'cartoon', label: 'كرتون: أحمد' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Layla&backgroundColor=ffdfbf', category: 'cartoon', label: 'كرتون: ليلى' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Omar&backgroundColor=c0aede', category: 'cartoon', label: 'كرتون: عمر' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima&backgroundColor=ffd5dc', category: 'cartoon', label: 'كرتون: فاطمة' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Youssef&backgroundColor=d1d4f9', category: 'cartoon', label: 'كرتون: يوسف' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mariam&backgroundColor=c0aede', category: 'cartoon', label: 'كرتون: مريم' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ali&backgroundColor=b6e3f4', category: 'cartoon', label: 'كرتون: علي' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Zahra&backgroundColor=ffdfbf', category: 'cartoon', label: 'كرتون: زهراء' },
+  { url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Zaid&backgroundColor=b6e3f4', category: 'cartoon', label: 'رسوم: زيد' },
+  { url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Noor&backgroundColor=ffd5dc', category: 'cartoon', label: 'رسوم: نور' },
+  { url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Bilal&backgroundColor=d1d4f9', category: 'cartoon', label: 'أنمي: بلال' },
+  { url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Salma&backgroundColor=ffdfbf', category: 'cartoon', label: 'أنمي: سلمى' },
+
+  // 3. أفاتار ثلاثي الأبعاد وعصري (3D & Digital Avatars)
+  { url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150', category: 'avatar3d', label: 'أفاتار 3D' },
+  { url: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuranKid&backgroundColor=c0aede', category: 'avatar3d', label: 'روبوت لطيف' },
+  { url: 'https://api.dicebear.com/7.x/bottts/svg?seed=RoboMuslim&backgroundColor=b6e3f4', category: 'avatar3d', label: 'أفاتار مستقبلي' },
+  { url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Tariq&backgroundColor=c0aede', category: 'avatar3d', label: 'أفاتار فني: طارق' },
+  { url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Huda&backgroundColor=ffd5dc', category: 'avatar3d', label: 'أفاتار فني: هدى' },
+  { url: 'https://api.dicebear.com/7.x/micah/svg?seed=Ibrahim&backgroundColor=b6e3f4', category: 'avatar3d', label: 'أفاتار عصري: إبراهيم' },
+  { url: 'https://api.dicebear.com/7.x/micah/svg?seed=Aisha&backgroundColor=ffdfbf', category: 'avatar3d', label: 'أفاتار عصري: عائشة' },
+  { url: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Happy&backgroundColor=ffd5dc', category: 'avatar3d', label: 'إيموجي مرح' },
+  { url: 'https://api.dicebear.com/7.x/thumbs/svg?seed=Barakah&backgroundColor=c0aede', category: 'avatar3d', label: 'أفاتار بركة' },
+
+  // 4. معالم وقيم إسلامية وطبيعة (Islamic & Landmarks)
+  { url: 'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?w=150', category: 'islamic', label: 'المصحف الشريف' },
+  { url: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=150', category: 'islamic', label: 'الكعبة المشرفة' },
+  { url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=150', category: 'islamic', label: 'المسجد النبوي' },
+  { url: 'https://images.unsplash.com/photo-1564769625905-50e93615e769?w=150', category: 'islamic', label: 'قبة المسجد' },
+  { url: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?w=150', category: 'islamic', label: 'فانوس إسلامي' },
+  { url: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=150', category: 'islamic', label: 'طبيعة وسلام' }
 ];
+
+const PRESET_AVATARS = AVATAR_OPTIONS.map(a => a.url);
+
+const AVATAR_CATEGORIES = [
+  { id: 'all', label: 'الكل' },
+  { id: 'cartoon', label: 'كرتونية 🎨' },
+  { id: 'avatar3d', label: 'أفاتار 3D 🤖' },
+  { id: 'realistic', label: 'واقعية 👤' },
+  { id: 'islamic', label: 'إسلامية 🕌' }
+] as const;
+
+interface AvatarSelectorProps {
+  selectedUrl: string;
+  onSelect: (url: string) => void;
+  primaryColor: string;
+  cardBorder: string;
+  isDeepBlack: boolean;
+  textColor?: string;
+}
+
+const AvatarSelector: React.FC<AvatarSelectorProps> = ({
+  selectedUrl,
+  onSelect,
+  primaryColor,
+  cardBorder,
+  isDeepBlack,
+  textColor
+}) => {
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+
+  const filteredAvatars = activeCategory === 'all'
+    ? AVATAR_OPTIONS
+    : AVATAR_OPTIONS.filter(a => a.category === activeCategory);
+
+  return (
+    <div className="w-full mt-2.5">
+      <div className="flex items-center justify-between mb-1.5 px-0.5">
+        <span className="text-[11px] font-bold" style={{ color: textColor || 'inherit' }}>
+          اختر صورة رمزية ({filteredAvatars.length}):
+        </span>
+      </div>
+
+      {/* شريط التصنيفات */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-1.5 no-scrollbar">
+        {AVATAR_CATEGORIES.map(cat => {
+          const isActive = activeCategory === cat.id;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setActiveCategory(cat.id)}
+              className="px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all shrink-0 cursor-pointer"
+              style={{
+                backgroundColor: isActive ? primaryColor : (isDeepBlack ? '#1e1e1e' : 'rgba(0,0,0,0.05)'),
+                color: isActive ? (isDeepBlack ? '#000000' : '#ffffff') : (textColor || 'inherit'),
+                border: isActive ? `1px solid ${primaryColor}` : `1px solid ${cardBorder}40`
+              }}
+            >
+              {cat.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* شريط الصور بحجم صغير كما كانت سابقاً */}
+      <div 
+        className="flex items-center gap-2 overflow-x-auto p-2 rounded-xl border no-scrollbar"
+        style={{
+          borderColor: `${cardBorder}50`,
+          backgroundColor: isDeepBlack ? '#141414' : 'rgba(0,0,0,0.02)'
+        }}
+      >
+        {filteredAvatars.map((item, idx) => {
+          const isSelected = selectedUrl === item.url;
+          return (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => onSelect(item.url)}
+              title={item.label}
+              className="relative w-9 h-9 shrink-0 rounded-full overflow-hidden transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer flex items-center justify-center group"
+              style={{
+                borderWidth: isSelected ? '2.5px' : '1.5px',
+                borderColor: isSelected ? primaryColor : cardBorder,
+                boxShadow: isSelected ? `0 0 8px ${primaryColor}70` : 'none',
+                opacity: isSelected ? 1 : 0.85
+              }}
+            >
+              <img 
+                src={item.url} 
+                alt={item.label} 
+                className="w-full h-full object-cover" 
+                loading="lazy" 
+              />
+              {isSelected && (
+                <div 
+                  className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[0.5px]"
+                >
+                  <Check size={12} className="text-white stroke-[3] drop-shadow-md" />
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 const compressAvatar = (dataUrl: string, maxDim = 128, quality = 0.7): Promise<string> => {
   return new Promise((resolve) => {
@@ -160,7 +315,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
   onNavigate
 }) => {
   const { theme, themeKey } = useTheme();
-  const showNewBadge = useShowNewBadge();
+  const showNewBadge = useShowNewBadge('ahl-al-quran');
   const isDefaultTheme = themeKey === 'default' || !themeKey || theme.name?.includes('الافتراضي') || theme.name === 'Default';
   const isDeepBlack = theme.bgColor === '#000000' || theme.name === 'أبيض وأسود' || themeKey === 'deep_black';
   const cardBorderColor = isDefaultTheme 
@@ -432,6 +587,18 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
       return;
     }
 
+    const cleanPass = communityService.normalizeDigits(newPasscode);
+    if (!cleanPass) {
+      setError('يرجى تسجيل الرقم السري أولاً (إجباري لحماية الحساب واستعادته)');
+      newPasscodeRef.current?.focus();
+      return;
+    }
+    if (cleanPass.length < 4) {
+      setError('يرجى إدخال رقم سري مكون من 4 إلى 8 أرقام');
+      newPasscodeRef.current?.focus();
+      return;
+    }
+
     let finalCountry = newCountry;
     if (newCountry === 'دولة أخرى / كتابة يدوية ✍️') {
       finalCountry = newCustomCountry.trim();
@@ -442,7 +609,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
     setError('');
     setSuccessMsg('');
     try {
-      const created = await communityService.createNewAccount(newUsername, finalCountry, newBio, finalAvatar, newPasscode);
+      const created = await communityService.createNewAccount(newUsername, finalCountry, newBio, finalAvatar, cleanPass);
       communityService.setActiveTab('users');
       setCurrentUser(created);
       setUsername(created.username);
@@ -623,7 +790,10 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <button
                 type="button"
-                onClick={() => onNavigate ? onNavigate('ahl-al-quran') : null}
+                onClick={() => {
+                  markPageAsSeen('ahl-al-quran');
+                  if (onNavigate) onNavigate('ahl-al-quran');
+                }}
                 className="w-10 h-10 rounded-2xl border flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer relative"
                 style={{
                   backgroundColor: cardBg,
@@ -637,7 +807,14 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
               >
                 <Trophy size={18} />
                 {showNewBadge && (
-                  <span className="absolute -top-1.5 -right-1 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded-full shadow-xs border border-white dark:border-slate-800 animate-bounce pointer-events-none">
+                  <span 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      markPageAsSeen('ahl-al-quran');
+                    }}
+                    className="absolute -top-1.5 -right-1 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded-full shadow-xs border border-white dark:border-slate-800 animate-bounce cursor-pointer select-none z-30"
+                    title="جديد"
+                  >
                     جديد
                   </span>
                 )}
@@ -900,24 +1077,14 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     )}
 
                     {/* Preset Avatars */}
-                    <div className="mt-2.5 flex items-center justify-center gap-1.5">
-                      {PRESET_AVATARS.map((url, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => setAvatarUrl(url)}
-                          className="w-7 h-7 rounded-full overflow-hidden transition-all cursor-pointer"
-                          style={{
-                            borderColor: avatarUrl === url ? primaryColor : cardBorder,
-                            borderWidth: avatarUrl === url ? '2px' : '1px',
-                            borderStyle: 'solid',
-                            opacity: avatarUrl === url ? 1 : 0.75
-                          }}
-                        >
-                          <img src={url} alt={`رمز ${i}`} className="w-full h-full object-cover" />
-                        </button>
-                      ))}
-                    </div>
+                    <AvatarSelector
+                      selectedUrl={avatarUrl}
+                      onSelect={(url) => setAvatarUrl(url)}
+                      primaryColor={primaryColor}
+                      cardBorder={cardBorder}
+                      isDeepBlack={isDeepBlack}
+                      textColor={theme.textColor}
+                    />
                   </div>
 
                   {/* Username */}
@@ -1042,17 +1209,18 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     />
                   </div>
 
-                  {/* Optional Passcode / PIN */}
+                  {/* Passcode / PIN */}
                   <div>
                     <label className="block text-xs font-bold mb-1 flex items-center justify-between" style={{ color: theme.textColor }}>
                       <span className="flex items-center gap-1">
-                        <span>رمز مرور سري لحماية الحساب (اختياري):</span>
+                        <span>الرقم السري:</span>
                       </span>
-                      <span className="text-[10px] opacity-60 font-normal">4-6 أرقام</span>
+                      <span className="text-[10px] opacity-75 font-normal">4-6 أرقام</span>
                     </label>
                     <input
                       ref={passcodeRef}
                       type="password"
+                      inputMode="numeric"
                       maxLength={8}
                       value={passcode}
                       onChange={(e) => setPasscode(e.target.value)}
@@ -1193,24 +1361,14 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   </button>
 
                   {/* Preset Avatars */}
-                  <div className="mt-2.5 flex items-center justify-center gap-1.5">
-                    {PRESET_AVATARS.map((url, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setNewAvatarUrl(url)}
-                        className="w-7 h-7 rounded-full overflow-hidden transition-all cursor-pointer"
-                        style={{
-                          borderColor: newAvatarUrl === url ? primaryColor : cardBorder,
-                          borderWidth: newAvatarUrl === url ? '2px' : '1px',
-                          borderStyle: 'solid',
-                          opacity: newAvatarUrl === url ? 1 : 0.75
-                        }}
-                      >
-                        <img src={url} alt={`رمز ${i}`} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
+                  <AvatarSelector
+                    selectedUrl={newAvatarUrl}
+                    onSelect={(url) => setNewAvatarUrl(url)}
+                    primaryColor={primaryColor}
+                    cardBorder={cardBorder}
+                    isDeepBlack={isDeepBlack}
+                    textColor={theme.textColor}
+                  />
                 </div>
 
                 {/* Username */}
@@ -1230,11 +1388,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
-                        if (newCountry === 'دولة أخرى / كتابة يدوية ✍️' && newCustomCountryRef.current) {
-                          newCustomCountryRef.current.focus();
-                        } else if (newBioRef.current) {
-                          newBioRef.current.focus();
-                        }
+                        newPasscodeRef.current?.focus();
                       }
                     }}
                     className="w-full px-3.5 py-2.5 rounded-xl text-sm font-medium focus:outline-none transition-all"
@@ -1246,6 +1400,50 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       color: theme.textColor
                     }}
                   />
+                </div>
+
+                {/* Passcode / PIN - Directly below Username */}
+                <div>
+                  <label className="block text-xs font-bold mb-1 flex items-center justify-between" style={{ color: theme.textColor }}>
+                    <span className="flex items-center gap-1">
+                      <span>الرقم السري:</span>
+                    </span>
+                    <span className="text-[10px] opacity-75 font-normal">4-6 أرقام (إجباري)</span>
+                  </label>
+                  <input
+                    ref={newPasscodeRef}
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={8}
+                    value={newPasscode}
+                    onChange={(e) => {
+                      setNewPasscode(e.target.value);
+                      setError('');
+                    }}
+                    placeholder=""
+                    enterKeyHint="next"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newCountry === 'دولة أخرى / كتابة يدوية ✍️' && newCustomCountryRef.current) {
+                          newCustomCountryRef.current.focus();
+                        } else if (newBioRef.current) {
+                          newBioRef.current.focus();
+                        }
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none transition-all font-mono"
+                    style={{
+                      borderColor: cardBorder,
+                      borderWidth: '1.5px',
+                      borderStyle: 'solid',
+                      backgroundColor: secondaryBg,
+                      color: theme.textColor
+                    }}
+                  />
+                  <p className="text-[10px] mt-1 opacity-70 leading-relaxed" style={{ color: theme.textColor }}>
+                    إجباري لحماية حسابك واستعادته عند الدخول من أي هاتف آخر.
+                  </p>
                 </div>
 
                 {/* Country */}
@@ -1317,11 +1515,11 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     value={newBio}
                     onChange={(e) => setNewBio(e.target.value)}
                     placeholder=""
-                    enterKeyHint="next"
+                    enterKeyHint="done"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
-                        newPasscodeRef.current?.focus();
+                        handleCreateNewAccount(e);
                       }
                     }}
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none transition-all"
@@ -1335,37 +1533,21 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   />
                 </div>
 
-                {/* Optional Passcode / PIN */}
-                <div>
-                  <label className="block text-xs font-bold mb-1 flex items-center justify-between" style={{ color: theme.textColor }}>
-                    <span className="flex items-center gap-1">
-                      <span>رمز مرور سري لحماية هذا الحساب (اختياري):</span>
-                    </span>
-                    <span className="text-[10px] opacity-60 font-normal">4-6 أرقام</span>
-                  </label>
-                  <input
-                    ref={newPasscodeRef}
-                    type="password"
-                    maxLength={8}
-                    value={newPasscode}
-                    onChange={(e) => setNewPasscode(e.target.value)}
-                    placeholder=""
-                    enterKeyHint="done"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleCreateNewAccount(e);
-                      }
-                    }}
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium focus:outline-none transition-all font-mono"
-                    style={{
-                      borderColor: cardBorder,
-                      borderWidth: '1.5px',
-                      borderStyle: 'solid',
-                      backgroundColor: secondaryBg,
-                      color: theme.textColor
-                    }}
-                  />
+                {/* 30-Day Inactivity Deletion Condition */}
+                <div 
+                  className="p-3 rounded-2xl flex items-center gap-2.5 text-xs leading-relaxed"
+                  style={{
+                    backgroundColor: isBlackTheme ? '#181818' : (theme.isDark ? 'rgba(239, 68, 68, 0.12)' : '#fef2f2'),
+                    borderColor: isBlackTheme ? '#333333' : 'rgba(239, 68, 68, 0.35)',
+                    borderWidth: '1.5px',
+                    borderStyle: 'solid',
+                    color: isBlackTheme ? '#f87171' : (theme.isDark ? '#fca5a5' : '#b91c1c')
+                  }}
+                >
+                  <AlertCircle size={18} className="shrink-0 text-rose-500" />
+                  <p className="text-[11px] font-bold leading-relaxed">
+                    إذا لم تقم بفتح التطبيق لمدة 30 يوم سيتم حذف حسابك تلقائياً من التطبيق
+                  </p>
                 </div>
 
                 <div className="pt-2">
@@ -1460,12 +1642,13 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-bold mb-1 flex items-center justify-between" style={{ color: theme.textColor }}>
-                      <span>رمز الحماية (PIN) - إن كنت قد قمت بتعيينه:</span>
-                      <span className="text-[10px] opacity-60 font-normal">4-6 أرقام</span>
+                      <span>الرقم السري لحسابك:</span>
+                      <span className="text-[10px] opacity-75 font-normal">4-6 أرقام</span>
                     </label>
                     <input
                       ref={restorePasscodeRef}
                       type="password"
+                      inputMode="numeric"
                       maxLength={8}
                       value={restorePasscode}
                       onChange={(e) => {

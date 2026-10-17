@@ -5,7 +5,7 @@ import NavButton from './NavButton';
 import WhatsAppButton from '../WhatsAppButton';
 import VoiceControlToggle from '../VoiceControlToggle';
 import { useVoiceControl } from '../../context/VoiceControlContext';
-import { useShowNewBadge } from '../../utils/badgeManager';
+import { useShowNewBadge, useSeenPages, markPageAsSeen } from '../../utils/badgeManager';
 import { communityService } from '../../services/communityService';
 import { ahlAlQuranService, getAhlAlQuranRankColor } from '../../services/ahlAlQuranService';
 import { useLanguage } from '../../context/LanguageContext';
@@ -33,6 +33,7 @@ const GridSection: React.FC<GridSectionProps> = ({
 }) => {
     const { showVoiceIcon } = useVoiceControl();
     const showNewBadges = useShowNewBadge();
+    const { isPageSeen } = useSeenPages();
     const { t, translateMenuItem } = useLanguage();
     const [unreadCommunityCount, setUnreadCommunityCount] = useState<number>(() => {
         return communityService.getTotalUnreadCount();
@@ -232,7 +233,12 @@ const GridSection: React.FC<GridSectionProps> = ({
                                     <motion.button
                                         type="button"
                                         id="home-community-btn-round"
-                                        onClick={() => !isEditMode && onNavigate('community')}
+                                        onClick={() => {
+                                            if (!isEditMode) {
+                                                markPageAsSeen('community');
+                                                onNavigate('community');
+                                            }
+                                        }}
                                         whileHover={{ scale: 1.1 }}
                                         whileTap={{ scale: 0.9 }}
                                         className="w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-transform border-2 shrink-0 active:scale-95 relative"
@@ -260,7 +266,12 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 <div className="flex-1 min-w-[130px] max-w-[210px] h-full">
                                     <NavButton 
                                         label={stripIcons(translateMenuItem(item.id, item.label)) || "السيرة والخط الزمني"} 
-                                        onClick={() => !isEditMode && onNavigate('prophetic-seerah')} 
+                                        onClick={() => {
+                                            if (!isEditMode) {
+                                                markPageAsSeen('prophetic-seerah');
+                                                onNavigate('prophetic-seerah');
+                                            }
+                                        }} 
                                         className="w-full h-full shadow-lg"
                                         color={buttonColor} 
                                         border={buttonBorder || (theme.isGlass ? undefined : (theme.palette[0] ? `2px solid ${theme.palette[0]}` : undefined))} 
@@ -268,7 +279,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                                         onResize={(e) => handleResize(item.id, e)}
                                         isGlass={theme.isGlass}
                                         btnText={textColor}
-                                        showNewBadge={showNewBadges}
+                                        showNewBadge={showNewBadges && !isPageSeen('prophetic-seerah')}
                                         badgeText={t('common.new', 'جديد')}
                                     />
                                 </div>
@@ -277,7 +288,12 @@ const GridSection: React.FC<GridSectionProps> = ({
                                     <motion.button
                                         type="button"
                                         id="home-ahl-al-quran-btn-round"
-                                        onClick={() => !isEditMode && onNavigate('ahl-al-quran')}
+                                        onClick={() => {
+                                            if (!isEditMode) {
+                                                markPageAsSeen('ahl-al-quran');
+                                                onNavigate('ahl-al-quran');
+                                            }
+                                        }}
                                         whileHover={{ scale: 1.1 }}
                                         whileTap={{ scale: 0.9 }}
                                         className="w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-transform border-2 shrink-0 active:scale-95 relative"
@@ -291,7 +307,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                                         aria-label="أهل القرآن"
                                     >
                                         <Trophy className="w-5 h-5" style={{ color: iconTextColor }} />
-                                        {userRank !== null && userRank !== undefined && (
+                                        {userRank !== null && userRank !== undefined ? (
                                             <span 
                                                 className="absolute -top-1.5 -right-1.5 min-w-[19px] h-[19px] px-1 rounded-full bg-white text-[11px] font-black flex items-center justify-center border-2 shadow-md leading-none pointer-events-none z-30"
                                                 style={{ 
@@ -303,14 +319,30 @@ const GridSection: React.FC<GridSectionProps> = ({
                                             >
                                                 {userRank}
                                             </span>
-                                        )}
+                                        ) : (showNewBadges && !isPageSeen('ahl-al-quran') && (
+                                            <span 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    markPageAsSeen('ahl-al-quran');
+                                                }}
+                                                className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded-full shadow-xs border border-white dark:border-slate-800 animate-bounce cursor-pointer select-none z-30"
+                                                title={t('common.new', 'جديد')}
+                                            >
+                                                {t('common.new', 'جديد')}
+                                            </span>
+                                        ))}
                                     </motion.button>
                                 </div>
                             </div>
                         ) : (
                             <NavButton 
                                 label={stripIcons(translateMenuItem(item.id, item.label))} 
-                                onClick={() => !isEditMode && onNavigate(item.id)} 
+                                onClick={() => {
+                                    if (!isEditMode) {
+                                        markPageAsSeen(item.id);
+                                        onNavigate(item.id);
+                                    }
+                                }} 
                                 className="w-full h-full"
                                 color={buttonColor} 
                                 border={buttonBorder} 
@@ -318,8 +350,11 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 onResize={(e) => handleResize(item.id, e)}
                                 isGlass={theme.isGlass}
                                 btnText={textColor}
-                                showNewBadge={showNewBadges && NEW_BADGE_ITEMS.includes(item.id)}
+                                showNewBadge={showNewBadges && NEW_BADGE_ITEMS.includes(item.id) && !isPageSeen(item.id)}
                                 badgeText={t('common.new', 'جديد')}
+                                onBadgeClick={() => {
+                                    markPageAsSeen(item.id);
+                                }}
                                 leftAction={item.id === 'quran' && !isEditMode ? (
                                     <div
                                         role="button"
@@ -362,7 +397,12 @@ const GridSection: React.FC<GridSectionProps> = ({
                             <motion.button
                                 type="button"
                                 id="home-community-btn-round"
-                                onClick={() => !isEditMode && onNavigate('community')}
+                                onClick={() => {
+                                    if (!isEditMode) {
+                                        markPageAsSeen('community');
+                                        onNavigate('community');
+                                    }
+                                }}
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 className="w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-transform border-2 shrink-0 active:scale-95 relative"
@@ -390,14 +430,19 @@ const GridSection: React.FC<GridSectionProps> = ({
                         <div className="flex-1 min-w-[130px] max-w-[210px] h-full">
                             <NavButton 
                                 label="السيرة والخط الزمني" 
-                                onClick={() => !isEditMode && onNavigate('prophetic-seerah')} 
+                                onClick={() => {
+                                    if (!isEditMode) {
+                                        markPageAsSeen('prophetic-seerah');
+                                        onNavigate('prophetic-seerah');
+                                    }
+                                }} 
                                 className="w-full h-full shadow-lg"
                                 color={isBlackTheme ? '#000000' : (themeKey === 'default' ? '#059669' : (theme.palette[0] || '#059669'))} 
                                 border={isBlackTheme ? '1px solid rgba(255, 255, 255, 0.25)' : theme.btnBorder} 
                                 isEditMode={false}
                                 isGlass={theme.isGlass}
                                 btnText={isBlackTheme ? '#FFFFFF' : (theme.btnText || '#FFFFFF')}
-                                showNewBadge={showNewBadges}
+                                showNewBadge={showNewBadges && !isPageSeen('prophetic-seerah')}
                                 badgeText={t('common.new', 'جديد')}
                             />
                         </div>
@@ -406,7 +451,12 @@ const GridSection: React.FC<GridSectionProps> = ({
                             <motion.button
                                 type="button"
                                 id="home-ahl-al-quran-btn-round"
-                                onClick={() => !isEditMode && onNavigate('ahl-al-quran')}
+                                onClick={() => {
+                                    if (!isEditMode) {
+                                        markPageAsSeen('ahl-al-quran');
+                                        onNavigate('ahl-al-quran');
+                                    }
+                                }}
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 className="w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-transform border-2 shrink-0 active:scale-95 relative"
@@ -420,7 +470,7 @@ const GridSection: React.FC<GridSectionProps> = ({
                                 aria-label="أهل القرآن"
                             >
                                 <Trophy className="w-5 h-5" style={{ color: iconTextColor }} />
-                                {userRank !== null && userRank !== undefined && (
+                                {userRank !== null && userRank !== undefined ? (
                                     <span 
                                         className="absolute -top-1.5 -right-1.5 min-w-[19px] h-[19px] px-1 rounded-full bg-white text-[11px] font-black flex items-center justify-center border-2 shadow-md leading-none pointer-events-none z-30"
                                         style={{ 
@@ -432,7 +482,18 @@ const GridSection: React.FC<GridSectionProps> = ({
                                     >
                                         {userRank}
                                     </span>
-                                )}
+                                ) : (showNewBadges && !isPageSeen('ahl-al-quran') && (
+                                    <span 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            markPageAsSeen('ahl-al-quran');
+                                        }}
+                                        className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded-full shadow-xs border border-white dark:border-slate-800 animate-bounce cursor-pointer select-none z-30"
+                                        title={t('common.new', 'جديد')}
+                                    >
+                                        {t('common.new', 'جديد')}
+                                    </span>
+                                ))}
                             </motion.button>
                         </div>
                     </div>

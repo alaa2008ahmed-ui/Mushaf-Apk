@@ -15,6 +15,7 @@ import {
 import { communityService } from '../services/communityService';
 import UsernameModal from '../components/Community/UsernameModal';
 import ThemePageLock from '../components/ThemePageLock';
+import { markPageAsSeen } from '../utils/badgeManager';
 
 interface AhlAlQuranPageProps {
   onBack: () => void;
@@ -53,6 +54,10 @@ const AhlAlQuranPage: React.FC<AhlAlQuranPageProps> = ({ onBack, onNavigate }) =
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>('');
   const [isArchiveDropdownOpen, setIsArchiveDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'leaderboard' | 'my_stats' | 'privacy'>('leaderboard');
+
+  useEffect(() => {
+    markPageAsSeen('ahl-al-quran');
+  }, []);
   const [tabHistory, setTabHistory] = useState<('leaderboard' | 'my_stats' | 'privacy')[]>(['leaderboard']);
 
   const switchTab = (newTab: 'leaderboard' | 'my_stats' | 'privacy') => {

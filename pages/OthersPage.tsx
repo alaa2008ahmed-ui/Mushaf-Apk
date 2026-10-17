@@ -5,6 +5,7 @@ import ThemePageLock from '../components/ThemePageLock';
 import { useTheme } from '../context/ThemeContext';
 import { shareAsImage } from '../utils/shareAsImage';
 import { playTTS, stopTTS, subscribeTTS } from '../utils/ttsEngine';
+import { markPageAsSeen } from '../utils/badgeManager';
 
 interface OthersPageProps {
   onBack: () => void;
@@ -1026,6 +1027,10 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
 
   const fabRef = useRef<HTMLButtonElement>(null);
 
+  useEffect(() => {
+    markPageAsSeen('others');
+  }, []);
+
   // Subscribe to TTS playing changes
   useEffect(() => {
     const unsubscribe = subscribeTTS(setPlayingText);
@@ -1259,7 +1264,7 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
       </div>
 
       {/* Main Container */}
-      <main className="w-full flex-1 overflow-y-auto px-4 pt-0 pb-4">
+      <main className="w-full flex-1 overflow-y-auto px-4 pt-2 pb-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-right pt-2 pb-6" dir="rtl">
           <AnimatePresence mode="wait">
             {/* TABS 1 & 2: QURANIC / SUNNAH / FAVORITES / ALL LISTS */}

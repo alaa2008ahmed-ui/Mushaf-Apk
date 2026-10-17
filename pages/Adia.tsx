@@ -250,7 +250,7 @@ function Adia({ onBack, onNavigate }: AdiaProps) {
                 </div>
             </header>
 
-            <main ref={mainRef} className="w-full flex-1 overflow-y-auto px-4 pt-0 pb-4">
+            <main ref={mainRef} className="w-full flex-1 overflow-y-auto px-4 pt-2 pb-4">
                 <div className="mb-6">
                     <div className="relative max-w-2xl mx-auto border-2 rounded-2xl overflow-hidden focus-within:ring-2 transition-all shadow-sm" style={{ borderColor: cardBorderColor, ...(themeKey === 'default' ? { focusRingColor: '#000'} : { focusRingColor: theme.palette[0]}) }}>
                         <input 

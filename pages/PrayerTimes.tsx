@@ -128,10 +128,7 @@ function PrayerTimes({ onBack, onNavigate }) {
     const handleRefreshLocation = async () => {
         showToast("جاري تحديد الموقع واستعادة المواقيت الأصلية...");
         try {
-            updateConfig({
-                prayerOffsets: { Fajr: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0, Sunrise: 0 }
-            });
-            await refreshLocation();
+            await refreshLocation(true);
             showToast("تم تحديد الموقع واستعادة المواقيت الأصلية تلقائياً");
         } catch (e) {
             console.error(e);
@@ -144,6 +141,7 @@ function PrayerTimes({ onBack, onNavigate }) {
         if (searchIconRef.current) searchIconRef.current.className = 'fa-solid fa-spinner fa-spin';
         try {
             await manualSearch(searchInput);
+            showToast("تم تحديد المدينة بنجاح واستعادة المواقيت الأصلية");
         } catch(e) { 
             console.error(e); 
             showToast("حدث خطأ أثناء البحث أو لم يتم العثور على نتائج.");
@@ -215,6 +213,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                 }
             }
         });
+        showToast("تم حفظ تعديل وقت الصلاة بنجاح");
         setIsModalOpen(false);
     };
 
@@ -225,12 +224,22 @@ function PrayerTimes({ onBack, onNavigate }) {
 
     const togglePrayerSound = (key) => {
         if (isAudioMuted) {
-            showToast("التنبيهات الصوتية متوقفة حالياً. قم بتفعيلها أولاً.");
+            showToast("التنبيهات الصوتية متوقفة مؤقتاً. قم بإلغاء الكتم أولاً.");
             return;
         }
+        const willBeMuted = !config.mutedPrayers[key];
+        if (willBeMuted) {
+            stopNotificationSound();
+        }
         updateConfig({
-            mutedPrayers: {...config.mutedPrayers, [key]: !config.mutedPrayers[key] }
+            mutedPrayers: {...config.mutedPrayers, [key]: willBeMuted }
         });
+        const pName = prayerNamesAr[key] || key;
+        showToast(
+            willBeMuted 
+                ? `تم إيقاف تنبيه وإشعار صلاة ${pName} تماماً (صوتي ومرئي)`
+                : `تم تفعيل تنبيه وإشعار صلاة ${pName} (صوتي ومرئي)`
+        );
     }
 
     const toggleSummerTime = () => {
@@ -301,7 +310,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                 onHome={handleGoHome}
             />
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar px-2 pb-1">
+            <main className="flex-1 overflow-y-auto hide-scrollbar px-2 pt-2 pb-1">
                 <div className="max-w-md mx-auto flex flex-col h-full">
                     <div 
                         className={`themed-card ${isDefaultTheme ? 'bg-white' : 'bg-black/5 dark:bg-white/5'} rounded-xl p-2 mb-1.5 shadow-sm`}

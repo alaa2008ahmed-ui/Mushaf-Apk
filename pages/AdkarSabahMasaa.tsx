@@ -156,7 +156,7 @@ function AdkarSabahMasaa({ onBack, onNavigate }: AdkarSabahMasaaProps) {
                 onHome={handleGoHome}
             />
 
-            <main className="w-full flex-1 flex flex-col items-center overflow-hidden px-4 pt-0 pb-4 relative">
+            <main className="w-full flex-1 flex flex-col items-center overflow-hidden px-4 pt-2 pb-4 relative">
                 <div className="w-full max-w-lg flex-1 overflow-y-auto hide-scrollbar mt-0 space-y-3 pb-4">
                     {filteredAdhkar.length > 0 ? (
                         filteredAdhkar.map((dhikr) => {

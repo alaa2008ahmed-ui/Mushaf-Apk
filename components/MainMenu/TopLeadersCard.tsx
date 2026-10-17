@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Trophy, Crown, BookOpen } from 'lucide-react';
+import { Trophy, Crown, BookOpen, UserPlus } from 'lucide-react';
 import { ahlAlQuranService, CalendarType } from '../../services/ahlAlQuranService';
 import { communityService } from '../../services/communityService';
 import { shareAsImage } from '../../utils/shareAsImage';
 import { toArabic } from '../QuranReader/constants';
+import { markPageAsSeen } from '../../utils/badgeManager';
 
 interface TopLeadersCardProps {
   theme: any;
@@ -18,8 +19,18 @@ export const TopLeadersCard: React.FC<TopLeadersCardProps> = ({
 }) => {
   const [topLeaders, setTopLeaders] = useState<any[]>([]);
   const [monthName, setMonthName] = useState<string>('');
+  const [isRegistered, setIsRegistered] = useState<boolean>(() => communityService.isProfileComplete());
 
   const updateLeaders = useCallback(() => {
+    const registered = communityService.isProfileComplete();
+    setIsRegistered(registered);
+
+    if (!registered) {
+      setTopLeaders([]);
+      setMonthName('');
+      return;
+    }
+
     let calType: CalendarType = 'hijri';
     try {
       const saved = localStorage.getItem('ahl_al_quran_calendar_type');
@@ -114,14 +125,21 @@ export const TopLeadersCard: React.FC<TopLeadersCardProps> = ({
         fontFamily: theme?.font
       }}
       dir="rtl"
-      onClick={() => onNavigate('ahl-al-quran')}
+      onClick={() => {
+        if (!isRegistered) {
+          onNavigate('community');
+        } else {
+          markPageAsSeen('ahl-al-quran');
+          onNavigate('ahl-al-quran');
+        }
+      }}
     >
       {/* Header with Title, Month badge and Action buttons */}
       <div className="flex items-center justify-between z-10 w-full relative">
         <div className="flex items-center gap-2" style={{ color: primaryAccent }}>
           <Trophy className="w-4 h-4 shrink-0" />
           <span className="text-[12px] font-bold font-kufi">متصدرو أهل القرآن</span>
-          {monthName && (
+          {isRegistered && monthName && (
             <span 
               className="text-[10px] px-2 py-0.5 rounded-full font-bold opacity-90 truncate max-w-[130px] sm:max-w-none"
               style={{ 
@@ -134,21 +152,50 @@ export const TopLeadersCard: React.FC<TopLeadersCardProps> = ({
           )}
         </div>
 
-        <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
-          <button 
-            type="button"
-            onClick={handleShare}
-            className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-            title="مشاركة كصورة"
-            style={{ color: primaryAccent }}
-          >
-            <i className="fa-solid fa-share-nodes text-xs"></i>
-          </button>
-        </div>
+        {isRegistered && (
+          <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+            <button 
+              type="button"
+              onClick={handleShare}
+              className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+              title="مشاركة كصورة"
+              style={{ color: primaryAccent }}
+            >
+              <i className="fa-solid fa-share-nodes text-xs"></i>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Body: Top 3 List or Motivational Empty State */}
-      {topLeaders.length > 0 ? (
+      {/* Body: Prompt to register if unregistered; otherwise Top 3 List or Empty State */}
+      {!isRegistered ? (
+        <div className="flex flex-col items-center justify-center py-2.5 px-3 text-center gap-2 relative z-10">
+          <div 
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: `${primaryAccent}15`, color: primaryAccent }}
+          >
+            <Trophy className="w-5 h-5 opacity-90" />
+          </div>
+          <p className="text-xs font-bold leading-relaxed" style={{ color: theme?.textColor }}>
+            سجّل اسمك في مجتمع التواصل لتظهر لك بيانات وتصنيف متصدري أهل القرآن وتشاركهم التنافس الإيماني! 🌟
+          </p>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate('community');
+            }}
+            className="px-4 py-1.5 rounded-xl font-bold text-xs transition-all active:scale-95 shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
+            style={{
+              backgroundColor: primaryAccent,
+              color: theme?.btnText || '#FFFFFF'
+            }}
+          >
+            <UserPlus size={14} />
+            <span>التسجيل في مجتمع التواصل</span>
+          </button>
+        </div>
+      ) : topLeaders.length > 0 ? (
         <div className="flex flex-col gap-1.5 w-full relative z-10">
           {topLeaders.map((leader, idx) => {
             const rank = idx + 1;

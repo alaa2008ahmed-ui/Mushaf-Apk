@@ -14,7 +14,7 @@ import EditGroupModal from '../components/Community/EditGroupModal';
 import ThemePageLock from '../components/ThemePageLock';
 import { useTheme } from '../context/ThemeContext';
 import { registerBackInterceptor } from '../hooks/useBackButton';
-import { useShowNewBadge } from '../utils/badgeManager';
+import { useShowNewBadge, markPageAsSeen } from '../utils/badgeManager';
 
 interface CommunityPageProps {
   onBack: () => void;
@@ -24,7 +24,7 @@ interface CommunityPageProps {
 
 const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initialTab }) => {
   const { theme, themeKey } = useTheme();
-  const showNewBadge = useShowNewBadge();
+  const showAhlQuranBadge = useShowNewBadge('ahl-al-quran');
   const isDefaultTheme = themeKey === 'default' || !themeKey || theme.name?.includes('الافتراضي') || theme.name === 'Default';
   const isDeepBlack = theme.bgColor === '#000000' || theme.name === 'أبيض وأسود' || themeKey === 'deep_black';
   const cardBorderColor = isDefaultTheme 
@@ -60,6 +60,10 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
       : communityService.getActiveTab();
     return [initial];
   });
+
+  useEffect(() => {
+    markPageAsSeen('community');
+  }, []);
 
   const setActiveTab = (tab: 'users' | 'chats' | 'community' | 'blocked') => {
     userManuallySwitchedTabRef.current = true;
@@ -609,7 +613,10 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <button
                 type="button"
-                onClick={() => onNavigate('ahl-al-quran')}
+                onClick={() => {
+                  markPageAsSeen('ahl-al-quran');
+                  onNavigate('ahl-al-quran');
+                }}
                 className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer relative"
                 style={{
                   color: '#f59e0b'
@@ -618,6 +625,18 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
                 aria-label="صفحة أهل القرآن الكريم"
               >
                 <Trophy size={20} />
+                {showAhlQuranBadge && (
+                  <span 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      markPageAsSeen('ahl-al-quran');
+                    }}
+                    className="absolute -top-1.5 -right-1 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded-full shadow-xs border border-white dark:border-slate-800 animate-bounce cursor-pointer select-none z-30"
+                    title="جديد"
+                  >
+                    جديد
+                  </span>
+                )}
               </button>
               <ThemePageLock />
               <button

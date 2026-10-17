@@ -82,6 +82,7 @@
     "@types/node": "^22.14.0",
     "@types/suncalc": "^1.9.2",
     "@vitejs/plugin-react": "^5.0.0",
+    "opentype.js": "^2.0.0",
     "tailwindcss": "^4.2.1",
     "terser": "^5.46.1",
     "typescript": "~5.8.2",

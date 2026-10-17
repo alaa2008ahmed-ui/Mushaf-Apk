@@ -563,7 +563,7 @@ const Nawawi = ({ onBack, onNavigate }: { onBack: () => void; onNavigate?: (id: 
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-4">
+            <main className="flex-1 overflow-y-auto hide-scrollbar px-4 pt-2 pb-4">
                 <div className="grid grid-cols-2 gap-4">
                     {NAWAWI_DATA.map((hadith, index) => {
                         const color = theme.palette[index % theme.palette.length];

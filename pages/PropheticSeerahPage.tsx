@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect, useMemo } from 'react';
 import { 
     PROPHETIC_SEERAH_DATA, 
     PROPHETIC_STANCES_DATA, 
@@ -11,6 +11,7 @@ import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { shareAsImage } from '../utils/shareAsImage';
 import { registerBackInterceptor } from '../hooks/useBackButton';
+import { markPageAsSeen } from '../utils/badgeManager';
 
 interface PropheticSeerahPageProps {
     onBack?: () => void;
@@ -58,6 +59,10 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
     const [zoomedCard, setZoomedCard] = useState<ZoomedCardData | null>(null);
     const [zoomFontSize, setZoomFontSize] = useState<number>(24);
 
+    useEffect(() => {
+        markPageAsSeen('prophetic-seerah');
+    }, []);
+
     // Timeline Filter
     const [activeEraFilter, setActiveEraFilter] = useState<string>('all');
     // Stances Filter
@@ -81,19 +86,14 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
         if (mainScrollRef.current) {
             mainScrollRef.current.scrollTop = 0;
         }
-        window.scrollTo({ top: 0, behavior: 'instant' });
     }, []);
 
-    // Ensure the page always opens from the very top on any card/tab selection
+    // Ensure the page always opens from the very top on any card/tab selection instantly
     useLayoutEffect(() => {
-        scrollToTop();
-    }, [selectedMilestone?.id, selectedStance?.id, activeTab, lineageTab, scrollToTop]);
-
-    useEffect(() => {
-        scrollToTop();
-        const timer = setTimeout(scrollToTop, 30);
-        return () => clearTimeout(timer);
-    }, [selectedMilestone?.id, selectedStance?.id, activeTab, lineageTab, scrollToTop]);
+        if (mainScrollRef.current) {
+            mainScrollRef.current.scrollTop = 0;
+        }
+    }, [selectedMilestone?.id, selectedStance?.id, activeTab, lineageTab]);
 
     useLayoutEffect(() => {
         if (zoomedCard && zoomScrollRef.current) {
@@ -329,43 +329,53 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
         }
     };
 
-    // Filtering Milestones
-    const filteredMilestones = PROPHETIC_SEERAH_DATA.filter((m) => {
-        const matchesEra = activeEraFilter === 'all' || m.era === activeEraFilter;
-        const matchesSearch =
-            !searchQuery ||
-            m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            m.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            m.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            m.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (m.strategicImpact && m.strategicImpact.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (m.propheticMiraclesOrDuas && m.propheticMiraclesOrDuas.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (m.historicalSecrets && m.historicalSecrets.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (m.keyFigures && m.keyFigures.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()))) ||
-            m.lessons.some(l => l.toLowerCase().includes(searchQuery.toLowerCase()));
-        return matchesEra && matchesSearch;
-    });
+    // Filtering Milestones with useMemo for instantaneous tab switching
+    const filteredMilestones = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
+        return PROPHETIC_SEERAH_DATA.filter((m) => {
+            const matchesEra = activeEraFilter === 'all' || m.era === activeEraFilter;
+            if (!matchesEra) return false;
+            if (!q) return true;
+            return (
+                m.title.toLowerCase().includes(q) ||
+                m.summary.toLowerCase().includes(q) ||
+                m.details.toLowerCase().includes(q) ||
+                m.location.toLowerCase().includes(q) ||
+                (m.strategicImpact && m.strategicImpact.toLowerCase().includes(q)) ||
+                (m.propheticMiraclesOrDuas && m.propheticMiraclesOrDuas.toLowerCase().includes(q)) ||
+                (m.historicalSecrets && m.historicalSecrets.toLowerCase().includes(q)) ||
+                (m.keyFigures && m.keyFigures.some(f => f.toLowerCase().includes(q))) ||
+                m.lessons.some(l => l.toLowerCase().includes(q))
+            );
+        });
+    }, [activeEraFilter, searchQuery]);
 
-    // Filtering Stances
-    const filteredStances = PROPHETIC_STANCES_DATA.filter((s) => {
-        const matchesCategory = activeStanceCategory === 'all' || s.category === activeStanceCategory;
-        const matchesSearch =
-            !searchQuery ||
-            s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.situation.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.quote.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.moralLesson.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (s.detailedDialogue && s.detailedDialogue.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (s.psychologicalAnalysis && s.psychologicalAnalysis.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (s.contemporaryReflection && s.contemporaryReflection.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (s.keyFigures && s.keyFigures.some(f => f.toLowerCase().includes(searchQuery.toLowerCase())));
-        return matchesCategory && matchesSearch;
-    });
+    // Filtering Stances with useMemo for instantaneous tab switching
+    const filteredStances = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
+        return PROPHETIC_STANCES_DATA.filter((s) => {
+            const matchesCategory = activeStanceCategory === 'all' || s.category === activeStanceCategory;
+            if (!matchesCategory) return false;
+            if (!q) return true;
+            return (
+                s.title.toLowerCase().includes(q) ||
+                s.situation.toLowerCase().includes(q) ||
+                s.quote.toLowerCase().includes(q) ||
+                s.moralLesson.toLowerCase().includes(q) ||
+                (s.detailedDialogue && s.detailedDialogue.toLowerCase().includes(q)) ||
+                (s.psychologicalAnalysis && s.psychologicalAnalysis.toLowerCase().includes(q)) ||
+                (s.contemporaryReflection && s.contemporaryReflection.toLowerCase().includes(q)) ||
+                (s.keyFigures && s.keyFigures.some(f => f.toLowerCase().includes(q)))
+            );
+        });
+    }, [activeStanceCategory, searchQuery]);
 
     // Current Index in Milestones for next/prev
-    const currentMilestoneIndex = selectedMilestone 
-        ? PROPHETIC_SEERAH_DATA.findIndex(m => m.id === selectedMilestone.id) 
-        : -1;
+    const currentMilestoneIndex = useMemo(() => {
+        if (!selectedMilestone) return -1;
+        return PROPHETIC_SEERAH_DATA.findIndex(m => m.id === selectedMilestone.id);
+    }, [selectedMilestone?.id]);
+
     const prevMilestone = currentMilestoneIndex > 0 ? PROPHETIC_SEERAH_DATA[currentMilestoneIndex - 1] : null;
     const nextMilestone = currentMilestoneIndex >= 0 && currentMilestoneIndex < PROPHETIC_SEERAH_DATA.length - 1 
         ? PROPHETIC_SEERAH_DATA[currentMilestoneIndex + 1] 
@@ -594,16 +604,12 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
 
             {/* Main Content Body */}
             <main ref={mainScrollRef} className="flex-1 overflow-y-auto hide-scrollbar px-4 pt-2 pb-6">
-                <AnimatePresence mode="wait">
-                    {/* 1. Milestone Detail View */}
-                    {selectedMilestone ? (
-                        <motion.div
-                            key={`detail-milestone-${selectedMilestone.id}`}
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -15 }}
-                            className="max-w-2xl mx-auto space-y-4"
-                        >
+                {/* 1. Milestone Detail View */}
+                {selectedMilestone ? (
+                    <div
+                        key={`detail-milestone-${selectedMilestone.id}`}
+                        className="max-w-2xl mx-auto space-y-4"
+                    >
                             {/* Hero Card */}
                             <div 
                                 className="p-5 sm:p-6 rounded-3xl themed-card border shadow-lg relative overflow-hidden"
@@ -974,14 +980,11 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     <div />
                                 )}
                             </div>
-                        </motion.div>
+                        </div>
                     ) : selectedStance ? (
                         /* 2. Stance Detail View */
-                        <motion.div
+                        <div
                             key={`detail-stance-${selectedStance.id}`}
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -15 }}
                             className="max-w-2xl mx-auto space-y-4"
                         >
                             <div 
@@ -990,7 +993,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                             >
                                 <div className="flex items-center justify-between gap-2 mb-3">
                                     <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
-                                        <i className={selectedStance.icon}></i>
+                                        {selectedStance.icon && (selectedStance.icon.startsWith('fa') ? <i className={selectedStance.icon}></i> : <span>{selectedStance.icon}</span>)}
                                         {selectedStance.categoryBadge}
                                     </span>
                                     <div className="flex items-center gap-2">
@@ -1285,14 +1288,11 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     نسخ كامل تفاصيل الموقف
                                 </button>
                             </div>
-                        </motion.div>
+                        </div>
                     ) : activeTab === 'lineage' ? (
                         /* 3. Noble Lineage View (نسب النبي ﷺ كاملاً وصولاً إلى إبراهيم عليه السلام مع أقسام مفصلة) */
-                        <motion.div
+                        <div
                             key="lineage-view"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
                             className="space-y-4 max-w-3xl mx-auto"
                         >
                             {/* Lineage Hero Card */}
@@ -1503,7 +1503,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     <div className="flex items-center justify-between">
                                         <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                                             <i className="fa-solid fa-sparkles text-amber-400"></i>
-                                            أسماء النبي ﷺ المباركة ومعانيها ودلالاتها
+                                            أسماء النبي ﷺ المباركة ومعانيها ({PROPHETIC_LINEAGE_DATA.propheticNames.length} اسماً مرتبة من الأكثر شهرة)
                                         </h3>
                                         <button
                                             onClick={() => handleCopyLineage('names')}
@@ -1588,7 +1588,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     <div className="flex items-center justify-between">
                                         <h3 className="text-sm font-bold font-kufi flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                                             <i className="fa-solid fa-sun text-amber-400"></i>
-                                            الشمائل المحمدية الشريفة (أوصافه الخَلقية والخُلقية)
+                                            الشمائل المحمدية الشريفة ({PROPHETIC_LINEAGE_DATA.nobleCharacteristics.length} شَميلة خَلقية وخُلقية)
                                         </h3>
                                         <button
                                             onClick={() => handleCopyLineage('characteristics')}
@@ -1609,6 +1609,9 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                                 <div className="flex items-center justify-between gap-2">
                                                     <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                                                         {c.category}
+                                                    </span>
+                                                    <span className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] flex items-center justify-center font-bold shrink-0">
+                                                        {i + 1}
                                                     </span>
                                                 </div>
 
@@ -1667,14 +1670,11 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     </div>
                                 </div>
                             )}
-                        </motion.div>
+                        </div>
                     ) : activeTab === 'stances' ? (
                         /* 4. Immortal Stances View (مواقف خالدة للمصطفى ﷺ) */
-                        <motion.div
+                        <div
                             key="stances-view"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
                             className="space-y-4 max-w-3xl mx-auto"
                         >
                             {/* Search and Category Filter */}
@@ -1707,27 +1707,39 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                 {/* Category Pills */}
                                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
                                     {[
-                                        { id: 'all', label: 'جميع المواقف (الكل)' },
+                                        { id: 'all', label: 'الكل' },
                                         { id: 'رحمة وعفو', label: 'الرحمة والعفو' },
                                         { id: 'شجاعة وثبات', label: 'الشجاعة والثبات' },
                                         { id: 'حلم وتواضع', label: 'الحلم والتواضع' },
                                         { id: 'وفاء وأمانة', label: 'الوفاء والمروءة' },
                                         { id: 'شورى وعدالة', label: 'العدالة والنزاهة' },
                                         { id: 'رفق بالخلق', label: 'الرفق بالخلق والحيوان' },
-                                    ].map((cat) => (
-                                        <button
-                                            key={cat.id}
-                                            onClick={() => setActiveStanceCategory(cat.id)}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border shrink-0 active:scale-95 ${
-                                                activeStanceCategory === cat.id
-                                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                                                    : 'bg-black/5 dark:bg-white/5 hover:bg-black/10'
-                                            }`}
-                                            style={{ borderColor: cardBorderColor, borderWidth: '1px', borderStyle: 'solid' }}
-                                        >
-                                            {cat.label}
-                                        </button>
-                                    ))}
+                                    ].map((cat) => {
+                                        const count = cat.id === 'all' 
+                                            ? PROPHETIC_STANCES_DATA.length 
+                                            : PROPHETIC_STANCES_DATA.filter(s => s.category === cat.id).length;
+                                        return (
+                                            <button
+                                                key={cat.id}
+                                                onClick={() => setActiveStanceCategory(cat.id)}
+                                                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border shrink-0 active:scale-95 flex items-center gap-1.5 ${
+                                                    activeStanceCategory === cat.id
+                                                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                                                        : 'bg-black/5 dark:bg-white/5 hover:bg-black/10'
+                                                }`}
+                                                style={{ borderColor: cardBorderColor, borderWidth: '1px', borderStyle: 'solid' }}
+                                            >
+                                                <span>{cat.label}</span>
+                                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                                                    activeStanceCategory === cat.id 
+                                                        ? 'bg-white/20 text-white' 
+                                                        : 'bg-black/10 dark:bg-white/10 text-emerald-600 dark:text-emerald-400'
+                                                }`}>
+                                                    {count}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -1742,7 +1754,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     >
                                         <div className="flex items-center justify-between gap-2">
                                             <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1">
-                                                <i className={stance.icon}></i>
+                                                {stance.icon && (stance.icon.startsWith('fa') ? <i className={stance.icon}></i> : <span>{stance.icon}</span>)}
                                                 {stance.categoryBadge}
                                             </span>
                                             <div className="flex items-center gap-2">
@@ -1823,14 +1835,11 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     </div>
                                 )}
                             </div>
-                        </motion.div>
+                        </div>
                     ) : (
                         /* 5. Timeline Interactive List (الخط الزمني الكامل 43 محطة) */
-                        <motion.div
+                        <div
                             key="timeline-list"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
                             className="space-y-4 max-w-3xl mx-auto"
                         >
                             {/* Search and Era Filters */}
@@ -1844,7 +1853,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                             type="text"
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            placeholder="ابحث في أحداث السيرة، المعارك، الشخصيات، الأماكن والعِبر (43 محطة)..."
+                                            placeholder={`ابحث في أحداث السيرة، المعارك، الشخصيات، الأماكن والعِبر (${PROPHETIC_SEERAH_DATA.length} محطة)...`}
                                             className="w-full pl-8 pr-9 py-2 text-xs sm:text-sm rounded-xl border bg-black/5 dark:bg-white/5 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                             style={{ borderColor: cardBorderColor, color: theme.textColor }}
                                         />
@@ -1863,7 +1872,7 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                 {/* Era Filter Pills */}
                                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
                                     {[
-                                        { id: 'all', label: 'كامل السيرة (43 محطة)' },
+                                        { id: 'all', label: `كامل السيرة (${PROPHETIC_SEERAH_DATA.length} محطة)` },
                                         { id: 'pre-prophethood', label: 'ما قبل البعثة' },
                                         { id: 'makki', label: 'العهد المكي' },
                                         { id: 'early-madani', label: 'أوائل العهد المدني' },
@@ -1953,17 +1962,6 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                             {milestone.summary}
                                         </p>
 
-                                        {/* Highlight Strategic Impact or Miracles Preview if available */}
-                                        {milestone.strategicImpact && (
-                                            <div 
-                                                className="p-2.5 rounded-xl bg-blue-500/5 border text-[11px] leading-relaxed text-blue-700 dark:text-blue-300 line-clamp-1"
-                                                style={{ borderColor: cardBorderColor, borderWidth: '1px', borderStyle: 'solid' }}
-                                            >
-                                                <span className="font-bold">🎯 الأثر الاستراتيجي: </span>
-                                                <span>{milestone.strategicImpact}</span>
-                                            </div>
-                                        )}
-
                                         <div className="flex items-center justify-between text-xs pt-2 border-t opacity-75" style={{ borderColor: 'var(--card-border)' }}>
                                             <span className="flex items-center gap-1 font-bold">
                                                 <i className="fa-solid fa-location-dot text-emerald-500 text-[10px]"></i>
@@ -1985,9 +1983,8 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                                     </div>
                                 )}
                             </div>
-                        </motion.div>
+                        </div>
                     )}
-                </AnimatePresence>
             </main>
 
             {/* Zoom Modal - Matches identical style & behavior of Adhkar & Duas pages */}

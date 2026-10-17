@@ -8,7 +8,7 @@ import {
     ScrollText
 } from 'lucide-react';
 import { THEMES } from './QuranReader/constants';
-import { useShowNewBadge } from '../utils/badgeManager';
+import { useShowNewBadge, useSeenPages, markPageAsSeen } from '../utils/badgeManager';
 import { useLanguage } from '../context/LanguageContext';
 
 interface SideMenuProps {
@@ -22,6 +22,7 @@ interface SideMenuProps {
 
 const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpenThemes, currentTheme: _appTheme, currentPage }) => {
     const showNewBadges = useShowNewBadge();
+    const { isPageSeen } = useSeenPages();
     const { t, translateMenuItem, isRTL } = useLanguage();
     const [readerTheme, setReaderTheme] = React.useState(() => {
         try {
@@ -119,6 +120,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
                                     <button
                                         key={item.id}
                                         onClick={() => {
+                                            markPageAsSeen(item.id);
                                             if (item.id === 'themes') onOpenThemes();
                                             else if (item.id === 'whatsapp') window.open('https://wa.me/201000000000', '_blank');
                                             else if (item.id === 'notifications') onNavigate('phone-notifications');
@@ -138,8 +140,15 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className="font-bold text-[15px]">{item.label}</span>
-                                            {showNewBadges && (item.id === 'community' || item.id === 'ahl-al-quran' || item.id === 'prophetic-seerah') && (
-                                                <span className="bg-yellow-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-xs border border-white dark:border-slate-800">
+                                            {showNewBadges && (item.id === 'community' || item.id === 'ahl-al-quran' || item.id === 'prophetic-seerah') && !isPageSeen(item.id) && (
+                                                <span 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        markPageAsSeen(item.id);
+                                                    }}
+                                                    className="bg-yellow-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-xs border border-white dark:border-slate-800 cursor-pointer select-none"
+                                                    title={t('common.new', 'جديد')}
+                                                >
                                                     {t('common.new', 'جديد')}
                                                 </span>
                                             )}

@@ -934,7 +934,7 @@ function HijriCalendar({ onBack , onNavigate }: { onBack: () => void, onNavigate
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto px-3 pb-6 shadow-inner">
+            <main className="flex-1 overflow-y-auto px-3 pt-2 pb-6 shadow-inner">
                 <div className="w-full max-w-lg mx-auto space-y-3">
                     
                     {/* Mode Toggles */}

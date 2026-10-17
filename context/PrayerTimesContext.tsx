@@ -5,7 +5,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { prayerNamesAr, ADHAN_CHANNELS_CONFIG } from '../data/prayerTimesData';
-import { checkSupportsDST, calculateNightTimes, playNotificationSound } from '../utils/prayerTimesUtils';
+import { checkSupportsDST, calculateNightTimes, playNotificationSound, stopNotificationSound } from '../utils/prayerTimesUtils';
 import { updateAndroidWidget } from '../utils/widgetUtils';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { scheduleDeviceSilentWindows, cancelAllDeviceSilentWindows, setDeviceSilentNow } from '../utils/silentMode';
@@ -56,19 +56,21 @@ interface PrayerTimesContextType {
     countdown: string;
     config: PrayerConfig;
     setConfig: React.Dispatch<React.SetStateAction<PrayerConfig>>;
-    refreshLocation: () => Promise<void>;
+    refreshLocation: (isManualUserAction?: boolean) => Promise<void>;
     manualSearch: (query: string) => Promise<void>;
     updateConfig: (newConfig: Partial<PrayerConfig>) => void;
     isPrayerSilentActive?: boolean;
     activeSilentPrayerName?: string;
     activeIqamaAlert?: { prayerKey: string; prayerName: string; minutes: number; timeStr: string } | null;
     dismissIqamaAlert?: () => void;
+    activeAdhanAlert?: { prayerKey: string; prayerName: string; timeStr: string; soundFileName?: string } | null;
+    dismissAdhanAlert?: () => void;
 }
 
 // --- Default Configuration ---
 const DEFAULT_CONFIG: PrayerConfig = {
     iqamaOffsets: { Fajr: 20, Dhuhr: 15, Asr: 15, Maghrib: 10, Isha: 15 },
-    prayerOffsets: { Fajr: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 },
+    prayerOffsets: { Fajr: 0, Sunrise: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 },
     tones: {},
     mutedPrayers: { Sunrise: true },
     location: { cityGov: "الدمام - الشرقية", fullCountry: "المملكة العربية السعودية", combinedCode: "+966013", lat: 26.4207, lng: 50.0888 },
@@ -201,6 +203,10 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 return { 
                     ...DEFAULT_CONFIG, 
                     ...parsed,
+                    prayerOffsets: {
+                        ...DEFAULT_CONFIG.prayerOffsets,
+                        ...(parsed.prayerOffsets || {})
+                    },
                     iqamaReminder: {
                         enabled: parsed.iqamaReminder?.enabled !== undefined ? parsed.iqamaReminder.enabled : true,
                         minutes: parsed.iqamaReminder?.minutes || 15
@@ -214,6 +220,10 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 return {
                     ...DEFAULT_CONFIG,
                     ...parsed,
+                    prayerOffsets: {
+                        ...DEFAULT_CONFIG.prayerOffsets,
+                        ...(parsed.prayerOffsets || {})
+                    },
                     preAthanReminder: { enabled: false, minutes: parsed.preAthanReminder?.minutes || 15 },
                     autoSilent: false,
                     iqamaReminder: { enabled: true, minutes: parsed.iqamaReminder?.minutes || 15 }
@@ -233,7 +243,15 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
     const [isPrayerSilentActive, setIsPrayerSilentActive] = useState(false);
     const [activeSilentPrayerName, setActiveSilentPrayerName] = useState('');
     const [activeIqamaAlert, setActiveIqamaAlert] = useState<{ prayerKey: string; prayerName: string; minutes: number; timeStr: string } | null>(null);
-    const dismissIqamaAlert = useCallback(() => setActiveIqamaAlert(null), []);
+    const dismissIqamaAlert = useCallback(() => {
+        stopNotificationSound();
+        setActiveIqamaAlert(null);
+    }, []);
+    const [activeAdhanAlert, setActiveAdhanAlert] = useState<{ prayerKey: string; prayerName: string; timeStr: string; soundFileName?: string } | null>(null);
+    const dismissAdhanAlert = useCallback(() => {
+        stopNotificationSound();
+        setActiveAdhanAlert(null);
+    }, []);
     const triggeredAlertsRef = React.useRef<Set<string>>(new Set());
 
     // Check if phone/app should be automatically silent during prayer time
@@ -253,6 +271,9 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
             let activeName = '';
 
             for (const key of prayerKeys) {
+                // If this prayer is disabled/muted (button is RED), do NOT activate auto-silent or alerts
+                if (config.mutedPrayers?.[key]) continue;
+
                 // Determine if auto-silent is enabled for this prayer
                 let isSilentEnabled = false;
                 let duration = 15;
@@ -307,10 +328,23 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
 
     // --- Save Config ---
     useEffect(() => {
-        localStorage.setItem('prayerFinal_v34', JSON.stringify(config));
-        // Re-calculate times when config changes (e.g. location)
-        fetchTimesForLocation(config.location);
+        try {
+            localStorage.setItem('prayerFinal_v34', JSON.stringify(config));
+        } catch (e) {}
     }, [config]);
+
+    // Re-calculate times only when coordinates actually change
+    const prevLocationCoordsRef = React.useRef({ lat: config.location?.lat, lng: config.location?.lng });
+    useEffect(() => {
+        if (
+            config.location && 
+            (prevLocationCoordsRef.current.lat !== config.location.lat || 
+             prevLocationCoordsRef.current.lng !== config.location.lng)
+        ) {
+            prevLocationCoordsRef.current = { lat: config.location.lat, lng: config.location.lng };
+            fetchTimesForLocation(config.location);
+        }
+    }, [config.location]);
 
     // --- Calculation Logic ---
     const fetchTimesForLocation = useCallback(async (locationData: any) => {
@@ -404,9 +438,9 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
         } catch(e) { console.error("Failed to calculate prayer times:", e); }
     }, []);
 
-    const refreshLocation = useCallback(async () => {
+    const refreshLocation = useCallback(async (isManualUserAction: boolean = false) => {
         return new Promise<void>(async (resolve, reject) => {
-            const resetOffsets = { Fajr: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0, Sunrise: 0 };
+            const resetOffsets = { Fajr: 0, Sunrise: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 };
             const fetchByIP = async () => {
                 const fallbacks = [
                     {
@@ -451,7 +485,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                             setConfig(prev => ({ 
                                 ...prev, 
                                 location: newLoc,
-                                prayerOffsets: resetOffsets
+                                ...(isManualUserAction ? { prayerOffsets: resetOffsets } : {})
                             }));
                             resolve();
                             return;
@@ -460,8 +494,9 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                         console.warn(`IP location fetch failed for ${service.url}:`, e);
                     }
                 }
-                // Even if location lookup fails, reset prayerOffsets as requested
-                setConfig(prev => ({ ...prev, prayerOffsets: resetOffsets }));
+                if (isManualUserAction) {
+                    setConfig(prev => ({ ...prev, prayerOffsets: resetOffsets }));
+                }
                 reject(new Error("Failed to fetch location by IP from all services"));
             };
 
@@ -519,7 +554,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 setConfig(prev => ({ 
                     ...prev, 
                     location: newLoc,
-                    prayerOffsets: resetOffsets
+                    ...(isManualUserAction ? { prayerOffsets: resetOffsets } : {})
                 }));
                 resolve();
             } catch (err) {
@@ -545,7 +580,13 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                     combinedCode: countryInfo.combinedCode,
                     lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon)
                 };
-                setConfig(prev => ({ ...prev, location: newLocation }));
+                const resetOffsets = { Fajr: 0, Sunrise: 0, Dhuhr: 0, Asr: 0, Maghrib: 0, Isha: 0 };
+                // Condition 2: Searching for any other city resets prayer offsets back to defaults
+                setConfig(prev => ({ 
+                    ...prev, 
+                    location: newLocation,
+                    prayerOffsets: resetOffsets 
+                }));
             } else {
                 throw new Error("لم يتم العثور على نتائج");
             }
@@ -555,7 +596,22 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const updateConfig = useCallback((newConfig: Partial<PrayerConfig>) => {
-        setConfig(prev => ({ ...prev, ...newConfig }));
+        if (newConfig.mutedPrayers) {
+            for (const [key, isMuted] of Object.entries(newConfig.mutedPrayers)) {
+                if (isMuted) {
+                    stopNotificationSound();
+                    setActiveAdhanAlert(prev => (prev?.prayerKey === key ? null : prev));
+                    setActiveIqamaAlert(prev => (prev?.prayerKey === key ? null : prev));
+                }
+            }
+        }
+        setConfig(prev => {
+            const updated = { ...prev, ...newConfig };
+            try {
+                localStorage.setItem('prayerFinal_v34', JSON.stringify(updated));
+            } catch (e) {}
+            return updated;
+        });
     }, []);
 
     // --- Notification & Auto-Silent Scheduling ---
@@ -714,6 +770,13 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 const supportsDST = checkSupportsDST(config.location.combinedCode, config.location.fullCountry);
                 const totalOffset = (config.prayerOffsets[key] || 0) + ((config.isSummerTime && supportsDST) ? 60 : 0);
                 prayerDate.setMinutes(prayerDate.getMinutes() + totalOffset);
+
+                // If this prayer is disabled/muted (button is RED), ALL notifications & alerts (visual and audio)
+                // for this prayer (Adhan, Pre-Adhan reminder, Iqama reminder, Auto-silent mode)
+                // are COMPLETELY STOPPED and never scheduled!
+                if (config.mutedPrayers?.[key]) {
+                    continue;
+                }
 
                 // 1. Adhan Notification (scheduled only if not muted)
                 if (!config.mutedPrayers?.[key] && key !== 'Sunrise') {
@@ -1262,6 +1325,7 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 const isSummerTimeActive = config.isSummerTime && supportsDST;
 
                 for (const key of prayerCheckKeys) {
+                    const isPrayerMuted = !!config.mutedPrayers?.[key];
                     const totalOffset = (config.prayerOffsets[key] || 0) + (isSummerTimeActive ? 60 : 0);
                     const adjustedTime = applyOffset(times[key], totalOffset);
                     if (!adjustedTime || adjustedTime.includes('--')) continue;
@@ -1272,11 +1336,12 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
 
                     const diffMs = now.getTime() - prayerTimeObj.getTime();
 
-                    // 1. Live Adhan Sound: triggers when current time is at prayer time (within 0-45 seconds)
+                    // 1. Live Adhan Sound & Visual Alert: triggers when current time is at prayer time (within 0-45 seconds)
                     const adhanAlertKey = `${dayStr}_adhan_${key}`;
                     if (diffMs >= 0 && diffMs <= 45000 && !triggeredAlertsRef.current.has(adhanAlertKey)) {
                         triggeredAlertsRef.current.add(adhanAlertKey);
-                        if (!config.mutedPrayers?.[key] && key !== 'Sunrise') {
+                        // If this prayer is NOT muted (GREEN button), trigger audio and visual alerts
+                        if (!isPrayerMuted && key !== 'Sunrise') {
                             const toneConfig = config.tones?.[key];
                             let soundFileName = 'takbeer1.mp3';
                             let canPlay = true;
@@ -1323,7 +1388,31 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                                     console.log(`[Native Adhan] Adhan tone handled natively by Android notification channel for ${key}`);
                                 }
                             }
+
+                            // Trigger in-app visual modal alert
+                            setActiveAdhanAlert({
+                                prayerKey: key,
+                                prayerName: prayerNamesAr[key] || key,
+                                timeStr: adjustedTime,
+                                soundFileName
+                            });
+
+                            // Trigger web browser Notification if permission is granted
+                            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                                try {
+                                    new Notification(`حان الآن موعد أذان ${prayerNamesAr[key]}`, {
+                                        body: 'لا تنس ذكر الله. قال رسول الله ﷺ: "أرحنا بها يا بلال"',
+                                        icon: '/icon.png'
+                                    });
+                                } catch (e) {}
+                            }
                         }
+                    }
+
+                    // When prayer is disabled/muted (button is RED), ALL subsequent alerts (Pre-Adhan, Iqama, Auto-silent)
+                    // are COMPLETELY STOPPED and skipped for this prayer!
+                    if (isPrayerMuted) {
+                        continue;
                     }
 
                     // 2. Live Pre-Adhan Preparation Reminder (chime.mp3)
@@ -1442,15 +1531,23 @@ export const PrayerTimesProvider = ({ children }: { children: ReactNode }) => {
                 setDates(prayerData.dates);
             } catch(e) {}
         }
-        refreshLocation().catch(() => {});
-    }, [refreshLocation]);
+        if (config.location) {
+            fetchTimesForLocation(config.location);
+        }
+        // Only auto-locate on very first app launch if no saved config exists
+        const saved = localStorage.getItem('prayerFinal_v34') || localStorage.getItem('prayerFinal_v33');
+        if (!saved) {
+            refreshLocation(false).catch(() => {});
+        }
+    }, [fetchTimesForLocation, refreshLocation]);
 
     return (
         <PrayerTimesContext.Provider value={{ 
             times, dates, nextPrayer, countdown, config, setConfig, 
             refreshLocation, manualSearch, updateConfig,
             isPrayerSilentActive, activeSilentPrayerName,
-            activeIqamaAlert, dismissIqamaAlert
+            activeIqamaAlert, dismissIqamaAlert,
+            activeAdhanAlert, dismissAdhanAlert
         }}>
             {children}
         </PrayerTimesContext.Provider>
