@@ -24,11 +24,12 @@ import { Capacitor } from '@capacitor/core';
 import { clearSearchCache } from './pages/GlobalSearch';
 import { playNotificationSound } from './utils/prayerTimesUtils';
 import IqamaAlertModal from './components/PrayerTimes/IqamaAlertModal';
+import AdhanAlertModal from './components/PrayerTimes/AdhanAlertModal';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import { APP_VERSION, REMOTE_VERSION_URL, GOOGLE_PLAY_URL } from './constants';
 import UpdateNotificationModal from './components/UpdateNotificationModal';
 import { InAppChatNotification } from './components/InAppChatNotification';
-import { recordAppLaunch } from './utils/badgeManager';
+import { recordAppLaunch, markPageAsSeen } from './utils/badgeManager';
 import FloatingHelpButton from './components/FloatingHelpButton';
 
 // --- Main App Component ---
@@ -91,6 +92,9 @@ function App() {
   useEffect(() => {
     const currentPage = history[history.length - 1];
     setCurrentPage(currentPage);
+    if (currentPage && currentPage !== 'home') {
+      markPageAsSeen(currentPage);
+    }
   }, [history, setCurrentPage]);
 
   useEffect(() => {
@@ -152,6 +156,9 @@ function App() {
     }
 
     if (validPages.includes(pageId)) {
+      if (pageId !== 'home') {
+        markPageAsSeen(pageId);
+      }
       setNavParams(params || null);
       setHistory(prev => {
         const current = prev[prev.length - 1];
@@ -188,10 +195,17 @@ function App() {
             }
             return ['home', 'daily-wird', pageId];
           }
+          if (params?.isMemorization || params?.isMemorizationMode || params?.memorizationSettings) {
+            const memIdx = prev.lastIndexOf('memorization');
+            if (memIdx !== -1) {
+              return [...prev.slice(0, memIdx + 1), pageId];
+            }
+            return ['home', 'memorization', pageId];
+          }
           return ['home', pageId];
         }
 
-        // 4. Quran from Daily Wird
+        // 4. Quran from Daily Wird or Memorization
         if (pageId === 'quran') {
           if (params?.isWird) {
             const wirdIdx = prev.lastIndexOf('daily-wird');
@@ -200,12 +214,41 @@ function App() {
             }
             return ['home', 'daily-wird', pageId];
           }
+          if (params?.isMemorization || params?.isMemorizationMode || params?.memorizationSettings) {
+            const memIdx = prev.lastIndexOf('memorization');
+            if (memIdx !== -1) {
+              return [...prev.slice(0, memIdx + 1), pageId];
+            }
+            return ['home', 'memorization', pageId];
+          }
           return ['home', pageId];
         }
 
         // 5. Daily Wird
         if (pageId === 'daily-wird') {
           return ['home', 'daily-wird'];
+        }
+
+        // 6. Search (Advanced Search) - Preserve origin page (Quran, etc.) so back button returns properly
+        if (pageId === 'search') {
+          const quranLandscapeIdx = prev.lastIndexOf('quran-landscape');
+          if (quranLandscapeIdx !== -1 && (current === 'quran-landscape' || params?.from === 'quran-landscape')) {
+            return [...prev.slice(0, quranLandscapeIdx + 1), pageId];
+          }
+          const quranIdx = prev.lastIndexOf('quran');
+          if (quranIdx !== -1 && (current === 'quran' || params?.from === 'quran')) {
+            return [...prev.slice(0, quranIdx + 1), pageId];
+          }
+          if (params?.from === 'quran-landscape') {
+            return ['home', 'quran-landscape', pageId];
+          }
+          if (params?.from === 'quran') {
+            return ['home', 'quran', pageId];
+          }
+          if (current && current !== 'home') {
+            return [...prev, pageId];
+          }
+          return ['home', pageId];
         }
 
         return ['home', pageId];
@@ -277,9 +320,18 @@ function App() {
 
   const navigateBack = useCallback(() => {
     setHistory(prev => {
+      const current = prev[prev.length - 1];
+      if (current === 'search') {
+        const fromTarget = navParams?.from;
+        if ((fromTarget === 'quran' || fromTarget === 'quran-landscape') && !prev.includes(fromTarget)) {
+          setNavParams(null);
+          return ['home', fromTarget];
+        }
+      }
+      setNavParams(null);
       return (prev.length > 1 ? prev.slice(0, -1) : prev);
     });
-  }, []);
+  }, [navParams]);
 
   const handleVoiceAction = useCallback((action: string, text: string, params?: any) => {
     console.log('Voice Action:', action, text, params);
@@ -404,7 +456,7 @@ function AppContent({
 }: any) {
   const { setCurrentPage: setVoicePage } = useVoiceControl();
   const { theme, themeKey, applyPresetTheme, setCurrentPage: setThemePage } = useTheme();
-  const { activeIqamaAlert, dismissIqamaAlert } = usePrayerTimes();
+  const { activeIqamaAlert, dismissIqamaAlert, activeAdhanAlert, dismissAdhanAlert } = usePrayerTimes();
 
   useEffect(() => {
     setVoicePage(page);
@@ -502,6 +554,13 @@ function AppContent({
       <MawlidNotification />
       <InAppChatNotification currentPage={page} navParams={navParams} onNavigate={handleNavigate} />
       <FloatingHelpButton currentPage={page} onClick={() => handleNavigate('page-guide')} />
+
+      {activeAdhanAlert && (
+        <AdhanAlertModal
+          alert={activeAdhanAlert}
+          onDismiss={dismissAdhanAlert}
+        />
+      )}
 
       {activeIqamaAlert && (
         <IqamaAlertModal

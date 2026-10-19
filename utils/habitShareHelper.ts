@@ -13,10 +13,12 @@ interface ShareDailyCardOptions {
   theme: any;
   hexColor: string;
   isBlackTheme: boolean;
+  isEn?: boolean;
   setToastMessage?: (msg: string) => void;
 }
 
 const ARABIC_DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+const ENGLISH_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export const shareDailyHabitCard = async ({
   date,
@@ -26,9 +28,10 @@ export const shareDailyHabitCard = async ({
   theme,
   hexColor,
   isBlackTheme,
+  isEn,
   setToastMessage
 }: ShareDailyCardOptions) => {
-  if (setToastMessage) setToastMessage('جاري تجهيز صورة إنجاز العبادات... ⏳');
+  if (setToastMessage) setToastMessage(isEn ? 'Preparing worship achievement card... ⏳' : 'جاري تجهيز صورة إنجاز العبادات... ⏳');
 
   const containerId = `daily-habit-share-${Date.now()}`;
   const container = document.createElement('div');
@@ -49,13 +52,13 @@ export const shareDailyHabitCard = async ({
     container.style.left = '-9999px';
     container.style.top = '-9999px';
     container.style.width = '750px';
-    container.style.direction = 'rtl';
+    container.style.direction = isEn ? 'ltr' : 'rtl';
     container.style.fontFamily = '"Cairo", "Amiri", sans-serif';
 
     const mDate = moment(date);
-    const dayName = ARABIC_DAYS[mDate.day()];
-    const gregorianDateStr = mDate.locale('ar').format('D MMMM YYYY');
-    const hijriDateStr = `${mDate.iDate()} ${mDate.locale('ar-SA').format('iMMMM')} ${mDate.iYear()} هـ`;
+    const dayName = isEn ? ENGLISH_DAYS[mDate.day()] : ARABIC_DAYS[mDate.day()];
+    const gregorianDateStr = mDate.locale(isEn ? 'en' : 'ar').format(isEn ? 'MMMM D, YYYY' : 'D MMMM YYYY');
+    const hijriDateStr = isEn ? `${mDate.iDate()} ${mDate.locale('en').format('iMMMM')} ${mDate.iYear()} AH` : `${mDate.iDate()} ${mDate.locale('ar-SA').format('iMMMM')} ${mDate.iYear()} هـ`;
 
     // Prayers stats
     let completedFard = 0;

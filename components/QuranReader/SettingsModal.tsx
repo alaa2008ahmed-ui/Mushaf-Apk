@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { READERS, TAFSEERS, THEMES, DEFAULT_SETTINGS, toArabic } from './constants';
+import { READERS, TAFSEERS, THEMES, DEFAULT_SETTINGS, toArabic, ReadingMode, getReadersForMode, getValidReaderForMode } from './constants';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 import SurahHeader from './SurahHeader';
@@ -107,7 +107,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
 
 
 
-    const getReaderName = (id: string) => READERS.find(r => r.id === id)?.name || id;
+    const effectiveReaderId = getValidReaderForMode(readingMode as ReadingMode, settings.reader);
+    const getReaderName = (id: string) => {
+        const validId = getValidReaderForMode(readingMode as ReadingMode, id);
+        const modeList = getReadersForMode(readingMode as ReadingMode);
+        return modeList.find(r => r.id === validId)?.name || READERS.find(r => r.id === validId)?.name || validId;
+    };
     const getTafseerName = (id: string) => TAFSEERS.find(t => t.id === id)?.name || id;
     const getFontName = (val: string) => {
         const fontMap: Record<string, string> = {

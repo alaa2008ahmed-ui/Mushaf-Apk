@@ -1,18 +1,31 @@
-
 import React, { useState, useEffect, FC } from 'react';
-import { App as CapacitorApp } from '@capacitor/app';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import ThemePageLock from '../components/ThemePageLock';
-import { umrahVirtues, umrahGeneralInfo, umrahSteps, hajjTypes, hajjTamattuPlan, hajjIfradPlan, hajjQiranPlan, hajjGeneralInfo, allDuaas, homeScreenAdditions } from '../data/hajjUmrahData';
+import { 
+    umrahVirtues, umrahGeneralInfo, umrahSteps, hajjTypes, 
+    hajjTamattuPlan, hajjIfradPlan, hajjQiranPlan, hajjGeneralInfo, 
+    allDuaas, homeScreenAdditions 
+} from '../data/hajjUmrahData';
+import { 
+    umrahVirtuesEn, umrahGeneralInfoEn, umrahStepsEn, 
+    hajjGeneralInfoEn, hajjTypesEn, 
+    hajjTamattuPlanEn, hajjIfradPlanEn, hajjQiranPlanEn 
+} from '../data/hajjUmrahDataEn';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
     ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Map, Heart, Compass, 
     BookOpen, Info, ShieldAlert, ListChecks, Plus, Minus, RotateCcw, Tent,
-    ZoomIn, CheckCircle2, Circle, ArrowLeft, Footprints,
-    Ban, HelpCircle, MapPin, Sparkles, Scale, AlertTriangle, ScrollText, Home
+    ZoomIn, ZoomOut, CheckCircle2, Circle, ArrowLeft, Footprints,
+    Ban, HelpCircle, MapPin, Sparkles, Scale, AlertTriangle, ScrollText, Home,
+    Copy, Check
 } from 'lucide-react';
 import { getTawafCounterState, saveTawafCounterState, subscribeTawafCounter } from '../utils/tawafCounterStorage';
+import { 
+    tHajj, getDuaaEnglish, CHECKLIST_ITEMS_EN, 
+    DUAA_CATEGORY_TITLES_EN, HOME_ADDITIONS_EN 
+} from '../utils/hajjUmrahTranslations';
 
 interface DuaaSectionProps {
     id: number;
@@ -25,6 +38,8 @@ interface DuaaSectionProps {
 }
 
 const DuaaSection: FC<DuaaSectionProps> = ({ id, title, items, isOpen, onToggle, onZoom, cardBorderColor }) => {
+    const { language, isRTL } = useLanguage();
+    const isEn = language === 'en';
     const [currentIndex, setCurrentIndex] = useState(0);
 
     useEffect(() => {
@@ -43,13 +58,20 @@ const DuaaSection: FC<DuaaSectionProps> = ({ id, title, items, isOpen, onToggle,
         if (currentIndex > 0) setCurrentIndex(i => i - 1);
     };
 
+    const displayTitle = isEn ? (DUAA_CATEGORY_TITLES_EN[id] || title) : title;
+    const currentArabicItem = items[currentIndex] || '';
+    const currentEnglishTranslation = getDuaaEnglish(currentArabicItem);
+
     return (
         <div id={`duaa-section-${id}`} className="themed-card rounded-2xl overflow-hidden mb-3 backdrop-blur-sm" style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
             <button 
+                type="button"
                 onClick={onToggle} 
-                className="w-full flex justify-between items-center p-4 bg-white/10 dark:bg-gray-800/50 hover:bg-white/20 dark:hover:bg-gray-800 transition-colors"
+                className="w-full flex justify-between items-center p-4 bg-white/10 dark:bg-gray-800/50 hover:bg-white/20 dark:hover:bg-gray-800 transition-colors cursor-pointer"
             >
-                <span className="font-bold text-base md:text-lg text-right" style={{ color: 'var(--text-color)' }}>{title}</span>
+                <span className={`font-bold text-base md:text-lg ${isEn ? 'text-left' : 'text-right'}`} style={{ color: 'var(--text-color)' }}>
+                    {displayTitle}
+                </span>
                 <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
                     <ChevronDown className="w-5 h-5 opacity-70" style={{ color: 'var(--text-color)' }} />
                 </motion.div>
@@ -64,34 +86,52 @@ const DuaaSection: FC<DuaaSectionProps> = ({ id, title, items, isOpen, onToggle,
                     >
                         <div className="p-4 bg-white/10 dark:bg-gray-900/20">
                             <div className="flex flex-col gap-4 p-5 rounded-xl bg-white/10 dark:bg-gray-800/40 shadow-sm relative min-h-[160px] justify-center items-center text-center" style={{ borderColor: cardBorderColor, borderWidth: '1px', borderStyle: 'solid' }}>
-                                <span className="absolute top-3 right-4 text-xs font-bold opacity-50" style={{ color: 'var(--text-color)' }}>
+                                <span className={`absolute top-3 ${isRTL ? 'right-4' : 'left-4'} text-xs font-bold opacity-60 font-mono`} style={{ color: 'var(--text-color)' }}>
                                     {currentIndex + 1} / {items.length}
                                 </span>
-                                <button onClick={() => onZoom(items[currentIndex])} className="absolute top-2 left-2 p-2 shrink-0 opacity-60 hover:opacity-100 transition-opacity rounded-full dark:hover:bg-gray-700" style={{ color: 'var(--text-color)' }}>
+                                <button 
+                                    type="button"
+                                    onClick={() => onZoom(currentArabicItem)} 
+                                    className={`absolute top-2 ${isRTL ? 'left-2' : 'right-2'} p-2 shrink-0 opacity-70 hover:opacity-100 transition-opacity rounded-full dark:hover:bg-gray-700 cursor-pointer`} 
+                                    title={tHajj('zoomModalTitle', language)}
+                                    style={{ color: 'var(--text-color)' }}
+                                >
                                     <ZoomIn className="w-5 h-5" />
                                 </button>
                                 
-                                <span className="text-lg md:text-xl leading-loose font-amiri mt-6 mb-2" style={{ color: 'var(--text-color)' }} dangerouslySetInnerHTML={{ __html: items[currentIndex] }}></span>
+                                <div className="mt-6 mb-2 space-y-3 w-full">
+                                    {isEn ? (
+                                        <p className="text-sm md:text-base leading-relaxed text-emerald-800 dark:text-emerald-300 font-medium px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-start">
+                                            {currentEnglishTranslation}
+                                        </p>
+                                    ) : (
+                                        <p className="text-lg md:text-xl leading-loose font-amiri font-bold" style={{ color: 'var(--text-color)' }}>
+                                            {currentArabicItem}
+                                        </p>
+                                    )}
+                                </div>
                                 
                                 <div className="flex w-full justify-between items-center mt-2 border-t border-black/10 dark:border-white/10 pt-3">
                                     <button 
+                                        type="button"
                                         onClick={handleNext}
                                         disabled={currentIndex === items.length - 1}
-                                        className="p-2 rounded-lg bg-black/5 dark:bg-white/10 disabled:opacity-30 hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex items-center gap-1"
+                                        className="p-2 px-3 rounded-lg bg-black/5 dark:bg-white/10 disabled:opacity-30 hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex items-center gap-1.5 cursor-pointer font-bold text-xs sm:text-sm"
                                         style={{ color: 'var(--text-color)' }}
                                     >
-                                        <ChevronRight size={18} />
-                                        <span className="text-sm font-bold">التالي</span>
+                                        {!isRTL ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+                                        <span>{tHajj('nextDuaa', language)}</span>
                                     </button>
                                     
                                     <button 
+                                        type="button"
                                         onClick={handlePrev}
                                         disabled={currentIndex === 0}
-                                        className="p-2 rounded-lg bg-black/5 dark:bg-white/10 disabled:opacity-30 hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex items-center gap-1"
+                                        className="p-2 px-3 rounded-lg bg-black/5 dark:bg-white/10 disabled:opacity-30 hover:bg-black/10 dark:hover:bg-white/20 transition-colors flex items-center gap-1.5 cursor-pointer font-bold text-xs sm:text-sm"
                                         style={{ color: 'var(--text-color)' }}
                                     >
-                                        <span className="text-sm font-bold">السابق</span>
-                                        <ChevronLeft size={18} />
+                                        <span>{tHajj('prevDuaa', language)}</span>
+                                        {!isRTL ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
                                     </button>
                                 </div>
                             </div>
@@ -104,6 +144,8 @@ const DuaaSection: FC<DuaaSectionProps> = ({ id, title, items, isOpen, onToggle,
 };
 
 const ChecklistScreen = ({ theme, cardBorderColor }: { theme: any, cardBorderColor?: string }) => {
+    const { language, isRTL } = useLanguage();
+    const isEn = language === 'en';
     const isBlackTheme = theme.bgColor === '#000000';
     const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
@@ -122,25 +164,25 @@ const ChecklistScreen = ({ theme, cardBorderColor }: { theme: any, cardBorderCol
 
     const categories = [
         {
-            title: "للحج والعمرة (أساسيات)",
+            title: tHajj('checklistCatEssentials', language),
             items: [
-                { id: '1', text: "ملابس الإحرام (إزار ورداء / ملابس واسعة)" },
-                { id: '2', text: "حذاء خفيف ومريح" },
-                { id: '3', text: "حقيبة صغيرة لحفظ الأوراق والمال" },
-                { id: '4', text: "مقص صغير / ماكينة حلاقة" },
-                { id: '5', text: "أدوية شخصية ومسكنات" },
-                { id: '6', text: "مظلة شمسية" }
+                { id: '1', ar: "ملابس الإحرام (إزار ورداء / ملابس واسعة)" },
+                { id: '2', ar: "حذاء خفيف ومريح" },
+                { id: '3', ar: "حقيبة صغيرة لحفظ الأوراق والمال" },
+                { id: '4', ar: "مقص صغير / ماكينة حلاقة" },
+                { id: '5', ar: "أدوية شخصية ومسكنات" },
+                { id: '6', ar: "مظلة شمسية" }
             ]
         },
         {
-            title: "مستلزمات عامة",
+            title: tHajj('checklistCatGeneral', language),
             items: [
-                { id: '7', text: "كتيب أذكار / مصحف جيب / سبحة" },
-                { id: '8', text: "ملابس قطنية مريحة" },
-                { id: '9', text: "مناديل مبللة وجافة (بدون عطر)" },
-                { id: '10', text: "شاحن هاتف ومخزن طاقة" },
-                { id: '11', text: "نظارة شمسية" },
-                { id: '12', text: "سجادة صلاة خفيفة" }
+                { id: '7', ar: "كتيب أذكار / مصحف جيب / سبحة" },
+                { id: '8', ar: "ملابس قطنية مريحة" },
+                { id: '9', ar: "مناديل مبللة وجافة (بدون عطر)" },
+                { id: '10', ar: "شاحن هاتف ومخزن طاقة" },
+                { id: '11', ar: "نظارة شمسية" },
+                { id: '12', ar: "سجادة صلاة خفيفة" }
             ]
         }
     ];
@@ -151,30 +193,38 @@ const ChecklistScreen = ({ theme, cardBorderColor }: { theme: any, cardBorderCol
                 <div className="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-2" style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : `${theme.palette[0]}20` }}>
                     <ListChecks className="w-6 h-6" style={{ color: isBlackTheme ? '#000000' : theme.palette[0] }} />
                 </div>
-                <p className="text-sm opacity-70" style={{ color: 'var(--text-color)' }}>حدد الأشياء التي قمت بتجهيزها لرحلتك.</p>
+                <p className="text-sm opacity-80 font-medium" style={{ color: 'var(--text-color)' }}>
+                    {tHajj('checklistHeader', language)}
+                </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {categories.map((cat, i) => (
                     <div key={i} className="themed-card backdrop-blur-md rounded-xl p-3" style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
-                        <h3 className="font-bold text-base mb-2 border-b pb-1" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0], borderColor: isBlackTheme ? 'rgba(255,255,255,0.2)' : `${theme.palette[0]}20` }}>{cat.title}</h3>
+                        <h3 className="font-bold text-base mb-2 border-b pb-1 text-start" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0], borderColor: isBlackTheme ? 'rgba(255,255,255,0.2)' : `${theme.palette[0]}20` }}>
+                            {cat.title}
+                        </h3>
                         <div className="space-y-1.5">
-                            {cat.items.map(item => (
-                                <button 
-                                    key={item.id} 
-                                    onClick={() => toggleItem(item.id)}
-                                    className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-white/40 dark:hover:bg-gray-700 transition-all border border-transparent"
-                                    style={{ borderColor: checkedItems[item.id] ? (isBlackTheme ? 'rgba(255,255,255,0.3)' : `${theme.palette[0]}20`) : 'transparent' }}
-                                >
-                                    <div className={`shrink-0 w-4 h-4 rounded-md flex items-center justify-center transition-colors ${checkedItems[item.id] ? '' : 'border-2 border-gray-300/50 dark:border-gray-600'}`}
-                                         style={{ backgroundColor: checkedItems[item.id] ? (isBlackTheme ? '#FFFFFF' : theme.palette[0]) : 'transparent' }}>
-                                        {checkedItems[item.id] && <CheckCircle2 size={10} className={isBlackTheme ? "text-black" : "text-white"} />}
-                                    </div>
-                                    <span className={`text-sm text-right leading-relaxed font-medium transition-opacity ${checkedItems[item.id] ? 'opacity-40 line-through' : ''}`} style={{ color: 'var(--text-color)' }}>
-                                        {item.text}
-                                    </span>
-                                </button>
-                            ))}
+                            {cat.items.map(item => {
+                                const itemText = isEn ? (CHECKLIST_ITEMS_EN[item.id] || item.ar) : item.ar;
+                                return (
+                                    <button 
+                                        key={item.id} 
+                                        type="button"
+                                        onClick={() => toggleItem(item.id)}
+                                        className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-white/40 dark:hover:bg-gray-700 transition-all border border-transparent cursor-pointer"
+                                        style={{ borderColor: checkedItems[item.id] ? (isBlackTheme ? 'rgba(255,255,255,0.3)' : `${theme.palette[0]}20`) : 'transparent' }}
+                                    >
+                                        <div className={`shrink-0 w-4 h-4 rounded-md flex items-center justify-center transition-colors ${checkedItems[item.id] ? '' : 'border-2 border-gray-300/50 dark:border-gray-600'}`}
+                                             style={{ backgroundColor: checkedItems[item.id] ? (isBlackTheme ? '#FFFFFF' : theme.palette[0]) : 'transparent' }}>
+                                            {checkedItems[item.id] && <CheckCircle2 size={10} className={isBlackTheme ? "text-black" : "text-white"} />}
+                                        </div>
+                                        <span className={`text-sm text-start leading-relaxed font-medium transition-opacity flex-1 ${checkedItems[item.id] ? 'opacity-40 line-through' : ''}`} style={{ color: 'var(--text-color)' }}>
+                                            {itemText}
+                                        </span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 ))}
@@ -184,6 +234,8 @@ const ChecklistScreen = ({ theme, cardBorderColor }: { theme: any, cardBorderCol
 };
 
 const CountersScreen = ({ theme, cardBorderColor }: { theme: any, cardBorderColor?: string }) => {
+    const { language, isRTL } = useLanguage();
+    const isEn = language === 'en';
     const isBlackTheme = theme.bgColor === '#000000';
     const [state, setState] = useState(getTawafCounterState());
 
@@ -247,7 +299,7 @@ const CountersScreen = ({ theme, cardBorderColor }: { theme: any, cardBorderColo
 
     return (
         <section className="space-y-4">
-            {/* بطاقة تعريفية وزر تثبيت العداد في الصفحة الرئيسية */}
+            {/* Header info & Home toggle button */}
             <div 
                 className="backdrop-blur-md rounded-2xl p-4 text-center transition-all" 
                 style={{ 
@@ -261,22 +313,23 @@ const CountersScreen = ({ theme, cardBorderColor }: { theme: any, cardBorderColo
                     <RotateCcw className="w-6 h-6" style={{ color: isBlackTheme ? '#000000' : theme.palette[0] }} />
                 </div>
                 <h3 className="font-bold text-base mb-1" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0] }}>
-                    عداد أشواط الطواف والسعي
+                    {tHajj('counterHeaderTitle', language)}
                 </h3>
-                <p className="text-xs opacity-70 mb-3" style={{ color: 'var(--text-color)' }}>
-                    أداة ذكية لمتابعة وإحصاء أشواط الطواف حول الكعبة والسعي بين الصفا والمروة بسهولة.
+                <p className="text-xs opacity-75 mb-3" style={{ color: 'var(--text-color)' }}>
+                    {tHajj('counterHeaderDesc', language)}
                 </p>
 
-                {/* زر التفعيل/التعطيل للظهور في الصفحة الرئيسية */}
+                {/* Toggle button */}
                 <button
+                    type="button"
                     onClick={toggleHomeVisibility}
-                    className={`w-full p-3 rounded-xl border-2 flex items-center justify-between transition-all active:scale-[0.98] ${
+                    className={`w-full p-3 rounded-xl border-2 flex items-center justify-between transition-all active:scale-[0.98] cursor-pointer ${
                         state.showOnHome 
                             ? (isBlackTheme ? 'bg-white/10 border-white' : 'border-emerald-500 bg-emerald-500/10') 
                             : 'bg-black/5 dark:bg-white/5 border-dashed border-gray-400/40 hover:border-gray-400'
                     }`}
                 >
-                    <div className="flex items-center gap-2.5 text-right">
+                    <div className="flex items-center gap-2.5 text-start">
                         <div 
                             className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                             style={{
@@ -291,29 +344,29 @@ const CountersScreen = ({ theme, cardBorderColor }: { theme: any, cardBorderColo
                             <Home size={18} />
                         </div>
                         <div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-bold text-xs md:text-sm" style={{ color: isBlackTheme ? '#FFFFFF' : theme.textColor }}>
-                                    ظهور العداد في الصفحة الرئيسية
+                                    {tHajj('counterShowOnHome', language)}
                                 </span>
                                 {state.showOnHome ? (
                                     <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500 text-white shadow-sm">
-                                        مُفعّل ✓
+                                        {tHajj('counterEnabled', language)}
                                     </span>
                                 ) : (
                                     <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-gray-400/20 text-gray-500 dark:text-gray-400">
-                                        معطّل
+                                        {tHajj('counterDisabled', language)}
                                     </span>
                                 )}
                             </div>
-                            <span className="text-[11px] opacity-70 block text-right mt-0.5" style={{ color: 'var(--text-color)' }}>
+                            <span className="text-[11px] opacity-70 block text-start mt-0.5" style={{ color: 'var(--text-color)' }}>
                                 {state.showOnHome 
-                                    ? 'يظهر الآن تحت بطاقة الصلاة مباشرة في الصفحة الرئيسية' 
-                                    : 'اضغط لتفعيل ظهوره تحت بطاقة الصلاة في الرئيسية'}
+                                    ? tHajj('counterHomeActiveDesc', language)
+                                    : tHajj('counterHomeInactiveDesc', language)}
                             </span>
                         </div>
                     </div>
 
-                    {/* المفتاح التفاعلي Toggle Knob */}
+                    {/* Toggle Knob */}
                     <div 
                         className={`w-12 h-6.5 rounded-full p-1 transition-all flex items-center shrink-0 ${
                             state.showOnHome 
@@ -334,33 +387,35 @@ const CountersScreen = ({ theme, cardBorderColor }: { theme: any, cardBorderColo
                 </button>
             </div>
 
-            {/* التبديل بين الطواف والسعي */}
+            {/* Tawaf vs Sa'i switch */}
             <div className="flex bg-white/10 dark:bg-gray-800/50 backdrop-blur-xl p-1 rounded-2xl" style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
                 <button 
+                    type="button"
                     onClick={() => switchTab('tawaf')} 
-                    className={`flex-1 py-2 rounded-xl font-bold transition-all ${state.activeTab === 'tawaf' ? (isBlackTheme ? 'text-black shadow-lg' : 'text-white shadow-lg') : 'opacity-60'}`}
+                    className={`flex-1 py-2 rounded-xl font-bold transition-all cursor-pointer text-xs sm:text-sm ${state.activeTab === 'tawaf' ? (isBlackTheme ? 'text-black shadow-lg' : 'text-white shadow-lg') : 'opacity-60'}`}
                     style={{ 
                         backgroundColor: state.activeTab === 'tawaf' ? (isBlackTheme ? '#FFFFFF' : theme.palette[0]) : 'transparent',
                         color: state.activeTab === 'tawaf' ? (isBlackTheme ? 'black' : 'white') : 'var(--text-color)' 
                     }}
                 >
-                    أشواط الطواف ({state.tawafCount}/7)
+                    {tHajj('tabTawaf', language)} ({state.tawafCount}/7)
                 </button>
                 <button 
+                    type="button"
                     onClick={() => switchTab('sai')} 
-                    className={`flex-1 py-2 rounded-xl font-bold transition-all ${state.activeTab === 'sai' ? (isBlackTheme ? 'text-black shadow-lg' : 'text-white shadow-lg') : 'opacity-60'}`}
+                    className={`flex-1 py-2 rounded-xl font-bold transition-all cursor-pointer text-xs sm:text-sm ${state.activeTab === 'sai' ? (isBlackTheme ? 'text-black shadow-lg' : 'text-white shadow-lg') : 'opacity-60'}`}
                     style={{ 
                         backgroundColor: state.activeTab === 'sai' ? (isBlackTheme ? '#FFFFFF' : theme.palette[0]) : 'transparent',
                         color: state.activeTab === 'sai' ? (isBlackTheme ? 'black' : 'white') : 'var(--text-color)' 
                     }}
                 >
-                    أشواط السعي ({state.saiCount}/7)
+                    {tHajj('tabSai', language)} ({state.saiCount}/7)
                 </button>
             </div>
 
-            {/* بطاقة العداد الرئيسية */}
+            {/* Circular Counter Box */}
             <div className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-5 flex flex-col items-center justify-center shadow-xl min-h-[240px]" style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
-                {/* مؤشر الأشواط السبعة (7 Laps Bar) */}
+                {/* 7 Laps progress bar */}
                 <div className="w-full max-w-xs flex items-center justify-between gap-1.5 mb-4 px-1">
                     {[1, 2, 3, 4, 5, 6, 7].map((lap) => {
                         const isPassed = lap <= currentCount;
@@ -391,41 +446,48 @@ const CountersScreen = ({ theme, cardBorderColor }: { theme: any, cardBorderColo
                     })}
                 </div>
 
-                {/* الدائرة الدوارة للأشواط */}
+                {/* SVG Progress Circle */}
                 <div className="relative mb-5">
                      <svg className="w-32 h-32 transform -rotate-90">
                         <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="5" fill="none" className="text-white/10 dark:text-gray-700" />
                         <circle cx="64" cy="64" r="58" stroke={isBlackTheme ? '#FFFFFF' : theme.palette[0]} strokeWidth="5" fill="none" strokeDasharray="364.4" strokeDashoffset={364.4 - (364.4 * currentCount) / 7} style={{ transition: 'stroke-dashoffset 0.5s ease' }} strokeLinecap="round" />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                         <span className="text-3xl font-bold font-mono" style={{ color: theme.isDark ? '#ffffff' : (isBlackTheme ? '#FFFFFF' : theme.palette[0]), textShadow: isBlackTheme ? '0 0 20px rgba(255,255,255,0.3)' : `0 0 20px ${theme.palette[0]}4D` }}>{currentCount}</span>
-                         <span className="text-[10px] font-bold mt-0.5 opacity-50" style={{ color: 'var(--text-color)' }}>من 7 أشواط</span>
+                         <span className="text-3xl font-bold font-mono" style={{ color: theme.isDark ? '#ffffff' : (isBlackTheme ? '#FFFFFF' : theme.palette[0]), textShadow: isBlackTheme ? '0 0 20px rgba(255,255,255,0.3)' : `0 0 20px ${theme.palette[0]}4D` }}>
+                             {currentCount}
+                         </span>
+                         <span className="text-[10px] font-bold mt-0.5 opacity-60" style={{ color: 'var(--text-color)' }}>
+                             {tHajj('ofSevenLaps', language)}
+                         </span>
                     </div>
                 </div>
 
-                {/* أزرار التحكم: إنقاص، شوط جديد، وإعادة ضبط */}
+                {/* Action Buttons */}
                 <div className="flex gap-2.5 w-full max-w-xs">
                     <button 
+                        type="button"
                         onClick={reset} 
-                        title="إعادة الضبط للصفر" 
-                        className="p-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition-all border border-white/10 flex items-center justify-center active:scale-95"
+                        title={tHajj('resetCounterTooltip', language)} 
+                        className="p-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition-all border border-white/10 flex items-center justify-center active:scale-95 cursor-pointer"
                     >
                         <RotateCcw size={18} style={{ color: 'var(--text-color)' }} />
                     </button>
 
                     <button 
+                        type="button"
                         onClick={decrement}
                         disabled={currentCount <= 0}
-                        title="إنقاص شوط واحد"
-                        className={`p-3 bg-white/10 rounded-xl font-bold transition-all border border-white/10 flex items-center justify-center active:scale-95 ${currentCount <= 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/20'}`}
+                        title={tHajj('decreaseCounterTooltip', language)} 
+                        className={`p-3 bg-white/10 rounded-xl font-bold transition-all border border-white/10 flex items-center justify-center active:scale-95 cursor-pointer ${currentCount <= 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/20'}`}
                     >
                         <Minus size={18} style={{ color: 'var(--text-color)' }} />
                     </button>
 
                     <button 
+                        type="button"
                         onClick={increment} 
                         disabled={isComplete} 
-                        className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-base shadow-lg ${
+                        className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-base shadow-lg cursor-pointer ${
                             isComplete 
                                 ? 'bg-emerald-600 text-white cursor-default' 
                                 : 'active:scale-95 text-white'
@@ -436,7 +498,9 @@ const CountersScreen = ({ theme, cardBorderColor }: { theme: any, cardBorderColo
                         }}
                     >
                         {isComplete ? <CheckCircle2 size={20} /> : <Plus size={20} />}
-                        <span>{isComplete ? 'اكتملت 7 أشواط' : 'شوط جديد (+1)'}</span>
+                        <span className="text-sm font-bold">
+                            {isComplete ? tHajj('sevenLapsCompleted', language) : tHajj('nextLapBtn', language)}
+                        </span>
                     </button>
                 </div>
             </div>
@@ -444,8 +508,11 @@ const CountersScreen = ({ theme, cardBorderColor }: { theme: any, cardBorderColo
     );
 };
 
-function HajjUmrah({ onBack, onNavigate }) {
+export function HajjUmrah({ onBack, onNavigate }: { onBack: () => void; onNavigate: (pageId: string) => void }) {
     const { theme, themeKey } = useTheme();
+    const { language, isRTL, dir } = useLanguage();
+    const isEn = language === 'en';
+
     const isBlackTheme = theme.bgColor === '#000000' || theme.name === 'أبيض وأسود';
     const isDefaultTheme = themeKey === 'default' || !themeKey;
     const cardBorderColor = isDefaultTheme 
@@ -453,56 +520,85 @@ function HajjUmrah({ onBack, onNavigate }) {
         : (isBlackTheme 
             ? '#FFFFFF' 
             : (theme.palette?.[0] || '#000000'));
-    const [screen, setScreen] = useState('home');
-    const [hajjType, setHajjType] = useState('tamattu');
-    const [openDuaaId, setOpenDuaaId] = useState<number | null>(null);
-    const [zoomedDuaa, setZoomedDuaa] = useState(null);
-    const [selectedDetail, setSelectedDetail] = useState(null);
+
+    const [screen, setScreen] = useState<'home' | 'umrah' | 'hajj' | 'duaa' | 'checklist' | 'counters'>('home');
+    const [hajjType, setHajjType] = useState<'tamattu' | 'ifrad' | 'qiran'>('tamattu');
+    const [selectedDetail, setSelectedDetail] = useState<any>(null);
+    const [openDuaaId, setOpenDuaaId] = useState<number | null>(1);
+    const [zoomedDuaa, setZoomedDuaa] = useState<{ text: string } | null>(null);
+    const [zoomFontSize, setZoomFontSize] = useState<number>(30);
+    const [copySuccess, setCopySuccess] = useState(false);
 
     const handleDuaaToggle = (id: number) => {
-        setOpenDuaaId(prevId => {
-            const nextId = prevId === id ? null : id;
-            if (nextId !== null) {
-                setTimeout(() => {
-                    const el = document.getElementById(`duaa-section-${id}`);
-                    if (el) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                }, 400);
-            }
-            return nextId;
-        });
+        setOpenDuaaId(prevId => prevId === id ? null : id);
     };
 
-    const openZoomModal = (item) => {
-        setZoomedDuaa({ text: item });
-    };
-
+    const openZoomModal = (text: string) => setZoomedDuaa({ text });
     const closeZoomModal = () => {
         setZoomedDuaa(null);
+        setCopySuccess(false);
     };
-    
-    useEffect(() => {
-        if(screen === 'duaa') {
-            setOpenDuaaId(1);
-        }
-    }, [screen]);
+
+    const handleCopyDuaa = () => {
+        if (!zoomedDuaa) return;
+        const textToCopy = isEn 
+            ? getDuaaEnglish(zoomedDuaa.text)
+            : zoomedDuaa.text;
+        navigator.clipboard.writeText(textToCopy);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+    };
 
     useEffect(() => {
         const interceptor = () => {
             if (zoomedDuaa) {
-                setZoomedDuaa(null);
-                return true; // handled
-            } else if (screen !== 'home') {
-                setScreen('home');
-                return true; // handled
+                closeZoomModal();
+                return true;
             }
-            return false; // let the global handler process it (will call onBack)
+            if (selectedDetail) {
+                setSelectedDetail(null);
+                return true;
+            }
+            if (screen !== 'home') {
+                setScreen('home');
+                return true;
+            }
+            return false;
         };
 
         const unregister = registerBackInterceptor(interceptor);
         return unregister;
-    }, [screen, zoomedDuaa]);
+    }, [screen, zoomedDuaa, selectedDetail]);
+
+    const handleBack = () => {
+        if (selectedDetail) {
+            setSelectedDetail(null);
+        } else if (zoomedDuaa) {
+            closeZoomModal();
+        } else if (screen !== 'home') {
+            setScreen('home');
+        } else {
+            onBack();
+        }
+    };
+
+    const handleGoHome = () => {
+        if (selectedDetail) setSelectedDetail(null);
+        if (zoomedDuaa) closeZoomModal();
+        if (screen !== 'home') setScreen('home');
+        onNavigate('home');
+    };
+
+    const getScreenTitle = () => {
+        switch (screen) {
+            case 'umrah': return tHajj('screenUmrahTitle', language);
+            case 'hajj': return tHajj('screenHajjTitle', language);
+            case 'duaa': return tHajj('screenDuaaTitle', language);
+            case 'checklist': return tHajj('screenChecklistTitle', language);
+            case 'counters': return tHajj('screenCountersTitle', language);
+            default: return tHajj('appTitle', language);
+        }
+    };
 
     const renderScreen = () => {
         switch (screen) {
@@ -515,85 +611,40 @@ function HajjUmrah({ onBack, onNavigate }) {
         }
     };
 
-    const handleBack = () => {
-        if (selectedDetail) {
-            setSelectedDetail(null);
-        } else if (zoomedDuaa) {
-            setZoomedDuaa(null);
-        } else if (screen !== 'home') {
-            setScreen('home');
-        } else {
-            onBack();
-        }
-    };
-
-    const handleGoHome = () => {
-        if (selectedDetail) {
-            setSelectedDetail(null);
-        }
-        if (zoomedDuaa) {
-            setZoomedDuaa(null);
-        }
-        if (screen !== 'home') {
-            setScreen('home');
-        }
-        onNavigate('home');
-    };
-
-    const getScreenTitle = () => {
-        switch (screen) {
-            case 'umrah': return 'دليل العمرة';
-            case 'hajj': return 'دليل الحج';
-            case 'duaa': return 'أدعية وأذكار';
-            case 'checklist': return 'قائمة التجهيزات';
-            case 'counters': return 'عداد الأشواط';
-            default: return 'الحج والعمرة';
-        }
-    };
-
-    const getScreenSubtitle = () => {
-        switch (screen) {
-            case 'umrah': return 'دليل أداء مناسك العمرة خطوة بخطوة';
-            case 'hajj': return 'دليل أداء مناسك الحج وأنواعه المختلفة';
-            case 'duaa': return 'أدعية وأذكار الطواف والسعي والمناسك';
-            case 'checklist': return 'قائمة احتياجات الحاج والمعتمر الضرورية';
-            case 'counters': return 'متابعة عدد الأشواط أثناء الطواف والسعي';
-            default: return '﴿ وَأَتِمُّوا الْحَجَّ وَالْعُمْرَةَ لِلَّهِ ﴾ (سورة البقرة - آية 196)';
-        }
-    };
-
     return (
-        <div className="h-screen flex flex-col bg-transparent">
+        <div className="h-screen flex flex-col bg-transparent" dir={dir}>
             <header className="app-top-bar">
                 <div className="app-top-bar__inner">
                     <div className="relative flex items-center justify-center w-full min-h-[44px]">
-                        {/* سهم الرجوع للخلف على يمين النص */}
-                        <div className="absolute right-0 flex items-center">
+                        {/* Back Arrow */}
+                        <div className={`absolute ${isRTL ? 'right-0' : 'left-0'} flex items-center`}>
                             <button
+                                type="button"
                                 onClick={handleBack}
                                 className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
-                                title="رجوع للخلف"
-                                aria-label="رجوع للخلف"
+                                title={tHajj('back', language)}
+                                aria-label={tHajj('back', language)}
                             >
-                                <i className="fa-solid fa-arrow-right text-xl"></i>
+                                <i className={`fa-solid ${isRTL ? 'fa-arrow-right' : 'fa-arrow-left'} text-xl`}></i>
                             </button>
                         </div>
 
-                        {/* عنوان الصفحة في الوسط */}
+                        {/* Screen Title */}
                         <div className="text-center px-12 min-w-0">
                             <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">
                                 {getScreenTitle()}
                             </h1>
                         </div>
 
-                        {/* أيقونة المنزل على يسار النص للعودة إلى الصفحة الرئيسية */}
-                        <div className="absolute left-0 flex items-center gap-1">
+                        {/* Home Button */}
+                        <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} flex items-center gap-1`}>
                             {screen === 'home' && <ThemePageLock />}
                             <button
+                                type="button"
                                 onClick={handleGoHome}
                                 className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
-                                title="الصفحة الرئيسية"
-                                aria-label="الصفحة الرئيسية"
+                                title={tHajj('home', language)}
+                                aria-label={tHajj('home', language)}
                             >
                                 <i className="fa-solid fa-house text-xl"></i>
                             </button>
@@ -602,11 +653,12 @@ function HajjUmrah({ onBack, onNavigate }) {
                 </div>
             </header>
 
-            <main className="w-full max-w-4xl mx-auto px-4 pt-0 flex-1 overflow-y-auto pb-6">
+            <main className="w-full max-w-4xl mx-auto px-4 pt-2 flex-1 overflow-y-auto pb-6">
                 {renderScreen()}
                 <div className="w-full h-6 shrink-0"></div>
             </main>
 
+            {/* Selected Detail Modal */}
             {selectedDetail && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-3 md:p-4 overflow-hidden" onClick={() => setSelectedDetail(null)}>
                     <motion.div 
@@ -622,39 +674,47 @@ function HajjUmrah({ onBack, onNavigate }) {
                                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner shrink-0" style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : `${theme.palette[0]}30`), color: isBlackTheme ? '#000000' : (isDefaultTheme ? '#FFFFFF' : theme.palette[0]) }}>
                                     {selectedDetail.icon || <Info />}
                                 </div>
-                                <div>
-                                    <h3 className="text-lg md:text-xl font-bold leading-tight" style={{ color: 'var(--text-color)' }}>{selectedDetail.title}</h3>
+                                <div className="text-start">
+                                    <h3 className="text-lg md:text-xl font-bold leading-tight" style={{ color: 'var(--text-color)' }}>
+                                        {selectedDetail.title}
+                                    </h3>
                                     {selectedDetail.subtitle && (
-                                        <p className="text-xs opacity-75 mt-0.5" style={{ color: 'var(--text-color)' }}>{selectedDetail.subtitle}</p>
+                                        <p className="text-xs opacity-75 mt-0.5" style={{ color: 'var(--text-color)' }}>
+                                            {selectedDetail.subtitle}
+                                        </p>
                                     )}
                                 </div>
                             </div>
-                            <button onClick={() => setSelectedDetail(null)} className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition">
+                            <button 
+                                type="button"
+                                onClick={() => setSelectedDetail(null)} 
+                                className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition cursor-pointer"
+                            >
                                 <RotateCcw size={18} className="rotate-45" style={{ color: 'var(--text-color)' }} />
                             </button>
                         </div>
 
                         {/* Body */}
-                        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                        <div className="flex-1 overflow-y-auto p-5 space-y-4 text-start">
                             {/* Quranic Verse Callout */}
                             {(selectedDetail.quranAyah || selectedDetail.evidence || (selectedDetail.quranEvidence && selectedDetail.quranEvidence.length > 0)) && (
                                 <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 dark:bg-amber-950/20">
                                     <div className="flex items-center gap-2 mb-2 text-amber-600 dark:text-amber-400 font-bold text-xs">
                                         <BookOpen size={16} />
-                                        <span>الدليل من القرآن الكريم</span>
+                                        <span>{tHajj('quranEvidenceSection', language)}</span>
                                     </div>
                                     {selectedDetail.quranAyah && (
-                                        <p className="text-base md:text-lg font-amiri leading-relaxed text-amber-900 dark:text-amber-200">
+                                        <p className={`text-base md:text-lg leading-relaxed text-amber-900 dark:text-amber-200 ${isEn ? 'font-sans font-medium' : 'font-amiri font-bold'}`}>
                                             {selectedDetail.quranAyah}
                                         </p>
                                     )}
                                     {selectedDetail.evidence && !selectedDetail.quranAyah && (
-                                        <p className="text-sm md:text-base font-amiri leading-relaxed text-amber-900 dark:text-amber-200">
+                                        <p className={`text-sm md:text-base leading-relaxed text-amber-900 dark:text-amber-200 ${isEn ? 'font-sans font-medium' : 'font-amiri font-bold'}`}>
                                             {selectedDetail.evidence}
                                         </p>
                                     )}
                                     {selectedDetail.quranEvidence && selectedDetail.quranEvidence.map((ev: string, idx: number) => (
-                                        <p key={idx} className="text-base font-amiri leading-relaxed text-amber-900 dark:text-amber-200 mt-1">
+                                        <p key={idx} className={`text-base leading-relaxed text-amber-900 dark:text-amber-200 mt-1 ${isEn ? 'font-sans font-medium' : 'font-amiri font-bold'}`}>
                                             {ev}
                                         </p>
                                     ))}
@@ -666,15 +726,15 @@ function HajjUmrah({ onBack, onNavigate }) {
                                 <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 dark:bg-emerald-950/20">
                                     <div className="flex items-center gap-2 mb-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
                                         <ScrollText size={16} />
-                                        <span>من السنة النبوية المطهرة</span>
+                                        <span>{tHajj('sunnahEvidenceSection', language)}</span>
                                     </div>
                                     {selectedDetail.hadith && (
-                                        <p className="text-sm md:text-base font-amiri leading-relaxed text-emerald-950 dark:text-emerald-200">
+                                        <p className={`text-sm md:text-base leading-relaxed text-emerald-950 dark:text-emerald-200 ${isEn ? 'font-sans font-medium' : 'font-amiri'}`}>
                                             {selectedDetail.hadith}
                                         </p>
                                     )}
                                     {selectedDetail.sunnahEvidence && selectedDetail.sunnahEvidence.map((ev: string, idx: number) => (
-                                        <p key={idx} className="text-sm md:text-base font-amiri leading-relaxed text-emerald-950 dark:text-emerald-200 mt-2">
+                                        <p key={idx} className={`text-sm md:text-base leading-relaxed text-emerald-950 dark:text-emerald-200 mt-2 ${isEn ? 'font-sans font-medium' : 'font-amiri'}`}>
                                             {ev}
                                         </p>
                                     ))}
@@ -686,7 +746,7 @@ function HajjUmrah({ onBack, onNavigate }) {
                                 <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 dark:bg-blue-950/20">
                                     <div className="flex items-center gap-2 mb-1.5 text-blue-600 dark:text-blue-400 font-bold text-xs">
                                         <Info size={16} />
-                                        <span>البيان والتعريف الفقهي</span>
+                                        <span>{tHajj('fiqhDefSection', language)}</span>
                                     </div>
                                     <p className="text-sm leading-relaxed" style={{ color: 'var(--text-color)' }}>
                                         {selectedDetail.definition || selectedDetail.description}
@@ -699,7 +759,7 @@ function HajjUmrah({ onBack, onNavigate }) {
                                 <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 dark:bg-purple-950/20">
                                     <div className="flex items-center gap-2 mb-1.5 text-purple-600 dark:text-purple-400 font-bold text-xs">
                                         <Scale size={16} />
-                                        <span>حكم الهدي والبديل عنه في الشرع</span>
+                                        <span>{tHajj('hadyRulingSection', language)}</span>
                                     </div>
                                     <p className="text-sm leading-relaxed" style={{ color: 'var(--text-color)' }}>
                                         {selectedDetail.hadyRuling}
@@ -712,7 +772,7 @@ function HajjUmrah({ onBack, onNavigate }) {
                                 <div className="p-4 rounded-2xl bg-teal-500/10 border border-teal-500/20 dark:bg-teal-950/20">
                                     <div className="flex items-center gap-2 mb-1.5 text-teal-600 dark:text-teal-400 font-bold text-xs">
                                         <MapPin size={16} />
-                                        <span>لمن يُشرع هذا النسك ومميزاته</span>
+                                        <span>{tHajj('whoIsItForSection', language)}</span>
                                     </div>
                                     <p className="text-sm leading-relaxed" style={{ color: 'var(--text-color)' }}>
                                         {selectedDetail.whoIsItFor}
@@ -720,25 +780,25 @@ function HajjUmrah({ onBack, onNavigate }) {
                                 </div>
                             )}
 
-                            {/* Comparison */}
+                            {/* Fiqh Comparison */}
                             {selectedDetail.comparison && (
                                 <div className="p-4 rounded-2xl bg-white/5 dark:bg-black/20 border border-white/10 space-y-2">
                                     <h4 className="font-bold text-xs flex items-center gap-2" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0] }}>
-                                        <Scale size={16} /> خلاصة المقارنة الفقهية
+                                        <Scale size={16} /> {tHajj('comparisonSummarySection', language)}
                                     </h4>
                                     <div className="grid grid-cols-1 gap-2 text-xs">
-                                        <div className="p-2 rounded-lg bg-white/5"><span className="font-bold">الإحرام: </span>{selectedDetail.comparison.ihram}</div>
-                                        <div className="p-2 rounded-lg bg-white/5"><span className="font-bold">التحلل: </span>{selectedDetail.comparison.tahallul}</div>
-                                        <div className="p-2 rounded-lg bg-white/5"><span className="font-bold">الطواف: </span>{selectedDetail.comparison.tawaf}</div>
-                                        <div className="p-2 rounded-lg bg-white/5"><span className="font-bold">السعي: </span>{selectedDetail.comparison.sai}</div>
-                                        <div className="p-2 rounded-lg bg-white/5"><span className="font-bold">الهدي: </span>{selectedDetail.comparison.hady}</div>
+                                        <div className="p-2 rounded-lg bg-white/5"><span className="font-bold">{tHajj('compIhram', language)}: </span>{selectedDetail.comparison.ihram}</div>
+                                        <div className="p-2 rounded-lg bg-white/5"><span className="font-bold">{tHajj('compTahallul', language)}: </span>{selectedDetail.comparison.tahallul}</div>
+                                        <div className="p-2 rounded-lg bg-white/5"><span className="font-bold">{tHajj('compTawaf', language)}: </span>{selectedDetail.comparison.tawaf}</div>
+                                        <div className="p-2 rounded-lg bg-white/5"><span className="font-bold">{tHajj('compSai', language)}: </span>{selectedDetail.comparison.sai}</div>
+                                        <div className="p-2 rounded-lg bg-white/5"><span className="font-bold">{tHajj('compHady', language)}: </span>{selectedDetail.comparison.hady}</div>
                                     </div>
                                 </div>
                             )}
 
                             {/* Raw HTML text */}
                             {selectedDetail.text && (
-                                <div className="text-base leading-relaxed text-right font-medium" 
+                                <div className="text-base leading-relaxed font-medium" 
                                      style={{ color: 'var(--text-color)' }} 
                                      dangerouslySetInnerHTML={{ __html: selectedDetail.text.replaceAll('{{THEME_PALETTE_0}}', theme.palette[0]) }}>
                                 </div>
@@ -748,7 +808,7 @@ function HajjUmrah({ onBack, onNavigate }) {
                             {(selectedDetail.points || selectedDetail.actions || selectedDetail.detailedSteps) && (
                                 <div className="space-y-2">
                                     <h4 className="font-bold text-xs flex items-center gap-2 mb-2" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0] }}>
-                                        <ListChecks size={16} /> الخطوات والأحكام العملية:
+                                        <ListChecks size={16} /> {tHajj('practicalStepsSection', language)}
                                     </h4>
                                     <ul className="space-y-2.5">
                                         {(selectedDetail.points || selectedDetail.actions || selectedDetail.detailedSteps).map((point: string, i: number) => (
@@ -767,7 +827,7 @@ function HajjUmrah({ onBack, onNavigate }) {
                             {selectedDetail.sunan && selectedDetail.sunan.length > 0 && (
                                 <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 dark:bg-emerald-950/10 space-y-2">
                                     <h4 className="font-bold text-xs flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                                        <Sparkles size={16} /> سنن وآداب نبوية مستحبة
+                                        <Sparkles size={16} /> {tHajj('sunnahEtiquetteSection', language)}
                                     </h4>
                                     <ul className="space-y-1.5 text-xs">
                                         {selectedDetail.sunan.map((item: string, i: number) => (
@@ -784,7 +844,7 @@ function HajjUmrah({ onBack, onNavigate }) {
                             {selectedDetail.mistakes && selectedDetail.mistakes.length > 0 && (
                                 <div className="p-4 rounded-2xl bg-orange-500/10 border border-orange-500/30 dark:bg-orange-950/20 space-y-2">
                                     <h4 className="font-bold text-xs flex items-center gap-2 text-orange-600 dark:text-orange-400">
-                                        <AlertTriangle size={16} /> أخطاء ومحاذير شائعة احذر منها
+                                        <AlertTriangle size={16} /> {tHajj('commonMistakesSection', language)}
                                     </h4>
                                     <ul className="space-y-1.5 text-xs">
                                         {selectedDetail.mistakes.map((item: string, i: number) => (
@@ -798,29 +858,115 @@ function HajjUmrah({ onBack, onNavigate }) {
                             )}
                         </div>
 
-                        {/* Footer */}
+                        {/* Footer Button */}
                         <div className="p-4 bg-white/5 border-t border-white/10">
                             <button 
+                                type="button"
                                 onClick={() => setSelectedDetail(null)} 
-                                className="w-full py-3.5 rounded-2xl font-bold shadow-lg active:scale-[0.98] transition-all"
+                                className="w-full py-3.5 rounded-2xl font-bold shadow-lg active:scale-[0.98] transition-all cursor-pointer"
                                 style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]), color: isBlackTheme ? '#000000' : '#FFFFFF' }}
                             >
-                                فهمت، جزاكم الله خيراً
+                                {tHajj('understoodBtn', language)}
                             </button>
                         </div>
                     </motion.div>
                 </div>
             )}
 
+            {/* Magnifier / Zoom Modal for Adhkar & Supplications */}
             {zoomedDuaa && (
-                <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center p-4" onClick={closeZoomModal}>
-                    <div className="themed-card p-8 rounded-3xl w-full max-w-2xl text-center relative flex flex-col max-h-[90vh]" style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }} onClick={e => e.stopPropagation()}>
-                        <div className="overflow-y-auto hide-scrollbar flex-1 py-4">
-                            <p className="text-3xl md:text-4xl leading-relaxed font-amiri" dangerouslySetInnerHTML={{ __html: zoomedDuaa.text }}></p>
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[70] flex justify-center items-center p-3 md:p-4 overflow-hidden" onClick={closeZoomModal}>
+                    <div 
+                        className="themed-card p-5 sm:p-7 rounded-3xl w-full max-w-2xl text-center relative flex flex-col max-h-[90vh] shadow-2xl" 
+                        style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }} 
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Top Bar with Font Size Controls & Copy */}
+                        <div className="flex items-center justify-between pb-3 mb-2 border-b border-white/10 flex-wrap gap-2">
+                            <div className="flex items-center gap-2 font-bold text-sm">
+                                <Sparkles className="w-4 h-4 text-amber-500" />
+                                <span>{tHajj('zoomModalTitle', language)}</span>
+                            </div>
+
+                            {/* Magnification Toolbar */}
+                            <div className="flex items-center gap-1.5 bg-black/5 dark:bg-white/10 p-1 rounded-xl">
+                                <button
+                                    type="button"
+                                    onClick={() => setZoomFontSize(prev => Math.min(prev + 4, 52))}
+                                    className="p-1.5 px-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/20 transition-all font-bold text-xs flex items-center gap-1 cursor-pointer"
+                                    title={tHajj('zoomIn', language)}
+                                >
+                                    <ZoomIn size={14} />
+                                    <span>+</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setZoomFontSize(prev => Math.max(prev - 4, 18))}
+                                    className="p-1.5 px-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/20 transition-all font-bold text-xs flex items-center gap-1 cursor-pointer"
+                                    title={tHajj('zoomOut', language)}
+                                >
+                                    <ZoomOut size={14} />
+                                    <span>-</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setZoomFontSize(30)}
+                                    className="p-1.5 px-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/20 transition-all font-bold text-[10px] cursor-pointer"
+                                    title={tHajj('zoomReset', language)}
+                                >
+                                    {tHajj('zoomReset', language)}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleCopyDuaa}
+                                    className="p-1.5 px-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/20 transition-all font-bold text-xs flex items-center gap-1 text-emerald-600 dark:text-emerald-400 cursor-pointer"
+                                    title={tHajj('copyDuaa', language)}
+                                >
+                                    {copySuccess ? <Check size={14} /> : <Copy size={14} />}
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="mt-6 shrink-0">
-                            <button onClick={closeZoomModal} className="w-full py-3 rounded-xl font-bold bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:opacity-90 transition-opacity">إغلاق</button>
+                        {/* Content Area */}
+                        <div className="overflow-y-auto custom-scrollbar flex-1 py-4 px-2 space-y-4">
+                            {isEn ? (
+                                <div className="p-4 sm:p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-start space-y-2">
+                                    <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                                        <BookOpen size={14} />
+                                        <span>{tHajj('translationLabel', language)}</span>
+                                    </div>
+                                    <p 
+                                        className="leading-relaxed font-medium select-text text-emerald-950 dark:text-emerald-100" 
+                                        style={{ fontSize: `${Math.max(16, zoomFontSize - 4)}px` }}
+                                    >
+                                        {getDuaaEnglish(zoomedDuaa.text)}
+                                    </p>
+                                </div>
+                            ) : (
+                                <p 
+                                    className="leading-relaxed font-amiri font-bold select-text" 
+                                    style={{ fontSize: `${zoomFontSize}px`, color: 'var(--text-color)' }}
+                                >
+                                    {zoomedDuaa.text}
+                                </p>
+                            )}
+
+                            {copySuccess && (
+                                <p className="text-xs font-bold text-emerald-500 animate-pulse">
+                                    {tHajj('copiedSuccess', language)}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="mt-4 shrink-0 pt-2 border-t border-white/10">
+                            <button 
+                                type="button"
+                                onClick={closeZoomModal} 
+                                className="w-full py-3 rounded-xl font-bold bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:opacity-90 transition-opacity cursor-pointer"
+                            >
+                                {tHajj('closeBtn', language)}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -830,22 +976,28 @@ function HajjUmrah({ onBack, onNavigate }) {
 }
 
 const HomeScreen = ({ setScreen, theme, cardBorderColor }: { setScreen: any, theme: any, cardBorderColor?: string }) => {
+    const { language, isRTL } = useLanguage();
+    const isEn = language === 'en';
     const { themeKey } = useTheme();
     const isBlackTheme = theme.bgColor === '#000000';
     const isDefaultTheme = themeKey === 'default' || theme.name?.includes('الافتراضي') || (!themeKey && theme.palette[0] === '#10b981');
+
+    const additions = isEn ? HOME_ADDITIONS_EN : homeScreenAdditions;
+
     return (
      <section id="home-screen" className="space-y-4">
         <div className="grid grid-cols-2 gap-3 md:gap-4">
             {[
-                { id: 'umrah', icon: <Compass size={20} />, label: 'دليل العمرة' },
-                { id: 'hajj', icon: <Tent size={20} />, label: 'دليل الحج' },
-                { id: 'counters', icon: <RotateCcw size={20} />, label: 'عَدّاد الطواف' },
-                { id: 'duaa', icon: <BookOpen size={20} />, label: 'أدعية وأذكار' }
+                { id: 'umrah', icon: <Compass size={20} />, label: tHajj('cardUmrah', language) },
+                { id: 'hajj', icon: <Tent size={20} />, label: tHajj('cardHajj', language) },
+                { id: 'counters', icon: <RotateCcw size={20} />, label: tHajj('cardCounters', language) },
+                { id: 'duaa', icon: <BookOpen size={20} />, label: tHajj('cardDuaa', language) }
             ].map(item => (
                 <button 
                     key={item.id}
+                    type="button"
                     onClick={() => setScreen(item.id)} 
-                    className="group relative flex flex-col items-center justify-center p-4 rounded-xl bg-white/10 dark:bg-white/5 backdrop-blur-xl shadow-lg hover:bg-white/20 transition-all duration-300"
+                    className="group relative flex flex-col items-center justify-center p-4 rounded-xl bg-white/10 dark:bg-white/5 backdrop-blur-xl shadow-lg hover:bg-white/20 transition-all duration-300 cursor-pointer"
                     style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                 >
                     <div className="relative z-10 w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-inner border border-black/5" 
@@ -855,13 +1007,16 @@ const HomeScreen = ({ setScreen, theme, cardBorderColor }: { setScreen: any, the
                          }}>
                         {item.icon}
                     </div>
-                    <h2 className="relative z-10 font-bold text-sm mt-2" style={{ color: 'var(--text-color)' }}>{item.label}</h2>
+                    <h2 className="relative z-10 font-bold text-sm mt-2 text-center" style={{ color: 'var(--text-color)' }}>
+                        {item.label}
+                    </h2>
                 </button>
             ))}
             
             <button 
+                type="button"
                 onClick={() => setScreen('checklist')} 
-                className="group relative flex flex-col items-center justify-center p-4 rounded-xl bg-white/10 dark:bg-white/5 backdrop-blur-xl shadow-lg hover:bg-white/20 transition-all duration-300 col-span-2"
+                className="group relative flex flex-col items-center justify-center p-4 rounded-xl bg-white/10 dark:bg-white/5 backdrop-blur-xl shadow-lg hover:bg-white/20 transition-all duration-300 col-span-2 cursor-pointer"
                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
             >
                 <div className="relative z-10 w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-inner border border-black/5" 
@@ -871,12 +1026,14 @@ const HomeScreen = ({ setScreen, theme, cardBorderColor }: { setScreen: any, the
                      }}>
                     <ListChecks size={20} />
                 </div>
-                <h2 className="relative z-10 font-bold text-sm mt-2" style={{ color: 'var(--text-color)' }}>قائمة التجهيزات والأمتعة</h2>
+                <h2 className="relative z-10 font-bold text-sm mt-2 text-center" style={{ color: 'var(--text-color)' }}>
+                    {tHajj('cardChecklist', language)}
+                </h2>
             </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            {homeScreenAdditions.map((item, index) => {
+            {additions.map((item, index) => {
                 let IconComponent = Info;
                 if (item.icon === 'fa-gem') IconComponent = BookOpen;
                 if (item.icon === 'fa-ban') IconComponent = Ban;
@@ -884,32 +1041,38 @@ const HomeScreen = ({ setScreen, theme, cardBorderColor }: { setScreen: any, the
                 if (item.icon === 'fa-circle-question') IconComponent = HelpCircle;
 
                 return (
-                 <div key={index} className="bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-xl p-4 shadow-lg" style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
+                 <div key={index} className="bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-xl p-4 shadow-lg text-start" style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
                     <h3 className="font-bold text-base mb-2 flex items-center gap-2" style={{color: (isBlackTheme ? '#FFFFFF' : (theme.name === 'أبيض وأسود' ? theme.textColor : theme.palette[index % theme.palette.length]))}}>
                         <IconComponent size={16} />
                         <span>{item.title}</span>
                     </h3>
                     {item.type === 'hadith' ? (
-                        <p className="text-xs leading-relaxed pr-3 border-r-2 font-medium" style={{ color: 'var(--text-color)', borderColor: isBlackTheme ? '#FFFFFF' : theme.palette[0] }}>{item.content[0]}</p>
+                        <p className={`text-xs leading-relaxed ${isRTL ? 'pr-3 border-r-2' : 'pl-3 border-l-2'} font-medium`} style={{ color: 'var(--text-color)', borderColor: isBlackTheme ? '#FFFFFF' : theme.palette[0] }}>
+                            {item.content[0]}
+                        </p>
                     ) : (
                         <ul className="space-y-1.5 opacity-90 mt-2">
                             {item.content.map((point, pi) => (
                                 <li key={pi} className="flex gap-2 items-start text-xs font-medium" style={{ color: 'var(--text-color)' }}>
                                     <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 opacity-60" style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : theme.palette[0] }}></div>
-                                    <span className="flex-1 leading-relaxed opacity-80">{point}</span>
+                                    <span className="flex-1 leading-relaxed opacity-85">{point}</span>
                                 </li>
                             ))}
                         </ul>
                     )}
-                </div>
+                 </div>
                 );
             })}
-             <div className="col-span-1 md:col-span-2 bg-orange-500/5 dark:bg-orange-900/10 rounded-xl p-4 backdrop-blur-md" style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
+             <div className="col-span-1 md:col-span-2 bg-orange-500/5 dark:bg-orange-900/10 rounded-xl p-4 backdrop-blur-md text-start" style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
                 <h3 className="font-bold text-orange-600 dark:text-orange-400 mb-1 flex items-center gap-2 text-base">
                     <ShieldAlert size={16} />
-                    <span>تنبيه هام</span>
+                    <span>{isEn ? 'Important Warning' : 'تنبيه هام'}</span>
                 </h3>
-                <p className="leading-relaxed text-xs" style={{ color: 'var(--text-color)' }}>ترك ركن يبطل النسك، أما ترك واجب فيُجبر بدم، وارتكاب المحظورات يوجب الفدية.</p>
+                <p className="leading-relaxed text-xs" style={{ color: 'var(--text-color)' }}>
+                    {isEn 
+                        ? 'Omitting a pillar invalidates the ritual, whereas omitting an obligation requires a sacrificial penalty (dam), and committing prohibitions incurs an expiation (fidyah).' 
+                        : 'ترك ركن يبطل النسك، أما ترك واجب فيُجبر بدم، وارتكاب المحظورات يوجب الفدية.'}
+                </p>
             </div>
         </div>
     </section>
@@ -917,47 +1080,62 @@ const HomeScreen = ({ setScreen, theme, cardBorderColor }: { setScreen: any, the
 };
 
 const UmrahScreen = ({ theme, onSelectDetail, cardBorderColor }: { theme: any, onSelectDetail: any, cardBorderColor?: string }) => {
+    const { language, isRTL } = useLanguage();
+    const isEn = language === 'en';
     const { themeKey } = useTheme();
     const isBlackTheme = theme.bgColor === '#000000';
     const isDefaultTheme = themeKey === 'default' || theme.name?.includes('الافتراضي') || (!themeKey && theme.palette[0] === '#10b981');
     const [showVirtues, setShowVirtues] = useState(false);
+
+    const virtuesList = isEn ? umrahVirtuesEn : umrahVirtues;
+    const generalInfo = isEn ? umrahGeneralInfoEn : umrahGeneralInfo;
+    const stepsList = isEn ? umrahStepsEn : umrahSteps;
 
     return (
      <section id="umrah-screen" className="space-y-4">
         {/* Intro Banner */}
         <div className="rounded-2xl p-4 text-center backdrop-blur-sm shadow-md" 
              style={{ backgroundColor: isBlackTheme ? 'rgba(255,255,255,0.05)' : (isDefaultTheme ? 'rgba(0,0,0,0.05)' : `${theme.palette[0]}15`), borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
-            <p className="font-amiri text-base font-bold text-amber-700 dark:text-amber-300">﴿ وَأَتِمُّوا الْحَجَّ وَالْعُمْرَةَ لِلَّهِ ﴾ [البقرة: 196]</p>
-            <p className="text-xs opacity-75 mt-1" style={{ color: 'var(--text-color)' }}>دليل مناسك العمرة خطوة بخطوة موثقة بالقرآن الكريم وصحيح السنة النبوية</p>
+            <p className="font-amiri text-base font-bold text-amber-700 dark:text-amber-300">
+                {tHajj('umrahIntroVerse', language)}
+            </p>
+            <p className="text-xs opacity-75 mt-1" style={{ color: 'var(--text-color)' }}>
+                {tHajj('umrahIntroDesc', language)}
+            </p>
         </div>
 
-        {/* Card: فضائل العمرة من الكتاب والسنة */}
+        {/* Card: Virtues */}
         <div className="themed-card rounded-2xl overflow-hidden backdrop-blur-md shadow-md" style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
             <button 
+                type="button"
                 onClick={() => setShowVirtues(!showVirtues)}
-                className="w-full p-3.5 flex items-center justify-between transition-colors bg-white/5 hover:bg-white/10 text-right"
+                className="w-full p-3.5 flex items-center justify-between transition-colors bg-white/5 hover:bg-white/10 text-start cursor-pointer"
             >
                 <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : `${theme.palette[0]}25`, color: isBlackTheme ? '#000000' : theme.palette[0] }}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : `${theme.palette[0]}25`, color: isBlackTheme ? '#000000' : theme.palette[0] }}>
                         <Sparkles size={16} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-sm" style={{ color: 'var(--text-color)' }}>فضائل العمرة في القرآن والسنة</h3>
-                        <p className="text-[11px] opacity-70">تكفير الذنوب، نفي الفقر، ومضاعفة الأجر كأجر حجة</p>
+                        <h3 className="font-bold text-sm" style={{ color: 'var(--text-color)' }}>
+                            {tHajj('umrahVirtuesTitle', language)}
+                        </h3>
+                        <p className="text-[11px] opacity-70">
+                            {tHajj('umrahVirtuesSubtitle', language)}
+                        </p>
                     </div>
                 </div>
                 {showVirtues ? <ChevronUp size={18} style={{ color: 'var(--text-color)' }} /> : <ChevronDown size={18} style={{ color: 'var(--text-color)' }} />}
             </button>
 
             {showVirtues && (
-                <div className="p-3.5 border-t border-white/10 space-y-3 bg-black/10">
-                    {umrahVirtues.map((v, i) => (
+                <div className="p-3.5 border-t border-white/10 space-y-3 bg-black/10 text-start">
+                    {virtuesList.map((v, i) => (
                         <div key={i} className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
                             <div className="flex justify-between items-center text-xs">
                                 <span className="font-bold" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0] }}>{v.title}</span>
                                 <span className="text-[10px] opacity-60 font-mono">{v.source}</span>
                             </div>
-                            <p className="text-sm font-amiri text-amber-600 dark:text-amber-300 font-semibold">{v.text}</p>
+                            <p className={`text-sm font-semibold text-amber-600 dark:text-amber-300 ${isEn ? 'font-sans' : 'font-amiri'}`}>{v.text}</p>
                             <p className="text-xs opacity-80 leading-relaxed" style={{ color: 'var(--text-color)' }}>{v.explanation}</p>
                         </div>
                     ))}
@@ -965,116 +1143,151 @@ const UmrahScreen = ({ theme, onSelectDetail, cardBorderColor }: { theme: any, o
             )}
         </div>
 
-        {/* General Info Grid: الأركان، الواجبات، السنن، المفسدات */}
+        {/* General Info Grid: Arkan, Wajibat, Sunan, Mufsidat */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             <button 
+                type="button"
                 onClick={() => onSelectDetail({
                     icon: '🕌',
-                    title: 'أركان العمرة الثلاثة',
-                    subtitle: 'لا تصح العمرة إلا بها ولا تُجبر بدم بإجماع العلماء',
-                    points: umrahGeneralInfo.arkan,
-                    quranAyah: '﴿ وَأَتِمُّوا الْحَجَّ وَالْعُمْرَةَ لِلَّهِ ﴾ [البقرة: 196]، وقوله تعالى: ﴿ وَلْيَطَّوَّفُوا بِالْبَيْتِ الْعَتِيقِ ﴾ [الحج: 29]',
-                    hadith: 'قال رسول الله ﷺ: «إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ» وقال: «اسْعَوْا فَإِنَّ اللهَ كَتَبَ عَلَيْكُمُ السَّعْيَ»'
+                    title: isEn ? 'The Three Pillars of Umrah' : 'أركان العمرة الثلاثة',
+                    subtitle: isEn ? 'Umrah is invalid without them and cannot be compensated by animal sacrifice' : 'لا تصح العمرة إلا بها ولا تُجبر بدم بإجماع العلماء',
+                    points: generalInfo.arkan,
+                    quranAyah: isEn ? '﴿ And complete the Hajj and \'Umrah for Allah ﴾ [Al-Baqarah: 196]' : '﴿ وَأَتِمُّوا الْحَجَّ وَالْعُمْرَةَ لِلَّهِ ﴾ [البقرة: 196]، وقوله تعالى: ﴿ وَلْيَطَّوَّفُوا بِالْبَيْتِ الْعَتِيقِ ﴾ [الحج: 29]',
+                    hadith: isEn ? 'The Prophet ﷺ said: «Actions are judged by intentions», and: «Perform Sa\'i, for Allah has prescribed Sa\'i upon you»' : 'قال رسول الله ﷺ: «إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ» وقال: «اسْعَوْا فَإِنَّ اللهَ كَتَبَ عَلَيْكُمُ السَّعْيَ»'
                 })}
-                className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 text-right hover:bg-white/20 transition-all group" 
+                className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 text-start hover:bg-white/20 transition-all group cursor-pointer" 
                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
             >
                 <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-bold text-xs" style={{ color: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]) }}>الأركان (3)</span>
+                    <span className="font-bold text-xs" style={{ color: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]) }}>
+                        {tHajj('pillarsLabel', language)} (3)
+                    </span>
                     <CheckCircle2 size={14} className="opacity-70" />
                 </div>
-                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>الإحرام، الطواف 7 أشواط، السعي 7 أشواط</p>
+                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>
+                    {isEn ? 'Ihram, Tawaf (7 circuits), Sa\'i (7 laps)' : 'الإحرام، الطواف 7 أشواط، السعي 7 أشواط'}
+                </p>
             </button>
 
             <button 
+                type="button"
                 onClick={() => onSelectDetail({
                     icon: '📜',
-                    title: 'واجبات العمرة',
-                    subtitle: 'من ترك واجباً لزمه دم (شاة) وعمرته صحيحة',
-                    points: umrahGeneralInfo.wajibat,
-                    hadith: 'قال رسول الله ﷺ: «هُنَّ لَهُنَّ، وَلِمَنْ أَتَى عَلَيْهِنَّ...» وقال: «اللَّهُمَّ ارْحَمِ المُحَلِّقِينَ»'
+                    title: isEn ? 'Obligations of Umrah (Wajibat)' : 'واجبات العمرة',
+                    subtitle: isEn ? 'Omitting an obligation requires a sacrificial penalty (dam) and Umrah remains valid' : 'من ترك واجباً لزمه دم (شاة) وعمرته صحيحة',
+                    points: generalInfo.wajibat,
+                    hadith: isEn ? 'The Prophet ﷺ said: «These boundaries are for their people and whoever passes them...» and: «O Allah, have mercy on those who shave their heads»' : 'قال رسول الله ﷺ: «هُنَّ لَهُنَّ، وَلِمَنْ أَتَى عَلَيْهِنَّ...» وقال: «اللَّهُمَّ ارْحَمِ المُحَلِّقِينَ»'
                 })}
-                className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 text-right hover:bg-white/20 transition-all group" 
+                className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 text-start hover:bg-white/20 transition-all group cursor-pointer" 
                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
             >
                 <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-bold text-xs" style={{ color: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]) }}>الواجبات (2)</span>
+                    <span className="font-bold text-xs" style={{ color: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]) }}>
+                        {tHajj('obligationsLabel', language)} (2)
+                    </span>
                     <ListChecks size={14} className="opacity-70" />
                 </div>
-                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>الإحرام من الميقات، الحلق أو التقصير</p>
+                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>
+                    {isEn ? 'Ihram from the Miqat, Shaving or Trimming hair' : 'الإحرام من الميقات، الحلق أو التقصير'}
+                </p>
             </button>
 
             <button 
+                type="button"
                 onClick={() => onSelectDetail({
                     icon: '✨',
-                    title: 'سنن وآداب العمرة النبوية',
-                    subtitle: 'أعمال مستحبة تزيد في الأجر والاقتداء بالنبي ﷺ',
-                    points: umrahGeneralInfo.sunan,
-                    hadith: 'كان رسول الله ﷺ يكثر من التلبية ويضطبع ويرمل في الثلاثة أشواط الأولى في طواف العمرة'
+                    title: isEn ? 'Prophetic Sunnahs of Umrah' : 'سنن وآداب العمرة النبوية',
+                    subtitle: isEn ? 'Recommended acts that multiply rewards in following the Prophet ﷺ' : 'أعمال مستحبة تزيد في الأجر والاقتداء بالنبي ﷺ',
+                    points: generalInfo.sunan,
+                    hadith: isEn ? 'The Messenger of Allah ﷺ frequently chanted the Talbiyah, uncovered his right shoulder, and quickened his pace in the first three circuits of Tawaf.' : 'كان رسول الله ﷺ يكثر من التلبية ويضطبع ويرمل في الثلاثة أشواط الأولى في طواف العمرة'
                 })}
-                className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 text-right hover:bg-white/20 transition-all group" 
+                className="bg-white/10 dark:bg-gray-800/50 backdrop-blur-md rounded-xl p-3 text-start hover:bg-white/20 transition-all group cursor-pointer" 
                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
             >
                 <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-bold text-xs" style={{ color: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]) }}>السنن (8)</span>
+                    <span className="font-bold text-xs" style={{ color: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]) }}>
+                        {tHajj('sunnahsLabel', language)} (8)
+                    </span>
                     <Sparkles size={14} className="opacity-70" />
                 </div>
-                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>الغسل، الطيب، التلبية، الرمل، الاضطباع...</p>
+                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>
+                    {isEn ? 'Ghusl, Perfume, Talbiyah, Ramal, Idtiba\'...' : 'الغسل، الطيب، التلبية، الرمل، الاضطباع...'}
+                </p>
             </button>
 
             <button 
+                type="button"
                 onClick={() => onSelectDetail({
                     icon: '⚠️',
-                    title: 'مفسدات ومحظورات العمرة',
-                    subtitle: 'أعمال تبطل العمرة أو توجب الفدية',
-                    points: umrahGeneralInfo.mufsidat,
-                    quranAyah: '﴿ فَمَن فَرَضَ فِيهِنَّ الْحَجَّ فَلَا رَفَثَ وَلَا فُسُوقَ وَلَا جِدَالَ فِي الْحَجِّ ﴾ [البقرة: 197]'
+                    title: isEn ? 'Prohibitions & Nullifiers of Umrah' : 'مفسدات ومحظورات العمرة',
+                    subtitle: isEn ? 'Acts that invalidate Umrah or incur an expiation' : 'أعمال تبطل العمرة أو توجب الفدية',
+                    points: generalInfo.mufsidat,
+                    quranAyah: isEn ? '﴿ So whoever has made Hajj obligatory upon himself therein, there is [to be for him] no sexual relations and no disobedience and no disputing during Hajj ﴾ [Al-Baqarah: 197]' : '﴿ فَمَن فَرَضَ فِيهِنَّ الْحَجَّ فَلَا رَفَثَ وَلَا فُسُوقَ وَلَا جِدَالَ فِي الْحَجِّ ﴾ [البقرة: 197]'
                 })}
-                className="bg-orange-500/10 dark:bg-orange-950/30 backdrop-blur-md rounded-xl p-3 text-right hover:bg-orange-500/20 transition-all group" 
+                className="bg-orange-500/10 dark:bg-orange-950/30 backdrop-blur-md rounded-xl p-3 text-start hover:bg-orange-500/20 transition-all group cursor-pointer" 
                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
             >
                 <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-bold text-xs text-orange-600 dark:text-orange-400">المفسدات (3)</span>
+                    <span className="font-bold text-xs text-orange-600 dark:text-orange-400">
+                        {tHajj('prohibitionsLabel', language)} (3)
+                    </span>
                     <ShieldAlert size={14} className="text-orange-500" />
                 </div>
-                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>الجماع قبل التحلل، ترك ركن، ارتكاب المحظورات</p>
+                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>
+                    {isEn ? 'Marital relations before Tahallul, missing a pillar...' : 'الجماع قبل التحلل، ترك ركن، ارتكاب المحظورات'}
+                </p>
             </button>
         </div>
 
-        {/* الخطوات التسع التفصيلية */}
+        {/* 9 Steps */}
         <div className="space-y-3">
-            <h3 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
+            <h3 className="text-base font-bold flex items-center gap-2 text-start" style={{ color: 'var(--text-color)' }}>
                 <Compass className="w-5 h-5" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0] }} />
-                <span>خطوات مناسك العمرة بالدليل من الكتاب والسنة</span>
+                <span>{tHajj('umrahStepsSectionTitle', language)}</span>
             </h3>
-            {umrahSteps.map((step, index) => (
+            {stepsList.map((step) => (
                 <button 
                     key={step.title} 
+                    type="button"
                     onClick={() => onSelectDetail(step)}
-                    className="w-full text-right themed-card backdrop-blur-md rounded-2xl p-4 flex items-center gap-3.5 hover:shadow-lg transition-all active:scale-[0.982] group"
+                    className="w-full text-start themed-card backdrop-blur-md rounded-2xl p-4 flex items-center gap-3.5 hover:shadow-lg transition-all active:scale-[0.982] group cursor-pointer"
                     style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                 >
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-bold text-sm md:text-base leading-snug" style={{ color: 'var(--text-color)' }}>{step.title}</h4>
+                            <h4 className="font-bold text-sm md:text-base leading-snug" style={{ color: 'var(--text-color)' }}>
+                                {step.title}
+                            </h4>
                         </div>
                         {step.subtitle && (
-                            <p className="text-xs opacity-75 mt-0.5 truncate" style={{ color: 'var(--text-color)' }}>{step.subtitle}</p>
+                            <p className="text-xs opacity-75 mt-0.5 truncate" style={{ color: 'var(--text-color)' }}>
+                                {step.subtitle}
+                            </p>
                         )}
                         <div className="flex gap-2 mt-2 flex-wrap text-[10px]">
                             {step.quranAyah && (
-                                <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">دليل قرآني 📖</span>
+                                <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">
+                                    {tHajj('quranProofBadge', language)}
+                                </span>
                             )}
                             {step.hadith && (
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">سنة نبوية 📜</span>
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-medium">
+                                    {tHajj('sunnahProofBadge', language)}
+                                </span>
                             )}
                             {step.points && (
-                                <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 font-medium">{step.points.length} نقاط فقهية</span>
+                                <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 font-medium">
+                                    {step.points.length} {tHajj('fiqhPointsBadge', language)}
+                                </span>
                             )}
                         </div>
                     </div>
 
-                    <ChevronLeft size={18} className="opacity-30 group-hover:opacity-60 transition-opacity shrink-0" style={{ color: 'var(--text-color)' }} />
+                    {!isRTL ? (
+                        <ChevronRight size={18} className="opacity-30 group-hover:opacity-60 transition-opacity shrink-0" style={{ color: 'var(--text-color)' }} />
+                    ) : (
+                        <ChevronLeft size={18} className="opacity-30 group-hover:opacity-60 transition-opacity shrink-0" style={{ color: 'var(--text-color)' }} />
+                    )}
                 </button>
             ))}
         </div>
@@ -1083,113 +1296,145 @@ const UmrahScreen = ({ theme, onSelectDetail, cardBorderColor }: { theme: any, o
 };
 
 const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail, cardBorderColor }: { hajjType: any, setHajjType: any, theme: any, onSelectDetail: any, cardBorderColor?: string }) => {
+    const { language, isRTL } = useLanguage();
+    const isEn = language === 'en';
     const { themeKey } = useTheme();
     const isBlackTheme = theme.bgColor === '#000000';
     const isDefaultTheme = themeKey === 'default' || theme.name?.includes('الافتراضي') || (!themeKey && theme.palette[0] === '#10b981');
 
-    const currentType = hajjTypes[hajjType];
+    const typesMap = isEn ? hajjTypesEn : hajjTypes;
+    const currentType = typesMap[hajjType];
+    const generalInfo = isEn ? hajjGeneralInfoEn : hajjGeneralInfo;
+    const tamattuPlan = isEn ? hajjTamattuPlanEn : hajjTamattuPlan;
+    const ifradPlan = isEn ? hajjIfradPlanEn : hajjIfradPlan;
+    const qiranPlan = isEn ? hajjQiranPlanEn : hajjQiranPlan;
 
     return (
      <section id="hajj-screen" className="space-y-4">
         {/* Quran Intro Banner */}
         <div className="rounded-2xl p-4 text-center backdrop-blur-sm shadow-md"
              style={{ backgroundColor: isDefaultTheme ? 'rgba(0,0,0,0.05)' : `${theme.palette[0]}15`, borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
-            <p className="font-amiri text-base font-bold text-amber-700 dark:text-amber-300">﴿ وَلِلَّهِ عَلَى النَّاسِ حِجُّ الْبَيْتِ مَنِ اسْتَطَاعَ إِلَيْهِ سَبِيلًا ﴾ [آل عمران: 97]</p>
-            <p className="text-xs opacity-75 mt-1" style={{ color: 'var(--text-color)' }}>«العُمْرَةُ إِلَى العُمْرَةِ كَفَّارَةٌ لِمَا بَيْنَهُمَا، وَالحَجُّ المَبْرُورُ لَيْسَ لَهُ جَزَاءٌ إِلَّا الجَنَّةُ» [متفق عليه]</p>
+            <p className="font-amiri text-base font-bold text-amber-700 dark:text-amber-300">
+                {tHajj('hajjIntroVerse', language)}
+            </p>
+            <p className="text-xs opacity-75 mt-1" style={{ color: 'var(--text-color)' }}>
+                {tHajj('hajjIntroHadith', language)}
+            </p>
         </div>
 
-        {/* General Info Grid: الأركان (4)، الواجبات (7)، السنن (8)، المفسدات (3) */}
+        {/* General Info Grid: Arkan, Wajibat, Sunan, Mufsidat */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             <button 
+                type="button"
                 onClick={() => onSelectDetail({
                     icon: '🕋',
-                    title: 'أركان الحج الأربعة',
-                    subtitle: 'لا يصح الحج إلا بها جميعاً، وفوات واحد منها يبطل الحج ولا يُجبر بدم',
-                    points: hajjGeneralInfo.arkan,
-                    quranAyah: '﴿ وَلْيَطَّوَّفُوا بِالْبَيْتِ الْعَتِيقِ ﴾ [الحج: 29]',
-                    hadith: 'قال رسول الله ﷺ: «الحَجُّ عَرَفَةُ» وقال: «اسْعَوْا فَإِنَّ اللهَ كَتَبَ عَلَيْكُمُ السَّعْيَ»'
+                    title: isEn ? 'The Four Pillars of Hajj' : 'أركان الحج الأربعة',
+                    subtitle: isEn ? 'Hajj is invalid without them and missing one cannot be compensated by animal sacrifice' : 'لا يصح الحج إلا بها جميعاً، وفوات واحد منها يبطل الحج ولا يُجبر بدم',
+                    points: generalInfo.arkan,
+                    quranAyah: isEn ? '﴿ And let them circumambulate the Ancient House ﴾ [Al-Hajj: 29]' : '﴿ وَلْيَطَّوَّفُوا بِالْبَيْتِ الْعَتِيقِ ﴾ [الحج: 29]',
+                    hadith: isEn ? 'The Messenger of Allah ﷺ said: «Hajj is Arafat», and: «Perform Sa\'i, for Allah has prescribed Sa\'i upon you»' : 'قال رسول الله ﷺ: «الحَجُّ عَرَفَةُ» وقال: «اسْعَوْا فَإِنَّ اللهَ كَتَبَ عَلَيْكُمُ السَّعْيَ»'
                 })}
-                className="themed-card backdrop-blur-md rounded-xl p-3 text-right hover:bg-white/20 transition-all group"
+                className="themed-card backdrop-blur-md rounded-xl p-3 text-start hover:bg-white/20 transition-all group cursor-pointer"
                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
             >
                 <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-bold text-xs" style={{ color: isDefaultTheme ? '#000000' : theme.palette[0] }}>الأركان (4)</span>
+                    <span className="font-bold text-xs" style={{ color: isDefaultTheme ? '#000000' : theme.palette[0] }}>
+                        {tHajj('pillarsLabel', language)} (4)
+                    </span>
                     <CheckCircle2 size={14} className="opacity-70" />
                 </div>
-                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>الإحرام، عرفة، طواف الإفاضة، السعي</p>
+                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>
+                    {isEn ? 'Ihram, Arafat, Tawaf Al-Ifadah, Sa\'i' : 'الإحرام، عرفة، طواف الإفاضة، السعي'}
+                </p>
             </button>
 
             <button 
+                type="button"
                 onClick={() => onSelectDetail({
                     icon: '📜',
-                    title: 'واجبات الحج السبعة',
-                    subtitle: 'من ترك واجباً منها لزمه دم (شاة) يذبحها في مكة ويوزعها على فقرائها وحجه صحيح',
-                    points: hajjGeneralInfo.wajibat,
-                    hadith: 'عن ابن عباس رضي الله عنهما: «مَنْ نَسِيَ مِنْ نُسُكِهِ شَيْئًا أَوْ تَرَكَهُ فَلْيُهْرِقْ دَمًا» [موطأ مالك]'
+                    title: isEn ? 'The Seven Obligations of Hajj' : 'واجبات الحج السبعة',
+                    subtitle: isEn ? 'Omitting one requires an animal sacrifice (dam) slaughtered in Mecca' : 'من ترك واجباً منها لزمه دم (شاة) يذبحها في مكة ويوزعها على فقرائها وحجه صحيح',
+                    points: generalInfo.wajibat,
+                    hadith: isEn ? 'Ibn Abbas (may Allah be pleased with him) said: «Whoever forgets a rite of his rituals or leaves it must offer a sacrificial blood offering.» [Muwatta Malik]' : 'عن ابن عباس رضي الله عنهما: «مَنْ نَسِيَ مِنْ نُسُكِهِ شَيْئًا أَوْ تَرَكَهُ فَلْيُهْرِقْ دَمًا» [موطأ مالك]'
                 })}
-                className="themed-card backdrop-blur-md rounded-xl p-3 text-right hover:bg-white/20 transition-all group"
+                className="themed-card backdrop-blur-md rounded-xl p-3 text-start hover:bg-white/20 transition-all group cursor-pointer"
                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
             >
                 <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-bold text-xs" style={{ color: isDefaultTheme ? '#000000' : theme.palette[0] }}>الواجبات (7)</span>
+                    <span className="font-bold text-xs" style={{ color: isDefaultTheme ? '#000000' : theme.palette[0] }}>
+                        {tHajj('obligationsLabel', language)} (7)
+                    </span>
                     <ListChecks size={14} className="opacity-70" />
                 </div>
-                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>الميقات، الوقوف للمغرب، مزدلفة، منى، الجمار، الحلق، الوداع</p>
+                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>
+                    {isEn ? 'Miqat, Arafat until sunset, Muzdalifah, Mina, Jamarat, Shaving, Farewell Tawaf' : 'الميقات، الوقوف للمغرب، مزدلفة، منى، الجمار، الحلق، الوداع'}
+                </p>
             </button>
 
             <button 
+                type="button"
                 onClick={() => onSelectDetail({
                     icon: '✨',
-                    title: 'سنن الحج وآدابه النبوية',
-                    subtitle: 'أعمال مستحبة ترفع الدرجات وتكمل الأجر اقتداءً بالنبي ﷺ',
-                    points: hajjGeneralInfo.sunan,
-                    hadith: 'قال رسول الله ﷺ في حجة الوداع: «لِتَأْخُذُوا مَنَاسِكَكُمْ، فَإِنِّي لَا أَدْرِي لَعَلِّي لَا أَحُجُّ بَعْدَ حَجَّتِي هَذِهِ» [صحيح مسلم]'
+                    title: isEn ? 'Prophetic Sunnahs of Hajj' : 'سنن الحج وآدابه النبوية',
+                    subtitle: isEn ? 'Recommended acts that raise status following the Prophet ﷺ' : 'أعمال مستحبة ترفع الدرجات وتكمل الأجر اقتداءً بالنبي ﷺ',
+                    points: generalInfo.sunan,
+                    hadith: isEn ? 'The Prophet ﷺ said during the Farewell Pilgrimage: «Take your rituals from me, for I do not know if I will perform Hajj after this Hajj of mine.» [Sahih Muslim]' : 'قال رسول الله ﷺ في حجة الوداع: «لِتَأْخُذُوا مَنَاسِكَكُمْ، فَإِنِّي لَا أَدْرِي لَعَلِّي لَا أَحُجُّ بَعْدَ حَجَّتِي هَذِهِ» [صحيح مسلم]'
                 })}
-                className="themed-card backdrop-blur-md rounded-xl p-3 text-right hover:bg-white/20 transition-all group"
+                className="themed-card backdrop-blur-md rounded-xl p-3 text-start hover:bg-white/20 transition-all group cursor-pointer"
                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
             >
                 <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-bold text-xs" style={{ color: isDefaultTheme ? '#000000' : theme.palette[0] }}>السنن (8)</span>
+                    <span className="font-bold text-xs" style={{ color: isDefaultTheme ? '#000000' : theme.palette[0] }}>
+                        {tHajj('sunnahsLabel', language)} (8)
+                    </span>
                     <Sparkles size={14} className="opacity-70" />
                 </div>
-                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>المبيت بمنى ليلة عرفة، طواف القدوم، الجمع بنمرة، التلبية...</p>
+                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>
+                    {isEn ? 'Mina overnight on Tarwiyah, Tawaf Al-Qudum, Combining prayers, Talbiyah...' : 'المبيت بمنى ليلة عرفة، طواف القدوم، الجمع بنمرة، التلبية...'}
+                </p>
             </button>
 
             <button 
+                type="button"
                 onClick={() => onSelectDetail({
                     icon: '⚠️',
-                    title: 'مفسدات الحج ومحظوراته',
-                    subtitle: 'ما يبطل الحج بالكلية أو يوجب الفدية والدم',
-                    points: hajjGeneralInfo.mufsidat,
-                    quranAyah: '﴿ الْحَجُّ أَشْهُرٌ مَّعْلُومَاتٌ فَمَن فَرَضَ فِيهِنَّ الْحَجَّ فَلَا رَفَثَ وَلَا فُسُوقَ وَلَا جِدَالَ فِي الْحَجِّ ﴾ [البقرة: 197]'
+                    title: isEn ? 'Prohibitions & Nullifiers of Hajj' : 'مفسدات الحج ومحظوراته',
+                    subtitle: isEn ? 'Acts that invalidate Hajj or incur a sacrificial penalty' : 'ما يبطل الحج بالكلية أو يوجب الفدية والدم',
+                    points: generalInfo.mufsidat,
+                    quranAyah: isEn ? '﴿ Hajj is [during] well-known months, so whoever has made Hajj obligatory upon himself therein, there is [to be for him] no sexual relations and no disobedience and no disputing during Hajj ﴾ [Al-Baqarah: 197]' : '﴿ الْحَجُّ أَشْهُرٌ مَّعْلُومَاتٌ فَمَن فَرَضَ فِيهِنَّ الْحَجَّ فَلَا رَفَثَ وَلَا فُسُوقَ وَلَا جِدَالَ فِي الْحَجِّ ﴾ [البقرة: 197]'
                 })}
-                className="bg-orange-500/10 dark:bg-orange-950/30 backdrop-blur-md rounded-xl p-3 text-right hover:bg-orange-500/20 transition-all group"
+                className="bg-orange-500/10 dark:bg-orange-950/30 backdrop-blur-md rounded-xl p-3 text-start hover:bg-orange-500/20 transition-all group cursor-pointer"
                 style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
             >
                 <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-bold text-xs text-orange-600 dark:text-orange-400">المفسدات (3)</span>
+                    <span className="font-bold text-xs text-orange-600 dark:text-orange-400">
+                        {tHajj('prohibitionsLabel', language)} (3)
+                    </span>
                     <ShieldAlert size={14} className="text-orange-500" />
                 </div>
-                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>الجماع قبل التحلل، فوات عرفة، ترك ركن</p>
+                <p className="text-[10px] opacity-75 line-clamp-2" style={{ color: 'var(--text-color)' }}>
+                    {isEn ? 'Intercourse before Tahallul, missing Arafah, omitting a pillar' : 'الجماع قبل التحلل، فوات عرفة، ترك ركن'}
+                </p>
             </button>
         </div>
 
-        {/* القسم الرئيسي: أنواع الحج الثلاثة بشرح عميق ومفصل من الكتاب والسنة */}
+        {/* Three Types of Hajj */}
         <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
+                <h3 className="text-base font-bold flex items-center gap-2 text-start" style={{ color: 'var(--text-color)' }}>
                     <Scale className="w-5 h-5" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0] }} />
-                    <span>أنواع الحج الثلاثة وأحكامها من الكتاب والسنة</span>
+                    <span>{tHajj('hajjTypesSectionTitle', language)}</span>
                 </h3>
             </div>
 
-            {/* أزرار اختيار نوع الحج الثلاثة */}
+            {/* Selector buttons */}
             <div className="grid grid-cols-3 gap-2">
-                {Object.keys(hajjTypes).map(key => {
+                {Object.keys(typesMap).map(key => {
                     const isSelected = hajjType === key;
+                    const typeName = typesMap[key].name;
                     return (
-                        <button key={key} onClick={() => setHajjType(key)} 
-                            className={`px-3 py-2.5 rounded-xl font-bold transition-all text-xs md:text-sm flex flex-col items-center gap-1 ${isSelected ? 'shadow-md scale-[1.02]' : 'bg-white/5 hover:bg-white/10'}`}
+                        <button key={key} type="button" onClick={() => setHajjType(key)} 
+                            className={`px-3 py-2.5 rounded-xl font-bold transition-all text-xs md:text-sm flex flex-col items-center gap-1 cursor-pointer ${isSelected ? 'shadow-md scale-[1.02]' : 'bg-white/5 hover:bg-white/10'}`}
                             style={{ 
                                 backgroundColor: isSelected ? (isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0])) : 'transparent',
                                 borderColor: isSelected ? (isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0])) : cardBorderColor,
@@ -1199,16 +1444,15 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail, cardBorderCo
                                 opacity: isSelected ? 1 : 0.75 
                             }}
                         >
-                            <span>{hajjTypes[key].name}</span>
+                            <span>{typeName}</span>
                         </button>
                     );
                 })}
             </div>
 
-            {/* بطاقة الشرح التفصيلي للنوع المختار */}
+            {/* Selected type card */}
             {currentType && (
-                <div className="themed-card rounded-2xl p-4 md:p-5 backdrop-blur-md shadow-xl border space-y-4" style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
-                    {/* Header + Badge */}
+                <div className="themed-card rounded-2xl p-4 md:p-5 backdrop-blur-md shadow-xl border space-y-4 text-start" style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-white/10">
                         <div>
                             <div className="flex items-center gap-2 flex-wrap">
@@ -1225,9 +1469,10 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail, cardBorderCo
                         </div>
 
                         <button 
+                            type="button"
                             onClick={() => onSelectDetail({
                                 icon: '📖',
-                                title: `${currentType.name} - الدليل والأحكام الكاملة`,
+                                title: `${currentType.name} - ${isEn ? 'Complete Proof & Steps' : 'الدليل والأحكام الكاملة'}`,
                                 subtitle: currentType.badge,
                                 definition: currentType.definition,
                                 quranEvidence: currentType.quranEvidence,
@@ -1237,78 +1482,76 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail, cardBorderCo
                                 detailedSteps: currentType.detailedSteps,
                                 comparison: currentType.comparison
                             })}
-                            className="shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5"
+                            className="shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                             style={{ 
                                 backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]), 
                                 color: isBlackTheme ? '#000000' : '#FFFFFF' 
                             }}
                         >
                             <ScrollText size={14} />
-                            <span>عرض الدليل والخطوات كاملة</span>
+                            <span>{tHajj('viewFullEvidenceBtn', language)}</span>
                         </button>
                     </div>
 
-                    {/* الأدلة من القرآن والسنة */}
+                    {/* Evidences */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {/* الدليل القرآني */}
                         <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 dark:bg-amber-950/20 space-y-1.5">
                             <span className="font-bold text-xs flex items-center gap-1.5 text-amber-700 dark:text-amber-300">
-                                <BookOpen size={14} /> الدليل من القرآن الكريم
+                                <BookOpen size={14} /> {tHajj('quranEvidenceTitle', language)}
                             </span>
                             {currentType.quranEvidence.map((ev: string, idx: number) => (
-                                <p key={idx} className="text-xs md:text-sm font-amiri leading-relaxed text-amber-900 dark:text-amber-200">
+                                <p key={idx} className={`text-xs md:text-sm leading-relaxed text-amber-900 dark:text-amber-200 ${isEn ? 'font-sans font-medium' : 'font-amiri'}`}>
                                     {ev}
                                 </p>
                             ))}
                         </div>
 
-                        {/* الدليل من السنة النبوية */}
                         <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 dark:bg-emerald-950/20 space-y-1.5">
                             <span className="font-bold text-xs flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
-                                <ScrollText size={14} /> الدليل من السنة النبوية
+                                <ScrollText size={14} /> {tHajj('sunnahEvidenceTitle', language)}
                             </span>
                             {currentType.sunnahEvidence.slice(0, 2).map((ev: string, idx: number) => (
-                                <p key={idx} className="text-xs leading-relaxed text-emerald-950 dark:text-emerald-200">
+                                <p key={idx} className={`text-xs leading-relaxed text-emerald-950 dark:text-emerald-200 ${isEn ? 'font-sans' : ''}`}>
                                     {ev}
                                 </p>
                             ))}
                         </div>
                     </div>
 
-                    {/* حكم الهدي والفدية */}
+                    {/* Hady Ruling */}
                     <div className="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/25 dark:bg-purple-950/20 space-y-1">
                         <span className="font-bold text-xs flex items-center gap-1.5 text-purple-700 dark:text-purple-300">
-                            <Scale size={14} /> حكم الهدي وصيام الأيام العشرة البديلة
+                            <Scale size={14} /> {tHajj('hadyRulingTitle', language)}
                         </span>
                         <p className="text-xs leading-relaxed" style={{ color: 'var(--text-color)' }}>
                             {currentType.hadyRuling}
                         </p>
                     </div>
 
-                    {/* المقارنة الفقهية السريعة */}
+                    {/* Fiqh Comparison */}
                     <div className="p-3 rounded-xl bg-white/5 dark:bg-black/20 border border-white/10 space-y-2">
                         <span className="font-bold text-xs flex items-center gap-1.5" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0] }}>
-                            <ListChecks size={14} /> الفروق الفقهية الجوهرية لـ ({currentType.name})
+                            <ListChecks size={14} /> {tHajj('comparisonTitle', language)} ({currentType.name})
                         </span>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-[11px]">
                             <div className="p-2 rounded-lg bg-white/5 text-center">
-                                <span className="block font-bold text-[10px] opacity-70 mb-0.5">الإحرام</span>
+                                <span className="block font-bold text-[10px] opacity-70 mb-0.5">{tHajj('compIhram', language)}</span>
                                 <span className="leading-tight">{currentType.comparison.ihram}</span>
                             </div>
                             <div className="p-2 rounded-lg bg-white/5 text-center">
-                                <span className="block font-bold text-[10px] opacity-70 mb-0.5">التحلل</span>
+                                <span className="block font-bold text-[10px] opacity-70 mb-0.5">{tHajj('compTahallul', language)}</span>
                                 <span className="leading-tight">{currentType.comparison.tahallul}</span>
                             </div>
                             <div className="p-2 rounded-lg bg-white/5 text-center">
-                                <span className="block font-bold text-[10px] opacity-70 mb-0.5">الطواف</span>
+                                <span className="block font-bold text-[10px] opacity-70 mb-0.5">{tHajj('compTawaf', language)}</span>
                                 <span className="leading-tight">{currentType.comparison.tawaf}</span>
                             </div>
                             <div className="p-2 rounded-lg bg-white/5 text-center">
-                                <span className="block font-bold text-[10px] opacity-70 mb-0.5">السعي</span>
+                                <span className="block font-bold text-[10px] opacity-70 mb-0.5">{tHajj('compSai', language)}</span>
                                 <span className="leading-tight">{currentType.comparison.sai}</span>
                             </div>
                             <div className="p-2 rounded-lg bg-white/5 text-center col-span-2 md:col-span-1">
-                                <span className="block font-bold text-[10px] opacity-70 mb-0.5">الهدي</span>
+                                <span className="block font-bold text-[10px] opacity-70 mb-0.5">{tHajj('compHady', language)}</span>
                                 <span className="leading-tight">{currentType.comparison.hady}</span>
                             </div>
                         </div>
@@ -1317,16 +1560,17 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail, cardBorderCo
             )}
         </div>
 
-        {/* الجدول الزمني والمحطات العملية */}
+        {/* Timeline */}
         <div className="pt-2">
-            <h3 className="text-base font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--text-color)' }}>
+            <h3 className="text-base font-bold mb-3 flex items-center gap-2 text-start" style={{ color: 'var(--text-color)' }}>
                 <Map className="w-5 h-5" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0] }} /> 
-                <span>المخطط الزمني لمحطات النسك يوماً بيوم ({currentType?.name || ''})</span>
+                <span>{tHajj('hajjTimelineSectionTitle', language)}</span>
             </h3>
             <div className="space-y-2.5">
-                {(hajjType === 'tamattu' ? hajjTamattuPlan : hajjType === 'ifrad' ? hajjIfradPlan : hajjQiranPlan).map((day, i) => (
+                {(hajjType === 'tamattu' ? tamattuPlan : hajjType === 'ifrad' ? ifradPlan : qiranPlan).map((day, i) => (
                     <button 
                         key={i} 
+                        type="button"
                         onClick={() => onSelectDetail({ 
                             title: day.day, 
                             subtitle: day.summary,
@@ -1334,7 +1578,7 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail, cardBorderCo
                             points: day.actions, 
                             icon: <div className="text-2xl">{day.icon}</div> 
                         })}
-                        className="w-full text-right themed-card backdrop-blur-md rounded-2xl p-4 flex items-center gap-3.5 hover:shadow-lg transition-all active:scale-[0.982] group"
+                        className="w-full text-start themed-card backdrop-blur-md rounded-2xl p-4 flex items-center gap-3.5 hover:shadow-lg transition-all active:scale-[0.982] group cursor-pointer"
                         style={{ borderColor: cardBorderColor, borderWidth: '1.5px', borderStyle: 'solid' }}
                     >
                         <div className="flex-1 min-w-0">
@@ -1347,7 +1591,11 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail, cardBorderCo
                             )}
                         </div>
 
-                        <ChevronLeft size={18} className="opacity-30 group-hover:opacity-60 transition-opacity shrink-0" style={{ color: 'var(--text-color)' }} />
+                        {!isRTL ? (
+                            <ChevronRight size={18} className="opacity-30 group-hover:opacity-60 transition-opacity shrink-0" style={{ color: 'var(--text-color)' }} />
+                        ) : (
+                            <ChevronLeft size={18} className="opacity-30 group-hover:opacity-60 transition-opacity shrink-0" style={{ color: 'var(--text-color)' }} />
+                        )}
                     </button>
                 ))}
             </div>
@@ -1357,6 +1605,7 @@ const HajjScreen = ({ hajjType, setHajjType, theme, onSelectDetail, cardBorderCo
 };
 
 const DuaaScreen = ({ theme, openDuaaId, onToggle, onZoom, cardBorderColor }: { theme: any, openDuaaId: any, onToggle: any, onZoom: any, cardBorderColor?: string }) => {
+    const { language } = useLanguage();
     const isBlackTheme = theme.bgColor === '#000000';
     return (
         <section id="duaa-screen" className="space-y-4">
@@ -1365,7 +1614,9 @@ const DuaaScreen = ({ theme, openDuaaId, onToggle, onZoom, cardBorderColor }: { 
                 <div className="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-1.5" style={{ backgroundColor: isBlackTheme ? '#FFFFFF' : `${theme.palette[0]}20` }}>
                     <BookOpen className="w-5 h-5" style={{ color: isBlackTheme ? '#000000' : theme.palette[0] }} />
                 </div>
-                <p className="text-xs opacity-70">أدعية مختارة لمناسك الحج والعمرة.</p>
+                <p className="text-xs opacity-80 font-medium">
+                    {tHajj('duaaScreenHeader', language)}
+                </p>
             </div>
 
             <div className="space-y-2">
@@ -1385,6 +1636,5 @@ const DuaaScreen = ({ theme, openDuaaId, onToggle, onZoom, cardBorderColor }: { 
         </section>
     );
 };
-
 
 export default HajjUmrah;

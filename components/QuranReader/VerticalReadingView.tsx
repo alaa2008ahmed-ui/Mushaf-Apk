@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
-import { toArabic, SURAH_INFO, SURAH_NAMES_AR, getAyahCountText, SAJDAH_LOCATIONS } from './constants';
+import { toArabic, SURAH_INFO, SURAH_NAMES_AR, SURAH_NAMES_EN, getAyahCountText, SAJDAH_LOCATIONS } from './constants';
 import SurahHeader from './SurahHeader';
 
 interface VerticalReadingViewProps {
     quranData: any;
-    readingMode: 'tafseer' | 'meanings' | 'translation';
+    readingMode: 'tafseer' | 'meanings' | 'translation' | 'bilingual';
     settings: any;
     currentTheme: any;
     currentAyah: { s: number; a: number };
@@ -21,6 +21,7 @@ interface VerticalReadingViewProps {
     hideVerses?: boolean;
     memorizationSettings?: any;
     isLandscape?: boolean;
+    isLandscapeUIHidden?: boolean;
     onSurahHeaderLongPress?: () => void;
     isPlaying?: boolean;
     isRecording?: boolean;
@@ -51,6 +52,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     hideVerses = false,
     memorizationSettings,
     isLandscape = false,
+    isLandscapeUIHidden = false,
     onSurahHeaderLongPress,
     isPlaying = false,
     isRecording = false,
@@ -63,7 +65,7 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
     const [isLoading, setIsLoading] = useState(() => {
         if (readingMode === 'tafseer') return !cachedTafseerData;
         if (readingMode === 'meanings') return !cachedMeaningsData;
-        if (readingMode === 'translation') return !cachedTranslationData;
+        if (readingMode === 'translation' || readingMode === 'bilingual') return !cachedTranslationData;
         return true;
     });
     const virtuosoRef = useRef<VirtuosoHandle>(null);
@@ -176,7 +178,10 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
     useEffect(() => {
         const fetchTafseer = async () => {
-            if (cachedTafseerData) return;
+            if (cachedTafseerData) {
+                if (readingMode === 'tafseer') setIsLoading(false);
+                return;
+            }
             try {
                 const res = await fetch('/assets/data/ar.jalalayn.json');
                 const data = await res.json();
@@ -187,11 +192,15 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 }
             } catch (error) {
                 console.error('Error fetching tafseer data:', error);
+                if (readingMode === 'tafseer') setIsLoading(false);
             }
         };
 
         const fetchMeanings = async () => {
-            if (cachedMeaningsData) return;
+            if (cachedMeaningsData) {
+                if (readingMode === 'meanings') setIsLoading(false);
+                return;
+            }
             try {
                 const res = await fetch('/tafseer.json');
                 const data = await res.json();
@@ -200,19 +209,24 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                 if (readingMode === 'meanings') setIsLoading(false);
             } catch (error) {
                 console.error('Error fetching meanings data:', error);
+                if (readingMode === 'meanings') setIsLoading(false);
             }
         };
 
         const fetchTranslation = async () => {
-            if (cachedTranslationData) return;
+            if (cachedTranslationData) {
+                if (readingMode === 'translation' || readingMode === 'bilingual') setIsLoading(false);
+                return;
+            }
             try {
                 const res = await fetch('/en.json');
                 const data = await res.json();
                 cachedTranslationData = data;
                 setTranslationData(cachedTranslationData);
-                if (readingMode === 'translation') setIsLoading(false);
+                if (readingMode === 'translation' || readingMode === 'bilingual') setIsLoading(false);
             } catch (error) {
                 console.error('Error fetching translation data:', error);
+                if (readingMode === 'translation' || readingMode === 'bilingual') setIsLoading(false);
             }
         };
 
@@ -327,6 +341,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
     const renderItem = useCallback((index: number, item: any) => {
         if (item.type === 'page-marker') {
+            const isTranslation = readingMode === 'translation';
+            const isBilingual = readingMode === 'bilingual';
             const getContrastingColors = () => {
                 const themeId = currentTheme?.id || 'black';
                 const bracketColor = currentTheme?.verseBracket || currentTheme?.accent || '#9333ea';
@@ -345,34 +361,111 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
             const { num: pageNumColor, bracket: bracketColor } = getContrastingColors();
 
             return (
-                <div className="page-footer flex flex-col items-center pt-1 pb-4" style={{ color: currentTheme.text }}>
-                    <div className="flex items-center justify-center">
-                        <span className="page-number-bracket" style={{ color: bracketColor }}>﴿</span>
-                        <span className="page-number-text" style={{ color: pageNumColor }}>{toArabic(item.pageNumber)}</span>
-                        <span className="page-number-bracket" style={{ color: bracketColor }}>﴾</span>
+                <div className={`${isLandscape ? 'flex justify-center w-full' : 'w-full'}`}>
+                    <div className={`page-footer flex flex-col items-center pt-2 pb-4 ${isLandscape ? 'max-w-3xl w-full' : 'w-full'}`} style={{ color: currentTheme.text, direction: isTranslation ? 'ltr' : 'rtl' }}>
+                        <div className="flex items-center justify-center font-bold text-sm">
+                            {isBilingual ? (
+                                <>
+                                    <span className="page-number-bracket" style={{ color: bracketColor }}>﴿</span>
+                                    <span className="page-number-text" style={{ color: pageNumColor, margin: '0 4px' }}>{toArabic(item.pageNumber)}</span>
+                                    <span className="page-number-bracket" style={{ color: bracketColor }}>﴾</span>
+                                    <span className="mx-2 opacity-50">•</span>
+                                    <span className="page-number-bracket text-xs uppercase tracking-wider" style={{ color: bracketColor }}>Page </span>
+                                    <span className="page-number-text font-sans font-bold" style={{ color: pageNumColor, margin: '0 4px' }}>{item.pageNumber}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="page-number-bracket" style={{ color: bracketColor }}>{isTranslation ? '— Page ' : '﴿'}</span>
+                                    <span className="page-number-text" style={{ color: pageNumColor, margin: '0 4px' }}>{isTranslation ? item.pageNumber : toArabic(item.pageNumber)}</span>
+                                    <span className="page-number-bracket" style={{ color: bracketColor }}>{isTranslation ? ' —' : '﴾'}</span>
+                                </>
+                            )}
+                        </div>
+                        <div style={{ width: '60%', height: '2px', backgroundColor: bracketColor, marginTop: '10px', opacity: 0.6, borderRadius: '2px' }}></div>
                     </div>
-                    <div style={{ width: '60%', height: '2.5px', backgroundColor: bracketColor, marginTop: '12px', opacity: 0.8, borderRadius: '2px' }}></div>
                 </div>
             );
         }
 
         if (item.type === 'header') {
             return (
-                <SurahHeader 
-                    surahNumber={item.surahNumber}
-                    surahName={item.surahName}
-                    surahType={item.surahType}
-                    ayahCount={item.ayahCount}
-                    currentTheme={currentTheme}
-                    design={settings.surahHeaderDesign || 1}
-                    onLongPress={onSurahHeaderLongPress}
-                />
+                <div className={`${isLandscape ? 'flex justify-center w-full' : 'w-full'}`}>
+                    <div className={isLandscape ? 'max-w-3xl w-full' : 'w-full'}>
+                        <SurahHeader 
+                            surahNumber={item.surahNumber}
+                            surahName={item.surahName}
+                            surahType={item.surahType}
+                            ayahCount={item.ayahCount}
+                            currentTheme={currentTheme}
+                            design={settings.surahHeaderDesign || 1}
+                            onLongPress={onSurahHeaderLongPress}
+                            isTranslationMode={readingMode === 'translation'}
+                            isBilingualMode={readingMode === 'bilingual'}
+                        />
+                    </div>
+                </div>
             );
         }
 
         const isHighlighted = highlightedAyahId === `ayah-${item.surahNumber}-${item.ayahNumber}`;
         
-        // Determine if this ayah should be hidden
+        // In Translation Mode: Display ONLY English text full width, completely hide Arabic Quranic text
+        if (readingMode === 'translation') {
+            const translationText = getTranslation(item.surahNumber, item.ayahNumber);
+            return (
+                <div className={`${isLandscape ? 'flex justify-center' : ''} px-2`}>
+                    <div 
+                        id={`ayah-${item.surahNumber}-${item.ayahNumber}`}
+                        className={`ayah-item px-3.5 py-3.5 rounded-xl border-b transition-colors ${isLandscape ? 'max-w-3xl w-full' : 'w-full'}`}
+                        style={{ 
+                            borderBottomColor: isHighlighted ? (settings.highlightTextColor || currentTheme.accent) : `${currentTheme.border || '#000000'}22`,
+                            backgroundColor: isHighlighted ? `${settings.highlightTextColor || currentTheme.accent}18` : 'transparent',
+                        }}
+                        onPointerDown={(e) => handlePointerDown(item.surahNumber, item.ayahNumber, e)}
+                        onPointerMove={handlePointerMoveItem}
+                        onPointerUp={handlePointerUpItem}
+                        onPointerLeave={handlePointerLeaveItem}
+                        onClick={() => {
+                            if (isLongPressTriggered.current) return;
+                            isInternalClickRef.current = true;
+                            onAyahClick(item.surahNumber, item.ayahNumber);
+                        }}
+                    >
+                        <div 
+                            className="translation-text leading-relaxed text-left w-full"
+                            style={{ 
+                                fontSize: `${localFontSize * 0.95}rem`,
+                                color: isHighlighted 
+                                    ? (settings.highlightTextColor || currentTheme.highlightText || currentTheme.accent) 
+                                    : (settings.textColor || currentTheme.text),
+                                direction: 'ltr',
+                                textAlign: 'left',
+                                fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                            }}
+                        >
+                            <span 
+                                className="inline-flex items-center justify-center font-bold text-xs rounded-md mr-2.5 align-middle select-none px-2 py-0.5"
+                                style={{ 
+                                    minWidth: '26px',
+                                    backgroundColor: isHighlighted 
+                                        ? (settings.highlightTextColor || currentTheme.accent) 
+                                        : `${currentTheme.accent}22`,
+                                    color: isHighlighted ? '#ffffff' : (currentTheme.accent || '#10b981'),
+                                    border: `1px solid ${isHighlighted ? 'transparent' : `${currentTheme.accent || '#10b981'}44`}`,
+                                }}
+                            >
+                                {item.ayahNumber}
+                            </span>
+                            <span className="align-middle">
+                                {translationText || ''}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Determine if this ayah should be hidden in Arabic memorization mode
         let shouldHide = hideVerses && !isHighlighted;
         
         // If in memorization review mode, apply specific hiding rules
@@ -461,18 +554,59 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                         </span>
                     </div>
                     
-                    <div className="explanation-text text-right opacity-90 leading-relaxed pb-2"
-                         style={{ 
-                             fontSize: `${localFontSize * 0.8}rem`, 
-                             marginTop: '-2px',
-                             color: isHighlighted ? (settings.highlightTextColor || currentTheme.highlightText || currentTheme.accent) : (settings.textColor || currentTheme.text),
-                             direction: readingMode === 'translation' ? 'ltr' : 'rtl',
-                             textAlign: readingMode === 'translation' ? 'left' : 'right'
-                         }}>
-                        {readingMode === 'tafseer' ? getTafseer(item.surahNumber, item.ayahNumber) : 
-                         readingMode === 'meanings' ? getMeaning(item.surahNumber, item.ayahNumber) :
-                         getTranslation(item.surahNumber, item.ayahNumber)}
-                    </div>
+                    {readingMode === 'bilingual' ? (
+                        <div 
+                            className="translation-subtext text-left pt-2 pb-2.5 mt-1 border-t border-dashed"
+                            style={{ 
+                                borderColor: isHighlighted 
+                                    ? `${settings.highlightTextColor || currentTheme.accent}44` 
+                                    : `${currentTheme.border || '#000000'}22`,
+                                direction: 'ltr',
+                                textAlign: 'left',
+                                fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                            }}
+                        >
+                            <div className="flex items-start gap-2.5">
+                                <span 
+                                    className="inline-flex items-center justify-center font-bold text-xs rounded-md select-none px-2 py-0.5 mt-0.5 shrink-0"
+                                    style={{ 
+                                        minWidth: '26px',
+                                        backgroundColor: isHighlighted 
+                                            ? (settings.highlightTextColor || currentTheme.accent) 
+                                            : `${currentTheme.accent || '#10b981'}1a`,
+                                        color: isHighlighted ? '#ffffff' : (currentTheme.accent || '#10b981'),
+                                        border: `1px solid ${isHighlighted ? 'transparent' : `${currentTheme.accent || '#10b981'}44`}`,
+                                    }}
+                                >
+                                    {item.ayahNumber}
+                                </span>
+                                <p 
+                                    className="leading-relaxed flex-1 select-text"
+                                    style={{ 
+                                        fontSize: `${localFontSize * 0.88}rem`,
+                                        color: isHighlighted 
+                                            ? (settings.highlightTextColor || currentTheme.highlightText || currentTheme.accent) 
+                                            : (settings.textColor || currentTheme.text),
+                                        opacity: isHighlighted ? 1 : 0.9
+                                    }}
+                                >
+                                    {getTranslation(item.surahNumber, item.ayahNumber) || ''}
+                                </p>
+                            </div>
+                        </div>
+                    ) : (readingMode === 'tafseer' || readingMode === 'meanings') ? (
+                        <div className="explanation-text text-right opacity-90 leading-relaxed pb-2"
+                             style={{ 
+                                 fontSize: `${localFontSize * 0.8}rem`, 
+                                 marginTop: '-2px',
+                                 color: isHighlighted ? (settings.highlightTextColor || currentTheme.highlightText || currentTheme.accent) : (settings.textColor || currentTheme.text),
+                                 direction: 'rtl',
+                                 textAlign: 'right'
+                             }}>
+                            {readingMode === 'tafseer' ? getTafseer(item.surahNumber, item.ayahNumber) : 
+                             getMeaning(item.surahNumber, item.ayahNumber)}
+                        </div>
+                    ) : null}
                 </div>
             </div>
         );
@@ -488,8 +622,8 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
 
     return (
         <div 
-            className="w-full min-h-full" 
-            style={{ direction: 'rtl', backgroundColor: settings.bgColor || currentTheme.bg }}
+            className={`w-full min-h-full ${isLandscape ? (!isLandscapeUIHidden ? 'pt-[calc(48px+var(--logical-safe-top))] pb-[calc(56px+var(--logical-safe-bottom))]' : 'pt-2 pb-8') : ''}`} 
+            style={{ direction: readingMode === 'translation' ? 'ltr' : 'rtl', backgroundColor: settings.bgColor || currentTheme.bg }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -510,7 +644,13 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                     if (item && item.type === 'ayah') {
                         // Detect Juz change
                         if (item.juz && lastNotifiedJuz.current !== null && item.juz !== lastNotifiedJuz.current) {
-                            showJuzNotification?.(`بداية الجزء ${toArabic(item.juz)}`);
+                            if (readingMode === 'bilingual') {
+                                showJuzNotification?.(`بداية الجزء ${toArabic(item.juz)} • Start of Juz ${item.juz}`);
+                            } else if (readingMode === 'translation') {
+                                showJuzNotification?.(`Start of Juz ${item.juz}`);
+                            } else {
+                                showJuzNotification?.(`بداية الجزء ${toArabic(item.juz)}`);
+                            }
                         }
                         lastNotifiedJuz.current = item.juz;
 
@@ -519,10 +659,25 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                             let label = '';
                             const qInHizb = ((item.hizbQuarter - 1) % 4) + 1;
                             const hizbNum = Math.ceil(item.hizbQuarter / 4);
-                            if (qInHizb === 1) label = `بداية الحزب ${toArabic(hizbNum)}`;
-                            else if (qInHizb === 2) label = `ربع الحزب ${toArabic(hizbNum)}`;
-                            else if (qInHizb === 3) label = `نصف الحزب ${toArabic(hizbNum)}`;
-                            else if (qInHizb === 4) label = `ثلاثة أرباع الحزب ${toArabic(hizbNum)}`;
+                            if (readingMode === 'bilingual') {
+                                let labelAr = '';
+                                let labelEn = '';
+                                if (qInHizb === 1) { labelAr = `بداية الحزب ${toArabic(hizbNum)}`; labelEn = `Start of Hizb ${hizbNum}`; }
+                                else if (qInHizb === 2) { labelAr = `ربع الحزب ${toArabic(hizbNum)}`; labelEn = `Quarter of Hizb ${hizbNum}`; }
+                                else if (qInHizb === 3) { labelAr = `نصف الحزب ${toArabic(hizbNum)}`; labelEn = `Half of Hizb ${hizbNum}`; }
+                                else if (qInHizb === 4) { labelAr = `ثلاثة أرباع الحزب ${toArabic(hizbNum)}`; labelEn = `Three Quarters of Hizb ${hizbNum}`; }
+                                label = `${labelAr} • ${labelEn}`;
+                            } else if (readingMode === 'translation') {
+                                if (qInHizb === 1) label = `Start of Hizb ${hizbNum}`;
+                                else if (qInHizb === 2) label = `Quarter of Hizb ${hizbNum}`;
+                                else if (qInHizb === 3) label = `Half of Hizb ${hizbNum}`;
+                                else if (qInHizb === 4) label = `Three Quarters of Hizb ${hizbNum}`;
+                            } else {
+                                if (qInHizb === 1) label = `بداية الحزب ${toArabic(hizbNum)}`;
+                                else if (qInHizb === 2) label = `ربع الحزب ${toArabic(hizbNum)}`;
+                                else if (qInHizb === 3) label = `نصف الحزب ${toArabic(hizbNum)}`;
+                                else if (qInHizb === 4) label = `ثلاثة أرباع الحزب ${toArabic(hizbNum)}`;
+                            }
                             
                             if (label) showMarkerNotification?.('quarter', label);
                         }
@@ -532,14 +687,26 @@ const VerticalReadingView: React.FC<VerticalReadingViewProps> = React.memo(({
                         if (item.sajda) {
                             const sajdaId = `${item.surahNumber}-${item.ayahNumber}`;
                             if (lastNotifiedSajda.current !== sajdaId) {
-                                const surahName = SURAH_NAMES_AR[item.surahNumber - 1];
-                                if (handleSajdahVisible) {
-                                    handleSajdahVisible(surahName, item.surahNumber, item.ayahNumber);
+                                if (readingMode === 'bilingual') {
+                                    const surahNameAr = SURAH_NAMES_AR[item.surahNumber - 1];
+                                    const displaySurahAr = (surahNameAr.includes('سورة') || surahNameAr.includes('سُورَة')) 
+                                        ? surahNameAr 
+                                        : `سورة ${surahNameAr}`;
+                                    const surahNameEn = SURAH_NAMES_EN[item.surahNumber - 1] || `Surah ${item.surahNumber}`;
+                                    showMarkerNotification?.('sajda', `سجدة تلاوة: ${displaySurahAr} - آية ${toArabic(item.ayahNumber)} • Sajdah: ${surahNameEn} - Verse ${item.ayahNumber}`);
+                                } else if (readingMode === 'translation') {
+                                    const surahNameEn = SURAH_NAMES_EN[item.surahNumber - 1] || `Surah ${item.surahNumber}`;
+                                    showMarkerNotification?.('sajda', `Prostration of Recitation (Sajdah): Surah ${surahNameEn} - Verse ${item.ayahNumber}`);
                                 } else {
-                                    const displaySurah = (surahName.includes('سورة') || surahName.includes('سُورَة')) 
-                                        ? surahName 
-                                        : `سورة ${surahName}`;
-                                    showMarkerNotification?.('sajda', `سجدة تلاوة: ${displaySurah} - آية ${toArabic(item.ayahNumber)}`);
+                                    const surahName = SURAH_NAMES_AR[item.surahNumber - 1];
+                                    if (handleSajdahVisible) {
+                                        handleSajdahVisible(surahName, item.surahNumber, item.ayahNumber);
+                                    } else {
+                                        const displaySurah = (surahName.includes('سورة') || surahName.includes('سُورَة')) 
+                                            ? surahName 
+                                            : `سورة ${surahName}`;
+                                        showMarkerNotification?.('sajda', `سجدة تلاوة: ${displaySurah} - آية ${toArabic(item.ayahNumber)}`);
+                                    }
                                 }
                                 lastNotifiedSajda.current = sajdaId;
                             }

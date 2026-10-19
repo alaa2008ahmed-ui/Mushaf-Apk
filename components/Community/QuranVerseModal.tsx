@@ -12,6 +12,7 @@ import { QuranVerseAttachment } from '../../services/communityService';
 import { quranData } from '../../utils/quranData';
 import { FONTS, SURAH_NAMES_AR, toArabic } from '../QuranReader/constants';
 import { renderTajweedTextHtml } from '../QuranReader/MushafPage';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface QuranVerseModalProps {
   isOpen: boolean;
@@ -159,6 +160,8 @@ const QUICK_SUGGESTIONS = [
 ];
 
 const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSendVerse }) => {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
   const [step, setStep] = useState<'search' | 'customize'>('search');
   const [quranSearchQuery, setQuranSearchQuery] = useState('');
   const [browseSurah, setBrowseSurah] = useState<number>(1);
@@ -958,7 +961,7 @@ const QuranVerseModal: React.FC<QuranVerseModalProps> = ({ isOpen, onClose, onSe
                       fontWeight: 'bold'
                     }}
                   >
-                    {shareType === 'page' ? 'مصحف احمد وليلي • صفحة قراءة تلاوة' : 'مصحف احمد وليلي'}
+                    {isEn ? (shareType === 'page' ? 'Mushaf Ahmed & Laila • Page Reading' : 'Mushaf Ahmed & Laila') : (shareType === 'page' ? 'مصحف أحمد وليلى • صفحة قراءة وتلاوة' : 'مصحف أحمد وليلى')}
                   </span>
                 </div>
               </div>

@@ -63,8 +63,8 @@ const DEFAULT_MENU_ITEMS = [
   { id: 'nawawi', label: "الأربعون النووية", className: "col-span-2 h-11" },
   { id: 'voice-control', label: "التحكم الصوتي", className: "col-span-2 h-11" },
   { id: 'asmaul-husna', label: "أسماء الله الحسنى", className: "col-span-2 h-11" },
-  // صف السيرة والخط الزمني باللون الأخضر
-  { id: 'prophetic-seerah', label: "السيرة والخط الزمني", className: "col-span-6 h-10 flex justify-center" },
+  // صف السيرة النبوية باللون الأخضر
+  { id: 'prophetic-seerah', label: "السيرة النبوية", className: "col-span-6 h-10 flex justify-center" },
 ];
 
 export const PageGuide: React.FC<PageGuideProps> = ({ 
@@ -646,7 +646,7 @@ export const PageGuide: React.FC<PageGuideProps> = ({
                         'nawawi': 'الأربعون النووية',
                         'voice-control': 'التحكم الصوتي',
                         'asmaul-husna': 'أسماء الله الحسنى',
-                        'prophetic-seerah': 'السيرة والخط الزمني',
+                        'prophetic-seerah': 'السيرة النبوية',
                         'side-whatsapp': 'تواصل واتساب',
                         'side-voice': 'التحكم الصوتي',
                         'side-ahl-al-quran': 'أهل القرآن الكريم'
@@ -739,6 +739,18 @@ export const PageGuide: React.FC<PageGuideProps> = ({
                     title="الصفحة الرئيسية"
                   >
                     <i className="fa-solid fa-house text-base"></i>
+                  </button>
+                </div>
+              ) : selectedPageId === 'hajj-umrah' ? (
+                /* في صفحة الحج والعمرة: زر الصفحة الرئيسية المنزل فقط مطابق للصورة المرفقة */
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={handleGoHome}
+                    className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                    title="الصفحة الرئيسية"
+                    aria-label="الصفحة الرئيسية"
+                  >
+                    <i className="fa-solid fa-house text-xl"></i>
                   </button>
                 </div>
               ) : (

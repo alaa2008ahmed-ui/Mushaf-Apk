@@ -2,12 +2,14 @@ import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 
-interface ShareOptions {
+export interface ShareOptions {
     text: string;
     title?: string;
     source?: string;
     category?: string;
     theme?: any;
+    isEn?: boolean;
+    language?: string;
     setToastMessage?: (msg: string) => void;
 }
 
@@ -34,12 +36,20 @@ function drawRoundRect(
 }
 
 // Wrap text into clean lines respecting maximum width and paragraph breaks
-function wrapArabicText(
+function wrapText(
     ctx: CanvasRenderingContext2D,
     text: string,
     maxWidth: number
 ): { text: string; isHighlight?: boolean; isBullet?: boolean }[] {
-    const rawParagraphs = (text || '').split('\n');
+    const clean = (text || '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&#39;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, '&');
+
+    const rawParagraphs = clean.split('\n');
     const result: { text: string; isHighlight?: boolean; isBullet?: boolean }[] = [];
 
     for (const rawParagraph of rawParagraphs) {
@@ -50,7 +60,7 @@ function wrapArabicText(
         }
 
         const isHighlight = paragraph.startsWith('💡') || paragraph.startsWith('📜') || paragraph.startsWith('📖');
-        const isBullet = paragraph.startsWith('•') || /^[0-9]+[.-]/.test(paragraph);
+        const isBullet = paragraph.startsWith('•') || paragraph.startsWith('-') || /^[0-9]+[.-]/.test(paragraph);
 
         const words = paragraph.split(/\s+/);
         let currentLine = '';
@@ -73,12 +83,18 @@ function wrapArabicText(
 }
 
 /**
- * Pure Canvas 2D card renderer that completely eliminates Arabic text-overlap / scrambling bugs.
- * Renders at 1080px width (high definition), with native Arabic font ligatures,
- * golden ornamental frames, Islamic motifs, and immaculate typography.
+ * Pure Canvas 2D card renderer that supports both Arabic and English seamlessly.
+ * Dynamically adapts dimensions and height to content volume:
+ * - Short text: Compact card with tight, balanced margins and ZERO empty void at bottom.
+ * - Long text: Expands seamlessly to accommodate all paragraphs without truncation.
+ * - Proportioned for mobile phones and tablets (1080px crisp high-DPI width).
+ * When in English: LTR alignment, Latin typography, English brand name and references.
+ * When in Arabic: RTL alignment, Amiri/Cairo font, Arabic brand name and references.
  */
 export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTMLCanvasElement> {
-    const { text, title, source, category, theme } = options;
+    const { text, title, source, category, theme, isEn: explicitIsEn, language } = options;
+
+    const isEn = explicitIsEn ?? (language === 'en' || !(/[\u0600-\u06FF]/.test(text || '')));
 
     // Ensure fonts are ready
     try {
@@ -90,67 +106,143 @@ export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTM
         // Proceed with fallbacks
     }
 
+    // --- STANDARD VERTICAL SOCIAL DIMENSIONS (4:5 Portrait for Instagram, Facebook & Mobile Screens) ---
     const width = 1080;
-    const horizontalPadding = 75;
-    const innerWidth = width - horizontalPadding * 2;
+    const baseHeight = 1350; // Standard 4:5 vertical aspect ratio
+    const outerMargin = 26;
+    const innerMargin = 46;
+    // Comfortable reading column width (so text wraps into 3-6 balanced poetic lines instead of stretching wide)
+    const horizontalContentPadding = 140;
+    const maxTextWidth = width - (horizontalContentPadding * 2);
 
-    // Typography sizing based on text volume
-    const textLen = (text || '').length;
-    let bodyFontSize = 28;
-    let lineHeight = 48;
+    const fontFamily = isEn 
+        ? "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        : "'Amiri', 'Cairo', 'Traditional Arabic', sans-serif";
 
-    if (textLen > 450) {
-        bodyFontSize = 23;
-        lineHeight = 39;
-    } else if (textLen > 300) {
-        bodyFontSize = 25;
-        lineHeight = 43;
-    } else if (textLen > 150) {
-        bodyFontSize = 28;
-        lineHeight = 48;
-    } else {
-        bodyFontSize = 32;
-        lineHeight = 54;
+    // Sanitize and ensure pure English when isEn is active
+    let cleanCategory = category ? category.trim() : '';
+    if (isEn && cleanCategory && /[\u0600-\u06FF]/.test(cleanCategory)) {
+        cleanCategory = 'Remembrances & Supplications';
     }
 
-    // Temporary measurement context
+    let cleanTitle = title ? title.trim() : '';
+    if (isEn && cleanTitle && /[\u0600-\u06FF]/.test(cleanTitle)) {
+        cleanTitle = 'Remembrance (Dhikr)';
+    }
+
+    let cleanSource = source ? source.trim() : '';
+    if (isEn && cleanSource && /[\u0600-\u06FF]/.test(cleanSource)) {
+        cleanSource = cleanSource
+            .replace(/مرة واحدة/g, 'Once')
+            .replace(/مرات/g, 'times')
+            .replace(/مرة/g, 'times')
+            .replace(/البداية/g, 'Start')
+            .replace(/تمام المائة/g, 'Completion of 100')
+            .replace(/صحيح البخاري/g, 'Sahih Al-Bukhari')
+            .replace(/صحيح مسلم/g, 'Sahih Muslim')
+            .replace(/سنن أبي داود/g, 'Sunan Abi Dawud')
+            .replace(/سنن الترمذي/g, 'Sunan At-Tirmidhi')
+            .replace(/سنن النسائي/g, "Sunan An-Nasa'i")
+            .replace(/سنن ابن ماجه/g, 'Sunan Ibn Majah')
+            .replace(/سورة/g, 'Surah')
+            .replace(/آية/g, 'Ayah');
+        if (/[\u0600-\u06FF]/.test(cleanSource)) {
+            cleanSource = '';
+        }
+    }
+
+    let cleanText = text ? text.trim() : '';
+    if (isEn && cleanText && /[\u0600-\u06FF]/.test(cleanText)) {
+        cleanText = cleanText.replace(/[\u0600-\u06FF]/g, '').trim() || text;
+    }
+
+    // Adaptive typography sizing for vertical mobile card
+    const cleanLen = cleanText.replace(/<[^>]+>/g, '').length;
+    let bodyFontSize: number;
+    let lineHeight: number;
+
+    if (cleanLen > 650) {
+        bodyFontSize = isEn ? 23 : 24;
+        lineHeight = isEn ? 40 : 44;
+    } else if (cleanLen > 380) {
+        bodyFontSize = isEn ? 26 : 28;
+        lineHeight = isEn ? 46 : 52;
+    } else if (cleanLen > 180) {
+        bodyFontSize = isEn ? 30 : 33;
+        lineHeight = isEn ? 52 : 60;
+    } else if (cleanLen > 80) {
+        bodyFontSize = isEn ? 34 : 37;
+        lineHeight = isEn ? 58 : 66;
+    } else {
+        // Very short text: bold, majestic typography that commands attention
+        bodyFontSize = isEn ? 38 : 42;
+        lineHeight = isEn ? 62 : 72;
+    }
+
+    // Temporary measurement context with exact font styling
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = width;
     tempCanvas.height = 100;
     const tempCtx = tempCanvas.getContext('2d')!;
-    tempCtx.direction = 'rtl';
-    tempCtx.font = `500 ${bodyFontSize}px 'Cairo', 'Amiri', 'Traditional Arabic', sans-serif`;
+    tempCtx.direction = isEn ? 'ltr' : 'rtl';
+    tempCtx.font = `500 ${bodyFontSize}px ${fontFamily}`;
 
-    const lines = wrapArabicText(tempCtx, text, innerWidth - 50);
+    const lines = wrapText(tempCtx, cleanText, maxTextWidth);
 
-    // Height calculations
-    let calculatedHeight = 110; // Top margin & outer frame
-
-    if (category) {
-        calculatedHeight += 50;
+    // --- MEASURE VERTICAL HEIGHTS ---
+    // 1. Top Section (Bismillah + Category Badge)
+    const bismillahText = isEn 
+        ? 'In the Name of Allah, the Entirely Merciful, the Especially Merciful' 
+        : 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
+    const topSectionStartY = innerMargin + 32;
+    let topSectionEndY = topSectionStartY + (isEn ? 24 : 38); // Bismillah height
+    if (cleanCategory) {
+        topSectionEndY += 16 + 36; // gap + badge height (36px)
     }
+    topSectionEndY += 20; // safety margin below top section
 
-    if (title) {
-        calculatedHeight += 85; // Title + divider
+    // 2. Middle Section (Title + Divider + Body Lines + Source)
+    let middleHeight = 0;
+    if (cleanTitle) {
+        middleHeight += 44 + 14 + 16 + 28; // Title + gap + divider + gap to text
     }
-
-    // Body lines
     for (const l of lines) {
         if (!l.text) {
-            calculatedHeight += lineHeight * 0.45; // paragraph space
+            middleHeight += lineHeight * 0.45;
         } else {
-            calculatedHeight += lineHeight;
+            middleHeight += lineHeight;
+        }
+    }
+    middleHeight += 20; // gap below text
+    if (cleanSource) {
+        middleHeight += 16 + 28 + 18; // divider + source text + gap
+    }
+
+    // 3. Bottom Section (Footer Brand)
+    const footerHeight = 22 + 30 + 6 + 18 + 24; // divider + brandName + gap + subtitle + padding
+    const footerTotalNeeded = footerHeight + innerMargin;
+
+    // 4. Determine Final Canvas Height:
+    // If content fits within standard 4:5 vertical (1350px), use 1350px.
+    // If text is very long, expand vertically beyond 1350px.
+    const totalRequiredHeight = topSectionEndY + middleHeight + 40 + footerTotalNeeded;
+    const finalHeight = Math.max(baseHeight, Math.round(totalRequiredHeight));
+
+    // Calculate Middle Start Y:
+    // If finalHeight === baseHeight, vertically center the middle section in available space!
+    let middleStartY = topSectionEndY + 20;
+    const footerStartY = finalHeight === baseHeight
+        ? (finalHeight - innerMargin - 85)
+        : (middleStartY + middleHeight + 30);
+
+    if (finalHeight === baseHeight) {
+        const availableMiddleSpace = footerStartY - topSectionEndY;
+        if (availableMiddleSpace > middleHeight) {
+            middleStartY = Math.round(topSectionEndY + (availableMiddleSpace - middleHeight) / 2);
         }
     }
 
-    if (source) {
-        calculatedHeight += 65; // Source pill / divider
-    }
-
-    calculatedHeight += 110; // Footer brand + bottom padding
-    const finalHeight = Math.max(calculatedHeight, 680);
-
-    // Create target canvas
+    // Create target canvas with exact vertical dimensions
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = finalHeight;
@@ -159,7 +251,7 @@ export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTM
     // Enable high quality rendering
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.direction = 'rtl';
+    ctx.direction = isEn ? 'ltr' : 'rtl';
 
     // Theme colors
     const primaryColor = theme?.palette?.[0] || '#064e3b';
@@ -173,18 +265,18 @@ export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTM
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, finalHeight);
 
-    // 2. Subtle Radial Glow in Center
-    const glow = ctx.createRadialGradient(width / 2, finalHeight * 0.45, 50, width / 2, finalHeight * 0.45, width * 0.65);
-    glow.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
-    glow.addColorStop(0.6, 'rgba(255, 255, 255, 0.03)');
-    glow.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
+    // 2. Subtle Radial Glow in Center of Vertical Card
+    const glow = ctx.createRadialGradient(width / 2, finalHeight * 0.48, 50, width / 2, finalHeight * 0.48, width * 0.7);
+    glow.addColorStop(0, 'rgba(255, 255, 255, 0.14)');
+    glow.addColorStop(0.55, 'rgba(255, 255, 255, 0.03)');
+    glow.addColorStop(1, 'rgba(0, 0, 0, 0.28)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, finalHeight);
 
-    // 3. Subtle Islamic Geometric Star Pattern Overlay
+    // 3. Subtle Geometric Star Pattern Overlay
     ctx.save();
     ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-    const step = 42;
+    const step = 44;
     for (let x = 20; x < width; x += step) {
         for (let y = 20; y < finalHeight; y += step) {
             ctx.beginPath();
@@ -195,24 +287,22 @@ export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTM
     ctx.restore();
 
     // 4. Outer & Inner Luxury Frames
-    const outerMargin = 28;
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.lineWidth = 2;
-    drawRoundRect(ctx, outerMargin, outerMargin, width - outerMargin * 2, finalHeight - outerMargin * 2, 28);
+    ctx.lineWidth = 2.2;
+    drawRoundRect(ctx, outerMargin, outerMargin, width - outerMargin * 2, finalHeight - outerMargin * 2, 32);
     ctx.stroke();
 
-    const innerMargin = 44;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
-    ctx.strokeStyle = 'rgba(254, 240, 138, 0.4)'; // Golden border
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
+    ctx.strokeStyle = 'rgba(254, 240, 138, 0.45)'; // Golden border
     ctx.lineWidth = 1.8;
-    drawRoundRect(ctx, innerMargin, innerMargin, width - innerMargin * 2, finalHeight - innerMargin * 2, 22);
+    drawRoundRect(ctx, innerMargin, innerMargin, width - innerMargin * 2, finalHeight - innerMargin * 2, 24);
     ctx.fill();
     ctx.stroke();
 
     // Corner Ornaments
-    ctx.strokeStyle = 'rgba(254, 240, 138, 0.7)';
+    ctx.strokeStyle = 'rgba(254, 240, 138, 0.75)';
     ctx.lineWidth = 2.5;
-    const cornerSize = 22;
+    const cornerSize = 24;
     const corners = [
         [innerMargin + 8, innerMargin + 8, 1, 1],
         [width - innerMargin - 8, innerMargin + 8, -1, 1],
@@ -227,125 +317,153 @@ export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTM
         ctx.stroke();
     }
 
-    let currentY = innerMargin + 38;
+    // 5. TOP SECTION: Bismillah & Category Badge
+    let currentTopY = topSectionStartY;
+    ctx.save();
+    ctx.font = isEn ? `bold 16px ${fontFamily}` : `600 30px 'Amiri', 'Traditional Arabic', serif`;
+    ctx.fillStyle = '#fef08a';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 6;
+    ctx.fillText(bismillahText, width / 2, currentTopY + (isEn ? 16 : 24));
+    ctx.restore();
 
-    // 5. Category Badge (if provided)
-    if (category) {
-        ctx.font = "bold 17px 'Cairo', 'Amiri', sans-serif";
-        const catMetrics = ctx.measureText(category);
-        const pillW = catMetrics.width + 44;
-        const pillH = 34;
+    currentTopY += isEn ? 28 : 42;
+
+    if (cleanCategory) {
+        ctx.font = `bold 17px ${fontFamily}`;
+        const catMetrics = ctx.measureText(cleanCategory);
+        const pillW = catMetrics.width + 48;
+        const pillH = 36;
         const pillX = (width - pillW) / 2;
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
         ctx.strokeStyle = 'rgba(254, 240, 138, 0.5)';
         ctx.lineWidth = 1.2;
-        drawRoundRect(ctx, pillX, currentY, pillW, pillH, 17);
+        drawRoundRect(ctx, pillX, currentTopY, pillW, pillH, 18);
         ctx.fill();
         ctx.stroke();
 
         ctx.fillStyle = '#fef08a';
         ctx.textAlign = 'center';
-        ctx.fillText(category, width / 2, currentY + 23);
-        currentY += 46;
+        ctx.fillText(cleanCategory, width / 2, currentTopY + 24);
     }
 
-    // 6. Title (if provided)
-    if (title) {
+    // 6. MIDDLE SECTION: Title & Elegant Divider
+    let currentMiddleY = middleStartY;
+    if (cleanTitle) {
         ctx.save();
-        ctx.font = "bold 34px 'Cairo', 'Amiri', sans-serif";
+        ctx.font = `bold 34px ${fontFamily}`;
         ctx.fillStyle = '#fef08a';
         ctx.textAlign = 'center';
         ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
         ctx.shadowBlur = 8;
         ctx.shadowOffsetY = 2;
-        ctx.fillText(title, width / 2, currentY + 28);
+        ctx.fillText(cleanTitle, width / 2, currentMiddleY + 30);
         ctx.restore();
 
-        currentY += 46;
+        currentMiddleY += 46;
 
         // Elegant Golden Divider with Center Diamond
-        ctx.strokeStyle = 'rgba(254, 240, 138, 0.35)';
-        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(254, 240, 138, 0.4)';
+        ctx.lineWidth = 1.4;
         ctx.beginPath();
-        ctx.moveTo(width / 2 - 180, currentY);
-        ctx.lineTo(width / 2 - 16, currentY);
-        ctx.moveTo(width / 2 + 16, currentY);
-        ctx.lineTo(width / 2 + 180, currentY);
+        ctx.moveTo(width / 2 - 160, currentMiddleY);
+        ctx.lineTo(width / 2 - 16, currentMiddleY);
+        ctx.moveTo(width / 2 + 16, currentMiddleY);
+        ctx.lineTo(width / 2 + 160, currentMiddleY);
         ctx.stroke();
 
-        // Diamond
+        // Center Diamond
         ctx.fillStyle = '#fef08a';
         ctx.beginPath();
-        ctx.moveTo(width / 2, currentY - 6);
-        ctx.lineTo(width / 2 + 6, currentY);
-        ctx.lineTo(width / 2, currentY + 6);
-        ctx.lineTo(width / 2 - 6, currentY);
+        ctx.moveTo(width / 2, currentMiddleY - 6);
+        ctx.lineTo(width / 2 + 6, currentMiddleY);
+        ctx.lineTo(width / 2, currentMiddleY + 6);
+        ctx.lineTo(width / 2 - 6, currentMiddleY);
         ctx.closePath();
         ctx.fill();
 
-        currentY += 26;
+        currentMiddleY += 28;
     }
 
-    // 7. Body Text (Clean Line by Line with Native Arabic Shaping)
-    const textStartX = width - horizontalPadding - 25;
-    ctx.direction = 'rtl';
-    ctx.textAlign = 'right';
+    // 7. MIDDLE SECTION: Body Text (Poetic & Comfortable Vertical Line Wrapping)
+    ctx.direction = isEn ? 'ltr' : 'rtl';
+    ctx.textAlign = 'center';
 
     for (const lineObj of lines) {
         if (!lineObj.text) {
-            currentY += lineHeight * 0.45;
+            currentMiddleY += lineHeight * 0.45;
             continue;
         }
 
         ctx.save();
         if (lineObj.isHighlight) {
-            ctx.font = `bold ${bodyFontSize + 1}px 'Cairo', 'Amiri', sans-serif`;
-            ctx.fillStyle = '#fef08a'; // Golden highlight for title-like headings (e.g. 💡 من أبرز الدروس)
+            ctx.font = `bold ${bodyFontSize + 1}px ${fontFamily}`;
+            ctx.fillStyle = '#fef08a';
             ctx.shadowColor = 'rgba(0,0,0,0.4)';
             ctx.shadowBlur = 4;
         } else if (lineObj.isBullet) {
-            ctx.font = `500 ${bodyFontSize}px 'Cairo', 'Amiri', sans-serif`;
+            ctx.font = `500 ${bodyFontSize}px ${fontFamily}`;
             ctx.fillStyle = '#f1f5f9';
         } else {
-            ctx.font = `normal ${bodyFontSize}px 'Cairo', 'Amiri', sans-serif`;
+            ctx.font = `normal ${bodyFontSize}px ${fontFamily}`;
             ctx.fillStyle = '#ffffff';
         }
 
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        ctx.shadowBlur = 3;
-        ctx.fillText(lineObj.text, textStartX, currentY + bodyFontSize * 0.85);
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(lineObj.text, width / 2, currentMiddleY + bodyFontSize * 0.85);
         ctx.restore();
 
-        currentY += lineHeight;
+        currentMiddleY += lineHeight;
     }
 
-    currentY += 15;
+    currentMiddleY += 16;
 
-    // 8. Source & Metadata
-    if (source) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    // 8. MIDDLE SECTION: Source & Metadata (if provided)
+    if (cleanSource) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(horizontalPadding + 40, currentY);
-        ctx.lineTo(width - horizontalPadding - 40, currentY);
+        ctx.moveTo(horizontalContentPadding + 20, currentMiddleY);
+        ctx.lineTo(width - horizontalContentPadding - 20, currentMiddleY);
         ctx.stroke();
-        currentY += 24;
 
-        ctx.font = "bold 18px 'Cairo', 'Amiri', sans-serif";
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+        ctx.font = `bold 19px ${fontFamily}`;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
         ctx.textAlign = 'center';
-        ctx.fillText(source, width / 2, currentY);
-        currentY += 22;
+        ctx.fillText(cleanSource, width / 2, currentMiddleY + 22);
     }
 
-    // 9. Footer Brand "مصحف أحمد وليلى"
-    ctx.font = "bold 21px 'Cairo', 'Amiri', sans-serif";
+    // 9. BOTTOM SECTION: Footer Brand (Grounded at the bottom of the vertical card)
+    ctx.strokeStyle = 'rgba(254, 240, 138, 0.3)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(width / 2 - 150, footerStartY);
+    ctx.lineTo(width / 2 + 150, footerStartY);
+    ctx.stroke();
+
+    const brandName = isEn 
+        ? 'Mushaf Ahmed & Laila' 
+        : 'مصحف أحمد وليلى';
+
+    const brandSubtitle = isEn
+        ? 'Holy Quran & Daily Remembrance'
+        : 'تلاوة وتدبر وسيرة نبوية';
+
+    ctx.save();
+    ctx.font = `bold 24px ${fontFamily}`;
     ctx.fillStyle = '#fef08a';
     ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 4;
-    ctx.fillText('مصحف أحمد وليلى • تلاوة وتدبر وسيرة نبوية', width / 2, finalHeight - innerMargin - 18);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+    ctx.shadowBlur = 6;
+    ctx.fillText(brandName, width / 2, footerStartY + 26);
+
+    ctx.font = `500 14px ${fontFamily}`;
+    ctx.fillStyle = 'rgba(254, 240, 138, 0.85)';
+    ctx.fillText(brandSubtitle, width / 2, footerStartY + 50);
+    ctx.restore();
 
     return canvas;
 }
@@ -353,8 +471,12 @@ export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTM
 /**
  * Universal high-reliability sharing function for cards and quotes
  */
-export const shareAsImage = async ({ text, title, source, category, theme, setToastMessage }: ShareOptions) => {
-    if (setToastMessage) setToastMessage('جاري تجهيز الصورة بدقة عالية...');
+export const shareAsImage = async ({ text, title, source, category, theme, isEn: explicitIsEn, language, setToastMessage }: ShareOptions) => {
+    const isEn = explicitIsEn ?? (language === 'en' || !(/[\u0600-\u06FF]/.test(text || '')));
+
+    if (setToastMessage) {
+        setToastMessage(isEn ? 'Preparing high quality image...' : 'جاري تجهيز الصورة بدقة عالية...');
+    }
 
     try {
         const canvas = await renderCardToPureCanvas({
@@ -363,6 +485,8 @@ export const shareAsImage = async ({ text, title, source, category, theme, setTo
             source,
             category,
             theme,
+            isEn,
+            language: isEn ? 'en' : 'ar',
             setToastMessage
         });
 
@@ -372,51 +496,68 @@ export const shareAsImage = async ({ text, title, source, category, theme, setTo
             throw new Error('Failed to generate image data');
         }
 
+        const shareTitle = title || (isEn ? 'Mushaf Ahmed & Laila' : 'مصحف أحمد وليلى');
+        const shareDialogTitle = isEn ? 'Share Image via' : 'مشاركة البطاقة كصورة عبر';
+        const shareFileName = isEn ? `ahmed_layla_card_${Date.now()}.jpg` : `mus-share_${Date.now()}.jpg`;
+        const shareText = isEn 
+            ? `${shareTitle}\nMushaf Ahmed & Laila • Holy Quran & Daily Remembrance`
+            : `${shareTitle}\nمصحف أحمد وليلى • تلاوة وتدبر وسيرة نبوية`;
+
         // Share via Native Device Sheet or Web Share
         if (Capacitor.isNativePlatform()) {
-            const fileName = `mus-share_${Date.now()}.jpg`;
             const base64Data = dataUrl.split(',')[1];
 
             const savedFile = await Filesystem.writeFile({
-                path: fileName,
+                path: shareFileName,
                 data: base64Data,
                 directory: Directory.Cache
             });
 
             await Share.share({
-                title: title || 'مشاركة من تطبيق مصحف أحمد وليلى',
+                title: shareTitle,
+                text: shareText,
                 url: savedFile.uri,
-                dialogTitle: 'مشاركة البطاقة كصورة عبر'
+                dialogTitle: shareDialogTitle
             });
         } else if (navigator.share) {
             try {
                 const response = await fetch(dataUrl);
                 const blob = await response.blob();
-                const file = new File([blob], 'mushaf_card.jpg', { type: 'image/jpeg' });
+                const file = new File([blob], shareFileName, { type: 'image/jpeg' });
 
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                const sharePayload: ShareData = {
+                    files: [file],
+                    title: shareTitle,
+                    text: shareText
+                };
+
+                if (navigator.canShare && navigator.canShare(sharePayload)) {
+                    await navigator.share(sharePayload);
+                } else if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({
                         files: [file],
-                        title: title || 'مصحف أحمد وليلى'
+                        title: shareTitle
                     });
                 } else {
-                    await downloadFile(dataUrl, setToastMessage);
+                    await downloadFile(dataUrl, isEn, setToastMessage);
                 }
             } catch (e: any) {
                 if (e.name !== 'AbortError') {
                     console.warn('Navigator share file failed, falling back to download', e);
-                    await downloadFile(dataUrl, setToastMessage);
+                    await downloadFile(dataUrl, isEn, setToastMessage);
                 }
             }
         } else {
-            await downloadFile(dataUrl, setToastMessage);
+            await downloadFile(dataUrl, isEn, setToastMessage);
         }
 
-        if (setToastMessage) setToastMessage('تمت المشاركة بنجاح');
+        if (setToastMessage) {
+            setToastMessage(isEn ? 'Shared successfully' : 'تمت المشاركة بنجاح');
+        }
     } catch (err) {
         console.error('Share Error:', err);
         if (setToastMessage) {
-            setToastMessage('فشلت المشاركة كصورة');
+            setToastMessage(isEn ? 'Failed to share image' : 'فشلت المشاركة كصورة');
         }
     } finally {
         setTimeout(() => {
@@ -425,17 +566,21 @@ export const shareAsImage = async ({ text, title, source, category, theme, setTo
     }
 };
 
-const downloadFile = async (dataUrl: string, setToastMessage?: (msg: string) => void) => {
+const downloadFile = async (dataUrl: string, isEn: boolean, setToastMessage?: (msg: string) => void) => {
     try {
         const link = document.createElement('a');
-        link.download = `mushaf_share_${Date.now()}.jpg`;
+        link.download = isEn ? `ahmed_layla_card_${Date.now()}.jpg` : `mushaf_share_${Date.now()}.jpg`;
         link.href = dataUrl;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        if (setToastMessage) setToastMessage('تم تنزيل الصورة بنجاح');
+        if (setToastMessage) {
+            setToastMessage(isEn ? 'Image downloaded successfully' : 'تم تنزيل الصورة بنجاح');
+        }
     } catch (e) {
         console.error('Download failed', e);
-        if (setToastMessage) setToastMessage('فشل تنزيل الصورة');
+        if (setToastMessage) {
+            setToastMessage(isEn ? 'Failed to download image' : 'فشل تنزيل الصورة');
+        }
     }
 };
