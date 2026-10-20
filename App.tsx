@@ -31,6 +31,7 @@ import UpdateNotificationModal from './components/UpdateNotificationModal';
 import { InAppChatNotification } from './components/InAppChatNotification';
 import { recordAppLaunch, markPageAsSeen } from './utils/badgeManager';
 import FloatingHelpButton from './components/FloatingHelpButton';
+import InitialOnboardingModal from './components/Community/InitialOnboardingModal';
 
 // --- Main App Component ---
 function App() {
@@ -476,6 +477,48 @@ function AppContent({
 
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
 
+  const [showInitialOnboarding, setShowInitialOnboarding] = useState(() => {
+    try {
+      // 1. If user already registered in Community (has a valid username), NEVER show again
+      const savedUserV9 = localStorage.getItem('mushaf_community_current_user_v9');
+      if (savedUserV9) {
+        const parsed = JSON.parse(savedUserV9);
+        if (parsed?.username && parsed.username.trim().length >= 2) {
+          return false;
+        }
+      }
+      const savedUserLegacy = localStorage.getItem('mushaf_community_user');
+      if (savedUserLegacy) {
+        const parsed = JSON.parse(savedUserLegacy);
+        if (parsed?.username && parsed.username.trim().length >= 2) {
+          return false;
+        }
+      }
+
+      // 2. If already marked completed, do not show
+      const completed = localStorage.getItem('initial_community_onboarding_completed');
+      if (completed === 'true') return false;
+
+      // 3. Cancel count check:
+      // If cancelled once before, it appears again "مرة أخرى فقط" (cancelCount === 1).
+      // If cancelled >= 2 times, do not show again.
+      const cancelCount = parseInt(localStorage.getItem('initial_onboarding_cancel_count') || '0', 10);
+      if (cancelCount >= 2) {
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const handleOpen = () => setShowInitialOnboarding(true);
+    window.addEventListener('open-initial-onboarding', handleOpen);
+    return () => window.removeEventListener('open-initial-onboarding', handleOpen);
+  }, []);
+
   useEffect(() => {
     const handleResize = () => {
       setIsLandscape(window.innerWidth > window.innerHeight);
@@ -566,6 +609,14 @@ function AppContent({
         <IqamaAlertModal
           alert={activeIqamaAlert}
           onDismiss={dismissIqamaAlert}
+        />
+      )}
+
+      {showInitialOnboarding && (
+        <InitialOnboardingModal 
+          isOpen={showInitialOnboarding}
+          onClose={() => setShowInitialOnboarding(false)}
+          onNavigate={handleNavigate}
         />
       )}
     </div>

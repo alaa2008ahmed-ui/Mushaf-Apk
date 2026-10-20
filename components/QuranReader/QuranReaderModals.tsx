@@ -119,6 +119,7 @@ export const QuranReaderModals = ({
                     onSelect={(fontId: string) => updateSetting('fontFamily', fontId, isLandscapeRef)}
                     currentFontId={settings.fontFamily}
                     isLandscape={isLandscapeRef.current}
+                    readingMode={readingMode}
                 />
             )}
 

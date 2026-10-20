@@ -10,6 +10,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useHabitTracker } from '../hooks/useHabitTracker';
 import { HISN_CATEGORIES_EN } from '../data/hisnAlmuslimTranslationsEn';
 import { motion, AnimatePresence } from 'motion/react';
+import { LayoutGrid, ListFilter, Search } from 'lucide-react';
 
 const HISN_STATUS_KEY = 'hisn_almuslim_counts_v1';
 
@@ -18,11 +19,19 @@ function HisnAlmuslim({ onBack, onNavigate }) {
     const { language } = useLanguage();
     const isEn = language === 'en';
     const isBlackTheme = theme.bgColor === '#000000';
+    const isDefaultTheme = themeKey === 'default';
+    const cardBorderColor = isDefaultTheme 
+        ? '#000000' 
+        : (isBlackTheme 
+            ? '#FFFFFF' 
+            : (theme.palette?.[0] || '#000000'));
     const [selectedCategory, setSelectedCategory] = useState<any>(null);
     const [zoomedItem, setZoomedItem] = useState<any>(null);
     const [toastMessage, setToastMessage] = useState('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [menuOpenDirection, setMenuOpenDirection] = useState<'up' | 'down'>('up');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeTab, setActiveTab] = useState<'grid' | 'list'>('grid');
     const fabRef = useRef<HTMLButtonElement>(null);
     const fabContainerRef = useRef<HTMLDivElement>(null);
 
@@ -118,6 +127,7 @@ function HisnAlmuslim({ onBack, onNavigate }) {
     }, [selectedCategory, zoomedItem, isMenuOpen]);
 
     const handleBack = () => {
+        setSearchQuery('');
         if (zoomedItem) {
             setZoomedItem(null);
         } else if (selectedCategory) {
@@ -128,6 +138,7 @@ function HisnAlmuslim({ onBack, onNavigate }) {
     };
 
     const handleGoHome = () => {
+        setSearchQuery('');
         if (zoomedItem) {
             setZoomedItem(null);
         }
@@ -181,7 +192,71 @@ function HisnAlmuslim({ onBack, onNavigate }) {
                 onHome={handleGoHome}
             />
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar relative mx-auto w-full max-w-lg px-4 pb-6">
+            <main className="flex-1 overflow-y-auto hide-scrollbar relative mx-auto w-full max-w-lg px-4 pb-6 flex flex-col">
+                {!selectedCategory && (
+                    <div className="pt-1 pb-3 w-full flex items-center justify-between gap-2 z-10 shrink-0">
+                        {/* Search Input */}
+                        <div className="relative flex-1">
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                <Search size={16} />
+                            </div>
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder={isEn ? "Search by name or meaning..." : "ابحث بالاسم أو المعنى..."}
+                                className="w-full pr-9 pl-4 py-2 rounded-xl text-xs sm:text-sm border shadow-sm outline-none transition-all"
+                                style={{
+                                    backgroundColor: isBlackTheme ? '#111111' : (theme.isDark ? '#1e293b' : '#ffffff'),
+                                    borderColor: cardBorderColor,
+                                    color: 'var(--text-color)'
+                                }}
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 hover:text-gray-600"
+                                >
+                                    <i className="fa-solid fa-times text-xs"></i>
+                                </button>
+                            )}
+                        </div>
+
+                        {/* View Mode Switch */}
+                        <div 
+                            className="flex items-center p-1 rounded-xl border shrink-0 shadow-sm"
+                            style={{
+                                backgroundColor: isBlackTheme ? '#111111' : (theme.isDark ? '#1e293b' : '#ffffff'),
+                                borderColor: cardBorderColor
+                            }}
+                        >
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('grid')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'grid' ? 'shadow-sm' : 'opacity-60 hover:opacity-100'}`}
+                                style={activeTab === 'grid' ? {
+                                    backgroundColor: isBlackTheme ? '#FFFFFF' : theme.palette[0],
+                                    color: isBlackTheme ? '#000000' : '#ffffff'
+                                } : { color: 'var(--text-color)' }}
+                                title={isEn ? "Grid View" : "عرض شبكي"}
+                            >
+                                <LayoutGrid size={15} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('list')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'list' ? 'shadow-sm' : 'opacity-60 hover:opacity-100'}`}
+                                style={activeTab === 'list' ? {
+                                    backgroundColor: isBlackTheme ? '#FFFFFF' : theme.palette[0],
+                                    color: isBlackTheme ? '#000000' : '#ffffff'
+                                } : { color: 'var(--text-color)' }}
+                                >
+                                    <ListFilter size={15} />
+                                </button>
+                        </div>
+                    </div>
+                )}
+
                 <div>
                     {selectedCategory ? (
                         <CategoryDetail 
@@ -194,7 +269,12 @@ function HisnAlmuslim({ onBack, onNavigate }) {
                         />
                     ) : (
                         <CategoryList 
-                            onSelectCategory={setSelectedCategory} 
+                            onSelectCategory={(cat) => {
+                                setSearchQuery('');
+                                setSelectedCategory(cat);
+                            }}
+                            activeTab={activeTab}
+                            searchQuery={searchQuery}
                         />
                     )}
                 </div>
@@ -273,7 +353,7 @@ function HisnAlmuslim({ onBack, onNavigate }) {
                 </button>
             </div>
 
-            <ZoomModal zoomedItem={zoomedItem} onClose={closeZoomModal} />
+            <ZoomModal zoomedItem={zoomedItem} onClose={closeZoomModal} setToastMessage={setToastMessage} />
 
             <AnimatePresence>
                 {toastMessage && (

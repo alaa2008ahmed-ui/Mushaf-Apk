@@ -83,7 +83,7 @@ export async function renderPropheticLineagePoster(options: PropheticLineageShar
     }
 
     const width = 1080;
-    const height = 1380;
+    const height = 1920; // Exact 9:16 vertical smartphone screen resolution
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -256,8 +256,8 @@ export async function renderPropheticLineagePoster(options: PropheticLineageShar
     const contentX = (width - contentWidth) / 2;
 
     // 9. Card 1: عَمُودُ النَّسَبِ الشَّرِيفِ الأَقْرَبُ
-    let currentY = 365;
-    const card1H = 340;
+    let currentY = 375;
+    const card1H = 460;
     drawCard(contentX, currentY, contentWidth, card1H, 0.85);
 
     ctx.save();
@@ -265,35 +265,35 @@ export async function renderPropheticLineagePoster(options: PropheticLineageShar
     ctx.textBaseline = 'top';
 
     // Header badge inside Card 1
-    const badgeW = 440;
-    const badgeH = 36;
+    const badgeW = 460;
+    const badgeH = 42;
     ctx.fillStyle = 'rgba(212, 175, 55, 0.15)';
-    drawRoundedRect(ctx, (width - badgeW) / 2, currentY + 18, badgeW, badgeH, 18);
+    drawRoundedRect(ctx, (width - badgeW) / 2, currentY + 22, badgeW, badgeH, 20);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(226, 194, 117, 0.5)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(226, 194, 117, 0.55)';
+    ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    ctx.font = "bold 18px 'Cairo', 'Tajawal', sans-serif";
+    ctx.font = "bold 20px 'Cairo', 'Tajawal', sans-serif";
     ctx.fillStyle = '#FFE680';
-    ctx.fillText('✨  عَمُودُ النَّسَبِ الشَّرِيفِ الأَقْرَبُ إِلَى عَدْنَان  ✨', width / 2, currentY + 26);
+    ctx.fillText('✨  عَمُودُ النَّسَبِ الشَّرِيفِ الأَقْرَبُ إِلَى عَدْنَان  ✨', width / 2, currentY + 31);
 
     // Short chain lines - large, elegant, and readable
-    ctx.font = "bold 24px 'Amiri', 'Amiri Quran', serif";
+    ctx.font = "bold 28px 'Amiri', 'Amiri Quran', serif";
     ctx.fillStyle = '#FFFFFF';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-    ctx.shadowBlur = 8;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+    ctx.shadowBlur = 10;
     const shortChainLines = wrapText(ctx, options.shortChain, contentWidth - 70);
-    let scY = currentY + 76;
+    let scY = currentY + 90;
     for (const line of shortChainLines) {
         ctx.fillText(line, width / 2, scY);
-        scY += 40;
+        scY += 50;
     }
     ctx.restore();
 
     // 10. Card 2: سِلْسِلَةُ الأَجْدَادِ المُتَّصِلَةِ وُصُولاً إِلَى إِسْمَاعِيلَ وَإِبْرَاهِيمَ عَلَيْهِمَا السَّلَام
-    currentY += card1H + 24;
-    const card2H = 390;
+    currentY += card1H + 34;
+    const card2H = 760;
     drawCard(contentX, currentY, contentWidth, card2H, 0.8);
 
     ctx.save();
@@ -301,51 +301,51 @@ export async function renderPropheticLineagePoster(options: PropheticLineageShar
     ctx.textBaseline = 'top';
 
     // Header Badge inside Card 2
-    ctx.font = "bold 20px 'Cairo', 'Tajawal', sans-serif";
+    ctx.font = "bold 23px 'Cairo', 'Tajawal', sans-serif";
     ctx.fillStyle = '#34D399'; // Emerald mint
-    ctx.fillText('📌 سِلْسِلَةُ الأَجْدَادِ المُتَّصِلَةِ وُصُولاً إِلَى إِسْمَاعِيلَ وَإِبْرَاهِيمَ عَلَيْهِمَا السَّلَام:', contentX + contentWidth - 34, currentY + 22);
+    ctx.fillText('📌 سِلْسِلَةُ الأَجْدَادِ المُتَّصِلَةِ وُصُولاً إِلَى إِسْمَاعِيلَ وَإِبْرَاهِيمَ عَلَيْهِمَا السَّلَام:', contentX + contentWidth - 34, currentY + 28);
 
     // Full text lines
-    ctx.font = "500 23px 'Amiri', 'Cairo', serif";
+    ctx.font = "500 27px 'Amiri', 'Cairo', serif";
     ctx.fillStyle = '#E6F4EA';
     const fullChainLines = wrapText(ctx, options.fullText, contentWidth - 68);
-    let fcY = currentY + 68;
+    let fcY = currentY + 84;
     for (const line of fullChainLines) {
         ctx.fillText(line, contentX + contentWidth - 34, fcY);
-        fcY += 42;
+        fcY += 50;
     }
 
     // Ibrahim & Ismail highlight pill
-    const ibrahimY = currentY + card2H - 82;
-    ctx.fillStyle = 'rgba(16, 185, 129, 0.16)';
-    drawRoundedRect(ctx, contentX + 24, ibrahimY, contentWidth - 48, 56, 16);
+    const ibrahimY = currentY + card2H - 96;
+    ctx.fillStyle = 'rgba(16, 185, 129, 0.18)';
+    drawRoundedRect(ctx, contentX + 24, ibrahimY, contentWidth - 48, 64, 18);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(52, 211, 153, 0.45)';
-    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = 'rgba(52, 211, 153, 0.55)';
+    ctx.lineWidth = 1.4;
     ctx.stroke();
 
     ctx.textAlign = 'center';
-    ctx.font = "bold 18px 'Cairo', 'Amiri', sans-serif";
+    ctx.font = "bold 20px 'Cairo', 'Amiri', sans-serif";
     ctx.fillStyle = '#FDE68A';
-    ctx.fillText('🌱  مِنْ وُلْدِ إِسْمَاعِيلَ (ذَبِيحِ الله) بْنِ إِبْرَاهِيمَ (خَلِيلِ الرَّحْمَن) عَلَيْهِمَا أَزْكَى الصَّلَاةِ وَالسَّلَام  🌱', width / 2, ibrahimY + 28);
+    ctx.fillText('🌱  مِنْ وُلْدِ إِسْمَاعِيلَ (ذَبِيحِ الله) بْنِ إِبْرَاهِيمَ (خَلِيلِ الرَّحْمَن) عَلَيْهِمَا أَزْكَى الصَّلَاةِ وَالسَّلَام  🌱', width / 2, ibrahimY + 32);
     ctx.restore();
 
     // 11. Footer: Salawat & App Seal
-    const footerY = height - 108;
+    const footerY = height - 128;
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    ctx.font = "bold 24px 'Amiri', 'Amiri Quran', serif";
+    ctx.font = "bold 28px 'Amiri', 'Amiri Quran', serif";
     ctx.fillStyle = goldGrad;
-    ctx.shadowColor = 'rgba(255, 241, 184, 0.55)';
-    ctx.shadowBlur = 10;
+    ctx.shadowColor = 'rgba(255, 241, 184, 0.65)';
+    ctx.shadowBlur = 12;
     ctx.fillText('صَلَّى اللهُ عَلَيْهِ وَعَلَى آلِهِ وَصَحْبِهِ وَسَلَّمَ تَسْلِيماً كَثِيراً', width / 2, footerY);
 
     ctx.shadowBlur = 0;
-    ctx.font = "bold 16px 'Cairo', 'Tajawal', sans-serif";
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.fillText('مُصْحَفُ أَحْمَدَ وَلَيْلَى  •  صَدَقَةٌ جَارِيَةٌ لِأُمَّتِنَا الإِسْلَامِيَّة', width / 2, footerY + 38);
+    ctx.font = "bold 18px 'Cairo', 'Tajawal', sans-serif";
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.fillText('مُصْحَفُ أَحْمَدَ وَلَيْلَى  •  صَدَقَةٌ جَارِيَةٌ لِأُمَّتِنَا الإِسْلَامِيَّة', width / 2, footerY + 44);
     ctx.restore();
 
     return canvas;

@@ -366,7 +366,7 @@ class CommunityService {
     return this.normalizeUsernameForMatch(str);
   }
 
-  public async restoreAccount(codeOrUsername: string, inputPasscode?: string): Promise<CommunityUser> {
+  public async restoreAccount(codeOrUsername: string, inputPasscode?: string, country?: string): Promise<CommunityUser> {
     const rawInput = (codeOrUsername || '').trim();
     if (!rawInput) {
       throw new Error('يرجى إدخال كود الحساب (مثل MQ-XXXXX) أو اسم المستخدم بالكامل');
@@ -532,7 +532,9 @@ class CommunityService {
     const nowIso = new Date().toISOString();
     foundUser.isOnline = true;
     foundUser.lastSeen = nowIso;
-    if (!foundUser.country || !foundUser.country.trim()) {
+    if (country && country.trim()) {
+      foundUser.country = country.trim();
+    } else if (!foundUser.country || !foundUser.country.trim()) {
       foundUser.country = 'دولة أخرى 🌍';
     }
     if (!foundUser.avatarUrl || !foundUser.avatarUrl.trim()) {
@@ -546,6 +548,9 @@ class CommunityService {
     this.usersMap.set(foundUser.userId, foundUser);
 
     localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(foundUser));
+    try {
+      localStorage.setItem('initial_community_onboarding_completed', 'true');
+    } catch (e) {}
     this.saveToLocalStorage();
 
     // Mark online in Firestore
@@ -781,6 +786,9 @@ class CommunityService {
     this.currentUser = user;
     try {
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+      try {
+        localStorage.setItem('initial_community_onboarding_completed', 'true');
+      } catch (err) {}
       this.usersMap.set(user.userId, user);
       
       const payload = this.cleanPayload(user);
@@ -804,8 +812,8 @@ class CommunityService {
     passcode?: string
   ): Promise<CommunityUser> {
     const cleanPass = this.normalizeDigits(passcode);
-    if (!cleanPass || cleanPass.length < 6 || cleanPass.length > 12) {
-      throw new Error('يرجى إدخال رقم سري مكون من 6 إلى 12 حرف أو رقم.');
+    if (!cleanPass || cleanPass.length < 4 || cleanPass.length > 16) {
+      throw new Error('يرجى إدخال رقم سري مكون من 4 إلى 16 خانة.');
     }
 
     const randomId = 'usr_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
@@ -832,6 +840,9 @@ class CommunityService {
     this.currentUser = newUser;
     this.usersMap.set(newUser.userId, newUser);
     localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(newUser));
+    try {
+      localStorage.setItem('initial_community_onboarding_completed', 'true');
+    } catch (err) {}
 
     try {
       const payload = this.cleanPayload(newUser);

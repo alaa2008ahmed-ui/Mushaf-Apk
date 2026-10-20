@@ -106,13 +106,13 @@ export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTM
         // Proceed with fallbacks
     }
 
-    // --- STANDARD VERTICAL SOCIAL DIMENSIONS (4:5 Portrait for Instagram, Facebook & Mobile Screens) ---
+    // --- EXACT VERTICAL SMARTPHONE SCREEN DIMENSIONS (9:16 / 1080x1920 for Stories, Status & Mobile Screens) ---
     const width = 1080;
-    const baseHeight = 1350; // Standard 4:5 vertical aspect ratio
-    const outerMargin = 26;
-    const innerMargin = 46;
-    // Comfortable reading column width (so text wraps into 3-6 balanced poetic lines instead of stretching wide)
-    const horizontalContentPadding = 140;
+    const height = 1920; // Fixed 9:16 ratio as requested
+    const outerMargin = 30;
+    const innerMargin = 52;
+    // Comfortable reading column width
+    const horizontalContentPadding = 120;
     const maxTextWidth = width - (horizontalContentPadding * 2);
 
     const fontFamily = isEn 
@@ -156,96 +156,126 @@ export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTM
         cleanText = cleanText.replace(/[\u0600-\u06FF]/g, '').trim() || text;
     }
 
-    // Adaptive typography sizing for vertical mobile card
-    const cleanLen = cleanText.replace(/<[^>]+>/g, '').length;
-    let bodyFontSize: number;
-    let lineHeight: number;
-
-    if (cleanLen > 650) {
-        bodyFontSize = isEn ? 23 : 24;
-        lineHeight = isEn ? 40 : 44;
-    } else if (cleanLen > 380) {
-        bodyFontSize = isEn ? 26 : 28;
-        lineHeight = isEn ? 46 : 52;
-    } else if (cleanLen > 180) {
-        bodyFontSize = isEn ? 30 : 33;
-        lineHeight = isEn ? 52 : 60;
-    } else if (cleanLen > 80) {
-        bodyFontSize = isEn ? 34 : 37;
-        lineHeight = isEn ? 58 : 66;
-    } else {
-        // Very short text: bold, majestic typography that commands attention
-        bodyFontSize = isEn ? 38 : 42;
-        lineHeight = isEn ? 62 : 72;
+    // --- MEASURE HEADER & FOOTER TO COMPUTE AVAILABLE MIDDLE VERTICAL SPACE ---
+    // 1. Top Section (Bismillah + Category Badge)
+    const bismillahText = isEn 
+        ? 'In the Name of Allah, the Entirely Merciful, the Especially Merciful' 
+        : 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
+    const topSectionStartY = innerMargin + 42;
+    let topSectionEndY = topSectionStartY + (isEn ? 28 : 46); // Bismillah height
+    if (cleanCategory) {
+        topSectionEndY += 20 + 40; // gap + badge height (40px)
     }
+    topSectionEndY += 30; // safety margin below top section
 
-    // Temporary measurement context with exact font styling
+    // 2. Bottom Section (Footer Brand)
+    const footerStartY = height - innerMargin - 120; // Around y = 1748
+
+    // 3. Available Vertical Space for Middle Section (Title + Body + Source)
+    const availableMiddleSpace = footerStartY - topSectionEndY - 40; // ~1400px
+
+    // Temporary measurement canvas
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = width;
     tempCanvas.height = 100;
     const tempCtx = tempCanvas.getContext('2d')!;
     tempCtx.direction = isEn ? 'ltr' : 'rtl';
-    tempCtx.font = `500 ${bodyFontSize}px ${fontFamily}`;
 
-    const lines = wrapText(tempCtx, cleanText, maxTextWidth);
+    // Helper to measure height of wrapped lines
+    const measureLinesHeight = (linesList: { text: string; isHighlight?: boolean; isBullet?: boolean }[], lh: number) => {
+        let total = 0;
+        for (const l of linesList) {
+            total += !l.text ? lh * 0.45 : lh;
+        }
+        return total;
+    };
 
-    // --- MEASURE VERTICAL HEIGHTS ---
-    // 1. Top Section (Bismillah + Category Badge)
-    const bismillahText = isEn 
-        ? 'In the Name of Allah, the Entirely Merciful, the Especially Merciful' 
-        : 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
-    const topSectionStartY = innerMargin + 32;
-    let topSectionEndY = topSectionStartY + (isEn ? 24 : 38); // Bismillah height
-    if (cleanCategory) {
-        topSectionEndY += 16 + 36; // gap + badge height (36px)
-    }
-    topSectionEndY += 20; // safety margin below top section
-
-    // 2. Middle Section (Title + Divider + Body Lines + Source)
-    let middleHeight = 0;
+    // Calculate fixed reserved heights inside middle section (Title + Source)
+    let reservedMiddleExtras = 0;
     if (cleanTitle) {
-        middleHeight += 44 + 14 + 16 + 28; // Title + gap + divider + gap to text
+        reservedMiddleExtras += 54 + 20 + 20 + 36; // Title font (38px) + gap + diamond divider + gap
     }
-    for (const l of lines) {
-        if (!l.text) {
-            middleHeight += lineHeight * 0.45;
-        } else {
-            middleHeight += lineHeight;
-        }
-    }
-    middleHeight += 20; // gap below text
     if (cleanSource) {
-        middleHeight += 16 + 28 + 18; // divider + source text + gap
+        reservedMiddleExtras += 30 + 16 + 32; // divider + gap + source font (22px)
     }
 
-    // 3. Bottom Section (Footer Brand)
-    const footerHeight = 22 + 30 + 6 + 18 + 24; // divider + brandName + gap + subtitle + padding
-    const footerTotalNeeded = footerHeight + innerMargin;
+    const maxAllowedTextHeight = Math.max(200, availableMiddleSpace - reservedMiddleExtras - 30);
 
-    // 4. Determine Final Canvas Height:
-    // If content fits within standard 4:5 vertical (1350px), use 1350px.
-    // If text is very long, expand vertically beyond 1350px.
-    const totalRequiredHeight = topSectionEndY + middleHeight + 40 + footerTotalNeeded;
-    const finalHeight = Math.max(baseHeight, Math.round(totalRequiredHeight));
+    // --- DYNAMIC INTELLIGENT AUTO-FIT TYPOGRAPHY ALGORITHM ---
+    // Rule:
+    // - Short text: enlarge font size (up to 68px in Arabic, 56px in English) with generous line-height
+    //   so it comfortably commands the 1080x1920 canvas without leaving huge empty voids.
+    // - Long text: scale font size down smoothly (step-by-step) so it fits completely within 1080x1920
+    //   without any overflow or truncation.
+    const cleanLen = cleanText.replace(/<[^>]+>/g, '').length;
+    let initialFontSize: number;
 
-    // Calculate Middle Start Y:
-    // If finalHeight === baseHeight, vertically center the middle section in available space!
-    let middleStartY = topSectionEndY + 20;
-    const footerStartY = finalHeight === baseHeight
-        ? (finalHeight - innerMargin - 85)
-        : (middleStartY + middleHeight + 30);
-
-    if (finalHeight === baseHeight) {
-        const availableMiddleSpace = footerStartY - topSectionEndY;
-        if (availableMiddleSpace > middleHeight) {
-            middleStartY = Math.round(topSectionEndY + (availableMiddleSpace - middleHeight) / 2);
-        }
+    if (cleanLen < 70) {
+        initialFontSize = isEn ? 56 : 66;
+    } else if (cleanLen < 150) {
+        initialFontSize = isEn ? 48 : 56;
+    } else if (cleanLen < 300) {
+        initialFontSize = isEn ? 40 : 46;
+    } else if (cleanLen < 550) {
+        initialFontSize = isEn ? 32 : 36;
+    } else if (cleanLen < 900) {
+        initialFontSize = isEn ? 26 : 30;
+    } else {
+        initialFontSize = isEn ? 22 : 25;
     }
 
-    // Create target canvas with exact vertical dimensions
+    let bodyFontSize = initialFontSize;
+    let lineHeight = Math.round(bodyFontSize * (isEn ? 1.7 : 1.9));
+    tempCtx.font = `500 ${bodyFontSize}px ${fontFamily}`;
+    let lines = wrapText(tempCtx, cleanText, maxTextWidth);
+    let textHeight = measureLinesHeight(lines, lineHeight);
+
+    // If text overflows available height, iteratively scale down until it fits
+    const minFontSize = isEn ? 17 : 19;
+    while (textHeight > maxAllowedTextHeight && bodyFontSize > minFontSize) {
+        bodyFontSize -= 1;
+        lineHeight = Math.round(bodyFontSize * (isEn ? 1.6 : 1.75));
+        tempCtx.font = `500 ${bodyFontSize}px ${fontFamily}`;
+        lines = wrapText(tempCtx, cleanText, maxTextWidth);
+        textHeight = measureLinesHeight(lines, lineHeight);
+    }
+
+    // If text is small and takes up less than 40% of available space, iteratively scale up
+    const maxFontSize = isEn ? 58 : 68;
+    while (textHeight < maxAllowedTextHeight * 0.45 && bodyFontSize < maxFontSize) {
+        const testFs = bodyFontSize + 2;
+        const testLh = Math.round(testFs * (isEn ? 1.75 : 1.95));
+        tempCtx.font = `500 ${testFs}px ${fontFamily}`;
+        const testLines = wrapText(tempCtx, cleanText, maxTextWidth);
+        const testHeight = measureLinesHeight(testLines, testLh);
+        if (testHeight > maxAllowedTextHeight) break;
+        bodyFontSize = testFs;
+        lineHeight = testLh;
+        lines = testLines;
+        textHeight = testHeight;
+    }
+
+    // Dynamic title and source sizes proportional to body font size
+    const titleFontSize = Math.min(46, Math.max(28, Math.round(bodyFontSize * 0.95)));
+    const sourceFontSize = Math.min(24, Math.max(18, Math.round(bodyFontSize * 0.6)));
+
+    // Calculate total middle height
+    let totalMiddleHeight = 0;
+    if (cleanTitle) {
+        totalMiddleHeight += titleFontSize + 22 + 16 + 28;
+    }
+    totalMiddleHeight += textHeight;
+    if (cleanSource) {
+        totalMiddleHeight += 24 + 16 + sourceFontSize + 10;
+    }
+
+    // Vertically center middle section in available space!
+    const middleStartY = topSectionEndY + Math.max(20, Math.round((availableMiddleSpace - totalMiddleHeight) / 2));
+
+    // Create target canvas with EXACT 1080x1920 dimensions
     const canvas = document.createElement('canvas');
     canvas.width = width;
-    canvas.height = finalHeight;
+    canvas.height = height;
     const ctx = canvas.getContext('2d')!;
 
     // Enable high quality rendering
@@ -258,56 +288,56 @@ export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTM
     const secondaryColor = theme?.palette?.[1] || '#0f766e';
 
     // 1. Background Gradient
-    const bgGrad = ctx.createLinearGradient(0, 0, width, finalHeight);
+    const bgGrad = ctx.createLinearGradient(0, 0, width, height);
     bgGrad.addColorStop(0, primaryColor);
     bgGrad.addColorStop(0.5, secondaryColor);
     bgGrad.addColorStop(1, '#062621'); // Deep rich bottom
     ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, width, finalHeight);
+    ctx.fillRect(0, 0, width, height);
 
-    // 2. Subtle Radial Glow in Center of Vertical Card
-    const glow = ctx.createRadialGradient(width / 2, finalHeight * 0.48, 50, width / 2, finalHeight * 0.48, width * 0.7);
-    glow.addColorStop(0, 'rgba(255, 255, 255, 0.14)');
-    glow.addColorStop(0.55, 'rgba(255, 255, 255, 0.03)');
-    glow.addColorStop(1, 'rgba(0, 0, 0, 0.28)');
+    // 2. Subtle Radial Glow in Center of Vertical 9:16 Canvas
+    const glow = ctx.createRadialGradient(width / 2, height * 0.5, 60, width / 2, height * 0.5, width * 0.85);
+    glow.addColorStop(0, 'rgba(255, 255, 255, 0.16)');
+    glow.addColorStop(0.55, 'rgba(255, 255, 255, 0.04)');
+    glow.addColorStop(1, 'rgba(0, 0, 0, 0.32)');
     ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, width, finalHeight);
+    ctx.fillRect(0, 0, width, height);
 
     // 3. Subtle Geometric Star Pattern Overlay
     ctx.save();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-    const step = 44;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+    const step = 46;
     for (let x = 20; x < width; x += step) {
-        for (let y = 20; y < finalHeight; y += step) {
+        for (let y = 20; y < height; y += step) {
             ctx.beginPath();
-            ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+            ctx.arc(x, y, 1.6, 0, Math.PI * 2);
             ctx.fill();
         }
     }
     ctx.restore();
 
     // 4. Outer & Inner Luxury Frames
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.lineWidth = 2.2;
-    drawRoundRect(ctx, outerMargin, outerMargin, width - outerMargin * 2, finalHeight - outerMargin * 2, 32);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+    ctx.lineWidth = 2.4;
+    drawRoundRect(ctx, outerMargin, outerMargin, width - outerMargin * 2, height - outerMargin * 2, 36);
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
-    ctx.strokeStyle = 'rgba(254, 240, 138, 0.45)'; // Golden border
-    ctx.lineWidth = 1.8;
-    drawRoundRect(ctx, innerMargin, innerMargin, width - innerMargin * 2, finalHeight - innerMargin * 2, 24);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+    ctx.strokeStyle = 'rgba(254, 240, 138, 0.5)'; // Golden border
+    ctx.lineWidth = 2;
+    drawRoundRect(ctx, innerMargin, innerMargin, width - innerMargin * 2, height - innerMargin * 2, 28);
     ctx.fill();
     ctx.stroke();
 
     // Corner Ornaments
-    ctx.strokeStyle = 'rgba(254, 240, 138, 0.75)';
-    ctx.lineWidth = 2.5;
-    const cornerSize = 24;
+    ctx.strokeStyle = 'rgba(254, 240, 138, 0.85)';
+    ctx.lineWidth = 2.8;
+    const cornerSize = 28;
     const corners = [
-        [innerMargin + 8, innerMargin + 8, 1, 1],
-        [width - innerMargin - 8, innerMargin + 8, -1, 1],
-        [innerMargin + 8, finalHeight - innerMargin - 8, 1, -1],
-        [width - innerMargin - 8, finalHeight - innerMargin - 8, -1, -1],
+        [innerMargin + 10, innerMargin + 10, 1, 1],
+        [width - innerMargin - 10, innerMargin + 10, -1, 1],
+        [innerMargin + 10, height - innerMargin - 10, 1, -1],
+        [width - innerMargin - 10, height - innerMargin - 10, -1, -1],
     ];
     for (const [cx, cy, dx, dy] of corners) {
         ctx.beginPath();
@@ -320,74 +350,74 @@ export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTM
     // 5. TOP SECTION: Bismillah & Category Badge
     let currentTopY = topSectionStartY;
     ctx.save();
-    ctx.font = isEn ? `bold 16px ${fontFamily}` : `600 30px 'Amiri', 'Traditional Arabic', serif`;
+    ctx.font = isEn ? `bold 18px ${fontFamily}` : `600 34px 'Amiri', 'Traditional Arabic', serif`;
     ctx.fillStyle = '#fef08a';
     ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 6;
-    ctx.fillText(bismillahText, width / 2, currentTopY + (isEn ? 16 : 24));
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+    ctx.shadowBlur = 8;
+    ctx.fillText(bismillahText, width / 2, currentTopY + (isEn ? 18 : 28));
     ctx.restore();
 
-    currentTopY += isEn ? 28 : 42;
+    currentTopY += isEn ? 32 : 50;
 
     if (cleanCategory) {
-        ctx.font = `bold 17px ${fontFamily}`;
+        ctx.font = `bold 19px ${fontFamily}`;
         const catMetrics = ctx.measureText(cleanCategory);
-        const pillW = catMetrics.width + 48;
-        const pillH = 36;
+        const pillW = catMetrics.width + 56;
+        const pillH = 40;
         const pillX = (width - pillW) / 2;
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
-        ctx.strokeStyle = 'rgba(254, 240, 138, 0.5)';
-        ctx.lineWidth = 1.2;
-        drawRoundRect(ctx, pillX, currentTopY, pillW, pillH, 18);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+        ctx.strokeStyle = 'rgba(254, 240, 138, 0.55)';
+        ctx.lineWidth = 1.4;
+        drawRoundRect(ctx, pillX, currentTopY, pillW, pillH, 20);
         ctx.fill();
         ctx.stroke();
 
         ctx.fillStyle = '#fef08a';
         ctx.textAlign = 'center';
-        ctx.fillText(cleanCategory, width / 2, currentTopY + 24);
+        ctx.fillText(cleanCategory, width / 2, currentTopY + 26);
     }
 
     // 6. MIDDLE SECTION: Title & Elegant Divider
     let currentMiddleY = middleStartY;
     if (cleanTitle) {
         ctx.save();
-        ctx.font = `bold 34px ${fontFamily}`;
+        ctx.font = `bold ${titleFontSize}px ${fontFamily}`;
         ctx.fillStyle = '#fef08a';
         ctx.textAlign = 'center';
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-        ctx.shadowBlur = 8;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+        ctx.shadowBlur = 10;
         ctx.shadowOffsetY = 2;
-        ctx.fillText(cleanTitle, width / 2, currentMiddleY + 30);
+        ctx.fillText(cleanTitle, width / 2, currentMiddleY + titleFontSize * 0.9);
         ctx.restore();
 
-        currentMiddleY += 46;
+        currentMiddleY += titleFontSize + 20;
 
         // Elegant Golden Divider with Center Diamond
-        ctx.strokeStyle = 'rgba(254, 240, 138, 0.4)';
-        ctx.lineWidth = 1.4;
+        ctx.strokeStyle = 'rgba(254, 240, 138, 0.45)';
+        ctx.lineWidth = 1.6;
         ctx.beginPath();
-        ctx.moveTo(width / 2 - 160, currentMiddleY);
-        ctx.lineTo(width / 2 - 16, currentMiddleY);
-        ctx.moveTo(width / 2 + 16, currentMiddleY);
-        ctx.lineTo(width / 2 + 160, currentMiddleY);
+        ctx.moveTo(width / 2 - 180, currentMiddleY);
+        ctx.lineTo(width / 2 - 20, currentMiddleY);
+        ctx.moveTo(width / 2 + 20, currentMiddleY);
+        ctx.lineTo(width / 2 + 180, currentMiddleY);
         ctx.stroke();
 
         // Center Diamond
         ctx.fillStyle = '#fef08a';
         ctx.beginPath();
-        ctx.moveTo(width / 2, currentMiddleY - 6);
-        ctx.lineTo(width / 2 + 6, currentMiddleY);
-        ctx.lineTo(width / 2, currentMiddleY + 6);
-        ctx.lineTo(width / 2 - 6, currentMiddleY);
+        ctx.moveTo(width / 2, currentMiddleY - 7);
+        ctx.lineTo(width / 2 + 7, currentMiddleY);
+        ctx.lineTo(width / 2, currentMiddleY + 7);
+        ctx.lineTo(width / 2 - 7, currentMiddleY);
         ctx.closePath();
         ctx.fill();
 
-        currentMiddleY += 28;
+        currentMiddleY += 32;
     }
 
-    // 7. MIDDLE SECTION: Body Text (Poetic & Comfortable Vertical Line Wrapping)
+    // 7. MIDDLE SECTION: Body Text (Auto-fitted with high legibility)
     ctx.direction = isEn ? 'ltr' : 'rtl';
     ctx.textAlign = 'center';
 
@@ -401,47 +431,47 @@ export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTM
         if (lineObj.isHighlight) {
             ctx.font = `bold ${bodyFontSize + 1}px ${fontFamily}`;
             ctx.fillStyle = '#fef08a';
-            ctx.shadowColor = 'rgba(0,0,0,0.4)';
-            ctx.shadowBlur = 4;
+            ctx.shadowColor = 'rgba(0,0,0,0.45)';
+            ctx.shadowBlur = 6;
         } else if (lineObj.isBullet) {
             ctx.font = `500 ${bodyFontSize}px ${fontFamily}`;
             ctx.fillStyle = '#f1f5f9';
         } else {
-            ctx.font = `normal ${bodyFontSize}px ${fontFamily}`;
+            ctx.font = `500 ${bodyFontSize}px ${fontFamily}`;
             ctx.fillStyle = '#ffffff';
         }
 
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
-        ctx.shadowBlur = 4;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+        ctx.shadowBlur = 6;
         ctx.fillText(lineObj.text, width / 2, currentMiddleY + bodyFontSize * 0.85);
         ctx.restore();
 
         currentMiddleY += lineHeight;
     }
 
-    currentMiddleY += 16;
+    currentMiddleY += 20;
 
     // 8. MIDDLE SECTION: Source & Metadata (if provided)
     if (cleanSource) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.moveTo(horizontalContentPadding + 20, currentMiddleY);
-        ctx.lineTo(width - horizontalContentPadding - 20, currentMiddleY);
+        ctx.moveTo(horizontalContentPadding + 30, currentMiddleY);
+        ctx.lineTo(width - horizontalContentPadding - 30, currentMiddleY);
         ctx.stroke();
 
-        ctx.font = `bold 19px ${fontFamily}`;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.font = `bold ${sourceFontSize}px ${fontFamily}`;
+        ctx.fillStyle = 'rgba(254, 240, 138, 0.95)';
         ctx.textAlign = 'center';
-        ctx.fillText(cleanSource, width / 2, currentMiddleY + 22);
+        ctx.fillText(cleanSource, width / 2, currentMiddleY + sourceFontSize + 10);
     }
 
-    // 9. BOTTOM SECTION: Footer Brand (Grounded at the bottom of the vertical card)
-    ctx.strokeStyle = 'rgba(254, 240, 138, 0.3)';
-    ctx.lineWidth = 1.2;
+    // 9. BOTTOM SECTION: Footer Brand (Grounded at the bottom of the 1080x1920 canvas)
+    ctx.strokeStyle = 'rgba(254, 240, 138, 0.35)';
+    ctx.lineWidth = 1.4;
     ctx.beginPath();
-    ctx.moveTo(width / 2 - 150, footerStartY);
-    ctx.lineTo(width / 2 + 150, footerStartY);
+    ctx.moveTo(width / 2 - 180, footerStartY);
+    ctx.lineTo(width / 2 + 180, footerStartY);
     ctx.stroke();
 
     const brandName = isEn 
@@ -453,16 +483,16 @@ export async function renderCardToPureCanvas(options: ShareOptions): Promise<HTM
         : 'تلاوة وتدبر وسيرة نبوية';
 
     ctx.save();
-    ctx.font = `bold 24px ${fontFamily}`;
+    ctx.font = `bold 28px ${fontFamily}`;
     ctx.fillStyle = '#fef08a';
     ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-    ctx.shadowBlur = 6;
-    ctx.fillText(brandName, width / 2, footerStartY + 26);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+    ctx.shadowBlur = 8;
+    ctx.fillText(brandName, width / 2, footerStartY + 34);
 
-    ctx.font = `500 14px ${fontFamily}`;
-    ctx.fillStyle = 'rgba(254, 240, 138, 0.85)';
-    ctx.fillText(brandSubtitle, width / 2, footerStartY + 50);
+    ctx.font = `500 16px ${fontFamily}`;
+    ctx.fillStyle = 'rgba(254, 240, 138, 0.9)';
+    ctx.fillText(brandSubtitle, width / 2, footerStartY + 64);
     ctx.restore();
 
     return canvas;

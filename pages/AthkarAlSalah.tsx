@@ -8,6 +8,8 @@ import { shareAsImage } from '../utils/shareAsImage';
 import { playTTS, stopTTS, subscribeTTS } from '../utils/ttsEngine';
 import { useHabitTracker } from '../hooks/useHabitTracker';
 import { useLanguage } from '../context/LanguageContext';
+import { BottomSalahGuides } from '../components/AthkarAlSalah/BottomSalahGuides';
+import { LayoutGrid, ListFilter, Search } from 'lucide-react';
 
 const SalahZikrCard = ({ 
     zikr, 
@@ -248,6 +250,8 @@ function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
     const [favorites, setFavorites] = useState<string[]>([]);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [menuOpenDirection, setMenuOpenDirection] = useState<'up' | 'down'>('up');
+    const [activeTab, setActiveTab] = useState<'grid' | 'list'>('list');
+    const [searchQuery, setSearchQuery] = useState('');
     const fabRef = useRef<HTMLButtonElement>(null);
     const fabContainerRef = useRef<HTMLDivElement>(null);
 
@@ -298,6 +302,7 @@ function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
     };
 
     const openPrayer = (prayerId: string, titleText: string, titleEnText?: string) => {
+        setSearchQuery('');
         let currentAthkarData: SalahDhikrItem[] = JSON.parse(JSON.stringify(baseAthkar));
 
         // Handle common Fajr/Maghrib changes
@@ -350,6 +355,7 @@ function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
     };
 
     const handleBack = () => {
+        setSearchQuery('');
         if (zoomedZikr) {
             setZoomedZikr(null);
         } else if (isFavoritesView) {
@@ -362,6 +368,7 @@ function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
     };
 
     const handleGoHome = () => {
+        setSearchQuery('');
         if (zoomedZikr) setZoomedZikr(null);
         if (isFavoritesView) setIsFavoritesView(false);
         if (currentPrayer) setCurrentPrayer(null);
@@ -377,6 +384,30 @@ function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
     const favoriteAthkar = allPossibleAthkar
         .filter(z => favorites.includes(z.text))
         .map(z => ({ ...z, currentCount: z.count }));
+
+    const filteredPrayerOptions = prayerOptions.filter(prayer =>
+        !searchQuery ||
+        prayer.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        prayer.titleEn.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const filteredAthkarList = athkarList.filter(zikr =>
+        !searchQuery ||
+        zikr.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (zikr.title && zikr.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (zikr.note && zikr.note.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (zikr.textEn && zikr.textEn.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (zikr.titleEn && zikr.titleEn.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    const filteredFavoriteAthkar = favoriteAthkar.filter(zikr =>
+        !searchQuery ||
+        zikr.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (zikr.title && zikr.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (zikr.note && zikr.note.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (zikr.textEn && zikr.textEn.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (zikr.titleEn && zikr.titleEn.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
     const pageTitle = currentPrayer 
         ? (isEn ? (currentPrayer.titleEn || currentPrayer.title) : currentPrayer.title) 
@@ -424,12 +455,75 @@ function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar relative max-w-md mx-auto w-full px-4 pt-2 pb-4 flex flex-col">
+            <main className="flex-1 overflow-y-auto hide-scrollbar relative max-w-2xl mx-auto w-full px-4 pt-2 pb-4 flex flex-col">
+                {/* Controls Bar: Search and View Mode Switch */}
+                <div className="pt-1 pb-3 w-full flex items-center justify-between gap-2 z-10 shrink-0">
+                    {/* Search Input */}
+                    <div className="relative flex-1">
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                            <Search size={16} />
+                        </div>
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder={isEn ? "Search by name or meaning..." : "ابحث بالاسم أو المعنى..."}
+                            className="w-full pr-9 pl-4 py-2 rounded-xl text-xs sm:text-sm border shadow-sm outline-none transition-all"
+                            style={{
+                                backgroundColor: isBlackTheme ? '#111111' : (theme.isDark ? '#1e293b' : '#ffffff'),
+                                borderColor: cardBorderColor,
+                                color: 'var(--text-color)'
+                            }}
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 hover:text-gray-600"
+                            >
+                                <i className="fa-solid fa-times text-xs"></i>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* View Mode Switch */}
+                    <div 
+                        className="flex items-center p-1 rounded-xl border shrink-0 shadow-sm"
+                        style={{
+                            backgroundColor: isBlackTheme ? '#111111' : (theme.isDark ? '#1e293b' : '#ffffff'),
+                            borderColor: cardBorderColor
+                        }}
+                    >
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('grid')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'grid' ? 'shadow-sm' : 'opacity-60 hover:opacity-100'}`}
+                            style={activeTab === 'grid' ? {
+                                backgroundColor: isBlackTheme ? '#FFFFFF' : theme.palette[0],
+                                color: isBlackTheme ? '#000000' : '#ffffff'
+                            } : { color: 'var(--text-color)' }}
+                            title={isEn ? "Grid View" : "عرض شبكي"}
+                        >
+                            <LayoutGrid size={15} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('list')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'list' ? 'shadow-sm' : 'opacity-60 hover:opacity-100'}`}
+                            style={activeTab === 'list' ? {
+                                backgroundColor: isBlackTheme ? '#FFFFFF' : theme.palette[0],
+                                color: isBlackTheme ? '#000000' : '#ffffff'
+                            } : { color: 'var(--text-color)' }}
+                            >
+                                <ListFilter size={15} />
+                            </button>
+                    </div>
+                </div>
+
                 {isFavoritesView ? (
-                    <div className="space-y-4">
-                        {favoriteAthkar.length > 0 ? (
+                    <div className={activeTab === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-4"}>
+                        {filteredFavoriteAthkar.length > 0 ? (
                             <>
-                                {favoriteAthkar.map(zikr => (
+                                {filteredFavoriteAthkar.map(zikr => (
                                     <SalahZikrCard 
                                         key={zikr.id} 
                                         zikr={zikr} 
@@ -444,7 +538,7 @@ function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
                                 ))}
                             </>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-20 opacity-50 text-center">
+                            <div className="flex flex-col items-center justify-center py-20 opacity-50 text-center col-span-full">
                                 <i className="fa-solid fa-heart text-5xl mb-4"></i>
                                 <p className="font-bold">
                                     {isEn ? 'No favorite adhkar to display currently' : 'لا توجد أذكار مفضلة لعرضها حالياً'}
@@ -454,8 +548,8 @@ function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
                     </div>
                 ) : !currentPrayer ? (
                     <>
-                        <div id="prayersMenu" className="space-y-4">
-                            {prayerOptions.map(prayer => (
+                        <div id="prayersMenu" className={activeTab === 'grid' ? "grid grid-cols-2 gap-3.5" : "space-y-4"}>
+                            {filteredPrayerOptions.map(prayer => (
                                  <div 
                                       key={prayer.id} 
                                       onClick={() => openPrayer(
@@ -463,21 +557,21 @@ function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
                                           `أذكار ${prayer.title}`, 
                                           `${prayer.titleEn} Adhkar`
                                       )} 
-                                      className={`themed-card p-4 rounded-xl shadow-sm border flex items-center justify-between cursor-pointer active:scale-95 transition`}
+                                      className={`themed-card p-4 rounded-xl shadow-sm border flex ${activeTab === 'grid' ? 'flex-col items-center text-center justify-center py-6 gap-3' : 'items-center justify-between'} cursor-pointer active:scale-95 transition`}
                                       style={{ 
                                           borderColor: cardBorderColor,
                                           borderWidth: '1.5px',
                                           borderStyle: 'solid',
-                                          ...(isEn ? {
+                                          ...(activeTab === 'grid' ? {} : (isEn ? {
                                               borderLeftWidth: '4px',
                                               borderLeftColor: prayer.color === 'primary' ? theme.palette[0] : theme.palette[1]
                                           } : {
                                               borderRightWidth: '4px',
                                               borderRightColor: prayer.color === 'primary' ? theme.palette[0] : theme.palette[1]
-                                          })
+                                          }))
                                       }}
                                  >
-                                    <div className="flex items-center gap-4">
+                                    <div className={`flex ${activeTab === 'grid' ? 'flex-col items-center gap-3' : 'items-center gap-4'}`}>
                                         <div 
                                              className={`w-12 h-12 rounded-full flex items-center justify-center ${themeKey === 'default' ? 'shadow-inner border border-black/5' : ''}`} 
                                              style={{
@@ -488,213 +582,27 @@ function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
                                             <i className={`fa-solid ${prayer.icon} text-xl`}></i>
                                         </div>
                                         <div>
-                                            <h2 className="font-bold text-lg">
+                                            <h2 className="font-bold text-base sm:text-lg">
                                                 {isEn ? prayer.titleEn : prayer.title}
                                             </h2>
                                         </div>
                                     </div>
-                                    <i className={`fa-solid ${isEn ? 'fa-angle-right' : 'fa-angle-left'} themed-text-muted`}></i>
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-auto pt-6">
-                            {/* Sunan Rawatib Card */}
-                            <div 
-                                className="themed-card p-4 rounded-xl border border-t-4"
-                                style={{ 
-                                    borderColor: cardBorderColor,
-                                    borderWidth: '1.5px',
-                                    borderStyle: 'solid',
-                                    borderTopWidth: '4px',
-                                    borderTopColor: theme.palette[0] 
-                                }}
-                            >
-                                <h3 className="font-bold text-sm mb-3 text-center" style={{ color: theme.palette[1] }}>
-                                    <i className={`fa-solid fa-mosque text-xs ${isEn ? 'mr-2' : 'ml-2'}`}></i> 
-                                    {isEn ? 'Daily Sunnah Prayers (Rawatib)' : 'سنن الصلوات (الرواتب)'}
-                                </h3>
-                                <div className={`space-y-2 text-sm ${isEn ? 'font-sans' : 'font-amiri'} themed-text-muted`} dir={isEn ? 'ltr' : 'rtl'}>
-                                    <div className="flex justify-between border-b border-card-border pb-1">
-                                        <span>{isEn ? 'Fajr Prayer:' : 'صلاة الفجر:'}</span>
-                                        <span className="font-bold">{isEn ? "2 Rak'ahs Before" : "2 ركعة قبلية"}</span>
-                                    </div>
-                                    <div className="flex justify-between border-b border-card-border pb-1">
-                                        <span>{isEn ? 'Dhuhr Prayer:' : 'صلاة الظهر:'}</span>
-                                        <span className="font-bold">{isEn ? "4 Before & 2 After" : "4 قبلية و 2 بعدية"}</span>
-                                    </div>
-                                    <div className="flex justify-between border-b border-card-border pb-1">
-                                        <span>{isEn ? 'Asr Prayer:' : 'صلاة العصر:'}</span>
-                                        <span className="opacity-60 italic">{isEn ? "No confirmed Sunnah" : "ليس لها سنة راتبة"}</span>
-                                    </div>
-                                    <div className="flex justify-between border-b border-card-border pb-1">
-                                        <span>{isEn ? 'Maghrib Prayer:' : 'صلاة المغرب:'}</span>
-                                        <span className="font-bold">{isEn ? "2 Rak'ahs After" : "2 ركعة بعدية"}</span>
-                                    </div>
-                                    <div className="flex justify-between border-b border-card-border pb-1">
-                                        <span>{isEn ? 'Isha Prayer:' : 'صلاة العشاء:'}</span>
-                                        <span className="font-bold">{isEn ? "2 Rak'ahs After" : "2 ركعة بعدية"}</span>
-                                    </div>
-                                    <div className="pt-2 text-center font-bold" style={{ color: theme.palette[0] }}>
-                                        {isEn ? 'Total: 12 Rak\'ahs daily' : 'المجموع: 12 ركعة في اليوم'}
-                                    </div>
-                                </div>
-                                <div className="flex justify-center mt-3 pt-2 border-t border-card-border">
-                                    <button 
-                                        onClick={() => setZoomedZikr({
-                                            title: isEn ? "Daily Sunnah Prayers (Rawatib)" : "سنن الصلوات (الرواتب)",
-                                            titleEn: "Daily Sunnah Prayers (Rawatib)",
-                                            text: `
-                                                <div class="space-y-4 text-2xl">
-                                                    <div class="flex justify-between border-b border-black/10 pb-2"><span>الفجر:</span> <b>2 ركعة قبلية</b></div>
-                                                    <div class="flex justify-between border-b border-black/10 pb-2"><span>الظهر:</span> <b>4 قبلية و 2 بعدية</b></div>
-                                                    <div class="flex justify-between border-b border-black/10 pb-2"><span>العصر:</span> <i class="opacity-60">ليس لها سنة راتبة</i></div>
-                                                    <div class="flex justify-between border-b border-black/10 pb-2"><span>المغرب:</span> <b>2 ركعة بعدية</b></div>
-                                                    <div class="flex justify-between border-b border-black/10 pb-2"><span>العشاء:</span> <b>2 ركعة بعدية</b></div>
-                                                </div>
-                                            `,
-                                            textEn: `
-                                                <div class="space-y-4 text-xl md:text-2xl text-left" dir="ltr">
-                                                    <div class="flex justify-between border-b border-black/10 dark:border-white/10 pb-2"><span>Fajr:</span> <b>2 Rak'ahs Before</b></div>
-                                                    <div class="flex justify-between border-b border-black/10 dark:border-white/10 pb-2"><span>Dhuhr:</span> <b>4 Before & 2 After</b></div>
-                                                    <div class="flex justify-between border-b border-black/10 dark:border-white/10 pb-2"><span>Asr:</span> <i class="opacity-60">No confirmed Sunnah</i></div>
-                                                    <div class="flex justify-between border-b border-black/10 dark:border-white/10 pb-2"><span>Maghrib:</span> <b>2 Rak'ahs After</b></div>
-                                                    <div class="flex justify-between border-b border-black/10 dark:border-white/10 pb-2"><span>Isha:</span> <b>2 Rak'ahs After</b></div>
-                                                    <div class="pt-3 text-center font-bold text-lg" style="color: ${theme.palette[0]};">Total: 12 Rak'ahs daily</div>
-                                                </div>
-                                            `,
-                                            note: isEn ? "Confirmed Daily Sunan" : "الرواتب المؤكدة",
-                                            noteEn: "Confirmed Daily Sunan"
-                                        })} 
-                                        className="p-2 rounded-full hover:bg-card-bg-hover transition-colors"
-                                        title={isEn ? "Zoom" : "تكبير"}
-                                        aria-label={isEn ? "Zoom" : "تكبير"}
-                                    >
-                                        <i className="fa-solid fa-magnifying-glass-plus text-lg themed-text-muted"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Hadiths on Sunan card */}
-                            <div 
-                                className="themed-card p-4 rounded-xl border border-t-4 mt-4"
-                                style={{ 
-                                    borderColor: cardBorderColor,
-                                    borderWidth: '1.5px',
-                                    borderStyle: 'solid',
-                                    borderTopWidth: '4px',
-                                    borderTopColor: theme.palette[1] 
-                                }}
-                            >
-                                <h3 className="font-bold text-sm mb-3 text-center" style={{ color: theme.palette[0] }}>
-                                    <i className={`fa-solid fa-scroll text-xs ${isEn ? 'mr-2' : 'ml-2'}`}></i> 
-                                    {isEn ? 'Hadiths on the Virtues of Sunan' : 'أحاديث في فضل السنن'}
-                                </h3>
-                                <div className={`space-y-4 text-sm ${isEn ? 'font-sans' : 'font-amiri'} themed-text-muted`} dir={isEn ? 'ltr' : 'rtl'}>
-                                    <div className={`bg-card-bg-hover p-3 rounded-lg ${isEn ? 'border-l-2' : 'border-r-2'}`} style={isEn ? { borderLeftColor: theme.palette[0] } : { borderRightColor: theme.palette[0] }}>
-                                        <p className="leading-relaxed">
-                                            {isEn ? (
-                                                <>Umm Habibah (may Allah be pleased with her) reported: I heard the Messenger of Allah ﷺ say: <span className="font-bold" style={{ color: theme.palette[0] }}>"Whoever prays twelve Rak'ahs during the day and night, a house will be built for him in Paradise."</span></>
-                                            ) : (
-                                                <>عن أم حبيبة رضي الله عنها قالت: سمعت رسول الله ﷺ يقول: <span className="text-primary font-bold">"مَنْ صَلَّى فِي يَوْمٍ وَلَيْلَةٍ ثِنْتَيْ عَشْرَةَ رَكْعَةً بُنِيَ لَهُ بَيْتٌ فِي الْجَنَّةِ"</span>.</>
-                                            )}
-                                        </p>
-                                        <p className={`${isEn ? 'text-right' : 'text-left'} text-[10px] mt-1 opacity-70`}>{isEn ? '- Sahih Muslim' : '- رواه مسلم'}</p>
-                                    </div>
-                                    
-                                    <div className={`bg-card-bg-hover p-3 rounded-lg ${isEn ? 'border-l-2' : 'border-r-2'}`} style={isEn ? { borderLeftColor: theme.palette[1] } : { borderRightColor: theme.palette[1] }}>
-                                        <p className="leading-relaxed">
-                                            {isEn ? (
-                                                <>Aisha (may Allah be pleased with her) reported that the Prophet ﷺ said: <span className="font-bold" style={{ color: theme.palette[1] }}>"The two Rak'ahs before Fajr are better than this world and everything in it."</span></>
-                                            ) : (
-                                                <>عن عائشة رضي الله عنها عن النبي ﷺ قال: <span className="text-secondary font-bold">"رَكْعَتَا الْفَجْرِ خَيْرٌ مِنَ الدُّنْيَا وَمَا فِيهَا"</span>.</>
-                                            )}
-                                        </p>
-                                        <p className={`${isEn ? 'text-right' : 'text-left'} text-[10px] mt-1 opacity-70`}>{isEn ? '- Sahih Muslim' : '- رواه مسلم'}</p>
-                                    </div>
-
-                                    <div className={`bg-card-bg-hover p-3 rounded-lg ${isEn ? 'border-l-2' : 'border-r-2'}`} style={isEn ? { borderLeftColor: theme.palette[0] } : { borderRightColor: theme.palette[0] }}>
-                                        <p className="leading-relaxed">
-                                            {isEn ? (
-                                                <>Ibn Umar (may Allah be pleased with them) reported that the Prophet ﷺ said: <span className="font-bold" style={{ color: theme.palette[0] }}>"May Allah have mercy on a person who prays four Rak'ahs before Asr."</span></>
-                                            ) : (
-                                                <>عن ابن عمر رضي الله عنهما أن النبي ﷺ قال: <span className="text-primary font-bold">"رَحِمَ اللَّهُ امْرَأً صَلَّى قَبْلَ الْعَصْرِ أَرْبَعًا"</span>.</>
-                                            )}
-                                        </p>
-                                        <p className={`${isEn ? 'text-right' : 'text-left'} text-[10px] mt-1 opacity-70`}>{isEn ? '- At-Tirmidhi & Abu Dawud' : '- رواه الترمذي وأبو داود'}</p>
-                                    </div>
-
-                                    <div className={`bg-card-bg-hover p-3 rounded-lg ${isEn ? 'border-l-2' : 'border-r-2'}`} style={isEn ? { borderLeftColor: theme.palette[1] } : { borderRightColor: theme.palette[1] }}>
-                                        <p className="leading-relaxed">
-                                            {isEn ? (
-                                                <>Umm Habibah (may Allah be pleased with her) reported: The Messenger of Allah ﷺ said: <span className="font-bold" style={{ color: theme.palette[1] }}>"Whoever guards four Rak'ahs before Dhuhr and four after it, Allah will forbid him from the Fire."</span></>
-                                            ) : (
-                                                <>عن أم حبيبة رضي الله عنها قالت: قال رسول الله ﷺ: <span className="text-secondary font-bold">"مَنْ حَافَظَ عَلَى أَرْبَعِ رَكَعَاتٍ قَبْلَ الظُّهْرِ وَأَرْبَعٍ بَعْدَهَا حَرَّمَهُ اللَّهُ عَلَى النَّارِ"</span>.</>
-                                            )}
-                                        </p>
-                                        <p className={`${isEn ? 'text-right' : 'text-left'} text-[10px] mt-1 opacity-70`}>{isEn ? '- At-Tirmidhi & Abu Dawud' : '- رواه الترمذي وأبو داود'}</p>
-                                    </div>
-                                </div>
-                                <div className="flex justify-center mt-3 pt-2 border-t border-card-border">
-                                    <button 
-                                        onClick={() => setZoomedZikr({
-                                            title: isEn ? "Hadiths on the Virtues of Sunan" : "أحاديث في فضل السنن",
-                                            titleEn: "Hadiths on the Virtues of Sunan",
-                                            text: `
-                                                <div class="space-y-6 text-xl md:text-2xl text-right" dir="rtl">
-                                                    <div class="border-b border-black/5 dark:border-white/5 pb-4 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
-                                                        <p class="leading-relaxed font-amiri">عن أم حبيبة رضي الله عنها قالت: سمعت رسول الله ﷺ يقول: <span style="color: ${theme.palette[0]}; font-weight: bold;">"مَنْ صَلَّى فِي يَوْمٍ وَلَيْلَةٍ ثِنْتَيْ عَشْرَةَ رَكْعَةً بُنِيَ لَهُ بَيْتٌ فِي الْجَنَّةِ"</span>.</p>
-                                                        <p class="text-sm mt-2 opacity-60 font-sans">- رواه مسلم</p>
-                                                    </div>
-                                                    <div class="border-b border-black/5 dark:border-white/5 pb-4 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
-                                                        <p class="leading-relaxed font-amiri">عن عائشة رضي الله عنها عن النبي ﷺ قال: <span style="color: ${theme.palette[1]}; font-weight: bold;">"رَكْعَتَا الْفَجْرِ خَيْرٌ مِنَ الدُّنْيَا وَمَا فِيهَا"</span>.</p>
-                                                        <p class="text-sm mt-2 opacity-60 font-sans">- رواه مسلم</p>
-                                                    </div>
-                                                    <div class="border-b border-black/5 dark:border-white/5 pb-4 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
-                                                        <p class="leading-relaxed font-amiri">عن ابن عمر رضي الله عنهما أن النبي ﷺ قال: <span style="color: ${theme.palette[0]}; font-weight: bold;">"رَحِمَ اللَّهُ امْرَأً صَلَّى قَبْلَ الْعَصْرِ أَرْبَعًا"</span>.</p>
-                                                        <p class="text-sm mt-2 opacity-60 font-sans">- رواه الترمذي وأبو داود</p>
-                                                    </div>
-                                                    <div class="border-b border-black/5 dark:border-white/5 pb-4 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
-                                                        <p class="leading-relaxed font-amiri">عن أم حبيبة رضي الله عنها قالت: قال رسول الله ﷺ: <span style="color: ${theme.palette[1]}; font-weight: bold;">"مَنْ حَافَظَ عَلَى أَرْبَعِ رَكَعَاتٍ قَبْلَ الظُّهْرِ وَأَرْبَعٍ بَعْدَهَا حَرَّمَهُ اللَّهُ عَلَى النَّارِ"</span>.</p>
-                                                        <p class="text-sm mt-2 opacity-60 font-sans">- رواه الترمذي وأبو داود</p>
-                                                    </div>
-                                                </div>
-                                            `,
-                                            textEn: `
-                                                <div class="space-y-6 text-lg md:text-xl text-left" dir="ltr">
-                                                    <div class="border-b border-black/5 dark:border-white/5 pb-4 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
-                                                        <p class="leading-relaxed">Umm Habibah (may Allah be pleased with her) reported: I heard the Messenger of Allah ﷺ say: <span style="color: ${theme.palette[0]}; font-weight: bold;">"Whoever prays twelve Rak'ahs during the day and night, a house will be built for him in Paradise."</span></p>
-                                                        <p class="text-sm mt-2 opacity-60 font-sans">- Sahih Muslim</p>
-                                                    </div>
-                                                    <div class="border-b border-black/5 dark:border-white/5 pb-4 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
-                                                        <p class="leading-relaxed">Aisha (may Allah be pleased with her) reported that the Prophet ﷺ said: <span style="color: ${theme.palette[1]}; font-weight: bold;">"The two Rak'ahs before Fajr are better than this world and everything in it."</span></p>
-                                                        <p class="text-sm mt-2 opacity-60 font-sans">- Sahih Muslim</p>
-                                                    </div>
-                                                    <div class="border-b border-black/5 dark:border-white/5 pb-4 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
-                                                        <p class="leading-relaxed">Ibn Umar (may Allah be pleased with them) reported that the Prophet ﷺ said: <span style="color: ${theme.palette[0]}; font-weight: bold;">"May Allah have mercy on a person who prays four Rak'ahs before Asr."</span></p>
-                                                        <p class="text-sm mt-2 opacity-60 font-sans">- At-Tirmidhi & Abu Dawud</p>
-                                                    </div>
-                                                    <div class="border-b border-black/5 dark:border-white/5 pb-4 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
-                                                        <p class="leading-relaxed">Umm Habibah (may Allah be pleased with her) reported: The Messenger of Allah ﷺ said: <span style="color: ${theme.palette[1]}; font-weight: bold;">"Whoever guards four Rak'ahs before Dhuhr and four after it, Allah will forbid him from the Fire."</span></p>
-                                                        <p class="text-sm mt-2 opacity-60 font-sans">- At-Tirmidhi & Abu Dawud</p>
-                                                    </div>
-                                                </div>
-                                            `,
-                                            note: isEn ? "Authentic Hadiths" : "أحاديث صحيحة",
-                                            noteEn: "Authentic Hadiths"
-                                        })} 
-                                        className="p-2 rounded-full hover:bg-card-bg-hover transition-colors"
-                                        title={isEn ? "Zoom" : "تكبير"}
-                                        aria-label={isEn ? "Zoom" : "تكبير"}
-                                    >
-                                        <i className="fa-solid fa-magnifying-glass-plus text-lg themed-text-muted"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        <BottomSalahGuides 
+                            theme={theme}
+                            themeKey={themeKey}
+                            cardBorderColor={cardBorderColor}
+                            isBlackTheme={isBlackTheme}
+                            isEn={isEn}
+                            onZoom={setZoomedZikr}
+                            setToastMessage={setToastMessage}
+                        />
                     </>
                 ) : (
-                    <div id="athkarDetails" className="space-y-4">
-                        {athkarList.map(zikr => (
+                    <div id="athkarDetails" className={activeTab === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-4"}>
+                        {filteredAthkarList.map(zikr => (
                             <SalahZikrCard 
                                 key={zikr.id} 
                                 zikr={zikr} 
@@ -707,6 +615,17 @@ function AthkarAlSalah({ onBack, onNavigate }: AthkarAlSalahProps) {
                                 setToastMessage={setToastMessage}
                             />
                         ))}
+                        <div className="col-span-full">
+                            <BottomSalahGuides 
+                                theme={theme}
+                                themeKey={themeKey}
+                                cardBorderColor={cardBorderColor}
+                                isBlackTheme={isBlackTheme}
+                                isEn={isEn}
+                                onZoom={setZoomedZikr}
+                                setToastMessage={setToastMessage}
+                            />
+                        </div>
                     </div>
                 )}
                 <div className="shrink-0 w-full h-32"></div>

@@ -190,8 +190,8 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   const isBlackTheme = themeKey === 'deep_black' || theme.bgColor === '#000000' || theme.name === 'اسود' || theme.name === 'black';
   const cardHeaderColor = isBlackTheme ? '#FFFFFF' : theme.palette[0];
   const cardBorderColor = isBlackTheme ? '#FFFFFF' : theme.palette[0];
-  const cardButtonColor = isBlackTheme ? '#FFFFFF' : theme.palette[0];
-  const cardButtonTextColor = isBlackTheme ? '#000000' : '#FFFFFF';
+  const cardButtonColor = isBlackTheme ? '#000000' : theme.palette[0];
+  const cardButtonTextColor = isBlackTheme ? '#FFFFFF' : '#FFFFFF';
   const [visibleItems, setVisibleItems] = useState<string[]>(() => {
     const savedVersion = localStorage.getItem('menu_layout_version_v2');
     if (savedVersion !== CURRENT_LAYOUT_VERSION) {
@@ -810,7 +810,9 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                 title={language === 'ar' ? 'English' : 'اللغة العربية'}
                 aria-label={language === 'ar' ? 'English' : 'اللغة العربية'}
               >
-                <Globe className="w-[18px] h-[18px] pointer-events-none" />
+                <span className="text-xs font-bold font-mono pointer-events-none">
+                  {language === 'ar' ? 'En' : 'Ar'}
+                </span>
               </button>
 
               {/* 3. زر دليل الصفحات */}
@@ -1152,13 +1154,13 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                           <div className="flex items-center justify-center gap-3 mt-0.5">
                               <button 
                                   onClick={() => window.open('https://mushaf-ahmed-laila.vercel.app/', '_blank')}
-                                  className="py-1.5 px-3 rounded-xl font-bold text-[10px] text-center flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
+                                  className="py-1.5 px-3 rounded-xl font-bold text-[10px] text-center flex items-center justify-center shadow-md active:scale-95 transition-all"
                                   style={{ 
                                       backgroundColor: cardButtonColor, 
-                                      color: cardButtonTextColor 
+                                      color: cardButtonTextColor,
+                                      border: isBlackTheme ? '1.5px solid #FFFFFF' : undefined
                                   }}
                               >
-                                  <i className="fa-solid fa-arrow-up-right-from-square"></i>
                                   <span>{t('webapp.open', 'فتح الرابط')}</span>
                               </button>
                               

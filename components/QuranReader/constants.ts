@@ -248,22 +248,82 @@ export const getTafseerDisplayName = (tafseerId: string, lang: 'ar' | 'en' = 'ar
     return TAFSEERS.find(t => t.id === tafseerId)?.name || 'التفسير';
 };
 
-export const FONTS = [
-    { id: "var(--font-amiri)", name: "نسخ" },
-    { id: "var(--font-noto)", name: "نسخ حديث" },
-    { id: "var(--font-lateef)", name: "تراثي" },
-    { id: "var(--font-thuluth)", name: "ثلوث" },
-    { id: "var(--font-aref)", name: "رقعة" },
-    { id: "var(--font-harmattan)", name: "ورش" },
-    { id: "var(--font-amiri-quran)", name: "حفص" },
-    { id: "'Me Quran'", name: "خط المصحف" },
-    { id: "var(--font-katibeh)", name: "قطيبة" },
-    { id: "var(--font-qalam)", name: "قلم" },
-    { id: "var(--font-kufi)", name: "كوفي" },
-    { id: "'KFGQPC Uthman Taha Naskh'", name: "مجمع الملك فهد" },
-    { id: "var(--font-scheherazade)", name: "مجود" },
-    { id: "var(--font-mirza)", name: "ميرزا" }
+export interface FontItem {
+    id: string;
+    name: string;
+    nameEn?: string;
+    category?: 'serif' | 'sans-serif' | 'display';
+    previewEn?: string;
+}
+
+export const FONTS: FontItem[] = [
+    { id: "var(--font-amiri)", name: "نسخ", nameEn: "Naskh" },
+    { id: "var(--font-noto)", name: "نسخ حديث", nameEn: "Modern Naskh" },
+    { id: "var(--font-lateef)", name: "تراثي", nameEn: "Traditional" },
+    { id: "var(--font-thuluth)", name: "ثلوث", nameEn: "Thuluth" },
+    { id: "var(--font-aref)", name: "رقعة", nameEn: "Ruq'ah" },
+    { id: "var(--font-harmattan)", name: "ورش", nameEn: "Warsh" },
+    { id: "var(--font-amiri-quran)", name: "حفص", nameEn: "Hafs" },
+    { id: "'Me Quran'", name: "خط المصحف", nameEn: "Mushaf Font" },
+    { id: "var(--font-katibeh)", name: "قطيبة", nameEn: "Katibeh" },
+    { id: "var(--font-qalam)", name: "قلم", nameEn: "Qalam" },
+    { id: "var(--font-kufi)", name: "كوفي", nameEn: "Kufi" },
+    { id: "'KFGQPC Uthman Taha Naskh'", name: "مجمع الملك فهد", nameEn: "King Fahd Complex" },
+    { id: "var(--font-scheherazade)", name: "مجود", nameEn: "Mujawwad" },
+    { id: "var(--font-mirza)", name: "ميرزا", nameEn: "Mirza" }
 ].sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+
+export const ENGLISH_FONTS: FontItem[] = [
+    { id: "'EB Garamond', Garamond, serif", name: "إي بي جاراموند", nameEn: "EB Garamond (Sacred)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Cinzel', Georgia, serif", name: "سينزل الملكي", nameEn: "Cinzel (Royal)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Merriweather', Georgia, serif", name: "ميريويذر", nameEn: "Merriweather (Book)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Playfair Display', serif", name: "بليفير ديسبلاي", nameEn: "Playfair (Display)", category: "display", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Cormorant Garamond', serif", name: "كورمورانت", nameEn: "Cormorant (Literary)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Lora', Georgia, serif", name: "لورا", nameEn: "Lora (Calligraphic)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Spectral', Georgia, serif", name: "سبيكترال", nameEn: "Spectral (Editorial)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Alegreya', serif", name: "اليجريا", nameEn: "Alegreya (Classic)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Philosopher', sans-serif", name: "فيلوسوفر", nameEn: "Philosopher (Grace)", category: "sans-serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Montserrat', sans-serif", name: "مونتسيرات", nameEn: "Montserrat (Modern)", category: "sans-serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Inter', sans-serif", name: "إنتر الحديث", nameEn: "Inter (Clean Sans)", category: "sans-serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Poppins', sans-serif", name: "بوبنز", nameEn: "Poppins (Geometric)", category: "sans-serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Outfit', sans-serif", name: "أوتفيت", nameEn: "Outfit (Contemporary)", category: "sans-serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Cinzel Decorative', serif", name: "سينزل المزين", nameEn: "Cinzel Decorative (Artistic)", category: "display", previewEn: "In the name of Allah, the Entirely Merciful" }
+];
+
+export const getFontsForMode = (mode: ReadingMode | string = 'mushaf'): FontItem[] => {
+    if (mode === 'translation') {
+        return ENGLISH_FONTS;
+    }
+    return FONTS;
+};
+
+export const getDefaultFontForMode = (mode: ReadingMode | string = 'mushaf'): string => {
+    if (mode === 'translation') {
+        return "'EB Garamond', Garamond, serif";
+    }
+    return "var(--font-amiri)";
+};
+
+export const BILINGUAL_ENGLISH_FONT_MAP: Record<string, string> = {
+    "var(--font-amiri)": "'EB Garamond', Garamond, serif",
+    "var(--font-noto)": "'Inter', -apple-system, sans-serif",
+    "var(--font-lateef)": "'Alegreya', serif",
+    "var(--font-thuluth)": "'Cinzel', Georgia, serif",
+    "var(--font-aref)": "'Cormorant Garamond', serif",
+    "var(--font-harmattan)": "'Spectral', serif",
+    "var(--font-amiri-quran)": "'EB Garamond', Garamond, serif",
+    "'Me Quran'": "'Playfair Display', serif",
+    "var(--font-katibeh)": "'Philosopher', sans-serif",
+    "var(--font-qalam)": "'Merriweather', serif",
+    "var(--font-kufi)": "'Montserrat', sans-serif",
+    "'KFGQPC Uthman Taha Naskh'": "'Cinzel', Georgia, serif",
+    "var(--font-scheherazade)": "'Lora', Georgia, serif",
+    "var(--font-mirza)": "'Poppins', sans-serif"
+};
+
+export const getBilingualEnglishFont = (arabicFontId: string): string => {
+    return BILINGUAL_ENGLISH_FONT_MAP[arabicFontId] || "'EB Garamond', Garamond, serif";
+};
 
 export const SURAH_INFO: Record<number, { ayahs: number, type: string }> = {
     1: { ayahs: 7, type: "مكية" },

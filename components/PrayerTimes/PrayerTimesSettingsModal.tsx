@@ -477,7 +477,7 @@ const PrayerTimesSettingsModal: React.FC<PrayerTimesSettingsModalProps> = ({
 
                                 <button
                                     type="button"
-                                    onClick={() => playNotificationSound('/assets/audio/chime.mp3')}
+                                    onClick={() => playNotificationSound('/assets/audio/chime.mp3', true)}
                                     className="px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer shrink-0"
                                     title={tPrayer('iqamaSoundPreviewTooltip', language)}
                                     style={{ color: primaryColor }}

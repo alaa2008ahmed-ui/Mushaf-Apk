@@ -193,7 +193,7 @@ export const TopLeadersCard: React.FC<TopLeadersCardProps> = ({
     });
   };
 
-  const isBlackTheme = theme?.bgColor === '#000000' || theme?.name === 'اسود' || theme?.name === 'black';
+  const isBlackTheme = theme?.bgColor === '#000000' || theme?.name === 'اسود' || theme?.name === 'black' || theme?.name?.includes?.('أسود') || theme?.name?.includes?.('اسود');
   const primaryAccent = isBlackTheme ? '#FFFFFF' : (theme?.palette?.[0] || '#10b981');
   const displayMonth = translateMonthBadge(monthName);
 
@@ -268,8 +268,9 @@ export const TopLeadersCard: React.FC<TopLeadersCardProps> = ({
             }}
             className="px-4 py-1.5 rounded-xl font-bold text-xs transition-all active:scale-95 shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
             style={{
-              backgroundColor: primaryAccent,
-              color: theme?.btnText || '#FFFFFF'
+              backgroundColor: isBlackTheme ? '#000000' : primaryAccent,
+              color: isBlackTheme ? '#FFFFFF' : (theme?.btnText || '#FFFFFF'),
+              border: isBlackTheme ? '1px solid #FFFFFF' : undefined
             }}
           >
             <UserPlus size={14} />

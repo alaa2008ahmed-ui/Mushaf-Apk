@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HISN_ALMUSLIM_DATA } from '../../data/hisnAlmuslimData';
+import { HISN_ALMUSLIM_DATA, HISN_ALMUSLIM_CATEGORIES } from '../../data/hisnAlmuslimData';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { shareAsImage } from '../../utils/shareAsImage';
@@ -71,7 +71,10 @@ const HisnItemCard: React.FC<HisnItemCardProps> = ({
     const displayText = isEn ? (trans?.text || item.text) : item.text;
     const displayTitle = isEn ? (trans?.title || (item.title ? item.title.replace('الذكر', 'Supplication') : '')) : (item.title || '');
     const displaySource = isEn ? (trans?.source || '') : (item.source || '');
-    const categoryTitle = isEn ? (HISN_CATEGORIES_EN[categoryId]?.title || 'Fortress of the Muslim') : 'حصن المسلم';
+    const catInfo = HISN_ALMUSLIM_CATEGORIES.find(c => c.id === categoryId);
+    const categoryTitleAr = categoryId === 'favorites' ? 'المفضلة' : (catInfo?.title || 'حصن المسلم');
+    const categoryTitleEn = categoryId === 'favorites' ? 'Favorites' : (HISN_CATEGORIES_EN[categoryId]?.title || 'Fortress of the Muslim');
+    const categoryTitle = isEn ? categoryTitleEn : categoryTitleAr;
 
     useEffect(() => {
         try {
@@ -231,7 +234,13 @@ const HisnItemCard: React.FC<HisnItemCardProps> = ({
                            onZoom({
                                title: displayTitle,
                                text: displayText,
+                               textEn: trans?.text,
                                source: displaySource,
+                               sourceEn: trans?.source,
+                               category: categoryTitle,
+                               categoryAr: categoryTitleAr,
+                               categoryEn: categoryTitleEn,
+                               count: initialCount,
                                isEn
                            }); 
                        }} 

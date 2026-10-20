@@ -88,9 +88,13 @@ const QuranHeader: React.FC<QuranHeaderProps> = React.memo(({
                 className="top-bar-text-button flex items-center justify-center leading-none !pt-0 flex-1 min-w-0 mx-0.5 !px-1" 
                 style={getToolbarStyle('surah', currentTheme.barBg, currentTheme.barText, currentTheme.btnBorder || currentTheme.barBorder)}
             >
-                <span className="flex items-center justify-center leading-none whitespace-nowrap overflow-hidden w-full font-bold" style={{ fontSize: 'clamp(11px, 3.8vw, 19px)' }}>
-                    {readingMode === 'bilingual' ? (
-                        <>{currentAyah.s} - سورة {surahName} • {enSurahName} - {toArabic(currentAyah.a)} ({currentAyah.a})</>
+                <span className="flex items-center justify-center leading-none whitespace-nowrap overflow-hidden w-full font-bold" style={{ fontSize: 'clamp(8px, 2.5vw, 13px)' }}>
+                    {readingMode === 'bilingual' || readingMode === 'translation' ? (
+                        isMemorizationMode && memorizationSettings ? (
+                            <>{currentAyah.s} - Surah {enSurahName} - Ayahs {memorizationSettings.fromAyah}-{memorizationSettings.toAyah} - Juz {juz}</>
+                        ) : (
+                            <>{currentAyah.s} - Surah {enSurahName} - Ayah {currentAyah.a} - Juz {juz}</>
+                        )
                     ) : isEn ? (
                         isMemorizationMode && memorizationSettings ? (
                             <>{currentAyah.s} - Surah {enSurahName} - Ayahs {memorizationSettings.fromAyah}-{memorizationSettings.toAyah} - Juz {juz}</>

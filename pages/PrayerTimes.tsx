@@ -270,7 +270,7 @@ function PrayerTimes({ onBack, onNavigate }) {
                         showToast(tPrayer('toastDownloadingTone', language));
                         localUri = await copyAssetToDevice(selectedInternet.path);
                     }
-                    playNotificationSound(localUri); // Play preview
+                    playNotificationSound(localUri, true); // Play preview immediately
                     updateConfig({
                         tones: { ...config.tones, [currentEditingKey]: { name: selectedInternet.name, data: localUri, originalUrl: selectedInternet.path }}
                     });
@@ -291,7 +291,7 @@ function PrayerTimes({ onBack, onNavigate }) {
             const reader = new FileReader();
             reader.onload = (event) => {
                 const audioDataUrl = event.target.result as string;
-                playNotificationSound(audioDataUrl); // Play preview
+                playNotificationSound(audioDataUrl, true); // Play preview immediately
                 updateConfig({
                     tones: { ...config.tones, [currentEditingKey]: { name: file.name, data: audioDataUrl }}
                 });

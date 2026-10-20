@@ -18,6 +18,7 @@ import VerticalReadingView from '../components/QuranReader/VerticalReadingView';
 import SurahDesignPickerModal from '../components/QuranReader/SurahDesignPickerModal';
 import Toast from '../components/QuranReader/Toast';
 import TafseerModal from '../components/QuranReader/TafseerModal';
+import EnglishTafseerModal from '../components/QuranReader/EnglishTafseerModal';
 import ReciterSelectModal from '../components/QuranReader/ReciterSelectModal';
 import SajdahCardModal from '../components/QuranReader/SajdahCardModal';
 import TafseerSelectionModal from '../components/QuranReader/TafseerSelectionModal';
@@ -1427,6 +1428,37 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const quranMeaningsCache = useRef<any>(null);
     
     const [quranTranslationInfo, setQuranTranslationInfo] = useState({ isOpen: false, s: 0, a: 0, text: '', surahName: '', wasAutoscrolling: false });
+    
+    // English Tafseer state (strictly for bilingual and translation modes)
+    const [englishTafseerInfo, setEnglishTafseerInfo] = useState<{
+        isOpen: boolean;
+        s: number;
+        a: number;
+        wasAutoscrolling: boolean;
+    }>({
+        isOpen: false,
+        s: 1,
+        a: 1,
+        wasAutoscrolling: false
+    });
+
+    const handleAyahNumberLongPress = useCallback((s: number, a: number) => {
+        // Strictly ONLY in bilingual and translation modes! Never in mushaf mode!
+        if (readingMode !== 'bilingual' && readingMode !== 'translation') {
+            return;
+        }
+        const wasAutoscrolling = autoScrollState.isActive && !autoScrollState.isPaused;
+        if (wasAutoscrolling) {
+            autoScrollPausedRef.current = true;
+            setAutoScrollState(p => ({ ...p, isPaused: true }));
+        }
+        setEnglishTafseerInfo({
+            isOpen: true,
+            s,
+            a,
+            wasAutoscrolling
+        });
+    }, [readingMode, autoScrollState.isActive, autoScrollState.isPaused]);
 
     useEffect(() => {
         const updateCurrentPage = () => {
@@ -3331,7 +3363,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         const y = window.innerHeight / 2;
         const el = document.elementFromPoint(x, y); 
         if (!el) return;
-        const ayahBlock = el.closest('.ayah-text-block');
+        const ayahBlock = el.closest('.ayah-text-block, .ayah-item');
         if (ayahBlock && ayahBlock.id) {
             const parts = ayahBlock.id.split('-'); 
             if (parts.length === 3) {
@@ -3430,7 +3462,21 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                         const pages = content.querySelectorAll('.mushaf-page');
                         let totalHeight = 0; let count = 0;
                         pages.forEach((page: any) => { const h = page.offsetHeight; if (h) { totalHeight += h; count++; } });
-                        cachedPageHeight = count ? (totalHeight / count) : (content.clientHeight || PAGE_HEIGHT_FALLBACK);
+                        if (count > 0) {
+                            cachedPageHeight = totalHeight / count;
+                        } else {
+                            // In translation or bilingual mode, measure rendered .ayah-item elements
+                            const ayahItems = content.querySelectorAll('.ayah-item');
+                            if (ayahItems.length > 0) {
+                                let totalAyahH = 0;
+                                ayahItems.forEach((item: any) => { totalAyahH += item.offsetHeight || 0; });
+                                const avgAyahH = totalAyahH / ayahItems.length;
+                                // In Quran there are ~208 ayahs per Juz / 20 pages = ~10.4 ayahs per page equivalent
+                                cachedPageHeight = avgAyahH * 10.4;
+                            } else {
+                                cachedPageHeight = content.clientHeight || PAGE_HEIGHT_FALLBACK;
+                            }
+                        }
                         lastHeightCalcTime = timestamp;
                     }
                     
@@ -3465,7 +3511,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const toggleAutoScroll = () => {
         if (autoScrollStateRef.current.isActive) stopAutoScroll();
-        else { startAutoScroll(); showToast('تم تفعيل التمرير التلقائي'); }
+        else { 
+            startAutoScroll(); 
+            showToast(isEn || readingMode === 'translation' ? 'Auto-scroll enabled' : 'تم تفعيل التمرير التلقائي'); 
+        }
     };
     const handleScreenTap = () => {
       setIsFloatingMenuOpen(false);
@@ -3598,6 +3647,14 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     setAutoScrollState(p => ({ ...p, isPaused: false }));
                 }
                 setTafseerSelectionInfo(p => ({ ...p, isOpen: false, wasAutoscrolling: false }));
+                return true;
+            }
+            if (englishTafseerInfo.isOpen) {
+                if (englishTafseerInfo.wasAutoscrolling) {
+                    autoScrollPausedRef.current = false;
+                    setAutoScrollState(p => ({ ...p, isPaused: false }));
+                }
+                setEnglishTafseerInfo(p => ({ ...p, isOpen: false, wasAutoscrolling: false }));
                 return true;
             }
             if (sajdahCardInfo.show) {
@@ -3764,11 +3821,31 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     const handleVerticalAyahClick = useCallback((s: number, a: number) => {
         setCurrentAyah({ s, a });
         setHighlightedAyahId(`ayah-${s}-${a}`);
+        currentAyahRef.current = { s, a };
         localStorage.setItem(`last_pos${posSuffix}`, JSON.stringify({ s, a })); 
         localStorage.setItem("last_read_ayah_global", JSON.stringify({ s, a, ts: Date.now() }));
         window.dispatchEvent(new Event('last_read_update'));
+        
+        setIsFloatingMenuOpen(false);
+
         if (isLandscapeRef.current) {
             setIsLandscapeUIHidden(prev => !prev);
+            if (landscapeAutoHideTimerRef.current) {
+                clearTimeout(landscapeAutoHideTimerRef.current);
+                landscapeAutoHideTimerRef.current = null;
+            }
+        } else {
+            if (isHideToolbarsEnabledRef.current) {
+                setIsLandscapeUIHidden(prev => !prev);
+            }
+        }
+
+        if (autoScrollStateRef.current.isActive) {
+            const newPausedState = !autoScrollStateRef.current.isPaused;
+            autoScrollPausedRef.current = newPausedState;
+            const newState = { ...autoScrollStateRef.current, isPaused: newPausedState };
+            autoScrollStateRef.current = newState;
+            setAutoScrollState(newState);
         }
     }, [posSuffix]);
 
@@ -3913,6 +3990,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                             isRecording={isRecording}
                             revealedAyahs={revealedAyahs}
                             tempRevealedAyah={tempRevealedAyah}
+                            onAyahNumberLongPress={handleAyahNumberLongPress}
+                            onAyahNumberClick={handleAyahNumberLongPress}
+                            onInteractionStart={handleInteractionStart}
+                            onInteractionEnd={handleInteractionEnd}
                         />
                     </div>
                 )}
@@ -3946,7 +4027,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 isFloatingMenuOpen={isFloatingMenuOpen}
                 isAnyMenuOpen={isAnyMenuOpen}
                 hideShareButton={readingMode !== 'mushaf' || isLandscape}
-                hideAutoScrollButton={readingMode !== 'mushaf'}
+                hideAutoScrollButton={false}
                 openModal={openModal}
                 menuButtonRef={menuButtonRef}
                 handleBookmarkButtonPointerDown={handleBookmarkButtonPointerDown}
@@ -3957,6 +4038,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 handleAutoScrollButtonPointerLeave={handleAutoScrollButtonPointerLeave}
                 autoScrollState={autoScrollState}
                 onBack={handleHomeClick}
+                isEn={isEn}
             />
             {isAutoScrollSettingsOpen && (
             <AutoScrollSettingsModal
@@ -3968,9 +4050,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 }}
                 currentMinutes={settings.scrollMinutes}
                 isLandscape={isLandscape}
+                isEn={isEn}
             />
         )}
-        {activeModals.includes('surah-modal') && <SurahJuzModal type="surah" quranData={quranData} currentTheme={currentTheme} onSelect={(s, a) => { closeModal('surah-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('surah-modal')} isLandscape={isLandscape} currentSelection={currentAyah.s} currentAyah={currentAyah} />}
+        {activeModals.includes('surah-modal') && <SurahJuzModal type="surah" quranData={quranData} currentTheme={currentTheme} onSelect={(s, a) => { closeModal('surah-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('surah-modal')} isLandscape={isLandscape} currentSelection={currentAyah.s} currentAyah={currentAyah} readingMode={readingMode} />}
             {activeModals.includes('juz-modal') && <SurahJuzModal type="juz" quranData={quranData} currentTheme={currentTheme} onSelect={(s, a) => { closeModal('juz-modal'); jumpToAyah(s, a, true); }} onClose={() => closeModal('juz-modal')} isLandscape={isLandscape} currentSelection={juz} currentAyah={currentAyah} />}
             {activeModals.includes('bookmarks-modal') && (
                 <BookmarksModal 
@@ -4014,12 +4097,12 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={themeSuffix} />}
             {activeModals.includes('settings-modal') && <SettingsModal onClose={() => closeModal('settings-modal')} onOpenModal={openModal} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={themeSuffix} />}
             {activeModals.includes('notification-settings-modal') && <NotificationSettingsModal onClose={() => closeModal('notification-settings-modal')} showToast={showToast} isLandscape={isLandscape} modeSuffix={themeSuffix} initialTab={modalParams?.tab} />}
-            {activeModals.includes('font-modal') && <FontSelectModal isOpen={true} onClose={() => closeModal('font-modal')} isLandscape={isLandscape} currentFontId={settings.fontFamily} onSelect={(id) => {
+            {activeModals.includes('font-modal') && <FontSelectModal isOpen={true} onClose={() => closeModal('font-modal')} isLandscape={isLandscape} readingMode={readingMode} currentFontId={settings.fontFamily} onSelect={(id) => {
                 const newSettings = { ...settings, fontFamily: id };
                 setSettings(newSettings);
                 localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(newSettings));
                 window.dispatchEvent(new Event('settings-change'));
-                showToast('تم تغيير الخط بنجاح');
+                showToast(readingMode === 'translation' ? 'Font updated successfully' : 'تم تغيير الخط بنجاح');
                 closeModal('font-modal');
             }} />}
             {activeModals.includes('ayah-font-modal') && (
@@ -4027,6 +4110,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     isOpen={true} 
                     onClose={() => closeModal('ayah-font-modal')} 
                     isLandscape={isLandscape} 
+                    readingMode={readingMode}
                     currentFontId={ayahContextMenu.tempSettings.fontFamily} 
                     onSelect={(id) => {
                         setAyahContextMenu(prev => ({
@@ -4135,6 +4219,24 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     setQuranTranslationInfo(p => ({ ...p, isOpen: false, wasAutoscrolling: false }));
                 }} 
             />
+            {(readingMode === 'bilingual' || readingMode === 'translation') && englishTafseerInfo.isOpen && (
+                <EnglishTafseerModal 
+                    isOpen={englishTafseerInfo.isOpen}
+                    onClose={() => {
+                        if (englishTafseerInfo.wasAutoscrolling) {
+                            autoScrollPausedRef.current = false;
+                            setAutoScrollState(p => ({ ...p, isPaused: false }));
+                        }
+                        setEnglishTafseerInfo(p => ({ ...p, isOpen: false, wasAutoscrolling: false }));
+                    }}
+                    surahNumber={englishTafseerInfo.s}
+                    ayahNumber={englishTafseerInfo.a}
+                    currentTheme={currentTheme}
+                    isLandscape={isLandscape}
+                    quranData={quranJsonData}
+                    readingMode={readingMode}
+                />
+            )}
             <AyahActionMenu
                 isOpen={ayahActionMenu.isOpen}
                 currentTheme={currentTheme}
@@ -4148,6 +4250,15 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 }}
                 onTafseer={() => {
                     setAyahActionMenu(p => ({ ...p, isOpen: false }));
+                    if (readingMode === 'bilingual' || readingMode === 'translation') {
+                        setEnglishTafseerInfo({
+                            isOpen: true,
+                            s: ayahActionMenu.s,
+                            a: ayahActionMenu.a,
+                            wasAutoscrolling: ayahActionMenu.wasAutoscrolling
+                        });
+                        return;
+                    }
                     setIsTafseerLoading(true);
                     setTafseerInfo({ isOpen: true, s: ayahActionMenu.s, a: ayahActionMenu.a, text: '', surahName: ayahActionMenu.surahName, wasAutoscrolling: ayahActionMenu.wasAutoscrolling });
                 }}

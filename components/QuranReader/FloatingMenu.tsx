@@ -50,6 +50,8 @@ import {
   BILINGUAL_READER_ID,
   TRANSLATION_READER_ID,
   FONTS,
+  ENGLISH_FONTS,
+  getFontsForMode,
   FONT_NAMES_EN,
   TAFSEERS,
   JUZ_MAP,
@@ -1701,14 +1703,25 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                     className="font-bold text-sm"
                     style={{ color: currentTheme.text }}
                   >
-                    {isEn ? "Font Style" : "نوع الخط"}
+                    {readingMode === "translation" 
+                      ? (isEn ? "English Translation Fonts" : "خطوط الترجمة الإنجليزية")
+                      : (isEn ? "Font Style" : "نوع الخط")}
                   </h3>
                 </div>
               </div>
               <div className="flex-grow overflow-y-auto p-4 custom-scrollbar flex flex-col justify-between">
                 <div className="grid grid-cols-1 gap-3">
-                  {FONTS.map((f) => {
-                    const fontDisplayName = isEn ? (FONT_NAMES_EN[f.name] || f.name) : f.name;
+                  {(readingMode === "translation" ? ENGLISH_FONTS : FONTS).map((f) => {
+                    const isTranslationMode = readingMode === "translation";
+                    const fontDisplayName = isTranslationMode 
+                      ? (f.nameEn || f.name) 
+                      : (isEn ? (FONT_NAMES_EN[f.name] || f.name) : f.name);
+                    const isSelected = isTranslationMode
+                      ? (settings.fontFamily === f.id || ((!settings.fontFamily || settings.fontFamily.startsWith('var(--font-')) && f.id === ENGLISH_FONTS[0].id))
+                      : settings.fontFamily === f.id;
+                    const previewText = isTranslationMode
+                      ? (f.previewEn || "In the name of Allah, the Entirely Merciful")
+                      : "﴿بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ﴾";
                     return (
                       <button
                         key={f.id}
@@ -1716,16 +1729,16 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                           updateSetting("fontFamily", f.id);
                           setCurrentView("main");
                           setIsFloatingMenuOpen(false);
-                          showToast(isEn ? `Font changed to: ${fontDisplayName}` : `تم تغيير الخط إلى: ${f.name}`);
+                          showToast(isEn ? `Font changed to: ${fontDisplayName}` : `تم تغيير الخط إلى: ${fontDisplayName}`);
                         }}
-                        className={`flex flex-col p-4 rounded-xl border transition-all ${settings.fontFamily === f.id ? "border-emerald-500" : ""}`}
+                        className={`flex flex-col p-4 rounded-xl border transition-all ${isSelected ? "border-emerald-500 shadow-sm" : ""}`}
                         style={{
                           backgroundColor:
-                            settings.fontFamily === f.id
+                            isSelected
                               ? `${currentTheme.accent}15`
                               : `${currentTheme.text}05`,
                           borderColor:
-                            settings.fontFamily === f.id
+                            isSelected
                               ? currentTheme.accent
                               : `${currentTheme.text}10`,
                           color: currentTheme.text,
@@ -1733,19 +1746,19 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                       >
                         <div className="flex items-center justify-between w-full mb-2">
                           <span
-                            className={`text-sm font-bold ${settings.fontFamily === f.id ? "text-emerald-500" : ""}`}
+                            className={`text-sm font-bold ${isSelected ? "text-emerald-500" : ""}`}
                           >
                             {fontDisplayName}
                           </span>
-                          {settings.fontFamily === f.id && (
+                          {isSelected && (
                             <Check size={16} className="text-emerald-500" />
                           )}
                         </div>
                       <span
-                        className="text-xl text-center opacity-70"
+                        className={`text-center opacity-80 ${isTranslationMode ? "text-sm text-left italic font-normal" : "text-xl text-center"}`}
                         style={{ fontFamily: f.id }}
                       >
-                        ﴿بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ﴾
+                        {previewText}
                       </span>
                     </button>
                   );

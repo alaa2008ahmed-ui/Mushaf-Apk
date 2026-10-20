@@ -51,7 +51,9 @@ export const shareDailyHabitCard = async ({
     container.style.position = 'fixed';
     container.style.left = '-9999px';
     container.style.top = '-9999px';
-    container.style.width = '750px';
+    container.style.width = '1080px';
+    container.style.height = '1920px';
+    container.style.boxSizing = 'border-box';
     container.style.direction = isEn ? 'ltr' : 'rtl';
     container.style.fontFamily = '"Cairo", "Amiri", sans-serif';
 
@@ -141,14 +143,19 @@ export const shareDailyHabitCard = async ({
     container.innerHTML = `
       <div style="
         background: ${bgGradient};
-        padding: 34px 30px;
+        width: 1080px;
+        height: 1920px;
+        padding: 64px 56px;
         color: #ffffff;
-        border-radius: 26px;
-        border: 2px solid rgba(255, 255, 255, 0.22);
+        border-radius: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.25);
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         position: relative;
         overflow: hidden;
         box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
       ">
         <!-- Subtle Pattern Overlay -->
         <div style="
@@ -156,7 +163,7 @@ export const shareDailyHabitCard = async ({
           inset: 0;
           opacity: 0.08;
           background-image: radial-gradient(circle, #ffffff 1px, transparent 1px);
-          background-size: 18px 18px;
+          background-size: 24px 24px;
           pointer-events: none;
         "></div>
 
@@ -165,26 +172,26 @@ export const shareDailyHabitCard = async ({
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 22px;
-          border-bottom: 1px solid rgba(255,255,255,0.2);
-          padding-bottom: 16px;
+          margin-bottom: 28px;
+          border-bottom: 2px solid rgba(255,255,255,0.22);
+          padding-bottom: 24px;
           position: relative;
           z-index: 1;
         ">
           <div style="text-align: right;">
-            <div style="font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+            <div style="font-size: 34px; font-weight: 800; display: flex; align-items: center; gap: 12px;">
               <span>مربّي العبادات</span>
-              <span style="font-size: 22px;">🌙</span>
+              <span style="font-size: 30px;">🌙</span>
             </div>
-            <div style="font-size: 13px; opacity: 0.9; margin-top: 4px;">
+            <div style="font-size: 18px; opacity: 0.9; margin-top: 6px;">
               يوم ${dayName} • ${gregorianDateStr}
             </div>
           </div>
           <div style="text-align: left;">
-            <div style="font-size: 18px; font-weight: 800; color: #fef08a;">
+            <div style="font-size: 26px; font-weight: 800; color: #fef08a;">
               مصحف أحمد وليلى
             </div>
-            <div style="font-size: 12px; opacity: 0.85; margin-top: 4px;">
+            <div style="font-size: 16px; opacity: 0.88; margin-top: 6px;">
               ${hijriDateStr}
             </div>
           </div>
@@ -193,42 +200,42 @@ export const shareDailyHabitCard = async ({
         <!-- Hero Percentage Card -->
         <div style="
           background: rgba(255, 255, 255, 0.12);
-          border: 1px solid rgba(255, 255, 255, 0.22);
-          border-radius: 20px;
-          padding: 22px 24px;
+          border: 1.5px solid rgba(255, 255, 255, 0.25);
+          border-radius: 28px;
+          padding: 34px 38px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-bottom: 22px;
+          margin-bottom: 28px;
           position: relative;
           z-index: 1;
         ">
           <div>
-            <div style="font-size: 22px; font-weight: 800; color: #fef08a; margin-bottom: 6px;">
+            <div style="font-size: 32px; font-weight: 800; color: #fef08a; margin-bottom: 10px;">
               ${achievementTitle}
             </div>
-            <div style="font-size: 14px; opacity: 0.92; line-height: 1.6;">
+            <div style="font-size: 20px; opacity: 0.95; line-height: 1.6;">
               ${achievementDesc}
             </div>
           </div>
           <div style="
-            width: 90px;
-            height: 90px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
-            border: 4px solid rgba(255,255,255,0.25);
+            border: 6px solid rgba(255,255,255,0.3);
             border-top-color: #fef08a;
             border-right-color: #fef08a;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.25);
             flex-shrink: 0;
           ">
-            <span style="font-size: 26px; font-weight: 900; font-family: sans-serif; color: #ffffff;">
+            <span style="font-size: 40px; font-weight: 900; font-family: sans-serif; color: #ffffff;">
               ${progress}%
             </span>
-            <span style="font-size: 11px; opacity: 0.85;">إنجاز اليوم</span>
+            <span style="font-size: 14px; opacity: 0.9; margin-top: 2px;">إنجاز اليوم</span>
           </div>
         </div>
 
@@ -236,24 +243,28 @@ export const shareDailyHabitCard = async ({
         <div style="
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
-          margin-bottom: 22px;
+          gap: 20px;
+          margin-bottom: 28px;
+          flex: 1;
           position: relative;
           z-index: 1;
         ">
           <!-- Prayers Box -->
           <div style="
             background: rgba(255, 255, 255, 0.09);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 16px;
-            padding: 16px;
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 24px;
+            padding: 24px;
             text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
           ">
-            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 6px;">🕌 الصلوات المكتوبة والسنن</div>
-            <div style="font-size: 20px; font-weight: 800; color: #ffffff;">
-              ${completedFard} / 5 <span style="font-size: 13px; font-weight: normal; opacity: 0.85;">فريضة</span>
+            <div style="font-size: 19px; opacity: 0.95; margin-bottom: 10px; font-weight: 700;">🕌 الصلوات المكتوبة والسنن</div>
+            <div style="font-size: 28px; font-weight: 800; color: #ffffff;">
+              ${completedFard} / 5 <span style="font-size: 18px; font-weight: normal; opacity: 0.85;">فريضة</span>
             </div>
-            <div style="font-size: 12px; opacity: 0.85; margin-top: 4px;">
+            <div style="font-size: 17px; opacity: 0.9; margin-top: 8px; line-height: 1.4;">
               ${completedSunnah > 0 ? `+ ${completedSunnah} سنن رواتب` : 'لم تسجل سنن'} 
               ${completedNafl > 0 ? `• ${completedNafl} نوافل` : ''}
             </div>
@@ -262,16 +273,19 @@ export const shareDailyHabitCard = async ({
           <!-- Quran Box -->
           <div style="
             background: rgba(255, 255, 255, 0.09);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 16px;
-            padding: 16px;
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 24px;
+            padding: 24px;
             text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
           ">
-            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 6px;">📖 الورد القرآني</div>
-            <div style="font-size: 20px; font-weight: 800; color: #ffffff;">
-              ${quranPages} <span style="font-size: 13px; font-weight: normal; opacity: 0.85;">صفحة</span>
+            <div style="font-size: 19px; opacity: 0.95; margin-bottom: 10px; font-weight: 700;">📖 الورد القرآني</div>
+            <div style="font-size: 28px; font-weight: 800; color: #ffffff;">
+              ${quranPages} <span style="font-size: 18px; font-weight: normal; opacity: 0.85;">صفحة</span>
             </div>
-            <div style="font-size: 12px; opacity: 0.85; margin-top: 4px;">
+            <div style="font-size: 17px; opacity: 0.9; margin-top: 8px; line-height: 1.4;">
               ${quranDone ? '✓ تم إتمام الورد القرآني' : quranPages > 0 ? 'قراءة متواصلة مباركة' : 'لم يسجل ورد'}
             </div>
           </div>
@@ -279,13 +293,16 @@ export const shareDailyHabitCard = async ({
           <!-- Adhkar Box -->
           <div style="
             background: rgba(255, 255, 255, 0.09);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 16px;
-            padding: 16px;
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 24px;
+            padding: 24px;
             text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
           ">
-            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 6px;">📿 الأذكار اليومية</div>
-            <div style="font-size: 16px; font-weight: 700; color: #ffffff; line-height: 1.4;">
+            <div style="font-size: 19px; opacity: 0.95; margin-bottom: 10px; font-weight: 700;">📿 الأذكار اليومية</div>
+            <div style="font-size: 22px; font-weight: 700; color: #ffffff; line-height: 1.5;">
               ${completedAdhkar.length > 0 ? completedAdhkar.join(' • ') : '<span style="opacity:0.7; font-weight:normal;">لم تسجل الأذكار</span>'}
             </div>
           </div>
@@ -293,13 +310,16 @@ export const shareDailyHabitCard = async ({
           <!-- Ethics & Custom Habits Box -->
           <div style="
             background: rgba(255, 255, 255, 0.09);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 16px;
-            padding: 16px;
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 24px;
+            padding: 24px;
             text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
           ">
-            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 6px;">🤍 البر والسنن المستحبة</div>
-            <div style="font-size: 14px; font-weight: 700; color: #ffffff; line-height: 1.4;">
+            <div style="font-size: 19px; opacity: 0.95; margin-bottom: 10px; font-weight: 700;">🤍 البر والسنن المستحبة</div>
+            <div style="font-size: 22px; font-weight: 700; color: #ffffff; line-height: 1.5;">
               ${[...completedEthics, ...completedCustom].length > 0
                 ? [...completedEthics, ...completedCustom].slice(0, 3).join(' • ') + ([...completedEthics, ...completedCustom].length > 3 ? '...' : '')
                 : '<span style="opacity:0.7; font-weight:normal;">لم تسجل بعد</span>'}
@@ -310,15 +330,15 @@ export const shareDailyHabitCard = async ({
         <!-- Footer Hadith & Dedication -->
         <div style="
           text-align: center;
-          border-top: 1px solid rgba(255,255,255,0.2);
-          padding-top: 16px;
+          border-top: 2px solid rgba(255,255,255,0.22);
+          padding-top: 24px;
           position: relative;
           z-index: 1;
         ">
-          <div style="font-size: 16px; font-weight: 700; color: #fef08a; font-family: 'Amiri', serif; margin-bottom: 6px;">
+          <div style="font-size: 24px; font-weight: 700; color: #fef08a; font-family: 'Amiri', serif; margin-bottom: 10px;">
             «أَحَبُّ الأَعْمَالِ إِلَى اللهِ أَدْوَمُهَا وَإِنْ قَلَّ»
           </div>
-          <div style="font-size: 12px; opacity: 0.85; font-family: 'Amiri', serif;">
+          <div style="font-size: 17px; opacity: 0.9; font-family: 'Amiri', serif;">
             جعله الله في ميزان حسناتكم وصدقة جارية عن أرواح أحمد وليلى 🤍
           </div>
         </div>
@@ -331,14 +351,27 @@ export const shareDailyHabitCard = async ({
     await new Promise((r) => setTimeout(r, 400));
 
     const canvas = await safeHtml2Canvas(container, {
-      scale: 2.8,
+      scale: 1,
       backgroundColor: null,
       useCORS: true,
       logging: false,
       imageTimeout: 15000
     });
 
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    // Guarantee exact 1080x1920
+    let finalCanvas = canvas;
+    if (canvas.width !== 1080 || canvas.height !== 1920) {
+      const resized = document.createElement('canvas');
+      resized.width = 1080;
+      resized.height = 1920;
+      const rCtx = resized.getContext('2d')!;
+      rCtx.imageSmoothingEnabled = true;
+      rCtx.imageSmoothingQuality = 'high';
+      rCtx.drawImage(canvas, 0, 0, 1080, 1920);
+      finalCanvas = resized;
+    }
+
+    const dataUrl = finalCanvas.toDataURL('image/jpeg', 0.95);
 
     if (!dataUrl || dataUrl === 'data:,') {
       throw new Error('Failed to generate image data');

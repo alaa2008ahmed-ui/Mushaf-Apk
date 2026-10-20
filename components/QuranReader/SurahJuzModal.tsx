@@ -12,11 +12,13 @@ interface SurahJuzModalProps {
     isLandscape?: boolean;
     currentSelection?: number;
     currentAyah?: { s: number, a: number };
+    readingMode?: string;
 }
 
-const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect, onClose, currentTheme, isLandscape, currentSelection, currentAyah }) => {
+const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect, onClose, currentTheme, isLandscape, currentSelection, currentAyah, readingMode }) => {
     const { language, isRTL } = useLanguage();
     const isEn = language === 'en';
+    const isEnglishMode = isEn || readingMode === 'bilingual' || readingMode === 'translation';
     // Helper to find Juz for a given (Surah, Ayah)
     const getJuzForAyah = useCallback((s: number, a: number) => {
         for (let i = JUZ_MAP.length - 1; i >= 0; i--) {
@@ -381,6 +383,7 @@ const SurahJuzModal: React.FC<SurahJuzModalProps> = ({ type, quranData, onSelect
                     surahNumber={infoSurah.number}
                     quranData={quranData}
                     onClose={() => setInfoSurah(null)}
+                    isEnglishMode={isEnglishMode}
                 />
             )}
         </div>

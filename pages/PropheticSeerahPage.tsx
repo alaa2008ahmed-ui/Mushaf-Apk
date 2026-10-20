@@ -22,6 +22,7 @@ import { shareAsImage } from '../utils/shareAsImage';
 import { sharePropheticLineageImage } from '../utils/lineageShareHelper';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { markPageAsSeen } from '../utils/badgeManager';
+import { ZoomIn } from 'lucide-react';
 
 interface PropheticSeerahPageProps {
     onBack?: () => void;
@@ -80,6 +81,26 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
     // Zoom Modal State for Cards
     const [zoomedCard, setZoomedCard] = useState<ZoomedCardData | null>(null);
     const [zoomFontSize, setZoomFontSize] = useState<number>(24);
+
+    // Global in-page card font scaling
+    const [cardTextScale, setCardTextScale] = useState<number>(() => {
+        try {
+            const saved = localStorage.getItem('seerahCardTextScale');
+            return saved ? parseFloat(saved) : 1;
+        } catch {
+            return 1;
+        }
+    });
+
+    const toggleCardTextScale = () => {
+        setCardTextScale(prev => {
+            const next = prev >= 1.45 ? 1 : Number((prev + 0.15).toFixed(2));
+            try {
+                localStorage.setItem('seerahCardTextScale', String(next));
+            } catch {}
+            return next;
+        });
+    };
 
     useEffect(() => {
         markPageAsSeen('prophetic-seerah');
@@ -625,9 +646,24 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                             </h1>
                         </div>
 
-                        {/* Home icon & ThemeLock */}
+                        {/* Right Tools: ThemeLock, Magnifying Glass (Enlarge Card Text), & Home Button */}
                         <div className={`absolute ${isEn ? 'right-0' : 'left-0'} flex items-center gap-1`}>
                             <ThemePageLock />
+                            {/* Magnifying Glass to scale text of all cards on the page */}
+                            <button
+                                type="button"
+                                onClick={toggleCardTextScale}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer relative"
+                                title={isEn ? `Enlarge card text (${Math.round(cardTextScale * 100)}%)` : `تكبير نص البطاقات (${Math.round(cardTextScale * 100)}%)`}
+                                aria-label={isEn ? 'Enlarge card text' : 'تكبير نص البطاقات'}
+                            >
+                                <ZoomIn className="w-5 h-5" />
+                                {cardTextScale > 1 && (
+                                    <span className="absolute -top-1 -right-1 text-[9px] font-bold px-1 rounded-full bg-emerald-600 text-white leading-tight shadow" dir="ltr">
+                                        +{Math.round((cardTextScale - 1) * 100)}%
+                                    </span>
+                                )}
+                            </button>
                             <button
                                 onClick={() => onNavigate('home')}
                                 className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
@@ -705,8 +741,73 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                 </div>
             )}
 
+            {/* Scoped CSS for scaling text across all cards when cardTextScale > 1 */}
+            {cardTextScale > 1 && (
+                <style>{`
+                    .seerah-scalable-content .themed-card p,
+                    .seerah-scalable-content .rounded-2xl.border p,
+                    .seerah-scalable-content .rounded-3xl.border p,
+                    .seerah-scalable-content .themed-card li,
+                    .seerah-scalable-content .rounded-2xl.border li,
+                    .seerah-scalable-content .themed-card .leading-relaxed,
+                    .seerah-scalable-content .rounded-2xl.border .leading-relaxed {
+                        font-size: calc(0.925rem * ${cardTextScale}) !important;
+                        line-height: ${cardTextScale >= 1.3 ? '1.85' : '1.7'} !important;
+                    }
+                    .seerah-scalable-content .themed-card h2,
+                    .seerah-scalable-content .rounded-2xl.border h2,
+                    .seerah-scalable-content .rounded-3xl.border h2 {
+                        font-size: calc(1.5rem * ${cardTextScale}) !important;
+                    }
+                    .seerah-scalable-content .themed-card h3,
+                    .seerah-scalable-content .rounded-2xl.border h3,
+                    .seerah-scalable-content .rounded-3xl.border h3 {
+                        font-size: calc(1.15rem * ${cardTextScale}) !important;
+                    }
+                    .seerah-scalable-content .themed-card h4,
+                    .seerah-scalable-content .themed-card h5,
+                    .seerah-scalable-content .rounded-2xl.border h4,
+                    .seerah-scalable-content .rounded-2xl.border h5 {
+                        font-size: calc(1.05rem * ${cardTextScale}) !important;
+                    }
+                    .seerah-scalable-content .themed-card .text-xs,
+                    .seerah-scalable-content .themed-card .text-\\[11px\\],
+                    .seerah-scalable-content .themed-card .text-\\[10px\\],
+                    .seerah-scalable-content .rounded-2xl.border .text-xs,
+                    .seerah-scalable-content .rounded-2xl.border .text-\\[11px\\] {
+                        font-size: calc(0.775rem * ${cardTextScale}) !important;
+                    }
+                    .seerah-scalable-content .themed-card .text-sm,
+                    .seerah-scalable-content .rounded-2xl.border .text-sm {
+                        font-size: calc(0.875rem * ${cardTextScale}) !important;
+                    }
+                    .seerah-scalable-content .themed-card .text-base,
+                    .seerah-scalable-content .rounded-2xl.border .text-base {
+                        font-size: calc(1rem * ${cardTextScale}) !important;
+                    }
+                    .seerah-scalable-content .themed-card .text-lg,
+                    .seerah-scalable-content .rounded-2xl.border .text-lg {
+                        font-size: calc(1.125rem * ${cardTextScale}) !important;
+                    }
+                    .seerah-scalable-content .themed-card .text-xl,
+                    .seerah-scalable-content .rounded-2xl.border .text-xl {
+                        font-size: calc(1.25rem * ${cardTextScale}) !important;
+                    }
+                    .seerah-scalable-content .themed-card .text-2xl,
+                    .seerah-scalable-content .rounded-2xl.border .text-2xl {
+                        font-size: calc(1.5rem * ${cardTextScale}) !important;
+                    }
+                    .seerah-scalable-content .line-clamp-2 {
+                        -webkit-line-clamp: 4 !important;
+                    }
+                    .seerah-scalable-content .line-clamp-3 {
+                        -webkit-line-clamp: 5 !important;
+                    }
+                `}</style>
+            )}
+
             {/* Main Content Body */}
-            <main ref={mainScrollRef} className="flex-1 overflow-y-auto hide-scrollbar px-4 pt-2 pb-6">
+            <main ref={mainScrollRef} className="flex-1 overflow-y-auto hide-scrollbar px-4 pt-2 pb-6 seerah-scalable-content">
                 {/* 1. Milestone Detail View */}
                 {selectedMilestone && activeMilestone ? (
                     <div
@@ -2322,57 +2423,22 @@ const PropheticSeerahPage: React.FC<PropheticSeerahPageProps> = ({ onBack, onNav
                             onClick={e => e.stopPropagation()}
                             dir={isEn ? 'ltr' : 'rtl'}
                         >
-                            {/* Header: Title, Subtitle, Font size controls & Close */}
-                            <div className="flex items-center justify-between pb-3 border-b shrink-0 gap-2" style={{ borderColor: 'var(--card-border)' }}>
-                                <div className={`${isEn ? 'text-left' : 'text-right'} flex items-center gap-2.5 min-w-0`}>
-                                    {zoomedCard.icon && (
-                                        <div className="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                                            <i className={`${zoomedCard.icon} text-sm`}></i>
-                                        </div>
+                            {/* Header: Title & Subtitle */}
+                            <div className="flex items-center pb-3 border-b shrink-0 gap-2.5" style={{ borderColor: 'var(--card-border)' }}>
+                                {zoomedCard.icon && (
+                                    <div className="w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                        <i className={`${zoomedCard.icon} text-sm`}></i>
+                                    </div>
+                                )}
+                                <div className={`min-w-0 flex-1 ${isEn ? 'text-left' : 'text-right'}`}>
+                                    <h3 className={`text-base sm:text-lg font-bold ${isEn ? 'font-sans' : 'font-kufi'} text-emerald-600 dark:text-emerald-400 leading-snug`}>
+                                        {zoomedCard.title}
+                                    </h3>
+                                    {zoomedCard.subtitle && (
+                                        <p className="text-xs opacity-70 font-sans mt-0.5">
+                                            {zoomedCard.subtitle}
+                                        </p>
                                     )}
-                                    <div className="truncate">
-                                        <h3 className={`text-base sm:text-lg font-bold ${isEn ? 'font-sans' : 'font-kufi'} text-emerald-600 dark:text-emerald-400 truncate`}>
-                                            {zoomedCard.title}
-                                        </h3>
-                                        {zoomedCard.subtitle && (
-                                            <p className="text-[11px] opacity-70 font-sans truncate">
-                                                {zoomedCard.subtitle}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Font Size controls (A- / A+) and Close (X) */}
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                    <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-xl">
-                                        <button 
-                                            type="button"
-                                            onClick={() => setZoomFontSize(prev => Math.min(prev + 2, 40))}
-                                            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                            title={ui.zoomTitleSizeUp}
-                                            aria-label={ui.zoomTitleSizeUp}
-                                        >
-                                            A+
-                                        </button>
-                                        <button 
-                                            type="button"
-                                            onClick={() => setZoomFontSize(prev => Math.max(prev - 2, 18))}
-                                            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                            title={ui.zoomTitleSizeDown}
-                                            aria-label={ui.zoomTitleSizeDown}
-                                        >
-                                            A-
-                                        </button>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setZoomedCard(null)}
-                                        className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 cursor-pointer"
-                                        title={ui.close}
-                                        aria-label={ui.close}
-                                    >
-                                        <i className="fa-solid fa-xmark text-sm"></i>
-                                    </button>
                                 </div>
                             </div>
 

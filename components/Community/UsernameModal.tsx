@@ -560,6 +560,15 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
     }
     const finalAvatar = avatarUrl && avatarUrl.trim() ? avatarUrl.trim() : PRESET_AVATARS[0];
 
+    if (passcode && passcode.trim()) {
+      const cleanPass = communityService.normalizeDigits(passcode);
+      if (cleanPass.length < 6 || cleanPass.length > 12) {
+        setError(isEn ? 'Please enter a passcode of 6 to 12 characters (letters and numbers)' : 'يرجى إدخال رقم سري مكون من 6 إلى 12 حرف أو رقم');
+        passcodeRef.current?.focus();
+        return;
+      }
+    }
+
     setIsSaving(true);
     setError('');
     setSuccessMsg('');
@@ -1657,13 +1666,12 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   <div>
                     <label className="block text-xs font-bold mb-1 flex items-center justify-between" style={{ color: theme.textColor }}>
                       <span>{isEn ? 'Account Passcode / PIN:' : 'الرقم السري لحسابك:'}</span>
-                      <span className="text-[10px] opacity-75 font-normal">{isEn ? '4-6 digits' : '4-6 أرقام'}</span>
+                      <span className="text-[10px] opacity-75 font-normal">{isEn ? '6-12 chars' : '6-12 حرف أو رقم'}</span>
                     </label>
                     <input
                       ref={restorePasscodeRef}
                       type="password"
-                      inputMode="numeric"
-                      maxLength={8}
+                      maxLength={12}
                       value={restorePasscode}
                       onChange={(e) => {
                         setRestorePasscode(e.target.value);

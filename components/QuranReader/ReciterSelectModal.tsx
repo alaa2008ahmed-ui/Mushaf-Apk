@@ -111,22 +111,24 @@ const ReciterSelectModal: React.FC<ReciterSelectModalProps> = ({
                                 onClick={() => handleSelect(r.id)}
                                 className={`w-full ${isSingleReciterMode ? 'max-w-md p-5' : 'p-3'} rounded-xl border-2 transition-all font-bold flex flex-col items-center justify-center text-center cursor-pointer ${isSelected ? 'shadow-md' : 'hover:opacity-80'}`}
                                 style={{ 
-                                    backgroundColor: isSelected 
-                                        ? (isEnReader ? '#4f46e5' : 'var(--qr-accent)') 
-                                        : 'var(--qr-card-bg)', 
-                                    color: isSelected ? '#ffffff' : 'var(--qr-card-text)', 
-                                    borderColor: isSelected 
-                                        ? (isEnReader ? '#4f46e5' : 'var(--qr-accent)') 
-                                        : (isEnReader ? 'rgba(99, 102, 241, 0.4)' : 'var(--qr-card-border)') 
+                                    backgroundColor: isEnReader 
+                                        ? 'var(--qr-card-bg)' 
+                                        : (isSelected ? 'var(--qr-accent)' : 'var(--qr-card-bg)'), 
+                                    color: isEnReader 
+                                        ? 'var(--qr-card-text)' 
+                                        : (isSelected ? '#ffffff' : 'var(--qr-card-text)'), 
+                                    borderColor: isEnReader 
+                                        ? 'var(--qr-card-border)' 
+                                        : (isSelected ? 'var(--qr-accent)' : 'var(--qr-card-border)') 
                                 }}
                             >
                                 <div className="flex items-center justify-between w-full">
                                     <span className={`${isSingleReciterMode ? 'text-sm font-black' : 'text-xs font-bold'} truncate flex-1 text-center`}>
                                         {getReciterDisplayName(r.name, language)}
                                     </span>
-                                    {isSelected && <Check size={isSingleReciterMode ? 20 : 16} className="shrink-0 ml-1" />}
+                                    {isSelected && <Check size={isSingleReciterMode ? 20 : 16} className="shrink-0 ml-1" style={{ color: isEnReader ? 'var(--qr-card-text)' : '#ffffff' }} />}
                                 </div>
-                                {(r.subTitle || r.subTitleEn) && (
+                                {!isEnReader && (r.subTitle || r.subTitleEn) && (
                                     <span className={`${isSingleReciterMode ? 'text-xs mt-1.5' : 'text-[10px] mt-1'} opacity-90 ${isSelected ? 'text-indigo-100' : 'text-indigo-600 dark:text-indigo-300'}`}>
                                         {isEn ? (r.subTitleEn || r.subTitle) : r.subTitle}
                                     </span>

@@ -15,9 +15,11 @@ import {
   List, Shirt, Wand2, Droplet, Waves, DoorOpen, Bath,
   LogOut, ArrowRightSquare, Navigation, Map,
   User, CheckCircle, Repeat, ArrowLeftRight, HelpCircle, ListFilter,
-  Home, Phone, ExternalLink, Tent, Ban, ShieldAlert, SlidersHorizontal
+  Home, Phone, ExternalLink, Tent, Ban, ShieldAlert, SlidersHorizontal, ZoomIn
 } from 'lucide-react';
 import { ButtonExplanationData } from './ButtonExplanationModal';
+import { useLanguage } from '../../context/LanguageContext';
+import { translateExplanationData, translateTree, tGuide } from './pageGuideTranslations';
 
 interface PageMockupProps {
   onInspect: (data: ButtonExplanationData) => void;
@@ -39,13 +41,17 @@ export const Hotspot: React.FC<{
   className?: string;
   title?: string;
 }> = ({ onClick, children, className = '', title }) => {
+  const { language } = useLanguage();
+  const defaultTitle = language === 'en' ? "Tap to view button explanation" : "اضغط لعرض شرح هذا الزر";
+  const finalTitle = title ? (language === 'en' ? tGuide(title, 'en') : title) : defaultTitle;
+
   return (
     <div
       onClick={(e) => {
         e.stopPropagation();
         onClick();
       }}
-      title={title || "اضغط لعرض شرح هذا الزر"}
+      title={finalTitle}
       className={`cursor-pointer transition-all duration-150 hover:opacity-90 active:scale-[0.98] select-none ${className}`}
     >
       {children}
@@ -2001,7 +2007,7 @@ export const QuranReaderMockup: React.FC<PageMockupProps> = ({
 };
 
 // =============================================================
-// 13. صفحة الحج والعمرة (HajjUmrah) - مطابقة 100% للصورة المرفقة
+// 13. صفحة الحج والعمرة (HajjUmrah) - مطابقة 100% للصفحة المحدثة
 // =============================================================
 export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
   onInspect, isBlackTheme, textColor, cardBorderColor
@@ -2009,7 +2015,7 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
   return (
     <div className="w-full max-w-md mx-auto flex flex-col gap-3 py-1 select-none" dir="rtl">
       
-      {/* 1. الصف الأول: دليل العمرة + دليل الحج */}
+      {/* 1. الصف الأول: دليل العمرة + دليل الحج (بدون أيقونات) */}
       <div className="grid grid-cols-2 gap-3 w-full">
         {/* دليل الحج */}
         <Hotspot onClick={() => onInspect({
@@ -2017,17 +2023,14 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
           purpose: 'شرح مفصل لمناسك الحج بأنواعه الثلاثة (التمتع، الإفراد، القِران) مع المخطط الزمني لمحطات النسك يوماً بيوم من يوم التروية وحتى طواف الوداع وأدلة الكتاب والسنة.'
         })}>
           <div 
-            className="rounded-2xl border-2 p-4 flex flex-col items-center justify-center gap-2 h-28 sm:h-32 shadow-xs transition-all w-full"
+            className="rounded-2xl border-2 p-4 flex flex-col items-center justify-center gap-2 h-20 sm:h-24 shadow-xs transition-all w-full"
             style={{ 
               backgroundColor: isBlackTheme ? '#141414' : '#ffffff', 
               borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.4)' : '#000000', 
               color: textColor 
             }}
           >
-            <div className="w-11 h-11 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-center bg-black/5 dark:bg-white/5">
-              <Tent className="w-6 h-6 stroke-[1.8]" />
-            </div>
-            <span className="font-bold text-sm sm:text-base font-kufi">دليل الحج</span>
+            <span className="font-bold text-base sm:text-lg font-kufi">دليل الحج</span>
           </div>
         </Hotspot>
 
@@ -2037,22 +2040,19 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
           purpose: 'دليل شامل لمناسك العمرة خطوة بخطوة موثقة بالقرآن الكريم وصحيح السنة النبوية، مع بيان الأركان والواجبات والسنن والمحظورات وتفاصيل الطواف والسعي.'
         })}>
           <div 
-            className="rounded-2xl border-2 p-4 flex flex-col items-center justify-center gap-2 h-28 sm:h-32 shadow-xs transition-all w-full"
+            className="rounded-2xl border-2 p-4 flex flex-col items-center justify-center gap-2 h-20 sm:h-24 shadow-xs transition-all w-full"
             style={{ 
               backgroundColor: isBlackTheme ? '#141414' : '#ffffff', 
               borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.4)' : '#000000', 
               color: textColor 
             }}
           >
-            <div className="w-11 h-11 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-center bg-black/5 dark:bg-white/5">
-              <Compass className="w-6 h-6 stroke-[1.8]" />
-            </div>
-            <span className="font-bold text-sm sm:text-base font-kufi">دليل العمرة</span>
+            <span className="font-bold text-base sm:text-lg font-kufi">دليل العمرة</span>
           </div>
         </Hotspot>
       </div>
 
-      {/* 2. الصف الثاني: أدعية وأذكار + عَدّاد الطواف */}
+      {/* 2. الصف الثاني: أدعية وأذكار + عَدّاد الطواف (بدون أيقونات) */}
       <div className="grid grid-cols-2 gap-3 w-full">
         {/* أدعية وأذكار */}
         <Hotspot onClick={() => onInspect({
@@ -2060,17 +2060,14 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
           purpose: 'موسوعة أدعية وأذكار الحج والعمرة المأثورة عن النبي ﷺ في الطواف والمسعى ويوم عرفة والمشعر الحرام مع إمكانية التكبير والتنقل السهل بين الأدعية.'
         })}>
           <div 
-            className="rounded-2xl border-2 p-4 flex flex-col items-center justify-center gap-2 h-28 sm:h-32 shadow-xs transition-all w-full"
+            className="rounded-2xl border-2 p-4 flex flex-col items-center justify-center gap-2 h-20 sm:h-24 shadow-xs transition-all w-full"
             style={{ 
               backgroundColor: isBlackTheme ? '#141414' : '#ffffff', 
               borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.4)' : '#000000', 
               color: textColor 
             }}
           >
-            <div className="w-11 h-11 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-center bg-black/5 dark:bg-white/5">
-              <BookOpen className="w-6 h-6 stroke-[1.8]" />
-            </div>
-            <span className="font-bold text-sm sm:text-base font-kufi">أدعية وأذكار</span>
+            <span className="font-bold text-base sm:text-lg font-kufi">أدعية وأذكار</span>
           </div>
         </Hotspot>
 
@@ -2080,17 +2077,14 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
           purpose: 'عداد إلكتروني تفاعلي لمتابعة أشواط الطواف والسعي (٧ أشواط) مع التكبير والدعاء المأثور لكل شوط وخاصية الاهتزاز عند اكتمال كل شوط.'
         })}>
           <div 
-            className="rounded-2xl border-2 p-4 flex flex-col items-center justify-center gap-2 h-28 sm:h-32 shadow-xs transition-all w-full"
+            className="rounded-2xl border-2 p-4 flex flex-col items-center justify-center gap-2 h-20 sm:h-24 shadow-xs transition-all w-full"
             style={{ 
               backgroundColor: isBlackTheme ? '#141414' : '#ffffff', 
               borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.4)' : '#000000', 
               color: textColor 
             }}
           >
-            <div className="w-11 h-11 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-center bg-black/5 dark:bg-white/5">
-              <RotateCcw className="w-6 h-6 stroke-[1.8]" />
-            </div>
-            <span className="font-bold text-sm sm:text-base font-kufi">عَدّاد الطواف</span>
+            <span className="font-bold text-base sm:text-lg font-kufi">عَدّاد الطواف</span>
           </div>
         </Hotspot>
       </div>
@@ -2101,24 +2095,21 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
         purpose: 'قائمة تفاعلية ذكية لتنظيم وتجهيز مستلزمات الحج والعمرة، ملابس الإحرام، الأدوية، والأوراق الهامة لضمان عدم نسيان أي متطلب قبل السفر.'
       })}>
         <div 
-          className="rounded-2xl border-2 p-4 flex flex-col items-center justify-center gap-2 h-24 sm:h-28 shadow-xs transition-all w-full"
+          className="rounded-2xl border-2 p-4 flex flex-col items-center justify-center gap-2 h-16 sm:h-20 shadow-xs transition-all w-full"
           style={{ 
             backgroundColor: isBlackTheme ? '#141414' : '#ffffff', 
             borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.4)' : '#000000', 
             color: textColor 
           }}
         >
-          <div className="w-10 h-10 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-center bg-black/5 dark:bg-white/5">
-            <SlidersHorizontal className="w-5 h-5 stroke-[1.8]" />
-          </div>
-          <span className="font-bold text-sm sm:text-base font-kufi">قائمة التجهيزات والأمتعة</span>
+          <span className="font-bold text-base sm:text-lg font-kufi">قائمة التجهيزات والأمتعة</span>
         </div>
       </Hotspot>
 
-      {/* 4. بطاقة: فضل الحج والعمرة */}
+      {/* 4. بطاقة: فضل الحج والعمرة (مع أيقونة العدسة لتكبير النص) */}
       <Hotspot onClick={() => onInspect({
         title: 'بطاقة فضل الحج والعمرة',
-        purpose: 'تذكير إيماني بفضل وثواب الحج المبرور والعمرة وتكفير الذنوب مستنداً إلى الحديث النبوي الشريف الصحيح عن أبي هريرة رضي الله عنه.'
+        purpose: 'تذكير إيماني بفضل وثواب الحج المبرور والعمرة وتكفير الذنوب مستنداً إلى الحديث النبوي الشريف الصحيح عن أبي هريرة رضي الله عنه مع أيقونة العدسة للتكبير.'
       })}>
         <div 
           className="rounded-2xl border-2 p-4 flex flex-col gap-2.5 shadow-xs transition-all w-full"
@@ -2128,9 +2119,9 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
             color: textColor 
           }}
         >
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-between">
             <span className="font-bold text-base sm:text-lg text-teal-600 dark:text-teal-400 font-kufi">فضل الحج والعمرة</span>
-            <BookOpen className="w-5 h-5 text-teal-600 dark:text-teal-400 stroke-[2]" />
+            <ZoomIn className="w-5 h-5 opacity-70 hover:opacity-100" />
           </div>
           <div className="border-r-2 border-teal-600 dark:border-teal-400 pr-3">
             <p className="text-xs sm:text-sm leading-relaxed font-medium text-right opacity-90">
@@ -2140,10 +2131,10 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
         </div>
       </Hotspot>
 
-      {/* 5. بطاقة: محظورات الإحرام */}
+      {/* 5. بطاقة: محظورات الإحرام (مع أيقونة العدسة لتكبير النص) */}
       <Hotspot onClick={() => onInspect({
         title: 'بطاقة محظورات الإحرام',
-        purpose: 'بيان ما يحرم على المحرم فعله بعد عقد نية النسك كالطيب والمخيط وتغطية الرأس وعقد النكاح والصيد لتجنب الوقوع في الفدية أو الإثم.'
+        purpose: 'بيان ما يحرم على المحرم فعله بعد عقد نية النسك كالطيب والمخيط وتغطية الرأس وعقد النكاح والصيد مع أيقونة العدسة لتكبير وقراءة المحظورات.'
       })}>
         <div 
           className="rounded-2xl border-2 p-4 flex flex-col gap-3 shadow-xs transition-all w-full"
@@ -2153,9 +2144,9 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
             color: textColor 
           }}
         >
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-between">
             <span className="font-bold text-base sm:text-lg text-purple-600 dark:text-purple-400 font-kufi">محظورات الإحرام</span>
-            <Ban className="w-5 h-5 text-purple-600 dark:text-purple-400 stroke-[2]" />
+            <ZoomIn className="w-5 h-5 opacity-70 hover:opacity-100" />
           </div>
           <div className="space-y-2 text-right">
             {[
@@ -2176,10 +2167,10 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
         </div>
       </Hotspot>
 
-      {/* 6. بطاقة: المواقيت المكانية */}
+      {/* 6. بطاقة: المواقيت المكانية (مع أيقونة العدسة لتكبير النص) */}
       <Hotspot onClick={() => onInspect({
         title: 'بطاقة المواقيت المكانية',
-        purpose: 'توضيح حدود ومواقيت الإحرام المكانية الخمسة المحددة شرعاً لكل قادم إلى مكة المكرمة لأداء المناسك براً أو بحراً أو جواً.'
+        purpose: 'توضيح حدود ومواقيت الإحرام المكانية الخمسة المحددة شرعاً لكل قادم إلى مكة المكرمة لأداء المناسك مع أيقونة العدسة للتكبير.'
       })}>
         <div 
           className="rounded-2xl border-2 p-4 flex flex-col gap-3 shadow-xs transition-all w-full"
@@ -2189,9 +2180,9 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
             color: textColor 
           }}
         >
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-between">
             <span className="font-bold text-base sm:text-lg text-teal-600 dark:text-teal-400 font-kufi">المواقيت المكانية</span>
-            <MapPin className="w-5 h-5 text-teal-600 dark:text-teal-400 stroke-[2]" />
+            <ZoomIn className="w-5 h-5 opacity-70 hover:opacity-100" />
           </div>
           <div className="space-y-2 text-right">
             {[
@@ -2210,10 +2201,10 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
         </div>
       </Hotspot>
 
-      {/* 7. بطاقة: ما الفرق بين الحج والعمرة؟ */}
+      {/* 7. بطاقة: ما الفرق بين الحج والعمرة؟ (مع أيقونة العدسة لتكبير النص) */}
       <Hotspot onClick={() => onInspect({
         title: 'بطاقة الفرق بين الحج والعمرة',
-        purpose: 'مقارنة فقهية سريعة توضح الفروق الجوهرية بين فريضة الحج والنافلة/الواجب في العمرة من حيث التوقيت والأركان والواجبات والمناسك.'
+        purpose: 'مقارنة فقهية سريعة توضح الفروق الجوهرية بين فريضة الحج والنافلة/الواجب في العمرة مع أيقونة العدسة للتكبير.'
       })}>
         <div 
           className="rounded-2xl border-2 p-4 flex flex-col gap-3 shadow-xs transition-all w-full"
@@ -2223,9 +2214,9 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
             color: textColor 
           }}
         >
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-between">
             <span className="font-bold text-base sm:text-lg text-teal-600 dark:text-teal-400 font-kufi">ما الفرق بين الحج والعمرة؟</span>
-            <HelpCircle className="w-5 h-5 text-teal-600 dark:text-teal-400 stroke-[2]" />
+            <ZoomIn className="w-5 h-5 opacity-70 hover:opacity-100" />
           </div>
           <div className="space-y-2 text-right">
             {[
@@ -2242,10 +2233,10 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
         </div>
       </Hotspot>
 
-      {/* 8. بطاقة: تنبيه هام */}
+      {/* 8. بطاقة: تنبيه هام (مع أيقونة العدسة لتكبير النص) */}
       <Hotspot onClick={() => onInspect({
         title: 'تنبيه فقهي هام',
-        purpose: 'قاعدة فقهية جوهرية توضح حكم ترك الركن والواجب والمحظور وما يترتب على كل منها من بطلان النسك أو لزوم الدم أو الفدية.'
+        purpose: 'قاعدة فقهية جوهرية توضح حكم ترك الركن والواجب والمحظور وما يترتب على كل منها من بطلان النسك أو لزوم الدم أو الفدية مع أيقونة العدسة لتكبير النص.'
       })}>
         <div 
           className="rounded-2xl border-2 p-4 flex flex-col gap-2 shadow-xs transition-all w-full"
@@ -2255,9 +2246,9 @@ export const HajjUmrahMockup: React.FC<PageMockupProps> = ({
             color: textColor 
           }}
         >
-          <div className="flex items-center justify-end gap-2 mb-1">
+          <div className="flex items-center justify-between mb-1">
             <span className="font-bold text-base sm:text-lg text-amber-600 dark:text-amber-500 font-kufi">تنبيه هام</span>
-            <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-500 stroke-[2]" />
+            <ZoomIn className="w-5 h-5 opacity-70 hover:opacity-100 text-amber-600 dark:text-amber-500" />
           </div>
           <p className="text-xs sm:text-sm leading-relaxed font-medium text-center opacity-90">
             ترك ركن يبطل النسك، أما ترك واجب فيُجبر بدم، وارتكاب المحظورات يوجب الفدية.
@@ -3551,60 +3542,120 @@ export const PageMockupDispatcher: React.FC<{
   cardBg: string;
   cardBorderColor: string;
 }> = (props) => {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
+
+  // Wrap onInspect so any data passed from any mockup is translated if in English
+  const localizedOnInspect = (data: ButtonExplanationData) => {
+    if (isEn) {
+      props.onInspect(translateExplanationData(data, 'en'));
+    } else {
+      props.onInspect(data);
+    }
+  };
+
+  const localizedProps = {
+    ...props,
+    onInspect: localizedOnInspect,
+  };
+
+  let MockupComponent: React.FC<PageMockupProps>;
   switch (props.pageId) {
     case 'tasbeeh':
-      return <TasbeehMockup {...props} />;
+      MockupComponent = TasbeehMockup;
+      break;
     case 'community':
     case 'side-community':
-      return <CommunityMockup {...props} />;
+      MockupComponent = CommunityMockup;
+      break;
     case 'adia':
-      return <AdiaMockup {...props} />;
+      MockupComponent = AdiaMockup;
+      break;
     case 'salah-adhkar':
-      return <AthkarAlSalahMockup {...props} />;
+      MockupComponent = AthkarAlSalahMockup;
+      break;
     case 'hisn-muslim':
-      return <HisnAlmuslimMockup {...props} />;
+      MockupComponent = HisnAlmuslimMockup;
+      break;
     case 'calendar':
-      return <CalendarMockup {...props} />;
+      MockupComponent = CalendarMockup;
+      break;
     case 'sabah-masaa':
-      return <SabahMasaaMockup {...props} />;
+      MockupComponent = SabahMasaaMockup;
+      break;
     case 'prayer-times':
-      return <PrayerTimesMockup {...props} />;
+      MockupComponent = PrayerTimesMockup;
+      break;
     case 'qibla':
-      return <QiblaMockup {...props} />;
+      MockupComponent = QiblaMockup;
+      break;
     case 'listen':
-      return <ListenQuranMockup {...props} />;
+      MockupComponent = ListenQuranMockup;
+      break;
     case 'ahl-al-quran':
     case 'side-ahl-al-quran':
-      return <AhlAlQuranMockup {...props} />;
+      MockupComponent = AhlAlQuranMockup;
+      break;
     case 'quran':
-      return <QuranReaderMockup {...props} />;
+      MockupComponent = QuranReaderMockup;
+      break;
     case 'hajj-umrah':
-      return <HajjUmrahMockup {...props} />;
+      MockupComponent = HajjUmrahMockup;
+      break;
     case 'daily-wird':
-      return <DailyWirdMockup {...props} />;
+      MockupComponent = DailyWirdMockup;
+      break;
     case 'memorization':
-      return <MemorizationMockup {...props} />;
+      MockupComponent = MemorizationMockup;
+      break;
     case 'habit-tracker':
-      return <HabitTrackerMockup {...props} />;
+      MockupComponent = HabitTrackerMockup;
+      break;
     case 'others':
-      return <OthersMockup {...props} />;
+      MockupComponent = OthersMockup;
+      break;
     case 'prophetic-seerah':
-      return <PropheticSeerahMockup {...props} />;
+      MockupComponent = PropheticSeerahMockup;
+      break;
     case 'islamic-sites':
-      return <IslamicSitesMockup {...props} />;
+      MockupComponent = IslamicSitesMockup;
+      break;
     case 'nawawi':
-      return <NawawiMockup {...props} />;
+      MockupComponent = NawawiMockup;
+      break;
     case 'calculators':
-      return <CalculatorsMockup {...props} />;
+      MockupComponent = CalculatorsMockup;
+      break;
     case 'voice-control':
     case 'side-voice':
-      return <VoiceControlMockup {...props} />;
+      MockupComponent = VoiceControlMockup;
+      break;
     case 'asmaul-husna':
-      return <AsmaulHusnaMockup {...props} />;
+      MockupComponent = AsmaulHusnaMockup;
+      break;
     case 'side-whatsapp':
-      return <WhatsAppMockup {...props} />;
+      MockupComponent = WhatsAppMockup;
+      break;
     default:
-      return <TasbeehMockup {...props} />;
+      MockupComponent = TasbeehMockup;
+      break;
   }
+
+  // Directly call the mockup component to get its real JSX elements
+  const rawElement = MockupComponent(localizedProps) as React.ReactElement;
+
+  if (isEn) {
+    return (
+      <div dir="ltr" className="w-full font-sans">
+        {translateTree(rawElement, 'en')}
+      </div>
+    );
+  }
+
+  return (
+    <div dir="rtl" className="w-full font-kufi">
+      {rawElement}
+    </div>
+  );
 };
 

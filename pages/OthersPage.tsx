@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LayoutGrid, ListFilter } from 'lucide-react';
 import ThemePageLock from '../components/ThemePageLock';
 import { useTheme } from '../context/ThemeContext';
 import { shareAsImage } from '../utils/shareAsImage';
@@ -28,7 +29,9 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
       ? '#FFFFFF' 
       : (theme.palette?.[0] || '#000000'));
       
-  const [activeTab, setActiveTab] = useState<'all' | 'quran' | 'sunnah' | 'favorites' | 'guide'>('quran');
+  const [activeTab, setActiveTab] = useState<'all' | 'quran' | 'sunnah' | 'favorites' | 'guide'>('all');
+  const [activeTabMode, setActiveTabMode] = useState<'grid' | 'list'>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string>('');
   const [playingText, setPlayingText] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -219,7 +222,9 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
     return [];
   };
 
-  const filteredItems = getFilteredItems();
+  const filteredItems = getFilteredItems().filter(item => 
+    (isEn ? (item.textEn || item.text) : item.text).includes(searchQuery)
+  );
 
   return (
     <div 
@@ -266,37 +271,35 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
         </div>
       </header>
 
-      {/* Main Tabs Control */}
-      <div className="px-4 py-2 z-20 shrink-0 max-w-2xl mx-auto w-full" dir={isEn ? 'ltr' : 'rtl'}>
-        <div className="flex rounded-xl p-1 bg-black/5 dark:bg-white/5 border border-black/5 gap-1">
-          <button 
-            onClick={() => switchTab('quran')}
-            className="flex-1 py-2.5 rounded-lg text-xs font-black transition-all duration-300 border"
-            style={getTabStyle(activeTab === 'quran')}
-          >
-            {isEn ? "The Noble Qur'an" : "القرآن الكريم"}
-          </button>
-          <button 
-            onClick={() => switchTab('sunnah')}
-            className="flex-1 py-2.5 rounded-lg text-xs font-black transition-all duration-300 border"
-            style={getTabStyle(activeTab === 'sunnah')}
-          >
-            {isEn ? "Prophetic Sunnah" : "السنة النبوية"}
-          </button>
-          <button 
-            onClick={() => switchTab('guide')}
-            className="flex-1 py-2.5 rounded-lg text-xs font-black transition-all duration-300 border"
-            style={getTabStyle(activeTab === 'guide')}
-          >
-            {isEn ? "Ruqyah Guide" : "دليل الرقية"}
-          </button>
+      {/* Search and View Mode Control */}
+      <div className="px-4 py-2 z-20 shrink-0 max-w-2xl mx-auto w-full flex items-center gap-2" dir={isEn ? 'ltr' : 'rtl'}>
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={isEn ? "Search..." : "بحث..."}
+            className="w-full py-2.5 px-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5"
+          />
         </div>
+        <button
+          onClick={() => setActiveTabMode('grid')}
+          className={`p-2.5 rounded-xl ${activeTabMode === 'grid' ? 'bg-black/10 dark:bg-white/10' : ''}`}
+        >
+          <LayoutGrid size={20} />
+        </button>
+        <button
+          onClick={() => setActiveTabMode('list')}
+          className={`p-2.5 rounded-xl ${activeTabMode === 'list' ? 'bg-black/10 dark:bg-white/10' : ''}`}
+        >
+          <ListFilter size={20} />
+        </button>
       </div>
 
       {/* Main Container */}
       <main className="w-full flex-1 overflow-y-auto px-4 pt-2 pb-4">
         <div 
-          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2 pb-6 ${isEn ? 'text-left' : 'text-right'}`}
+          className={`${activeTabMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'flex flex-col'} gap-4 pt-2 pb-6 ${isEn ? 'text-left' : 'text-right'}`}
           dir={isEn ? 'ltr' : 'rtl'}
         >
           <AnimatePresence mode="wait">
@@ -571,7 +574,7 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
         </button>
       </div>
 
-      {/* Zoom Modal - Full English Support */}
+      {/* Zoom Modal - Matches identical style & behavior of Adhkar & Duas pages */}
       {zoomedDuaa && (
         <div 
           className="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center p-4 backdrop-blur-sm" 
@@ -581,62 +584,64 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
             className="bg-modal-bg text-modal-text p-6 sm:p-8 rounded-3xl w-full max-w-2xl text-center relative scale-in shadow-2xl border-2 border-modal-border flex flex-col max-h-[90vh]" 
             style={{ 
               fontFamily: isEn ? 'inherit' : theme.font,
-              backgroundColor: theme.cardBg,
-              color: theme.textColor,
-              borderColor: theme.palette[0] + '44'
+              borderColor: theme.palette[0] || '#059669'
             }} 
             onClick={e => e.stopPropagation()}
             dir={isEn ? 'ltr' : 'rtl'}
           >
             <div className="overflow-y-auto hide-scrollbar flex-1 py-4">
-              <div className={`leading-relaxed ${isEn ? 'text-xl md:text-2xl font-medium' : 'text-3xl md:text-4xl font-amiri'}`}>
-                {isEn ? (zoomedDuaa.textEn || zoomedDuaa.text) : zoomedDuaa.text}
-              </div>
-              <p className="text-base sm:text-lg mt-6 font-bold" style={{ color: isBlackTheme ? '#FFFFFF' : theme.palette[0] }}>
-                {zoomedDuaa.type === 'quran'
-                  ? (isEn ? (zoomedDuaa.sourceEn || zoomedDuaa.source) : zoomedDuaa.source)
-                  : (isEn ? `Prophetic Sunnah • ${zoomedDuaa.sourceEn || zoomedDuaa.source}` : `السنة النبوية • ${zoomedDuaa.source}`)}
+              {/* Ruqyah Text */}
+              {isEn ? (
+                <div 
+                  className="text-xl md:text-2xl leading-relaxed font-sans font-medium text-center my-4 select-none text-balance"
+                  dir="ltr"
+                >
+                  {zoomedDuaa.textEn || zoomedDuaa.text}
+                </div>
+              ) : (
+                <div 
+                  className="text-3xl md:text-4xl leading-relaxed font-amiri text-center select-none"
+                  dir="rtl"
+                >
+                  {zoomedDuaa.text}
+                </div>
+              )}
+
+              {/* Subtitle in Emerald Green */}
+              <p 
+                className="text-base sm:text-lg mt-6 font-bold font-cairo" 
+                style={{ color: theme.palette[0] || '#059669' }} 
+                dir={isEn ? 'ltr' : 'rtl'}
+              >
+                {isEn 
+                  ? (zoomedDuaa.type === 'quran'
+                      ? `From the Holy Qur'an (${zoomedDuaa.sourceEn || zoomedDuaa.source})`
+                      : `From the Prophetic Sunnah (${zoomedDuaa.sourceEn || zoomedDuaa.source})`)
+                  : (zoomedDuaa.type === 'quran'
+                      ? `من آيات الرقية من القرآن الكريم (${zoomedDuaa.source})`
+                      : `من أدعية الرقية من السنة النبوية (${zoomedDuaa.source})`)}
               </p>
             </div>
 
-            <div className="mt-6 shrink-0 flex flex-wrap sm:flex-nowrap justify-center gap-2 sm:gap-3">
-              {/* Play Audio in Zoom Modal */}
-              <button
-                onClick={(e) => handlePlayAudio(zoomedDuaa, e)}
-                className="flex-1 py-3 px-4 rounded-xl font-bold bg-black/5 dark:bg-white/10 hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer text-xs sm:text-sm"
-                style={{ color: playingText === (isEn ? (zoomedDuaa.textEn || zoomedDuaa.text) : zoomedDuaa.text) ? '#ef4444' : 'inherit' }}
-                title={playingText === (isEn ? (zoomedDuaa.textEn || zoomedDuaa.text) : zoomedDuaa.text) ? (isEn ? "Stop Audio" : "إيقاف الاستماع") : (isEn ? "Listen" : "استماع صوتي")}
+            {/* Bottom Action Buttons: Share as Image & Close */}
+            <div className="mt-6 shrink-0 flex items-center gap-3" dir={isEn ? 'ltr' : 'rtl'}>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleShare(zoomedDuaa, e);
+                }} 
+                className="flex-1 py-3 sm:py-3.5 rounded-2xl font-bold text-white flex items-center justify-center gap-2 hover:opacity-95 active:scale-98 transition-all shadow-md cursor-pointer"
+                style={{ backgroundColor: theme.palette[0] || '#059669' }}
+                title={isEn ? "Share Image" : "مشاركة كصورة"}
               >
-                <i className={`fa-solid ${playingText === (isEn ? (zoomedDuaa.textEn || zoomedDuaa.text) : zoomedDuaa.text) ? 'fa-circle-pause text-red-500 animate-pulse' : 'fa-volume-high'}`}></i>
-                <span>{playingText === (isEn ? (zoomedDuaa.textEn || zoomedDuaa.text) : zoomedDuaa.text) ? (isEn ? "Stop" : "إيقاف") : (isEn ? "Listen" : "استماع")}</span>
+                <i className="fa-solid fa-share-nodes text-lg"></i>
+                <span>{isEn ? 'Share Image' : 'مشاركة كصورة'}</span>
               </button>
-
-              {/* Copy in Zoom Modal */}
-              <button
-                onClick={(e) => copyToClipboard(isEn ? (zoomedDuaa.textEn || zoomedDuaa.text) : zoomedDuaa.text, e)}
-                className="flex-1 py-3 px-4 rounded-xl font-bold bg-black/5 dark:bg-white/10 hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer text-xs sm:text-sm"
-                title={isEn ? "Copy" : "نسخ"}
-              >
-                <i className="fa-regular fa-copy"></i>
-                <span>{isEn ? "Copy" : "نسخ"}</span>
-              </button>
-
-              {/* Share in Zoom Modal */}
-              <button
-                onClick={(e) => handleShare(zoomedDuaa, e)}
-                className="flex-1 py-3 px-4 rounded-xl font-bold bg-black/5 dark:bg-white/10 hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer text-xs sm:text-sm"
-                title={isEn ? "Share" : "مشاركة"}
-              >
-                <i className="fa-solid fa-share-nodes"></i>
-                <span>{isEn ? "Share" : "مشاركة"}</span>
-              </button>
-
-              {/* Close Button */}
               <button 
                 onClick={() => setZoomedDuaa(null)} 
-                className="w-full sm:w-auto px-6 py-3 rounded-xl font-bold bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:opacity-90 transition-opacity cursor-pointer text-xs sm:text-sm"
+                className="flex-1 py-3 sm:py-3.5 rounded-2xl font-bold bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 active:scale-98 transition-all cursor-pointer"
               >
-                {isEn ? "Close" : "إغلاق"}
+                {isEn ? 'Close' : 'إغلاق'}
               </button>
             </div>
           </div>
