@@ -30,7 +30,6 @@ import { APP_VERSION, REMOTE_VERSION_URL, GOOGLE_PLAY_URL } from './constants';
 import UpdateNotificationModal from './components/UpdateNotificationModal';
 import { InAppChatNotification } from './components/InAppChatNotification';
 import { recordAppLaunch, markPageAsSeen } from './utils/badgeManager';
-import FloatingHelpButton from './components/FloatingHelpButton';
 import InitialOnboardingModal from './components/Community/InitialOnboardingModal';
 
 // --- Main App Component ---
@@ -135,7 +134,7 @@ function App() {
       'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'qibla', 
       'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'daily-wird', 'memorization',
       'phone-notifications', 'search', 'asmaul-husna', 'habit-tracker', 'community', 'direct-chat', 'group-chat', 'ahl-al-quran', 'others', 'islamic-sites',
-      'prophetic-seerah', 'page-guide'
+      'prophetic-seerah'
     ];
 
     if (pageId === 'phone-notifications') {
@@ -596,7 +595,6 @@ function AppContent({
       <RateUs />
       <MawlidNotification />
       <InAppChatNotification currentPage={page} navParams={navParams} onNavigate={handleNavigate} />
-      <FloatingHelpButton currentPage={page} onClick={() => handleNavigate('page-guide')} />
 
       {activeAdhanAlert && (
         <AdhanAlertModal

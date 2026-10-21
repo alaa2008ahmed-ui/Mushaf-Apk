@@ -15,6 +15,7 @@ import AutoScrollSettingsModal from './AutoScrollSettingsModal';
 import ListenSurahSelectModal from './ListenSurahSelectModal';
 import MushafSelectionModal from './MushafSelectionModal';
 import ShareAyahModal from './ShareAyahModal';
+import SurahDesignPickerModal from './SurahDesignPickerModal';
 
 export const QuranReaderModals = ({
     activeModals,
@@ -139,6 +140,23 @@ export const QuranReaderModals = ({
                     onClose={() => closeModal('scroll-speed-modal')}
                     onSelect={(speed: number) => updateSetting('scrollSpeed', speed, isLandscapeRef)}
                     currentMinutes={settings.scrollSpeed || 5}
+                    isLandscape={isLandscapeRef.current}
+                />
+            )}
+
+            {(activeModals.includes('surah-design-picker') || activeModals.includes('surah-design-modal')) && (
+                <SurahDesignPickerModal
+                    isOpen={true}
+                    onClose={() => {
+                        closeModal('surah-design-picker');
+                        closeModal('surah-design-modal');
+                    }}
+                    currentDesign={Number(settings.surahHeaderDesign) || 1}
+                    onSelectDesign={(d: number) => {
+                        updateSetting('surahHeaderDesign', d, isLandscapeRef);
+                        showToast('تم تغيير تصميم رأس السورة');
+                    }}
+                    currentTheme={currentTheme}
                     isLandscape={isLandscapeRef.current}
                 />
             )}

@@ -94,6 +94,26 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
     setActiveTabState(tab);
     communityService.setActiveTab(tab);
     setTabHistory(prev => [...prev, tab]);
+
+    // Close any previous guide immediately
+    setShowHeaderTour(false);
+    setShowChatsTour(false);
+    setShowCommunityTour(false);
+    setShowUsersTour(false);
+    setShowBlockedTour(false);
+
+    // When switching tabs, trigger the specific tab's guide if not seen before
+    setTimeout(() => {
+      if (tab === 'chats' && !getGuideSeen('tab_chats')) {
+        setShowChatsTour(true);
+      } else if (tab === 'community' && !getGuideSeen('tab_community')) {
+        setShowCommunityTour(true);
+      } else if (tab === 'users' && !getGuideSeen('tab_users')) {
+        setShowUsersTour(true);
+      } else if (tab === 'blocked' && !getGuideSeen('tab_blocked')) {
+        setShowBlockedTour(true);
+      }
+    }, 200);
   };
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -124,6 +144,24 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
   const [showCommunityTour, setShowCommunityTour] = useState(false);
   const [showUsersTour, setShowUsersTour] = useState(false);
   const [showBlockedTour, setShowBlockedTour] = useState(false);
+
+  // If header tour was already seen previously, check if the current active tab needs a tour
+  useEffect(() => {
+    if (getGuideSeen('community_header')) {
+      const timer = setTimeout(() => {
+        if (activeTab === 'chats' && !getGuideSeen('tab_chats')) {
+          setShowChatsTour(true);
+        } else if (activeTab === 'community' && !getGuideSeen('tab_community')) {
+          setShowCommunityTour(true);
+        } else if (activeTab === 'users' && !getGuideSeen('tab_users')) {
+          setShowUsersTour(true);
+        } else if (activeTab === 'blocked' && !getGuideSeen('tab_blocked')) {
+          setShowBlockedTour(true);
+        }
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -1742,6 +1780,17 @@ const CommunityPage: React.FC<CommunityPageProps> = ({ onBack, onNavigate, initi
         onClose={() => {
           setShowHeaderTour(false);
           setGuideSeen('community_header');
+          setTimeout(() => {
+            if (activeTab === 'chats' && !getGuideSeen('tab_chats')) {
+              setShowChatsTour(true);
+            } else if (activeTab === 'community' && !getGuideSeen('tab_community')) {
+              setShowCommunityTour(true);
+            } else if (activeTab === 'users' && !getGuideSeen('tab_users')) {
+              setShowUsersTour(true);
+            } else if (activeTab === 'blocked' && !getGuideSeen('tab_blocked')) {
+              setShowBlockedTour(true);
+            }
+          }, 250);
         }}
         isEn={isEn}
       />

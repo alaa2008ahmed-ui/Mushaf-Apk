@@ -4215,23 +4215,27 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 currentTheme={currentTheme} 
                 isLandscape={isLandscape}
             />
+            {activeModals.includes('search-modal') && <SearchModal quranData={quranData} onSelect={(s,a) => jumpToAyah(s,a, true)} onClose={() => closeModal('search-modal')} isLandscape={isLandscape} initialQuery={initialSearchQuery} readingMode={readingMode} currentTheme={currentTheme} />}
+            {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} readingMode={readingMode} settings={settings} showToast={showToast} />}
+            {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={themeSuffix} />}
+            {activeModals.includes('settings-modal') && <SettingsModal onClose={() => closeModal('settings-modal')} onOpenModal={openModal} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={themeSuffix} />}
             <SurahDesignPickerModal
-                isOpen={isSurahDesignPickerOpen}
-                onClose={() => setIsSurahDesignPickerOpen(false)}
-                currentDesign={settings.surahHeaderDesign || 1}
+                isOpen={isSurahDesignPickerOpen || activeModals.includes('surah-design-picker')}
+                onClose={() => {
+                    setIsSurahDesignPickerOpen(false);
+                    closeModal('surah-design-picker');
+                }}
+                currentDesign={Number(settings.surahHeaderDesign) || 1}
                 onSelectDesign={(d) => {
                     const newSettings = { ...settings, surahHeaderDesign: d };
                     setSettings(newSettings);
                     localStorage.setItem('quran_settings' + themeSuffix, JSON.stringify(newSettings));
                     window.dispatchEvent(new Event('settings-change'));
+                    showToast(isEn ? 'Surah header design updated' : 'تم تغيير تصميم رأس السورة');
                 }}
                 currentTheme={currentTheme}
                 isLandscape={isLandscape}
             />
-            {activeModals.includes('search-modal') && <SearchModal quranData={quranData} onSelect={(s,a) => jumpToAyah(s,a, true)} onClose={() => closeModal('search-modal')} isLandscape={isLandscape} initialQuery={initialSearchQuery} readingMode={readingMode} currentTheme={currentTheme} />}
-            {activeModals.includes('share-ayah') && <ShareAyahModal isOpen={true} onClose={() => closeModal('share-ayah')} currentAyah={currentAyah} quranData={quranData} currentTheme={currentTheme} readingMode={readingMode} settings={settings} showToast={showToast} />}
-            {activeModals.includes('themes-modal') && <ThemesModal onClose={() => closeModal('themes-modal')} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={themeSuffix} />}
-            {activeModals.includes('settings-modal') && <SettingsModal onClose={() => closeModal('settings-modal')} onOpenModal={openModal} showToast={showToast} isLandscape={isLandscape} readingMode={readingMode} modeSuffix={themeSuffix} />}
             {activeModals.includes('notification-settings-modal') && <NotificationSettingsModal onClose={() => closeModal('notification-settings-modal')} showToast={showToast} isLandscape={isLandscape} modeSuffix={themeSuffix} initialTab={modalParams?.tab} />}
             {activeModals.includes('font-modal') && <FontSelectModal isOpen={true} onClose={() => closeModal('font-modal')} isLandscape={isLandscape} readingMode={readingMode} currentFontId={settings.fontFamily} onSelect={(id) => {
                 const newSettings = { ...settings, fontFamily: id };

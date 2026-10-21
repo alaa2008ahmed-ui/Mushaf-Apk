@@ -21,7 +21,7 @@ import {
   CommunitySpotlightGuide, 
   getGuideSeen 
 } from '../components/Community/CommunitySpotlightGuide';
-import { CHAT_ROOM_STEPS } from '../components/Community/communityTourSteps';
+import { GROUP_CHAT_STEPS } from '../components/Community/communityTourSteps';
 import { ChatQuranCard, ChatMessageAudioPlayer } from './DirectChatPage';
 import EmojiPicker from '../components/Community/EmojiPicker';
 import QuranVerseModal from '../components/Community/QuranVerseModal';
@@ -79,7 +79,16 @@ const GroupChatPage: React.FC<GroupChatPageProps> = ({ groupId, onBack, onNaviga
   const [addMemberSearch, setAddMemberSearch] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [playingAudioUrl, setPlayingAudioUrl] = useState<string | null>(null);
-  const [showChatTour, setShowChatTour] = useState(() => !getGuideSeen('chat_room'));
+  const [showGroupTour, setShowGroupTour] = useState(() => !getGuideSeen('group_chat_room'));
+
+  const handleGroupTourStepChange = (stepIndex: number) => {
+    const currentStep = GROUP_CHAT_STEPS[stepIndex];
+    if (currentStep && (currentStep.id === 'group_chat_menu_options' || currentStep.id === 'group_chat_menu_admin')) {
+      setShowMenu(true);
+    } else {
+      setShowMenu(false);
+    }
+  };
 
   // Media Attachment state (image, video, file)
   const [showAttachmentPicker, setShowAttachmentPicker] = useState(false);
@@ -116,6 +125,8 @@ const GroupChatPage: React.FC<GroupChatPageProps> = ({ groupId, onBack, onNaviga
     if (!showMenu) return;
 
     const handleGlobalClickOutside = (event: MouseEvent | TouchEvent | PointerEvent) => {
+      // Keep menu open while the group tour is spotlighting the menu steps
+      if (showGroupTour) return;
       const target = event.target as Node;
       // If clicking inside the dropdown menu itself, let the item's onClick handle it
       if (menuDropdownRef.current && menuDropdownRef.current.contains(target)) {
@@ -811,15 +822,15 @@ const GroupChatPage: React.FC<GroupChatPageProps> = ({ groupId, onBack, onNaviga
         <div className="flex items-center gap-1.5 flex-shrink-0 relative">
           <button
             type="button"
-            onClick={() => setShowChatTour(true)}
+            onClick={() => setShowGroupTour(true)}
             className="w-9 h-9 rounded-xl flex items-center justify-center border transition-all active:scale-95 cursor-pointer"
             style={{
               backgroundColor: secondaryBg,
               borderColor: cardBorder,
               color: 'var(--top-bar-text, inherit)'
             }}
-            title={isEn ? "Chat Guide" : "دليل وشرح المحادثة"}
-            aria-label={isEn ? "Chat Guide" : "دليل وشرح المحادثة"}
+            title={isEn ? "Group Guide" : "دليل وشرح الحلقة والمجموعة"}
+            aria-label={isEn ? "Group Guide" : "دليل وشرح الحلقة والمجموعة"}
           >
             <HelpCircle size={17} />
           </button>
@@ -842,6 +853,7 @@ const GroupChatPage: React.FC<GroupChatPageProps> = ({ groupId, onBack, onNaviga
           <div className="relative" ref={menuContainerRef}>
             <button
               ref={menuButtonRef}
+              id="group-chat-menu-btn"
               type="button"
               onClick={() => setShowMenu(prev => !prev)}
               className="w-9 h-9 rounded-xl flex items-center justify-center border transition-all active:scale-95 cursor-pointer relative z-50"
@@ -868,6 +880,7 @@ const GroupChatPage: React.FC<GroupChatPageProps> = ({ groupId, onBack, onNaviga
                   />
                   <motion.div
                     ref={menuDropdownRef}
+                    id="group-chat-menu-dropdown"
                     initial={{ opacity: 0, scale: 0.95, y: -5 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -5 }}
@@ -1037,6 +1050,7 @@ const GroupChatPage: React.FC<GroupChatPageProps> = ({ groupId, onBack, onNaviga
       {/* Messages List Area */}
       <div 
         ref={messagesContainerRef}
+        id="group-chat-messages-area"
         className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3.5 overscroll-contain"
       >
         {/* Welcome Notice Banner */}
@@ -1410,7 +1424,7 @@ const GroupChatPage: React.FC<GroupChatPageProps> = ({ groupId, onBack, onNaviga
             )}
           </AnimatePresence>
 
-          <div className="flex items-center gap-1 sm:gap-1.5 w-full max-w-full overflow-hidden">
+          <div id="group-chat-input-row" className="flex items-center gap-1 sm:gap-1.5 w-full max-w-full overflow-hidden">
             {/* Three action buttons clustered tightly with minimal spacing */}
             <div className="flex items-center gap-0 shrink-0">
               {/* Quran Verse Share Button */}
@@ -2314,12 +2328,16 @@ const GroupChatPage: React.FC<GroupChatPageProps> = ({ groupId, onBack, onNaviga
         )}
       </AnimatePresence>
 
-      {/* Interactive Chat Room Spotlight Tour */}
+      {/* Interactive Group Chat Spotlight Tour */}
       <CommunitySpotlightGuide
-        guideKey="chat_room"
-        steps={CHAT_ROOM_STEPS}
-        isOpen={showChatTour}
-        onClose={() => setShowChatTour(false)}
+        guideKey="group_chat_room"
+        steps={GROUP_CHAT_STEPS}
+        isOpen={showGroupTour}
+        onStepChange={handleGroupTourStepChange}
+        onClose={() => {
+          setShowGroupTour(false);
+          setShowMenu(false);
+        }}
         isEn={isEn}
       />
     </div>

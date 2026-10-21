@@ -53,6 +53,7 @@ export const resetCommunityGuides = (): void => {
       'tab_users',
       'tab_blocked',
       'chat_room',
+      'group_chat_room',
       'memorization_setup_tour',
       'memorization_review_tour'
     ];

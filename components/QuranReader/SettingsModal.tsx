@@ -55,8 +55,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
     const activeThemeId = localStorage.getItem('current_theme_id' + modeSuffix) || settings.theme || 'black';
     const modalTheme = THEMES[activeThemeId as keyof typeof THEMES] || THEMES.black;
     const currentDesign = Number(settings.surahHeaderDesign) || 1;
-    const [isDesignDropdownOpen, setIsDesignDropdownOpen] = useState(false);
-    const availableDesigns = [1, 2, 3, 4, 7, 9, 10, 11, 14, 15, 16, 19, 20];
 
     const [activeColorField, setActiveColorField] = useState<'textColor' | 'bgColor' | 'highlightTextColor' | null>(null);
 
@@ -261,17 +259,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                     </div>
 
                     <div id="surah-header-design-section" className="border-b border-gray-200 dark:border-gray-700 py-2">
-                        <div className="flex items-center justify-between mb-1">
-                            <label className="text-xs font-bold opacity-80">تصميم رأس السورة</label>
-                            <span className="text-[10px] opacity-60 font-bold">{`نموذج ${toArabic(currentDesign)}`}</span>
-                        </div>
+                        <label className="text-xs font-bold block opacity-80 mb-1 text-right">
+                            {isEn ? "Surah Header Design" : "تصميم رأس السورة"}
+                        </label>
                         <div className="mt-1">
                             <button 
-                                onClick={() => setIsDesignDropdownOpen(!isDesignDropdownOpen)} 
-                                className="w-full themed-card-bg rounded-xl border-2 p-1 transition-all relative overflow-hidden active:scale-[0.98] group"
+                                type="button"
+                                onClick={() => onOpenModal('surah-design-picker')} 
+                                className="w-full themed-card-bg rounded-xl border-2 p-1.5 transition-all relative overflow-hidden active:scale-[0.98] hover:border-indigo-400 group flex items-center justify-between"
                                 style={{ borderColor: 'var(--qr-accent)' }}
+                                title={isEn ? "Choose Surah Header Design" : "اختيار تصميم رأس السورة"}
                             >
-                                <div className="pointer-events-none w-full">
+                                <div className="pointer-events-none flex-1 w-full">
                                     <SurahHeader 
                                         surahNumber={1}
                                         surahName="الفاتحة"
@@ -282,59 +281,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onOpenModal, sho
                                         compact={true}
                                     />
                                 </div>
-                                <div className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-75 group-hover:opacity-100 transition-opacity">
-                                    <i className={`fa-solid fa-chevron-${isDesignDropdownOpen ? 'up' : 'down'} text-[10px]`}></i>
+                                <div className="shrink-0 px-2 flex items-center justify-center text-xs opacity-50 group-hover:opacity-100 transition-opacity">
+                                    <i className="fa-solid fa-chevron-left"></i>
                                 </div>
                             </button>
                         </div>
-
-                        {isDesignDropdownOpen && (
-                            <div className="mt-2 max-h-60 overflow-y-auto p-2 space-y-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/90 dark:bg-black/50 animate-fadeIn">
-                                {availableDesigns.map((d) => {
-                                    const isSelected = currentDesign === d;
-                                    return (
-                                        <button
-                                            key={d}
-                                            onClick={() => {
-                                                updateSetting('surahHeaderDesign', d);
-                                                showToast(`تم تفعيل تصميم رأس السورة ${toArabic(d)}`);
-                                                setIsDesignDropdownOpen(false);
-                                            }}
-                                            className={`relative w-full rounded-xl border-2 transition-all p-1 text-right block overflow-hidden ${
-                                                isSelected 
-                                                    ? 'shadow-md scale-[1.01]' 
-                                                    : 'border-gray-200/90 dark:border-gray-700/90 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800/50'
-                                            }`}
-                                            style={{ 
-                                                borderColor: isSelected ? 'var(--qr-accent)' : undefined,
-                                                backgroundColor: isSelected ? 'var(--qr-accent-bg, rgba(16, 185, 129, 0.08))' : undefined
-                                            }}
-                                        >
-                                            <div className="flex items-center justify-between px-2 pb-1 text-[10px] font-bold opacity-80">
-                                                <span>{`نموذج ${toArabic(d)}`}</span>
-                                                {isSelected && (
-                                                    <span className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--qr-accent)' }}>
-                                                        <i className="fa-solid fa-circle-check"></i>
-                                                        <span>مفعل</span>
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="pointer-events-none w-full">
-                                                <SurahHeader 
-                                                    surahNumber={1}
-                                                    surahName="الفاتحة"
-                                                    surahType="مكية"
-                                                    ayahCount={7}
-                                                    currentTheme={modalTheme}
-                                                    design={d}
-                                                    compact={true}
-                                                />
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
                     </div>
 
                     <div id="scroll-speed-section" className="border-b pb-2 border-gray-200 dark:border-gray-700 space-y-2">

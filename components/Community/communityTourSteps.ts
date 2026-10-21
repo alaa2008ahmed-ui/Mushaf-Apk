@@ -281,10 +281,10 @@ export const TAB_CHATS_STEPS: SpotlightStep[] = [
   {
     id: 'tab_chats_item',
     targetSelector: '#community-tab-chats',
-    titleAr: 'تبويب الأصدقاء',
-    titleEn: 'Friends & Direct Chats',
-    descAr: 'يضم جميع محادثاتك الثنائية الخاصة، مع ظهور شارة حمراء توضح عدد الرسائل غير المقروءة.',
-    descEn: 'Displays all your 1-on-1 private conversations, with unread message counter badges.',
+    titleAr: 'تبويب الأصدقاء والمحادثات الخاصة',
+    titleEn: 'Friends & Direct Chats Tab',
+    descAr: 'يضم هذا التبويب محادثاتك الثنائية الخاصة مع الأصدقاء وقراء القرآن، مع ظهور شارة بعدد الرسائل الجديدة غير المقروءة.',
+    descEn: 'Contains all your 1-on-1 private conversations with friends and Quran readers, showing unread message badges.',
     badgeAr: 'الأصدقاء • Friends',
     badgeEn: 'Friends Tab',
     iconName: 'chat',
@@ -292,47 +292,73 @@ export const TAB_CHATS_STEPS: SpotlightStep[] = [
     gradient: 'from-sky-500 to-blue-600'
   },
   {
+    id: 'tab_chats_search',
+    targetSelector: '#community-search-container',
+    titleAr: 'البحث السريع في المحادثات',
+    titleEn: 'Quick Friend Search',
+    descAr: 'ابحث عن أصدقائك بالاسم أو الدولة أو رمز الحساب للوصول السريع إلى محادثاتك معهم.',
+    descEn: 'Search for friends by name, country, or account ID for rapid conversation access.',
+    badgeAr: 'البحث • Search',
+    badgeEn: 'Search',
+    iconName: 'search',
+    accentColor: '#8b5cf6',
+    gradient: 'from-purple-500 to-indigo-600'
+  },
+  {
     id: 'tab_chats_list',
     targetSelector: '#community-chats-section',
-    titleAr: 'قائمة المحادثات الخاصة',
+    titleAr: 'قائمة محادثات الأصدقاء',
     titleEn: 'Conversations List',
-    descAr: 'اضغط على أي صديق لفتح المحادثة، أو اسحب لليسار للخيارات. يمكنك إرسال آيات بالرسم العثماني وتسجيلات صوتية.',
-    descEn: 'Tap any friend to open chat. Share Uthmani Qur’an verses, voice notes, and media files.',
-    badgeAr: 'المحادثات',
-    badgeEn: 'Chat Rooms',
+    descAr: 'اضغط على أي صديق لفتح المحادثة الفورية، مشاركة الآيات برسم المصحف، إرسال تلاوات صوتية، أو السحب لحذف المحادثة.',
+    descEn: 'Tap any friend to open instant chat, share Uthmani verses, send voice notes, or swipe to remove conversation.',
+    badgeAr: 'المحادثات • Chats',
+    badgeEn: 'Chat List',
     iconName: 'action',
     accentColor: '#10b981',
     gradient: 'from-emerald-500 to-teal-600'
   }
 ];
 
-// 5. خطوات إرشاد تبويب المجتمع (المجموعات والحلقات)
+// 5. خطوات إرشاد تبويب المجتمع (المجموعات والحلقات القرآنية)
 export const TAB_COMMUNITY_STEPS: SpotlightStep[] = [
   {
-    id: 'tab_comm_create',
-    targetSelector: '#community-create-group-btn',
-    titleAr: 'زر إنشاء مجموعة جديدة',
-    titleEn: 'Create New Group',
-    descAr: 'يمكنك إنشاء حلقة قرآنية أو مجموعة تدبرية، وتحديد ما إذا كانت عامة للجميع أو خاصة تتطلب دعوة.',
-    descEn: 'Create a Qur’anic study circle or group, setting it as public or invitation-only.',
-    badgeAr: 'إنشاء حلقة • Create',
-    badgeEn: 'Create Circle',
+    id: 'tab_comm_tab_item',
+    targetSelector: '#community-tab-groups',
+    titleAr: 'تبويب المجتمع والحلقات القرآنية',
+    titleEn: 'Community & Study Circles Tab',
+    descAr: 'مساحة الحلقات والمجموعات الجماعية لتدارس كتاب الله وتبادل الفوائد والخواطر وتنسيق الختمات المشتركة.',
+    descEn: 'A collective space for Quranic study circles, collective Khatm, and sharing Islamic reflections.',
+    badgeAr: 'المجتمع • Community',
+    badgeEn: 'Community Tab',
     iconName: 'group',
     accentColor: '#10b981',
     gradient: 'from-emerald-500 to-teal-600'
   },
   {
+    id: 'tab_comm_create',
+    targetSelector: '#community-create-group-btn',
+    titleAr: 'زر إنشاء حلقة جديدة',
+    titleEn: 'Create New Circle / Group',
+    descAr: 'أسس حلقتك القرآنية الخاصة أو العامة، وحدد اسمها وصورتها وهدفها، ودعُ القراء للانضمام والتدارس.',
+    descEn: 'Found your private or public circle, set its name, icon and purpose, and invite fellow readers.',
+    badgeAr: 'إنشاء حلقة • Create',
+    badgeEn: 'Create Circle',
+    iconName: 'action',
+    accentColor: '#f59e0b',
+    gradient: 'from-amber-500 to-orange-600'
+  },
+  {
     id: 'tab_comm_list',
     targetSelector: '#community-groups-section',
-    titleAr: 'قائمة حلقات المجتمع',
-    titleEn: 'Community Circles',
-    descAr: 'تصفح الحلقات المتاحة والدعوات المعلقة. انضم لحلقات ختم القرآن وتدارس الآيات وتفاعل مع الإخوة.',
-    descEn: 'Browse study circles and pending invitations. Join Khatm groups and Quranic discussions.',
+    titleAr: 'قائمة الحلقات والدعوات',
+    titleEn: 'Circles & Pending Invites',
+    descAr: 'تصفح حلقات المجتمع المتاحة، انضم للحلقات العامة، أو تفاعل مع دعوات الانضمام المعلقة المرسلة إليك.',
+    descEn: 'Explore available community circles, join public groups, or accept pending invitations sent to you.',
     badgeAr: 'المجموعات والحلقات',
     badgeEn: 'Circles List',
     iconName: 'tab',
-    accentColor: '#f59e0b',
-    gradient: 'from-amber-500 to-orange-600'
+    accentColor: '#0ea5e9',
+    gradient: 'from-sky-500 to-blue-600'
   }
 ];
 
@@ -341,10 +367,10 @@ export const TAB_USERS_STEPS: SpotlightStep[] = [
   {
     id: 'tab_users_item',
     targetSelector: '#community-tab-users',
-    titleAr: 'دليل الأعضاء',
-    titleEn: 'Members Directory',
-    descAr: 'يعرض جميع قراء المصحف المسجلين من أنحاء العالم مع علم دولتهم وحالتهم (متصل الآن أو غير متصل).',
-    descEn: 'Shows all registered Qur’an readers worldwide, their country flags, and online presence.',
+    titleAr: 'دليل قراء المصحف الشريف',
+    titleEn: 'Holy Quran Readers Directory',
+    descAr: 'دليل عالمي يجمع قراء المصحف من مختلف الدول، يعرض بلدهم وحالة اتصالهم لربط قلوب المسلمين في كتاب الله.',
+    descEn: 'A global directory connecting Quran readers worldwide, displaying country flags and live online status.',
     badgeAr: 'الأعضاء • Members',
     badgeEn: 'Directory',
     iconName: 'user',
@@ -354,10 +380,10 @@ export const TAB_USERS_STEPS: SpotlightStep[] = [
   {
     id: 'tab_users_actions',
     targetSelector: '#community-users-section',
-    titleAr: 'بدء المحادثة والإضافة',
-    titleEn: 'Connecting with Members',
-    descAr: 'اضغط على زر المراسلة أو الإضافة لبدء حوار مبارك مع أي عضو، أو اضغط على الملف للتعرف عليه.',
-    descEn: 'Tap chat or add button to start a blessed connection, or view their profile bio.',
+    titleAr: 'التواصل والتعارف الإيماني',
+    titleEn: 'Connecting & Adding Friends',
+    descAr: 'اضغط على زر المحادثة لبدء حوار مبارك، أو زر الإضافة لإرسال طلب صداقة، أو اضغط على الملف للاطلاع على بيانات القارئ.',
+    descEn: 'Tap chat to start a direct message, add button to send a friend request, or tap the profile for details.',
     badgeAr: 'التواصل والتعارف',
     badgeEn: 'Direct Connection',
     iconName: 'action',
@@ -369,21 +395,155 @@ export const TAB_USERS_STEPS: SpotlightStep[] = [
 // 7. خطوات إرشاد تبويب الحظر
 export const TAB_BLOCKED_STEPS: SpotlightStep[] = [
   {
-    id: 'tab_blocked_info',
-    targetSelector: '#community-blocked-section',
-    titleAr: 'قائمة الحظر والأمان',
-    titleEn: 'Blocked List & Privacy',
-    descAr: 'هنا يمكنك مراجعة الأشخاص المحظورين، وإلغاء الحظر عن أي مستخدم بضغطة زر لتعود للتواصل معه.',
-    descEn: 'Review blocked users and unblock any user with one tap to resume communication.',
+    id: 'tab_blocked_tab_item',
+    targetSelector: '#community-tab-blocked',
+    titleAr: 'تبويب الحظر والخصوصية',
+    titleEn: 'Block & Privacy Tab',
+    descAr: 'قسم مخصص للتحكم بالخصوصية وضمان أمان تجربتك الإيمانية داخل مجتمع المصحف.',
+    descEn: 'Dedicated section to manage privacy and safeguard your Quranic community experience.',
     badgeAr: 'الأمان والخصوصية',
-    badgeEn: 'Security & Block',
+    badgeEn: 'Privacy Tab',
     iconName: 'block',
     accentColor: '#ec4899',
     gradient: 'from-rose-500 to-pink-600'
+  },
+  {
+    id: 'tab_blocked_info',
+    targetSelector: '#community-blocked-section',
+    titleAr: 'إدارة الحسابات المحظورة',
+    titleEn: 'Manage Blocked Accounts',
+    descAr: 'هنا يمكنك مراجعة الأشخاص المحظورين، وإلغاء الحظر عن أي مستخدم بضغطة زر لتعود للتواصل معه متى شئت.',
+    descEn: 'Review blocked users and unblock any user with one tap to resume communication whenever you want.',
+    badgeAr: 'قائمة الحظر',
+    badgeEn: 'Blocked List',
+    iconName: 'action',
+    accentColor: '#ef4444',
+    gradient: 'from-red-500 to-rose-600'
   }
 ];
 
-// 8. خطوات إرشاد داخل غرفة الدردشة (Direct & Group Chat)
+// 8. خطوات إرشاد شاشة محادثة المجموعة وزر النقاط الثلاثة (Group Chat Room)
+export const GROUP_CHAT_STEPS: SpotlightStep[] = [
+  {
+    id: 'group_chat_header',
+    targetSelector: '#chat-header-bar',
+    titleAr: 'شريط الحلقة ومعلوماتها',
+    titleEn: 'Group Header & Details',
+    descAr: 'يعرض اسم المجموعة وصورتها وعدد أعضائها. يمكنك الضغط على اسم المجموعة في أي وقت لفتح نافذة التفاصيل وقائمة الأعضاء.',
+    descEn: 'Displays the group name, avatar, and total members. Tap the group name anytime to view its details and member list.',
+    badgeAr: 'معلومات الحلقة',
+    badgeEn: 'Group Info',
+    iconName: 'group',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  },
+  {
+    id: 'group_chat_menu_button',
+    targetSelector: '#group-chat-menu-btn',
+    titleAr: 'زر النقاط الثلاثة (الخيارات الإضافية)',
+    titleEn: 'Three-Dots Options Menu',
+    descAr: 'الزر المخصص لفتح القائمة السريعة للتحكم بالمجموعة وإدارتها والوصول لكافة خيارات الحلقة وأوامرها.',
+    descEn: 'The button to open the quick options and group management menu. Access all commands and features here.',
+    badgeAr: 'زر الخيارات • ...',
+    badgeEn: '3-Dots Menu',
+    iconName: 'action',
+    accentColor: '#0ea5e9',
+    gradient: 'from-sky-500 to-blue-600'
+  },
+  {
+    id: 'group_chat_menu_options',
+    targetSelector: '#group-chat-menu-btn',
+    titleAr: 'قوائم زر النقاط: معلومات ونسخ المعرّف',
+    titleEn: 'Menu: Group Info & Copy ID',
+    descAr: '• معلومات المجموعة: فتح بطاقة تعريفية بالحلقة، تاريخ إنشائها، ووصفها، وتصفح قائمة كافة الأعضاء.\n• نسخ معرّف المجموعة: نسخ الرمز التعريفي الفريد لمشاركته ودعوة الأصدقاء للانضمام.',
+    descEn: '• Group Information: Opens full details, circle description, and member roster.\n• Copy Group ID: Copies the unique circle ID to share and invite your friends.',
+    badgeAr: 'المعلومات والمعرّف',
+    badgeEn: 'Info & ID',
+    iconName: 'tab',
+    accentColor: '#8b5cf6',
+    gradient: 'from-purple-500 to-indigo-600'
+  },
+  {
+    id: 'group_chat_menu_admin',
+    targetSelector: '#group-chat-menu-btn',
+    titleAr: 'قوائم زر النقاط: إدارة الحلقة والتحكم',
+    titleEn: 'Menu: Circle Management & Options',
+    descAr: '• تعديل المجموعة (للمنشئ): تغيير اسم الحلقة ووصفها وصورتها.\n• إضافة أعضاء (للمنشئ): دعوة قراء جدد من دليل الأعضاء.\n• مسح الرسائل (للمنشئ): إفراغ سجل المحادثة.\n• مغادرة / حذف المجموعة: للأعضاء لمغادرة الحلقة، أو للمنشئ لحذفها نهائياً.',
+    descEn: '• Edit Group (Creator): Modify name, description, and avatar.\n• Add Members (Creator): Invite new members.\n• Clear Messages (Creator): Clear chat history.\n• Leave / Delete: Leave the circle or delete it permanently.',
+    badgeAr: 'خيارات التحكم والإدارة',
+    badgeEn: 'Management Menus',
+    iconName: 'action',
+    accentColor: '#f59e0b',
+    gradient: 'from-amber-500 to-orange-600'
+  },
+  {
+    id: 'group_chat_feed',
+    targetSelector: '#group-chat-messages-area',
+    titleAr: 'منطقة رسائل وتدارس المجموعة',
+    titleEn: 'Messages & Quranic Study Feed',
+    descAr: 'هنا يجتمع الإخوة لتدارس الآيات وتبادل الفوائد والتسجيلات. يمكنك الضغط على صورة أي عضو لعرض ملفه الشخصي ومراسلته مباشرة أو إرسال طلب صداقة.',
+    descEn: 'Where members gather to study verses and share Islamic wisdom. Tap any member avatar to view their profile, send a friend request, or chat directly.',
+    badgeAr: 'حلقة التدارس',
+    badgeEn: 'Discussion Feed',
+    iconName: 'chat',
+    accentColor: '#3b82f6',
+    gradient: 'from-blue-500 to-indigo-600'
+  },
+  {
+    id: 'group_chat_verse',
+    targetSelector: '#chat-btn-verse',
+    titleAr: 'مشاركة آيات القرآن الكريم',
+    titleEn: 'Share Qur’an Verses',
+    descAr: 'ميزة تفاعلية لاختيار أي آية أو مقطع من المصحف بالرسم العثماني الشريف، مع إطارات إسلامية مذهبة وتلاوات صوتية عطرة لمشاركتها فوراً داخل الحلقة.',
+    descEn: 'Interactive feature to select verses in Uthmani script with Islamic ornate frames and recitation audio to share in the circle.',
+    badgeAr: 'آية كريمة • Verse',
+    badgeEn: 'Holy Verse',
+    iconName: 'verse',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  },
+  {
+    id: 'group_chat_attach',
+    targetSelector: '#chat-btn-attach',
+    titleAr: 'إرفاق الوسائط والمستندات',
+    titleEn: 'Media & File Attachments',
+    descAr: 'إمكانية إرسال واسترداد الصور والمقاطع المرئية والمستندات والملفات الصوتية لدعم حلقات الحفظ ونشر الفوائد النافعة.',
+    descEn: 'Send photos, documents, videos, and files to enrich study sessions and lessons within the circle.',
+    badgeAr: 'المرفقات • Attach',
+    badgeEn: 'Attachments',
+    iconName: 'attach',
+    accentColor: '#0ea5e9',
+    gradient: 'from-sky-500 to-blue-600'
+  },
+  {
+    id: 'group_chat_emoji',
+    targetSelector: '#chat-btn-emoji',
+    titleAr: 'أذكار وتعبيرات إسلامية جاهزة',
+    titleEn: 'Adhkar & Islamic Expressions',
+    descAr: 'قائمة سريعة للأذكار والأدعية والتحيات الإسلامية المباركة والرموز التعبيرية لإرسالها بضغطة زر واحدة للتفاعل الإيماني.',
+    descEn: 'Quick picker for blessed Islamic adhkar, greetings, and emojis for instant one-tap responses.',
+    badgeAr: 'أذكار وتعبيرات',
+    badgeEn: 'Adhkar Picker',
+    iconName: 'emoji',
+    accentColor: '#8b5cf6',
+    gradient: 'from-purple-500 to-indigo-600'
+  },
+  {
+    id: 'group_chat_input_voice',
+    targetSelector: '#group-chat-input-row',
+    titleAr: 'الكتابة والتسجيل الصوتي والتلاوة',
+    titleEn: 'Text Input & Audio Recitation',
+    descAr: 'اكتب رسالتك النصية هنا، أو اضغط زر الميكروفون لتسجيل تلاوة صوتية نقية بصوتك ليسمعها إخوانك في الحلقة ويتفاعلوا معها.',
+    descEn: 'Type text messages, or tap the microphone button to record audio recitations with your voice for group members to hear.',
+    badgeAr: 'الكتابة والتسجيل',
+    badgeEn: 'Input & Audio',
+    iconName: 'voice',
+    accentColor: '#ec4899',
+    gradient: 'from-pink-500 to-rose-600'
+  }
+];
+
+// 9. خطوات إرشاد داخل غرفة الدردشة الفردية (Direct Chat)
 export const CHAT_ROOM_STEPS: SpotlightStep[] = [
   {
     id: 'chat_header',

@@ -12,7 +12,7 @@ import VerseSection from '../components/MainMenu/VerseSection';
 import TitleSection from '../components/MainMenu/TitleSection';
 import GridSection from '../components/MainMenu/GridSection';
 import VerseContextMenu from '../components/MainMenu/VerseContextMenu';
-import { Palette, Globe, HelpCircle } from 'lucide-react';
+import { Palette } from 'lucide-react';
 import { useVoiceControl } from '../context/VoiceControlContext';
 import { usePrayerTimes } from '../context/PrayerTimesContext';
 import { prayerNamesAr } from '../data/prayerTimesData';
@@ -188,6 +188,8 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   });
   const { theme, themeKey } = useTheme();
   const isBlackTheme = themeKey === 'deep_black' || theme.bgColor === '#000000' || theme.name === 'اسود' || theme.name === 'black';
+  const isDarkTheme = isBlackTheme || theme.isDark || theme.bgColor === '#000000' || (theme.textColor && theme.textColor.toLowerCase() === '#ffffff');
+  const quickMenuIconBorderColor = isDarkTheme ? '#FFFFFF' : '#000000';
   const cardHeaderColor = isBlackTheme ? '#FFFFFF' : theme.palette[0];
   const cardBorderColor = isBlackTheme ? '#FFFFFF' : theme.palette[0];
   const cardButtonColor = isBlackTheme ? '#000000' : theme.palette[0];
@@ -289,12 +291,8 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   useEffect(() => {
     const handleResize = () => {
       setIsLandscape(window.innerWidth > window.innerHeight);
-      const guideBtn = document.getElementById('guide-help-btn');
       const themesBtn = document.getElementById('themes-btn');
-      if (guideBtn) {
-        const gRect = guideBtn.getBoundingClientRect();
-        if (gRect.height > 0) buttonThresholdRef.current = gRect.bottom + 6;
-      } else if (themesBtn) {
+      if (themesBtn) {
         const tRect = themesBtn.getBoundingClientRect();
         if (tRect.height > 0) buttonThresholdRef.current = tRect.bottom + 32;
       }
@@ -759,7 +757,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
         </svg>
       </button>
 
-      {/* القائمة المنسدلة الرأسية بالثلاث أزرار تحت بعض */}
+      {/* القائمة المنسدلة الرأسية بالثلاث أزرار تحت بعض داخل إطار موحد يتغير لونه مع الثيم وبدون إطار حول كل زر منفصل */}
       <AnimatePresence>
         {isQuickMenuOpen && !isThemesSidebarOpen && (
           <motion.div
@@ -767,7 +765,16 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.85, y: -6 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className={`absolute top-full mt-2 ${dir === 'ltr' ? 'left-0' : 'right-0'} z-[1150] flex flex-col items-center gap-2`}
+            className={`absolute top-full mt-2 ${dir === 'ltr' ? 'left-0' : 'right-0'} z-[1150] flex flex-col items-center gap-1.5 p-1 rounded-full shadow-lg backdrop-blur-md`}
+            style={{
+              backgroundColor: isBlackTheme
+                ? 'rgba(15, 23, 42, 0.92)'
+                : (isDarkTheme ? 'rgba(30, 41, 59, 0.92)' : (theme.cardBg || 'rgba(255, 255, 255, 0.95)')),
+              border: `2px solid ${isBlackTheme ? '#FFFFFF' : (theme.accent || theme.palette?.[0] || '#10b981')}`,
+              boxShadow: isDarkTheme
+                ? '0 6px 20px rgba(0, 0, 0, 0.6)'
+                : '0 6px 20px rgba(0, 0, 0, 0.15)'
+            }}
             onClick={(e) => e.stopPropagation()}
           >
               {/* 1. زر الثيمات */}
@@ -778,10 +785,10 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                   setIsQuickMenuOpen(false);
                   setIsThemesSidebarOpen(true);
                 }}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90 hover:scale-110 cursor-pointer shadow-sm select-none"
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90 hover:scale-110 cursor-pointer select-none"
                 style={{ 
-                  backgroundColor: (isBlackTheme || theme.isDark) ? 'rgba(255,255,255,0.18)' : `${theme.palette[0]}18`,
-                  color: (isBlackTheme || theme.isDark) ? '#FFFFFF' : (theme.accent || theme.palette[0])
+                  backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.15)' : `${theme.palette?.[0] || '#10b981'}18`,
+                  color: isDarkTheme ? '#FFFFFF' : (theme.accent || theme.palette?.[0] || '#10b981')
                 }}
                 title={language === 'en' ? 'Themes' : 'الثيمات والمظهر'}
                 aria-label={language === 'en' ? 'Themes' : 'الثيمات والمظهر'}
@@ -797,10 +804,10 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                   toggleLanguage();
                   setIsQuickMenuOpen(false);
                 }}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90 hover:scale-110 cursor-pointer shadow-sm select-none"
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90 hover:scale-110 cursor-pointer select-none"
                 style={{ 
-                  backgroundColor: (isBlackTheme || theme.isDark) ? 'rgba(255,255,255,0.18)' : `${theme.palette[0]}18`,
-                  color: (isBlackTheme || theme.isDark) ? '#FFFFFF' : (theme.accent || theme.palette[0])
+                  backgroundColor: isDarkTheme ? 'rgba(255,255,255,0.15)' : `${theme.palette?.[0] || '#10b981'}18`,
+                  color: isDarkTheme ? '#FFFFFF' : (theme.accent || theme.palette?.[0] || '#10b981')
                 }}
                 title={language === 'ar' ? 'English' : 'اللغة العربية'}
                 aria-label={language === 'ar' ? 'English' : 'اللغة العربية'}
@@ -808,25 +815,6 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                 <span className="text-xs font-bold font-mono pointer-events-none">
                   {language === 'ar' ? 'En' : 'Ar'}
                 </span>
-              </button>
-
-              {/* 3. زر دليل الصفحات */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsQuickMenuOpen(false);
-                  onNavigate('page-guide');
-                }}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90 hover:scale-110 cursor-pointer shadow-sm select-none"
-                style={{ 
-                  backgroundColor: (isBlackTheme || theme.isDark) ? 'rgba(255,255,255,0.18)' : `${theme.palette[0]}18`,
-                  color: (isBlackTheme || theme.isDark) ? '#FFFFFF' : (theme.accent || theme.palette[0])
-                }}
-                title={language === 'en' ? 'Pages Guide' : 'دليل صفحات التطبيق'}
-                aria-label={language === 'en' ? 'Pages Guide' : 'دليل صفحات التطبيق'}
-              >
-                <HelpCircle className="w-[18px] h-[18px] pointer-events-none" />
               </button>
             </motion.div>
         )}
@@ -862,17 +850,10 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
             const quranRowEl = document.getElementById('menu-item-quran') || document.querySelector('[data-item-id="quran"]') || document.getElementById('grid-section');
             if (quranRowEl) {
               const rect = quranRowEl.getBoundingClientRect();
-              const guideBtn = document.getElementById('guide-help-btn');
-              const themesBtn = document.getElementById('themes-btn');
-
               // حفظ موقع الأزرار قبل الاختفاء لتفادي تأثر القياس بالتصغير scale-0
+              const themesBtn = document.getElementById('themes-btn');
               if (!hideIconsOnScroll) {
-                if (guideBtn) {
-                  const gRect = guideBtn.getBoundingClientRect();
-                  if (gRect.height > 0) {
-                    buttonThresholdRef.current = gRect.bottom + 6;
-                  }
-                } else if (themesBtn) {
+                if (themesBtn) {
                   const tRect = themesBtn.getBoundingClientRect();
                   if (tRect.height > 0) {
                     buttonThresholdRef.current = tRect.bottom + 32;

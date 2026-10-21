@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Globe } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -40,7 +39,7 @@ export const InitialOnboardingModal: React.FC<InitialOnboardingModalProps> = ({
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        className="w-full max-w-sm rounded-3xl p-6 sm:p-7 shadow-2xl border flex flex-col items-center text-center relative overflow-hidden"
+        className="w-full max-w-xs sm:max-w-sm rounded-3xl p-5 sm:p-6 shadow-2xl border flex flex-col items-center text-center relative overflow-hidden"
         style={{
           backgroundColor: cardBg,
           borderColor: borderColor,
@@ -48,34 +47,54 @@ export const InitialOnboardingModal: React.FC<InitialOnboardingModalProps> = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4 shadow-inner">
-          <Globe size={30} />
+        {/* أول القائمة: الصف الأول (مصحف أحمد وليلى) والصف الثاني (Mushaf Ahmed &laila) */}
+        <div className="flex flex-col items-center justify-center w-full mb-4">
+          <div 
+            className="w-12 h-12 rounded-2xl flex items-center justify-center mb-2.5 shadow-md"
+            style={{ backgroundColor: isBlackTheme ? 'rgba(255,255,255,0.12)' : `${theme?.palette?.[0] || '#059669'}18` }}
+          >
+            <img 
+              src="/app_icon.png" 
+              alt="Logo" 
+              className="w-8 h-8 object-contain rounded-lg"
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = 'none';
+              }} 
+            />
+          </div>
+          <h1 
+            className="text-xl sm:text-2xl font-black font-kufi tracking-tight mb-1"
+            style={{ color: isBlackTheme ? '#FFFFFF' : (theme?.palette?.[0] || '#059669') }}
+          >
+            مصحف أحمد وليلى
+          </h1>
+          <h2 
+            className="text-sm sm:text-base font-bold font-sans tracking-wide opacity-85"
+            style={{ color: isBlackTheme ? '#E5E7EB' : (theme?.textColor || '#374151') }}
+          >
+            Mushaf Ahmed &laila
+          </h2>
         </div>
 
-        <h2 className="text-lg sm:text-xl font-black mb-2">
+        <div className="w-full h-px bg-current opacity-10 mb-4" />
+
+        <h3 className="text-xs sm:text-sm font-bold mb-4 opacity-75 whitespace-nowrap tracking-tight">
           اختر لغة التطبيق / Choose App Language
-        </h2>
-        <p className="text-xs sm:text-sm opacity-75 mb-6 leading-relaxed">
-          يرجى اختيار لغة العرض المفضلة لديك للبدء في استخدام مصحف أحمد وليلى.
-          <br />
-          Please select your preferred display language to start.
-        </p>
+        </h3>
 
         <div className="w-full space-y-3">
           <button
             onClick={() => handleSelectLanguage('ar')}
-            className="w-full py-3.5 px-6 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="w-full py-3.5 px-6 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
           >
             <span>العربية</span>
-            <span className="text-xs opacity-85 font-normal">(Arabic)</span>
           </button>
 
           <button
             onClick={() => handleSelectLanguage('en')}
-            className="w-full py-3.5 px-6 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
+            className="w-full py-3.5 px-6 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
           >
             <span>English</span>
-            <span className="text-xs opacity-85 font-normal">(الإنجليزية)</span>
           </button>
         </div>
       </motion.div>
