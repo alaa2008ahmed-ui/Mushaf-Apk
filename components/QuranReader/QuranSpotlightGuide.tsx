@@ -32,6 +32,7 @@ interface QuranSpotlightGuideProps {
   isOpen: boolean;
   onClose: () => void;
   isEn?: boolean;
+  onStepChange?: (stepIndex: number, step: QuranGuideStep) => void;
 }
 
 export const getQuranGuideSeen = (guideKey: string): boolean => {
@@ -116,6 +117,7 @@ export const QuranSpotlightGuide: React.FC<QuranSpotlightGuideProps> = ({
   isOpen,
   onClose,
   isEn = false,
+  onStepChange,
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
@@ -129,6 +131,42 @@ export const QuranSpotlightGuide: React.FC<QuranSpotlightGuideProps> = ({
   }, [isOpen, guideKey]);
 
   const step = steps[currentStepIndex];
+
+  // Notify parent of step change
+  useEffect(() => {
+    if (isOpen && step && onStepChange) {
+      onStepChange(currentStepIndex, step);
+    }
+  }, [isOpen, currentStepIndex, step, onStepChange]);
+
+  // Helper to find the scrollable parent container of a given element
+  const findScrollParent = useCallback((el: HTMLElement): HTMLElement | null => {
+    // 1. Direct check for the Quran floating sidebar menu container
+    const menuContainer = el.closest('#floating-menu-scroll-container') as HTMLElement | null;
+    if (menuContainer) return menuContainer;
+
+    // 2. Check if inside floating-menu
+    const floatingMenu = el.closest('#floating-menu') as HTMLElement | null;
+    if (floatingMenu) {
+      const scrollableInside = floatingMenu.querySelector('.overflow-y-auto') as HTMLElement | null;
+      if (scrollableInside) return scrollableInside;
+    }
+
+    // 3. Direct check for the Quran reader scroll container
+    const mushafContent = el.closest('#mushaf-content') as HTMLElement | null;
+    if (mushafContent) return mushafContent;
+
+    // 4. Walk up the DOM tree looking for an overflow container
+    let p = el.parentElement;
+    while (p && p !== document.body && p !== document.documentElement) {
+      const s = window.getComputedStyle(p);
+      if ((s.overflowY === 'auto' || s.overflowY === 'scroll') && p.scrollHeight > p.clientHeight + 10) {
+        return p;
+      }
+      p = p.parentElement;
+    }
+    return null;
+  }, []);
 
   // Update target bounding box
   const updateRect = useCallback(() => {
@@ -154,23 +192,12 @@ export const QuranSpotlightGuide: React.FC<QuranSpotlightGuideProps> = ({
         });
 
         if (visibleElements.length > 0) {
-          const viewportH = window.innerHeight;
-          // Prefer element visible in current viewport
-          const inViewport = visibleElements.find(el => {
-            const r = el.getBoundingClientRect();
-            return r.bottom > 50 && r.top < viewportH - 50;
-          });
-
-          const chosen = inViewport || visibleElements[0];
-
-          // If not in viewport, bring it into view smoothly
-          const r = chosen.getBoundingClientRect();
-          if (r.bottom <= 50 || r.top >= viewportH - 50) {
-            try {
-              chosen.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-            } catch (e) {}
+          let chosen = visibleElements[0];
+          // If this step targets Surah Header, prioritize Surah Al-Fatihah on Page 1
+          if (step.id === 'surah_header_style') {
+            const fatihahEl = visibleElements.find(el => el.closest('#page-1'));
+            if (fatihahEl) chosen = fatihahEl;
           }
-
           const finalRect = chosen.getBoundingClientRect();
           if (finalRect.width > 0 && finalRect.height > 0) {
             setTargetRect(finalRect);
@@ -183,28 +210,113 @@ export const QuranSpotlightGuide: React.FC<QuranSpotlightGuideProps> = ({
     setTargetRect(null);
   }, [step]);
 
+  // Smoothly scroll the container or window to bring the target element into view
+  const scrollToTarget = useCallback((chosen: HTMLElement) => {
+    try {
+      const scrollParent = findScrollParent(chosen);
+      if (scrollParent) {
+        const isSidebarGuide = guideKey === 'sidebar_menu' || scrollParent.id === 'floating-menu-scroll-container';
+
+        // Step 0 in sidebar menu: reset to top
+        if (isSidebarGuide && currentStepIndex === 0) {
+          scrollParent.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+
+        // Special handling for Surah Header frame:
+        // Scroll the mushaf-content container to top: 0 so Surah Al-Fatihah is fully visible at top
+        if (
+          step?.id === 'surah_header_style' ||
+          chosen.classList.contains('surah-header-visual') ||
+          chosen.closest('#surah-header-container')
+        ) {
+          scrollParent.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+
+        const containerRect = scrollParent.getBoundingClientRect();
+        const elRect = chosen.getBoundingClientRect();
+        const currentScroll = scrollParent.scrollTop;
+        const relativeTop = elRect.top - containerRect.top;
+
+        // Center the element inside the scrollable container so it's fully visible
+        const desiredRelativeTop = Math.max(20, (containerRect.height - elRect.height) / 2);
+        const scrollDiff = relativeTop - desiredRelativeTop;
+        const targetScroll = Math.max(0, currentScroll + scrollDiff);
+
+        if (Math.abs(scrollDiff) > 6) {
+          scrollParent.scrollTo({
+            top: targetScroll,
+            behavior: 'smooth'
+          });
+        }
+      } else {
+        // Fallback for standard elements in window
+        const viewportH = window.innerHeight;
+        const elRect = chosen.getBoundingClientRect();
+        if (elRect.top < 70 || elRect.bottom > viewportH - 70) {
+          try {
+            chosen.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+          } catch (e) {}
+        }
+      }
+    } catch (e) {}
+  }, [findScrollParent, guideKey, currentStepIndex, step]);
+
+  const rafRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (!isOpen || !step) return;
 
+    // 1. Immediately find the target element and trigger auto-scroll
+    try {
+      const elements = Array.from(document.querySelectorAll(step.targetSelector || '')) as HTMLElement[];
+      const visible = elements.filter(el => {
+        const r = el.getBoundingClientRect();
+        const s = window.getComputedStyle(el);
+        return r.width > 0 && r.height > 0 && s.display !== 'none' && s.visibility !== 'hidden' && s.opacity !== '0';
+      });
+      if (visible.length > 0) {
+        scrollToTarget(visible[0]);
+      }
+    } catch (e) {}
+
+    // 2. Perform initial rect computation
     updateRect();
-    const t1 = setTimeout(updateRect, 60);
-    const t2 = setTimeout(updateRect, 180);
-    const t3 = setTimeout(updateRect, 350);
-    const t4 = setTimeout(updateRect, 600);
+
+    // 3. Continuous RAF tracking loop while the smooth scroll animates
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    const startTimestamp = performance.now();
+    const trackAnimation = () => {
+      updateRect();
+      if (performance.now() - startTimestamp < 750) {
+        rafRef.current = requestAnimationFrame(trackAnimation);
+      }
+    };
+    rafRef.current = requestAnimationFrame(trackAnimation);
+
+    // 4. Staggered timers as reliable fallbacks
+    const t1 = setTimeout(updateRect, 50);
+    const t2 = setTimeout(updateRect, 150);
+    const t3 = setTimeout(updateRect, 300);
+    const t4 = setTimeout(updateRect, 500);
+    const t5 = setTimeout(updateRect, 750);
 
     const handleResize = () => updateRect();
     window.addEventListener('resize', handleResize);
     window.addEventListener('scroll', handleResize, true);
 
     return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
       clearTimeout(t4);
+      clearTimeout(t5);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleResize, true);
     };
-  }, [isOpen, step, updateRect]);
+  }, [isOpen, step, currentStepIndex, scrollToTarget, updateRect]);
 
   if (!isOpen || !step) return null;
 
@@ -239,7 +351,7 @@ export const QuranSpotlightGuide: React.FC<QuranSpotlightGuideProps> = ({
   const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 380;
   const cardWidth = Math.min(380, screenWidth - 28);
   const margin = 14;
-  const tooltipHeightEstimate = 250;
+  const cardHeight = cardRef.current?.offsetHeight || 240;
 
   let beakLeft = Math.round(cardWidth / 2 - 8);
 
@@ -252,24 +364,24 @@ export const QuranSpotlightGuide: React.FC<QuranSpotlightGuideProps> = ({
     const computedLeft = Math.max(14, Math.min(screenWidth - cardWidth - 14, Math.round(targetCenterX - cardWidth / 2)));
     beakLeft = Math.max(20, Math.min(cardWidth - 28, Math.round(targetCenterX - computedLeft - 8)));
 
-    if (!isTargetVeryLarge && spaceBelow >= tooltipHeightEstimate + margin) {
+    if (!isTargetVeryLarge && spaceBelow >= cardHeight + margin + 10) {
       pointerPlacement = 'top';
       cardPositionStyle = {
-        top: Math.min(targetRect.bottom + margin, screenHeight - tooltipHeightEstimate - 20),
+        top: Math.min(targetRect.bottom + margin, screenHeight - cardHeight - 20),
         left: computedLeft,
         width: cardWidth
       };
-    } else if (!isTargetVeryLarge && spaceAbove >= tooltipHeightEstimate + margin) {
+    } else if (!isTargetVeryLarge && spaceAbove >= cardHeight + margin + 10) {
       pointerPlacement = 'bottom';
       cardPositionStyle = {
-        top: Math.max(14, targetRect.top - tooltipHeightEstimate - margin),
+        top: Math.max(14, targetRect.top - cardHeight - margin),
         left: computedLeft,
         width: cardWidth
       };
     } else {
       pointerPlacement = 'center';
       const centeredLeft = Math.max(14, Math.round((screenWidth - cardWidth) / 2));
-      const centeredTop = Math.max(14, Math.round((screenHeight - tooltipHeightEstimate) / 2));
+      const centeredTop = Math.max(14, Math.round((screenHeight - cardHeight) / 2));
       cardPositionStyle = {
         top: centeredTop,
         left: centeredLeft,
@@ -279,7 +391,7 @@ export const QuranSpotlightGuide: React.FC<QuranSpotlightGuideProps> = ({
   } else {
     pointerPlacement = 'center';
     const centeredLeft = Math.max(14, Math.round((screenWidth - cardWidth) / 2));
-    const centeredTop = Math.max(14, Math.round((screenHeight - tooltipHeightEstimate) / 2));
+    const centeredTop = Math.max(14, Math.round((screenHeight - cardHeight) / 2));
     cardPositionStyle = {
       top: centeredTop,
       left: centeredLeft,

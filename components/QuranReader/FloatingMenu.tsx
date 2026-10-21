@@ -110,6 +110,7 @@ interface FloatingMenuProps {
   jumpToAyah?: (s: number, a: number, closeMenu?: boolean) => void;
   handleMushafTypeSelect: (type: string) => void;
   initialView?: string;
+  onOpenMainGuide?: () => void;
 }
 
 const ALL_SHORTCUTS = [
@@ -169,6 +170,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
   deleteBookmark,
   jumpToAyah,
   initialView = "main",
+  onOpenMainGuide,
 }) => {
   const { applyPresetTheme: applyGlobalTheme } = useTheme();
   const { t, translateMenuItem, language, isRTL, formatNumber } = useLanguage();
@@ -2634,7 +2636,10 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
             </div>
           ) : (
             /* Main Menu Content */
-            <div className="p-2 flex flex-col justify-between overflow-y-auto flex-grow custom-scrollbar min-h-0">
+            <div
+              id="floating-menu-scroll-container"
+              className="p-2 flex flex-col justify-between overflow-y-auto flex-grow custom-scrollbar min-h-0"
+            >
               {/* خيارات القراءة */}
               <MenuSection
                 title={isEn ? "Reading Options" : "خيارات القراءة"}
@@ -2863,11 +2868,26 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   </React.Fragment>
                 ))}
               </MenuSection>
-              <div className="pt-2 pb-1 px-1">
+              <div className="pt-2 pb-1 px-1 flex items-center gap-1.5">
+                {onOpenMainGuide && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFloatingMenuOpen(false);
+                      onOpenMainGuide();
+                    }}
+                    className="flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 opacity-75 hover:opacity-100 hover:bg-black/5 active:scale-95 transition-all cursor-pointer"
+                    style={{ color: currentTheme?.text || '#000000' }}
+                    title={isEn ? "Open Quran Reader Guide" : "دليل المصحف الشريف"}
+                  >
+                    <BookOpen size={14} />
+                    <span>{isEn ? "Quran Guide" : "دليل المصحف"}</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsSidebarGuideOpen(true)}
-                  className="w-full py-1.5 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 opacity-70 hover:opacity-100 hover:bg-black/5 active:scale-95 transition-all cursor-pointer"
+                  className={`${onOpenMainGuide ? 'flex-1' : 'w-full'} py-1.5 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 opacity-75 hover:opacity-100 hover:bg-black/5 active:scale-95 transition-all cursor-pointer`}
                   style={{ color: currentTheme?.text || '#000000' }}
                   title={isEn ? "Open Sidebar Guide" : "دليل القائمة الجانبية"}
                 >
@@ -2875,6 +2895,11 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   <span>{isEn ? "Sidebar Guide" : "دليل القائمة"}</span>
                 </button>
               </div>
+              {/* Bottom Spacer to ensure full upward scroll during sidebar guide */}
+              <div
+                className="shrink-0 pointer-events-none transition-all duration-300"
+                style={{ height: isSidebarGuideOpen ? "45vh" : "28px" }}
+              />
             </div>
           )}
         </div>

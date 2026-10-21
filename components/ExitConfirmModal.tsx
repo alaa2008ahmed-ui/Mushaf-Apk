@@ -40,17 +40,6 @@ const ExitConfirmModal: React.FC<ExitConfirmModalProps> = ({ isOpen, onClose, on
                     </p>
                     <div className="flex justify-center gap-3">
                         <button 
-                            onClick={onClose} 
-                            className="px-6 py-2 rounded-lg font-bold transition active:scale-95"
-                            style={{
-                                backgroundColor: isGlass ? 'rgba(255, 255, 255, 0.15)' : (theme.isOriginal ? '#f3f4f6' : 'rgba(255, 255, 255, 0.1)'),
-                                color: modalTextColor,
-                                border: `1px solid ${isGlass ? 'rgba(255, 255, 255, 0.3)' : (theme.palette[1] || '#d1d5db')}`
-                            }}
-                        >
-                            {isEn ? "No" : "لا"}
-                        </button>
-                        <button 
                             onClick={onConfirm} 
                             className="px-6 py-2 rounded-lg font-bold transition active:scale-95 shadow-md"
                             style={{
@@ -60,6 +49,17 @@ const ExitConfirmModal: React.FC<ExitConfirmModalProps> = ({ isOpen, onClose, on
                             }}
                         >
                             {isEn ? "Yes" : "نعم"}
+                        </button>
+                        <button 
+                            onClick={onClose} 
+                            className="px-6 py-2 rounded-lg font-bold transition active:scale-95"
+                            style={{
+                                backgroundColor: isGlass ? 'rgba(255, 255, 255, 0.15)' : (theme.isOriginal ? '#f3f4f6' : 'rgba(255, 255, 255, 0.1)'),
+                                color: modalTextColor,
+                                border: `1px solid ${isGlass ? 'rgba(255, 255, 255, 0.3)' : (theme.palette[1] || '#d1d5db')}`
+                            }}
+                        >
+                            {isEn ? "No" : "لا"}
                         </button>
                     </div>
                 </div>

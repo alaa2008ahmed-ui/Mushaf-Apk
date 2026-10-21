@@ -53,7 +53,8 @@ import {
     QURAN_PAGE_STEPS, 
     QURAN_SURAH_JUZ_STEPS, 
     QURAN_BOOKMARKS_STEPS, 
-    QURAN_TAFSEER_SELECT_STEPS 
+    QURAN_TAFSEER_SELECT_STEPS,
+    QuranGuideStep
 } from '../components/QuranReader/quranGuideSteps';
 
 declare var window: any;
@@ -2302,6 +2303,10 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             wasAutoscrollingBeforeModal.current = true;
             wasScrolling = true;
         }
+        if (modalName === 'surah-design-picker') {
+            setIsSurahDesignPickerOpen(true);
+            return;
+        }
         if (modalName === 'tafseer-selection-modal') {
             setTafseerSelectionInfo(p => ({ ...p, isOpen: true, wasAutoscrolling: wasScrolling }));
         } else if (modalName === 'sajdah-card') {
@@ -3065,6 +3070,49 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             showToast(`لا توجد بيانات لصفحة ${toArabic(targetPageNum)}`);
         }
     }, [quranData, jumpToAyah, getPageData, showToast]);
+
+    const prevPosBeforeGuideRef = useRef<{ s: number; a: number } | null>(null);
+
+    // Ensure Surah Al-Fatihah frame (Page 1) is visible and scrolled to top when main guide is active
+    useEffect(() => {
+        if (isMainGuideOpen) {
+            if (currentAyah.s !== 1 || currentAyah.a !== 1) {
+                prevPosBeforeGuideRef.current = {
+                    s: currentAyah.s,
+                    a: currentAyah.a
+                };
+                jumpToAyah(1, 1, true, true);
+            }
+            const timer = setTimeout(() => {
+                const mushafEl = document.getElementById('mushaf-content');
+                if (mushafEl) {
+                    mushafEl.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [isMainGuideOpen, currentAyah.s, currentAyah.a, jumpToAyah]);
+
+    const handleCloseMainGuide = useCallback(() => {
+        setIsMainGuideOpen(false);
+        if (prevPosBeforeGuideRef.current) {
+            const { s, a } = prevPosBeforeGuideRef.current;
+            prevPosBeforeGuideRef.current = null;
+            jumpToAyah(s, a, true, true);
+        }
+    }, [jumpToAyah]);
+
+    const handleMainGuideStepChange = useCallback((stepIndex: number, step: QuranGuideStep) => {
+        if (step.id === 'surah_header_style') {
+            if (currentAyah.s !== 1) {
+                jumpToAyah(1, 1, true, true);
+            }
+            const mushafEl = document.getElementById('mushaf-content');
+            if (mushafEl) {
+                mushafEl.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+    }, [currentAyah.s, jumpToAyah]);
 
     useEffect(() => {
         if (initialSurah && initialAyah) {
@@ -4007,6 +4055,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 deleteBookmark={deleteBookmark}
                 jumpToAyah={jumpToAyah}
                 initialView={floatingMenuInitialView}
+                onOpenMainGuide={() => setIsMainGuideOpen(true)}
             />
             <ReadingTimer isVisible={autoScrollState.isPaused || (!autoScrollState.isActive && autoScrollState.elapsedTime > 0)} elapsedTime={autoScrollState.elapsedTime} />
             <div id="mushaf-content" ref={mushafContentRef} onClick={handleScreenTap} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="flex-grow overflow-y-auto w-full relative touch-pan-y">
@@ -4464,7 +4513,8 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                 guideKey="main_reader"
                 steps={QURAN_PAGE_STEPS}
                 isOpen={isMainGuideOpen}
-                onClose={() => setIsMainGuideOpen(false)}
+                onClose={handleCloseMainGuide}
+                onStepChange={handleMainGuideStepChange}
                 isEn={isEn}
             />
             <QuranSpotlightGuide
