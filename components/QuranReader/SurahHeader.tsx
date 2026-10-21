@@ -412,7 +412,7 @@ const SurahHeader: React.FC<SurahHeaderProps> = ({
     };
 
     return (
-        <div id="surah-header-container" className={`surah-header-container-wrapper ${compact ? 'px-0 pt-1 pb-0' : 'px-0 pt-4 pb-0'}`}
+        <div id="surah-header-container" data-tour="surah-header" className={`surah-header-container surah-header surah-header-container-wrapper ${compact ? 'px-0 pt-1 pb-0' : 'px-0 pt-4 pb-0'}`}
              onMouseDown={handleMouseDown}
              onMouseUp={handleMouseUp}
              onMouseLeave={handleMouseUp}

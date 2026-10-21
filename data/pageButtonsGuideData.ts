@@ -46,7 +46,7 @@ export const PAGES_BUTTONS_GUIDE: PageButtonsGuide[] = [
         visualType: 'counter-button',
         iconColor: '#3b82f6',
         label: 'رقم الآية',
-        purpose: 'يفتح فوراً نافذة تفسير الآية الكريمة الميسر لقراءة شرح معاني الكلمات وأسباب النزول وبيان المعنى الإجمالي للآية.'
+        purpose: 'يفتح قائمة خيارات الآية المتكاملة: عرض التفسير، معاني القرآن، التلاوة الصوتية، الترجمة الإنجليزية، ونسخ ومشاركة الآية.'
       },
       {
         id: 'verse_num_long_press',

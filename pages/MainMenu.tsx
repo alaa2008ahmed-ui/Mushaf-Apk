@@ -767,14 +767,9 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.85, y: -6 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className={`absolute top-full mt-2 ${dir === 'ltr' ? 'left-0' : 'right-0'} z-[1150] flex flex-col items-center gap-2 p-1.5 rounded-2xl shadow-2xl border backdrop-blur-xl`}
-              style={{
-                backgroundColor: isBlackTheme ? 'rgba(20, 20, 20, 0.96)' : (theme.isDark ? 'rgba(30, 30, 30, 0.96)' : 'rgba(255, 255, 255, 0.97)'),
-                borderColor: isBlackTheme ? 'rgba(255, 255, 255, 0.2)' : (theme.isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.1)'),
-                boxShadow: isBlackTheme ? '0 12px 36px rgba(0,0,0,0.85)' : '0 12px 36px rgba(0,0,0,0.16)'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
+            className={`absolute top-full mt-2 ${dir === 'ltr' ? 'left-0' : 'right-0'} z-[1150] flex flex-col items-center gap-2`}
+            onClick={(e) => e.stopPropagation()}
+          >
               {/* 1. زر الثيمات */}
               <button
                 type="button"

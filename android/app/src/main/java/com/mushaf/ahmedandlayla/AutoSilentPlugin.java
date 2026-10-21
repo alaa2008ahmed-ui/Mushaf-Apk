@@ -44,6 +44,20 @@ public class AutoSilentPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void openAppSettings(PluginCall call) {
+        try {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            android.net.Uri uri = android.net.Uri.fromParts("package", getContext().getPackageName(), null);
+            intent.setData(uri);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Could not open app settings: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
     public void setSilentNow(PluginCall call) {
         boolean silent = call.getBoolean("silent", false);
         String prayerName = call.getString("prayerName", "الصلاة");

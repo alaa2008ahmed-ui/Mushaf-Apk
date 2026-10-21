@@ -48,6 +48,13 @@ import { getReciterDisplayName } from '../utils/listenQuranTranslations';
 import { useAudioStore } from '../hooks/useAudioStore';
 import { useHabitTracker } from '../hooks/useHabitTracker';
 import { App as CapacitorApp } from '@capacitor/app';
+import { QuranSpotlightGuide, getQuranGuideSeen } from '../components/QuranReader/QuranSpotlightGuide';
+import { 
+    QURAN_PAGE_STEPS, 
+    QURAN_SURAH_JUZ_STEPS, 
+    QURAN_BOOKMARKS_STEPS, 
+    QURAN_TAFSEER_SELECT_STEPS 
+} from '../components/QuranReader/quranGuideSteps';
 
 declare var window: any;
 
@@ -1020,6 +1027,18 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         };
     }, [ayahContextMenu.isOpen, activeModals]);
 
+    useEffect(() => {
+        if (!ayahContextMenu.isOpen && wasAutoscrollingBeforeAyahContext.current) {
+            wasAutoscrollingBeforeAyahContext.current = false;
+            if (autoScrollStateRef.current.isActive) {
+                autoScrollPausedRef.current = false;
+                const newState = { ...autoScrollStateRef.current, isPaused: false };
+                autoScrollStateRef.current = newState;
+                setAutoScrollState(newState);
+            }
+        }
+    }, [ayahContextMenu.isOpen]);
+
     const updateSetting = (key: string, value: any) => {
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
@@ -1442,6 +1461,65 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
         wasAutoscrolling: false
     });
 
+    // --- Contextual Guides for Quran Reader & Submenus ---
+    const [isMainGuideOpen, setIsMainGuideOpen] = useState(false);
+    const [isTafseerSelectGuideOpen, setIsTafseerSelectGuideOpen] = useState(false);
+    const [isBookmarksGuideOpen, setIsBookmarksGuideOpen] = useState(false);
+    const [isSurahJuzGuideOpen, setIsSurahJuzGuideOpen] = useState(false);
+
+    // 1. Quran page main guide: triggers only when page is loaded and no other menu/modal is open
+    useEffect(() => {
+        if (!isLoading) {
+            if (!getQuranGuideSeen('main_reader')) {
+                const anyModalOpen = activeModals.length > 0 || isFloatingMenuOpen || tafseerInfo.isOpen || tafseerSelectionInfo.isOpen;
+                if (!anyModalOpen) {
+                    const timer = setTimeout(() => {
+                        setIsMainGuideOpen(true);
+                    }, 800);
+                    return () => clearTimeout(timer);
+                }
+            }
+        }
+    }, [isLoading, activeModals, isFloatingMenuOpen, tafseerInfo.isOpen, tafseerSelectionInfo.isOpen]);
+
+    // 3. Tafseer Selection modal guide: triggers only when tafseer selection is opened
+    useEffect(() => {
+        if (tafseerSelectionInfo.isOpen && !getQuranGuideSeen('tafseer_select_modal')) {
+            const timer = setTimeout(() => {
+                setIsTafseerSelectGuideOpen(true);
+            }, 350);
+            return () => clearTimeout(timer);
+        } else {
+            setIsTafseerSelectGuideOpen(false);
+        }
+    }, [tafseerSelectionInfo.isOpen]);
+
+    // 4. Bookmarks modal guide: triggers only when bookmarks modal is opened
+    useEffect(() => {
+        if (activeModals.includes('bookmarks-modal') && !getQuranGuideSeen('bookmarks_modal')) {
+            const timer = setTimeout(() => {
+                setIsBookmarksGuideOpen(true);
+            }, 350);
+            return () => clearTimeout(timer);
+        } else {
+            setIsBookmarksGuideOpen(false);
+        }
+    }, [activeModals]);
+
+    // 5. Surah & Juz modal guide: triggers only when surah/juz modal is opened
+    useEffect(() => {
+        const isSurahModalOpen = activeModals.includes('surah-modal') || activeModals.includes('juz-modal');
+        if (isSurahModalOpen && !getQuranGuideSeen('surah_juz_modal')) {
+            const timer = setTimeout(() => {
+                setIsSurahJuzGuideOpen(true);
+            }, 350);
+            return () => clearTimeout(timer);
+        } else {
+            setIsSurahJuzGuideOpen(false);
+        }
+    }, [activeModals]);
+
+
     const handleAyahNumberLongPress = useCallback((s: number, a: number) => {
         // Strictly ONLY in bilingual and translation modes! Never in mushaf mode!
         if (readingMode !== 'bilingual' && readingMode !== 'translation') {
@@ -1480,6 +1558,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
     useEffect(() => { isPageInputActiveRef.current = isPageInputActive; }, [isPageInputActive]);
     const isJumpingRef = useRef(true);
     const wasAutoscrollingBeforeModal = useRef(false);
+    const wasAutoscrollingBeforeAyahContext = useRef(false);
 
     const isAnyMenuOpen = isFloatingMenuOpen || 
                           activeModals.length > 0 || 
@@ -2325,6 +2404,14 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const handleAyahLongPress = useCallback((s: number, a: number, x: number, y: number) => {
         stopAudio();
+        const wasAutoscrolling = autoScrollStateRef.current.isActive && !autoScrollStateRef.current.isPaused;
+        if (wasAutoscrolling) {
+            wasAutoscrollingBeforeAyahContext.current = true;
+            autoScrollPausedRef.current = true;
+            const newState = { ...autoScrollStateRef.current, isPaused: true };
+            autoScrollStateRef.current = newState;
+            setAutoScrollState(newState);
+        }
         setAyahContextColorField(null); 
         setAyahContextMenu({ 
             isOpen: true, 
@@ -2333,7 +2420,7 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
             tempSettings: { ...settingsRef.current },
             originalSettings: { ...settingsRef.current }
         });
-    }, []);
+    }, [stopAudio]);
 
     const handleTafseerSelect = useCallback((tafseerId: string) => {
         if (tafseerSelectionInfo.wasAutoscrolling) {
@@ -3811,12 +3898,12 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
 
     const handleInteractionEnd = useCallback(() => {
         setTimeout(() => {
-             const isAnyModalOpen = activeModals.length > 0 || tafseerInfo.isOpen || tafseerSelectionInfo.isOpen;
+             const isAnyModalOpen = activeModals.length > 0 || tafseerInfo.isOpen || tafseerSelectionInfo.isOpen || ayahContextMenu.isOpen;
              if (!isAnyModalOpen && autoScrollStateRef.current.isActive && !autoScrollStateRef.current.isPaused) {
                  autoScrollPausedRef.current = false;
              }
         }, 100);
-    }, [activeModals, tafseerInfo.isOpen, tafseerSelectionInfo.isOpen]);
+    }, [activeModals, tafseerInfo.isOpen, tafseerSelectionInfo.isOpen, ayahContextMenu.isOpen]);
 
     const handleVerticalAyahClick = useCallback((s: number, a: number) => {
         setCurrentAyah({ s, a });
@@ -4371,6 +4458,37 @@ const QuranReader: FC<{ page: string, onBack: () => void, onNavigate: (pageId: s
                     }}
                 />
             )}
+
+            {/* Contextual Guides for Quran Reader & Submenus (Only open when page or specific menu is opened) */}
+            <QuranSpotlightGuide
+                guideKey="main_reader"
+                steps={QURAN_PAGE_STEPS}
+                isOpen={isMainGuideOpen}
+                onClose={() => setIsMainGuideOpen(false)}
+                isEn={isEn}
+            />
+            <QuranSpotlightGuide
+                guideKey="tafseer_select_modal"
+                steps={QURAN_TAFSEER_SELECT_STEPS}
+                isOpen={isTafseerSelectGuideOpen}
+                onClose={() => setIsTafseerSelectGuideOpen(false)}
+                isEn={isEn}
+            />
+            <QuranSpotlightGuide
+                guideKey="bookmarks_modal"
+                steps={QURAN_BOOKMARKS_STEPS}
+                isOpen={isBookmarksGuideOpen}
+                onClose={() => setIsBookmarksGuideOpen(false)}
+                isEn={isEn}
+            />
+            <QuranSpotlightGuide
+                guideKey="surah_juz_modal"
+                steps={QURAN_SURAH_JUZ_STEPS}
+                isOpen={isSurahJuzGuideOpen}
+                onClose={() => setIsSurahJuzGuideOpen(false)}
+                isEn={isEn}
+            />
+
         </div>
     );
 };

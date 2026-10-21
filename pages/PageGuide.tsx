@@ -629,19 +629,6 @@ export const PageGuide: React.FC<PageGuideProps> = ({
                   <Compass size={20} />
                 </div>
               )}
-
-              {(selectedPageId === 'community' || selectedPageId === 'side-community') && (
-                <div 
-                  className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer text-emerald-600 dark:text-emerald-400"
-                  onClick={() => handleInspect({
-                    title: 'زر فتح المصحف الشريف من المجتمع',
-                    purpose: 'يتيح لك الانتقال السريع للمصحف لقراءة القرآن أو مشاركة آية مباشرة داخل محادثات المجتمع.'
-                  })}
-                  title={isEn ? "Holy Quran" : "صفحة القرآن الكريم"}
-                >
-                  <BookOpen size={20} />
-                </div>
-              )}
             </div>
 
             {/* عنوان الصفحة في الوسط مطابق 100% للصورة */}
@@ -703,7 +690,7 @@ export const PageGuide: React.FC<PageGuideProps> = ({
                             'sabah-masaa': 'أذكار الصباح',
                             'calendar': 'التقويم',
                             'hajj-umrah': 'الحج والعمرة',
-                            'ahl-al-quran': 'أهل القرآن الكريم',
+                            'ahl-al-quran': 'أهل القرآن',
                             'daily-wird': 'الورد اليومي',
                             'memorization': 'التحفيظ والمراجعة',
                             'habit-tracker': 'مربّي العبادات',
@@ -716,7 +703,7 @@ export const PageGuide: React.FC<PageGuideProps> = ({
                             'prophetic-seerah': 'السيرة النبوية',
                             'side-whatsapp': 'تواصل واتساب',
                             'side-voice': 'التحكم الصوتي',
-                            'side-ahl-al-quran': 'أهل القرآن الكريم'
+                            'side-ahl-al-quran': 'أهل القرآن'
                           }[selectedPageId] || selectedGuide?.pageName || 'دليل صفحات التطبيق'))
                     : (isEn ? 'App Pages Guide' : 'دليل صفحات التطبيق')}
                 </h1>
@@ -729,18 +716,8 @@ export const PageGuide: React.FC<PageGuideProps> = ({
               {selectedPageId === 'tasbeeh' ? (
                 <ThemePageLock />
               ) : selectedPageId === 'community' || selectedPageId === 'side-community' ? (
-                /* في صفحة المجتمع: الكأس + المنزل */
+                /* في صفحة المجتمع: المنزل */
                 <div className="flex items-center gap-1">
-                  <div 
-                    className="w-9 h-9 rounded-full border border-black/10 dark:border-white/10 flex items-center justify-center text-amber-500 cursor-pointer"
-                    onClick={() => handleInspect({
-                      title: 'زر لوحة المتصدرين (الكأس)',
-                      purpose: 'يفتح لوحة شرف متصدري قراءة القرآن الكريم ونشاط المجتمع لهذا الشهر.'
-                    })}
-                    title={isEn ? "Leaderboard" : "لوحة المتصدرين"}
-                  >
-                    <Trophy size={18} />
-                  </div>
                   <button
                     onClick={handleGoHome}
                     className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
@@ -795,21 +772,11 @@ export const PageGuide: React.FC<PageGuideProps> = ({
                   </button>
                 </div>
               ) : selectedPageId === 'ahl-al-quran' || selectedPageId === 'side-ahl-al-quran' ? (
-                /* في صفحة أهل القرآن: أيقونة المصحف + المنزل */
+                /* في صفحة أهل القرآن: المنزل */
                 <div className="flex items-center gap-1">
-                  <div 
-                    className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer"
-                    onClick={() => handleInspect({
-                      title: 'زر الانتقال للمصحف الشريف',
-                      purpose: 'ينقلك مباشرة لصفحات القرآن الكريم لقراءة وردك وزيادة صفحاتك المسجلة في المسابقة.'
-                    })}
-                    title={isEn ? "Open Quran" : "المصحف الشريف"}
-                  >
-                    <BookOpen size={18} />
-                  </div>
                   <button
                     onClick={handleGoHome}
-                    className="w-9 h-9 rounded-full flex items-center justify-center"
+                    className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
                     title={isEn ? "Home Page" : "الصفحة الرئيسية"}
                     aria-label={isEn ? "Home Page" : "الصفحة الرئيسية"}
                   >

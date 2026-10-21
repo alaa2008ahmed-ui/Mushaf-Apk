@@ -74,6 +74,8 @@ import {
 import { getReciterDisplayName } from "../../utils/listenQuranTranslations";
 import { normalizeArabic } from "../../utils/voiceParser";
 import { setupNotifications } from "../../utils/notifications";
+import { QuranSpotlightGuide, getQuranGuideSeen } from "./QuranSpotlightGuide";
+import { QURAN_SIDEBAR_STEPS } from "./quranGuideSteps";
 
 interface FloatingMenuProps {
   page: string;
@@ -526,12 +528,29 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
     }
   };
 
+  const [isSidebarGuideOpen, setIsSidebarGuideOpen] = useState(false);
+
   useEffect(() => {
     if (isFloatingMenuOpen) {
       setCurrentView(initialView as MenuView);
       setIsAddModalOpen(false);
+
+      if (!getQuranGuideSeen("sidebar_menu")) {
+        const timer = setTimeout(() => {
+          setIsSidebarGuideOpen(true);
+        }, 400);
+        return () => clearTimeout(timer);
+      }
+    } else {
+      setIsSidebarGuideOpen(false);
     }
   }, [isFloatingMenuOpen, initialView]);
+
+  useEffect(() => {
+    if (currentView !== "main") {
+      setIsSidebarGuideOpen(false);
+    }
+  }, [currentView]);
 
   useEffect(() => {
     const saved = localStorage.getItem("quran_menu_shortcuts");
@@ -2844,10 +2863,29 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   </React.Fragment>
                 ))}
               </MenuSection>
+              <div className="pt-2 pb-1 px-1">
+                <button
+                  type="button"
+                  onClick={() => setIsSidebarGuideOpen(true)}
+                  className="w-full py-1.5 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 opacity-70 hover:opacity-100 hover:bg-black/5 active:scale-95 transition-all cursor-pointer"
+                  style={{ color: currentTheme?.text || '#000000' }}
+                  title={isEn ? "Open Sidebar Guide" : "دليل القائمة الجانبية"}
+                >
+                  <HelpCircle size={14} />
+                  <span>{isEn ? "Sidebar Guide" : "دليل القائمة"}</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
+      <QuranSpotlightGuide
+        guideKey="sidebar_menu"
+        steps={QURAN_SIDEBAR_STEPS}
+        isOpen={isSidebarGuideOpen}
+        onClose={() => setIsSidebarGuideOpen(false)}
+        isEn={isEn}
+      />
     </>
   );
 };

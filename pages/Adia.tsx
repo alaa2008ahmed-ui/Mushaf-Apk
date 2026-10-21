@@ -24,12 +24,12 @@ function Adia({ onBack, onNavigate }: AdiaProps) {
     const { language } = useLanguage();
     const isEn = language === 'en';
     const isBlackTheme = theme.bgColor === '#000000';
-    const isDefaultTheme = themeKey === 'default';
+    const isDefaultTheme = themeKey === 'default' || theme.name === 'الافتراضي' || !!theme.isOriginal || !themeKey;
     const cardBorderColor = isDefaultTheme 
         ? '#000000' 
         : (isBlackTheme 
-            ? '#FFFFFF' 
-            : (theme.palette?.[0] || '#000000'));
+            ? 'rgba(255, 255, 255, 0.2)' 
+            : (theme.palette?.[0] + '33' || 'rgba(0, 0, 0, 0.08)'));
     const [zoomedDuaa, setZoomedDuaa] = useState<DuaaItem | null>(null);
     const [activeCategory, setActiveCategory] = useState('all');
     const [favorites, setFavorites] = useState<string[]>([]);
@@ -286,10 +286,10 @@ function Adia({ onBack, onNavigate }: AdiaProps) {
             </header>
 
             <main ref={mainRef} className="w-full flex-1 overflow-y-auto px-4 pt-2 pb-4">
-                <div className="mb-6 max-w-3xl mx-auto flex items-center gap-2">
+                <div className="mb-6 max-w-3xl mx-auto flex items-center gap-2 w-full" dir={isEn ? 'ltr' : 'rtl'}>
                     <div 
                         className="relative flex-1 border-2 rounded-2xl overflow-hidden focus-within:ring-2 transition-all shadow-sm" 
-                        style={{ borderColor: cardBorderColor, ...(themeKey === 'default' ? { focusRingColor: '#000'} : { focusRingColor: theme.palette[0]}) }}
+                        style={{ borderColor: cardBorderColor, ...(isDefaultTheme ? { focusRingColor: '#000'} : { focusRingColor: theme.palette[0]}) }}
                     >
                         <input 
                             type="text" 
@@ -326,7 +326,7 @@ function Adia({ onBack, onNavigate }: AdiaProps) {
                             onClick={() => setActiveTab('grid')}
                             className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'grid' ? 'shadow-sm' : 'opacity-60 hover:opacity-100'}`}
                             style={activeTab === 'grid' ? {
-                                backgroundColor: isBlackTheme ? '#FFFFFF' : theme.palette[0],
+                                backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]),
                                 color: isBlackTheme ? '#000000' : '#ffffff'
                             } : { color: 'var(--text-color)' }}
                             title={isEn ? "Grid View" : "عرض شبكي"}
@@ -338,12 +338,13 @@ function Adia({ onBack, onNavigate }: AdiaProps) {
                             onClick={() => setActiveTab('list')}
                             className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'list' ? 'shadow-sm' : 'opacity-60 hover:opacity-100'}`}
                             style={activeTab === 'list' ? {
-                                backgroundColor: isBlackTheme ? '#FFFFFF' : theme.palette[0],
+                                backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]),
                                 color: isBlackTheme ? '#000000' : '#ffffff'
                             } : { color: 'var(--text-color)' }}
-                            >
-                                <ListFilter size={16} />
-                            </button>
+                            title={isEn ? "List View" : "عرض القوائم"}
+                        >
+                            <ListFilter size={16} />
+                        </button>
                     </div>
                 </div>
 
