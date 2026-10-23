@@ -699,7 +699,7 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
     userIsNearBottomRef.current = isNear;
   };
 
-  const loadData = (shouldScrollIfNear: boolean = false) => {
+  const loadData = (shouldScrollIfNear: boolean = false, shouldMarkAsRead: boolean = true) => {
     if (!communityService.isProfileComplete()) {
       showToast('عفواً، يجب استكمال بيانات ملفك الشخصي أولاً');
       onBack();
@@ -739,23 +739,30 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
       }, 50);
     }
 
-    communityService.markMessagesAsRead(partnerUserId);
+    if (shouldMarkAsRead) {
+      const current = communityService.getCurrentUser();
+      const hasUnread = chatMsgs.some(m => m.recipientId === current?.userId && !m.isRead);
+      if (hasUnread) {
+        communityService.markMessagesAsRead(partnerUserId);
+      }
+    }
   };
 
   useEffect(() => {
     isFirstLoadRef.current = true;
     userIsNearBottomRef.current = true;
-    loadData(true);
+    loadData(true, true);
 
     const handleUpdate = () => {
-      loadData(true);
+      // Reload messages without re-calling markMessagesAsRead in an infinite loop
+      loadData(true, false);
     };
 
     window.addEventListener('community_contacts_updated', handleUpdate);
 
     const presenceInterval = setInterval(() => {
       // Periodic presence refresh without force scrolling
-      loadData(false);
+      loadData(false, false);
     }, 4000);
 
     window.addEventListener('community_messages_updated', handleUpdate);

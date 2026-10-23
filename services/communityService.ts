@@ -2145,74 +2145,114 @@ class CommunityService {
 
   public async markMessagesAsRead(partnerUserId: string) {
     const current = this.getCurrentUser();
-    const uid = current.userId;
-    if (!uid || !partnerUserId) return;
-    const chatId = this.getChatId(uid, partnerUserId);
+    const uid = current?.userId;
+    if (!uid || typeof uid !== 'string' || !uid.trim() || uid === 'undefined') return;
+    if (!partnerUserId || typeof partnerUserId !== 'string' || !partnerUserId.trim() || partnerUserId === 'undefined') return;
+
+    const cleanUid = uid.trim().replace(/\//g, '_');
+    const cleanPartnerId = partnerUserId.trim().replace(/\//g, '_');
+    const chatId = this.getChatId(cleanUid, cleanPartnerId);
     const nowIso = new Date().toISOString();
 
     let latestMsgId = '';
     const unreadMessageIdsToUpdate: string[] = [];
+    let hasUnreadChanged = false;
 
     this.messagesList.forEach(m => {
       const isMatch = (m.chatId === chatId || 
-        (m.senderId === partnerUserId && m.recipientId === uid) ||
-        (m.senderId === uid && m.recipientId === partnerUserId)) &&
-        m.recipientId === uid;
+        (m.senderId === cleanPartnerId && m.recipientId === cleanUid) ||
+        (m.senderId === cleanUid && m.recipientId === cleanPartnerId)) &&
+        m.recipientId === cleanUid;
 
       if (isMatch) {
         if (!m.isRead || !this.readMessageIdsSet.has(m.messageId)) {
           m.isRead = true;
           this.readMessageIdsSet.add(m.messageId);
-          unreadMessageIdsToUpdate.push(m.messageId);
+          if (m.messageId && typeof m.messageId === 'string' && m.messageId.trim() && !m.messageId.includes('/')) {
+            unreadMessageIdsToUpdate.push(m.messageId.trim());
+          }
+          hasUnreadChanged = true;
         }
         latestMsgId = m.messageId;
       }
     });
 
+    const directReadId = `${cleanUid}_${cleanPartnerId}`;
+    const prevRead = this.directReadsMap.get(directReadId);
+
+    // If nothing unread changed and direct read state is already current, skip completely to prevent loops
+    if (!hasUnreadChanged && prevRead && prevRead.lastReadMessageId === (latestMsgId || '')) {
+      return;
+    }
+
     const readState = {
       lastReadMessageId: latestMsgId || '',
       lastReadTime: nowIso
     };
-    this.directReadsMap.set(`${uid}_${partnerUserId}`, readState);
-    this.directReadsMap.set(partnerUserId, readState);
+    this.directReadsMap.set(directReadId, readState);
+    this.directReadsMap.set(cleanPartnerId, readState);
 
     this.saveToLocalStorage();
-    window.dispatchEvent(new CustomEvent('community_messages_updated'));
 
     // 1. Sync direct_read record to Firestore
-    const directReadId = `${uid}_${partnerUserId}`;
-    setDoc(doc(db, 'direct_reads', directReadId), {
-      readId: directReadId,
-      userId: uid,
-      partnerId: partnerUserId,
-      lastReadMessageId: latestMsgId || '',
-      lastReadTime: nowIso,
-      updatedAt: nowIso
-    }, { merge: true }).catch(err => console.warn('Sync direct read to Firestore:', err));
+    if (directReadId && !directReadId.includes('/')) {
+      try {
+        setDoc(doc(db, 'direct_reads', directReadId), {
+          readId: directReadId,
+          userId: cleanUid,
+          partnerId: cleanPartnerId,
+          lastReadMessageId: latestMsgId || '',
+          lastReadTime: nowIso,
+          updatedAt: nowIso
+        }, { merge: true }).catch(err => console.warn('Sync direct read to Firestore:', err));
+      } catch (e) {
+        console.warn('Invalid directRead doc path:', e);
+      }
+    }
 
     // 2. Atomically update isRead: true in Firestore messages
     try {
-      const idsSet = new Set(unreadMessageIdsToUpdate);
+      const idsSet = new Set<string>();
+      unreadMessageIdsToUpdate.forEach(id => {
+        if (id && typeof id === 'string' && id.trim() && !id.includes('/')) {
+          idsSet.add(id.trim());
+        }
+      });
 
-      // Query any unread messages from this partner in Firestore directly to guarantee none were missed
-      const unreadSnap = await getDocs(query(
-        collection(db, 'messages'),
-        where('recipientId', '==', uid),
-        where('senderId', '==', partnerUserId),
-        where('isRead', '==', false)
-      ));
-      unreadSnap.forEach(d => idsSet.add(d.id));
+      if (hasUnreadChanged) {
+        try {
+          const unreadSnap = await getDocs(query(
+            collection(db, 'messages'),
+            where('recipientId', '==', cleanUid),
+            where('senderId', '==', cleanPartnerId),
+            where('isRead', '==', false)
+          ));
+          unreadSnap.forEach(d => {
+            if (d.id && typeof d.id === 'string' && d.id.trim() && !d.id.includes('/')) {
+              idsSet.add(d.id.trim());
+            }
+          });
+        } catch (e) {
+          console.warn('Error querying unread messages from Firestore:', e);
+        }
+      }
 
-      const allIds = Array.from(idsSet);
+      const allIds = Array.from(idsSet).filter(id => Boolean(id && typeof id === 'string' && id.trim() && !id.includes('/')));
       if (allIds.length > 0) {
         const CHUNK_SIZE = 400;
         for (let i = 0; i < allIds.length; i += CHUNK_SIZE) {
           const batch = writeBatch(db);
           const chunk = allIds.slice(i, i + CHUNK_SIZE);
+          let validCount = 0;
           chunk.forEach(mId => {
-            batch.update(doc(db, 'messages', mId), { isRead: true });
+            if (mId && typeof mId === 'string' && mId.trim() && !mId.includes('/')) {
+              batch.update(doc(db, 'messages', mId.trim()), { isRead: true });
+              validCount++;
+            }
           });
-          await batch.commit().catch(e => console.warn('Batch mark messages read:', e));
+          if (validCount > 0) {
+            await batch.commit().catch(e => console.warn('Batch mark messages read:', e));
+          }
         }
       }
     } catch (e) {
@@ -2221,11 +2261,13 @@ class CommunityService {
   }
 
   public async deleteSingleMessage(messageId: string) {
-    this.messagesList = this.messagesList.filter(m => m.messageId !== messageId);
+    if (!messageId || typeof messageId !== 'string' || !messageId.trim() || messageId.includes('/')) return;
+    const cleanId = messageId.trim();
+    this.messagesList = this.messagesList.filter(m => m.messageId !== cleanId);
     this.saveToLocalStorage();
 
     try {
-      await deleteDoc(doc(db, 'messages', messageId));
+      await deleteDoc(doc(db, 'messages', cleanId));
     } catch (e) {}
 
     window.dispatchEvent(new CustomEvent('community_messages_updated'));
@@ -2233,6 +2275,7 @@ class CommunityService {
 
   public async deleteReadMessages(partnerUserId: string) {
     const current = this.getCurrentUser();
+    if (!current?.userId || !partnerUserId) return;
     const chatId = this.getChatId(current.userId, partnerUserId);
 
     const toDelete = this.messagesList.filter(m => m.chatId === chatId && m.isRead);
@@ -2241,7 +2284,9 @@ class CommunityService {
 
     toDelete.forEach(async (m) => {
       try {
-        await deleteDoc(doc(db, 'messages', m.messageId));
+        if (m.messageId && typeof m.messageId === 'string' && m.messageId.trim() && !m.messageId.includes('/')) {
+          await deleteDoc(doc(db, 'messages', m.messageId.trim()));
+        }
       } catch (e) {}
     });
 
@@ -3529,8 +3574,18 @@ class CommunityService {
 
   public markGroupAsRead(groupId: string, lastMessageId?: string, lastMessageTime?: string): void {
     const uid = this.getCurrentUser()?.userId;
-    if (!uid) return;
-    const msgs = this.getGroupMessages(groupId, uid);
+    if (!uid || typeof uid !== 'string' || !uid.trim() || !groupId || typeof groupId !== 'string' || !groupId.trim()) return;
+    const cleanUid = uid.trim().replace(/\//g, '_');
+    const cleanGroupId = groupId.trim().replace(/\//g, '_');
+    const msgs = this.getGroupMessages(cleanGroupId, cleanUid);
+
+    const latestMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+    const targetMsgId = lastMessageId || latestMsg?.messageId || '';
+
+    const currentRead = this.groupReadStateMap.get(`${cleanGroupId}_${cleanUid}`);
+    if (currentRead && targetMsgId && currentRead.lastReadMessageId === targetMsgId) {
+      return;
+    }
 
     // Record every current message in this group into the persistent read set
     msgs.forEach(m => {
@@ -3540,13 +3595,11 @@ class CommunityService {
     });
 
     this.groupMessagesList.forEach(m => {
-      if (m.groupId === groupId && m.messageId) {
+      if (m.groupId === cleanGroupId && m.messageId) {
         this.readGroupMessageIdsSet.add(m.messageId);
       }
     });
 
-    const latestMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
-    const targetMsgId = lastMessageId || latestMsg?.messageId || '';
     const latestTimeMs = latestMsg?.createdAt ? new Date(latestMsg.createdAt).getTime() : 0;
     const nowMs = Date.now();
     const safeReadTime = new Date(Math.max(nowMs, latestTimeMs + 5000)).toISOString();
@@ -3557,24 +3610,29 @@ class CommunityService {
       lastReadTime: targetTime
     };
 
-    this.groupReadStateMap.set(`${groupId}_${uid}`, readState);
-    this.groupReadStateMap.set(groupId, readState);
+    this.groupReadStateMap.set(`${cleanGroupId}_${cleanUid}`, readState);
+    this.groupReadStateMap.set(cleanGroupId, readState);
 
     this.saveToLocalStorage();
-    window.dispatchEvent(new CustomEvent('community_group_read_updated', { detail: { groupId } }));
+    window.dispatchEvent(new CustomEvent('community_group_read_updated', { detail: { groupId: cleanGroupId } }));
     window.dispatchEvent(new CustomEvent('community_groups_updated'));
-    window.dispatchEvent(new CustomEvent('community_group_messages_updated'));
 
     // Sync group read position to Firestore for instant cross-device synchronization
-    const readDocId = `${uid}_${groupId}`;
-    setDoc(doc(db, 'group_reads', readDocId), {
-      readId: readDocId,
-      userId: uid,
-      groupId: groupId,
-      lastReadMessageId: targetMsgId || '',
-      lastReadTime: targetTime,
-      updatedAt: new Date().toISOString()
-    }, { merge: true }).catch(err => console.warn('Sync group read to Firestore:', err));
+    const readDocId = `${cleanUid}_${cleanGroupId}`;
+    if (readDocId && !readDocId.includes('/')) {
+      try {
+        setDoc(doc(db, 'group_reads', readDocId), {
+          readId: readDocId,
+          userId: cleanUid,
+          groupId: cleanGroupId,
+          lastReadMessageId: targetMsgId || '',
+          lastReadTime: targetTime,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(err => console.warn('Sync group read to Firestore:', err));
+      } catch (err) {
+        console.warn('Invalid group_read doc path:', err);
+      }
+    }
   }
 
   public getTotalUnreadGroupMessagesCount(userId?: string): number {
