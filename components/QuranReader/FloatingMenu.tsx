@@ -9,7 +9,6 @@ import {
   Search,
   Brain,
   Calendar,
-  BookOpen,
   Book,
   FileText,
   Headphones,
@@ -29,7 +28,6 @@ import {
   Heart,
   Calculator,
   Info,
-  HelpCircle,
   Download,
   Type,
   Shield,
@@ -537,7 +535,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
       setCurrentView(initialView as MenuView);
       setIsAddModalOpen(false);
 
-      if (!getQuranGuideSeen("sidebar_menu")) {
+      if (!getQuranGuideSeen("sidebar_menu_v2")) {
         const timer = setTimeout(() => {
           setIsSidebarGuideOpen(true);
         }, 400);
@@ -1187,20 +1185,46 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
   return (
     <>
       {/* Backdrop to block interaction with background and close menu on click */}
-      <div
-        className={`fixed inset-0 z-[999] transition-opacity duration-300 ${isFloatingMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
-        onClick={() => setIsFloatingMenuOpen(false)}
-        style={{ backgroundColor: "rgba(0,0,0,0.05)" }}
-      />
+      {isFloatingMenuOpen && !isSidebarGuideOpen && (
+        <div
+          className="fixed inset-0 z-[1050] bg-black/[0.02] pointer-events-auto select-none"
+          style={{ touchAction: 'none', WebkitTapHighlightColor: 'transparent' }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsFloatingMenuOpen(false);
+          }}
+          onTouchStart={(e) => {
+            // Absorb touchstart so it doesn't propagate down to Quran text or anything below
+            e.stopPropagation();
+          }}
+          onTouchMove={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
+            // Tap finished on backdrop: prevent synthetic clicks and close menu
+            e.preventDefault();
+            e.stopPropagation();
+            setIsFloatingMenuOpen(false);
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+          }}
+        />
+      )}
       <div
         ref={floatingMenuRef}
-        className={`fixed ${isLandscape ? "top-0 bottom-0" : "top-[calc(3.5rem+var(--logical-safe-top))] bottom-[calc(3.5rem+var(--logical-safe-bottom))]"} ${isRTL ? "right-0" : "left-0"} z-[1000] flex items-start gap-4 pointer-events-none`}
+        className={`fixed ${isLandscape ? "top-0 bottom-0" : "top-[calc(3.5rem+var(--logical-safe-top))] bottom-[calc(3.5rem+var(--logical-safe-bottom))]"} ${isRTL ? "right-0" : "left-0"} z-[1060] flex items-start gap-4 pointer-events-none`}
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* The Main Menu Container */}
         <div
           id="floating-menu"
-          className={`w-[190px] max-w-[85vw] ${isLandscape ? "rounded-none" : isRTL ? "rounded-l-2xl" : "rounded-r-2xl"} shadow-2xl transition-all duration-300 ${isRTL ? "origin-top-right" : "origin-top-left"} flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? "opacity-100 visible scale-100 translate-y-0" : "opacity-0 invisible scale-95 -translate-y-4"}`}
+          className={`${(currentView === "main" && !isAddModalOpen) ? "w-max max-w-[85vw]" : "w-[200px] max-w-[85vw]"} ${isLandscape ? "rounded-none" : isRTL ? "rounded-l-2xl" : "rounded-r-2xl"} shadow-2xl transition-all duration-300 ${isRTL ? "origin-top-right" : "origin-top-left"} flex flex-col pointer-events-auto h-full ${isFloatingMenuOpen ? "opacity-100 visible scale-100 translate-y-0" : "opacity-0 invisible scale-95 -translate-y-4"}`}
           style={{
             fontFamily: currentTheme.font || "var(--font-amiri)",
             backgroundColor: currentTheme.bg || "#ffffff",
@@ -2794,7 +2818,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   data-id="menu-item-global-search"
                   icon={<Search size={18} />}
                   label={isEn ? "Advanced Search" : "البحث المتقدم"}
-                  onClick={() => handleAction(() => onNavigate('search', { from: page || (isLandscape ? 'quran-landscape' : 'quran'), isWird: isWirdMode }))}
+                  onClick={() => handleAction(() => onNavigate('search', { from: page || (isLandscape ? 'quran-landscape' : 'quran'), isWird: isWirdMode, fromSidebar: true }))}
                   iconColor={sidebarIconColor}
                   currentTheme={currentTheme}
                   isRTL={isRTL}
@@ -2868,7 +2892,7 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                   </React.Fragment>
                 ))}
               </MenuSection>
-              <div className="pt-2 pb-1 px-1 flex items-center gap-1.5">
+              <div className="pt-2 pb-0.5 px-0.5 flex items-center gap-1.5">
                 {onOpenMainGuide && (
                   <button
                     type="button"
@@ -2876,36 +2900,36 @@ const FloatingMenu: React.FC<FloatingMenuProps> = ({
                       setIsFloatingMenuOpen(false);
                       onOpenMainGuide();
                     }}
-                    className="flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 opacity-75 hover:opacity-100 hover:bg-black/5 active:scale-95 transition-all cursor-pointer"
+                    className="flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center opacity-75 hover:opacity-100 hover:bg-black/5 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                     style={{ color: currentTheme?.text || '#000000' }}
-                    title={isEn ? "Open Quran Reader Guide" : "دليل المصحف الشريف"}
+                    title={isEn ? "Quran" : "المصحف"}
                   >
-                    <BookOpen size={14} />
-                    <span>{isEn ? "Quran Guide" : "دليل المصحف"}</span>
+                    <span>{isEn ? "Quran" : "المصحف"}</span>
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => setIsSidebarGuideOpen(true)}
-                  className={`${onOpenMainGuide ? 'flex-1' : 'w-full'} py-1.5 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 opacity-75 hover:opacity-100 hover:bg-black/5 active:scale-95 transition-all cursor-pointer`}
+                  className={`${onOpenMainGuide ? 'flex-1' : 'w-full'} py-1.5 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center opacity-75 hover:opacity-100 hover:bg-black/5 active:scale-95 transition-all cursor-pointer whitespace-nowrap`}
                   style={{ color: currentTheme?.text || '#000000' }}
-                  title={isEn ? "Open Sidebar Guide" : "دليل القائمة الجانبية"}
+                  title={isEn ? "Sidebar" : "القائمة"}
                 >
-                  <HelpCircle size={14} />
-                  <span>{isEn ? "Sidebar Guide" : "دليل القائمة"}</span>
+                  <span>{isEn ? "Sidebar" : "القائمة"}</span>
                 </button>
               </div>
-              {/* Bottom Spacer to ensure full upward scroll during sidebar guide */}
-              <div
-                className="shrink-0 pointer-events-none transition-all duration-300"
-                style={{ height: isSidebarGuideOpen ? "45vh" : "28px" }}
-              />
+              {/* Bottom Spacer only active during sidebar guide */}
+              {isSidebarGuideOpen && (
+                <div
+                  className="shrink-0 pointer-events-none transition-all duration-300"
+                  style={{ height: "45vh" }}
+                />
+              )}
             </div>
           )}
         </div>
       </div>
       <QuranSpotlightGuide
-        guideKey="sidebar_menu"
+        guideKey="sidebar_menu_v2"
         steps={QURAN_SIDEBAR_STEPS}
         isOpen={isSidebarGuideOpen}
         onClose={() => setIsSidebarGuideOpen(false)}
@@ -3654,7 +3678,7 @@ const MenuSection: React.FC<{
 }> = ({ title, children, iconColor, titleColor = "#000000", currentTheme, isRTL = true }) => (
   <div className="flex flex-col flex-grow">
     <div
-      className={`py-1.5 px-3 rounded-md mb-1.5 ${isRTL ? "text-right" : "text-left"}`}
+      className={`py-1 px-2.5 rounded-md mb-1 ${isRTL ? "text-right" : "text-left"} whitespace-nowrap`}
       style={{
         backgroundColor: currentTheme
           ? `${currentTheme.accent}15`
@@ -3662,13 +3686,13 @@ const MenuSection: React.FC<{
       }}
     >
       <span
-        className="text-[11px] font-bold"
+        className="text-[11px] font-bold whitespace-nowrap"
         style={{ color: currentTheme ? currentTheme.accent : titleColor }}
       >
         {title}
       </span>
     </div>
-    <div className="flex flex-col px-1.5 justify-evenly flex-grow">
+    <div className="flex flex-col px-1 justify-evenly flex-grow">
       {children}
     </div>
   </div>
@@ -3702,14 +3726,14 @@ const MenuItem: React.FC<{
   <button
     onClick={onClick}
     data-id={dataId}
-    className={`flex items-center gap-3 py-2.5 border-b last:border-0 hover:bg-black/5 transition-colors ${isRTL ? "text-right" : "text-left"} w-full ${isSubItem ? "px-2 py-1.5 border-0" : ""}`}
+    className={`flex items-center gap-2.5 py-2 px-1 border-b last:border-0 hover:bg-black/5 transition-colors ${isRTL ? "text-right" : "text-left"} w-full whitespace-nowrap ${isSubItem ? "px-2 py-1.5 border-0" : ""}`}
     style={{
       borderBottomColor: currentTheme ? `${currentTheme.text}10` : "#f3f4f6",
     }}
   >
-    <div style={{ color: iconColor }}>{icon}</div>
+    <div style={{ color: iconColor }} className="shrink-0 flex items-center justify-center">{icon}</div>
     <span
-      className={`${isSubItem ? "text-[11px]" : "text-[12px]"} font-bold flex-1`}
+      className={`${isSubItem ? "text-[11px]" : "text-[12px]"} font-bold whitespace-nowrap`}
       style={{
         color: isActive
           ? iconColor

@@ -307,12 +307,12 @@ export const TAB_CHATS_STEPS: SpotlightStep[] = [
   {
     id: 'tab_chats_list',
     targetSelector: '#community-chats-section',
-    titleAr: 'قائمة محادثات الأصدقاء',
-    titleEn: 'Conversations List',
-    descAr: 'اضغط على أي صديق لفتح المحادثة الفورية، مشاركة الآيات برسم المصحف، إرسال تلاوات صوتية، أو السحب لحذف المحادثة.',
-    descEn: 'Tap any friend to open instant chat, share Uthmani verses, send voice notes, or swipe to remove conversation.',
-    badgeAr: 'المحادثات • Chats',
-    badgeEn: 'Chat List',
+    titleAr: 'قائمة الاصدقاء والدعم الفنى',
+    titleEn: 'Friends & Technical Support List',
+    descAr: 'التواصل مع الدعم الفنى ويظهر اسفل الدعم الفنى قائمه بالاصدقاء للتواصل معهم',
+    descEn: 'Connect with Technical Support, and below Technical Support appears a list of friends to connect with.',
+    badgeAr: 'الأصدقاء والدعم الفني',
+    badgeEn: 'Friends & Support',
     iconName: 'action',
     accentColor: '#10b981',
     gradient: 'from-emerald-500 to-teal-600'
@@ -487,7 +487,8 @@ export const GROUP_CHAT_STEPS: SpotlightStep[] = [
     badgeEn: 'Discussion Feed',
     iconName: 'chat',
     accentColor: '#3b82f6',
-    gradient: 'from-blue-500 to-indigo-600'
+    gradient: 'from-blue-500 to-indigo-600',
+    preferredPlacement: 'bottom'
   },
   {
     id: 'group_chat_verse',
@@ -1016,7 +1017,7 @@ export const MEMORIZATION_REVIEW_STEPS: SpotlightStep[] = [
   },
   {
     id: 'rev_list',
-    targetSelector: '#memorization-review-list',
+    targetSelector: '#first-review-card, #memorization-review-empty, #memorization-review-list',
     titleAr: 'قائمة المحفوظات للمراجعة',
     titleEn: 'Review Schedule List',
     descAr: 'يعرض جميع مقاطعك المحفوظة مع تواريخ مراجعتها؛ يمكنك الضغط على زر «بدء جلسة المراجعة والتثبيت» للانطلاق فوراً في تثبيتها، أو حذفها.',
@@ -1028,3 +1029,280 @@ export const MEMORIZATION_REVIEW_STEPS: SpotlightStep[] = [
     gradient: 'from-purple-500 to-indigo-600'
   }
 ];
+
+export const RUQYAH_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'ruqyah_page_intro',
+    titleAr: 'الرقية الشرعية من الكتاب والسنة',
+    titleEn: "Al-Ruqyah Al-Shar'iyyah",
+    descAr: 'رقية شرعية جامعة وشاملة للتحصين والاستشفاء ودفع كل أذى وسوء، بآيات القرآن الكريم والأدعية النبوية الثابتة عن النبي ﷺ مع إمكانية القراءة والاستماع الصوتي.',
+    descEn: 'Comprehensive spiritual healing and protection from the Holy Quran and authentic Prophetic supplications, with recitation and audio listening.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const WORSHIP_MENTOR_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'worship_mentor_page_intro',
+    titleAr: 'مربّي العبادات اليومية',
+    titleEn: 'Daily Worship Mentor',
+    descAr: 'متابعة وتنظيم العبادات اليومية من الصلوات والسنن والأذكار والنوافل والصدقات وبر الوالدين، لتتعهد قلبك وترتقي بقربك إلى الله تعالى كل يوم.',
+    descEn: 'Track and organize your daily prayers, sunnahs, adhkar, voluntary acts, charity, and righteous deeds to cultivate your heart and elevate your closeness to Allah every day.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const CALCULATOR_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'calculator_page_intro',
+    titleAr: 'الحاسبة الشرعية والمالية',
+    titleEn: 'Islamic Legal & Financial Calculator',
+    descAr: 'حاسبة شرعية شاملة لحساب الزكاة والتركات والمواريث والكفارات وزكاة الفطر والأضاحي بدقة تامة وفق أحكام الفقه الإسلامي.',
+    descEn: 'Comprehensive Islamic calculator for Zakat, inheritance, expiations, Fitr, and Udhiyah accurately according to Islamic jurisprudence.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const NAWAWI_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'nawawi_page_intro',
+    titleAr: 'الأربعون النووية',
+    titleEn: "Al-Nawawi's 40 Hadith",
+    descAr: 'الأحاديث النبوية الجامعة للإمام النووي رحمه الله، مع الشرح المختصر والفوائد العقدية والفقهية والتربوية لكل حديث، وإمكانية الاستماع الصوتي والبحث الذكي.',
+    descEn: "Imam Al-Nawawi's comprehensive prophetic traditions with brief explanations, creed, jurisprudence, and behavioral benefits for each hadith, plus audio listening and smart search.",
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const PRAYER_TIMES_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'prayer_times_page_intro',
+    titleAr: 'مواقيت الصلاة واتجاه القبلة',
+    titleEn: 'Prayer Times & Qibla Direction',
+    descAr: 'حساب مواقيت الصلوات الخمس بدقة تامة حسب موقعك الجغرافي وحسابات الفلك المعتمدة، مع تنبيهات الأذان والإقامة وحساب الثلث الأخير من الليل واتجاه القبلة.',
+    descEn: 'Calculate prayer times accurately based on your location and approved astronomical methods, with Adhan and Iqama alerts, last third of the night, and Qibla direction.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const ASMAUL_HUSNA_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'asmaul_husna_page_intro',
+    titleAr: 'أسماء الله الحسنى',
+    titleEn: 'Beautiful Names of Allah',
+    descAr: 'تعرف على أسماء الله الحسنى ومعانيها العظيمة ودلائلها القرآنية، مع إمكانية الاستماع الصوتي لكل اسم ومشاركته كبطاقة تصميم إسلامية مذهبة والبحث السريع.',
+    descEn: 'Explore the Beautiful Names of Allah, their profound meanings and Qurancic proofs, with audio recitations, Islamic design cards sharing, and smart search.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const LISTEN_QURAN_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'listen_quran_page_intro',
+    titleAr: 'استماع القرآن الكريم',
+    titleEn: 'Quran Listening',
+    descAr: 'استمع لتلاوات القرآن الكريم بصوت نخبة من القراء، مع إمكانية اختيار السور والتحكم في التكرار والمؤقت وإمكانية التحميل للاستماع بدون إنترنت.',
+    descEn: 'Listen to Holy Quran recitations by elite reciters, with options to select surahs, control repetition, set sleep timer, and download for offline listening.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const QIBLA_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'qibla_page_intro',
+    titleAr: 'اتجاه القبلة',
+    titleEn: 'Qibla Direction',
+    descAr: 'حدد اتجاه القبلة بدقة من أي مكان في العالم باستخدام البوصلة التفاعلية الذكية المدمجة.',
+    descEn: 'Accurately determine the Qibla direction from anywhere in the world using the integrated smart interactive compass.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const ATHKAR_SALAH_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'athkar_salah_page_intro',
+    titleAr: 'أذكار الصلاة',
+    titleEn: 'Prayer Athkar',
+    descAr: 'مجموعة الأذكار المسنونة بعد الصلوات المكتوبة، مع إمكانية القراءة والعد.',
+    descEn: 'Collection of Sunnah adhkar after obligatory prayers, with reading and counting capabilities.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const ADIA_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'adia_page_intro',
+    titleAr: 'الأدعية المأثورة',
+    titleEn: 'Supplications (Adia)',
+    descAr: 'مجموعة متنوعة من الأدعية المأثورة من الكتاب والسنة لمختلف الحالات والمناسبات.',
+    descEn: 'A diverse collection of supplications from the Quran and Sunnah for various situations and occasions.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const HISN_ALMUSLIM_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'hisn_almuslim_page_intro',
+    titleAr: 'حصن المسلم',
+    titleEn: 'Hisn Al-Muslim',
+    descAr: 'الكتاب الشهير لأذكار وأدعية المسلم اليومية، منظم في أبواب لسهولة الوصول.',
+    descEn: 'The famous book of daily Muslim adhkar and supplications, organized into chapters for easy access.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const ADKAR_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'adkar_page_intro',
+    titleAr: 'أذكار الصباح والمساء',
+    titleEn: 'Morning and Evening Athkar',
+    descAr: 'أذكار الصباح والمساء الثابتة عن النبي ﷺ مع إمكانية العد والمتابعة.',
+    descEn: 'Authentic Morning and Evening Athkar from the Prophet ﷺ, with counting and tracking capabilities.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const CALENDAR_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'calendar_page_intro',
+    titleAr: 'التقويم الهجري والميلادي والمناسبات',
+    titleEn: 'Hijri & Gregorian Calendar & Events',
+    descAr: 'عرض التقويم الهجري والميلادي جنباً إلى جنب مع تحديد المناسبات الإسلامية والأحداث التاريخية الهامة ومحول تواريخ دقيق.',
+    descEn: 'Display Hijri and Gregorian calendars side by side with Islamic occasions, historical events, and accurate date converter.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const HAJJ_UMRAH_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'hajj_umrah_page_intro',
+    titleAr: 'دليل الحج والعمرة والسبحة التفاعلية',
+    titleEn: 'Hajj, Umrah & Tawaf Guide',
+    descAr: 'دليل شامل ومبسط لمناسك الحج والعمرة مع أذكار الطواف والسعي ومتابعة الأشواط بالعداد التفاعلي والأحكام الفقهية.',
+    descEn: 'Comprehensive and simplified guide for Hajj and Umrah rituals with Tawaf and Sai supplications, interactive counter for circuits, and jurisprudence rulings.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const VOICE_CONTROL_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'voice_control_intro',
+    titleAr: 'التحكم الصوتي في التطبيق',
+    titleEn: 'Voice Control',
+    descAr: 'تحكم في التطبيق بالكامل باستخدام الأوامر الصوتية، مثل فتح الأبواب والبحث والتنقل، لتسهيل تجربة الاستخدام.',
+    descEn: 'Control the entire app using voice commands, such as opening sections, searching, and navigating, for an easier user experience.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'voice',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const ISLAMIC_SITES_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'islamic_sites_intro',
+    titleAr: 'مواقع إسلامية موثوقة',
+    titleEn: 'Islamic Websites',
+    descAr: 'دليل لأبرز المواقع الإسلامية الموثوقة والمصنفة لخدمة المسلم في شتى العلوم الشرعية والقرآنية.',
+    descEn: 'A directory of the most prominent and trusted Islamic websites, categorized to serve the Muslim in various Sharia and Quranic sciences.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'quran',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const TASBEEH_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'tasbeeh_page_intro',
+    titleAr: 'السبحة الإلكترونية الذكية',
+    titleEn: 'Smart Electronic Tasbeeh',
+    descAr: 'سبحة إلكترونية متطورة مع أذكار متنوعة وأشكال عرض متعددة وإحصائيات يومية لتتبع ورد التسبيح والاستغفار بسهولة.',
+    descEn: 'Advanced electronic tasbeeh with diverse supplications, multiple display skins, and daily statistics to easily track your tasbeeh and dhikr.',
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+export const PROPHETIC_SEERAH_PAGE_STEPS: SpotlightStep[] = [
+  {
+    id: 'prophetic_seerah_page_intro',
+    titleAr: 'السيرة النبوية العطرة',
+    titleEn: 'The Noble Prophetic Seerah',
+    descAr: 'سيرة النبي محمد ﷺ الشريفة، محطاتها التاريخية العظيمة، ومواقفه الخالدة، ونسبه الشريف مع إمكانية التصفح، البحث الذكي، ومشاركة البطاقات كصور.',
+    descEn: "The blessed biography of Prophet Muhammad ﷺ, grand historical milestones, immortal stances, and noble lineage with search, audio-like features, and card sharing.",
+    badgeAr: 'فائدة الصفحة',
+    badgeEn: 'Purpose & Benefit',
+    iconName: 'block',
+    accentColor: '#10b981',
+    gradient: 'from-emerald-500 to-teal-600'
+  }
+];
+
+
+
+
+
+
+

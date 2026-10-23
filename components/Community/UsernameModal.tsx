@@ -120,42 +120,41 @@ export interface AvatarOption {
 }
 
 export const AVATAR_OPTIONS: AvatarOption[] = [
-  // 1. الصور الحالية (الواقعية الـ 5 الأصلية)
+  // 1. صور واقعية (نساء بالحجاب ورجال محترمون)
+  { url: '/assets/avatars/hijab_woman_emerald_1792672024617.jpg', category: 'realistic', label: 'أخت بحجاب زمردي' },
   { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', category: 'realistic', label: 'شاب مبتسم' },
+  { url: '/assets/avatars/hijab_woman_pastel_1792672025965.jpg', category: 'realistic', label: 'أخت بحجاب وردي' },
   { url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', category: 'realistic', label: 'رجل بنظارة' },
-  { url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', category: 'realistic', label: 'فتاة هادئة' },
+  { url: '/assets/avatars/hijab_woman_beige_1792672025440.jpg', category: 'realistic', label: 'أخت بحجاب بيج' },
   { url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150', category: 'realistic', label: 'شاب ببدلة' },
-  { url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', category: 'realistic', label: 'فتاة مبتسمة' },
-
-  // صور واقعية إضافية
+  { url: '/assets/avatars/hijab_woman_navy_1792672044491.jpg', category: 'realistic', label: 'أخت بحجاب كحلي' },
   { url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150', category: 'realistic', label: 'شاب وقور' },
-  { url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150', category: 'realistic', label: 'شابة هادئة' },
   { url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150', category: 'realistic', label: 'ابتسامة مشرقة' },
-  { url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', category: 'realistic', label: 'فتاة بشوشة' },
   { url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150', category: 'realistic', label: 'شاب معاصر' },
 
-  // 2. صور كرتونية ورسوم متحركة (Cartoon & Anime)
+  // 2. صور كرتونية ورسوم متحركة (كرتون بحجاب ورسوم محتشمة)
+  { url: '/assets/avatars/hijab_avatar_cartoon_1792672065395.jpg', category: 'cartoon', label: 'كرتون: أخت بالحجاب' },
   { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad&backgroundColor=b6e3f4', category: 'cartoon', label: 'كرتون: أحمد' },
-  { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Layla&backgroundColor=ffdfbf', category: 'cartoon', label: 'كرتون: ليلى' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?top=hijab&seed=Fatima&backgroundColor=ffd5dc', category: 'cartoon', label: 'كرتون: فاطمة بالحجاب' },
   { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Omar&backgroundColor=c0aede', category: 'cartoon', label: 'كرتون: عمر' },
-  { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima&backgroundColor=ffd5dc', category: 'cartoon', label: 'كرتون: فاطمة' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?top=hijab&seed=Mariam&backgroundColor=c0aede', category: 'cartoon', label: 'كرتون: مريم بالحجاب' },
   { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Youssef&backgroundColor=d1d4f9', category: 'cartoon', label: 'كرتون: يوسف' },
-  { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mariam&backgroundColor=c0aede', category: 'cartoon', label: 'كرتون: مريم' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?top=hijab&seed=Aisha&backgroundColor=ffdfbf', category: 'cartoon', label: 'كرتون: عائشة بالحجاب' },
   { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ali&backgroundColor=b6e3f4', category: 'cartoon', label: 'كرتون: علي' },
-  { url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Zahra&backgroundColor=ffdfbf', category: 'cartoon', label: 'كرتون: زهراء' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?top=hijab&seed=Zahra&backgroundColor=ffdfbf', category: 'cartoon', label: 'كرتون: زهراء بالحجاب' },
   { url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Zaid&backgroundColor=b6e3f4', category: 'cartoon', label: 'رسوم: زيد' },
-  { url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Noor&backgroundColor=ffd5dc', category: 'cartoon', label: 'رسوم: نور' },
   { url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Bilal&backgroundColor=d1d4f9', category: 'cartoon', label: 'أنمي: بلال' },
-  { url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Salma&backgroundColor=ffdfbf', category: 'cartoon', label: 'أنمي: سلمى' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?top=hijab&seed=Khadija&backgroundColor=b6e3f4', category: 'cartoon', label: 'كرتون: خديجة بالحجاب' },
 
-  // 3. أفاتار ثلاثي الأبعاد وعصري (3D & Digital Avatars)
+  // 3. أفاتار ثلاثي الأبعاد وعصري (3D & Digital Avatars مع الحجاب)
+  { url: '/assets/avatars/hijab_avatar_modern_3d_1792672065148.jpg', category: 'avatar3d', label: 'أفاتار 3D: أخت بالحجاب' },
   { url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150', category: 'avatar3d', label: 'أفاتار 3D' },
   { url: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuranKid&backgroundColor=c0aede', category: 'avatar3d', label: 'روبوت لطيف' },
   { url: 'https://api.dicebear.com/7.x/bottts/svg?seed=RoboMuslim&backgroundColor=b6e3f4', category: 'avatar3d', label: 'أفاتار مستقبلي' },
   { url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Tariq&backgroundColor=c0aede', category: 'avatar3d', label: 'أفاتار فني: طارق' },
-  { url: 'https://api.dicebear.com/7.x/notionists/svg?seed=Huda&backgroundColor=ffd5dc', category: 'avatar3d', label: 'أفاتار فني: هدى' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?top=hijab&seed=Huda&backgroundColor=ffd5dc', category: 'avatar3d', label: 'أفاتار: هدى بالحجاب' },
   { url: 'https://api.dicebear.com/7.x/micah/svg?seed=Ibrahim&backgroundColor=b6e3f4', category: 'avatar3d', label: 'أفاتار عصري: إبراهيم' },
-  { url: 'https://api.dicebear.com/7.x/micah/svg?seed=Aisha&backgroundColor=ffdfbf', category: 'avatar3d', label: 'أفاتار عصري: عائشة' },
+  { url: 'https://api.dicebear.com/7.x/avataaars/svg?top=hijab&seed=Ruqayyah&backgroundColor=ffdfbf', category: 'avatar3d', label: 'أفاتار: رقية بالحجاب' },
   { url: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=Happy&backgroundColor=ffd5dc', category: 'avatar3d', label: 'إيموجي مرح' },
   { url: 'https://api.dicebear.com/7.x/thumbs/svg?seed=Barakah&backgroundColor=c0aede', category: 'avatar3d', label: 'أفاتار بركة' },
 
@@ -262,6 +261,7 @@ const AvatarSelector: React.FC<AvatarSelectorProps> = ({
                 alt={item.label} 
                 className="w-full h-full object-cover" 
                 loading="lazy" 
+                referrerPolicy="no-referrer"
               />
               {isSelected && (
                 <div 
@@ -278,7 +278,7 @@ const AvatarSelector: React.FC<AvatarSelectorProps> = ({
   );
 };
 
-const compressAvatar = (dataUrl: string, maxDim = 128, quality = 0.7): Promise<string> => {
+const compressAvatar = (dataUrl: string, maxDim = 512, quality = 0.90): Promise<string> => {
   return new Promise((resolve) => {
     if (!dataUrl || !dataUrl.startsWith('data:image')) {
       return resolve(dataUrl || PRESET_AVATARS[0]);
@@ -303,18 +303,20 @@ const compressAvatar = (dataUrl: string, maxDim = 128, quality = 0.7): Promise<s
       canvas.height = Math.max(1, height);
       const ctx = canvas.getContext('2d');
       if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, width, height);
         try {
           const compressed = canvas.toDataURL('image/jpeg', quality);
           resolve(compressed);
         } catch (e) {
-          resolve(PRESET_AVATARS[0]);
+          resolve(dataUrl || PRESET_AVATARS[0]);
         }
       } else {
-        resolve(PRESET_AVATARS[0]);
+        resolve(dataUrl || PRESET_AVATARS[0]);
       }
     };
-    img.onerror = () => resolve(PRESET_AVATARS[0]);
+    img.onerror = () => resolve(dataUrl || PRESET_AVATARS[0]);
     img.src = dataUrl;
   });
 };
@@ -567,7 +569,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
 
   const handleCropComplete = async (croppedDataUrl: string) => {
     try {
-      const compressed = await compressAvatar(croppedDataUrl, 180, 0.8);
+      const compressed = await compressAvatar(croppedDataUrl, 512, 0.90);
       if (cropperTargetIsNew) {
         setNewAvatarUrl(compressed);
       } else {
@@ -623,7 +625,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
         } else {
           onClose();
         }
-      }, 400);
+      }, 100);
     } catch (err: any) {
       console.error('Save profile error:', err);
       setError(err?.message || (isEn ? 'Error saving profile, please try again' : 'حدث خطأ أثناء الحفظ، يرجى المحاولة مرة أخرى'));
@@ -688,7 +690,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
         } else {
           onClose();
         }
-      }, 500);
+      }, 100);
     } catch (err: any) {
       console.error('Create new account error:', err);
       setError(err?.message || (isEn ? 'Error creating account, please try again' : 'حدث خطأ أثناء إنشاء الحساب، يرجى المحاولة مرة أخرى'));
@@ -739,7 +741,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
         } else {
           onClose();
         }
-      }, 500);
+      }, 100);
     } catch (err: any) {
       setError(err?.message || (isEn ? 'Unable to restore account. Check name/code and passcode.' : 'تعذر استعادة الحساب. تأكد من صحة الاسم أو الكود ورمز المرور.'));
     } finally {
@@ -1037,7 +1039,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   {/* Avatar Section */}
                   <div 
                     id="onboarding-reg-avatar"
-                    className="p-3.5 rounded-2xl flex flex-col items-center justify-center mb-1"
+                    className="p-3.5 rounded-2xl flex flex-col items-center justify-center mb-1 scroll-mt-20"
                     style={{
                       backgroundColor: secondaryBg,
                       borderColor: cardBorder,
@@ -1119,12 +1121,11 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   </div>
 
                   {/* Username */}
-                  <div>
+                  <div id="onboarding-reg-username">
                     <label className="block text-xs font-bold mb-1" style={{ color: theme.textColor }}>
                       {isEn ? 'Username / Nickname:' : 'اسم المستخدم / اللقب المبارك:'}
                     </label>
                     <input
-                      id="onboarding-reg-username"
                       type="text"
                       value={username}
                       onChange={(e) => {
@@ -1151,7 +1152,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   </div>
 
                   {/* Passcode / PIN - Directly below Username */}
-                  <div>
+                  <div id="onboarding-reg-passcode">
                     <label className="block text-xs font-bold mb-1 flex items-center justify-between" style={{ color: theme.textColor }}>
                       <span className="flex items-center gap-1">
                         <span>{isEn ? 'Passcode / PIN:' : 'الرقم السري:'}</span>
@@ -1159,7 +1160,6 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                       <span className="text-[10px] opacity-75 font-normal">{isEn ? '6-12 chars' : '6-12 حرف أو رقم'}</span>
                     </label>
                     <input
-                      id="onboarding-reg-passcode"
                       ref={passcodeRef}
                       type="password"
                       maxLength={12}
@@ -1189,12 +1189,11 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                   </div>
 
                   {/* Country */}
-                  <div>
+                  <div id="onboarding-reg-country">
                     <label className="block text-xs font-bold mb-1" style={{ color: theme.textColor }}>
                       {isEn ? 'Country / Region:' : 'الدولة / البلد:'}
                     </label>
                     <select
-                      id="onboarding-reg-country"
                       value={country}
                       onChange={(e) => {
                         setCountry(e.target.value);
@@ -1335,7 +1334,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                 {/* Avatar Section */}
                 <div 
                   id="onboarding-reg-avatar"
-                  className="p-3.5 rounded-2xl flex flex-col items-center justify-center mb-1"
+                  className="p-3.5 rounded-2xl flex flex-col items-center justify-center mb-1 scroll-mt-20"
                   style={{
                     backgroundColor: secondaryBg,
                     borderColor: cardBorder,
@@ -1407,12 +1406,11 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                 </div>
 
                 {/* Username */}
-                <div>
+                <div id="onboarding-reg-username">
                   <label className="block text-xs font-bold mb-1" style={{ color: theme.textColor }}>
                     {isEn ? 'New Username / Nickname:' : 'اسم المستخدم / اللقب الجديد:'}
                   </label>
                   <input
-                    id="onboarding-reg-username"
                     type="text"
                     value={newUsername}
                     onChange={(e) => {
@@ -1439,7 +1437,7 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                 </div>
 
                 {/* Passcode / PIN - Directly below Username */}
-                <div>
+                <div id="onboarding-reg-passcode">
                   <label className="block text-xs font-bold mb-1 flex items-center justify-between" style={{ color: theme.textColor }}>
                     <span className="flex items-center gap-1">
                       <span>{isEn ? 'Passcode / PIN:' : 'الرقم السري:'}</span>
@@ -1447,7 +1445,6 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     <span className="text-[10px] opacity-75 font-normal">{isEn ? '6-12 chars (Required)' : '6-12 حرف أو رقم (إجباري)'}</span>
                   </label>
                   <input
-                    id="onboarding-reg-passcode"
                     ref={newPasscodeRef}
                     type="password"
                     maxLength={12}
@@ -1485,12 +1482,11 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                 </div>
 
                 {/* Country */}
-                <div>
+                <div id="onboarding-reg-country">
                   <label className="block text-xs font-bold mb-1" style={{ color: theme.textColor }}>
                     {isEn ? 'Country / Region:' : 'الدولة / البلد:'}
                   </label>
                   <select
-                    id="onboarding-reg-country"
                     value={newCountry}
                     onChange={(e) => {
                       setNewCountry(e.target.value);
@@ -1653,12 +1649,11 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                 }}
               >
                 <form onSubmit={handleRestoreAccount} className="space-y-3.5">
-                  <div>
+                  <div id="onboarding-restore-username">
                     <label className="block text-xs font-bold mb-1" style={{ color: theme.textColor }}>
                       {isEn ? 'Full username or unique account code:' : 'اسم المستخدم بالكامل أو كود الحساب الفريد:'}
                     </label>
                     <input
-                      id="onboarding-restore-username"
                       type="text"
                       value={restoreCode}
                       onChange={(e) => {
@@ -1684,13 +1679,12 @@ const UsernameModal: React.FC<UsernameModalProps> = ({
                     />
                   </div>
 
-                  <div>
+                  <div id="onboarding-restore-passcode">
                     <label className="block text-xs font-bold mb-1 flex items-center justify-between" style={{ color: theme.textColor }}>
                       <span>{isEn ? 'Account Passcode / PIN:' : 'الرقم السري لحسابك:'}</span>
                       <span className="text-[10px] opacity-75 font-normal">{isEn ? '6-12 chars' : '6-12 حرف أو رقم'}</span>
                     </label>
                     <input
-                      id="onboarding-restore-passcode"
                       ref={restorePasscodeRef}
                       type="password"
                       maxLength={12}

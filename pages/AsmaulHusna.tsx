@@ -3,11 +3,14 @@ import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'motion/react';
 import ThemePageLock from '../components/ThemePageLock';
 import { asmaulHusna, AsmaulHusnaItem } from '../data/asmaulHusnaData';
-import { Search, LayoutGrid, ListFilter } from 'lucide-react';
+import { Search, LayoutGrid, ListFilter, HelpCircle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { shareAsImage } from '../utils/shareAsImage';
 import { playTTS, stopTTS, subscribeTTS } from '../utils/ttsEngine';
+import { CommunitySpotlightGuide, getGuideSeen } from '../components/Community/CommunitySpotlightGuide';
+import { ASMAUL_HUSNA_PAGE_STEPS } from '../components/Community/communityTourSteps';
+import { markPageAsSeen } from '../utils/badgeManager';
 
 const toArabicNumerals = (num: number) => String(num).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
 
@@ -30,8 +33,13 @@ const AsmaulHusna: React.FC<{ onBack: () => void, onNavigate: (id: string, param
     const [zoomedName, setZoomedName] = useState<AsmaulHusnaItem | null>(null);
     const [toastMessage, setToastMessage] = useState('');
     const [playingText, setPlayingText] = useState<string | null>(null);
+    const [showGuide, setShowGuide] = useState(false);
 
     useEffect(() => {
+        markPageAsSeen('asmaul_husna');
+        if (!getGuideSeen('asmaul_husna_page_spotlight')) {
+            setShowGuide(true);
+        }
         const unsubscribe = subscribeTTS(setPlayingText);
         return () => {
             unsubscribe();
@@ -240,8 +248,18 @@ const AsmaulHusna: React.FC<{ onBack: () => void, onNavigate: (id: string, param
                             </h1>
                         </div>
 
-                        {/* Home / Lock */}
+                        {/* Guide / Home / Lock */}
                         <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setShowGuide(true)}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                style={{ color: 'var(--top-bar-text, inherit)' }}
+                                title={isEn ? "Asmaul Husna Guide" : "دليل أسماء الله الحسنى"}
+                                aria-label={isEn ? "Asmaul Husna Guide" : "دليل أسماء الله الحسنى"}
+                            >
+                                <HelpCircle size={19} />
+                            </button>
                             <ThemePageLock />
                             <button
                                 type="button"
@@ -541,6 +559,17 @@ const AsmaulHusna: React.FC<{ onBack: () => void, onNavigate: (id: string, param
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <CommunitySpotlightGuide
+                isOpen={showGuide}
+                onClose={() => {
+                    setShowGuide(false);
+                    markPageAsSeen('asmaul_husna');
+                }}
+                steps={ASMAUL_HUSNA_PAGE_STEPS}
+                guideKey="asmaul_husna_page_spotlight"
+                isEn={isEn}
+            />
         </div>
     );
 };

@@ -10,7 +10,10 @@ import { useLanguage } from '../context/LanguageContext';
 import { useHabitTracker } from '../hooks/useHabitTracker';
 import { HISN_CATEGORIES_EN } from '../data/hisnAlmuslimTranslationsEn';
 import { motion, AnimatePresence } from 'motion/react';
-import { LayoutGrid, ListFilter, Search } from 'lucide-react';
+import { LayoutGrid, ListFilter, Search, HelpCircle } from 'lucide-react';
+import { CommunitySpotlightGuide, getGuideSeen } from '../components/Community/CommunitySpotlightGuide';
+import { HISN_ALMUSLIM_PAGE_STEPS } from '../components/Community/communityTourSteps';
+import { markPageAsSeen } from '../utils/badgeManager';
 
 const HISN_STATUS_KEY = 'hisn_almuslim_counts_v1';
 
@@ -32,7 +35,15 @@ function HisnAlmuslim({ onBack, onNavigate }) {
     const [menuOpenDirection, setMenuOpenDirection] = useState<'up' | 'down'>('up');
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<'grid' | 'list'>('grid');
+    const [showGuide, setShowGuide] = useState(false);
     const fabRef = useRef<HTMLButtonElement>(null);
+    
+    useEffect(() => {
+        markPageAsSeen('hisn_almuslim');
+        if (!getGuideSeen('hisn_almuslim_page_spotlight')) {
+            setShowGuide(true);
+        }
+    }, []);
     const fabContainerRef = useRef<HTMLDivElement>(null);
 
     const [hisnCounts, setHisnCounts] = useState<{ [key: string]: number }>(() => {
@@ -190,6 +201,7 @@ function HisnAlmuslim({ onBack, onNavigate }) {
                 showThemePageLock={!selectedCategory}
                 onBack={handleBack}
                 onHome={handleGoHome}
+                onOpenGuide={() => setShowGuide(true)}
             />
 
             <main className="flex-1 overflow-y-auto hide-scrollbar relative mx-auto w-full max-w-3xl px-4 pb-6 flex flex-col">
@@ -369,6 +381,16 @@ function HisnAlmuslim({ onBack, onNavigate }) {
                     </motion.div>
                 )}
             </AnimatePresence>
+            <CommunitySpotlightGuide
+                isOpen={showGuide}
+                onClose={() => {
+                    setShowGuide(false);
+                    markPageAsSeen('hisn_almuslim');
+                }}
+                steps={HISN_ALMUSLIM_PAGE_STEPS}
+                guideKey="hisn_almuslim_page_spotlight"
+                isEn={isEn}
+            />
         </div>
     );
 }

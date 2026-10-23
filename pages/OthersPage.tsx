@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutGrid, ListFilter } from 'lucide-react';
+import { LayoutGrid, ListFilter, HelpCircle } from 'lucide-react';
 import ThemePageLock from '../components/ThemePageLock';
 import { useTheme } from '../context/ThemeContext';
 import { shareAsImage } from '../utils/shareAsImage';
@@ -9,6 +9,8 @@ import { playTTS, stopTTS, subscribeTTS } from '../utils/ttsEngine';
 import { markPageAsSeen } from '../utils/badgeManager';
 import { useLanguage } from '../context/LanguageContext';
 import { RUQYAH_DATA, RUQYAH_GUIDE_STEPS, RuqyahItem } from '../data/ruqyahData';
+import { CommunitySpotlightGuide, getGuideSeen } from '../components/Community/CommunitySpotlightGuide';
+import { RUQYAH_PAGE_STEPS } from '../components/Community/communityTourSteps';
 
 interface OthersPageProps {
   onBack: () => void;
@@ -34,12 +36,16 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
   const [zoomedDuaa, setZoomedDuaa] = useState<RuqyahItem | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [menuOpenDirection, setMenuOpenDirection] = useState<'up' | 'down'>('up');
+  const [showGuide, setShowGuide] = useState(false);
 
   const fabRef = useRef<HTMLButtonElement>(null);
   const fabContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     markPageAsSeen('others');
+    if (!getGuideSeen('ruqyah_page_spotlight')) {
+      setShowGuide(true);
+    }
   }, []);
 
   // Subscribe to TTS playing changes
@@ -157,12 +163,17 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
   // Back interceptor for hardware/device back button
   useEffect(() => {
     const interceptor = () => {
-      // 1. Close zoom modal if open
+      // 1. Close spotlight guide if open
+      if (showGuide) {
+        setShowGuide(false);
+        return true;
+      }
+      // 2. Close zoom modal if open
       if (zoomedDuaa) {
         setZoomedDuaa(null);
         return true;
       }
-      // 2. Close floating quick-menu if open
+      // 3. Close floating quick-menu if open
       if (isMenuOpen) {
         setIsMenuOpen(false);
         return true;
@@ -171,7 +182,7 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
     };
     const unregister = registerBackInterceptor(interceptor);
     return unregister;
-  }, [zoomedDuaa, isMenuOpen]);
+  }, [zoomedDuaa, isMenuOpen, showGuide]);
 
   const getCardStyle = () => {
     return {
@@ -236,8 +247,8 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
       style={{ fontFamily: isEn ? 'inherit' : theme.font }}
       dir={isEn ? 'ltr' : 'rtl'}
     >
-      {/* Top Header with Back Button and Home Button */}
-      <header className="app-top-bar z-20 shrink-0" dir={isEn ? 'ltr' : 'rtl'}>
+      {/* Top Header with Back Button, Guide, Theme Lock, and Home Button */}
+      <header id="ruqyah-header" className="app-top-bar z-20 shrink-0" dir={isEn ? 'ltr' : 'rtl'}>
         <div className="app-top-bar__inner">
           <div className="relative flex items-center justify-center w-full min-h-[44px]">
             {/* Back Button */}
@@ -259,10 +270,21 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
               </h1>
             </div>
 
-            {/* Home Icon and Theme Lock */}
+            {/* Guide Icon, Theme Lock and Home Icon */}
             <div className={`absolute ${isEn ? 'right-0' : 'left-0'} flex items-center gap-1`}>
+              <button
+                type="button"
+                onClick={() => setShowGuide(true)}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                style={{ color: 'var(--top-bar-text, inherit)' }}
+                title={isEn ? "Ruqyah Guide" : "دليل وشرح الرقية الشرعية"}
+                aria-label={isEn ? "Ruqyah Guide" : "دليل وشرح الرقية الشرعية"}
+              >
+                <HelpCircle size={19} />
+              </button>
               <ThemePageLock />
               <button
+                type="button"
                 onClick={() => onNavigate('home')}
                 className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
                 title={isEn ? "Home" : "الصفحة الرئيسية"}
@@ -689,6 +711,15 @@ const OthersPage: React.FC<OthersPageProps> = ({ onBack, onNavigate, onOpenTheme
           </div>
         </div>
       )}
+
+      {/* Ruqyah Page Spotlight Guide */}
+      <CommunitySpotlightGuide
+        guideKey="ruqyah_page_spotlight"
+        steps={RUQYAH_PAGE_STEPS}
+        isOpen={showGuide}
+        onClose={() => setShowGuide(false)}
+        isEn={isEn}
+      />
     </div>
   );
 };

@@ -10,6 +10,10 @@ import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { shareAsImage } from '../utils/shareAsImage';
 import { playTTS, stopTTS, subscribeTTS } from '../utils/ttsEngine';
+import { HelpCircle } from 'lucide-react';
+import { CommunitySpotlightGuide, getGuideSeen } from '../components/Community/CommunitySpotlightGuide';
+import { NAWAWI_PAGE_STEPS } from '../components/Community/communityTourSteps';
+import { markPageAsSeen } from '../utils/badgeManager';
 import { 
     BookOpen, Sparkles, Lightbulb, Scale, ShieldCheck, 
     HeartHandshake, Copy, Share2, Volume2, ZoomIn, 
@@ -490,12 +494,17 @@ const Nawawi = ({ onBack, onNavigate }: { onBack: () => void; onNavigate?: (id: 
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTabMode, setActiveTabMode] = useState<'grid' | 'list'>('grid');
     const [playingText, setPlayingText] = useState<string | null>(null);
+    const [showGuide, setShowGuide] = useState(false);
 
     const isBlackTheme = theme.bgColor === '#000000';
     const isDefaultTheme = themeKey === 'default' || theme.name === 'الافتراضي' || !!theme.isOriginal || !themeKey;
     const cardBorderColor = isBlackTheme ? '#222222' : (theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)');
 
     useEffect(() => {
+        markPageAsSeen('nawawi');
+        if (!getGuideSeen('nawawi_page_spotlight')) {
+            setShowGuide(true);
+        }
         const unsubscribe = subscribeTTS(setPlayingText);
         return () => {
             unsubscribe();
@@ -619,6 +628,16 @@ const Nawawi = ({ onBack, onNavigate }: { onBack: () => void; onNavigate?: (id: 
 
                         {/* Home / Lock */}
                         <div className={`absolute ${isEn ? 'right-0' : 'left-0'} flex items-center gap-1`}>
+                            <button
+                                type="button"
+                                onClick={() => setShowGuide(true)}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                style={{ color: 'var(--top-bar-text, inherit)' }}
+                                title={isEn ? "Nawawi Guide" : "دليل وشرح الأربعون النووية"}
+                                aria-label={isEn ? "Nawawi Guide" : "دليل وشرح الأربعون النووية"}
+                            >
+                                <HelpCircle size={19} />
+                            </button>
                             <ThemePageLock />
                             <button
                                 onClick={() => onNavigate ? onNavigate('home') : onBack()}
@@ -990,6 +1009,18 @@ const Nawawi = ({ onBack, onNavigate }: { onBack: () => void; onNavigate?: (id: 
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Interactive Spotlight Guide */}
+            <CommunitySpotlightGuide
+                guideKey="nawawi_page_spotlight"
+                steps={NAWAWI_PAGE_STEPS}
+                isOpen={showGuide}
+                onClose={() => {
+                    setShowGuide(false);
+                    markPageAsSeen('nawawi');
+                }}
+                isEn={isEn}
+            />
         </div>
     );
 };

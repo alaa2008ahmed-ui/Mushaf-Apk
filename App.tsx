@@ -323,12 +323,18 @@ function App() {
       const current = prev[prev.length - 1];
       if (current === 'search') {
         const fromTarget = navParams?.from;
-        if ((fromTarget === 'quran' || fromTarget === 'quran-landscape') && !prev.includes(fromTarget)) {
+        const returnSidebar = navParams?.fromSidebar;
+        if (returnSidebar) {
+          setNavParams({ openSidebar: true, isWird: navParams?.isWird });
+        } else {
           setNavParams(null);
+        }
+        if ((fromTarget === 'quran' || fromTarget === 'quran-landscape') && !prev.includes(fromTarget)) {
           return ['home', fromTarget];
         }
+      } else {
+        setNavParams(null);
       }
-      setNavParams(null);
       return (prev.length > 1 ? prev.slice(0, -1) : prev);
     });
   }, [navParams]);

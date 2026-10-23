@@ -49,18 +49,39 @@ const GREGORIAN_MONTHS = ["يناير", "فبراير", "مارس", "أبريل"
 const APP_SHARE_TEXT_EN = `🕋✨ Major Update: "Mushaf Ahmed & Laila"! ✨🕋
 (Your Comprehensive Faith Companion — Offline & 100% Ad-Free)
 
-We are delighted to present an exceptional, fully refined release crafted for seamless, beautiful, and swift spiritual daily routines:
+We are delighted to present an exceptional and brand-new release, completely redesigned across all pages and user interface for smoother, faster, and more beautiful experience, featuring exclusive new faith tools:
 
-🚀 Key Features in this Edition:
-📜 Prophetic Seerah: Inspiring interactive timeline of the Prophet's life ﷺ with detailed historical stations and expeditions.
-🏆 Ahl Al-Quran: Live recitation statistics and leaderboard honouring Quran readers.
-💬 Faith Community: Brotherhood discussions, verified Islamic quotes, and daily reflections.
-🕋 Tawaf & Sa'i Counter: Live circuit tracker with authentic supplications.
-📊 Habit Tracker: Comprehensive tracker for daily obligatory & sunnah prayers and adhkar.
-⭐ Fortress of the Muslim (Hisn Al-Muslim), Tajweed Rules, Audio Quran, and more.
+🚀 Key Highlights in this Major Update:
 
-Explore & Share:
-https://mushaf-ahmed-laila.vercel.app/`;
+🌍 Full Arabic & English Bilingual Support:
+A seamless bilingual experience with full Arabic and English language support across all app sections and interfaces.
+
+📜 Prophetic Seerah (New):
+An inspiring and interactive journey through the life of the Prophet ﷺ with a detailed timeline of key milestones and events.
+
+🏆 Ahl Al-Quran (New):
+Honor board and virtuous competition to track recitation statistics and celebrate Quran readers monthly and cumulatively.
+
+💬 Community Hub (New):
+Spiritual brotherly connection, sharing wisdom and reflections, and purposeful group discussions.
+
+🛡️ Comprehensive Ruqyah (New):
+Complete authentic Ruqyah Shariah from the Holy Quran and Prophetic Sunnah for protection and peace of mind.
+
+🌐 Islamic Platforms & Directory (New):
+Integrated interactive guide to trusted Islamic platforms for Fatwa, Quranic studies, and Islamic knowledge.
+
+🎨 Complete Interface & Design Overhaul:
+Fresh modern design for all pages to elevate reading experience, typography, themes, and navigation speed.
+
+🌟 Alongside Your Favorite Core Features:
+(Complete Holy Quran with multiple recitations & exegesis • Fortress of the Muslim (Hisn Al-Muslim) & Daily Adhkar • Accurate Prayer Times & Qibla • Daily Recitation Wird & Memorization • Smart Voice Control • Habit Tracker • Zakat & Inheritance Calculators • An-Nawawi's Forty Hadiths).
+
+📥 Download or update for free on Google Play:
+👉 https://play.google.com/store/apps/details?id=com.AhmedLaila.Quran
+
+🤍 Share with your family and loved ones..
+"The one who guides to good is like the one who does it." 🤲🌱`;
 
 const APP_SHARE_TEXT = `🕋✨ التحديث الأكبر لتطبيق "مصحف أحمد وليلى"! ✨🕋
 (رفيقك الإيماني الشامل — يعمل بدون إنترنت وبدون إعلانات)
@@ -69,19 +90,22 @@ const APP_SHARE_TEXT = `🕋✨ التحديث الأكبر لتطبيق "مصح
 
 🚀 أبرز ما تم إضافته وتطويره في هذا التحديث:
 
+🌍 دعم اللغتين العربية والإنجليزية بالكامل:
+تجربة متكاملة تدعم اللغتين العربية والإنجليزية بشكل كامل لكافة أقسام وواجهات التطبيق ومحتواه.
+
 📜 صفحة السيرة النبوية (جديد):
 رحلة ملهمة وتفاعلية في سيرة خير الأنام ﷺ عبر خط زمني مفصل يوثق أهم المحطات والغزوات والأحداث النبوية الشريفة بأسلوب عصري وميسر.
 
-🏆 صفحة أهل القرآن:
+🏆 صفحة أهل القرآن (جديد):
 لوحة المتصدرين وتنافس إيماني مبارك؛ لمتابعة إحصائيات تلاوتك وتكريم قرّاء القرآن الكريم شهرياً وتراكمياً.
 
-💬 صفحة مجتمع التواصل:
+💬 صفحة مجتمع التواصل (جديد):
 ملتقى إيماني للتواصل الأخوي، ونشر الفوائد والخواطر، ومجموعات النقاش الهادف والتواصي بالحق.
 
-🛡️ صفحة الرقية الشرعية:
+🛡️ صفحة الرقية الشرعية (جديد):
 رقية شرعية كاملة وشاملة وميسرة من القرآن الكريم والسنة النبوية للتحصين والشفاء والسكينة.
 
-🌐 صفحة مواقع ومنصات إسلامية:
+🌐 صفحة مواقع ومنصات إسلامية (جديد):
 دليل تفاعلي متكامل لأوثق المواقع الإسلامية للفتوى والبحث الشرعي وعلوم القرآن.
 
 🎨 تحديث شامل للواجهة ولكافة الصفحات:

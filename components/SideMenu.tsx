@@ -106,7 +106,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ isOpen, onClose, onNavigate, onOpen
                                     </div>
                                     <div>
                                         <h2 className="font-bold text-base leading-tight">{t('app.name', 'مصحف أحمد وليلى')}</h2>
-                                        <p className="text-xs font-semibold opacity-75">Mushaf Ahmed &laila</p>
+                                        <p className="text-xs font-semibold opacity-75">Mushaf Ahmed & Laila</p>
                                         <p className="text-[10px] opacity-50">{t('app.version', 'الإصدار 1.13')}</p>
                                     </div>
                                 </div>

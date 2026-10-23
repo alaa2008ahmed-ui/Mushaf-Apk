@@ -9,7 +9,10 @@ import { shareAsImage } from '../utils/shareAsImage';
 import { playTTS, stopTTS, subscribeTTS } from '../utils/ttsEngine';
 import { useHabitTracker } from '../hooks/useHabitTracker';
 import { useLanguage } from '../context/LanguageContext';
-import { LayoutGrid, ListFilter } from 'lucide-react';
+import { LayoutGrid, ListFilter, HelpCircle } from 'lucide-react';
+import { CommunitySpotlightGuide, getGuideSeen } from '../components/Community/CommunitySpotlightGuide';
+import { ADIA_PAGE_STEPS } from '../components/Community/communityTourSteps';
+import { markPageAsSeen } from '../utils/badgeManager';
 
 const ADIA_STATUS_KEY = 'adia_status_v1';
 const toArabicNumerals = (num: number) => String(num).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
@@ -37,6 +40,14 @@ function Adia({ onBack, onNavigate }: AdiaProps) {
     const [activeTab, setActiveTab] = useState<'grid' | 'list'>('grid');
     const [toastMessage, setToastMessage] = useState('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [showGuide, setShowGuide] = useState(false);
+    
+    useEffect(() => {
+        markPageAsSeen('adia');
+        if (!getGuideSeen('adia_page_spotlight')) {
+            setShowGuide(true);
+        }
+    }, []);
     const [menuOpenDirection, setMenuOpenDirection] = useState<'up' | 'down'>('up');
     const [playingText, setPlayingText] = useState<string | null>(null);
     const fabRef = useRef<HTMLButtonElement>(null);
@@ -271,6 +282,16 @@ function Adia({ onBack, onNavigate }: AdiaProps) {
 
                         {/* أيقونة المنزل: على اليسار في العربي، وعلى اليمين في الإنجليزي */}
                         <div className={`absolute ${isEn ? 'right-0' : 'left-0'} flex items-center gap-1`}>
+                            <button
+                                type="button"
+                                onClick={() => setShowGuide(true)}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                style={{ color: 'var(--top-bar-text, inherit)' }}
+                                title={isEn ? "Adia Guide" : "دليل الأدعية"}
+                                aria-label={isEn ? "Adia Guide" : "دليل الأدعية"}
+                            >
+                                <HelpCircle size={19} />
+                            </button>
                             <ThemePageLock />
                             <button
                                 onClick={handleGoHome}
@@ -659,6 +680,16 @@ function Adia({ onBack, onNavigate }: AdiaProps) {
                     </div>
                 </div>
             )}
+            <CommunitySpotlightGuide
+                isOpen={showGuide}
+                onClose={() => {
+                    setShowGuide(false);
+                    markPageAsSeen('adia');
+                }}
+                steps={ADIA_PAGE_STEPS}
+                guideKey="adia_page_spotlight"
+                isEn={isEn}
+            />
         </div>
     );
 }

@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useVoiceControl, VoiceCommand } from '../context/VoiceControlContext';
-import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, RotateCcw, ChevronRight, BookOpen, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Mic, MicOff, Trash2, Edit2, Check, X, Plus, RotateCcw, ChevronRight, BookOpen, ArrowLeft, ArrowRight, HelpCircle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import ThemePageLock from '../components/ThemePageLock';
+import { CommunitySpotlightGuide, getGuideSeen } from '../components/Community/CommunitySpotlightGuide';
+import { VOICE_CONTROL_PAGE_STEPS } from '../components/Community/communityTourSteps';
+import { markPageAsSeen } from '../utils/badgeManager';
 
 const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: string) => void }> = ({ onBack, onNavigate }) => {
     const { theme, themeKey } = useTheme();
@@ -34,6 +37,14 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
     } = useVoiceControl();
 
     const [toastMessage, setToastMessage] = useState('');
+    const [showGuide, setShowGuide] = useState(false);
+
+    useEffect(() => {
+        markPageAsSeen('voice-control');
+        if (!getGuideSeen('voice_control_page_spotlight')) {
+            setShowGuide(true);
+        }
+    }, []);
 
     const handleToggleVoiceControl = () => {
         if (!isEnabled) {
@@ -74,8 +85,18 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                             </h1>
                         </div>
 
-                        {/* Home / Lock */}
+                        {/* Home / Lock / Help */}
                         <div className={`absolute ${isEn ? 'right-0' : 'left-0'} flex items-center gap-1`}>
+                            <button
+                                type="button"
+                                onClick={() => setShowGuide(true)}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                style={{ color: 'var(--top-bar-text, inherit)' }}
+                                title={isEn ? "Voice Control Guide" : "دليل التحكم الصوتي"}
+                                aria-label={isEn ? "Voice Control Guide" : "دليل التحكم الصوتي"}
+                            >
+                                <HelpCircle size={19} />
+                            </button>
                             <ThemePageLock />
                             <button
                                 onClick={() => onNavigate('home')}
@@ -298,6 +319,16 @@ const VoiceControlPage: React.FC<{ onBack: () => void, onNavigate: (pageId: stri
                     <div className="shrink-0 w-full h-4"></div>
                 </div>
             </main>
+            <CommunitySpotlightGuide
+                isOpen={showGuide}
+                onClose={() => {
+                    setShowGuide(false);
+                    markPageAsSeen('voice-control');
+                }}
+                steps={VOICE_CONTROL_PAGE_STEPS}
+                guideKey="voice_control_page_spotlight"
+                isEn={isEn}
+            />
         </div>
     );
 };
