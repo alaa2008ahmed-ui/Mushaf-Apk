@@ -1,24 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Download, FileText, Maximize2, X, File, FileArchive, Check } from 'lucide-react';
 import { ChatAttachment } from '../../services/communityService';
+import { useLanguage } from '../../context/LanguageContext';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { registerBackInterceptor } from '../../hooks/useBackButton';
 
 interface ChatAttachmentViewProps {
   attachment: ChatAttachment;
   isMe?: boolean;
 }
 
-export const downloadAttachment = (url: string, fileName?: string) => {
+export const downloadAttachment = async (url: string, fileName?: string) => {
+  const finalName = fileName || `mushaf_image_${Date.now()}.jpg`;
   try {
+    if (Capacitor.isNativePlatform()) {
+      let base64Data = '';
+      if (url.startsWith('data:')) {
+        base64Data = url.split(',')[1];
+      } else {
+        const resp = await fetch(url);
+        const blob = await resp.blob();
+        base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const res = reader.result as string;
+            resolve(res.split(',')[1]);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      const savedFile = await Filesystem.writeFile({
+        path: finalName,
+        data: base64Data,
+        directory: Directory.Documents
+      }).catch(async () => {
+        return await Filesystem.writeFile({
+          path: finalName,
+          data: base64Data,
+          directory: Directory.Cache
+        });
+      });
+
+      try {
+        await Share.share({
+          title: finalName,
+          url: savedFile.uri,
+          dialogTitle: 'حفظ الصورة'
+        });
+      } catch (e) {}
+      return;
+    }
+
     const a = document.createElement('a');
     a.href = url;
-    a.download = fileName || `mushaf_file_${Date.now()}`;
+    a.download = finalName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   } catch (err) {
     console.error('Error downloading file:', err);
-    window.open(url, '_blank');
+    try {
+      window.open(url, '_blank');
+    } catch (e) {}
   }
 };
 
@@ -30,14 +78,39 @@ export const formatFileSize = (bytes?: number): string => {
 };
 
 export const ChatAttachmentView: React.FC<ChatAttachmentViewProps> = ({ attachment, isMe }) => {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
   const [showLightbox, setShowLightbox] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
 
-  const handleDownload = (e: React.MouseEvent) => {
+  // Close lightbox on hardware back button
+  useEffect(() => {
+    if (!showLightbox) return;
+    const interceptor = () => {
+      setShowLightbox(false);
+      return true;
+    };
+    const unregister = registerBackInterceptor(interceptor);
+    return unregister;
+  }, [showLightbox]);
+
+  // Close lightbox on Escape key
+  useEffect(() => {
+    if (!showLightbox) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowLightbox(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showLightbox]);
+
+  const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    downloadAttachment(attachment.url, attachment.fileName);
+    await downloadAttachment(attachment.url, attachment.fileName);
     setDownloadSuccess(true);
-    setTimeout(() => setDownloadSuccess(false), 2000);
+    setTimeout(() => setDownloadSuccess(false), 2500);
   };
 
   if (!attachment || !attachment.url) return null;
@@ -49,113 +122,91 @@ export const ChatAttachmentView: React.FC<ChatAttachmentViewProps> = ({ attachme
         className="mt-1.5 mb-1 flex flex-col items-start w-full"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Clickable Image Container */}
         <div 
-          className="relative group rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 max-w-full sm:max-w-xs shadow-xs"
+          className="relative group rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 max-w-full sm:max-w-xs shadow-xs cursor-pointer select-none"
           onClick={(e) => {
             e.stopPropagation();
             setShowLightbox(true);
           }}
+          title={isEn ? "Click to view full image" : "اضغط لعرض الصورة بحجمها الكامل"}
         >
           <img
             src={attachment.url}
-            alt={attachment.fileName || 'صورة مرفقة'}
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowLightbox(true);
-            }}
-            className="w-full max-h-64 sm:max-h-72 object-cover cursor-pointer transition-transform duration-200 group-hover:scale-102 active:scale-98"
+            alt={attachment.fileName || (isEn ? 'Attached Image' : 'صورة مرفقة')}
+            className="w-full max-h-64 sm:max-h-72 object-cover cursor-pointer transition-transform duration-200 group-hover:scale-102 active:scale-98 block"
             loading="lazy"
           />
-
-          {/* Quick overlay buttons */}
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 pointer-events-none">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowLightbox(true);
-              }}
-              className="p-2 rounded-xl bg-white/90 text-slate-800 shadow-md pointer-events-auto active:scale-95 transition-all cursor-pointer"
-              title="تكبير الصورة"
-            >
-              <Maximize2 size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={handleDownload}
-              className="p-2 rounded-xl bg-emerald-600 text-white shadow-md pointer-events-auto active:scale-95 transition-all cursor-pointer"
-              title="استرداد / تنزيل الصورة"
-            >
-              {downloadSuccess ? <Check size={16} /> : <Download size={16} />}
-            </button>
+          <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+            <div className="p-2 rounded-xl bg-black/60 text-white backdrop-blur-xs shadow-md">
+              <Maximize2 size={18} />
+            </div>
           </div>
-        </div>
-
-        {/* Action bar below image */}
-        <div 
-          className="flex items-center justify-end w-full mt-1 px-1"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline active:scale-95 transition-all cursor-pointer"
-            title="استرداد وحفظ الصورة على جهازك"
-          >
-            {downloadSuccess ? <Check size={12} /> : <Download size={12} />}
-            <span>{downloadSuccess ? 'تم الحفظ' : 'استرداد الصورة'}</span>
-          </button>
         </div>
 
         {/* Lightbox Modal */}
         <AnimatePresence>
           {showLightbox && (
             <div
-              className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md"
+              className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md select-none"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowLightbox(false);
               }}
+              dir={isEn ? 'ltr' : 'rtl'}
             >
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.92 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="relative max-w-3xl max-h-[90vh] flex flex-col items-center"
+                exit={{ opacity: 0, scale: 0.92 }}
+                className="relative max-w-3xl w-full flex flex-col items-center max-h-[92vh]"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="absolute -top-12 left-0 right-0 flex items-center justify-between px-2 text-white">
-                  <span className="text-xs font-bold truncate max-w-[200px]">
-                    معاينة الصورة
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleDownload}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-lg active:scale-95 transition-all cursor-pointer"
-                    >
-                      {downloadSuccess ? <Check size={14} /> : <Download size={14} />}
-                      <span>{downloadSuccess ? 'تم الحفظ!' : 'استرداد وتنزيل'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowLightbox(false);
-                      }}
-                      className="p-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white transition-all active:scale-95 cursor-pointer"
-                      title="إغلاق"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
+                {/* Image Display */}
+                <div className="relative w-full flex items-center justify-center flex-1 min-h-0 overflow-hidden py-2">
+                  <img
+                    src={attachment.url}
+                    alt={attachment.fileName || (isEn ? 'Attached Image' : 'صورة مرفقة')}
+                    className="max-h-[72vh] sm:max-h-[78vh] w-auto max-w-full rounded-2xl shadow-2xl object-contain border border-white/10"
+                  />
                 </div>
 
-                <img
-                  src={attachment.url}
-                  alt={attachment.fileName || 'صورة'}
-                  className="max-h-[80vh] w-auto max-w-full rounded-2xl shadow-2xl object-contain border border-white/10"
-                />
+                {/* Bottom Action Buttons: Save & Close to return to chat */}
+                <div className="w-full max-w-sm pt-3 flex items-center justify-center gap-3 shrink-0">
+                  {/* زر حفظ */}
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    className="flex-1 py-3 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all cursor-pointer"
+                    title={isEn ? "Save Image" : "حفظ الصورة"}
+                  >
+                    {downloadSuccess ? (
+                      <>
+                        <Check size={18} className="stroke-[2.5]" />
+                        <span>{isEn ? 'Saved' : 'تم الحفظ'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download size={18} className="stroke-[2.5]" />
+                        <span>{isEn ? 'Save' : 'حفظ'}</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* زر إغلاق باللون المميز بدلاً من الشفاف */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowLightbox(false);
+                    }}
+                    className="flex-1 py-3 px-5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all cursor-pointer border border-rose-500/40"
+                    title={isEn ? "Close and return to conversation" : "إغلاق والعودة للمحادثة"}
+                  >
+                    <X size={18} className="stroke-[2.5]" />
+                    <span>{isEn ? 'Close' : 'إغلاق'}</span>
+                  </button>
+                </div>
               </motion.div>
             </div>
           )}

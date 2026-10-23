@@ -37,6 +37,7 @@ export const MessageReactionsBar: React.FC<MessageReactionsBarProps> = ({
       exit={{ scale: 0.5, opacity: 0, y: 8 }}
       transition={{ type: 'spring', damping: 22, stiffness: 350 }}
       className={`absolute bottom-full mb-2.5 ${isMe ? 'right-0' : 'left-0'} z-50 flex items-center gap-1.5 bg-white dark:bg-slate-800 rounded-full px-2 py-1.5 shadow-2xl border border-slate-200/90 dark:border-slate-700 select-none backdrop-blur-md`}
+      data-reaction-bar="true"
       onClick={(e) => e.stopPropagation()}
       dir="ltr"
     >

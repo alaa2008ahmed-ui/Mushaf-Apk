@@ -1320,7 +1320,15 @@ const GroupChatPage: React.FC<GroupChatPageProps> = ({ groupId, onBack, onNaviga
                         <MessageReactionsBar
                           isMe={isMe}
                           onSelectEmoji={(emoji) => handleToggleReaction(msg.messageId, emoji)}
-                          onOpenMoreEmoji={() => setMoreEmojiPickerMsgId(msg.messageId)}
+                          onOpenMoreEmoji={() => {
+                            setReactionMenuMsgId(null);
+                            setMoreEmojiPickerMsgId(msg.messageId);
+                          }}
+                          onOpenMoreEmojis={() => {
+                            setReactionMenuMsgId(null);
+                            setMoreEmojiPickerMsgId(msg.messageId);
+                          }}
+                          userReaction={msg.reactions?.[currentUser.userId]}
                           onClose={() => setReactionMenuMsgId(null)}
                         />
                       )}
@@ -2579,10 +2587,13 @@ const GroupChatPage: React.FC<GroupChatPageProps> = ({ groupId, onBack, onNaviga
       <AnimatePresence>
         {moreEmojiPickerMsgId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" onClick={() => setMoreEmojiPickerMsgId(null)}>
-            <div className="relative z-50" onClick={(e) => e.stopPropagation()}>
+            <div id="more-emoji-modal-card" className="relative z-50 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
               <EmojiPicker
+                isReactionPicker={true}
+                title={isEn ? "Select reaction for card" : "اختر تفاعلاً لإضافته للبطاقة"}
                 onSelectEmoji={(emoji) => {
                   handleToggleReaction(moreEmojiPickerMsgId, emoji);
+                  setMoreEmojiPickerMsgId(null);
                 }}
                 onClose={() => setMoreEmojiPickerMsgId(null)}
               />

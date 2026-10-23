@@ -574,9 +574,13 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
   // Global click & touch outside listeners to guarantee immediate closing when tapping or clicking anywhere on screen
   useEffect(() => {
     const handleGlobalClickOutside = (event: MouseEvent | TouchEvent | PointerEvent) => {
-      const target = event.target as Node;
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
       if (reactionMenuMsgId) {
-        setReactionMenuMsgId(null);
+        if (!target.closest?.('[data-reaction-bar="true"]')) {
+          setReactionMenuMsgId(null);
+        }
       }
       if (showMenu) {
         if (menuDropdownRef.current && menuDropdownRef.current.contains(target)) {
@@ -591,7 +595,9 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
         setShowEmojiPicker(false);
       }
       if (moreEmojiPickerMsgId) {
-        setMoreEmojiPickerMsgId(null);
+        if (!target.closest?.('#more-emoji-modal-card')) {
+          setMoreEmojiPickerMsgId(null);
+        }
       }
     };
 
@@ -2049,11 +2055,16 @@ const DirectChatPage: React.FC<DirectChatPageProps> = ({ partnerUserId, onBack, 
       {/* More Emoji Reaction Picker Modal (Triggered by + on reaction bar) */}
       <AnimatePresence>
         {moreEmojiPickerMsgId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
             <div className="fixed inset-0" onClick={() => setMoreEmojiPickerMsgId(null)} />
-            <div className="relative z-10 max-w-sm w-full">
+            <div id="more-emoji-modal-card" className="relative z-10 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
               <EmojiPicker
-                onSelectEmoji={(emoji) => handleToggleReaction(moreEmojiPickerMsgId, emoji)}
+                isReactionPicker={true}
+                title={isEn ? "Select reaction for card" : "اختر تفاعلاً لإضافته للبطاقة"}
+                onSelectEmoji={(emoji) => {
+                  handleToggleReaction(moreEmojiPickerMsgId, emoji);
+                  setMoreEmojiPickerMsgId(null);
+                }}
                 onClose={() => setMoreEmojiPickerMsgId(null)}
               />
             </div>
