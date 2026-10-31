@@ -1,22 +1,64 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import BottomBar from '../components/BottomBar';
 import { useTheme } from '../context/ThemeContext';
 import ThemePageLock from '../components/ThemePageLock';
-import { baseAthkar, specialZikr, prayerOptions, fajrDhikr, fajrMaghribDhikr } from '../data/athkarAlSalahData';
+import { baseAthkar, specialZikr, prayerOptions, fajrDhikr, fajrMaghribDhikr, SalahDhikrItem } from '../data/athkarAlSalahData';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { motion, AnimatePresence } from 'motion/react';
 import { shareAsImage } from '../utils/shareAsImage';
+import { playTTS, stopTTS, subscribeTTS } from '../utils/ttsEngine';
+import { useHabitTracker } from '../hooks/useHabitTracker';
+import { useLanguage } from '../context/LanguageContext';
+import { BottomSalahGuides } from '../components/AthkarAlSalah/BottomSalahGuides';
+import { LayoutGrid, ListFilter, Search, HelpCircle } from 'lucide-react';
+import ZoomModal from '../components/AthkarAlSalah/ZoomModal';
+import { scrollToNextCard } from '../utils/cardScrollHelper';
+import { CommunitySpotlightGuide, getGuideSeen } from '../components/Community/CommunitySpotlightGuide';
+import { ATHKAR_SALAH_PAGE_STEPS } from '../components/Community/communityTourSteps';
+import { markPageAsSeen } from '../utils/badgeManager';
 
-const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { zikr: any; theme: any; onDecrement: () => void; onZoom: () => void; setToastMessage: (msg: string) => void }) => {
+const SalahZikrCard = ({ 
+    zikr, 
+    theme, 
+    themeKey, 
+    prayerTitle,
+    prayerTitleEn,
+    onDecrement, 
+    onZoom, 
+    setToastMessage 
+}: { 
+    zikr: any; 
+    theme: any; 
+    themeKey?: string; 
+    prayerTitle?: string;
+    prayerTitleEn?: string;
+    onDecrement: () => void; 
+    onZoom: () => void; 
+    setToastMessage: (msg: string) => void;
+}) => {
+    const { language } = useLanguage();
+    const isEn = language === 'en';
+    const isBlackTheme = theme.bgColor === '#000000' || theme.name === 'أبيض وأسود' || theme.name === 'اسود';
+    const primaryColor = isBlackTheme ? 'rgba(255, 255, 255, 0.22)' : (theme.palette?.[0] || theme.accent || '#2E7D5E');
     const [isFav, setIsFav] = useState(false);
+    const [playingText, setPlayingText] = useState<string | null>(null);
     const isFinished = zikr.currentCount === 0;
-    const textClass = zikr.isQuran ? 'font-amiri text-2xl text-center leading-relaxed' : 'text-lg leading-loose font-medium';
+    const textClass = zikr.isQuran ? 'font-amiri text-2xl text-center leading-relaxed' : 'text-lg leading-loose font-medium text-center';
 
     useEffect(() => {
         const favs = JSON.parse(localStorage.getItem('favorite_dhikr') || '[]');
         setIsFav(favs.includes(zikr.text));
     }, [zikr.text]);
+
+    useEffect(() => {
+        const unsubscribe = subscribeTTS(setPlayingText);
+        return () => {
+            unsubscribe();
+            stopTTS();
+        };
+    }, []);
+
+    const currentText = isEn ? (zikr.textEn || zikr.text) : zikr.text;
+    const isPlaying = playingText === currentText || playingText === zikr.text;
 
     const toggleFav = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -31,44 +73,153 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
         setIsFav(!isFav);
     };
 
+    const handlePlayAudio = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const textToPlay = isEn ? (zikr.textEn || zikr.text) : zikr.text;
+        playTTS(textToPlay, { 
+            isEn,
+            onToast: (msg) => {
+                if (isEn) {
+                    if (msg.includes('جاري تشغيل')) setToastMessage('Playing audio...');
+                    else if (msg.includes('تم إيقاف')) setToastMessage('Audio stopped');
+                    else setToastMessage(msg);
+                } else {
+                    setToastMessage(msg);
+                }
+            }, 
+            categoryId: isEn ? undefined : 'hisn_25' 
+        });
+    };
+
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        let textToCopy = '';
+        if (isEn) {
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = zikr.textEn || zikr.text;
+            textToCopy = tempDiv.textContent || tempDiv.innerText || "";
+        } else {
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = zikr.text;
+            textToCopy = tempDiv.textContent || tempDiv.innerText || "";
+        }
+        navigator.clipboard.writeText(textToCopy);
+        setToastMessage(isEn ? 'Copied to clipboard' : 'تم النسخ إلى الحافظة');
+    };
+
+    const handleShare = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const fallbackTitle = isEn ? 'Prayer Remembrance' : 'أذكار ما بعد الصلاة';
+        const itemTitle = isEn 
+            ? (zikr.titleEn || (prayerTitleEn ? `${prayerTitleEn} Adhkar` : fallbackTitle)) 
+            : (zikr.title || (prayerTitle ? `أذكار صلاة ${prayerTitle}` : fallbackTitle));
+        const itemCategory = isEn 
+            ? (prayerTitleEn ? `${prayerTitleEn} Adhkar` : 'Prayer Remembrances') 
+            : (prayerTitle ? `أذكار صلاة ${prayerTitle}` : 'أذكار الصلاة');
+        const itemNote = isEn ? (zikr.noteEn || zikr.note) : zikr.note;
+
+        await shareAsImage({
+            text: isEn ? (zikr.textEn || zikr.text) : zikr.text,
+            title: itemTitle,
+            source: itemNote,
+            category: itemCategory,
+            theme,
+            isEn: isEn,
+            language: isEn ? 'en' : 'ar',
+            setToastMessage
+        });
+    };
+
+    const displayTitle = isEn ? (zikr.titleEn || '') : zikr.title;
+    const displayNote = isEn ? (zikr.noteEn || zikr.note) : zikr.note;
+
     return (
-        <div className={`themed-card p-5 pb-2 rounded-2xl border relative overflow-hidden group mb-4 transition-all duration-300 ${isFinished ? 'opacity-60' : ''}`} onClick={onDecrement}>
-            <div className="flex justify-between items-start mb-2">
-                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold shadow-sm" style={{backgroundColor: theme.palette[1]+'30', color: theme.palette[1]}}>{zikr.note}</span>
-                <div className={`count-badge w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-md transform transition-transform`} style={isFinished ? {backgroundColor: 'var(--badge-finished-bg)', color: 'var(--badge-finished-text)'} : {backgroundImage: `linear-gradient(to bottom right, ${theme.palette[0]}, ${theme.palette[1]})`, color: theme.textColor}}>
+        <div 
+            data-card-item="true"
+            className={`bg-white dark:bg-[#1E293B] p-5 pb-3 rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05),0_2px_6px_-1px_rgba(0,0,0,0.02)] border border-slate-100/80 dark:border-white/5 relative overflow-hidden group mb-4 transition-all duration-300 ${isFinished ? 'opacity-60 cursor-pointer' : 'cursor-pointer hover:shadow-md'}`} 
+            onClick={(e) => {
+                onDecrement();
+                if (zikr.currentCount <= 1 || isFinished) {
+                    const cardEl = e.currentTarget as HTMLElement;
+                    setTimeout(() => scrollToNextCard(cardEl), 60);
+                }
+            }}
+        >
+            <div className={`flex justify-between items-start mb-2 ${isEn ? 'flex-row' : ''}`}>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold" style={{ backgroundColor: `${primaryColor}14`, color: primaryColor }}>
+                    {displayNote}
+                </span>
+                <div 
+                    className={`count-badge w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-md transform transition-transform`} 
+                    style={
+                        isFinished 
+                        ? { backgroundColor: '#94a3b8', color: '#ffffff' } 
+                        : { backgroundColor: primaryColor, color: '#ffffff', boxShadow: `0 4px 14px 0 ${primaryColor}40` }
+                    }
+                >
                     {isFinished ? <i className="fa-solid fa-check"></i> : zikr.currentCount}
                 </div>
             </div>
-            {zikr.title && <h3 className="text-center font-bold mb-2 text-sm" style={{color: theme.palette[1]}}>{zikr.title}</h3>}
-            <div className={`${textClass} select-none`} dangerouslySetInnerHTML={{ __html: zikr.text }}></div>
+
+            {displayTitle && (
+                <h3 className="text-center font-bold mb-2 text-sm" style={{color: theme.palette[1]}}>
+                    {displayTitle}
+                </h3>
+            )}
+
+            {/* When in English mode, display ONLY the English text. Never display Arabic text. */}
+            {isEn ? (
+                <div 
+                    className="text-base sm:text-lg leading-relaxed text-center font-medium font-sans select-none my-3 text-balance" 
+                    dir="ltr" 
+                    dangerouslySetInnerHTML={{ __html: zikr.textEn || zikr.text }}
+                ></div>
+            ) : (
+                <div className={`${textClass} select-none`} dangerouslySetInnerHTML={{ __html: zikr.text }}></div>
+            )}
             
-            <div className="flex justify-between items-center mt-4 mb-3 pt-3 border-t border-black/5 dark:border-white/5">
-                <button onClick={toggleFav} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors">
+            <div className={`flex justify-between items-center mt-4 mb-3 pt-3 border-t border-black/5 dark:border-white/5 ${isEn ? 'flex-row' : ''}`}>
+                <button 
+                    onClick={toggleFav} 
+                    className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors"
+                    title={isEn ? (isFav ? 'Remove from favorites' : 'Add to favorites') : (isFav ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة')}
+                    aria-label={isEn ? 'Favorite' : 'المفضلة'}
+                >
                     <i className={`fa-heart ${isFav ? 'fa-solid text-red-500' : 'fa-regular text-gray-500 dark:text-gray-400'}`}></i>
                 </button>
                 <div className="flex gap-2">
-                   <button onClick={(e) => { e.stopPropagation(); onZoom(); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                   <button 
+                       onClick={(e) => { e.stopPropagation(); onZoom(); }} 
+                       className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" 
+                       title={isEn ? "Zoom" : "تكبير"}
+                       aria-label={isEn ? "Zoom" : "تكبير"}
+                   >
                        <i className="fa-solid fa-magnifying-glass-plus"></i>
                    </button>
-                   <button onClick={(e) => {
-                       e.stopPropagation();
-                       const tempDiv = document.createElement("div");
-                       tempDiv.innerHTML = zikr.text;
-                       navigator.clipboard.writeText(tempDiv.textContent || tempDiv.innerText || "");
-                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                   <button 
+                       onClick={handleCopy} 
+                       className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" 
+                       title={isEn ? "Copy" : "نسخ"}
+                       aria-label={isEn ? "Copy" : "نسخ"}
+                   >
                        <i className="fa-regular fa-copy"></i>
                    </button>
-                   <button onClick={async (e) => {
-                       e.stopPropagation();
-                       await shareAsImage({
-                           text: zikr.text,
-                           source: zikr.note,
-                           category: zikr.title || 'أذكار الصلاة',
-                           theme,
-                           setToastMessage
-                       });
-                   }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300">
+                   <button 
+                       onClick={handleShare} 
+                       className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" 
+                       title={isEn ? "Share" : "مشاركة"}
+                       aria-label={isEn ? "Share" : "مشاركة"}
+                   >
                        <i className="fa-solid fa-share-nodes"></i>
+                   </button>
+                   <button 
+                       onClick={handlePlayAudio} 
+                       className="w-8 h-8 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors text-gray-600 dark:text-gray-300" 
+                       style={{ color: isPlaying ? '#ef4444' : 'inherit' }}
+                       title={isEn ? (isPlaying ? "Stop listening" : "Listen audio") : (isPlaying ? "إيقاف الاستماع" : "استماع صوتي")}
+                       aria-label={isEn ? "Listen audio" : "استماع صوتي"}
+                   >
+                       <i className={`fa-solid ${isPlaying ? 'fa-circle-pause text-red-500 animate-pulse' : 'fa-volume-high'}`}></i>
                    </button>
                 </div>
             </div>
@@ -78,18 +229,40 @@ const SalahZikrCard = ({ zikr, theme, onDecrement, onZoom, setToastMessage }: { 
     );
 };
 
-function AthkarAlSalah({ onBack, onNavigate }) {
+interface AthkarAlSalahProps {
+    onBack: () => void;
+    onNavigate: (page: string, params?: any) => void;
+    navParams?: any;
+}
+
+function AthkarAlSalah({ onBack, onNavigate, navParams }: AthkarAlSalahProps) {
     const { theme, themeKey } = useTheme();
-    const isBlackTheme = theme.bgColor === '#000000';
-    const [currentPrayer, setCurrentPrayer] = useState(null);
-    const [athkarList, setAthkarList] = useState([]);
-    const [zoomedZikr, setZoomedZikr] = useState(null);
+    const { language } = useLanguage();
+    const isEn = language === 'en';
+    const isBlackTheme = theme.bgColor === '#000000' || theme.name === 'أبيض وأسود' || theme.name === 'اسود';
+    const primaryColor = isBlackTheme ? '#FFFFFF' : (theme.palette?.[0] || theme.accent || '#2E7D5E');
+    const isDefaultTheme = themeKey === 'default' || theme.name === 'الافتراضي' || !!theme.isOriginal || !themeKey;
+    const cardBorderColor = isBlackTheme ? 'rgba(255, 255, 255, 0.1)' : 'transparent';
+    const [currentPrayer, setCurrentPrayer] = useState<{ id: string; title: string; titleEn?: string } | null>(null);
+    const [athkarList, setAthkarList] = useState<any[]>([]);
+    const [zoomedZikr, setZoomedZikr] = useState<any>(null);
     const [toastMessage, setToastMessage] = useState('');
     const [isFavoritesView, setIsFavoritesView] = useState(false);
     const [favorites, setFavorites] = useState<string[]>([]);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [menuOpenDirection, setMenuOpenDirection] = useState('up');
+    const [showGuide, setShowGuide] = useState(false);
+
+    useEffect(() => {
+        markPageAsSeen('athkar_salah');
+        if (!getGuideSeen('athkar_salah_page_spotlight')) {
+            setShowGuide(true);
+        }
+    }, []);
+    const [menuOpenDirection, setMenuOpenDirection] = useState<'up' | 'down'>('up');
+    const [activeTab, setActiveTab] = useState<'grid' | 'list'>('list');
+    const [searchQuery, setSearchQuery] = useState('');
     const fabRef = useRef<HTMLButtonElement>(null);
+    const fabContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const loadFavs = () => {
@@ -107,6 +280,10 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                 setZoomedZikr(null);
                 return true;
             }
+            if (isMenuOpen) {
+                setIsMenuOpen(false);
+                return true;
+            }
             if (isFavoritesView) {
                 setIsFavoritesView(false);
                 return true;
@@ -119,7 +296,7 @@ function AthkarAlSalah({ onBack, onNavigate }) {
         };
         const unregister = registerBackInterceptor(interceptor);
         return unregister;
-    }, [zoomedZikr, currentPrayer]);
+    }, [zoomedZikr, currentPrayer, isFavoritesView, isMenuOpen]);
 
     const handleFabClick = () => {
         if (!isMenuOpen && fabRef.current) {
@@ -133,8 +310,9 @@ function AthkarAlSalah({ onBack, onNavigate }) {
         setIsMenuOpen(!isMenuOpen);
     };
 
-    const openPrayer = (prayerId, titleText) => {
-        let currentAthkarData = JSON.parse(JSON.stringify(baseAthkar));
+    const openPrayer = (prayerId: string, titleText: string, titleEnText?: string) => {
+        setSearchQuery('');
+        let currentAthkarData: SalahDhikrItem[] = JSON.parse(JSON.stringify(baseAthkar));
 
         // Handle common Fajr/Maghrib changes
         if (prayerId === 'fajr' || prayerId === 'maghrib') {
@@ -143,6 +321,7 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                 if (['ikhlas', 'falaq', 'naas'].includes(z.id)) {
                     z.count = 3;
                     z.note = "3 مرات";
+                    z.noteEn = "3 times";
                 }
             });
             
@@ -169,10 +348,12 @@ function AthkarAlSalah({ onBack, onNavigate }) {
 
         const listWithCounts = currentAthkarData.map(z => ({ ...z, currentCount: z.count }));
         setAthkarList(listWithCounts);
-        setCurrentPrayer({ id: prayerId, title: titleText });
+        setCurrentPrayer({ id: prayerId, title: titleText, titleEn: titleEnText });
+        useHabitTracker.getState().recordAdhkarRead('salah');
     };
 
-    const handleDecrement = (zikrId) => {
+    const handleDecrement = (zikrId: string) => {
+        useHabitTracker.getState().recordAdhkarRead('salah');
         setAthkarList(prevList =>
             prevList.map(zikr =>
                 zikr.id === zikrId && zikr.currentCount > 0
@@ -182,7 +363,8 @@ function AthkarAlSalah({ onBack, onNavigate }) {
         );
     };
 
-    const handleHomeClick = () => {
+    const handleBack = () => {
+        setSearchQuery('');
         if (zoomedZikr) {
             setZoomedZikr(null);
         } else if (isFavoritesView) {
@@ -194,226 +376,301 @@ function AthkarAlSalah({ onBack, onNavigate }) {
         }
     };
 
+    const handleGoHome = () => {
+        setSearchQuery('');
+        if (zoomedZikr) setZoomedZikr(null);
+        if (isFavoritesView) setIsFavoritesView(false);
+        if (currentPrayer) setCurrentPrayer(null);
+        onNavigate('home');
+    };
+
     const allPossibleAthkar = [
         ...baseAthkar,
         specialZikr,
         fajrDhikr,
         fajrMaghribDhikr
     ];
-    const favoriteAthkar = allPossibleAthkar.filter(z => favorites.includes(z.text)).map(z => ({ ...z, currentCount: z.count }));
+    const favoriteAthkar = allPossibleAthkar
+        .filter(z => favorites.includes(z.text))
+        .map(z => ({ ...z, currentCount: z.count }));
+
+    const filteredPrayerOptions = prayerOptions.filter(prayer =>
+        !searchQuery ||
+        prayer.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        prayer.titleEn.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const filteredAthkarList = athkarList.filter(zikr =>
+        !searchQuery ||
+        zikr.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (zikr.title && zikr.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (zikr.note && zikr.note.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (zikr.textEn && zikr.textEn.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (zikr.titleEn && zikr.titleEn.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    const filteredFavoriteAthkar = favoriteAthkar.filter(zikr =>
+        !searchQuery ||
+        zikr.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (zikr.title && zikr.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (zikr.note && zikr.note.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (zikr.textEn && zikr.textEn.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (zikr.titleEn && zikr.titleEn.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    const pageTitle = currentPrayer 
+        ? (isEn ? (currentPrayer.titleEn || currentPrayer.title) : currentPrayer.title) 
+        : (isFavoritesView 
+            ? (isEn ? "Favorite Adhkar" : "الأذكار المفضلة") 
+            : (isEn ? "Prayer Adhkar" : "أذكار الصلوات"));
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden bg-transparent">
-            <header className="app-top-bar">
+        <div 
+            className="h-screen flex flex-col overflow-hidden transition-colors" 
+            dir={isEn ? 'ltr' : 'rtl'}
+            style={{ backgroundColor: isBlackTheme ? '#000000' : (theme.bgColor || (theme.isDark ? '#0F172A' : '#F5F7FA')) }}
+        >
+            <header className="app-top-bar" dir={isEn ? 'ltr' : 'rtl'}>
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-center w-full">
-                        <div className="absolute left-0">
-                            <ThemePageLock />
+                    <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                        {/* زر الرجوع للخلف: على اليمين في العربي، وعلى اليسار في الإنجليزي مع سهم متوافق */}
+                        <div className={`absolute ${isEn ? 'left-0' : 'right-0'} flex items-center`}>
+                            <button
+                                onClick={handleBack}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title={isEn ? "Go Back" : "رجوع للخلف"}
+                                aria-label={isEn ? "Go Back" : "رجوع للخلف"}
+                            >
+                                <i className={`fa-solid ${isEn ? 'fa-arrow-left' : 'fa-arrow-right'} text-xl`}></i>
+                            </button>
                         </div>
-                        <h1 className="app-top-bar__title text-2xl font-kufi">
-                            {currentPrayer ? currentPrayer.title : (isFavoritesView ? "الأذكار المفضلة" : "أذكار الصلوات")}
-                        </h1>
+
+                        {/* عنوان الصفحة في الوسط */}
+                        <div className="text-center px-12 min-w-0">
+                            <h1 className="app-top-bar__title text-lg sm:text-xl font-kufi truncate">
+                                {pageTitle}
+                            </h1>
+                        </div>
+
+                        {/* زر الهوم: على اليسار في العربي، وعلى اليمين في الإنجليزي */}
+                        <div className={`absolute ${isEn ? 'right-0' : 'left-0'} flex items-center gap-1`}>
+                            <button
+                                type="button"
+                                onClick={() => setShowGuide(true)}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                style={{ color: 'var(--top-bar-text, inherit)' }}
+                                title={isEn ? "Athkar Guide" : "دليل أذكار الصلاة"}
+                                aria-label={isEn ? "Athkar Guide" : "دليل أذكار الصلاة"}
+                            >
+                                <i className="fa-solid fa-circle-question text-lg"></i>
+                            </button>
+                            <ThemePageLock />
+                            <button
+                                onClick={handleGoHome}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title={isEn ? "Home" : "الصفحة الرئيسية"}
+                                aria-label={isEn ? "Home" : "الصفحة الرئيسية"}
+                            >
+                                <i className="fa-solid fa-house text-xl"></i>
+                            </button>
+                        </div>
                     </div>
-                    <p className="app-top-bar__subtitle px-4">
-                        {currentPrayer 
-                            ? `أذكار ما بعد صلاة ${currentPrayer.title.split(' ')[2] || currentPrayer.title}` 
-                            : (isFavoritesView ? "أذكارك التي اخترتها للوصول السريع" : "أذكار ما بعد الصلاة مع عدّاد تفاعلي وتنقل سهل بين")}
-                    </p>
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto hide-scrollbar relative max-w-md mx-auto w-full px-4 pb-4 flex flex-col">
+            <main className="flex-1 overflow-y-auto hide-scrollbar relative max-w-3xl mx-auto w-full px-4 pt-2 pb-7 sm:pb-8 pb-[calc(env(safe-area-inset-bottom,0px)+1.75rem)] flex flex-col">
+                {/* Controls Bar: Search and View Mode Switch - Matches Adia/OthersPage */}
+                <div className="mb-6 max-w-3xl mx-auto w-full flex items-center gap-2 z-10 shrink-0" dir={isEn ? 'ltr' : 'rtl'}>
+                    {/* Search Input */}
+                    <div 
+                        className="relative flex-1 rounded-2xl overflow-hidden focus-within:ring-2 transition-all shadow-sm" 
+                        style={{ 
+                            backgroundColor: isBlackTheme ? '#111111' : (theme.isDark ? '#1e293b' : '#ffffff'),
+                            borderColor: cardBorderColor,
+                            boxShadow: theme.isDark ? 'none' : '0 4px 14px rgba(0, 0, 0, 0.04)',
+                            ...(isDefaultTheme ? { focusRingColor: '#000'} : { focusRingColor: theme.palette[0]}) 
+                        }}
+                    >
+                        <input 
+                            type="text" 
+                            placeholder={isEn ? "Search prayer remembrances..." : "ابحث في أذكار الصلاة..."} 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className={`w-full bg-transparent py-3 ${isEn ? 'pl-12 pr-10 text-left font-sans' : 'pr-12 pl-10 text-right font-kufi'} focus:outline-none placeholder-gray-500 dark:placeholder-gray-400`}
+                            style={{ color: 'var(--text-color)' }}
+                        />
+                        <i 
+                            className={`fa-solid fa-search absolute ${isEn ? 'left-4' : 'right-4'} top-1/2 transform -translate-y-1/2 opacity-50`} 
+                            style={{ color: 'var(--text-color)' }}
+                        ></i>
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className={`absolute inset-y-0 ${isEn ? 'right-4' : 'left-4'} flex items-center text-gray-400 hover:text-gray-600`}
+                            >
+                                <i className="fa-solid fa-times text-xs"></i>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* View Mode Switch */}
+                    <div 
+                        className="flex items-center p-1 rounded-2xl border shrink-0 shadow-sm"
+                        style={{
+                            backgroundColor: isBlackTheme ? '#111111' : (theme.isDark ? '#1e293b' : '#ffffff'),
+                            borderColor: cardBorderColor
+                        }}
+                    >
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('grid')}
+                            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'grid' ? 'shadow-sm' : 'opacity-60 hover:opacity-100'}`}
+                            style={activeTab === 'grid' ? {
+                                backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]),
+                                color: isBlackTheme ? '#000000' : '#ffffff'
+                            } : { color: 'var(--text-color)' }}
+                            title={isEn ? "Grid View" : "عرض شبكي"}
+                        >
+                            <LayoutGrid size={16} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('list')}
+                            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'list' ? 'shadow-sm' : 'opacity-60 hover:opacity-100'}`}
+                            style={activeTab === 'list' ? {
+                                backgroundColor: isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : theme.palette[0]),
+                                color: isBlackTheme ? '#000000' : '#ffffff'
+                            } : { color: 'var(--text-color)' }}
+                            title={isEn ? "List View" : "عرض القوائم"}
+                        >
+                            <ListFilter size={16} />
+                        </button>
+                    </div>
+                </div>
+
                 {isFavoritesView ? (
-                    <div className="space-y-4">
-                        {favoriteAthkar.length > 0 ? (
+                    <div className={activeTab === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-4"}>
+                        {filteredFavoriteAthkar.length > 0 ? (
                             <>
-                                {favoriteAthkar.map(zikr => (
+                                {filteredFavoriteAthkar.map(zikr => (
                                     <SalahZikrCard 
                                         key={zikr.id} 
                                         zikr={zikr} 
                                         theme={theme} 
-                                        onDecrement={() => {}} 
+                                        themeKey={themeKey}
+                                        onDecrement={() => {
+                                            useHabitTracker.getState().recordAdhkarRead('salah');
+                                        }} 
                                         onZoom={() => setZoomedZikr(zikr)} 
                                         setToastMessage={setToastMessage}
                                     />
                                 ))}
                             </>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-20 opacity-50 text-center">
+                            <div className="flex flex-col items-center justify-center py-20 opacity-50 text-center col-span-full">
                                 <i className="fa-solid fa-heart text-5xl mb-4"></i>
-                                <p className="font-bold">لا توجد أذكار مفضلة لعرضها حالياً</p>
+                                <p className="font-bold">
+                                    {isEn ? 'No favorite adhkar to display currently' : 'لا توجد أذكار مفضلة لعرضها حالياً'}
+                                </p>
                             </div>
                         )}
                     </div>
                 ) : !currentPrayer ? (
                     <>
-                        <div id="prayersMenu" className="space-y-4">
-                            {prayerOptions.map(prayer => (
-                                 <div key={prayer.id} onClick={() => openPrayer(prayer.id, `أذكار ${prayer.title}`)} 
-                                      className={`themed-card p-4 rounded-xl shadow-sm border-r-4 flex items-center justify-between cursor-pointer active:scale-95 transition`}
-                                      style={{ borderRightColor: prayer.color === 'primary' ? theme.palette[0] : theme.palette[1] }}>
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${themeKey === 'default' ? 'shadow-inner border border-black/5' : ''}`} 
+                        <div id="prayersMenu" className={activeTab === 'grid' ? "grid grid-cols-2 gap-3.5" : "space-y-3.5"}>
+                            {filteredPrayerOptions.map(prayer => (
+                                 <div 
+                                      key={prayer.id} 
+                                      onClick={() => openPrayer(
+                                          prayer.id, 
+                                          `أذكار ${prayer.title}`, 
+                                          `${prayer.titleEn} Adhkar`
+                                      )} 
+                                      className={`bg-white dark:bg-[#1E293B] p-4 sm:p-5 rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05),0_2px_6px_-1px_rgba(0,0,0,0.02)] border border-slate-100/80 dark:border-white/5 flex ${activeTab === 'grid' ? 'flex-col items-center text-center justify-center py-6 gap-3' : 'items-center justify-between'} cursor-pointer active:scale-98 transition-all hover:shadow-md group`}
+                                 >
+                                    <div className={`flex ${activeTab === 'grid' ? 'flex-col items-center gap-3' : 'items-center gap-4'}`}>
+                                        <div 
+                                             className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 shrink-0" 
                                              style={{
-                                                 backgroundColor: themeKey === 'default' ? '#FFFFFF' : (prayer.color === 'primary' ? theme.palette[0]+'20' : theme.palette[1]+'20'), 
-                                                 color: themeKey === 'default' ? '#000000' : (prayer.color === 'primary' ? theme.palette[0] : theme.palette[1])
-                                             }}>
+                                                 backgroundColor: isBlackTheme ? 'rgba(255, 255, 255, 0.1)' : `${primaryColor}14`, 
+                                                 color: primaryColor
+                                             }}
+                                        >
                                             <i className={`fa-solid ${prayer.icon} text-xl`}></i>
                                         </div>
                                         <div>
-                                            <h2 className="font-bold text-lg">{prayer.title}</h2>
+                                            <h2 className="font-bold text-base sm:text-lg text-slate-800 dark:text-white">
+                                                {isEn ? prayer.titleEn : prayer.title}
+                                            </h2>
                                         </div>
                                     </div>
-                                    <i className="fa-solid fa-angle-left themed-text-muted"></i>
+                                    {activeTab === 'list' && (
+                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 dark:text-zinc-500 opacity-60">
+                                            <i className={`fa-solid ${isEn ? 'fa-chevron-right' : 'fa-chevron-left'} text-sm`}></i>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-auto pt-6">
-                            <div 
-                                className="themed-card p-4 rounded-xl border-t-4"
-                                style={{ borderColor: theme.palette[0] }}
-                            >
-                                <h3 className="font-bold text-sm mb-3 text-center" style={{ color: theme.palette[1] }}>
-                                    <i className="fa-solid fa-mosque text-xs ml-2"></i> سنن الصلوات (الرواتب)
-                                </h3>
-                                <div className="space-y-2 text-sm font-amiri themed-text-muted" dir="rtl">
-                                    <div className="flex justify-between border-b border-card-border pb-1">
-                                        <span>صلاة الفجر:</span>
-                                        <span className="font-bold">2 ركعة قبلية</span>
-                                    </div>
-                                    <div className="flex justify-between border-b border-card-border pb-1">
-                                        <span>صلاة الظهر:</span>
-                                        <span className="font-bold">4 قبلية و 2 بعدية</span>
-                                    </div>
-                                    <div className="flex justify-between border-b border-card-border pb-1">
-                                        <span>صلاة العصر:</span>
-                                        <span className="opacity-60 italic">ليس لها سنة راتبة</span>
-                                    </div>
-                                    <div className="flex justify-between border-b border-card-border pb-1">
-                                        <span>صلاة المغرب:</span>
-                                        <span className="font-bold">2 ركعة بعدية</span>
-                                    </div>
-                                    <div className="flex justify-between border-b border-card-border pb-1">
-                                        <span>صلاة العشاء:</span>
-                                        <span className="font-bold">2 ركعة بعدية</span>
-                                    </div>
-                                    <div className="pt-2 text-center font-bold" style={{ color: theme.palette[0] }}>
-                                        المجموع: 12 ركعة في اليوم
-                                    </div>
-                                </div>
-                                <div className="flex justify-center mt-3 pt-2 border-t border-card-border">
-                                    <button 
-                                        onClick={() => setZoomedZikr({
-                                            title: "سنن الصلوات (الرواتب)",
-                                            text: `
-                                                <div class="space-y-4 text-2xl">
-                                                    <div class="flex justify-between border-b border-black/10 pb-2"><span>الفجر:</span> <b>2 ركعة قبلية</b></div>
-                                                    <div class="flex justify-between border-b border-black/10 pb-2"><span>الظهر:</span> <b>4 قبلية و 2 بعدية</b></div>
-                                                    <div class="flex justify-between border-b border-black/10 pb-2"><span>العصر:</span> <i class="opacity-60">ليس لها سنة راتبة</i></div>
-                                                    <div class="flex justify-between border-b border-black/10 pb-2"><span>المغرب:</span> <b>2 ركعة بعدية</b></div>
-                                                    <div class="flex justify-between border-b border-black/10 pb-2"><span>العشاء:</span> <b>2 ركعة بعدية</b></div>
-                                                </div>
-                                            `,
-                                            note: "الرواتب المؤكدة"
-                                        })} 
-                                        className="p-2 rounded-full hover:bg-card-bg-hover transition-colors"
-                                    >
-                                        <i className="fa-solid fa-magnifying-glass-plus text-lg themed-text-muted"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div 
-                                className="themed-card p-4 rounded-xl border-t-4 mt-4"
-                                style={{ borderColor: theme.palette[1] }}
-                            >
-                                <h3 className="font-bold text-sm mb-3 text-center" style={{ color: theme.palette[0] }}>
-                                    <i className="fa-solid fa-scroll text-xs ml-2"></i> أحاديث في فضل السنن
-                                </h3>
-                                <div className="space-y-4 text-sm font-amiri themed-text-muted" dir="rtl">
-                                    <div className="bg-card-bg-hover p-3 rounded-lg border-r-2" style={{ borderRightColor: theme.palette[0] }}>
-                                        <p className="leading-relaxed">
-                                            عن أم حبيبة رضي الله عنها قالت: سمعت رسول الله ﷺ يقول: <span className="text-primary font-bold">"مَنْ صَلَّى فِي يَوْمٍ وَلَيْلَةٍ ثِنْتَيْ عَشْرَةَ رَكْعَةً بُنِيَ لَهُ بَيْتٌ فِي الْجَنَّةِ"</span>.
-                                        </p>
-                                        <p className="text-left text-[10px] mt-1 opacity-70">- رواه مسلم</p>
-                                    </div>
-                                    
-                                    <div className="bg-card-bg-hover p-3 rounded-lg border-r-2" style={{ borderRightColor: theme.palette[1] }}>
-                                        <p className="leading-relaxed">
-                                            عن عائشة رضي الله عنها عن النبي ﷺ قال: <span className="text-secondary font-bold">"رَكْعَتَا الْفَجْرِ خَيْرٌ مِنَ الدُّنْيَا وَمَا فِيهَا"</span>.
-                                        </p>
-                                        <p className="text-left text-[10px] mt-1 opacity-70">- رواه مسلم</p>
-                                    </div>
-
-                                    <div className="bg-card-bg-hover p-3 rounded-lg border-r-2" style={{ borderRightColor: theme.palette[0] }}>
-                                        <p className="leading-relaxed">
-                                            عن ابن عمر رضي الله عنهما أن النبي ﷺ قال: <span className="text-primary font-bold">"رَحِمَ اللَّهُ امْرَأً صَلَّى قَبْلَ الْعَصْرِ أَرْبَعًا"</span>.
-                                        </p>
-                                        <p className="text-left text-[10px] mt-1 opacity-70">- رواه الترمذي وأبو داود</p>
-                                    </div>
-
-                                    <div className="bg-card-bg-hover p-3 rounded-lg border-r-2" style={{ borderRightColor: theme.palette[1] }}>
-                                        <p className="leading-relaxed">
-                                            عن أم حبيبة رضي الله عنها قالت: قال رسول الله ﷺ: <span className="text-secondary font-bold">"مَنْ حَافَظَ عَلَى أَرْبَعِ رَكَعَاتٍ قَبْلَ الظُّهْرِ وَأَرْبَعٍ بَعْدَهَا حَرَّمَهُ اللَّهُ عَلَى النَّارِ"</span>.
-                                        </p>
-                                        <p className="text-left text-[10px] mt-1 opacity-70">- رواه الترمذي وأبو داود</p>
-                                    </div>
-                                </div>
-                                <div className="flex justify-center mt-3 pt-2 border-t border-card-border">
-                                    <button 
-                                        onClick={() => setZoomedZikr({
-                                            title: "أحاديث في فضل السنن",
-                                            text: `
-                                                <div class="space-y-6 text-xl md:text-2xl text-right" dir="rtl">
-                                                    <div class="border-b border-black/5 dark:border-white/5 pb-4 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
-                                                        <p class="leading-relaxed font-amiri">عن أم حبيبة رضي الله عنها قالت: سمعت رسول الله ﷺ يقول: <span style="color: ${theme.palette[0]}; font-weight: bold;">"مَنْ صَلَّى فِي يَوْمٍ وَلَيْلَةٍ ثِنْتَيْ عَشْرَةَ رَكْعَةً بُنِيَ لَهُ بَيْتٌ فِي الْجَنَّةِ"</span>.</p>
-                                                        <p class="text-sm mt-2 opacity-60 font-sans">- رواه مسلم</p>
-                                                    </div>
-                                                    <div class="border-b border-black/5 dark:border-white/5 pb-4 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
-                                                        <p class="leading-relaxed font-amiri">عن عائشة رضي الله عنها عن النبي ﷺ قال: <span style="color: ${theme.palette[1]}; font-weight: bold;">"رَكْعَتَا الْفَجْرِ خَيْرٌ مِنَ الدُّنْيَا وَمَا فِيهَا"</span>.</p>
-                                                        <p class="text-sm mt-2 opacity-60 font-sans">- رواه مسلم</p>
-                                                    </div>
-                                                    <div class="border-b border-black/5 dark:border-white/5 pb-4 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
-                                                        <p class="leading-relaxed font-amiri">عن ابن عمر رضي الله عنهما أن النبي ﷺ قال: <span style="color: ${theme.palette[0]}; font-weight: bold;">"رَحِمَ اللَّهُ امْرَأً صَلَّى قَبْلَ الْعَصْرِ أَرْبَعًا"</span>.</p>
-                                                        <p class="text-sm mt-2 opacity-60 font-sans">- رواه الترمذي وأبو داود</p>
-                                                    </div>
-                                                    <div class="border-b border-black/5 dark:border-white/5 pb-4 last:border-0 hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
-                                                        <p class="leading-relaxed font-amiri">عن أم حبيبة رضي الله عنها قالت: قال رسول الله ﷺ: <span style="color: ${theme.palette[1]}; font-weight: bold;">"مَنْ حَافَظَ عَلَى أَرْبَعِ رَكَعَاتٍ قَبْلَ الظُّهْرِ وَأَرْبَعٍ بَعْدَهَا حَرَّمَهُ اللَّهُ عَلَى النَّارِ"</span>.</p>
-                                                        <p class="text-sm mt-2 opacity-60 font-sans">- رواه الترمذي وأبو داود</p>
-                                                    </div>
-                                                </div>
-                                            `,
-                                            note: "أحاديث صحيحة"
-                                        })} 
-                                        className="p-2 rounded-full hover:bg-card-bg-hover transition-colors"
-                                    >
-                                        <i className="fa-solid fa-magnifying-glass-plus text-lg themed-text-muted"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        <BottomSalahGuides 
+                            theme={theme}
+                            themeKey={themeKey}
+                            cardBorderColor={cardBorderColor}
+                            isBlackTheme={isBlackTheme}
+                            isEn={isEn}
+                            onZoom={setZoomedZikr}
+                            setToastMessage={setToastMessage}
+                        />
                     </>
                 ) : (
-                    <div id="athkarDetails" className="space-y-4">
-                        {athkarList.map(zikr => (
+                    <div id="athkarDetails" className={activeTab === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "space-y-4"}>
+                        {filteredAthkarList.map(zikr => (
                             <SalahZikrCard 
                                 key={zikr.id} 
                                 zikr={zikr} 
                                 theme={theme} 
+                                themeKey={themeKey}
+                                prayerTitle={currentPrayer?.title}
+                                prayerTitleEn={currentPrayer?.titleEn}
                                 onDecrement={() => handleDecrement(zikr.id)} 
                                 onZoom={() => setZoomedZikr(zikr)} 
                                 setToastMessage={setToastMessage}
                             />
                         ))}
+                        <div className="col-span-full">
+                            <BottomSalahGuides 
+                                theme={theme}
+                                themeKey={themeKey}
+                                cardBorderColor={cardBorderColor}
+                                isBlackTheme={isBlackTheme}
+                                isEn={isEn}
+                                onZoom={setZoomedZikr}
+                                setToastMessage={setToastMessage}
+                            />
+                        </div>
                     </div>
                 )}
-                <div className="shrink-0 w-full h-32"></div>
+                <div className="shrink-0 w-full h-8"></div>
             </main>
 
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
+            {/* Backdrop to close floating menu when clicking anywhere, absorbing the click */}
+            {isMenuOpen && (
+                <div 
+                    className="fixed inset-0 z-[1200] bg-transparent cursor-pointer"
+                    style={{ position: 'fixed' }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setIsMenuOpen(false);
+                    }}
+                />
+            )}
 
             {/* Floating Menu & FAB */}
-            <div className="fixed bottom-20 right-4 z-[90] flex flex-col items-end">
+            <div 
+                ref={fabContainerRef} 
+                className={`fixed ${isEn ? 'left-4 items-start' : 'right-4 items-end'} ${isMenuOpen ? 'z-[1250]' : 'z-[90]'} flex flex-col`}
+                style={{ bottom: 'calc(env(safe-area-inset-bottom, 24px) + 32px)' }}
+            >
                 <AnimatePresence>
                     {isMenuOpen && (
                         <motion.div
@@ -421,26 +678,34 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: menuOpenDirection === 'up' ? 20 : -20, scale: 0.9 }}
                             transition={{ duration: 0.2 }}
-                            className={`absolute right-0 ${menuOpenDirection === 'up' ? 'bottom-full mb-4 origin-bottom-right' : 'top-full mt-4 origin-top-right'} themed-card rounded-2xl shadow-xl border p-2 flex flex-col gap-1 overflow-hidden w-48 z-0`}
-                            style={{ borderColor: 'var(--card-border)', color: 'var(--text-color)' }}
+                            className={`absolute ${isEn ? 'left-0 origin-bottom-left' : 'right-0 origin-bottom-right'} ${menuOpenDirection === 'up' ? 'bottom-full mb-4' : 'top-full mt-4'} bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-100/80 dark:border-white/10 p-2 flex flex-col gap-1 overflow-hidden w-52 z-0`}
+                            style={{ color: 'var(--text-color)' }}
+                            onClick={(e) => e.stopPropagation()}
                         >
                             <button 
                                 onClick={() => { setIsFavoritesView(true); setCurrentPrayer(null); setIsMenuOpen(false); }}
-                                className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-between ${isFavoritesView ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                                className={`w-full ${isEn ? 'text-left' : 'text-right'} px-4 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-between ${isFavoritesView ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
                                 style={isFavoritesView ? { color: isBlackTheme ? '#FFFFFF' : theme.palette[0] } : {}}
                             >
-                                المفضلة
+                                <span>{isEn ? 'Favorites' : 'المفضلة'}</span>
                                 <i className="fa-solid fa-heart text-xs opacity-70"></i>
                             </button>
-                            <div className="h-px bg-black/5 dark:bg-white/5 my-1 mx-2" />
+                            <div className="h-px bg-black/5 dark:bg-white/10 my-1 mx-2" />
                             {prayerOptions.map(prayer => (
                                 <button 
                                     key={prayer.id}
-                                    onClick={() => { openPrayer(prayer.id, `أذكار ${prayer.title}`); setIsMenuOpen(false); }}
-                                    className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${currentPrayer?.id === prayer.id ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}
+                                    onClick={() => { 
+                                        openPrayer(
+                                            prayer.id, 
+                                            `أذكار ${prayer.title}`, 
+                                            `${prayer.titleEn} Adhkar`
+                                        ); 
+                                        setIsMenuOpen(false); 
+                                    }}
+                                    className={`w-full ${isEn ? 'text-left' : 'text-right'} px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${currentPrayer?.id === prayer.id ? 'bg-black/5 dark:bg-white/10' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
                                     style={currentPrayer?.id === prayer.id ? { color: isBlackTheme ? '#FFFFFF' : theme.palette[0] } : {}}
                                 >
-                                    {prayer.title}
+                                    {isEn ? prayer.titleEn : prayer.title}
                                 </button>
                             ))}
                         </motion.div>
@@ -456,33 +721,20 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                         ? { backgroundColor: '#ffffff', border: '1px solid #000000' }
                         : { backgroundColor: isBlackTheme ? '#FFFFFF' : theme.palette[0] }
                     }
+                    title={isEn ? "Prayer Menu" : "قائمة الصلوات"}
+                    aria-label={isEn ? "Prayer Menu" : "قائمة الصلوات"}
                 >
                     <i className={`fa-solid ${isMenuOpen ? 'fa-times' : 'fa-list-ul'} text-xl`}></i>
                 </button>
             </div>
 
-            {zoomedZikr && (
-                <div className="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center p-4 backdrop-blur-sm" onClick={() => setZoomedZikr(null)}>
-                    <div className="bg-modal-bg text-modal-text p-8 rounded-3xl w-full max-w-2xl text-center relative scale-in shadow-2xl border-2 border-modal-border flex flex-col max-h-[90vh]" style={{ fontFamily: theme.font }} onClick={e => e.stopPropagation()}>
-                        <div className="overflow-y-auto hide-scrollbar flex-1 py-4">
-                            {zoomedZikr.title && <h3 className="text-xl font-bold mb-4" style={{ color: theme.palette[1] }}>{zoomedZikr.title}</h3>}
-                            <div 
-                                className="text-3xl md:text-4xl leading-relaxed"
-                                dangerouslySetInnerHTML={{ __html: zoomedZikr.text }}
-                            ></div>
-                            {zoomedZikr.note && (
-                                <p className="text-lg mt-6 font-bold" style={{ color: theme.palette[0] }}>
-                                    {zoomedZikr.count !== undefined ? `التكرار المطلوب: ${zoomedZikr.note}` : zoomedZikr.note}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="mt-6 shrink-0">
-                            <button onClick={() => setZoomedZikr(null)} className="w-full py-3 rounded-xl font-bold bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:opacity-90 transition-opacity">إغلاق</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Zoom Modal */}
+            <ZoomModal 
+                zoomedZikr={zoomedZikr} 
+                currentPrayer={currentPrayer} 
+                onClose={() => setZoomedZikr(null)} 
+                setToastMessage={setToastMessage} 
+            />
 
             <AnimatePresence>
                 {toastMessage && (
@@ -490,13 +742,23 @@ function AthkarAlSalah({ onBack, onNavigate }) {
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 50 }}
-                        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[101] bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 whitespace-nowrap border border-white/10"
+                        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[101] bg-gray-800 text-white px-6 py-3 rounded-full shadow-2xl font-bold flex items-center gap-2 whitespace-nowrap border border-white/10"
                     >
                         <i className="fa-solid fa-spinner fa-spin text-primary" style={{ color: theme.palette[0] }}></i>
                         {toastMessage}
                     </motion.div>
                 )}
             </AnimatePresence>
+            <CommunitySpotlightGuide
+                isOpen={showGuide}
+                onClose={() => {
+                    setShowGuide(false);
+                    markPageAsSeen('athkar_salah');
+                }}
+                steps={ATHKAR_SALAH_PAGE_STEPS}
+                guideKey="athkar_salah_page_spotlight"
+                isEn={isEn}
+            />
         </div>
     );
 }

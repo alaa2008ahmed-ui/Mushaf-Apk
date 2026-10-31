@@ -4,22 +4,42 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>مصحف احمد وليلى</title>
+    <title>مصحف أحمد و ليلى</title>
+    <meta name="description" content="تطبيق إسلامي شامل يعمل بدون انترنت، يحتوي على القرآن الكريم، أذكار، تسبيح، مواقيت الصلاة، وقائمة تطبيقات متنوعة. مصمم ليكون رفيقك اليومي." />
+    <meta property="og:title" content="مصحف أحمد و ليلى" />
+    <meta property="og:description" content="تطبيق إسلامي شامل يعمل بدون انترنت، يحتوي على القرآن الكريم، أذكار، تسبيح، مواقيت الصلاة، وقائمة تطبيقات متنوعة. مصمم ليكون رفيقك اليومي." />
+    <link rel="icon" type="image/png" href="/app_icon.png" />
+    <link rel="apple-touch-icon" href="/app_icon.png" />
 
-    <script type="text/javascript" charset="utf-8" src="cordova.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..900;1,400..900&family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400..900&family=Cormorant+Garamond:ital,wght@0,400..700;1,400..700&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Inter:wght@300..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Merriweather:ital,wght@0,300..900;1,300..900&family=Montserrat:ital,wght@0,300..900;1,300..900&family=Outfit:wght@300..800&family=Philosopher:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:ital,wght@0,300..800;1,300..800&family=Spectral:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+
     <script>
-        if (!window.cordova) {
-            window.cordova = { exec: function() {}, require: function() {}, platformId: 'browser' };
+        if (typeof window !== 'undefined') {
+            if (window.location.protocol === 'file:' || window.location.protocol === 'cdv:') {
+                var s = document.createElement('script');
+                s.src = 'cordova.js';
+                document.head.appendChild(s);
+            }
+            if (!window.cordova) {
+                window.cordova = { exec: function() {}, require: function() {}, platformId: 'browser' };
+            }
             if (!navigator.app) {
                 navigator.app = { exitApp: function() { if (window.close) window.close(); } };
             }
+            // Prevent React DevTools instrumentation error in restricted environments
+            window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
+            try {
+                var raw = (window.location.href + ' ' + window.location.hash + ' ' + window.location.search).toLowerCase();
+                if (raw.indexOf('quran') !== -1) window.__pendingShortcut = 'quran';
+                else if (raw.indexOf('prayer') !== -1 || raw.indexOf('salah') !== -1) window.__pendingShortcut = 'prayer-times';
+                else if (raw.indexOf('qibla') !== -1) window.__pendingShortcut = 'qibla';
+                else if (raw.indexOf('seerah') !== -1) window.__pendingShortcut = 'prophetic-seerah';
+                else if (raw.indexOf('hisn') !== -1 || raw.indexOf('azkar') !== -1) window.__pendingShortcut = 'hisn-muslim';
+            } catch (e) {}
         }
         document.addEventListener('deviceready', function() { console.log('Device ready - Cordova initialized'); }, false);
-        
-        // Prevent React DevTools instrumentation error in restricted environments
-        if (typeof window !== 'undefined') {
-            window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
-        }
     </script>
     
 <style>
@@ -75,41 +95,142 @@
       .font-kufi { font-family: 'Reem Kufi', sans-serif; }
       .font-scheherazade { font-family: 'Scheherazade New', serif; }
       
+      /* التصميم الذكي الحديث: خط كايرو ثابت وغير قابل للتغيير نهائياً */
+      .modern-home-layout,
+      .modern-home-layout *,
+      .modern-home-layout p,
+      .modern-home-layout span,
+      .modern-home-layout h1,
+      .modern-home-layout h2,
+      .modern-home-layout h3,
+      .modern-home-layout button {
+        font-family: 'Cairo', sans-serif !important;
+      }
+      
       .app-top-bar {
           background: rgb(var(--top-bar-rgb, 26, 34, 51));
           color: var(--top-bar-text, var(--text-color, #ffffff)); 
           border-bottom: 2px solid var(--bottom-bar-border, #334155);
           position: sticky; top: 0; z-index: 40;
           padding-top: env(safe-area-inset-top);
-          min-height: 90px;
+          min-height: 67px;
           display: flex;
           align-items: center;
           justify-content: center;
       }
+      .app-top-bar button,
+      .app-top-bar button i,
+      .app-top-bar button svg,
+      .app-top-bar i,
+      .app-top-bar svg {
+          color: var(--top-bar-text, var(--text-color, #1e293b));
+      }
+
+      /* In Black Theme: All icons and buttons across all top bars & sub-page headers are pure white (#ffffff) */
+      body.theme-black .app-top-bar:not(.quran-context) button,
+      body.theme-black .app-top-bar:not(.quran-context) button i,
+      body.theme-black .app-top-bar:not(.quran-context) button svg,
+      body.theme-black .app-top-bar:not(.quran-context) i,
+      body.theme-black .app-top-bar:not(.quran-context) svg,
+      body.theme-black .app-top-bar:not(.quran-context) .fa-solid,
+      body.theme-black .app-top-bar:not(.quran-context) .fas,
+      body.theme-black .app-top-bar:not(.quran-context) .fa-house,
+      body.theme-black .app-top-bar:not(.quran-context) .fa-circle-question,
+      body.theme-black .app-top-bar:not(.quran-context) .fa-gear,
+      body.theme-black .app-top-bar:not(.quran-context) .fa-arrow-right,
+      body.theme-black .app-top-bar:not(.quran-context) .fa-arrow-left,
+      body.theme-black .app-top-bar:not(.quran-context) .fa-location-crosshairs,
+      body.theme-black header:not(.quran-reader-header):not(.quran-context) button,
+      body.theme-black header:not(.quran-reader-header):not(.quran-context) button i,
+      body.theme-black header:not(.quran-reader-header):not(.quran-context) button svg,
+      body.theme-black header:not(.quran-reader-header):not(.quran-context) i,
+      body.theme-black header:not(.quran-reader-header):not(.quran-context) svg,
+      html.theme-black .app-top-bar:not(.quran-context) button,
+      html.theme-black .app-top-bar:not(.quran-context) button i,
+      html.theme-black .app-top-bar:not(.quran-context) button svg,
+      html.theme-black .app-top-bar:not(.quran-context) i,
+      html.theme-black .app-top-bar:not(.quran-context) svg,
+      html.theme-black .app-top-bar:not(.quran-context) .fa-solid,
+      html.theme-black .app-top-bar:not(.quran-context) .fas,
+      html.theme-black .app-top-bar:not(.quran-context) .fa-house,
+      html.theme-black .app-top-bar:not(.quran-context) .fa-circle-question,
+      html.theme-black .app-top-bar:not(.quran-context) .fa-gear,
+      html.theme-black .app-top-bar:not(.quran-context) .fa-arrow-right,
+      html.theme-black .app-top-bar:not(.quran-context) .fa-arrow-left,
+      html.theme-black .app-top-bar:not(.quran-context) .fa-location-crosshairs,
+      html.theme-black header:not(.quran-reader-header):not(.quran-context) button,
+      html.theme-black header:not(.quran-reader-header):not(.quran-context) button i,
+      html.theme-black header:not(.quran-reader-header):not(.quran-context) button svg,
+      html.theme-black header:not(.quran-reader-header):not(.quran-context) i,
+      html.theme-black header:not(.quran-reader-header):not(.quran-context) svg {
+          color: #ffffff !important;
+          fill: #ffffff !important;
+      }
+      body.theme-black .app-top-bar:not(.quran-context) svg,
+      body.theme-black header:not(.quran-reader-header):not(.quran-context) svg,
+      html.theme-black .app-top-bar:not(.quran-context) svg,
+      html.theme-black header:not(.quran-reader-header):not(.quran-context) svg {
+          stroke: #ffffff !important;
+      }
+      body.theme-black .app-top-bar:not(.quran-context) svg[fill="none"],
+      body.theme-black header:not(.quran-reader-header):not(.quran-context) svg[fill="none"],
+      html.theme-black .app-top-bar:not(.quran-context) svg[fill="none"],
+      html.theme-black header:not(.quran-reader-header):not(.quran-context) svg[fill="none"] {
+          fill: none !important;
+      }
       body.hide-top-bars .app-top-bar { display: none !important; }
       
-      /* Apply the same padding as MoreMenuPage.tsx (pt-12 = 3rem) when top bars are hidden */
+      /* When top bars are hidden in other pages */
       body.hide-top-bars:not(.quran-context) main:not(.absolute),
-      body.hide-top-bars:not(.quran-context) .main-layout,
       body.hide-top-bars:not(.quran-context) .app-top-bar + * {
           padding-top: calc(env(safe-area-inset-top) + 0.5rem) !important;
+      }
+
+      /* Home page layout has its dedicated header which already includes safe-area-inset-top */
+      .main-layout {
+          padding-top: 0 !important;
       }
 
       .app-top-bar__inner { 
           width: 100%;
           max-width: 900px; 
           margin: 0 auto; 
-          padding: 0.5rem 1.25rem; 
+          padding: 0.25rem 1.25rem; 
           display: flex; 
           flex-direction: column; 
           gap: 0.1rem; 
           text-align: center; 
           justify-content: center;
           height: 100%;
-          min-height: 70px;
+          min-height: 52px;
       }
-      .app-top-bar__title { font-weight: 800; letter-spacing: 0.03em; }
+      .app-top-bar__title { 
+          font-weight: 800; 
+          letter-spacing: 0.02em; 
+          font-size: 1.15rem; 
+          line-height: 1.3;
+          max-width: 100%;
+      }
+      @media (min-width: 640px) {
+          .app-top-bar__title {
+              font-size: 1.25rem;
+          }
+      }
       .app-top-bar__subtitle { font-size: 0.85rem; opacity: 0.9; }
+
+      /* Prayer Times Top Bar resized to match other pages (reduced by 25% to 67px) while retaining subtitle */
+      .app-top-bar.app-top-bar--prayer {
+          min-height: 67px !important;
+      }
+      .app-top-bar.app-top-bar--prayer .app-top-bar__inner {
+          min-height: 52px !important;
+          padding: 0.25rem 1.25rem !important;
+      }
+
+      /* Hide subtitles on all pages except prayer times */
+      .app-top-bar:not(.app-top-bar--prayer) .app-top-bar__subtitle {
+          display: none !important;
+      }
       .hide-scrollbar::-webkit-scrollbar { display: none; }
       .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       .app-bottom-bar {
@@ -119,16 +240,13 @@
           box-shadow: none; z-index: 50; padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
           transition: background-color 0.15s ease, border-top 0.15s ease;
       }
-      main {
-        padding-bottom: 0;
-      }
       .app-bottom-bar__inner { max-width: 900px; margin: 0 auto; display: flex; justify-content: center; align-items: center; gap: 1rem; }
       .bar-button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; border-radius: 999px; padding: 0.75rem 1rem; transition: all 0.15s ease; box-shadow: 0 5px 15px -3px rgba(0,0,0,0.15); }
       .themed-card { background-color: var(--card-bg); border: 1px solid var(--card-border); color: var(--text-color); transition: background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; box-shadow: var(--card-shadow); }
       .themed-card:hover { background-color: var(--card-bg-hover); }
       .themed-text { color: var(--text-color); }
       .themed-text-muted { color: var(--text-color-muted); }
-      .themed-bg-alt { background-color: var(--card-bg) }
+      .themed-bg-alt { background-color: var(--card-bg); color: var(--text-color); }
 
       .prayer-card { height: 75px; border-radius: 18px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; transition: all 0.3s ease; position: relative; }
 

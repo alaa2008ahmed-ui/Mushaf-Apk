@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { SAJDAH_LOCATIONS, toArabic, SURAH_INFO, getAyahCountText } from './constants';
+import { SAJDAH_LOCATIONS, toArabic, SURAH_INFO, getAyahCountText, SURAH_NAMES_AR } from './constants';
 import SurahHeader from './SurahHeader';
 
 interface MushafPageProps {
@@ -151,7 +151,7 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
             case 'night_sky': return { num: '#9333ea', bracket: '#9333ea' }; // Purple for both
             case 'green': return { num: '#dc2626', bracket: '#dc2626' }; // Red for both
             case 'red': return { num: '#2563eb', bracket: '#2563eb' }; // Blue for both
-            case 'deep_black': return { num: '#10B981', bracket: '#10B981' }; // Turquoise Green for both
+            case 'deep_black': return { num: '#ffffff', bracket: '#ffffff' }; // White for both in deep black
             default: return { 
                 num: numColor, 
                 bracket: bracketColor 
@@ -163,7 +163,7 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
 
     return (
         <div id={`page-${pageNum}`} className={`mushaf-page ${pageNum === 1 ? 'first-page' : ''}`} data-page={pageNum} ref={pageRef} style={{ 
-            backgroundColor: 'transparent',
+            backgroundColor: 'var(--qr-bg, #ffffff)',
             boxSizing: 'border-box'
         }}>
             <div className="page-content" style={pageStyle}>
@@ -237,12 +237,12 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                     return (
                         <React.Fragment key={id}>
                             {showHeader && ( 
-                                <> 
+                                <div className="surah-header-container-wrapper my-2 sm:my-3 block w-full select-none" onClick={() => onSurahHeaderLongPress && onSurahHeaderLongPress()}> 
                                     <SurahHeader 
                                         surahNumber={ayah.sNum}
-                                        surahName={ayah.sName.replace('سورة', '').trim()}
-                                        surahType={SURAH_INFO[ayah.sNum]?.type}
-                                        ayahCount={SURAH_INFO[ayah.sNum]?.ayahs || 0}
+                                        surahName={ayah.sName ? ayah.sName.replace(/سورة|سُورَةُ|سُورَة/g, '').trim() : (SURAH_NAMES_AR[ayah.sNum - 1] || '')}
+                                        surahType={SURAH_INFO[ayah.sNum]?.type || 'مكية'}
+                                        ayahCount={SURAH_INFO[ayah.sNum]?.ayahs || 7}
                                         currentTheme={currentTheme}
                                         design={settings?.surahHeaderDesign || 1}
                                         onLongPress={onSurahHeaderLongPress}
@@ -250,11 +250,12 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                     {ayah.sNum !== 1 && ayah.sNum !== 9 && (
                                         <div className="bismillah" style={headerStyle}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
                                     )} 
-                                 </> 
+                                 </div> 
                             )}
                             <span 
                                 id={id} 
                                 className={`ayah-text-block ${highlightedAyahId === id ? 'highlighted' : ''} ${isSajdah ? 'ayah-sajdah' : ''} ${shouldHide ? 'hide-text' : ''}`} 
+                                style={highlightedAyahId === id && currentTheme?.id === 'deep_black' ? { color: '#ffffff', textShadow: '0 0 2px rgba(255, 255, 255, 0.8)' } : undefined}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (!isLongPressTriggered.current) {
@@ -307,9 +308,9 @@ const MushafPage: React.FC<MushafPageProps> = React.memo(({ pageNum, pageData, h
                                         e.stopPropagation();
                                     }}
                                 >
-                                    <span className="verse-bracket" style={{ color: currentTheme?.verseBracket || currentTheme?.accent || '#d97706' }}>﴿</span>
-                                    <span className="verse-num-inner" style={{ color: currentTheme?.accent || '#1d4ed8' }}>{toArabic(ayah.numberInSurah)}</span>
-                                    <span className="verse-bracket" style={{ color: currentTheme?.verseBracket || currentTheme?.accent || '#d97706' }}>﴾</span>
+                                    <span className="verse-bracket" style={{ color: currentTheme?.id === 'deep_black' ? '#ffffff' : (currentTheme?.verseBracket || currentTheme?.accent || '#d97706') }}>﴿</span>
+                                    <span className="verse-num-inner" style={{ color: currentTheme?.id === 'deep_black' ? '#ffffff' : (currentTheme?.accent || '#1d4ed8') }}>{toArabic(ayah.numberInSurah)}</span>
+                                    <span className="verse-bracket" style={{ color: currentTheme?.id === 'deep_black' ? '#ffffff' : (currentTheme?.verseBracket || currentTheme?.accent || '#d97706') }}>﴾</span>
                                 </span>
                             </span>
                         </React.Fragment>

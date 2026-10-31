@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { App as CapacitorApp } from '@capacitor/app';
 import { parseVoiceCommand, normalizeArabic } from '../utils/voiceParser';
 import { SURAH_NAMES_AR } from '../components/QuranReader/constants';
+import { requestMicrophonePermission } from '../utils/permissionHelper';
 
 export interface VoiceCommand {
     id: string;
@@ -68,8 +69,6 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'nav_daily_wird', phrase: 'الورد اليومي', action: 'open_daily_wird', isDefault: true },
     { id: 'open_memorization', phrase: 'فتح التحفيظ', action: 'open_memorization', isDefault: true },
     { id: 'nav_memorization', phrase: 'التحفيظ', action: 'open_memorization', isDefault: true },
-    { id: 'open_more', phrase: 'فتح قائمة التطبيقات', action: 'open_more', isDefault: true },
-    { id: 'nav_more', phrase: 'قائمة التطبيقات', action: 'open_more', isDefault: true },
     { id: 'open_nawawi', phrase: 'فتح الاربعون النوويه', action: 'open_nawawi', isDefault: true },
     { id: 'nav_nawawi', phrase: 'الاربعون النوويه', action: 'open_nawawi', isDefault: true },
     { id: 'go_back', phrase: 'رجوع', action: 'go_back', isDefault: true },
@@ -258,7 +257,7 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         const startWebRecognition = () => {
             const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
             if (!SpeechRecognitionAPI) {
-                console.error("Speech Recognition API not supported in this browser.");
+                console.warn("Speech Recognition API not supported in this browser.");
                 setIsEnabled(false);
                 setIsListening(false);
                 isStartingRef.current = false;
@@ -323,8 +322,9 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             
             console.log('Voice Recognition Started. Active phrases:', commands.map(c => c.phrase));
             
-            // 1. Safely check and request permissions without blocking
+            // 1. Safely check and request permissions in-app without blocking
             try {
+                await requestMicrophonePermission();
                 const checkPerm = await SpeechRecognition.checkPermissions();
                 if (checkPerm.speechRecognition !== 'granted') {
                     await SpeechRecognition.requestPermissions();

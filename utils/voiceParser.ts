@@ -151,7 +151,9 @@ export const parseVoiceCommand = (
         'وردي': 'pink',
         'سماوي': 'cyan',
         'رمادي': 'gray',
-        'اسود': 'black'
+        'اسود': 'black',
+        'ذهبي': 'gold',
+        'ذهبي ملكي': 'i_royal_gold'
     };
 
     if (themeMatch) {
@@ -261,6 +263,10 @@ export const parseVoiceCommand = (
         'الحج والعمرة': 'open_hajj_umrah',
         'اسماء الله الحسنى': 'open_asmaul_husna',
         'أسماء الله الحسنى': 'open_asmaul_husna',
+        'مواقع اسلامية': 'open_islamic_sites',
+        'مواقع إسلامية': 'open_islamic_sites',
+        'المواقع الاسلامية': 'open_islamic_sites',
+        'المواقع الإسلامية': 'open_islamic_sites',
         'الورد اليومي': 'open_daily_wird',
         'التحفيظ': 'open_memorization',
         'فتح المزيد': 'open_more',

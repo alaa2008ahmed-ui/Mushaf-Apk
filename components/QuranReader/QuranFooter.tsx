@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Bookmark, ChevronDown, Pause, Home, Share2, Minimize, Maximize } from 'lucide-react';
+import { Menu, Bookmark, ChevronDown, Pause, Home, Share2 } from 'lucide-react';
 import FloatingMenu from './FloatingMenu';
 
 interface QuranFooterProps {
@@ -20,8 +20,7 @@ interface QuranFooterProps {
     handleAutoScrollButtonPointerLeave: () => void;
     autoScrollState: { isActive: boolean; isPaused: boolean; elapsedTime: number };
     onBack: () => void;
-    fitToScreen?: boolean;
-    toggleFitToScreen?: () => void;
+    isEn?: boolean;
 }
 
 const QuranFooter: React.FC<QuranFooterProps> = React.memo(({
@@ -42,20 +41,19 @@ const QuranFooter: React.FC<QuranFooterProps> = React.memo(({
     handleAutoScrollButtonPointerLeave,
     autoScrollState,
     onBack,
-    fitToScreen,
-    toggleFitToScreen
+    isEn = false
 }) => {
     return (
-        <footer id="bottom-bar" className={`footer-default flex-none border shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 flex justify-evenly items-center py-1 w-full ${isAnyMenuOpen ? 'pointer-events-none opacity-50' : ''}`} style={getToolbarStyle('bottom-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
+        <footer id="bottom-bar" className={`footer-default flex-none border-0 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.12)] z-50 flex justify-evenly items-center py-1 w-full ${isAnyMenuOpen ? 'pointer-events-none opacity-50' : ''}`} style={getToolbarStyle('bottom-toolbar', currentTheme.barBg, currentTheme.barText, currentTheme.barBorder)}>
             {!hideShareButton && (
                 <button 
                     id="btn-share" 
                     onClick={() => openModal('share-ayah')} 
-                    className={`bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1 shadow-sm ${isAnyMenuOpen ? 'pointer-events-none' : 'pointer-events-auto'}`} 
+                    className={`bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1 ${isAnyMenuOpen ? 'pointer-events-none' : 'pointer-events-auto'}`} 
                     style={getToolbarStyle('btn-share', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBorder || currentTheme.btnBg)}
-                    title="مشاركة"
+                    title={isEn ? "Share" : "مشاركة"}
                 >
-                    <Share2 size={24} />
+                    <Share2 size={24} className="quran-3d-icon" strokeWidth={2.4} />
                 </button>
             )}
             <button 
@@ -66,25 +64,12 @@ const QuranFooter: React.FC<QuranFooterProps> = React.memo(({
                 onTouchStart={handleBookmarkButtonPointerDown}
                 onTouchEnd={handleBookmarkButtonPointerUp}
                 onTouchCancel={handleBookmarkButtonPointerLeave}
-                className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1 shadow-sm" 
+                className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1" 
                 style={{...getToolbarStyle('btn-bookmark', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBorder || currentTheme.btnBg), touchAction: 'none'}}
-                title="حفظ العلامة"
+                title={isEn ? "Save Bookmark" : "حفظ العلامة"}
             >
-                <Bookmark size={24} />
+                <Bookmark size={24} className="quran-3d-icon" strokeWidth={2.4} />
             </button>
-            
-            {toggleFitToScreen && (
-                <button 
-                    id="btn-fit-screen" 
-                    onClick={toggleFitToScreen} 
-                    className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1 shadow-sm" 
-                    style={getToolbarStyle('btn-fit-screen', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBorder || currentTheme.btnBg)}
-                    title={fitToScreen ? "إلغاء الضغط" : "ضغط الصفحة لتناسب الشاشة"}
-                >
-                    {fitToScreen ? <Maximize size={24} /> : <Minimize size={24} />}
-                </button>
-            )}
-
             {!hideAutoScrollButton && (
                 <button 
                     id="btn-autoscroll" 
@@ -94,21 +79,21 @@ const QuranFooter: React.FC<QuranFooterProps> = React.memo(({
                     onTouchStart={handleAutoScrollButtonPointerDown}
                     onTouchEnd={handleAutoScrollButtonPointerUp}
                     onTouchCancel={handleAutoScrollButtonPointerLeave}
-                    className="bottom-bar-button btn-purple !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1 shadow-sm" 
+                    className="bottom-bar-button btn-purple !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1" 
                     style={{...getToolbarStyle('btn-autoscroll', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBorder || currentTheme.btnBg), touchAction: 'none'}}
-                    title="التمرير التلقائي"
+                    title={isEn ? "Auto-scroll" : "التمرير التلقائي"}
                 >
-                    {autoScrollState.isActive ? <Pause size={24} /> : <ChevronDown size={24} />}
+                    {autoScrollState.isActive ? <Pause size={24} className="quran-3d-icon" strokeWidth={2.4} /> : <ChevronDown size={24} className="quran-3d-icon" strokeWidth={2.4} />}
                 </button>
             )}
             <button 
                 id="btn-home" 
                 onClick={onBack} 
-                className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1 shadow-sm" 
+                className="bottom-bar-button btn-green !rounded-full !w-12 !h-12 !p-0 flex items-center justify-center mx-1" 
                 style={getToolbarStyle('btn-home', currentTheme.btnBg, currentTheme.btnText, currentTheme.btnBorder || currentTheme.btnBg)}
-                title="الرئيسية"
+                title={isEn ? "Home" : "الرئيسية"}
             >
-                <Home size={24} />
+                <Home size={24} className="quran-3d-icon" strokeWidth={2.4} />
             </button>
         </footer>
     );

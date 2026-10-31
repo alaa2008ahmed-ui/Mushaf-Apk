@@ -1,20 +1,18 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import BottomBar from '../components/BottomBar';
+import ThemesSidebar from '../components/MainMenu/ThemesSidebar';
 import { useTheme } from '../context/ThemeContext';
 import WhatsAppButton from '../components/WhatsAppButton';
 import InteractiveBackground from '../components/InteractiveBackground';
-import { verses } from '../data/mainMenuData';
 import MenuCustomizationModal from '../components/MenuCustomizationModal';
 import PasscodeModal from '../components/PasscodeModal';
 import { registerBackInterceptor } from '../hooks/useBackButton';
-import VerseSection from '../components/MainMenu/VerseSection';
 import TitleSection from '../components/MainMenu/TitleSection';
 import GridSection from '../components/MainMenu/GridSection';
 import FloatingNeonTicker from '../components/FloatingNeonTicker';
-import VerseContextMenu from '../components/MainMenu/VerseContextMenu';
-import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
-import { Mic, Palette, Grid, BookOpen } from 'lucide-react';
+import { Palette, LayoutDashboard, LayoutGrid, Moon, Sun } from 'lucide-react';
+import ModernHomeView from '../components/MainMenu/ModernHomeView';
+import VoiceControlToggle from '../components/VoiceControlToggle';
 import { useVoiceControl } from '../context/VoiceControlContext';
 import { usePrayerTimes } from '../context/PrayerTimesContext';
 import { prayerNamesAr } from '../data/prayerTimesData';
@@ -24,8 +22,24 @@ import { ON_THIS_DAY_EVENTS } from '../data/onThisDayEvents';
 import { shareAsImage } from '../utils/shareAsImage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share as CapacitorShare } from '@capacitor/share';
+import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
 import moment from 'moment-hijri';
+import HabitTrackerCard from '../components/MainMenu/HabitTrackerCard';
+import TawafCounterCard from '../components/MainMenu/TawafCounterCard';
+import HomePrayerCard from '../components/MainMenu/HomePrayerCard';
+import OnThisDayCard from '../components/MainMenu/OnThisDayCard';
+import IslamicEventsCard from '../components/MainMenu/IslamicEventsCard';
+import WebAppCard from '../components/MainMenu/WebAppCard';
+import ShareAppCard from '../components/MainMenu/ShareAppCard';
+import IslamicEventsBottomSheet from '../components/MainMenu/IslamicEventsBottomSheet';
+import OnThisDayBottomSheet from '../components/MainMenu/OnThisDayBottomSheet';
+import IslamicHistoryMemoryCard from '../components/MainMenu/IslamicHistoryMemoryCard';
+import IslamicHistoryMemoryBottomSheet from '../components/MainMenu/IslamicHistoryMemoryBottomSheet';
+import UnifiedEventZoomModal from '../components/MainMenu/UnifiedEventZoomModal';
+import { HISTORICAL_EVENTS_TRANSLATED, formatCalendarNumber } from '../utils/calendarTranslations';
+import { useLanguage } from '../context/LanguageContext';
+import { loadDayEvents, getTranslatedEventText, OnThisDayItem } from '../utils/onThisDayService';
 
 const ISLAMIC_EVENTS = [
     { day: 1, month: 1, name: "رأس السنة الهجرية" },
@@ -43,77 +57,315 @@ const ISLAMIC_EVENTS = [
 const HIJRI_MONTHS = ["محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
 const GREGORIAN_MONTHS = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
 
-const APP_SHARE_TEXT = `إليك التحديث الأضخم لتطبيق "مصحف أحمد وليلى"! 🕋✨
+export const APP_SHARE_TEXT_EN = `🕋✨ Major Update: "Mushaf Ahmed & Laila"! ✨🕋
+(Your Comprehensive Faith Companion — Offline & 100% Ad-Free)
 
-بشرى سارة لكل مسلم، تطبيقك الإسلامي الشامل الذي يعمل "بدون إنترنت" صار الآن أفضل وأجمل بكثير! لقد قمنا بتحديث جميع صفحات التطبيق بالكامل لضمان تجربة أسرع وسهولة تامة في الاستخدام.
+We are delighted to present an exceptional and brand-new release, completely redesigned across all pages and user interface for smoother, faster, and more beautiful experience, featuring exclusive new faith tools:
 
-ما الجديد في هذا التحديث؟ 🚀
-لقد تمت إضافة صفحات وميزات جديدة وحصرية لتكون رفيقك اليومي في التقرب إلى الله:
+🚀 Key Highlights in this Major Update:
 
-✅ صفحة التحفيظ: لمساعدتك على حفظ كتاب الله ومراجعته بيسر وسهولة.
-✅ الورد اليومي: لتنظيم قراءتك اليومية والالتزام بها بانتظام.
-✅ التحكم الصوتي: ميزة ذكية فريدة تمكنك من التنقل داخل التطبيق عبر أوامرك الصوتية.
-✅ أسماء الله الحسنى: شرح وتدبر لمعاني أسماء الله العظيمة بتصميم مميز.
-✅ مربي العبادات: دليلك العملي والمحفز للالتزام بالفرائض والسنن اليومية.
+🌍 Full Arabic & English Bilingual Support:
+A seamless bilingual experience with full Arabic and English language support across all app sections and interfaces.
 
-مميزات التطبيق المتكاملة:
-بجانب الإضافات الجديدة، التطبيق يوفر لك: (القرآن الكريم كاملاً، حصن المسلم والأذكار، الادعية، مواقيت الصلاة بدقة، اتجاه القبلة ، التقويم ، اذكار الصلاه ، السبحة الإلكترونية ، الحاسبة الشرعية ، الاربعون النوويه).. وكل ذلك بدون الحاجة للاتصال بالإنترنت.
+📜 Prophetic Seerah (New):
+An inspiring and interactive journey through the life of the Prophet ﷺ with a detailed timeline of key milestones and events.
 
-مميزات اخرى كثيرة تنتظرك اكتشفها بنفسك .
+💬 Community Hub (New):
+Spiritual brotherly connection, sharing wisdom and reflections, and purposeful group discussions.
 
-حمل التطبيق الآن وشاركه مع أحبابك لتكون لك صدقة جارية:
-📥 رابط التطبيق على متجر جوجل بلاي:
+🛡️ Comprehensive Ruqyah (New):
+Complete authentic Ruqyah Shariah from the Holy Quran and Prophetic Sunnah for protection and peace of mind.
 
-https://play.google.com/store/apps/details?id=com.AhmedLaila.Quran
+🌐 Islamic Platforms & Directory (New):
+Integrated interactive guide to trusted Islamic platforms for Fatwa, Quranic studies, and Islamic knowledge.
 
-نفعنا الله وإياكم به، وجعله في ميزان حسناتنا جميعاً. 🤲✨`;
+🎨 Complete Interface & Design Overhaul:
+Fresh modern design for all pages to elevate reading experience, typography, themes, and navigation speed.
+
+🌟 Alongside Your Favorite Core Features:
+(Complete Holy Quran with multiple recitations & exegesis • Fortress of the Muslim (Hisn Al-Muslim) & Daily Adhkar • Accurate Prayer Times & Qibla • Daily Recitation Wird & Memorization • Smart Voice Control • Habit Tracker • Zakat & Inheritance Calculators • An-Nawawi's Forty Hadiths).
+
+📥 Download or update for free on Google Play:
+👉 https://play.google.com/store/apps/details?id=com.AhmedLaila.Quran
+
+🤍 Share with your family and loved ones..
+"The one who guides to good is like the one who does it." 🤲🌱`;
+
+export const APP_SHARE_TEXT = `🕋✨ التحديث الأكبر لتطبيق "مصحف أحمد و ليلى"! ✨🕋
+(رفيقك الإيماني الشامل — يعمل بدون إنترنت وبدون إعلانات)
+
+نسعد بأن نضع بين أيديكم إصداراً استثنائياً وجديداً كلياً، خضع لتطوير شامل وتحديث جذري لجميع صفحات التطبيق وواجهته لتكون أكثر سلاسة، وجمالاً، وسرعة في الاستخدام، مع باقة حصرية من الصفحات والميزات الإيمانية الجديدة:
+
+🚀 أبرز ما تم إضافته وتطويره في هذا التحديث:
+
+🌍 دعم اللغتين العربية والإنجليزية بالكامل:
+تجربة متكاملة تدعم اللغتين العربية والإنجليزية بشكل كامل لكافة أقسام وواجهات التطبيق ومحتواه.
+
+📜 صفحة السيرة النبوية (جديد):
+رحلة ملهمة وتفاعلية في سيرة خير الأنام ﷺ عبر خط زمني مفصل يوثق أهم المحطات والغزوات والأحداث النبوية الشريفة بأسلوب عصري وميسر.
+
+🛡️ صفحة الرقية الشرعية (جديد):
+رقية شرعية كاملة وشاملة وميسرة من القرآن الكريم والسنة النبوية للتحصين والشفاء والسكينة.
+
+🌐 صفحة مواقع ومنصات إسلامية (جديد):
+دليل تفاعلي متكامل لأوثق المواقع الإسلامية للفتوى والبحث الشرعي وعلوم القرآن.
+
+🕌 صفحة العشرة المبشرون (جديد):
+تعرف على سير العظماء من أصحاب رسول الله ﷺ الذين بشرهم بالجنة، في صفحة تفاعلية ميسرة.
+
+🎨 تحديث شامل للواجهة ولكافة الصفحات:
+إعادة تصميم وتحديث لجميع صفحات التطبيق دون استثناء؛ لتحسين تجربة القراءة، والخطوط، والسمات المتعددة، وسرعة التصفح والتنقل.
+
+🌟 بجانب ميزاتك المفضلة:
+(المصحف الشريف كاملاً بأكثر من رواية وتفسير • حصن المسلم وأذكار اليوم والليلة • مواقيت الصلاة والقبلة • الورد اليومي والتحفيظ • التحكم الصوتي الذكي • مربي العبادات • الحاسبة الشرعية والمواريث • الأربعون النووية).
+
+📥 حمّل التطبيق الآن أو حدّثه مجاناً عبر متجر Google Play:
+👉 https://play.google.com/store/apps/details?id=com.AhmedLaila.Quran
+
+🤍 شاركه مع أهلك وأحبابك..
+فالدال على الخير كفاعله، واجعله صدقة جارية لك ولوالديك. 🤲🌱`;
+
+const CURRENT_LAYOUT_VERSION = 'v2026_sections_layout_v10';
 
 const ALL_POSSIBLE_ITEMS = [
-    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
-    { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
-    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "h-10", colorIndex: 1 },
-    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-10", colorIndex: 1 },
-    { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "h-10", colorIndex: 1 },
-    { id: 'tasbeeh', label: "📿 السبحة", className: "h-10", colorIndex: 1 },
-    { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 1 },
-    { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
-    { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
-    { id: 'nawawi', label: "📚 الأربعون النووية", className: "h-10", colorIndex: 1 },
-    { id: 'calculators', label: "🧮 الحاسبة الشرعية", className: "h-10", colorIndex: 1 },
-    { id: 'asmaul-husna', label: "✨ أسماء الله الحسنى", className: "col-span-2 h-10", colorIndex: 1 },
-    { id: 'more', label: "✨ قائمة التطبيقات", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
+    // القسم الأول: القرآن الكريم (التركيز الرئيسي للتطبيق)
+    { id: 'quran', label: "القرآن الكريم", className: "col-span-6 h-14", colorIndex: 0 },
+    { id: 'listen', label: "الاستماع للقرآن", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'memorization', label: "التحفيظ", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'daily-wird', label: "الورد اليومي", className: "col-span-2 h-11", colorIndex: 1 },
+
+    // القسم الثاني: العبادات اليومية
+    { id: 'prayer-times', label: "مواقيت الصلاة", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'salah-adhkar', label: "أذكار الصلاة", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'qibla', label: "البوصلة", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'sabah-masaa', label: "الأذكار", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'adia', label: "الأدعية", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'tasbeeh', label: "التسبيح", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'others', label: "الرقية الشرعية", className: "col-span-2 h-11", colorIndex: 0 },
+
+    // القسم الثالث: المكتبة الإسلامية
+    { id: 'prophetic-seerah', label: "السيرة النبوية", className: "col-span-3 h-11", colorIndex: 1 },
+    { id: 'ten-promised', label: "العشرة المبشرون", className: "col-span-3 h-11", colorIndex: 0 },
+    { id: 'hisn-muslim', label: "حصن المسلم", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'hajj-umrah', label: "الحج والعمرة", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'asmaul-husna', label: "أسماء الله", className: "col-span-2 h-11", colorIndex: 0 },
+
+    // القسم الرابع: خدمات إضافية
+    { id: 'habit-tracker', label: "مربّي العبادات", className: "col-span-3 h-11", colorIndex: 0 },
+    { id: 'calculators', label: "الحاسبة الشرعية", className: "col-span-3 h-11", colorIndex: 1 },
+    { id: 'nawawi', label: "الأربعون النووية", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'calendar', label: "التقويم", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'islamic-sites', label: "مواقع إسلامية", className: "col-span-2 h-11", colorIndex: 1 },
+
+    // شريط التحكم السفلي
+    { id: 'voice-control', label: "التحكم الصوتي", className: "col-span-6 h-10 flex justify-center", colorIndex: 0 },
 ];
 
 const DEFAULT_MENU_ITEMS = [
-    { id: 'quran', label: "📖 القرآن الكريم", className: "col-span-2 h-12", colorIndex: 0 },
-    { id: 'listen', label: "🎧 الاستماع للقرآن", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'prayer-times', label: "⏱️ مواقيت الصلاة", className: "col-span-2 h-10", colorIndex: 0 },
-    { id: 'adia', label: "🤲 الأدعية", className: "h-10", colorIndex: 1 },
-    { id: 'sabah-masaa', label: "☀️ الأذكار", className: "h-10", colorIndex: 1 },
-    { id: 'salah-adhkar', label: "🕌 أذكار الصلاة", className: "h-10", colorIndex: 1 },
-    { id: 'hisn-muslim', label: "🛡️ حصن المسلم", className: "h-10", colorIndex: 1 },
-    { id: 'tasbeeh', label: "📿 السبحة", className: "h-10", colorIndex: 1 },
-    { id: 'calendar', label: "📅 التقويم", className: "h-10", colorIndex: 1 },
-    { id: 'qibla', label: "🧭 القبلة", className: "h-10", colorIndex: 1 },
-    { id: 'hajj-umrah', label: "🕋 الحج والعمرة", className: "h-10", colorIndex: 1 },
-    { id: 'more', label: "✨ قائمة التطبيقات", className: "col-span-2 h-10 flex justify-center", colorIndex: 0 },
+    // القسم الأول: القرآن الكريم (التركيز الرئيسي للتطبيق)
+    { id: 'quran', label: "القرآن الكريم", className: "col-span-6 h-14", colorIndex: 0 },
+    { id: 'listen', label: "الاستماع للقرآن", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'memorization', label: "التحفيظ", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'daily-wird', label: "الورد اليومي", className: "col-span-2 h-11", colorIndex: 1 },
+
+    // القسم الثاني: العبادات اليومية
+    { id: 'prayer-times', label: "مواقيت الصلاة", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'salah-adhkar', label: "أذكار الصلاة", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'qibla', label: "البوصلة", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'sabah-masaa', label: "الأذكار", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'adia', label: "الأدعية", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'tasbeeh', label: "التسبيح", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'others', label: "الرقية الشرعية", className: "col-span-2 h-11", colorIndex: 0 },
+
+    // القسم الثالث: المكتبة الإسلامية
+    { id: 'prophetic-seerah', label: "السيرة النبوية", className: "col-span-3 h-11", colorIndex: 1 },
+    { id: 'ten-promised', label: "العشرة المبشرون", className: "col-span-3 h-11", colorIndex: 0 },
+    { id: 'hisn-muslim', label: "حصن المسلم", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'hajj-umrah', label: "الحج والعمرة", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'asmaul-husna', label: "أسماء الله", className: "col-span-2 h-11", colorIndex: 0 },
+
+    // القسم الرابع: خدمات إضافية
+    { id: 'habit-tracker', label: "مربّي العبادات", className: "col-span-3 h-11", colorIndex: 0 },
+    { id: 'calculators', label: "الحاسبة الشرعية", className: "col-span-3 h-11", colorIndex: 1 },
+    { id: 'nawawi', label: "الأربعون النووية", className: "col-span-2 h-11", colorIndex: 0 },
+    { id: 'calendar', label: "التقويم", className: "col-span-2 h-11", colorIndex: 1 },
+    { id: 'islamic-sites', label: "مواقع إسلامية", className: "col-span-2 h-11", colorIndex: 1 },
+
+    // شريط التحكم السفلي
+    { id: 'voice-control', label: "التحكم الصوتي", className: "col-span-6 h-10 flex justify-center", colorIndex: 0 },
 ];
+
 
 function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   const { showVoiceIcon } = useVoiceControl();
-  const [currentVerse] = useState(() => {
-    const randomIndex = Math.floor(Math.random() * verses.length);
-    return verses[randomIndex];
+  const { 
+    language, 
+    isRTL, 
+    dir, 
+    toggleLanguage, 
+    t, 
+    translatePrayerName, 
+    translateEventName, 
+    translateHijriMonth, 
+    translateGregorianMonth, 
+    formatNumber 
+  } = useLanguage();
+  const { theme, themeKey, isNightMode, toggleNightMode } = useTheme();
+  const isBlackTheme = themeKey === 'deep_black' || theme.bgColor === '#000000' || theme.name === 'اسود' || theme.name === 'black';
+  const isDarkTheme = isBlackTheme || theme.isDark || theme.bgColor === '#000000' || (theme.textColor && theme.textColor.toLowerCase() === '#ffffff');
+  // لون أيقونات الهيدر: يطابق الثيم الافتراضي (#2E7D5E)، ويتغير مع الثيمات الأخرى ومع الوضع الداكن/الأسود
+  const headerIconColor = isBlackTheme 
+    ? '#FFFFFF' 
+    : (themeKey === 'default' 
+        ? '#2E7D5E' 
+        : (theme.isDark ? (theme.accent || '#FFFFFF') : (theme.palette?.[0] || theme.accent || '#2E7D5E')));
+  const cardHeaderColor = isBlackTheme ? '#FFFFFF' : theme.palette[0];
+  const cardBorderColor = isBlackTheme ? '#FFFFFF' : theme.palette[0];
+  const cardButtonColor = isBlackTheme ? '#000000' : theme.palette[0];
+  const cardButtonTextColor = isBlackTheme ? '#FFFFFF' : '#FFFFFF';
+
+  // نظام تصميم الصفحة الرئيسية: 'classic' أو 'modern' (الافتراضي عند تشغيل التطبيق لأول مرة هو التصميم الذكي الحديث 'modern')
+  const [homeLayoutMode, setHomeLayoutMode] = useState<'classic' | 'modern'>(() => {
+    try {
+      const saved = localStorage.getItem('home_layout_system');
+      if (saved === 'classic' || saved === 'modern') return saved;
+      return 'modern';
+    } catch {
+      return 'modern';
+    }
   });
-  const { theme, themeKey } = useTheme();
+
+  // مزامنة حالة وضع التصميم مع Capacitor Preferences لضمان الفتح على آخر تصميم تم الإغلاق منه
+  useEffect(() => {
+    Preferences.get({ key: 'home_layout_system' }).then(({ value }) => {
+      if (value === 'classic' || value === 'modern') {
+        setHomeLayoutMode(value);
+        try {
+          localStorage.setItem('home_layout_system', value);
+        } catch (e) {}
+      }
+    }).catch(() => {});
+
+    const handleLayoutChange = (e: any) => {
+      const mode = e?.detail;
+      if (mode === 'classic' || mode === 'modern') {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = 0;
+        }
+        const container = document.getElementById('main-menu-scroll-container');
+        if (container) {
+          container.scrollTop = 0;
+        }
+        window.scrollTo(0, 0);
+        setHomeLayoutMode(mode);
+      }
+    };
+    window.addEventListener('home-layout-changed', handleLayoutChange);
+    return () => window.removeEventListener('home-layout-changed', handleLayoutChange);
+  }, []);
+
+  const toggleHomeLayout = () => {
+    const nextMode = homeLayoutMode === 'classic' ? 'modern' : 'classic';
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+    const container = document.getElementById('main-menu-scroll-container');
+    if (container) {
+      container.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+    setHomeLayoutMode(nextMode);
+    try {
+      localStorage.setItem('home_layout_system', nextMode);
+    } catch {}
+    Preferences.set({ key: 'home_layout_system', value: nextMode }).catch(() => {});
+    window.dispatchEvent(new CustomEvent('home-layout-changed', { detail: nextMode }));
+    if (navigator.vibrate) navigator.vibrate(40);
+    setToastMessage(
+      nextMode === 'modern'
+        ? (language === 'en' ? 'Switched to Modern Hub Design ✨' : 'تم التبديل إلى التصميم الذكي الحديث ✨')
+        : (language === 'en' ? 'Switched to Classic Design 🏛️' : 'تم التبديل إلى التصميم الكلاسيكي 🏛️')
+    );
+  };
+
+  // الانتقال إلى بداية الصفحة دائماً عند التبديل بين التصميم الكلاسيكي والحديث أو العكس
+  useEffect(() => {
+    const scrollToBeginning = () => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+      const container = document.getElementById('main-menu-scroll-container');
+      if (container) {
+        container.scrollTop = 0;
+      }
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    scrollToBeginning();
+    const raf = requestAnimationFrame(scrollToBeginning);
+    const timer = setTimeout(scrollToBeginning, 60);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [homeLayoutMode]);
+
+  // ضمان استقلالية تامة للتصميم الذكي الحديث عن ثيمات وفونتات وألوان التصميم الكلاسيكي مع دعم الوضع الليلي
+  useEffect(() => {
+    if (homeLayoutMode === 'modern') {
+      if (isNightMode) {
+        document.documentElement.classList.add('theme-black-gold', 'dark');
+        document.body.classList.add('theme-black-gold', 'dark');
+        document.documentElement.classList.remove('theme-black');
+        document.body.classList.remove('theme-black');
+        document.documentElement.classList.add('modern-home-active');
+        document.body.classList.add('modern-home-active');
+        document.body.style.backgroundColor = '#000000';
+        document.body.style.color = '#F59E0B';
+        document.body.style.fontFamily = "'Cairo', sans-serif";
+        document.documentElement.style.setProperty('--theme-font', "'Cairo', sans-serif");
+      } else {
+        document.documentElement.classList.remove('theme-black', 'dark', 'theme-black-gold');
+        document.body.classList.remove('theme-black', 'dark', 'theme-black-gold');
+        document.documentElement.classList.add('modern-home-active');
+        document.body.classList.add('modern-home-active');
+        document.body.style.backgroundColor = '#FFFFFF';
+        document.body.style.color = '#1C1917';
+        document.body.style.fontFamily = "'Cairo', sans-serif";
+        document.documentElement.style.setProperty('--theme-font', "'Cairo', sans-serif");
+      }
+    } else {
+      document.documentElement.classList.remove('modern-home-active');
+      document.body.classList.remove('modern-home-active');
+      if (isBlackTheme) {
+        document.documentElement.classList.add('theme-black');
+        document.body.classList.add('theme-black');
+      } else {
+        document.documentElement.classList.remove('theme-black');
+        document.body.classList.remove('theme-black');
+      }
+      if (theme.isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      document.body.style.backgroundColor = isBlackTheme ? '#000000' : (theme.bgColor || '#DFE5EC');
+      document.body.style.color = isBlackTheme ? '#FFFFFF' : theme.textColor;
+      document.body.style.fontFamily = theme.font;
+      document.documentElement.style.setProperty('--theme-font', theme.font);
+    }
+  }, [homeLayoutMode, theme, isBlackTheme, themeKey, isNightMode]);
   const [visibleItems, setVisibleItems] = useState<string[]>(() => {
+    const savedVersion = localStorage.getItem('menu_layout_version_v2');
+    if (savedVersion !== CURRENT_LAYOUT_VERSION) {
+        return DEFAULT_MENU_ITEMS.map(i => i.id);
+    }
     const savedVisible = localStorage.getItem('visibleMenuItems');
     if (savedVisible) {
         try {
-            const parsed = JSON.parse(savedVisible);
-            return parsed.filter((id: string) => id !== 'habit-tracker');
+            return JSON.parse(savedVisible);
         } catch (e) {
             return DEFAULT_MENU_ITEMS.map(i => i.id);
         }
@@ -121,12 +373,22 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     return DEFAULT_MENU_ITEMS.map(i => i.id);
   });
   const [menuItems, setMenuItems] = useState(() => {
+    const savedVersion = localStorage.getItem('menu_layout_version_v2');
+    if (savedVersion !== CURRENT_LAYOUT_VERSION) {
+        localStorage.setItem('menu_layout_version_v2', CURRENT_LAYOUT_VERSION);
+        localStorage.setItem('menuLayout', JSON.stringify(DEFAULT_MENU_ITEMS));
+        localStorage.setItem('visibleMenuItems', JSON.stringify(DEFAULT_MENU_ITEMS.map(i => i.id)));
+        try {
+            const seen = JSON.parse(localStorage.getItem('app_seen_pages_badge_v1') || '[]');
+            const updatedSeen = Array.isArray(seen) ? seen.filter((id: string) => id !== 'others' && id !== 'islamic-sites') : [];
+            localStorage.setItem('app_seen_pages_badge_v1', JSON.stringify(updatedSeen));
+        } catch {}
+        return DEFAULT_MENU_ITEMS;
+    }
     const savedLayout = localStorage.getItem('menuLayout');
     if (savedLayout) {
         try {
-            const parsed = JSON.parse(savedLayout);
-            const filtered = parsed.filter((item: any) => item.id !== 'habit-tracker');
-            return filtered;
+            return JSON.parse(savedLayout);
         } catch (e) {
             return DEFAULT_MENU_ITEMS;
         }
@@ -136,97 +398,64 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
   const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
   const [isPasscodeOpen, setIsPasscodeOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [verseFontSize, setVerseFontSize] = useState(() => {
-      const saved = localStorage.getItem('mainMenuVerseFontSize');
-      return saved ? parseFloat(saved) : 1.25;
-  });
-  const [verseSettings, setVerseSettings] = useState(() => {
-      const saved = localStorage.getItem('mainMenuVerseSettings');
-      return saved ? JSON.parse(saved) : {
-          fontFamily: theme.font,
-          bgColor: 'transparent',
-          textColor: theme.textColor
-      };
-  });
-  const [isVerseMenuOpen, setIsVerseMenuOpen] = useState(false);
+  const [isThemesSidebarOpen, setIsThemesSidebarOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const PREDEFINED_COLORS = [
-      '#ffffff', '#f3f4f6', '#9ca3af', '#4b5563', '#000000',
-      '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e',
-      '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
-      '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899',
-      '#f43f5e', '#78716c', '#57534e', 'transparent'
-  ];
-
-  const renderCheckerboard = (color: string) => {
-      if (color === 'transparent' || color === 'rgba(0, 0, 0, 0)') {
-          return {
-              backgroundColor: '#ffffff',
-              backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%)',
-              backgroundSize: '8px 8px'
-          };
-      }
-      return { backgroundColor: color };
-  };
+  const prayerCardRef = useRef<HTMLDivElement>(null);
 
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => {
+      setToastMessage('');
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
+
+  useEffect(() => {
     const handleResize = () => {
       setIsLandscape(window.innerWidth > window.innerHeight);
     };
+    handleResize();
     window.addEventListener('resize', handleResize);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleSaveVerseSettings = (newSettings: any) => {
-      setVerseSettings(newSettings);
-      localStorage.setItem('mainMenuVerseSettings', JSON.stringify(newSettings));
-  };
+  useEffect(() => {
+    const handleScrollToTop = () => {
+      if (scrollContainerRef.current) {
+        try {
+          scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch {
+          scrollContainerRef.current.scrollTop = 0;
+        }
+      }
+    };
+    window.addEventListener('scroll-to-top', handleScrollToTop);
+    return () => window.removeEventListener('scroll-to-top', handleScrollToTop);
+  }, []);
 
-  const homeTutorialSteps: TutorialStep[] = [
-    {
-      id: 'welcome',
-      title: 'أهلاً بك في مُصْحَفُ أَحْمَدَ وَلَيْلَى',
-      text: 'هذه جولة سريعة لتعريفك بأهم مميزات التطبيق وكيفية استخدامها. تم تصميم هذا التطبيق ليكون رفيقك الدائم في العبادة، حيث يجمع بين سهولة الاستخدام والجمال البصري.',
-      selector: '#app-title',
-      icon: <BookOpen className="w-8 h-8 text-white" />
-    },
-    {
-      id: 'voice',
-      title: 'التحكم الصوتي',
-      text: 'تحكم في التطبيق بالأوامر الصوتية العربية للتنقل والبحث والتحكم في التلاوة بسهولة. (هذه الخاصية تعمل فقط عند الاتصال بالإنترنت)',
-      selector: '#voice-control-btn',
-      icon: <Mic className="w-8 h-8 text-white" />
-    },
-    {
-      id: 'whatsapp',
-      title: 'تواصل معنا',
-      text: 'هل لديك اقتراح، استفسار، أو واجهت مشكلة؟ اضغط هنا للتواصل معنا مباشرة عبر الواتساب. نحن دائماً نسعد بسماع آرائكم لتحسين التطبيق وتقديم أفضل خدمة ممكنة.',
-      selector: '#whatsapp-button-container',
-      icon: <svg viewBox="0 0 24 24" className="w-8 h-8 text-white"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.361.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-    },
-    {
-      id: 'themes',
-      title: 'تخصيص المظهر (الثيمات)',
-      text: 'نؤمن بأن لكل مستخدم ذوقه الخاص، لذا وفرنا مجموعة واسعة من "الثيمات" الجاهزة (ليلي، هادئ، كلاسيكي). يمكنك أيضاً تعيين خلفية مخصصة أو فيديو تفاعلي ليكون خلفية لمصحفك الخاص.',
-      selector: '#themes-btn',
-      icon: <Palette className="w-8 h-8 text-white" />
-    }
-  ];
-
-  const [currentTutorialStep, setCurrentTutorialStep] = useState<string>('');
   const { times, nextPrayer, countdown } = usePrayerTimes();
   
   const [lastReadAyah, setLastReadAyah] = useState<{ s: number, a: number, text: string, surahName: string } | null>(null);
 
-  const [onThisDayEvent, setOnThisDayEvent] = useState<{ text: string, year: number, dateStr: string } | null>(null);
+  const [onThisDayEvent, setOnThisDayEvent] = useState<{ text: string, textEn?: string, year: number, dateStr: string } | null>(null);
   const [onThisDayIndex, setOnThisDayIndex] = useState(0);
-  const [onThisDayList, setOnThisDayList] = useState<{ text: string, year: number }[]>([]);
+  const [onThisDayList, setOnThisDayList] = useState<OnThisDayItem[]>([]);
   const [showExpandedEventsModal, setShowExpandedEventsModal] = useState(false);
   const [showExpandedUpcomingEventModal, setShowExpandedUpcomingEventModal] = useState(false);
+  const [showExpandedHistoryMemoryModal, setShowExpandedHistoryMemoryModal] = useState(false);
+
+  const historyDeckRef = useRef<number[]>([]);
+  const [historyMemoryIndex, setHistoryMemoryIndex] = useState<number>(() => {
+    const total = HISTORICAL_EVENTS_TRANSLATED.length;
+    if (total === 0) return 0;
+    return Math.floor(Math.random() * total);
+  });
 
   const [upcomingEvents, setUpcomingEvents] = useState<{name: string, dateStr: string, gregorianDateStr: string, daysRemaining: number, isToday: boolean}[]>([]);
   const [eventIndex, setEventIndex] = useState(0);
@@ -252,13 +481,20 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
           return a.day - b.day;
       });
 
-      const formattedEvents = allCycleEvents.map(ev => ({
-          name: ev.name,
-          dateStr: `${toArabic(ev.date.iDate())} ${HIJRI_MONTHS[ev.date.iMonth()]} ${toArabic(ev.date.iYear())} هـ`,
-          gregorianDateStr: `${toArabic(ev.date.date())} ${GREGORIAN_MONTHS[ev.date.month()]} ${toArabic(ev.date.year())} م`,
-          daysRemaining: ev.diff,
-          isToday: ev.diff === 0
-      }));
+      const formattedEvents = allCycleEvents.map(ev => {
+          const hijriDateAr = `${toArabic(ev.date.iDate())} ${HIJRI_MONTHS[ev.date.iMonth()]} ${toArabic(ev.date.iYear())} هـ`;
+          const hijriDateEn = `${ev.date.iDate()} ${translateHijriMonth(ev.date.iMonth())} ${ev.date.iYear()} AH`;
+          const gregDateAr = `${toArabic(ev.date.date())} ${GREGORIAN_MONTHS[ev.date.month()]} ${toArabic(ev.date.year())} م`;
+          const gregDateEn = `${ev.date.date()} ${translateGregorianMonth(ev.date.month())} ${ev.date.year()} AD`;
+
+          return {
+              name: ev.name,
+              dateStr: language === 'en' ? hijriDateEn : hijriDateAr,
+              gregorianDateStr: language === 'en' ? gregDateEn : gregDateAr,
+              daysRemaining: ev.diff,
+              isToday: ev.diff === 0
+          };
+      });
 
       setUpcomingEvents(formattedEvents);
 
@@ -266,114 +502,157 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
       let initialIndex = formattedEvents.findIndex(ev => ev.daysRemaining >= 0);
       if (initialIndex === -1) initialIndex = 0; // If all passed, start at 0
       setEventIndex(initialIndex);
-  }, []);
+  }, [language]);
 
   useEffect(() => {
+      let isMounted = true;
       const today = new Date();
       const mm = String(today.getMonth() + 1).padStart(2, '0');
       const dd = String(today.getDate()).padStart(2, '0');
       const key = `${mm}-${dd}`;
-      const formatter = new Intl.DateTimeFormat('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
+      const formatter = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
       const dateStr = formatter.format(today);
 
-      let events = ON_THIS_DAY_EVENTS[key] || [];
+      const fetchAndSetEvents = async () => {
+          let items = await loadDayEvents(mm, dd, language);
+          if (!isMounted) return;
 
-      let stored = null;
-      try { stored = JSON.parse(localStorage.getItem('on_this_day_state') || 'null'); } catch(e){}
+          // ضمان وجود قائمة وفيرة من الأحداث للتنقل السلس عند النقر على "حدث آخر"
+          if (items.length < 10) {
+              const allKeys = Object.keys(ON_THIS_DAY_EVENTS);
+              for (const k of allKeys) {
+                  if (k !== key && ON_THIS_DAY_EVENTS[k]) {
+                      for (const extraEv of ON_THIS_DAY_EVENTS[k]) {
+                          items.push({
+                              year: extraEv.year,
+                              text: extraEv.text,
+                              textEn: getTranslatedEventText(extraEv.text, extraEv.year)
+                          });
+                          if (items.length >= 15) break;
+                      }
+                  }
+                  if (items.length >= 15) break;
+              }
+          }
 
-      let startIndex = 0;
-      if (stored && stored.key === key) {
-          startIndex = (stored.index + 1) % Math.max(1, events.length);
-      } else if (events.length > 0) {
-          startIndex = Math.floor(Math.random() * events.length);
-      }
+          let stored = null;
+          try { stored = JSON.parse(localStorage.getItem('on_this_day_state') || 'null'); } catch(e){}
 
-      if (events.length > 0) {
-          setOnThisDayList(events);
-          setOnThisDayIndex(startIndex);
-          setOnThisDayEvent({ ...events[startIndex], dateStr });
-      }
-      localStorage.setItem('on_this_day_state', JSON.stringify({ key, index: startIndex }));
-  }, []);
+          let startIndex = 0;
+          if (stored && stored.key === key && typeof stored.index === 'number') {
+              startIndex = stored.index % Math.max(1, items.length);
+          } else if (items.length > 0) {
+              startIndex = Math.floor(Math.random() * items.length);
+          }
 
-  const handleNextEvent = async (e: React.MouseEvent) => {
-      e.stopPropagation();
+          if (items.length > 0) {
+              setOnThisDayList(items);
+              setOnThisDayIndex(startIndex);
+              const ev = items[startIndex];
+              const eventText = language === 'en' ? (ev.textEn || getTranslatedEventText(ev.text, ev.year)) : ev.text;
+              setOnThisDayEvent({ 
+                year: ev.year, 
+                text: eventText, 
+                textEn: ev.textEn || getTranslatedEventText(ev.text, ev.year),
+                dateStr 
+              });
+          }
+          try {
+              localStorage.setItem('on_this_day_state', JSON.stringify({ key: `${mm}-${dd}`, index: startIndex }));
+          } catch {}
+      };
+
+      fetchAndSetEvents();
+
+      return () => { isMounted = false; };
+  }, [language]);
+
+  const handleNextEvent = (e?: React.MouseEvent | any) => {
+      e?.stopPropagation?.();
+      if (!onThisDayList || onThisDayList.length === 0) return;
       const today = new Date();
       const mm = String(today.getMonth() + 1).padStart(2, '0');
       const dd = String(today.getDate()).padStart(2, '0');
-      const formatter = new Intl.DateTimeFormat('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
+      const formatter = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', { weekday: 'long', day: 'numeric', month: 'long' });
       const dateStr = formatter.format(today);
 
-      if (navigator.onLine && onThisDayIndex >= onThisDayList.length - 1) {
-          try {
-              const res = await fetch(`https://api.wikimedia.org/feed/v1/wikipedia/ar/onthisday/events/${mm}/${dd}`);
-              const data = await res.json();
-              if (data && data.events && data.events.length > onThisDayList.length) {
-                  const newEvents = data.events.map((e: any) => ({ year: e.year || 0, text: e.text }));
-                  setOnThisDayList(newEvents);
-                  const newIndex = onThisDayList.length;
-                  setOnThisDayIndex(newIndex);
-                  setOnThisDayEvent({ ...newEvents[newIndex], dateStr });
-                  localStorage.setItem('on_this_day_state', JSON.stringify({ key: `${mm}-${dd}`, index: newIndex }));
-                  return;
-              }
-          } catch (e) {
-              console.error(e);
-          }
-      }
-
-      const nextIndex = (onThisDayIndex + 1) % Math.max(1, onThisDayList.length);
+      const nextIndex = (onThisDayIndex + 1) % onThisDayList.length;
       setOnThisDayIndex(nextIndex);
-      if (onThisDayList[nextIndex]) {
-          setOnThisDayEvent({ ...onThisDayList[nextIndex], dateStr });
-          localStorage.setItem('on_this_day_state', JSON.stringify({ key: `${mm}-${dd}`, index: nextIndex }));
+      const ev = onThisDayList[nextIndex];
+      if (ev) {
+          const eventText = language === 'en' ? (ev.textEn || getTranslatedEventText(ev.text, ev.year)) : ev.text;
+          setOnThisDayEvent({ year: ev.year, text: eventText, textEn: ev.textEn, dateStr });
+          try {
+              localStorage.setItem('on_this_day_state', JSON.stringify({ key: `${mm}-${dd}`, index: nextIndex }));
+          } catch {}
       }
   };
 
-  const handleShareHighlight = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleShareHighlight = async (e?: React.MouseEvent | any) => {
+    e?.stopPropagation?.();
     if (!onThisDayEvent) return;
 
+    const sourceText = language === 'en'
+      ? `On This Day - ${onThisDayEvent.year} AD`
+      : `حدث في مثل هذا اليوم - ${onThisDayEvent.year}م`;
+
+    const activeText = language === 'en'
+      ? (onThisDayEvent.textEn || getTranslatedEventText(onThisDayEvent.text, onThisDayEvent.year))
+      : onThisDayEvent.text;
+
     await shareAsImage({ 
-      text: onThisDayEvent.text, 
-      source: `حدث في مثل هذا اليوم - ${onThisDayEvent.year}م`, 
+      text: activeText, 
+      source: sourceText, 
       category: onThisDayEvent.dateStr, 
       theme, 
       setToastMessage 
     });
   };
 
-  const handleCopyHighlight = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCopyHighlight = async (e?: React.MouseEvent | any) => {
+    e?.stopPropagation?.();
     if (!onThisDayEvent) return;
-    const textToCopy = `${onThisDayEvent.dateStr}\nفي عام ${onThisDayEvent.year} ميلادي\n${onThisDayEvent.text}`;
+    const activeText = language === 'en'
+      ? (onThisDayEvent.textEn || getTranslatedEventText(onThisDayEvent.text, onThisDayEvent.year))
+      : onThisDayEvent.text;
+
+    const textToCopy = language === 'en'
+      ? `${onThisDayEvent.dateStr}\nIn the year ${onThisDayEvent.year} AD\n${activeText}`
+      : `${onThisDayEvent.dateStr}\nفي عام ${onThisDayEvent.year} ميلادي\n${activeText}`;
     try {
         await navigator.clipboard.writeText(textToCopy);
-        setToastMessage('تم النسخ إلى الحافظة');
+        setToastMessage(t('on_this_day.copied', 'تم النسخ إلى الحافظة'));
         setTimeout(() => setToastMessage(''), 2000);
     } catch (err) {
         console.error('Clipboard error:', err);
-        setToastMessage('فشل في النسخ');
+        setToastMessage(t('common.failed_copy', 'فشل في النسخ'));
         setTimeout(() => setToastMessage(''), 2000);
     }
   };
 
-  const handleShareUpcomingEvent = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleShareUpcomingEvent = async (e?: React.MouseEvent | any) => {
+    e?.stopPropagation?.();
     if (upcomingEvents.length === 0) return;
 
     const event = upcomingEvents[eventIndex];
     let diffText = '';
     if (event.isToday) {
-        diffText = 'اليوم';
+        diffText = t('islamic_events.today', 'اليوم');
     } else if (event.daysRemaining > 0) {
-        diffText = `المتبقي: ${toArabic(event.daysRemaining)} يوم`;
+        diffText = language === 'en'
+          ? `Remaining: ${formatNumber(event.daysRemaining)} days`
+          : `المتبقي: ${toArabic(event.daysRemaining)} يوم`;
     } else {
-        diffText = `مر عليها: ${toArabic(Math.abs(event.daysRemaining))} يوم`;
+        diffText = language === 'en'
+          ? `Passed: ${formatNumber(Math.abs(event.daysRemaining))} days`
+          : `مر عليها: ${toArabic(Math.abs(event.daysRemaining))} يوم`;
     }
 
+    const eventName = translateEventName(event.name);
+    const labelTitle = t('islamic_events.title', 'المناسبة');
+
     await shareAsImage({ 
-      text: `المناسبة: ${event.name}\n${diffText}`, 
+      text: `${labelTitle}: ${eventName}\n${diffText}`, 
       source: event.gregorianDateStr, 
       category: event.dateStr, 
       theme, 
@@ -381,28 +660,95 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     });
   };
 
-  const handleCopyUpcomingEvent = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCopyUpcomingEvent = async (e?: React.MouseEvent | any) => {
+    e?.stopPropagation?.();
     if (upcomingEvents.length === 0) return;
     const event = upcomingEvents[eventIndex];
     let diffText = '';
     if (event.isToday) {
-        diffText = 'اليوم';
+        diffText = t('islamic_events.today', 'اليوم');
     } else if (event.daysRemaining > 0) {
-        diffText = `المتبقي: ${toArabic(event.daysRemaining)} يوم`;
+        diffText = language === 'en'
+          ? `Remaining: ${formatNumber(event.daysRemaining)} days`
+          : `المتبقي: ${toArabic(event.daysRemaining)} يوم`;
     } else {
-        diffText = `مر عليها: ${toArabic(Math.abs(event.daysRemaining))} يوم`;
+        diffText = language === 'en'
+          ? `Passed: ${formatNumber(Math.abs(event.daysRemaining))} days`
+          : `مر عليها: ${toArabic(Math.abs(event.daysRemaining))} يوم`;
     }
 
-    const textToCopy = `المناسبة الإسلامية: ${event.name}\nالتاريخ الهجري: ${event.dateStr}\nالتاريخ الميلادي: ${event.gregorianDateStr}\n${diffText}`;
+    const eventName = translateEventName(event.name);
+    const textToCopy = language === 'en'
+      ? `Islamic Occasion: ${eventName}\nHijri Date: ${event.dateStr}\nGregorian Date: ${event.gregorianDateStr}\n${diffText}`
+      : `المناسبة الإسلامية: ${event.name}\nالتاريخ الهجري: ${event.dateStr}\nالتاريخ الميلادي: ${event.gregorianDateStr}\n${diffText}`;
     try {
         await navigator.clipboard.writeText(textToCopy);
-        setToastMessage('تم النسخ إلى الحافظة');
+        setToastMessage(t('on_this_day.copied', 'تم النسخ إلى الحافظة'));
         setTimeout(() => setToastMessage(''), 2000);
     } catch (err) {
         console.error('Clipboard error:', err);
-        setToastMessage('فشل في النسخ');
+        setToastMessage(t('common.failed_copy', 'فشل في النسخ'));
         setTimeout(() => setToastMessage(''), 2000);
+    }
+  };
+
+  const currentHistoryMemoryEvent = HISTORICAL_EVENTS_TRANSLATED[historyMemoryIndex] || HISTORICAL_EVENTS_TRANSLATED[0] || null;
+
+  const handleNextHistoryMemoryEvent = (e?: React.MouseEvent | any) => {
+    e?.stopPropagation?.();
+    const total = HISTORICAL_EVENTS_TRANSLATED.length;
+    if (total <= 1) return;
+    setHistoryMemoryIndex(prev => (prev + 1) % total);
+  };
+
+  const handleShareHistoryMemory = async (e?: React.MouseEvent | any) => {
+    e?.stopPropagation?.();
+    if (!currentHistoryMemoryEvent) return;
+
+    const title = language === 'en' ? currentHistoryMemoryEvent.titleEn : currentHistoryMemoryEvent.titleAr;
+    const desc = language === 'en' ? currentHistoryMemoryEvent.descriptionEn : currentHistoryMemoryEvent.descriptionAr;
+    const hijriY = language === 'en'
+      ? currentHistoryMemoryEvent.hijriYearEn
+      : formatCalendarNumber(currentHistoryMemoryEvent.hijriYearAr, 'ar');
+    const gregY = language === 'en'
+      ? currentHistoryMemoryEvent.gregorianYearEn
+      : formatCalendarNumber(currentHistoryMemoryEvent.gregorianYearAr, 'ar');
+    const categoryLabel = language === 'en' ? 'Islamic History Memory' : 'ذاكرة التاريخ الإسلامي';
+
+    await shareAsImage({
+      text: desc,
+      source: `${title} (${hijriY} • ${gregY})`,
+      category: categoryLabel,
+      theme,
+      setToastMessage,
+    });
+  };
+
+  const handleCopyHistoryMemory = async (e?: React.MouseEvent | any) => {
+    e?.stopPropagation?.();
+    if (!currentHistoryMemoryEvent) return;
+
+    const title = language === 'en' ? currentHistoryMemoryEvent.titleEn : currentHistoryMemoryEvent.titleAr;
+    const desc = language === 'en' ? currentHistoryMemoryEvent.descriptionEn : currentHistoryMemoryEvent.descriptionAr;
+    const hijriY = language === 'en'
+      ? currentHistoryMemoryEvent.hijriYearEn
+      : formatCalendarNumber(currentHistoryMemoryEvent.hijriYearAr, 'ar');
+    const gregY = language === 'en'
+      ? currentHistoryMemoryEvent.gregorianYearEn
+      : formatCalendarNumber(currentHistoryMemoryEvent.gregorianYearAr, 'ar');
+
+    const textToCopy = language === 'en'
+      ? `Islamic History Memory — ${title}\n(${hijriY} • ${gregY})\n${desc}`
+      : `ذاكرة التاريخ الإسلامي — ${title}\n(${hijriY} • ${gregY})\n${desc}`;
+
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setToastMessage(t('on_this_day.copied', 'تم النسخ إلى الحافظة'));
+      setTimeout(() => setToastMessage(''), 2000);
+    } catch (err) {
+      console.error('Clipboard error:', err);
+      setToastMessage(t('common.failed_copy', 'فشل في النسخ'));
+      setTimeout(() => setToastMessage(''), 2000);
     }
   };
 
@@ -450,79 +796,15 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
     };
   }, []);
 
-  // --- Logic to determine Previous and Next "Salah" (excluding Sunrise) ---
-  const getSalahStats = () => {
-    if (!nextPrayer || !times || Object.keys(times).length === 0) {
-      return { prev: '-', next: '-', remaining: '--:--:--' };
-    }
-
-    const salahKeys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-    let nextIndex = salahKeys.indexOf(nextPrayer.key);
-    
-    // If nextPrayer is Sunrise, the next ACTUAL salah is Dhuhr (index 1)
-    if (nextPrayer.key === 'Sunrise') {
-      nextIndex = 1; 
-    }
-
-    const prevIndex = (nextIndex - 1 + salahKeys.length) % salahKeys.length;
-    const actualNextIndex = nextIndex % salahKeys.length;
-
-    return {
-      prev: prayerNamesAr[salahKeys[prevIndex] as keyof typeof prayerNamesAr],
-      next: prayerNamesAr[salahKeys[actualNextIndex] as keyof typeof prayerNamesAr],
-      remaining: countdown
-    };
-  };
-
-  const { prev: prevSalah, next: nextSalah, remaining: prayerCountdown } = getSalahStats();
 
   useEffect(() => {
-    // Check if we need to update layout in storage (migration/fix)
-    const savedLayout = localStorage.getItem('menuLayout');
-    if (savedLayout) {
-        try {
-            const parsed = JSON.parse(savedLayout);
-            let changed = false;
-            const updated = parsed.map((item: any) => {
-                let currentItem = { ...item };
-                if (currentItem.id === 'calculators' || currentItem.id === 'calendar') {
-                    if (currentItem.customColor) {
-                        delete currentItem.customColor;
-                        changed = true;
-                    }
-                }
-                if (currentItem.id === 'more' && !currentItem.className.includes('flex justify-center')) {
-                    changed = true;
-                    currentItem.className = currentItem.className + " flex justify-center";
-                }
-                if (currentItem.className) {
-                    const newClass = currentItem.className.replace(/h-\d+/g, (match) => {
-                        if (match === 'h-12') return 'h-12';
-                        return 'h-10';
-                    });
-                    if (currentItem.className !== newClass) {
-                        changed = true;
-                        currentItem.className = newClass;
-                    }
-                }
-                return currentItem;
-            });
-            
-            if (changed) {
-                const filtered = updated.filter((item: any) => item.id !== 'habit-tracker');
-                localStorage.setItem('menuLayout', JSON.stringify(filtered));
-                setMenuItems(filtered);
-            } else {
-                // Always ensure habit-tracker is removed
-                const filtered = updated.filter((item: any) => item.id !== 'habit-tracker');
-                if (filtered.length !== updated.length) {
-                    localStorage.setItem('menuLayout', JSON.stringify(filtered));
-                    setMenuItems(filtered);
-                }
-            }
-        } catch (e) {
-            // Error handled in initializer
-        }
+    const savedVersion = localStorage.getItem('menu_layout_version_v2');
+    if (savedVersion !== CURRENT_LAYOUT_VERSION) {
+        localStorage.setItem('menu_layout_version_v2', CURRENT_LAYOUT_VERSION);
+        localStorage.setItem('menuLayout', JSON.stringify(DEFAULT_MENU_ITEMS));
+        localStorage.setItem('visibleMenuItems', JSON.stringify(DEFAULT_MENU_ITEMS.map(i => i.id)));
+        setMenuItems(DEFAULT_MENU_ITEMS);
+        setVisibleItems(DEFAULT_MENU_ITEMS.map(i => i.id));
     }
   }, []);
 
@@ -539,16 +821,20 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
   useEffect(() => {
       const interceptor = () => {
+          if (isThemesSidebarOpen) {
+              setIsThemesSidebarOpen(false);
+              return true;
+          }
+          if (showExpandedHistoryMemoryModal) {
+              setShowExpandedHistoryMemoryModal(false);
+              return true;
+          }
           if (showExpandedEventsModal) {
               setShowExpandedEventsModal(false);
               return true;
           }
           if (showExpandedUpcomingEventModal) {
               setShowExpandedUpcomingEventModal(false);
-              return true;
-          }
-          if (isVerseMenuOpen) {
-              setIsVerseMenuOpen(false);
               return true;
           }
           if (isPasscodeOpen) {
@@ -567,7 +853,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
       };
       const unregister = registerBackInterceptor(interceptor);
       return unregister;
-  }, [isCustomizationOpen, isEditMode, showExpandedEventsModal, showExpandedUpcomingEventModal, isPasscodeOpen, isVerseMenuOpen]);
+  }, [isThemesSidebarOpen, isCustomizationOpen, isEditMode, showExpandedHistoryMemoryModal, showExpandedEventsModal, showExpandedUpcomingEventModal, isPasscodeOpen]);
 
   const handleSaveCustomization = (selectedIds: string[]) => {
       setVisibleItems(selectedIds);
@@ -583,30 +869,267 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
 
   const handleResetLayout = () => {
       setMenuItems(DEFAULT_MENU_ITEMS);
-      localStorage.removeItem('menuLayout');
+      localStorage.setItem('menu_layout_version_v2', CURRENT_LAYOUT_VERSION);
+      localStorage.setItem('menuLayout', JSON.stringify(DEFAULT_MENU_ITEMS));
+      localStorage.setItem('visibleMenuItems', JSON.stringify(DEFAULT_MENU_ITEMS.map(i => i.id)));
+      setVisibleItems(DEFAULT_MENU_ITEMS.map(i => i.id));
       setIsEditMode(false);
       if (navigator.vibrate) navigator.vibrate(50);
   };
 
   return (
-    <div>
-      <InteractiveBackground />
+    <div 
+      data-layout={homeLayoutMode}
+      className={`relative min-h-screen ${homeLayoutMode === 'modern' ? 'modern-home-layout font-cairo' : ''}`}
+      style={{ 
+        backgroundColor: homeLayoutMode === 'modern'
+          ? (isNightMode ? '#000000' : '#FFFFFF') 
+          : (isBlackTheme ? '#000000' : (theme.bgColor || '#DFE5EC')),
+        fontFamily: homeLayoutMode === 'modern' ? "'Cairo', sans-serif" : undefined
+      }}
+    >
+      {homeLayoutMode === 'classic' && <InteractiveBackground />}
+
       <div className="h-screen w-full flex flex-col overflow-hidden">
+        {/* صف اسم التطبيق وأيقونة الثيمات وأيقونة اللغة ونص الدعاء: مثبت بأول الصفحة ولا يتحرك مع التمرير في كلا التصميمين الكلاسيكي والذكي */}
+        <header 
+          id="sticky-title-wrapper"
+          dir={dir}
+          className={`shrink-0 z-40 relative select-none transition-colors duration-150 border-b ${
+            homeLayoutMode === 'modern'
+              ? (isNightMode ? 'border-amber-500/30 shadow-[0_2px_12px_rgba(0,0,0,0.8)]' : 'border-amber-200/80 shadow-[0_2px_12px_rgba(217,119,6,0.08)]')
+              : (isBlackTheme 
+                  ? 'border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.8)]' 
+                  : 'border-black/[0.04] dark:border-white/[0.06] shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)]')
+          }`}
+          style={{
+            backgroundColor: homeLayoutMode === 'modern'
+              ? (isNightMode ? '#000000' : '#FFFFFF')
+              : (isBlackTheme ? '#000000' : (theme.bgColor || '#DFE5EC')),
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+            fontFamily: homeLayoutMode === 'modern' ? "'Cairo', sans-serif" : theme.font
+          }}
+        >
+          <div className="w-full flex items-center justify-between px-3 sm:px-4 pt-1 pb-1 relative min-h-[44px]" dir={dir}>
+            {/* الطرف الأيمن: أيقونة الثيمات (كلاسيكي) أو التبديل للتصميم الكلاسيكي وأيقونة الوضع الليلي (حديث) */}
+            <div className="flex items-center gap-1.5 shrink-0 z-20">
+              {!isEditMode ? (
+                homeLayoutMode === 'classic' ? (
+                  <button
+                    id="themes-btn"
+                    data-id="themes-button"
+                    type="button"
+                    onClick={() => setIsThemesSidebarOpen(true)}
+                    className="p-1 sm:p-1.5 flex items-center justify-center transition-all duration-150 active:scale-90 hover:scale-110 cursor-pointer select-none shrink-0 bg-transparent border-none outline-none"
+                    title={language === 'en' ? 'Themes' : 'الثيمات والمظهر'}
+                    aria-label={language === 'en' ? 'Themes' : 'الثيمات والمظهر'}
+                  >
+                    <Palette 
+                      className="w-[22px] h-[22px] sm:w-[24px] sm:h-[24px] pointer-events-none transition-transform" 
+                      style={{
+                        color: isBlackTheme ? '#FFFFFF' : (theme.palette?.[0] || theme.accent || '#2E7D5E'),
+                        filter: isBlackTheme 
+                          ? 'drop-shadow(0 2px 3px rgba(255,255,255,0.4)) drop-shadow(0 4px 6px rgba(0,0,0,0.9))' 
+                          : 'drop-shadow(0 1px 0 rgba(255,255,255,0.9)) drop-shadow(0 2px 3px rgba(0,0,0,0.3)) drop-shadow(0 4px 5px rgba(0,0,0,0.2))'
+                      }}
+                    />
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      id="night-mode-toggle-btn"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleNightMode();
+                      }}
+                      className="p-1 sm:p-1.5 flex items-center justify-center transition-all duration-150 active:scale-90 hover:scale-110 cursor-pointer select-none shrink-0 bg-transparent border-none outline-none"
+                      title={isNightMode ? (language === 'en' ? 'Normal Mode' : 'الوضع العادي') : (language === 'en' ? 'Night Mode (Black & Gold)' : 'الوضع الليلي (الأسود والذهبي)')}
+                      aria-label="Toggle Night Mode"
+                    >
+                      {isNightMode ? (
+                        <Sun className="w-[21px] h-[21px] sm:w-[23px] sm:h-[23px] text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)] pointer-events-none" />
+                      ) : (
+                        <Moon className="w-[21px] h-[21px] sm:w-[23px] sm:h-[23px] text-amber-700 dark:text-amber-400 hover:text-amber-900 drop-shadow-[0_1px_2px_rgba(180,83,9,0.25)] pointer-events-none" />
+                      )}
+                    </button>
+
+                    <button
+                      id="modern-layout-toggle-btn"
+                      type="button"
+                      onClick={toggleHomeLayout}
+                      className="p-1 sm:p-1.5 flex items-center justify-center transition-all duration-150 active:scale-90 hover:scale-110 cursor-pointer select-none shrink-0 bg-transparent border-none outline-none"
+                      title={language === 'en' ? 'Switch to Classic Design' : 'التبديل إلى التصميم الكلاسيكي'}
+                      aria-label={language === 'en' ? 'Switch to Classic Design' : 'التبديل إلى التصميم الكلاسيكي'}
+                    >
+                      <LayoutGrid 
+                        className="w-[22px] h-[22px] sm:w-[24px] sm:h-[24px] pointer-events-none transition-transform text-amber-700 hover:text-amber-900"
+                        style={{
+                          color: isNightMode ? '#F59E0B' : undefined,
+                          filter: isNightMode ? 'drop-shadow(0 0 6px rgba(245,158,11,0.5))' : 'drop-shadow(0 1px 2px rgba(180,83,9,0.25))'
+                        }}
+                      />
+                    </button>
+                  </div>
+                )
+              ) : <div className="w-6 h-6 shrink-0" />}
+            </div>
+
+            {/* اسم التطبيق في منتصف الشريط تماماً بصرف النظر عن عدد الأيقونات يميناً أو يساراً */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center text-center z-10 px-0.5 max-w-[calc(100%-160px)] pointer-events-none">
+              <h1 
+                id="app-title" 
+                className={`pointer-events-auto text-[19px] sm:text-[22px] md:text-[24px] font-black tracking-tight select-none text-center truncate transition-transform leading-tight ${homeLayoutMode === 'modern' ? 'font-cairo' : 'font-kufi'} ${isEditMode ? 'scale-105 text-yellow-400' : ''}`} 
+                style={homeLayoutMode === 'modern' ? {
+                  color: isNightMode ? '#F59E0B' : '#78350F',
+                  fontFamily: "'Cairo', sans-serif",
+                  textShadow: isNightMode 
+                    ? '0 0 10px rgba(245,158,11,0.5), 0 2px 4px rgba(0,0,0,0.8)' 
+                    : '0 1px 1px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(180, 83, 9, 0.18)',
+                  textRendering: 'optimizeLegibility',
+                  WebkitFontSmoothing: 'antialiased'
+                } : { 
+                  color: isEditMode 
+                    ? undefined 
+                    : (isBlackTheme ? '#FFFFFF' : (themeKey === 'default' ? '#4C1D95' : theme.textColor)),
+                  fontFamily: theme.font,
+                  textShadow: isBlackTheme 
+                    ? '0 2px 4px rgba(255,255,255,0.3), 0 4px 8px rgba(0,0,0,0.8)' 
+                    : '0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 0 rgba(0, 0, 0, 0.15), 0 3px 2px rgba(0, 0, 0, 0.2), 0 4px 6px rgba(0, 0, 0, 0.25)',
+                  textRendering: 'optimizeLegibility',
+                  WebkitFontSmoothing: 'antialiased'
+                }}
+              >
+                {t('app.name', 'مُصْحَفُ أَحْمَدَ وَلَيْلَى')}
+              </h1>
+            </div>
+
+            {/* الطرف الأيسر: زر اللغة أو تبديل النمط - مع إزاحة زر اللغة ليكون مقرباً من اسم التطبيق وبعيداً عن الحافة */}
+            <div className={`flex items-center gap-1.5 shrink-0 z-20 ${homeLayoutMode === 'modern' ? 'me-11 sm:me-14' : ''}`}>
+              {!isEditMode && homeLayoutMode === 'classic' && (
+                <button
+                  id="layout-toggle-btn"
+                  type="button"
+                  onClick={toggleHomeLayout}
+                  className="p-1 sm:p-1.5 flex items-center justify-center transition-all duration-150 active:scale-90 hover:scale-110 cursor-pointer select-none shrink-0 bg-transparent border-none outline-none"
+                  title={language === 'en' ? 'Switch to Modern Hub Design' : 'التبديل إلى التصميم الذكي الحديث'}
+                  aria-label="Switch to Modern Layout"
+                >
+                  <LayoutDashboard 
+                    className="w-[21px] h-[21px] sm:w-[23px] sm:h-[23px] pointer-events-none transition-transform text-sky-600 dark:text-sky-400"
+                    style={{
+                      filter: isBlackTheme 
+                        ? 'drop-shadow(0 2px 3px rgba(255,255,255,0.4))' 
+                        : 'drop-shadow(0 1px 0 rgba(255,255,255,0.9)) drop-shadow(0 2px 3px rgba(0,0,0,0.25))'
+                    }}
+                  />
+                </button>
+              )}
+
+              {!isEditMode ? (
+                <button
+                  id="language-btn"
+                  data-id="language-button"
+                  type="button"
+                  onClick={toggleLanguage}
+                  className="p-1 sm:p-1.5 flex items-center justify-center transition-all duration-150 active:scale-90 hover:scale-110 cursor-pointer select-none shrink-0 bg-transparent border-none outline-none"
+                  title={language === 'ar' ? 'English' : 'اللغة العربية'}
+                  aria-label={language === 'ar' ? 'English' : 'اللغة العربية'}
+                >
+                  <span 
+                    className="text-[17px] sm:text-[18px] font-black font-cairo tracking-tight pointer-events-none leading-none"
+                    style={{
+                      color: homeLayoutMode === 'modern'
+                        ? (isNightMode ? '#F59E0B' : '#78350F')
+                        : (isBlackTheme ? '#FFFFFF' : (theme.palette?.[0] || theme.accent || '#2E7D5E')),
+                      textShadow: homeLayoutMode === 'modern'
+                        ? (isNightMode ? '0 0 8px rgba(245,158,11,0.4)' : '0 1px 2px rgba(255, 255, 255, 0.9)')
+                        : (isBlackTheme 
+                            ? '0 2px 3px rgba(255,255,255,0.4), 0 4px 6px rgba(0,0,0,0.9)' 
+                            : '0 1px 0 rgba(255,255,255,0.9), 0 2px 0 rgba(0, 0, 0, 0.3), 0 4px 5px rgba(0, 0, 0, 0.2)')
+                    }}
+                  >
+                    {language === 'ar' ? 'Ar' : 'En'}
+                  </span>
+                </button>
+              ) : <div className="w-6 h-6 shrink-0" />}
+            </div>
+          </div>
+        </header>
+
+        {/* الحاوية القابلة للتمرير لباقي محتوى الصفحة */}
         <div 
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto pb-24 no-scrollbar"
+          id="main-menu-scroll-container"
+          onScroll={(e) => {
+            const st = e.currentTarget.scrollTop;
+            window.dispatchEvent(new CustomEvent('app-scroll', { detail: { scrollTop: st } }));
+          }}
+          className="flex-1 overflow-y-auto pb-3 sm:pb-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] no-scrollbar"
         >
-          <div className="main-layout px-4 flex flex-col" style={{ fontFamily: theme.font }}>
-              
-              <div id="verse-section">
-                <VerseSection 
-                    currentVerse={currentVerse}
-                    verseFontSize={verseFontSize}
-                    theme={theme}
-                    verseSettings={verseSettings}
-                />
-              </div>
+          {/* نص الدعاء بأول الصفحة والشريط الإعلاني - في بداية الصفحة كما كان */}
+          <div className={`w-full max-w-lg mx-auto text-center select-none pt-2 px-3 ${homeLayoutMode === 'modern' ? 'pb-0' : 'pb-1.5'}`}>
+            <div className="relative h-[27.5px] max-w-sm mx-auto flex items-center justify-center px-2">
+              <p 
+                className={`text-[12.5px] sm:text-[13.5px] font-bold leading-tight tracking-normal text-center ${homeLayoutMode === 'modern' ? 'font-cairo' : 'font-kufi'} ${isNightMode ? '' : 'drop-shadow-sm'}`}
+                style={{ 
+                  color: isEditMode 
+                    ? undefined 
+                    : (homeLayoutMode === 'modern'
+                        ? (isNightMode ? '#F59E0B' : '#854D0E')
+                        : (isBlackTheme || isNightMode
+                            ? '#FFFFFF' 
+                            : (themeKey === 'default' ? '#7e22ce' : (themeKey === 'olive_grove' ? '#4D7C0F' : theme.textColor)))),
+                  fontFamily: homeLayoutMode === 'modern' ? "'Cairo', sans-serif" : theme.font,
+                  textShadow: homeLayoutMode === 'modern'
+                    ? (isNightMode ? 'none' : '0 1px 1px rgba(255, 255, 255, 0.8)')
+                    : (isBlackTheme || isNightMode
+                        ? 'none' 
+                        : '0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 0 rgba(0, 0, 0, 0.12), 0 3px 2px rgba(0, 0, 0, 0.18), 0 4px 5px rgba(0, 0, 0, 0.2)'),
+                  textRendering: 'optimizeLegibility',
+                  WebkitFontSmoothing: 'antialiased'
+                }}
+              >
+                {isEditMode ? t('common.drag_to_reorder', 'اسحب الأزرار لترتيبها') : t('app.subtitle', 'نرجوا الدعاء لهم بالرحمة والمغفرة')}
+              </p>
 
+              {/* الشريط الإعلاني المتحرك إذا تم تفعيله */}
+              <FloatingNeonTicker layoutMode={homeLayoutMode} />
+            </div>
+          </div>
+
+          {homeLayoutMode === 'modern' ? (
+            <div className="px-3 sm:px-4 pt-1">
+              <ModernHomeView
+                onNavigate={onNavigate}
+                theme={theme}
+                themeKey={themeKey}
+                isBlackTheme={false}
+                setToastMessage={setToastMessage}
+                onThisDayEvent={onThisDayEvent}
+                handleNextEvent={handleNextEvent}
+                handleShareHighlight={handleShareHighlight}
+                handleCopyHighlight={handleCopyHighlight}
+                setShowExpandedEventsModal={setShowExpandedEventsModal}
+                currentHistoryMemoryEvent={currentHistoryMemoryEvent}
+                handleNextHistoryMemoryEvent={handleNextHistoryMemoryEvent}
+                handleShareHistoryMemory={handleShareHistoryMemory}
+                handleCopyHistoryMemory={handleCopyHistoryMemory}
+                setShowExpandedHistoryMemoryModal={setShowExpandedHistoryMemoryModal}
+                upcomingEvents={upcomingEvents}
+                eventIndex={eventIndex}
+                setEventIndex={setEventIndex}
+                handleShareUpcomingEvent={handleShareUpcomingEvent}
+                handleCopyUpcomingEvent={handleCopyUpcomingEvent}
+                setShowExpandedUpcomingEventModal={setShowExpandedUpcomingEventModal}
+                shareTextAr={APP_SHARE_TEXT}
+                shareTextEn={APP_SHARE_TEXT_EN}
+              />
+              <div className="w-full h-2 sm:h-3 shrink-0 pointer-events-none" />
+            </div>
+          ) : (
+            <div className="main-layout px-4 flex flex-col pt-2" style={{ fontFamily: theme.font }}>
+              
               <TitleSection 
                   isEditMode={isEditMode}
                   setIsEditMode={setIsEditMode}
@@ -616,6 +1139,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                   theme={theme}
                   themeKey={themeKey}
                   onOpenSideMenu={onOpenSideMenu}
+                  hideTitle={true}
               />
 
               <div id="grid-section">
@@ -625,8 +1149,7 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
                     visibleItems={visibleItems}
                     isEditMode={isEditMode}
                     onNavigate={(id) => {
-                        if (id === 'more') onNavigate('more-menu');
-                        else onNavigate(id, { from: 'home' });
+                        onNavigate(id, { from: 'classic_home' });
                     }}
                     theme={theme}
                     themeKey={themeKey}
@@ -637,472 +1160,158 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
               {/* Footer/Save Button */}
               {!isEditMode && (
                   <div className="flex flex-col gap-2 w-full max-w-sm mx-auto mt-1 mb-4">
-                      {/* Prayer Status Cards */}
-                      <div 
-                          className="p-2 rounded-2xl shadow-lg border-2 transition-all duration-300" 
-                          style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
-                      >
-                          <div className="grid grid-cols-3 gap-2">
-                           {/* Right Card: Previous Prayer */}
-                           <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border-2 transition-all" 
-                                style={{ borderColor: `${theme.palette[0]}33` }}>
-                               <span className="text-[10px] opacity-70 font-bold mb-0.5">السابقة</span>
-                               <span className="text-base font-black truncate w-full" style={{ color: theme.textColor }}>{prevSalah}</span>
-                           </div>
+                      {/* Modern Prayer Status Card */}
+                      <HomePrayerCard 
+                          onNavigate={onNavigate}
+                          cardRef={prayerCardRef}
+                      />
 
-                           {/* Middle Card: Remaining Time */}
-                           <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-md border-2 relative overflow-hidden" 
-                                style={{ borderColor: theme.palette[0] }}>
-                               <span className="text-[10px] opacity-70 font-bold mb-0.5">متبقي</span>
-                               <span className="text-base font-mono font-black tracking-wider" style={{ color: theme.textColor }}>{prayerCountdown}</span>
-                           </div>
+                      {/* بطاقة ذاكرة التاريخ الإسلامي - أسفل بطاقة الصلاة مباشرة */}
+                      {currentHistoryMemoryEvent && (
+                          <IslamicHistoryMemoryCard
+                              event={currentHistoryMemoryEvent}
+                              onNextEvent={handleNextHistoryMemoryEvent}
+                              onCopy={handleCopyHistoryMemory}
+                              onShare={handleShareHistoryMemory}
+                              onOpenModal={() => setShowExpandedHistoryMemoryModal(true)}
+                          />
+                      )}
 
-                           {/* Left Card: Next Prayer */}
-                           <div className="themed-card py-2 px-1 rounded-xl text-center flex flex-col justify-center items-center shadow-sm border-2 transition-all"
-                                style={{ borderColor: `${theme.palette[0]}33` }}>
-                               <span className="text-[10px] opacity-70 font-bold mb-0.5">القادمة</span>
-                               <span className="text-base font-black truncate w-full" style={{ color: theme.textColor }}>{nextSalah}</span>
-                           </div>
-                          </div>
-                      </div>
+                      {/* بطاقة عداد الطواف والسعي - تظهر تحت بطاقة الصلاة مباشرة عند تفعيلها */}
+                      <TawafCounterCard 
+                          theme={theme}
+                          onNavigate={onNavigate}
+                      />
 
+
+                      {/* بطاقة مربي العبادات (إنجاز اليوم وملخص الأيام السابقة بالنسبة المئوية) */}
+                      <HabitTrackerCard
+                          theme={theme}
+                          onNavigate={onNavigate}
+                      />
 
                       {/* On This Day Card */}
                       {onThisDayEvent && (
-                          <div 
-                              className="w-full mt-1 py-4 px-5 rounded-2xl shadow-lg border-2 relative overflow-hidden flex flex-col gap-3 cursor-pointer"
-                              style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
-                              dir="rtl"
-                              onClick={() => setShowExpandedEventsModal(true)}
-                          >
-                              <div className="flex items-center justify-between z-10 w-full relative">
-                                  <div className="flex items-center gap-2" style={{ color: theme.palette[0] }}>
-                                      <i className="fa-solid fa-calendar-day text-base"></i>
-                                      <span className="text-[11px] font-bold font-kufi">حدث في مثل هذا اليوم</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                      <button 
-                                          onClick={handleNextEvent}
-                                          className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                                          title="حدث آخر"
-                                          style={{ color: theme.palette[0] }}
-                                      >
-                                          <i className="fa-solid fa-rotate-right text-xs"></i>
-                                      </button>
-                                      <button 
-                                          onClick={handleCopyHighlight}
-                                          className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                                          title="نسخ"
-                                          style={{ color: theme.palette[0] }}
-                                      >
-                                          <i className="fa-regular fa-copy text-xs"></i>
-                                      </button>
-                                      <button 
-                                          onClick={handleShareHighlight}
-                                          className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                                          title="مشاركة"
-                                          style={{ color: theme.palette[0] }}
-                                      >
-                                          <i className="fa-solid fa-share-nodes text-xs"></i>
-                                      </button>
-                                  </div>
-                              </div>
-                              <div className="flex flex-col gap-3 w-full relative z-10">
-                                  <div className="flex flex-row items-center justify-center gap-3 w-full py-2 px-3 rounded-xl bg-black/5 dark:bg-white/5" style={{ color: theme.textColor }}>
-                                      <span className="text-[10px] font-bold opacity-80">{onThisDayEvent.dateStr}</span>
-                                      <div className="w-[1px] h-4 bg-black/20 dark:bg-white/20"></div>
-                                      <span className="text-base font-black font-kufi leading-none">{toArabic(onThisDayEvent.year)}</span>
-                                      <div className="w-[1px] h-4 bg-black/20 dark:bg-white/20"></div>
-                                      <span className="text-[10px] font-bold opacity-80">ميلادي</span>
-                                  </div>
-                                  <p className="text-sm text-justify leading-relaxed break-words font-hafs font-bold" style={{ color: theme.textColor }}>
-                                      {onThisDayEvent.text}
-                                  </p>
-                              </div>
-                          </div>
+                          <OnThisDayCard 
+                              event={onThisDayEvent}
+                              onNextEvent={handleNextEvent}
+                              onCopy={handleCopyHighlight}
+                              onShare={handleShareHighlight}
+                              onOpenModal={() => setShowExpandedEventsModal(true)}
+                          />
                       )}
 
                       {/* Upcoming Islamic Event Card */}
                       {upcomingEvents.length > 0 && (
-                          <div 
-                              className="w-full mt-2 py-4 px-5 rounded-2xl shadow-lg border-2 relative overflow-hidden flex flex-col gap-3 cursor-pointer"
-                              style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
-                              dir="rtl"
-                              onClick={() => setShowExpandedUpcomingEventModal(true)}
-                          >
-                              <div className="flex items-center justify-between z-10 w-full relative mb-1.5">
-                                  <div className="flex items-center gap-2" style={{ color: theme.palette[0] }}>
-                                      <i className="fa-solid fa-moon text-base"></i>
-                                      <span className="text-[11px] font-bold font-kufi">
-                                          المناسبات الإسلامية
-                                      </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                      <button 
-                                          onClick={(e) => {
-                                              e.stopPropagation();
-                                              setEventIndex(prev => (prev - 1 + upcomingEvents.length) % upcomingEvents.length);
-                                          }}
-                                          className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                                          title="المناسبة السابقة"
-                                          style={{ color: theme.palette[0] }}
-                                      >
-                                          <i className="fa-solid fa-chevron-right text-xs"></i>
-                                      </button>
-                                      <button 
-                                          onClick={(e) => {
-                                              e.stopPropagation();
-                                              setEventIndex(prev => (prev + 1) % upcomingEvents.length);
-                                          }}
-                                          className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                                          title="المناسبة التالية"
-                                          style={{ color: theme.palette[0] }}
-                                      >
-                                          <i className="fa-solid fa-chevron-left text-xs"></i>
-                                      </button>
-                                      <button 
-                                          onClick={handleCopyUpcomingEvent}
-                                          className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                                          title="نسخ"
-                                          style={{ color: theme.palette[0] }}
-                                      >
-                                          <i className="fa-regular fa-copy text-xs"></i>
-                                      </button>
-                                      <button 
-                                          onClick={handleShareUpcomingEvent}
-                                          className="p-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                                          title="مشاركة"
-                                          style={{ color: theme.palette[0] }}
-                                      >
-                                          <i className="fa-solid fa-share-nodes text-xs"></i>
-                                      </button>
-                                  </div>
-                              </div>
-                              
-                              <div className="flex flex-col gap-3 w-full relative z-10">
-                                  {upcomingEvents[eventIndex] && (
-                                      <div className="flex flex-col gap-2 w-full">
-                                          <div className="flex flex-row items-center justify-center gap-2.5 w-full py-1.5 px-2 rounded-xl bg-black/5 dark:bg-white/5" style={{ color: theme.textColor }}>
-                                              {upcomingEvents[eventIndex].isToday ? (
-                                                  <span className="text-base font-black font-kufi leading-none" style={{ color: theme.palette[0] }}>اليوم</span>
-                                              ) : (
-                                                  <>
-                                                      <span className="text-xs font-bold opacity-80">{upcomingEvents[eventIndex].daysRemaining > 0 ? 'باقي' : 'مر عليها'}</span>
-                                                      <div className="w-[1px] h-3 bg-black/20 dark:bg-white/20"></div>
-                                                      <span className="text-base font-black font-kufi leading-none" style={{ color: theme.palette[0] }}>
-                                                          {toArabic(Math.abs(upcomingEvents[eventIndex].daysRemaining))}
-                                                      </span>
-                                                      <div className="w-[1px] h-3 bg-black/20 dark:bg-white/20"></div>
-                                                      <span className="text-xs font-bold opacity-80">يوم</span>
-                                                  </>
-                                              )}
-                                          </div>
-                                          <div className="flex flex-col text-center gap-1" style={{ color: theme.textColor }}>
-                                              <p className="text-sm leading-tight break-words font-kufi font-bold">
-                                                  {upcomingEvents[eventIndex].name}
-                                              </p>
-                                              <div className="flex flex-row items-center justify-center gap-2 opacity-60 text-[10px] font-bold">
-                                                  <span>{upcomingEvents[eventIndex].dateStr}</span>
-                                                  <span className="opacity-40">•</span>
-                                                  <span>{upcomingEvents[eventIndex].gregorianDateStr}</span>
-                                              </div>
-                                          </div>
-                                      </div>
-                                  )}
-                              </div>
-                          </div>
+                          <IslamicEventsCard
+                              events={upcomingEvents}
+                              currentIndex={eventIndex}
+                              onPrevEvent={(e) => {
+                                  e.stopPropagation();
+                                  setEventIndex(prev => (prev - 1 + upcomingEvents.length) % upcomingEvents.length);
+                              }}
+                              onNextEvent={(e) => {
+                                  e.stopPropagation();
+                                  setEventIndex(prev => (prev + 1) % upcomingEvents.length);
+                              }}
+                              onCopy={handleCopyUpcomingEvent}
+                              onShare={handleShareUpcomingEvent}
+                              onOpenModal={() => setShowExpandedUpcomingEventModal(true)}
+                          />
                       )}
 
                       {/* Web App Link Card */}
-                      <div 
-                          className="w-full mt-3 py-2 px-3 rounded-2xl shadow-lg border-2 relative flex flex-col gap-1"
-                          style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
-                          dir="rtl"
-                      >
-                          <div className="flex items-center gap-2 z-10 w-full relative" style={{ color: theme.palette[0] }}>
-                              <i className="fa-solid fa-globe text-xs"></i>
-                              <span className="text-[11px] font-bold font-kufi">تصفح التطبيق</span>
-                          </div>
-                          
-                          <p className="text-sm font-bold opacity-80 leading-relaxed" style={{ color: theme.textColor }}>
-                              لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط
-                          </p>
-
-                          <div className="flex items-center justify-center gap-3 mt-0.5">
-                              <button 
-                                  onClick={() => window.open('https://mushaf-ahmed-and-laila.netlify.app/', '_blank')}
-                                  className="py-1.5 px-3 rounded-xl font-bold text-[10px] text-center flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
-                                  style={{ 
-                                      backgroundColor: theme.palette[0], 
-                                      color: (theme.palette[0]?.toLowerCase() === '#ffffff' || theme.palette[0]?.toLowerCase() === 'white') ? '#000000' : '#ffffff' 
-                                  }}
-                              >
-                                  <i className="fa-solid fa-arrow-up-right-from-square"></i>
-                                  <span>فتح الرابط</span>
-                              </button>
-                              
-                              <button 
-                                  onClick={async (e) => {
-                                      e.stopPropagation();
-                                      try {
-                                          await navigator.clipboard.writeText('https://mushaf-ahmed-and-laila.netlify.app/');
-                                          setToastMessage('تم نسخ الرابط');
-                                          setTimeout(() => setToastMessage(''), 2000);
-                                      } catch (err) {
-                                          setToastMessage('فشل في النسخ');
-                                          setTimeout(() => setToastMessage(''), 2000);
-                                      }
-                                  }}
-                                  className="w-8 h-8 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
-                                  title="نسخ الرابط"
-                                  style={{ color: theme.palette[0] }}
-                              >
-                                  <i className="fa-regular fa-copy text-sm"></i>
-                              </button>
-
-                              <button 
-                                  onClick={async (e) => {
-                                      e.stopPropagation();
-                                      const shareData = {
-                                          title: 'تطبيق القرآن الكريم',
-                                          text: 'لمشاهدة التطبيق على المتصفح او الايفون اضغط على الرابط\nhttps://mushaf-ahmed-and-laila.netlify.app/',
-                                      };
-
-                                      if (Capacitor.isNativePlatform()) {
-                                          try {
-                                              await CapacitorShare.share(shareData);
-                                          } catch (err: any) {
-                                              try {
-                                                  await navigator.clipboard.writeText(shareData.text);
-                                                  setToastMessage('تم نسخ الرابط');
-                                                  setTimeout(() => setToastMessage(''), 2000);
-                                              } catch (copyErr) {}
-                                          }
-                                      } else if (navigator.share) {
-                                          try {
-                                              await navigator.share(shareData);
-                                          } catch (err: any) {
-                                              if (err.name !== 'AbortError') {
-                                                  try {
-                                                      await navigator.clipboard.writeText(shareData.text);
-                                                      setToastMessage('تم نسخ الرابط');
-                                                      setTimeout(() => setToastMessage(''), 2000);
-                                                  } catch (copyErr) {}
-                                              }
-                                          }
-                                      } else {
-                                          try {
-                                              await navigator.clipboard.writeText(shareData.text);
-                                              setToastMessage('تم نسخ الرابط');
-                                              setTimeout(() => setToastMessage(''), 2000);
-                                          } catch (copyErr) {}
-                                      }
-                                  }}
-                                  className="w-8 h-8 flex-shrink-0 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors shadow-sm active:scale-95"
-                                  title="مشاركة الرابط"
-                                  style={{ color: theme.palette[0] }}
-                              >
-                                  <i className="fa-solid fa-share-nodes text-sm"></i>
-                              </button>
-                          </div>
-                      </div>
+                      <WebAppCard setToastMessage={setToastMessage} />
 
                       {/* App Share Card */}
-                      <div 
-                          className="w-full mt-2 py-1.5 px-4 rounded-2xl shadow-lg border-2 relative flex flex-col gap-0.5 overflow-hidden"
-                          style={{ borderColor: theme.palette[0], backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.8)' }}
-                          dir="rtl"
-                      >
-                          <div className="flex items-center gap-2 z-10 w-full relative" style={{ color: theme.palette[0] }}>
-                              <i className="fa-solid fa-share-nodes text-xs"></i>
-                              <span className="text-[11px] font-bold font-kufi">شارك التطبيق</span>
-                          </div>
-                          
-                          <p className="text-sm font-bold opacity-80 leading-tight" style={{ color: theme.textColor }}>
-                              اذا اعجبك التطبيق قم بنشره على وسائل التواصل ليكون لك الاجر ولمن تحب ان شاء الله .
+                      <ShareAppCard
+                          shareTextAr={APP_SHARE_TEXT}
+                          shareTextEn={APP_SHARE_TEXT_EN}
+                          setToastMessage={setToastMessage}
+                      />
+
+                      {/* Dua - بارز وبدون بطاقة أو زر محيط */}
+                      <div className="flex items-center justify-center gap-2 mt-1 mb-0.5 px-4" dir={dir}>
+                          <p 
+                              className="text-sm font-black font-kufi leading-tight text-center relative z-10" 
+                              style={{ 
+                                  color: isBlackTheme ? '#FFFFFF' : (themeKey === 'default' ? '#7e22ce' : (themeKey === 'olive_grove' ? '#65A30D' : theme.textColor)),
+                                  textShadow: isBlackTheme 
+                                      ? '0 2px 4px rgba(255,255,255,0.3), 0 4px 8px rgba(0,0,0,0.8)' 
+                                      : '0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 0 rgba(0, 0, 0, 0.15), 0 3px 2px rgba(0, 0, 0, 0.2), 0 4px 6px rgba(0, 0, 0, 0.25)'
+                              }}
+                          >
+                              {t('app.dua_bottom', 'اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة')}
                           </p>
-
-                          <div className="flex items-center justify-center gap-6">
-                              {[
-                                  { icon: 'fa-regular fa-copy', label: 'نسخ', color: theme.palette[0], action: 'copy' },
-                                  { icon: 'fa-solid fa-share-nodes', label: 'مشاركة', color: theme.palette[0], action: 'share' }
-                              ].map((item, index) => (
-                                  <button 
-                                      key={index}
-                                      onClick={async (e) => {
-                                          e.stopPropagation();
-                                          
-                                          if (item.action === 'copy') {
-                                              try {
-                                                  await navigator.clipboard.writeText(APP_SHARE_TEXT);
-                                                  setToastMessage('تم نسخ نص المشاركة');
-                                                  setTimeout(() => setToastMessage(''), 2000);
-                                              } catch (err) {
-                                                  setToastMessage('فشل في النسخ');
-                                                  setTimeout(() => setToastMessage(''), 2000);
-                                              }
-                                          } else if (item.action === 'share') {
-                                              const shareData = {
-                                                  title: 'مصحف أحمد وليلى',
-                                                  text: APP_SHARE_TEXT,
-                                              };
-
-                                              if (Capacitor.isNativePlatform()) {
-                                                  try {
-                                                      await CapacitorShare.share(shareData);
-                                                  } catch (error: any) {
-                                                      try {
-                                                          await navigator.clipboard.writeText(APP_SHARE_TEXT);
-                                                          setToastMessage('تم نسخ نص المشاركة');
-                                                          setTimeout(() => setToastMessage(''), 2000);
-                                                      } catch (copyErr) {}
-                                                  }
-                                              } else if (navigator.share) {
-                                                  try {
-                                                      await navigator.share(shareData);
-                                                  } catch (error: any) {
-                                                      if (error.name !== 'AbortError') {
-                                                          try {
-                                                              await navigator.clipboard.writeText(APP_SHARE_TEXT);
-                                                              setToastMessage('تم نسخ نص المشاركة');
-                                                              setTimeout(() => setToastMessage(''), 2000);
-                                                          } catch (copyErr) {}
-                                                      }
-                                                  }
-                                              } else {
-                                                  try {
-                                                      await navigator.clipboard.writeText(APP_SHARE_TEXT);
-                                                      setToastMessage('تم نسخ نص المشاركة');
-                                                      setTimeout(() => setToastMessage(''), 2000);
-                                                  } catch (copyErr) {}
-                                              }
-                                          }
-                                      }}
-                                      className="flex items-center justify-center p-1 rounded-xl transition-all active:scale-90 hover:bg-black/5 dark:hover:bg-white/5"
-                                      title={item.label}
-                                  >
-                                      <div 
-                                          className="w-8 h-8 rounded-xl flex items-center justify-center text-lg shadow-sm"
-                                          style={{ backgroundColor: item.color + '20', color: item.color }}
-                                      >
-                                          <i className={item.icon}></i>
-                                      </div>
-                                  </button>
-                              ))}
-                          </div>
                       </div>
-
-                      {/* Dua Card */}
-                      <div className="flex items-center justify-center gap-2 h-10 mt-3">
-                          {!showVoiceIcon && (
-                              <div className="flex items-center justify-center shrink-0">
-                                  <WhatsAppButton />
-                              </div>
-                          )}
-                          <div className="themed-card p-1 rounded-2xl text-center flex-1 relative h-full flex flex-col justify-center overflow-hidden">
-                              <FloatingNeonTicker />
-                              <p className="text-sm font-bold leading-tight" style={{ color: theme.bgColor === '#000000' ? '#FFFFFF' : (themeKey === 'default' ? '#a855f7' : (themeKey === 'olive_grove' ? '#65A30D' : theme.textColor)) }}>
-                                  اللهم ارحمهما واغفر لهما واجعل مثواهما الجنة
-                              </p>
-                          </div>
-
-                      </div>
+                      {/* Bottom Spacer for Mobile Phone Navigation Bar (reduced 50%) */}
+                      <div className="w-full h-1 sm:h-1.5 shrink-0 pointer-events-none" />
                   </div>
               )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {showExpandedEventsModal && onThisDayEvent && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" dir="rtl" onClick={() => setShowExpandedEventsModal(false)}>
-            <div className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#F7F5F0] dark:bg-[#1A1A1A] rounded-3xl shadow-2xl p-6" onClick={e => e.stopPropagation()} style={{ backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.95)' }}>
-                <div className="flex flex-col items-center gap-4 mb-6">
-                    <div className="text-center font-bold text-2xl font-kufi" style={{ color: theme.palette[0] }}>
-                        {onThisDayEvent.dateStr} {toArabic(onThisDayEvent.year)} ميلادي
-                    </div>
-                </div>
-                
-                <div className="flex flex-col gap-6 w-full">
-                    <div className="flex flex-col items-center justify-center gap-6 p-8 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 w-full">
-                        <p className="text-[32px] sm:text-[38px] leading-[1.6] font-hafs font-bold text-center w-full" style={{ color: theme.textColor }}>
-                            {onThisDayEvent.text}
-                        </p>
-                    </div>
-
-                    <button 
-                        onClick={() => setShowExpandedEventsModal(false)}
-                        className="w-full py-4 rounded-2xl font-bold text-xl transition-all shadow-md active:scale-95"
-                        style={{ 
-                            backgroundColor: theme.palette[0],
-                            color: '#fff'
-                        }}
-                    >
-                        إغلاق
-                    </button>
-                </div>
-            </div>
-        </div>
+      {/* Zoom Modal: ذاكرة التاريخ الإسلامي (مطابق لصفحة الأدعية والأذكار) */}
+      {currentHistoryMemoryEvent && (
+        <UnifiedEventZoomModal
+          isOpen={showExpandedHistoryMemoryModal}
+          onClose={() => setShowExpandedHistoryMemoryModal(false)}
+          categoryTitle={language === 'en' ? 'Islamic History Memory' : 'ذاكرة التاريخ الإسلامي'}
+          text={language === 'en' 
+            ? `${currentHistoryMemoryEvent.titleEn || ''}\n\n${currentHistoryMemoryEvent.descriptionEn || ''}`.trim()
+            : `${currentHistoryMemoryEvent.titleAr || ''}\n\n${currentHistoryMemoryEvent.descriptionAr || ''}`.trim()}
+          subtitle={language === 'en'
+            ? `${currentHistoryMemoryEvent.hijriYearEn} • ${currentHistoryMemoryEvent.gregorianYearEn}`
+            : `${currentHistoryMemoryEvent.hijriYearAr} • ${currentHistoryMemoryEvent.gregorianYearAr}`}
+          setToastMessage={setToastMessage}
+          isGolden={homeLayoutMode === 'modern'}
+        />
       )}
 
-      {showExpandedUpcomingEventModal && upcomingEvents.length > 0 && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" dir="rtl" onClick={() => setShowExpandedUpcomingEventModal(false)}>
-            <div className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-[#F7F5F0] dark:bg-[#1A1A1A] rounded-3xl shadow-2xl p-6" onClick={e => e.stopPropagation()} style={{ backgroundColor: theme.cardBg || 'rgba(255, 255, 255, 0.95)' }}>
-                <div className="flex flex-col items-center gap-4 mb-6">
-                    <div className="text-center font-bold text-2xl font-kufi flex items-center gap-2" style={{ color: theme.palette[0] }}>
-                        <i className="fa-solid fa-moon"></i>
-                        المناسبة الإسلامية
-                    </div>
-                </div>
-                
-                <div className="flex flex-col gap-6 w-full">
-                    {upcomingEvents[eventIndex] && (
-                        <div className="flex flex-col items-center justify-center gap-6 p-8 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 w-full text-center">
-                            <p className="text-[32px] sm:text-[38px] leading-[1.6] font-kufi font-bold w-full" style={{ color: theme.textColor }}>
-                                {upcomingEvents[eventIndex].name}
-                            </p>
-                            <hr className="w-1/2 opacity-20 border-current" style={{ color: theme.textColor }} />
-                            <div className="flex flex-col gap-2">
-                                <p className="text-xl font-bold opacity-80" style={{ color: theme.textColor }}>
-                                    {upcomingEvents[eventIndex].dateStr}
-                                </p>
-                                <p className="text-xl font-bold opacity-80" style={{ color: theme.textColor }}>
-                                    {upcomingEvents[eventIndex].gregorianDateStr}
-                                </p>
-                            </div>
-                            <div className="w-full p-4 rounded-xl mt-2 flex flex-col items-center" style={{ backgroundColor: theme.palette[0] + '20', color: theme.palette[0] }}>
-                               <span className="text-lg font-bold mb-1 opacity-80">
-                                   {upcomingEvents[eventIndex].isToday ? 'توافق' : (upcomingEvents[eventIndex].daysRemaining > 0 ? 'يتبقى عليها' : 'مر عليها')}
-                               </span>
-                               <span className="text-5xl font-black font-kufi my-2">
-                                   {upcomingEvents[eventIndex].isToday ? 'اليوم' : toArabic(Math.abs(upcomingEvents[eventIndex].daysRemaining))}
-                               </span>
-                               {!upcomingEvents[eventIndex].isToday && (
-                                   <span className="text-lg font-bold opacity-80">يوم</span>
-                               )}
-                            </div>
-                        </div>
-                    )}
-
-                    <button 
-                        onClick={() => setShowExpandedUpcomingEventModal(false)}
-                        className="w-full py-4 rounded-2xl font-bold text-xl transition-all shadow-md active:scale-95"
-                        style={{ 
-                            backgroundColor: theme.palette[0],
-                            color: '#fff'
-                        }}
-                    >
-                        إغلاق
-                    </button>
-                </div>
-            </div>
-        </div>
+      {/* Zoom Modal: حدث في مثل هذا اليوم (مطابق لصفحة الأدعية والأذكار) */}
+      {onThisDayEvent && (
+        <UnifiedEventZoomModal
+          isOpen={showExpandedEventsModal}
+          onClose={() => setShowExpandedEventsModal(false)}
+          categoryTitle={t('on_this_day.title', 'حدث في مثل هذا اليوم')}
+          text={language === 'en'
+            ? (onThisDayEvent.textEn || getTranslatedEventText(onThisDayEvent.text, onThisDayEvent.year))
+            : onThisDayEvent.text}
+          subtitle={language === 'en'
+            ? `${onThisDayEvent.dateStr} • Year ${onThisDayEvent.year} AD`
+            : `${onThisDayEvent.dateStr} • عام ${formatNumber(onThisDayEvent.year)} م`}
+          setToastMessage={setToastMessage}
+          isGolden={homeLayoutMode === 'modern'}
+        />
       )}
 
-      <BottomBar 
-        onHomeClick={() => {}} 
-        onThemesClick={onOpenThemes} 
-        showHome={false} 
-        showThemes={true} 
+      {/* Zoom Modal: المناسبات الإسلامية (مطابق لصفحة الأدعية والأذكار) */}
+      {upcomingEvents.length > 0 && (
+        <UnifiedEventZoomModal
+          isOpen={showExpandedUpcomingEventModal}
+          onClose={() => setShowExpandedUpcomingEventModal(false)}
+          categoryTitle={t('islamic_events.title', 'المناسبات الإسلامية')}
+          text={upcomingEvents[eventIndex]?.name || ''}
+          subtitle={(() => {
+            const ev = upcomingEvents[eventIndex];
+            if (!ev) return '';
+            const status = ev.isToday
+              ? (language === 'en' ? 'Today' : 'اليوم')
+              : (ev.daysRemaining > 0
+                  ? (language === 'en' ? `${formatNumber(ev.daysRemaining)} days remaining` : `المتبقي ${formatNumber(ev.daysRemaining)} يوم`)
+                  : (language === 'en' ? `Passed ${formatNumber(Math.abs(ev.daysRemaining))} days ago` : `مرت منذ ${formatNumber(Math.abs(ev.daysRemaining))} يوم`));
+            return `${ev.dateStr} • ${ev.gregorianDateStr} (${status})`;
+          })()}
+          setToastMessage={setToastMessage}
+          isGolden={homeLayoutMode === 'modern'}
+        />
+      )}
+
+      <ThemesSidebar 
+        isOpen={isThemesSidebarOpen}
+        onClose={() => setIsThemesSidebarOpen(false)}
       />
       
       <PasscodeModal 
@@ -1120,39 +1329,6 @@ function MainMenu({ onNavigate, onOpenThemes, onOpenSideMenu }) {
         onSave={handleSaveCustomization}
         isLandscape={isLandscape}
       />
-
-      <VerseContextMenu 
-        isOpen={isVerseMenuOpen}
-        onClose={() => setIsVerseMenuOpen(false)}
-        settings={verseSettings}
-        onSave={handleSaveVerseSettings}
-        currentTheme={theme}
-        renderCheckerboard={renderCheckerboard}
-        PREDEFINED_COLORS={PREDEFINED_COLORS}
-        isLandscape={isLandscape}
-      />
-
-      <TutorialOverlay 
-        tutorialId="home-tutorial" 
-        steps={homeTutorialSteps} 
-        onStepChange={setCurrentTutorialStep}
-        onComplete={() => {
-            if (scrollContainerRef.current) {
-                // Ensure we go to the very top immediately
-                scrollContainerRef.current.scrollTo(0, 0);
-            }
-        }}
-      />
-      {currentTutorialStep && (
-        <style>{`
-          #voice-control-btn {
-            opacity: ${currentTutorialStep === 'voice' ? '1' : '0'} !important;
-            pointer-events: ${currentTutorialStep === 'voice' ? 'auto' : 'none'} !important;
-            z-index: 10005 !important;
-            transition: opacity 0.3s ease !important;
-          }
-        `}</style>
-      )}
 
       <AnimatePresence>
         {toastMessage && (

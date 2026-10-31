@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { RotateCcw, X, AlertTriangle } from 'lucide-react';
 
@@ -12,24 +12,18 @@ interface ResetConfirmModalProps {
 
 const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({ isOpen, onClose, onConfirm }) => {
     const { theme, themeKey } = useTheme();
-    const isDefaultTheme = themeKey === 'default';
+    const { language } = useLanguage();
+    const isEn = language === 'en';
 
-    const isGlass = theme.isGlass;
-    const isGolden = theme.name.includes('ذهب') || theme.name.includes('Golden');
-    const isEmerald = theme.name.includes('زمرد') || theme.name.includes('Emerald');
-
-    const modalBg = isDefaultTheme 
-        ? '#FFFFFF'
-        : (theme.isGlass 
-            ? (isGolden ? '#451a03' : isEmerald ? '#064E3B' : '#1e293b')
-            : 'var(--modal-bg)');
-    
-    const modalTextColor = isDefaultTheme ? '#000000' : (theme.isGlass ? '#FFFFFF' : 'var(--modal-text)');
+    const isBlackTheme = theme.bgColor === '#000000' || theme.name === 'أبيض وأسود' || themeKey === 'deep_black';
+    const isBlackAndWhite = themeKey === 'deep_black' || theme.name === 'أبيض وأسود';
+    const primaryColor = isBlackTheme ? '#FFFFFF' : (theme.accent || (isBlackAndWhite ? '#FFFFFF' : (theme.palette?.[0] || '#2E7D5E')));
+    const btnTextColor = isBlackTheme ? '#000000' : '#FFFFFF';
 
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4" dir={isEn ? 'ltr' : 'rtl'}>
                     {/* Backdrop */}
                     <motion.div 
                         initial={{ opacity: 0 }}
@@ -44,60 +38,60 @@ const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({ isOpen, onClose, 
                         initial={{ scale: 0.9, opacity: 0, y: 20 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                        className="relative w-full max-w-sm rounded-[32px] p-8 shadow-2xl border overflow-hidden"
+                        className="relative w-full max-w-sm rounded-[28px] p-6 shadow-2xl bg-white dark:bg-zinc-900 border-0 overflow-hidden"
                         style={{ 
-                            backgroundColor: modalBg, 
-                            borderColor: isDefaultTheme ? '#f3f4f6' : (theme.cardBorder || theme.palette[0]),
                             fontFamily: theme.font,
-                            color: modalTextColor
+                            color: 'var(--text-color)'
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Decorative background element */}
-                        <div className={`absolute -top-12 -right-12 w-40 h-40 rounded-full ${isDefaultTheme ? 'bg-[#10b981]/5' : 'opacity-10'}`} style={!isDefaultTheme ? { backgroundColor: theme.palette[0] } : {}} />
-                        
                         <div className="flex flex-col items-center text-center relative z-10">
-                            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-sm ${isDefaultTheme ? 'bg-[#10b981]/10 text-[#10b981]' : ''}`} 
-                                 style={!isDefaultTheme ? { backgroundColor: `${theme.palette[0]}20`, color: theme.palette[0] } : {}}>
-                                <RotateCcw size={40} className="animate-spin-slow" />
+                            <div 
+                                className="w-16 h-16 rounded-full flex items-center justify-center mb-4 shadow-sm"
+                                style={{
+                                    backgroundColor: isBlackTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                    color: isBlackTheme ? '#FFFFFF' : '#EF4444'
+                                }}
+                            >
+                                <RotateCcw size={32} className="animate-spin-slow" />
                             </div>
 
-                            <h3 className="text-2xl font-black mb-3 text-black">إعادة تعيين الختمة</h3>
+                            <h3 className="text-xl font-bold mb-2">
+                                {isEn ? 'Reset Khatma Plan' : 'إعادة تعيين الختمة'}
+                            </h3>
                             
-                            <div className="flex items-center gap-2 mb-4 px-4 py-1.5 rounded-md text-xs font-bold" 
-                                 style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+                            <div className="flex items-center gap-1.5 mb-3 px-3 py-1 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border-0">
                                 <AlertTriangle size={14} />
-                                <span>إجراء لا يمكن التراجع عنه</span>
+                                <span>{isEn ? 'Irreversible Action' : 'إجراء لا يمكن التراجع عنه'}</span>
                             </div>
 
-                            <p className="mb-8 text-gray-600 dark:text-gray-400 leading-relaxed text-sm">
-                                هل أنت متأكد من رغبتك في إعادة تعيين الختمة الحالية؟ سيتم مسح جميع التقدم الذي أحرزته والبدء من جديد.
+                            <p className="mb-6 leading-relaxed text-xs opacity-70">
+                                {isEn 
+                                    ? 'Are you sure you want to reset the current khatma? All your progress will be cleared and you will start over.' 
+                                    : 'هل أنت متأكد من رغبتك في إعادة تعيين الختمة الحالية؟ سيتم مسح جميع التقدم الذي أحرزته والبدء من جديد.'}
                             </p>
 
-                            <div className="flex w-full gap-4">
+                            <div className="flex w-full gap-3">
                                 <button 
+                                    type="button"
                                     onClick={onConfirm} 
-                                    className="flex-1 py-4 rounded-2xl font-bold transition-all active:scale-95 shadow-lg flex items-center justify-center gap-2"
+                                    className="flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-95 shadow-md flex items-center justify-center gap-2 border-0 cursor-pointer"
                                     style={{
-                                        backgroundColor: isDefaultTheme ? '#10b981' : (theme.palette[0] || '#ef4444'),
-                                        color: theme.name === 'اسود' ? '#000000' : '#ffffff',
-                                        boxShadow: isDefaultTheme ? '0 10px 15px -3px rgba(16, 185, 129, 0.3)' : `0 8px 20px -6px ${theme.palette[0]}60`
+                                        backgroundColor: primaryColor,
+                                        color: btnTextColor
                                     }}
                                 >
-                                    <RotateCcw size={20} />
-                                    تأكيد
+                                    <RotateCcw size={16} />
+                                    <span>{isEn ? 'Confirm' : 'تأكيد'}</span>
                                 </button>
                                 <button 
+                                    type="button"
                                     onClick={onClose} 
-                                    className="flex-1 py-4 rounded-2xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
-                                    style={{
-                                        backgroundColor: isDefaultTheme ? '#f3f4f6' : (theme.isGlass ? 'rgba(255, 255, 255, 0.1)' : (theme.isOriginal ? '#f3f4f6' : 'rgba(255, 255, 255, 0.05)')),
-                                        color: isDefaultTheme ? '#000000' : modalTextColor,
-                                        border: isDefaultTheme ? 'none' : `1px solid ${theme.isGlass ? 'rgba(255, 255, 255, 0.2)' : (theme.cardBorder || '#d1d5db')}`
-                                    }}
+                                    className="flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 border-0 cursor-pointer"
+                                    style={{ color: 'var(--text-color)' }}
                                 >
-                                    <X size={20} />
-                                    إلغاء
+                                    <X size={16} />
+                                    <span>{isEn ? 'Cancel' : 'إلغاء'}</span>
                                 </button>
                             </div>
                         </div>
