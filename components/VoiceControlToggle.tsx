@@ -11,46 +11,54 @@ interface VoiceControlToggleProps {
 }
 
 const VoiceControlToggle: React.FC<VoiceControlToggleProps> = ({ className, style }) => {
-  const { isEnabled, toggleEnabled, isListening, showVoiceIcon } = useVoiceControl();
-  const { theme, themeKey } = useTheme();
+  const { isEnabled, toggleEnabled, showVoiceIcon } = useVoiceControl();
+  const { isNightMode, homeThemeVariant } = useTheme();
 
   if (!showVoiceIcon) return null;
 
-  // Define colors based on state and theme
-  let bgColor = 'rgb(156, 163, 175)'; // Gray-400 equivalent
-  
-  if (isEnabled) {
-    if (isListening) {
-      bgColor = '#ef4444'; // red-500
-    } else {
-      // Use theme color
-      bgColor = themeKey === 'olive_grove' ? '#65A30D' : (theme.palette[0] || '#22c55e');
-    }
-  }
+  const isSkyTheme = !isNightMode && homeThemeVariant === 'sky';
+  const isEmeraldTheme = !isNightMode && homeThemeVariant === 'emerald';
+
+  const iconColor = isNightMode 
+    ? '#F59E0B' 
+    : (isSkyTheme 
+        ? '#0369a1' 
+        : (isEmeraldTheme 
+            ? '#047857' 
+            : '#C25E00'));
+
+  const pingColor = isNightMode 
+    ? '#FBBF24' 
+    : (isSkyTheme 
+        ? '#38BDF8' 
+        : (isEmeraldTheme 
+            ? '#34D399' 
+            : '#F59E0B'));
 
   return (
     <motion.button
       id="voice-control-btn"
-      initial={{ scale: 0, opacity: 0 }}
+      initial={{ scale: 0, opacity: 1 }}
       animate={{ scale: 1, opacity: 1 }}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       onClick={toggleEnabled}
-      className={`w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white ${isEnabled && isListening ? 'animate-pulse' : ''} ${className || ''}`}
-      style={{ 
-        ...style,
-        backgroundColor: bgColor
-      }}
+      className={`p-1.5 flex items-center justify-center transition-all bg-transparent border-none outline-none cursor-pointer select-none shrink-0 ${className || ''}`}
+      style={style}
       title={isEnabled ? 'تعطيل التحكم الصوتي' : 'تفعيل التحكم الصوتي'}
     >
-      {isEnabled ? <Mic className="text-white w-5 h-5" /> : <MicOff className="text-white w-5 h-5" />}
-      
-      {isEnabled && isListening && (
-        <motion.div
-          animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="absolute inset-0 rounded-full bg-red-500 -z-10"
-        />
+      {isEnabled ? (
+        <div className="relative flex items-center justify-center">
+          <Mic className="w-6 h-6 drop-shadow-md" style={{ color: iconColor }} strokeWidth={2.4} />
+          <span className="absolute -top-1 -right-1 flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: pingColor }}></span>
+            <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: iconColor }}></span>
+          </span>
+        </div>
+      ) : (
+        <div className="relative flex items-center justify-center">
+          <MicOff className="w-6 h-6 drop-shadow-md" style={{ color: iconColor }} strokeWidth={2.4} />
+        </div>
       )}
     </motion.button>
   );

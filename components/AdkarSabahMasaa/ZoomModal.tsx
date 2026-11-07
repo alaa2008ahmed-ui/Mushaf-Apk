@@ -1,38 +1,269 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { getAdhkarTranslation } from '../../data/adkarTranslationsEn';
+import { shareAsImage } from '../../utils/shareAsImage';
+import { playTTS, stopTTS, subscribeTTS } from '../../utils/ttsEngine';
+import { Volume2, VolumeX, Copy, Check, Share2, ZoomIn, ChevronDown } from 'lucide-react';
+import { hexToRgba, getModernFlatTokens } from '../../utils/flatDesignTokens';
 
 interface ZoomModalProps {
     zoomedDhikr: {
         text: string;
+        textEn?: string;
         source?: string;
+        sourceEn?: string;
+        category?: string;
+        categoryEn?: string;
+        count?: number;
     } | null;
     onClose: () => void;
+    setToastMessage?: (msg: string) => void;
 }
 
-const ZoomModal: React.FC<ZoomModalProps> = ({ zoomedDhikr, onClose }) => {
-    const { theme } = useTheme();
+const toArabicNumerals = (num: number) => String(num).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
+
+const ZoomModal: React.FC<ZoomModalProps> = ({ zoomedDhikr, onClose, setToastMessage }) => {
+    const { theme, themeKey } = useTheme();
+    const { language, dir } = useLanguage();
+    const tokens = getModernFlatTokens(theme, themeKey);
+    const isEn = language === 'en';
+
+    const [copied, setCopied] = useState(false);
+    const [playingText, setPlayingText] = useState<string | null>(null);
+    const [fontSize, setFontSize] = useState<number>(26);
+
+    useEffect(() => {
+        const unsubscribe = subscribeTTS(setPlayingText);
+        return () => {
+            unsubscribe();
+            stopTTS();
+        };
+    }, []);
 
     if (!zoomedDhikr) return null;
 
-    return (
-        <div className="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center p-4 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-modal-bg text-modal-text p-8 rounded-3xl w-full max-w-2xl text-center relative scale-in shadow-2xl border-2 border-modal-border flex flex-col max-h-[90vh]" style={{ fontFamily: theme.font }} onClick={e => e.stopPropagation()}>
-                <div className="overflow-y-auto hide-scrollbar flex-1 py-4">
-                    <p className="text-3xl md:text-4xl leading-relaxed">
-                        {zoomedDhikr.text}
-                    </p>
-                    {zoomedDhikr.source && (
-                        <p className="text-lg mt-6 font-bold" style={{ color: theme.palette[1] }}>
-                            {zoomedDhikr.source}
-                        </p>
-                    )}
-                </div>
+    const translation = getAdhkarTranslation(zoomedDhikr.text);
+    const displayText = isEn ? (translation?.text || zoomedDhikr.textEn || zoomedDhikr.text) : zoomedDhikr.text;
+    const displaySource = isEn ? (translation?.source || zoomedDhikr.sourceEn || zoomedDhikr.source) : zoomedDhikr.source;
+    
+    let displayCategory = zoomedDhikr.category || 'أذكار';
+    if (isEn) {
+        if (zoomedDhikr.category === 'أذكار الصباح') displayCategory = 'Morning Remembrances';
+        else if (zoomedDhikr.category === 'أذكار المساء') displayCategory = 'Evening Remembrances';
+        else displayCategory = zoomedDhikr.categoryEn || 'Daily Remembrances';
+    }
 
-                <div className="mt-6 shrink-0">
-                    <button onClick={onClose} className="w-full py-3 rounded-xl font-bold bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:opacity-90 transition-opacity">إغلاق</button>
-                </div>
+    const isPlaying = playingText === displayText || playingText === zoomedDhikr.text;
+
+    const handlePlayAudio = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (isPlaying) {
+            stopTTS();
+        } else {
+            playTTS(displayText, {
+                isEn,
+                onToast: (msg) => {
+                    if (setToastMessage) setToastMessage(msg);
+                }
+            });
+        }
+    };
+
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(displayText).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+            if (setToastMessage) {
+                setToastMessage(isEn ? 'Copied to clipboard' : 'تم النسخ إلى الحافظة');
+            }
+        });
+    };
+
+    const handleShare = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        await shareAsImage({
+            text: displayText,
+            source: displaySource,
+            category: displayCategory,
+            theme,
+            isEn,
+            language: isEn ? 'en' : 'ar',
+            setToastMessage
+        });
+    };
+
+    const handleToggleZoom = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setFontSize(prev => (prev >= 38 ? 22 : prev + 4));
+    };
+
+    return (
+        <AnimatePresence>
+            <div 
+                className="fixed inset-0 bg-black/60 z-[120] flex flex-col justify-end backdrop-blur-xs select-none" 
+                onClick={onClose}
+                dir={dir}
+            >
+                <motion.div 
+                    initial={{ y: '100%', opacity: 0.6 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: '100%', opacity: 0 }}
+                    transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+                    className="w-full max-w-xl mx-auto rounded-t-[28px] flex flex-col max-h-[85vh] overflow-hidden relative shadow-2xl"
+                    style={{ 
+                        backgroundColor: tokens.cardBgColor,
+                        color: 'var(--text-color)',
+                        fontFamily: isEn ? 'sans-serif' : theme.font,
+                    }} 
+                    onClick={e => e.stopPropagation()}
+                >
+                    {/* Top Drag Handle without X button */}
+                    <div className="pt-3 px-6 pb-2 shrink-0 flex flex-col items-center">
+                        <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700 mb-2" />
+                        <div className="w-full flex items-center justify-center">
+                            <span 
+                                className="px-3.5 py-1 rounded-full text-xs font-bold"
+                                style={{
+                                    backgroundColor: hexToRgba(tokens.primaryColor, 0.1),
+                                    color: tokens.primaryColor
+                                }}
+                            >
+                                {displayCategory}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Scrollable Content Area */}
+                    <div className="overflow-y-auto hide-scrollbar flex-1 px-6 py-4">
+                        {isEn ? (
+                            <div 
+                                className="leading-relaxed font-sans font-medium text-center my-4 select-none text-balance"
+                                style={{ fontSize: `${fontSize}px` }}
+                                dir="ltr"
+                            >
+                                {displayText}
+                            </div>
+                        ) : (
+                            <div 
+                                className="leading-[2.4] font-amiri text-center select-none py-2"
+                                style={{ fontSize: `${fontSize + 4}px` }}
+                                dir="rtl"
+                            >
+                                {displayText}
+                            </div>
+                        )}
+
+                        {displaySource && (
+                            <p 
+                                className="text-sm sm:text-base mt-4 font-bold font-cairo text-center" 
+                                style={{ color: tokens.primaryColor }} 
+                                dir={isEn ? 'ltr' : 'rtl'}
+                            >
+                                {displaySource}
+                            </p>
+                        )}
+
+                        {zoomedDhikr.count && zoomedDhikr.count > 1 && (
+                            <div className="flex justify-center mt-3">
+                                <span 
+                                    className="px-3.5 py-1 rounded-full text-xs font-bold"
+                                    style={{
+                                        backgroundColor: hexToRgba(tokens.primaryColor, 0.08),
+                                        color: tokens.primaryColor
+                                    }}
+                                >
+                                    {isEn 
+                                        ? `Required: ${zoomedDhikr.count} times` 
+                                        : `التكرار المطلوب: ${toArabicNumerals(zoomedDhikr.count)} مرات`}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Action Bar (Audio, Share, Copy, Zoom, ChevronDown to hide) with safe-area bottom elevation */}
+                    <div 
+                        className="p-4 pt-3 shrink-0 flex items-center justify-center gap-3 sm:gap-4 border-t border-slate-100 dark:border-white/5" 
+                        style={{ 
+                            backgroundColor: tokens.cardBgColor,
+                            paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 16px)'
+                        }}
+                    >
+                        {/* Audio Button */}
+                        <button
+                            type="button"
+                            onClick={handlePlayAudio}
+                            className="w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 border-0"
+                            style={{
+                                backgroundColor: isPlaying ? hexToRgba(tokens.primaryColor, 0.15) : (tokens.isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'),
+                                color: isPlaying ? '#EF4444' : tokens.textColor
+                            }}
+                            title={isEn ? (isPlaying ? 'Stop audio' : 'Play audio') : (isPlaying ? 'إيقاف الصوت' : 'استماع صوتي')}
+                        >
+                            {isPlaying ? <VolumeX className="w-5 h-5 text-red-500 animate-pulse" /> : <Volume2 className="w-5 h-5" />}
+                        </button>
+
+                        {/* Share Button */}
+                        <button 
+                            type="button"
+                            onClick={handleShare} 
+                            className="w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 border-0"
+                            style={{
+                                backgroundColor: tokens.isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
+                                color: tokens.textColor
+                            }}
+                            title={isEn ? "Share Image" : "مشاركة كصورة"}
+                        >
+                            <Share2 className="w-5 h-5" />
+                        </button>
+
+                        {/* Copy Button */}
+                        <button
+                            type="button"
+                            onClick={handleCopy}
+                            className="w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 border-0"
+                            style={{
+                                backgroundColor: copied ? '#10B981' : (tokens.isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'),
+                                color: copied ? '#FFFFFF' : tokens.textColor
+                            }}
+                            title={isEn ? 'Copy text' : 'نسخ النص'}
+                        >
+                            {copied ? <Check className="w-5 h-5 text-white" /> : <Copy className="w-5 h-5" />}
+                        </button>
+
+                        {/* Zoom Button */}
+                        <button
+                            type="button"
+                            onClick={handleToggleZoom}
+                            className="w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 border-0"
+                            style={{
+                                backgroundColor: tokens.isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
+                                color: tokens.textColor
+                            }}
+                            title={isEn ? 'Enlarge font size' : 'تكبير حجم الخط'}
+                        >
+                            <ZoomIn className="w-5 h-5" />
+                        </button>
+
+                        {/* Chevron Down / Hide Modal Button */}
+                        <button 
+                            type="button"
+                            onClick={onClose} 
+                            className="w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0 border-0"
+                            style={{
+                                backgroundColor: tokens.isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
+                                color: tokens.textColor
+                            }}
+                            title={isEn ? 'Hide list' : 'إخفاء القائمة'}
+                        >
+                            <ChevronDown className="w-5 h-5" />
+                        </button>
+                    </div>
+                </motion.div>
             </div>
-        </div>
+        </AnimatePresence>
     );
 };
 
