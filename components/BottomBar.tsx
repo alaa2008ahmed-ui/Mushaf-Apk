@@ -2,6 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { Lock, Unlock } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface BottomBarProps {
     onHomeClick: () => void;
@@ -13,8 +14,40 @@ interface BottomBarProps {
     rightButton?: React.ReactNode;
 }
 
-function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = true, homeLabel = "الرئيسية", leftButton, rightButton }: BottomBarProps) {
+function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = true, homeLabel, leftButton, rightButton }: BottomBarProps) {
     const { theme, themeKey, isPageLocked, togglePageLock, isQuranPage, currentPage } = useTheme();
+    const { t } = useLanguage();
+    const effectiveHomeLabel = homeLabel || t('bottombar.home', 'الرئيسية');
+    const navRef = useRef<HTMLElement | null>(null);
+
+    useEffect(() => {
+        const el = navRef.current;
+        if (!el || typeof document === 'undefined') return;
+        const root = document.documentElement;
+
+        const updateMetrics = () => {
+            const rect = el.getBoundingClientRect();
+            const h = Math.max(0, Math.ceil(rect.height));
+            root.style.setProperty('--app-bottom-bar-height', `${h}px`);
+            root.style.setProperty('--app-bottom-clearance', `max(var(--app-safe-bottom), ${h}px)`);
+        };
+
+        updateMetrics();
+
+        let ro: ResizeObserver | null = null;
+        if (typeof ResizeObserver !== 'undefined') {
+            ro = new ResizeObserver(() => updateMetrics());
+            ro.observe(el);
+        }
+        window.addEventListener('resize', updateMetrics);
+
+        return () => {
+            if (ro) ro.disconnect();
+            window.removeEventListener('resize', updateMetrics);
+            root.style.setProperty('--app-bottom-bar-height', '0px');
+            root.style.removeProperty('--app-bottom-clearance');
+        };
+    }, []);
 
     const isSingleButton = !showHome || !showThemes;
     const homeButtonClass = `bar-button btn-3d-effect ${isSingleButton ? 'w-full max-w-[160px] mx-auto py-2.5 px-4 rounded-xl shadow-lg' : 'max-w-[120px]'}`;
@@ -35,9 +68,8 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
     const homeBtnBorder = parseBorder(theme.btnBorder);
     const themesBtnBorder = parseBorder(theme.btnBorder);
 
-    const isMainOrMoreMenu = currentPage === 'home' || currentPage === 'more-menu';
-    const isDefaultMoreMenu = themeKey === 'default' && currentPage === 'more-menu';
-    const isDefaultNonQuran = themeKey === 'default' && !isQuranPage && !isMainOrMoreMenu;
+    const isMainPage = currentPage === 'home';
+    const isDefaultNonQuran = themeKey === 'default' && !isQuranPage && !isMainPage;
 
     const isBlackTheme = theme.bgColor === '#000000';
 
@@ -53,7 +85,8 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
             };
         }
 
-        if (isDefaultNonQuran || isDefaultMoreMenu) {
+        // In default theme: both Home button and Themes button are white with black text and 2px black border
+        if (themeKey === 'default') {
             return {
                 background: '#FFFFFF',
                 color: '#000000',
@@ -78,7 +111,7 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
     };
 
     return (
-        <nav className="app-bottom-bar" style={{ 
+        <nav ref={navRef} className="app-bottom-bar" style={{ 
             borderTopWidth: theme.barBorder ? navBorder.borderWidth : '2px',
             borderTopStyle: theme.barBorder ? navBorder.borderStyle : 'solid',
             borderTopColor: theme.barBorder ? navBorder.borderColor : theme.palette[0],
@@ -95,7 +128,7 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
                         style={getBtnStyle(0)}
                     >
                         <span className="text-xl">🏠</span>
-                        <span>{homeLabel}</span>
+                        <span>{effectiveHomeLabel}</span>
                     </button>
                 )}
                 
@@ -108,7 +141,7 @@ function BottomBar({ onHomeClick, onThemesClick, showHome = true, showThemes = t
                         data-id="theme-toggle-button"
                     >
                          <span className="text-xl">🎨</span>
-                        <span>الثيمات</span>
+                        <span>{t('bottombar.themes', 'الثيمات')}</span>
                     </button>
                 )}
                 

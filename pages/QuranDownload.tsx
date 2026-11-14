@@ -35,15 +35,12 @@ const QuranDownload: React.FC<{ onBack: () => void, onNavigate?: (pageId: string
     }, []);
 
     return (
-        <div className="min-h-screen flex flex-col font-cairo" style={{ backgroundColor: theme.bgColor, color: theme.textColor }}>
-            <header className="p-4 shadow-md theme-header-bg flex items-center gap-4">
-                <button onClick={onBack} className="text-2xl">
-                    <i className="fa-solid fa-arrow-right"></i>
-                </button>
-                <h1 className="text-xl font-bold">تحميل سور القرآن</h1>
+        <div className="h-[100dvh] flex flex-col overflow-hidden font-cairo" style={{ backgroundColor: theme.bgColor, color: theme.textColor }}>
+            <header className="p-4 shadow-md theme-header-bg flex items-center justify-center shrink-0">
+                <h1 className="text-xl font-bold font-kufi">التحميل</h1>
             </header>
 
-            <main className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
+            <main className="flex-1 min-h-0 overflow-y-auto px-4 pt-2 space-y-2 app-scroll-safe">
                 <div className="p-4 rounded-xl border mb-4" style={{ backgroundColor: `${theme.accent}15`, borderColor: `${theme.accent}30` }}>
                     <p className="text-sm text-center font-bold" style={{ color: theme.accent }}>
                         يمكنك نطق اسم السورة لتحميلها أو حذفها من جهازك
@@ -80,7 +77,6 @@ const QuranDownload: React.FC<{ onBack: () => void, onNavigate?: (pageId: string
                         </div>
                     );
                 })}
-                <div className="shrink-0 w-full h-32"></div>
             </main>
 
             <BottomBar onHomeClick={onBack} onThemesClick={() => {}} showThemes={false} />

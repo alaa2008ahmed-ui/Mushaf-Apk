@@ -1,4 +1,4 @@
-export type ReadingMode = 'mushaf' | 'tafseer' | 'meanings' | 'translation' | 'mushaf_paging';
+export type ReadingMode = 'mushaf' | 'tafseer' | 'meanings' | 'translation' | 'bilingual';
 
 export const JUZ_MAP = [{j:1,s:1,a:1},{j:2,s:2,a:142},{j:3,s:2,a:253},{j:4,s:3,a:93},{j:5,s:4,a:24},{j:6,s:4,a:148},{j:7,s:5,a:82},{j:8,s:6,a:111},{j:9,s:7,a:88},{j:10,s:8,a:41},{j:11,s:9,a:93},{j:12,s:11,a:6},{j:13,s:12,a:53},{j:14,s:15,a:1},{j:15,s:17,a:1},{j:16,s:18,a:75},{j:17,s:21,a:1},{j:18,s:23,a:1},{j:19,s:25,a:21},{j:20,s:27,a:56},{j:21,s:29,a:46},{j:22,s:33,a:31},{j:23,s:36,a:28},{j:24,s:39,a:32},{j:25,s:41,a:47},{j:26,s:46,a:1},{j:27,s:51,a:31},{j:28,s:58,a:1},{j:29,s:67,a:1},{j:30,s:78,a:1}];
 
@@ -13,146 +13,342 @@ export const THEMES = {
     maroon: { id: "maroon", name: "نبيتي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#831843", barBorder: "#831843", btnBg: "#ffffff", btnText: "#831843", accent: "#831843", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#831843", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#831843", sajdah: "#d97706", highlightText: "#831843", verseBracket: "#16a34a" },
     olive: { id: "olive", name: "زيتوني", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#65a30d", barBorder: "#65a30d", btnBg: "#ffffff", btnText: "#65a30d", accent: "#65a30d", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#65a30d", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#65a30d", sajdah: "#d97706", highlightText: "#65a30d", verseBracket: "#831843" },
     blue: { id: "blue", name: "نيلي فاتح", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#4f46e5", barBorder: "#4f46e5", btnBg: "#ffffff", btnText: "#4f46e5", accent: "#4f46e5", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#4f46e5", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#4f46e5", sajdah: "#d97706", highlightText: "#4f46e5", verseBracket: "#ea580c" },
-    brown: { id: "brown", name: "بني", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#92400e", barBorder: "#92400e", btnBg: "#ffffff", btnText: "#92400e", accent: "#92400e", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#92400e", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#92400e", sajdah: "#2563eb", highlightText: "#92400e", verseBracket: "#2563eb" },
     purple: { id: "purple", name: "بنفسجي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#9333ea", barBorder: "#9333ea", btnBg: "#ffffff", btnText: "#9333ea", accent: "#9333ea", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#9333ea", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#9333ea", sajdah: "#d97706", highlightText: "#9333ea", verseBracket: "#16a34a" },
     orange: { id: "orange", name: "برتقالي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#ea580c", barBorder: "#ea580c", btnBg: "#ffffff", btnText: "#ea580c", accent: "#ea580c", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#ea580c", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#ea580c", sajdah: "#2563eb", highlightText: "#ea580c", verseBracket: "#2563eb" },
-    sky: { id: "sky", name: "سماوي فاتح", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#0ea5e9", barBorder: "#0ea5e9", btnBg: "#ffffff", btnText: "#0ea5e9", accent: "#0ea5e9", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#0ea5e9", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#0ea5e9", sajdah: "#d97706", highlightText: "#0ea5e9", verseBracket: "#d97706" },
-    amber_light: { id: "amber_light", name: "كهرماني", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#f59e0b", barBorder: "#f59e0b", btnBg: "#ffffff", btnText: "#f59e0b", accent: "#f59e0b", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#f59e0b", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#f59e0b", sajdah: "#d97706", highlightText: "#f59e0b", verseBracket: "#3b82f6" },
-    mint: { id: "mint", name: "نعناعي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#4ade80", barBorder: "#4ade80", btnBg: "#ffffff", btnText: "#4ade80", accent: "#4ade80", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#4ade80", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#4ade80", sajdah: "#d97706", highlightText: "#4ade80", verseBracket: "#dc2626" },
-    pink: { id: "pink", name: "وردي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#db2777", barBorder: "#db2777", btnBg: "#ffffff", btnText: "#db2777", accent: "#db2777", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#db2777", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#db2777", sajdah: "#d97706", highlightText: "#db2777", verseBracket: "#16a34a" },
-    cyan: { id: "cyan", name: "سماوي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#0891b2", barBorder: "#0891b2", btnBg: "#ffffff", btnText: "#0891b2", accent: "#0891b2", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#0891b2", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#0891b2", sajdah: "#d97706", highlightText: "#0891b2", verseBracket: "#d97706" },
-    lime: { id: "lime", name: "ليموني", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#84cc16", barBorder: "#84cc16", btnBg: "#ffffff", btnText: "#84cc16", accent: "#84cc16", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#84cc16", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#84cc16", sajdah: "#d97706", highlightText: "#84cc16", verseBracket: "#831843" },
+    gold: { id: "gold", name: "ذهبي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#b45309", barBorder: "#d4af37", btnBg: "#ffffff", btnText: "#b45309", btnBorder: "#d4af37", accent: "#d4af37", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#b45309", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#d4af37", sajdah: "#d97706", highlightText: "#d4af37", verseBracket: "#d4af37", verseNumber: "#b91c1c" },
+    amber_light: { id: "amber_light", name: "كهرماني", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#f59e0b", barBorder: "#f59e0b", btnBg: "#ffffff", btnText: "#f59e0b", accent: "#f59e0b", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#f59e0b", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#f59e0b", sajdah: "#d97706", highlightText: "#f59e0b", verseBracket: "#3b82f6", verseNumber: "#f59e0b" },
+    mint: { id: "mint", name: "نعناعي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#4ade80", barBorder: "#4ade80", btnBg: "#ffffff", btnText: "#4ade80", accent: "#4ade80", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#4ade80", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#4ade80", sajdah: "#d97706", highlightText: "#4ade80", verseBracket: "#dc2626", verseNumber: "#16a34a" },
+    pink: { id: "pink", name: "وردي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#db2777", barBorder: "#db2777", btnBg: "#ffffff", btnText: "#db2777", accent: "#db2777", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#db2777", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#db2777", sajdah: "#d97706", highlightText: "#db2777", verseBracket: "#16a34a", verseNumber: "#db2777" },
+    cyan: { id: "cyan", name: "سماوي", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#0891b2", barBorder: "#0891b2", btnBg: "#ffffff", btnText: "#0891b2", accent: "#0891b2", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#0891b2", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#0891b2", sajdah: "#d97706", highlightText: "#0891b2", verseBracket: "#d97706", verseNumber: "#0891b2" },
+    lime: { id: "lime", name: "ليموني", bg: "#ffffff", text: "#000000", font: "var(--font-amiri)", barBg: "#ffffff", barText: "#84cc16", barBorder: "#84cc16", btnBg: "#ffffff", btnText: "#84cc16", accent: "#84cc16", accentText: "#ffffff", modalBg: "#ffffff", modalText: "#000000", headerBg: "#ffffff", headerText: "#84cc16", cardBg: "#ffffff", cardText: "#000000", cardBorder: "#84cc16", sajdah: "#d97706", highlightText: "#84cc16", verseBracket: "#831843", verseNumber: "#65a30d" },
     
     // --- المجموعة الثانية (الثيمات الداكنة) ---
-    deep_black: { id: "deep_black", name: "اسود غامق", bg: "#000000", text: "#ffffff", font: "var(--font-amiri)", barBg: "#000000", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#111111", btnText: "#ffffff", btnBorder: "#10b981", accent: "#10b981", accentText: "#ffffff", modalBg: "#000000", modalText: "#ffffff", headerBg: "#000000", headerText: "#10b981", cardBg: "#0a0a0a", cardText: "#ffffff", cardBorder: "#333333", sajdah: "#10b981", highlightText: "#10b981", verseBracket: "#10b981" },
-    i_emerald: { id: "i_emerald", name: "زمرد", bg: "#022c22", text: "#ffffff", font: "var(--font-amiri)", barBg: "#022c22", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#064e3b", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#10b981", accentText: "#ffffff", modalBg: "#022c22", modalText: "#ffffff", headerBg: "#022c22", headerText: "#10b981", cardBg: "#064e3b", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#10b981", verseBracket: "#f87171" },
-    i_ruby: { id: "i_ruby", name: "ياقوت", bg: "#450a0a", text: "#ffffff", font: "var(--font-amiri)", barBg: "#450a0a", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#7f1d1d", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#ef4444", accentText: "#ffffff", modalBg: "#450a0a", modalText: "#ffffff", headerBg: "#450a0a", headerText: "#ef4444", cardBg: "#7f1d1d", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#ef4444", verseBracket: "#60a5fa" },
-    i_lapis: { id: "i_lapis", name: "لازورد", bg: "#1e3a8a", text: "#ffffff", font: "var(--font-amiri)", barBg: "#1e3a8a", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#3b82f6", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#60a5fa", accentText: "#ffffff", modalBg: "#1e3a8a", modalText: "#ffffff", headerBg: "#1e3a8a", headerText: "#60a5fa", cardBg: "#3b82f6", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#60a5fa", verseBracket: "#fbbf24" },
-    i_gold: { id: "i_gold", name: "ذهبي", bg: "#422006", text: "#ffffff", font: "var(--font-amiri)", barBg: "#422006", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#78350f", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#fbbf24", accentText: "#ffffff", modalBg: "#422006", modalText: "#ffffff", headerBg: "#422006", headerText: "#fbbf24", cardBg: "#78350f", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#fbbf24", verseBracket: "#34d399" },
-    i_amber: { id: "i_amber", name: "عنبر", bg: "#78350f", text: "#ffffff", font: "var(--font-amiri)", barBg: "#78350f", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#92400e", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#f59e0b", accentText: "#ffffff", modalBg: "#78350f", modalText: "#ffffff", headerBg: "#78350f", headerText: "#f59e0b", cardBg: "#92400e", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#f59e0b", verseBracket: "#60a5fa" },
-    i_amethyst: { id: "i_amethyst", name: "أرجوان", bg: "#4c1d95", text: "#ffffff", font: "var(--font-amiri)", barBg: "#4c1d95", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#5b21b6", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#a78bfa", accentText: "#ffffff", modalBg: "#4c1d95", modalText: "#ffffff", headerBg: "#4c1d95", headerText: "#a78bfa", cardBg: "#5b21b6", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#a78bfa", verseBracket: "#34d399" },
-    i_sunset_royal: { id: "i_sunset_royal", name: "ملك الغروب", bg: "#280a1e", text: "#ffffff", font: "var(--font-amiri)", barBg: "#280a1e", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#3b102c", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#fbbf24", accentText: "#000000", modalBg: "#280a1e", modalText: "#ffffff", headerBg: "#280a1e", headerText: "#fbbf24", cardBg: "#3b102c", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#fbbf24", verseBracket: "#fbbf24" },
-    i_deep_ocean: { id: "i_deep_ocean", name: "ملك الأعماق", bg: "#041e3a", text: "#ffffff", font: "var(--font-amiri)", barBg: "#041e3a", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#062c54", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#22d3ee", accentText: "#000000", modalBg: "#041e3a", modalText: "#ffffff", headerBg: "#041e3a", headerText: "#22d3ee", cardBg: "#062c54", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#22d3ee", verseBracket: "#fbbf24" },
-    i_brocade: { id: "i_brocade", name: "إستبرق", bg: "#1e1b4b", text: "#ffffff", font: "var(--font-amiri)", barBg: "#1e1b4b", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#312e81", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#eab308", accentText: "#ffffff", modalBg: "#1e1b4b", modalText: "#ffffff", headerBg: "#1e1b4b", headerText: "#eab308", cardBg: "#312e81", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#eab308", verseBracket: "#60a5fa" },
-    i_musk: { id: "i_musk", name: "مسك", bg: "#1c1917", text: "#ffffff", font: "var(--font-amiri)", barBg: "#1c1917", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#292524", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#fbbf24", accentText: "#000000", modalBg: "#1c1917", modalText: "#ffffff", headerBg: "#1c1917", headerText: "#fbbf24", cardBg: "#292524", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#fbbf24", verseBracket: "#f87171" },
-    i_midnight: { id: "i_midnight", name: "ليل", bg: "#0f172a", text: "#ffffff", font: "var(--font-amiri)", barBg: "#0f172a", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#1e293b", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#38bdf8", accentText: "#ffffff", modalBg: "#0f172a", modalText: "#ffffff", headerBg: "#0f172a", headerText: "#38bdf8", cardBg: "#1e293b", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#38bdf8", verseBracket: "#fbbf24" },
-    i_obsidian: { id: "i_obsidian", name: "بركان", bg: "#09090b", text: "#ffffff", font: "var(--font-amiri)", barBg: "#09090b", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#18181b", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#71717a", accentText: "#ffffff", modalBg: "#09090b", modalText: "#ffffff", headerBg: "#09090b", headerText: "#71717a", cardBg: "#18181b", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#71717a", verseBracket: "#fbbf24" },
-    i_forest: { id: "i_forest", name: "غابة", bg: "#064e3b", text: "#ffffff", font: "var(--font-amiri)", barBg: "#064e3b", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#059669", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#10b981", accentText: "#ffffff", modalBg: "#064e3b", modalText: "#ffffff", headerBg: "#064e3b", headerText: "#10b981", cardBg: "#059669", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#10b981", verseBracket: "#fbbf24" },
-    i_turquoise: { id: "i_turquoise", name: "فيروزي داكن", bg: "#134e4a", text: "#ffffff", font: "var(--font-amiri)", barBg: "#134e4a", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#14b8a6", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#2dd4bf", accentText: "#ffffff", modalBg: "#134e4a", modalText: "#ffffff", headerBg: "#134e4a", headerText: "#2dd4bf", cardBg: "#14b8a6", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#2dd4bf", verseBracket: "#fbbf24" },
-    i_slate: { id: "i_slate", name: "حجري", bg: "#334155", text: "#ffffff", font: "var(--font-amiri)", barBg: "#334155", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#475569", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#94a3b8", accentText: "#ffffff", modalBg: "#334155", modalText: "#ffffff", headerBg: "#334155", headerText: "#94a3b8", cardBg: "#475569", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#94a3b8", verseBracket: "#fbbf24" }
+    deep_black: { id: "deep_black", name: "اسود غامق", bg: "#000000", text: "#ffffff", font: "var(--font-amiri)", barBg: "#000000", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#141414", btnText: "#ffffff", btnBorder: "#333333", accent: "#27272a", accentText: "#ffffff", modalBg: "#0A0A0A", modalText: "#ffffff", headerBg: "#000000", headerText: "#ffffff", cardBg: "#141414", cardText: "#ffffff", cardBorder: "#333333", sajdah: "#fbbf24", highlightText: "#f59e0b", verseBracket: "#fbbf24", verseNumber: "#38bdf8" },
+    i_emerald: { id: "i_emerald", name: "زمرد", bg: "#022c22", text: "#ffffff", font: "var(--font-amiri)", barBg: "#022c22", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#064e3b", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#10b981", accentText: "#ffffff", modalBg: "#022c22", modalText: "#ffffff", headerBg: "#022c22", headerText: "#10b981", cardBg: "#064e3b", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#10b981", verseBracket: "#f87171", verseNumber: "#10b981" },
+    i_ruby: { id: "i_ruby", name: "ياقوت", bg: "#450a0a", text: "#ffffff", font: "var(--font-amiri)", barBg: "#450a0a", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#7f1d1d", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#ef4444", accentText: "#ffffff", modalBg: "#450a0a", modalText: "#ffffff", headerBg: "#450a0a", headerText: "#ef4444", cardBg: "#7f1d1d", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#ef4444", verseBracket: "#60a5fa", verseNumber: "#ef4444" },
+    i_lapis: { id: "i_lapis", name: "لازورد", bg: "#1e3a8a", text: "#ffffff", font: "var(--font-amiri)", barBg: "#1e3a8a", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#3b82f6", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#60a5fa", accentText: "#ffffff", modalBg: "#1e3a8a", modalText: "#ffffff", headerBg: "#1e3a8a", headerText: "#60a5fa", cardBg: "#3b82f6", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#60a5fa", verseBracket: "#fbbf24", verseNumber: "#60a5fa" },
+    i_gold: { id: "i_gold", name: "ذهبي", bg: "#422006", text: "#ffffff", font: "var(--font-amiri)", barBg: "#422006", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#78350f", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#fbbf24", accentText: "#ffffff", modalBg: "#422006", modalText: "#ffffff", headerBg: "#422006", headerText: "#fbbf24", cardBg: "#78350f", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#fbbf24", verseBracket: "#34d399", verseNumber: "#fbbf24" },
+    i_amber: { id: "i_amber", name: "عنبر", bg: "#78350f", text: "#ffffff", font: "var(--font-amiri)", barBg: "#78350f", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#92400e", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#f59e0b", accentText: "#ffffff", modalBg: "#78350f", modalText: "#ffffff", headerBg: "#78350f", headerText: "#f59e0b", cardBg: "#92400e", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#f59e0b", verseBracket: "#60a5fa", verseNumber: "#f59e0b" },
+    i_amethyst: { id: "i_amethyst", name: "أرجوان", bg: "#4c1d95", text: "#ffffff", font: "var(--font-amiri)", barBg: "#4c1d95", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#5b21b6", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#a78bfa", accentText: "#ffffff", modalBg: "#4c1d95", modalText: "#ffffff", headerBg: "#4c1d95", headerText: "#a78bfa", cardBg: "#5b21b6", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#a78bfa", verseBracket: "#34d399", verseNumber: "#a78bfa" },
+    i_sunset_royal: { id: "i_sunset_royal", name: "ملك الغروب", bg: "#280a1e", text: "#ffffff", font: "var(--font-amiri)", barBg: "#280a1e", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#3b102c", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#fbbf24", accentText: "#000000", modalBg: "#280a1e", modalText: "#ffffff", headerBg: "#280a1e", headerText: "#fbbf24", cardBg: "#3b102c", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#fbbf24", verseBracket: "#fbbf24", verseNumber: "#ec4899" },
+    i_deep_ocean: { id: "i_deep_ocean", name: "ملك الأعماق", bg: "#041e3a", text: "#ffffff", font: "var(--font-amiri)", barBg: "#041e3a", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#062c54", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#22d3ee", accentText: "#000000", modalBg: "#041e3a", modalText: "#ffffff", headerBg: "#041e3a", headerText: "#22d3ee", cardBg: "#062c54", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#22d3ee", verseBracket: "#fbbf24", verseNumber: "#22d3ee" },
+    i_brocade: { id: "i_brocade", name: "إستبرق", bg: "#1e1b4b", text: "#ffffff", font: "var(--font-amiri)", barBg: "#1e1b4b", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#312e81", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#eab308", accentText: "#ffffff", modalBg: "#1e1b4b", modalText: "#ffffff", headerBg: "#1e1b4b", headerText: "#eab308", cardBg: "#312e81", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#eab308", verseBracket: "#60a5fa", verseNumber: "#eab308" },
+    i_midnight: { id: "i_midnight", name: "ليل", bg: "#0f172a", text: "#ffffff", font: "var(--font-amiri)", barBg: "#0f172a", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#1e293b", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#38bdf8", accentText: "#ffffff", modalBg: "#0f172a", modalText: "#ffffff", headerBg: "#0f172a", headerText: "#38bdf8", cardBg: "#1e293b", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#38bdf8", verseBracket: "#fbbf24", verseNumber: "#38bdf8" },
+    i_royal_gold: { id: "i_royal_gold", name: "ذهبي ملكي", bg: "#18150c", text: "#ffffff", font: "var(--font-amiri)", barBg: "#18150c", barText: "#fbbf24", barBorder: "#d4af37", btnBg: "#292213", btnText: "#fbbf24", btnBorder: "#d4af37", accent: "#d4af37", accentText: "#18150c", modalBg: "#18150c", modalText: "#ffffff", headerBg: "#18150c", headerText: "#fbbf24", cardBg: "#292213", cardText: "#ffffff", cardBorder: "#d4af37", sajdah: "#f59e0b", highlightText: "#fbbf24", verseBracket: "#fbbf24", verseNumber: "#38bdf8" },
+    i_forest: { id: "i_forest", name: "غابة", bg: "#064e3b", text: "#ffffff", font: "var(--font-amiri)", barBg: "#064e3b", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#059669", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#10b981", accentText: "#ffffff", modalBg: "#064e3b", modalText: "#ffffff", headerBg: "#064e3b", headerText: "#10b981", cardBg: "#059669", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#10b981", verseBracket: "#fbbf24", verseNumber: "#10b981" },
+    i_turquoise: { id: "i_turquoise", name: "فيروزي داكن", bg: "#134e4a", text: "#ffffff", font: "var(--font-amiri)", barBg: "#134e4a", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#14b8a6", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#2dd4bf", accentText: "#ffffff", modalBg: "#134e4a", modalText: "#ffffff", headerBg: "#134e4a", headerText: "#2dd4bf", cardBg: "#14b8a6", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#2dd4bf", verseBracket: "#fbbf24", verseNumber: "#2dd4bf" },
+    i_slate: { id: "i_slate", name: "حجري", bg: "#334155", text: "#ffffff", font: "var(--font-amiri)", barBg: "#334155", barText: "#ffffff", barBorder: "#ffffff", btnBg: "#475569", btnText: "#ffffff", btnBorder: "#ffffff", accent: "#94a3b8", accentText: "#ffffff", modalBg: "#334155", modalText: "#ffffff", headerBg: "#334155", headerText: "#94a3b8", cardBg: "#475569", cardText: "#ffffff", cardBorder: "#ffffff", sajdah: "#d97706", highlightText: "#94a3b8", verseBracket: "#fbbf24", verseNumber: "#94a3b8" }
 };
-export const READERS = [
-    { id: 'Ibrahim_Akhdar_32kbps', name: 'إبراهيم الأخضر' },
-    { id: 'Abu_Bakr_Ash-Shaatree_128kbps', name: 'أبو بكر الشاطري' },
-    { id: 'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net', name: 'أحمد بن علي العجمي' },
-    { id: 'Ahmed_Neana_128kbps', name: 'أحمد نعينع' },
-    { id: 'Akram_AlAlaqimy_128kbps', name: 'أكرم العلاقمي' },
-    { id: 'Ayman_Sowaid_64kbps', name: 'أيمن سويد' },
-    { id: 'Khaalid_Abdullaah_al-Qahtaanee_192kbps', name: 'خالد القحطاني' },
-    { id: 'khalefa_al_tunaiji_64kbps', name: 'خليفة الطنيجي' },
-    { id: 'Ghamadi_40kbps', name: 'سعد الغامدي' },
-    { id: 'Saood%20bin%20Ibraaheem%20Ash-Shuraym_128kbps', name: 'سعود الشريم' },
-    { id: 'Sahl_Yassin_128kbps', name: 'سهل ياسين' },
-    { id: 'Parhizgar_48kbps', name: 'شهريار بارهيزجار' },
-    { id: 'Salah_Al_Budair_128kbps', name: 'صلاح البدير' },
-    { id: 'Salaah_AbdulRahman_Bukhatir_128kbps', name: 'صلاح بو خاطر' },
-    { id: 'Abdul_Basit_Mujawwad_128kbps', name: 'عبدالباسط عبدالصمد مجود' },
-    { id: 'Abdul_Basit_Murattal_192kbps', name: 'عبدالباسط عبدالصمد مرتل' },
-    { id: 'Abdurrahmaan_As-Sudais_192kbps', name: 'عبدالرحمن السديس' },
-    { id: 'Abdullah_Basfar_192kbps', name: 'عبدالله بصفر' },
-    { id: 'Abdullah_Matroud_128kbps', name: 'عبدالله مطرود' },
-    { id: 'aziz_alili_128kbps', name: 'عزيز عليلي' },
-    { id: 'Hudhaify_128kbps', name: 'علي الحذيفي' },
-    { id: 'Ali_Jaber_64kbps', name: 'علي جابر' },
-    { id: 'Ali_Hajjaj_AlSuesy_128kbps', name: 'علي حجاج السويسي' },
-    { id: 'Fares_Abbad_64kbps', name: 'فارس عباد' },
-    { id: 'Karim_Mansoori_40kbps', name: 'كريم منصوري' },
-    { id: 'MaherAlMuaiqly128kbps', name: 'ماهر المعيقلي' },
-    { id: 'Muhsin_Al_Qasim_192kbps', name: 'محسن القاسم' },
-    { id: 'Muhammad_Ayyoub_128kbps', name: 'محمد أيوب' },
-    { id: 'Muhammad_Jibreel_128kbps', name: 'محمد جبريل' },
-    { id: 'Minshawy_Mujawwad_192kbps', name: 'محمد صديق المنشاوي مجود' },
-    { id: 'Minshawy_Murattal_128kbps', name: 'محمد صديق المنشاوي مرتل' },
-    { id: 'Minshawy_Teacher_128kbps', name: 'محمد صديق المنشاوي معلم' },
-    { id: 'Muhammad_AbdulKareem_128kbps', name: 'محمد عبدالكريم' },
-    { id: 'Mohammad_al_Tablaway_128kbps', name: 'محمود الطبلاوي' },
-    { id: 'Husary_128kbps', name: 'محمود خليل الحصري' },
-    { id: 'Husary_128kbps_Mujawwad', name: 'محمود خليل الحصري مجود' },
-    { id: 'Husary_Muallim_128kbps', name: 'محمود خليل الحصري معلم' },
-    { id: 'mahmoud_ali_al_banna_32kbps', name: 'محمود علي البنا' },
-    { id: 'Alafasy_128kbps', name: 'مشاري العفاسي' },
-    { id: 'Mustafa_Ismail_48kbps', name: 'مصطفى إسماعيل' },
-    { id: 'Nasser_Alqatami_128kbps', name: 'ناصر القطامي' },
-    { id: 'Nabil_Rifa3i_48kbps', name: 'نبيل الرفاعي' },
-    { id: 'Hani_Rifai_192kbps', name: 'هاني الرفاعي' },
-    { id: 'Yasser_Ad-Dussary_128kbps', name: 'ياسر الدوسري' },
-    { id: 'Yaser_Salamah_128kbps', name: 'ياسر سلامة' }
-];
-export const MEMORIZATION_READERS = [
-    { id: 'Ibrahim_Akhdar_32kbps', name: 'إبراهيم الأخضر' },
-    { id: 'Abu_Bakr_Ash-Shaatree_128kbps', name: 'أبو بكر الشاطري' },
-    { id: 'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net', name: 'أحمد بن علي العجمي' },
-    { id: 'Ahmed_Neana_128kbps', name: 'أحمد نعينع' },
-    { id: 'Akram_AlAlaqimy_128kbps', name: 'أكرم العلاقمي' },
-    { id: 'Ayman_Sowaid_64kbps', name: 'أيمن سويد' },
-    { id: 'Khaalid_Abdullaah_al-Qahtaanee_192kbps', name: 'خالد القحطاني' },
-    { id: 'khalefa_al_tunaiji_64kbps', name: 'خليفة الطنيجي' },
-    { id: 'Ghamadi_40kbps', name: 'سعد الغامدي' },
-    { id: 'Saood%20bin%20Ibraaheem%20Ash-Shuraym_128kbps', name: 'سعود الشريم' },
-    { id: 'Sahl_Yassin_128kbps', name: 'سهل ياسين' },
-    { id: 'Parhizgar_48kbps', name: 'شهريار بارهيزجار' },
-    { id: 'Salah_Al_Budair_128kbps', name: 'صلاح البدير' },
-    { id: 'Salaah_AbdulRahman_Bukhatir_128kbps', name: 'صلاح بو خاطر' },
-    { id: 'Abdul_Basit_Mujawwad_128kbps', name: 'عبدالباسط عبدالصمد مجود' },
-    { id: 'Abdul_Basit_Murattal_192kbps', name: 'عبدالباسط عبدالصمد مرتل' },
-    { id: 'Abdurrahmaan_As-Sudais_192kbps', name: 'عبدالرحمن السديس' },
-    { id: 'Abdullah_Basfar_192kbps', name: 'عبدالله بصفر' },
-    { id: 'Abdullah_Matroud_128kbps', name: 'عبدالله مطرود' },
-    { id: 'aziz_alili_128kbps', name: 'عزيز عليلي' },
-    { id: 'Hudhaify_128kbps', name: 'علي الحذيفي' },
-    { id: 'Ali_Jaber_64kbps', name: 'علي جابر' },
-    { id: 'Ali_Hajjaj_AlSuesy_128kbps', name: 'علي حجاج السويسي' },
-    { id: 'Fares_Abbad_64kbps', name: 'فارس عباد' },
-    { id: 'Karim_Mansoori_40kbps', name: 'كريم منصوري' },
-    { id: 'MaherAlMuaiqly128kbps', name: 'ماهر المعيقلي' },
-    { id: 'Muhsin_Al_Qasim_192kbps', name: 'محسن القاسم' },
-    { id: 'Muhammad_Ayyoub_128kbps', name: 'محمد أيوب' },
-    { id: 'Muhammad_Jibreel_128kbps', name: 'محمد جبريل' },
-    { id: 'Minshawy_Mujawwad_192kbps', name: 'محمد صديق المنشاوي مجود' },
-    { id: 'Minshawy_Murattal_128kbps', name: 'محمد صديق المنشاوي مرتل' },
-    { id: 'Minshawy_Teacher_128kbps', name: 'محمد صديق المنشاوي معلم' },
-    { id: 'Muhammad_AbdulKareem_128kbps', name: 'محمد عبدالكريم' },
-    { id: 'Mohammad_al_Tablaway_128kbps', name: 'محمود الطبلاوي' },
-    { id: 'Husary_128kbps', name: 'محمود خليل الحصري' },
-    { id: 'Husary_128kbps_Mujawwad', name: 'محمود خليل الحصري مجود' },
-    { id: 'Husary_Muallim_128kbps', name: 'محمود خليل الحصري معلم' },
-    { id: 'mahmoud_ali_al_banna_32kbps', name: 'محمود علي البنا' },
-    { id: 'Alafasy_128kbps', name: 'مشاري العفاسي' },
-    { id: 'Mustafa_Ismail_48kbps', name: 'مصطفى إسماعيل' },
-    { id: 'Nasser_Alqatami_128kbps', name: 'ناصر القطامي' },
-    { id: 'Nabil_Rifa3i_48kbps', name: 'نبيل الرفاعي' },
-    { id: 'Hani_Rifai_192kbps', name: 'هاني الرفاعي' },
-    { id: 'Yasser_Ad-Dussary_128kbps', name: 'ياسر الدوسري' },
-    { id: 'Yaser_Salamah_128kbps', name: 'ياسر سلامة' }
-];
-export const TAFSEERS = [{ id: 'ar.jalalayn', name: 'تفسير الجلالين' }, { id: 'ar.muyassar', name: 'التفسير الميسر' }, { id: 'ar.baghawi', name: 'تفسير البغوي' }, { id: 'ar.qurtubi', name: 'تفسير القرطبي' }, { id: 'ar.waseet', name: 'التفسير الوسيط' }];
 
-export const FONTS = [
-    { id: "var(--font-amiri)", name: "نسخ" },
-    { id: "var(--font-noto)", name: "نسخ حديث" },
-    { id: "var(--font-lateef)", name: "تراثي" },
-    { id: "var(--font-thuluth)", name: "ثلوث" },
-    { id: "var(--font-aref)", name: "رقعة" },
-    { id: "var(--font-harmattan)", name: "ورش" },
-    { id: "var(--font-amiri-quran)", name: "حفص" },
-    { id: "'Me Quran'", name: "خط المصحف" },
-    { id: "var(--font-katibeh)", name: "قطيبة" },
-    { id: "var(--font-qalam)", name: "قلم" },
-    { id: "var(--font-kufi)", name: "كوفي" },
-    { id: "'KFGQPC Uthman Taha Naskh'", name: "مجمع الملك فهد" },
-    { id: "var(--font-scheherazade)", name: "مجود" },
-    { id: "var(--font-mirza)", name: "ميرزا" }
+export const LIGHT_THEME_IDS = [
+    'black', 'night_sky', 'green', 'red', 'maroon', 'olive', 
+    'blue', 'purple', 'orange', 'gold', 'amber_light', 'mint', 
+    'pink', 'cyan', 'lime'
+];
+
+export const DARK_THEME_IDS = [
+    'deep_black', 'i_emerald', 'i_ruby', 'i_lapis', 'i_gold', 
+    'i_amber', 'i_amethyst', 'i_sunset_royal', 'i_deep_ocean', 
+    'i_brocade', 'i_midnight', 'i_royal_gold', 'i_forest', 
+    'i_turquoise', 'i_slate'
+];
+
+export const isDarkQuranTheme = (theme?: any): boolean => {
+    if (!theme) return false;
+    const themeId = typeof theme === 'string' ? theme : theme.id;
+    if (themeId && (DARK_THEME_IDS.includes(themeId) || themeId === 'night' || themeId === 'deep_black')) return true;
+    const bg = typeof theme?.bg === 'string' ? theme.bg.toLowerCase() : '';
+    const text = typeof theme?.text === 'string' ? theme.text.toLowerCase() : '';
+    if (text === '#ffffff' && bg && bg !== '#ffffff') return true;
+    return false;
+};
+
+export const THEME_NAMES_EN: Record<string, string> = {
+    black: "Default",
+    night_sky: "Blue",
+    green: "Green",
+    red: "Red",
+    maroon: "Maroon",
+    olive: "Olive",
+    blue: "Light Indigo",
+    purple: "Purple",
+    orange: "Orange",
+    gold: "Gold",
+    sky: "Light Sky",
+    amber_light: "Amber",
+    mint: "Mint",
+    pink: "Pink",
+    cyan: "Cyan",
+    lime: "Lime",
+    deep_black: "Deep Black",
+    i_emerald: "Emerald",
+    i_ruby: "Ruby",
+    i_lapis: "Lapis Lazuli",
+    i_gold: "Gold",
+    i_amber: "Amber",
+    i_amethyst: "Amethyst",
+    i_sunset_royal: "Royal Sunset",
+    i_deep_ocean: "Deep Ocean",
+    i_brocade: "Brocade",
+    i_midnight: "Midnight",
+    i_obsidian: "Obsidian",
+    i_royal_gold: "Royal Gold",
+    i_forest: "Forest",
+    i_turquoise: "Dark Turquoise",
+    i_slate: "Slate"
+};
+
+export const FONT_NAMES_EN: Record<string, string> = {
+    "نسخ": "Naskh",
+    "نسخ حديث": "Modern Naskh",
+    "تراثي": "Traditional",
+    "ثلوث": "Thuluth",
+    "رقعة": "Ruq'ah",
+    "ورش": "Warsh",
+    "حفص": "Hafs",
+    "خط المصحف": "Mushaf Font",
+    "قطيبة": "Katibeh",
+    "قلم": "Qalam",
+    "كوفي": "Kufi",
+    "مجمع الملك فهد": "King Fahd Complex",
+    "مجود": "Mujawwad",
+    "ميرزا": "Mirza"
+};
+
+export interface ReaderItem {
+    id: string;
+    name: string;
+    isEnglish?: boolean;
+    language?: 'en' | 'ar';
+    subTitle?: string;
+    subTitleEn?: string;
+}
+
+export const BILINGUAL_READER_ID = 'MultiLanguage/Basfar_Walk_192kbps';
+export const TRANSLATION_READER_ID = 'English/Sahih_Intnl_Ibrahim_Walk_192kbps';
+export const DEFAULT_ARABIC_READER_ID = 'Abu_Bakr_Ash-Shaatree_128kbps';
+
+export const BILINGUAL_READER: ReaderItem = {
+    id: BILINGUAL_READER_ID,
+    name: 'عبدالله بصفر وابراهيم والك En',
+    isEnglish: true,
+    language: 'en',
+    subTitle: 'تلاوة عربية متبوعة بالترجمة الإنجليزية',
+    subTitleEn: 'Arabic Recitation + English Translation'
+};
+
+export const TRANSLATION_READER: ReaderItem = {
+    id: TRANSLATION_READER_ID,
+    name: 'ابراهيم والك En',
+    isEnglish: true,
+    language: 'en',
+    subTitle: 'ترجمة صوتية كاملة بالإنجليزية',
+    subTitleEn: 'Complete English Audio Translation'
+};
+
+export const isEnglishReader = (r: ReaderItem | string): boolean => {
+    const id = typeof r === 'string' ? r : r.id;
+    return (
+        id === BILINGUAL_READER_ID || 
+        id === TRANSLATION_READER_ID || 
+        id.startsWith('English/') || 
+        id.startsWith('MultiLanguage/') || 
+        id.toLowerCase().includes('walk')
+    );
+};
+
+export const ARABIC_READERS: ReaderItem[] = [
+    { id: 'Ibrahim_Akhdar_32kbps', name: 'إبراهيم الأخضر' },
+    { id: 'Abu_Bakr_Ash-Shaatree_128kbps', name: 'أبو بكر الشاطري' },
+    { id: 'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net', name: 'أحمد بن علي العجمي' },
+    { id: 'Ahmed_Neana_128kbps', name: 'أحمد نعينع' },
+    { id: 'Akram_AlAlaqimy_128kbps', name: 'أكرم العلاقمي' },
+    { id: 'Ayman_Sowaid_64kbps', name: 'أيمن سويد' },
+    { id: 'Khaalid_Abdullaah_al-Qahtaanee_192kbps', name: 'خالد القحطاني' },
+    { id: 'khalefa_al_tunaiji_64kbps', name: 'خليفة الطنيجي' },
+    { id: 'Ghamadi_40kbps', name: 'سعد الغامدي' },
+    { id: 'Saood%20bin%20Ibraaheem%20Ash-Shuraym_128kbps', name: 'سعود الشريم' },
+    { id: 'Sahl_Yassin_128kbps', name: 'سهل ياسين' },
+    { id: 'Parhizgar_48kbps', name: 'شهريار بارهيزجار' },
+    { id: 'Salah_Al_Budair_128kbps', name: 'صلاح البدير' },
+    { id: 'Salaah_AbdulRahman_Bukhatir_128kbps', name: 'صلاح بو خاطر' },
+    { id: 'Abdul_Basit_Mujawwad_128kbps', name: 'عبدالباسط عبدالصمد مجود' },
+    { id: 'Abdul_Basit_Murattal_192kbps', name: 'عبدالباسط عبدالصمد مرتل' },
+    { id: 'Abdurrahmaan_As-Sudais_192kbps', name: 'عبدالرحمن السديس' },
+    { id: 'Abdullah_Basfar_192kbps', name: 'عبدالله بصفر' },
+    { id: 'Abdullah_Matroud_128kbps', name: 'عبدالله مطرود' },
+    { id: 'aziz_alili_128kbps', name: 'عزيز عليلي' },
+    { id: 'Hudhaify_128kbps', name: 'علي الحذيفي' },
+    { id: 'Ali_Jaber_64kbps', name: 'علي جابر' },
+    { id: 'Ali_Hajjaj_AlSuesy_128kbps', name: 'علي حجاج السويسي' },
+    { id: 'Fares_Abbad_64kbps', name: 'فارس عباد' },
+    { id: 'Karim_Mansoori_40kbps', name: 'كريم منصوري' },
+    { id: 'MaherAlMuaiqly128kbps', name: 'ماهر المعيقلي' },
+    { id: 'Muhsin_Al_Qasim_192kbps', name: 'محسن القاسم' },
+    { id: 'Muhammad_Ayyoub_128kbps', name: 'محمد أيوب' },
+    { id: 'Muhammad_Jibreel_128kbps', name: 'محمد جبريل' },
+    { id: 'Minshawy_Mujawwad_192kbps', name: 'محمد صديق المنشاوي مجود' },
+    { id: 'Minshawy_Murattal_128kbps', name: 'محمد صديق المنشاوي مرتل' },
+    { id: 'Minshawy_Teacher_128kbps', name: 'محمد صديق المنشاوي معلم' },
+    { id: 'Muhammad_AbdulKareem_128kbps', name: 'محمد عبدالكريم' },
+    { id: 'Mohammad_al_Tablaway_128kbps', name: 'محمود الطبلاوي' },
+    { id: 'Husary_128kbps', name: 'محمود خليل الحصري' },
+    { id: 'Husary_128kbps_Mujawwad', name: 'محمود خليل الحصري مجود' },
+    { id: 'Husary_Muallim_128kbps', name: 'محمود خليل الحصري معلم' },
+    { id: 'mahmoud_ali_al_banna_32kbps', name: 'محمود علي البنا' },
+    { id: 'Alafasy_128kbps', name: 'مشاري العفاسي' },
+    { id: 'Mustafa_Ismail_48kbps', name: 'مصطفى إسماعيل' },
+    { id: 'Nasser_Alqatami_128kbps', name: 'ناصر القطامي' },
+    { id: 'Nabil_Rifa3i_48kbps', name: 'نبيل الرفاعي' },
+    { id: 'Hani_Rifai_192kbps', name: 'هاني الرفاعي' },
+    { id: 'Yasser_Ad-Dussary_128kbps', name: 'ياسر الدوسري' },
+    { id: 'Yaser_Salamah_128kbps', name: 'ياسر سلامة' }
+];
+
+export const READERS: ReaderItem[] = [
+    ...ARABIC_READERS,
+    BILINGUAL_READER,
+    TRANSLATION_READER
+];
+
+export const MEMORIZATION_READERS: ReaderItem[] = ARABIC_READERS;
+
+export const getReadersForMode = (
+    mode: ReadingMode = 'mushaf', 
+    baseReaders: ReaderItem[] = READERS
+): ReaderItem[] => {
+    if (mode === 'bilingual') {
+        return [BILINGUAL_READER];
+    }
+    if (mode === 'translation') {
+        return [TRANSLATION_READER];
+    }
+    // If a custom list of readers is passed (e.g. 250 reciters from ListenQuran), use it
+    if (baseReaders && baseReaders !== READERS) {
+        return baseReaders;
+    }
+    // For 'mushaf', 'tafseer', 'meanings': ONLY Arabic reciters!
+    return ARABIC_READERS;
+};
+
+export const getDefaultReaderForMode = (mode: ReadingMode = 'mushaf'): string => {
+    if (mode === 'bilingual') return BILINGUAL_READER_ID;
+    if (mode === 'translation') return TRANSLATION_READER_ID;
+    return DEFAULT_ARABIC_READER_ID;
+};
+
+export const getValidReaderForMode = (
+    mode: ReadingMode = 'mushaf', 
+    currentReaderId?: string
+): string => {
+    if (mode === 'bilingual') return BILINGUAL_READER_ID;
+    if (mode === 'translation') return TRANSLATION_READER_ID;
+    // For mushaf, tafseer, meanings:
+    if (!currentReaderId || isEnglishReader(currentReaderId)) {
+        return DEFAULT_ARABIC_READER_ID;
+    }
+    const exists = ARABIC_READERS.some(r => r.id === currentReaderId);
+    return exists ? currentReaderId : DEFAULT_ARABIC_READER_ID;
+};
+export const TAFSEERS = [
+    { id: 'ar.jalalayn', name: 'تفسير الجلالين', englishName: 'Tafseer Al-Jalalayn' },
+    { id: 'ar.muyassar', name: 'التفسير الميسر', englishName: 'Al-Tafseer Al-Muyassar' },
+    { id: 'ar.baghawi', name: 'تفسير البغوي', englishName: 'Tafseer Al-Baghawi' },
+    { id: 'ar.qurtubi', name: 'تفسير القرطبي', englishName: 'Tafseer Al-Qurtubi' },
+    { id: 'ar.waseet', name: 'التفسير الوسيط', englishName: 'Al-Tafseer Al-Waseet' }
+];
+
+export const TAFSEER_NAMES_EN: Record<string, string> = {
+    'ar.jalalayn': 'Tafseer Al-Jalalayn',
+    'ar.muyassar': 'Al-Tafseer Al-Muyassar',
+    'ar.baghawi': 'Tafseer Al-Baghawi',
+    'ar.qurtubi': 'Tafseer Al-Qurtubi',
+    'ar.waseet': 'Al-Tafseer Al-Waseet'
+};
+
+export const getTafseerDisplayName = (tafseerId: string, lang: 'ar' | 'en' = 'ar'): string => {
+    if (lang === 'en') {
+        return TAFSEER_NAMES_EN[tafseerId] || TAFSEERS.find(t => t.id === tafseerId)?.englishName || 'Tafseer';
+    }
+    return TAFSEERS.find(t => t.id === tafseerId)?.name || 'التفسير';
+};
+
+export interface FontItem {
+    id: string;
+    name: string;
+    nameEn?: string;
+    category?: 'serif' | 'sans-serif' | 'display';
+    previewEn?: string;
+}
+
+export const FONTS: FontItem[] = [
+    { id: "var(--font-amiri)", name: "نسخ", nameEn: "Naskh" },
+    { id: "var(--font-noto)", name: "نسخ حديث", nameEn: "Modern Naskh" },
+    { id: "var(--font-lateef)", name: "تراثي", nameEn: "Traditional" },
+    { id: "var(--font-thuluth)", name: "ثلوث", nameEn: "Thuluth" },
+    { id: "var(--font-aref)", name: "رقعة", nameEn: "Ruq'ah" },
+    { id: "var(--font-harmattan)", name: "ورش", nameEn: "Warsh" },
+    { id: "var(--font-amiri-quran)", name: "حفص", nameEn: "Hafs" },
+    { id: "'Me Quran'", name: "خط المصحف", nameEn: "Mushaf Font" },
+    { id: "var(--font-katibeh)", name: "قطيبة", nameEn: "Katibeh" },
+    { id: "var(--font-qalam)", name: "قلم", nameEn: "Qalam" },
+    { id: "var(--font-kufi)", name: "كوفي", nameEn: "Kufi" },
+    { id: "'KFGQPC Uthman Taha Naskh'", name: "مجمع الملك فهد", nameEn: "King Fahd Complex" },
+    { id: "var(--font-scheherazade)", name: "مجود", nameEn: "Mujawwad" },
+    { id: "var(--font-mirza)", name: "ميرزا", nameEn: "Mirza" }
 ].sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+
+export const ENGLISH_FONTS: FontItem[] = [
+    { id: "'EB Garamond', Garamond, serif", name: "إي بي جاراموند", nameEn: "EB Garamond (Sacred)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Cinzel', Georgia, serif", name: "سينزل الملكي", nameEn: "Cinzel (Royal)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Merriweather', Georgia, serif", name: "ميريويذر", nameEn: "Merriweather (Book)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Playfair Display', serif", name: "بليفير ديسبلاي", nameEn: "Playfair (Display)", category: "display", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Cormorant Garamond', serif", name: "كورمورانت", nameEn: "Cormorant (Literary)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Lora', Georgia, serif", name: "لورا", nameEn: "Lora (Calligraphic)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Spectral', Georgia, serif", name: "سبيكترال", nameEn: "Spectral (Editorial)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Alegreya', serif", name: "اليجريا", nameEn: "Alegreya (Classic)", category: "serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Philosopher', sans-serif", name: "فيلوسوفر", nameEn: "Philosopher (Grace)", category: "sans-serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Montserrat', sans-serif", name: "مونتسيرات", nameEn: "Montserrat (Modern)", category: "sans-serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Inter', sans-serif", name: "إنتر الحديث", nameEn: "Inter (Clean Sans)", category: "sans-serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Poppins', sans-serif", name: "بوبنز", nameEn: "Poppins (Geometric)", category: "sans-serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Outfit', sans-serif", name: "أوتفيت", nameEn: "Outfit (Contemporary)", category: "sans-serif", previewEn: "In the name of Allah, the Entirely Merciful" },
+    { id: "'Cinzel Decorative', serif", name: "سينزل المزين", nameEn: "Cinzel Decorative (Artistic)", category: "display", previewEn: "In the name of Allah, the Entirely Merciful" }
+];
+
+export const getFontsForMode = (mode: ReadingMode | string = 'mushaf'): FontItem[] => {
+    if (mode === 'translation') {
+        return ENGLISH_FONTS;
+    }
+    return FONTS;
+};
+
+export const getDefaultFontForMode = (mode: ReadingMode | string = 'mushaf'): string => {
+    if (mode === 'translation') {
+        return "'EB Garamond', Garamond, serif";
+    }
+    return "var(--font-amiri)";
+};
+
+export const BILINGUAL_ENGLISH_FONT_MAP: Record<string, string> = {
+    "var(--font-amiri)": "'EB Garamond', Garamond, serif",
+    "var(--font-noto)": "'Inter', -apple-system, sans-serif",
+    "var(--font-lateef)": "'Alegreya', serif",
+    "var(--font-thuluth)": "'Cinzel', Georgia, serif",
+    "var(--font-aref)": "'Cormorant Garamond', serif",
+    "var(--font-harmattan)": "'Spectral', serif",
+    "var(--font-amiri-quran)": "'EB Garamond', Garamond, serif",
+    "'Me Quran'": "'Playfair Display', serif",
+    "var(--font-katibeh)": "'Philosopher', sans-serif",
+    "var(--font-qalam)": "'Merriweather', serif",
+    "var(--font-kufi)": "'Montserrat', sans-serif",
+    "'KFGQPC Uthman Taha Naskh'": "'Cinzel', Georgia, serif",
+    "var(--font-scheherazade)": "'Lora', Georgia, serif",
+    "var(--font-mirza)": "'Poppins', sans-serif"
+};
+
+export const getBilingualEnglishFont = (arabicFontId: string): string => {
+    return BILINGUAL_ENGLISH_FONT_MAP[arabicFontId] || "'EB Garamond', Garamond, serif";
+};
 
 export const SURAH_INFO: Record<number, { ayahs: number, type: string }> = {
     1: { ayahs: 7, type: "مكية" },
@@ -286,6 +482,21 @@ export const SURAH_NAMES_AR = [
     "المسد", "الإخلاص", "الفلق", "الناس"
 ];
 
+export const SURAH_NAMES_EN = [
+    "Al-Fatiha", "Al-Baqarah", "Aal-E-Imran", "An-Nisa", "Al-Ma'idah", "Al-An'am", "Al-A'raf", "Al-Anfal", "At-Tawbah", "Yunus",
+    "Hud", "Yusuf", "Ar-Ra'd", "Ibrahim", "Al-Hijr", "An-Nahl", "Al-Isra", "Al-Kahf", "Maryam", "Ta-Ha",
+    "Al-Anbiya", "Al-Hajj", "Al-Mu'minun", "An-Nur", "Al-Furqan", "Ash-Shu'ara", "An-Naml", "Al-Qasas", "Al-Ankabut", "Ar-Rum",
+    "Luqman", "As-Sajdah", "Al-Ahzab", "Saba", "Fatir", "Ya-Sin", "As-Saffat", "Sad", "Az-Zumar", "Ghafir",
+    "Fussilat", "Ash-Shura", "Az-Zukhruf", "Ad-Dukhan", "Al-Jathiyah", "Al-Ahqaf", "Muhammad", "Al-Fath", "Al-Hujurat", "Qaf",
+    "Adh-Dhariyat", "At-Tur", "An-Najm", "Al-Qamar", "Ar-Rahman", "Al-Waqi'ah", "Al-Hadid", "Al-Mujadila", "Al-Hashr", "Al-Mumtahanah",
+    "As-Saff", "Al-Jumu'ah", "Al-Munafiqun", "At-Taghabun", "At-Talaq", "At-Tahrim", "Al-Mulk", "Al-Qalam", "Al-Haqqah", "Al-Ma'arij",
+    "Nuh", "Al-Jinn", "Al-Muzzammil", "Al-Muddaththir", "Al-Qiyamah", "Al-Insan", "Al-Mursalat", "An-Naba", "An-Nazi'at", "Abasa",
+    "At-Takwir", "Al-Infitar", "Al-Mutaffifin", "Al-Inshiqaq", "Al-Buruj", "At-Tariq", "Al-A'la", "Al-Ghashiyah", "Al-Fajr", "Al-Balad",
+    "Ash-Shams", "Al-Layl", "Ad-Duha", "Ash-Sharh", "At-Tin", "Al-Alaq", "Al-Qadr", "Al-Bayyinah", "Az-Zalzalah", "Al-Adiyat",
+    "Al-Qari'ah", "At-Takathur", "Al-Asr", "Al-Humazah", "Al-Fil", "Quraysh", "Al-Ma'un", "Al-Kawthar", "Al-Kafirun", "An-Nasr",
+    "Al-Masad", "Al-Ikhlas", "Al-Falaq", "An-Nas"
+];
+
 export const toArabic = (n: number | string) => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
 
 export const getAyahCountText = (count: number) => {
@@ -297,8 +508,48 @@ export const getAyahCountText = (count: number) => {
     return `${arabicCount} آية`;
 };
 
+export const WORD_HIGHLIGHT_COLOR_OPTIONS = [
+    { id: 'auto', nameAr: 'تلقائي متباين', nameEn: 'Auto High-Contrast', color: '#059669' },
+    { id: '#059669', nameAr: 'زمردي نضر', nameEn: 'Emerald Green', color: '#059669' },
+    { id: '#0284c7', nameAr: 'أزرق سماوي', nameEn: 'Sky Blue', color: '#0284c7' },
+    { id: '#d97706', nameAr: 'عنبري متقد', nameEn: 'Vivid Amber', color: '#d97706' },
+    { id: '#dc2626', nameAr: 'ياقوتي أحمر', nameEn: 'Ruby Red', color: '#dc2626' },
+    { id: '#7c3aed', nameAr: 'بنفسجي ملكي', nameEn: 'Royal Purple', color: '#7c3aed' }
+];
+
+export const getEffectiveWordHighlightColor = (
+    ayahColor?: string,
+    userWordColor?: string,
+    themeId?: string
+): { bg: string; text: string; shadow: string } => {
+    // If user picked a specific custom color:
+    if (userWordColor && userWordColor !== 'auto' && userWordColor.startsWith('#')) {
+        return {
+            bg: userWordColor,
+            text: userWordColor,
+            shadow: 'transparent'
+        };
+    }
+
+    // Auto mode: Vivid Red (#dc2626) text color
+    const ayah = (ayahColor || '').toLowerCase();
+    if (ayah.includes('dc2626') || ayah.includes('ef4444') || ayah.includes('b91c1c') || ayah.includes('red')) {
+        return {
+            bg: '#2563eb', // Royal Blue if ayah text is already red
+            text: '#2563eb',
+            shadow: 'transparent'
+        };
+    }
+
+    return {
+        bg: '#dc2626', // Vivid Red text
+        text: '#dc2626',
+        shadow: 'transparent'
+    };
+};
+
 export const DEFAULT_SETTINGS = {
-    fontSize: 1.7,
+    fontSize: 1.6,
     fontFamily: "var(--font-amiri)",
     isBold: false,
     textColor: "",
@@ -311,5 +562,274 @@ export const DEFAULT_SETTINGS = {
     lockHighlightColor: false,
     ayahRepeatCount: 1,
     showPageBorder: false,
-    surahHeaderDesign: 1
+    surahHeaderDesign: 1,
+    wordHighlightEnabled: false,
+    wordHighlightColor: 'auto'
+};
+
+export const getCurrentLayoutContext = (navParams?: any): 'classic' | 'modern' => {
+    if (navParams?.from === 'modern_home') return 'modern';
+    if (navParams?.from === 'home') return 'classic';
+    try {
+        const layout = typeof localStorage !== 'undefined' ? localStorage.getItem('home_layout_system') : null;
+        if (layout === 'classic' || layout === 'modern') return layout;
+    } catch {}
+    return 'modern';
+};
+
+export const isNightModeForLayout = (layout: 'classic' | 'modern'): boolean => {
+    try {
+        const key = `night_mode_active_${layout}`;
+        const saved = localStorage.getItem(key);
+        if (saved !== null) return saved === 'true';
+        if (layout === 'classic') return false;
+        return localStorage.getItem('night_mode_active') === 'true';
+    } catch {
+        return false;
+    }
+};
+
+export const getLinkedQuranThemeForHomeVariant = (variant?: string | null): string => {
+    let v = variant;
+    if (!v && typeof localStorage !== 'undefined') {
+        try {
+            v = localStorage.getItem('modern_home_theme_variant');
+        } catch {}
+    }
+    if (v === 'burgundy') return 'maroon';
+    if (v === 'emerald') return 'green';
+    if (v === 'sky') return 'night_sky';
+    return 'gold';
+};
+
+export const applyQuranThemeForHomeVariant = (variant: 'gold' | 'sky' | 'emerald' | 'burgundy' | string) => {
+    const quranThemeId = getLinkedQuranThemeForHomeVariant(variant);
+    const theme = (THEMES as any)[quranThemeId] || THEMES['gold'];
+    const modes = ['mushaf', 'tafseer', 'meanings', 'bilingual', 'translation'] as const;
+    const orients = ['_v', '_h'] as const;
+    const colors = getToolbarColorsForTheme(theme);
+    const colorsJson = JSON.stringify(colors);
+
+    try {
+        localStorage.setItem('quran_synced_home_theme_variant', variant);
+        
+        // Root fallbacks
+        localStorage.setItem('current_theme_id', quranThemeId);
+        localStorage.setItem('current_theme_id_v', quranThemeId);
+        localStorage.setItem('current_theme_id_h', quranThemeId);
+
+        for (const m of modes) {
+            localStorage.setItem(`current_theme_id_${m}`, quranThemeId);
+            localStorage.setItem(`current_theme_id_modern_${m}`, quranThemeId);
+            localStorage.setItem(`quran_user_chosen_theme_modern_${m}`, quranThemeId);
+
+            for (const orient of orients) {
+                const scopedKey = `current_theme_id_modern_${m}${orient}`;
+                const mSuffixKey = `current_theme_id_${m}${orient}`;
+                const altKey = `quran_layout_modern_${m}_theme${orient}`;
+                const userChosenKey = `quran_user_chosen_theme_modern_${m}${orient}`;
+
+                localStorage.setItem(scopedKey, quranThemeId);
+                localStorage.setItem(mSuffixKey, quranThemeId);
+                localStorage.setItem(altKey, quranThemeId);
+                localStorage.setItem(userChosenKey, quranThemeId);
+
+                // Scoped suffix used by QuranReader
+                const scopedSuffix = m === 'mushaf' ? orient : `_${m}${orient}`;
+
+                // Toolbar colors
+                localStorage.setItem(`quran_layout_modern_${m}_toolbar_colors${orient}`, colorsJson);
+                localStorage.setItem(`toolbar_colors_v2${scopedSuffix}`, colorsJson);
+                localStorage.setItem(`toolbar_colors_v2${orient}`, colorsJson);
+
+                // Scoped settings
+                const scopedSettingsKey = `quran_settings_modern_${m}_${orient === '_h' ? 'h' : 'v'}`;
+                const generalSettingsKey = `quran_settings${scopedSuffix}`;
+                
+                const existingScoped = localStorage.getItem(scopedSettingsKey);
+                const baseScoped = existingScoped ? JSON.parse(existingScoped) : {};
+                const updatedScoped = {
+                    ...DEFAULT_SETTINGS,
+                    ...baseScoped,
+                    bgColor: theme.bg,
+                    textColor: theme.text,
+                    fontFamily: baseScoped.fontFamily || theme.font,
+                    ...(baseScoped.lockHighlightColor ? {} : { highlightTextColor: theme.highlightText || theme.accent }),
+                    theme: theme.id
+                };
+                localStorage.setItem(scopedSettingsKey, JSON.stringify(updatedScoped));
+                localStorage.setItem(generalSettingsKey, JSON.stringify(updatedScoped));
+            }
+        }
+        
+        localStorage.setItem('quran_theme_changed', 'true');
+    } catch (e) {
+        console.error('Failed to apply linked Quran theme', e);
+    }
+};
+
+export const getQuranThemeForLayout = (
+    layout: 'classic' | 'modern', 
+    modeSuffix: string = '', 
+    readingMode: string = 'mushaf'
+): string => {
+    const isClassic = layout === 'classic';
+    const isNight = isNightModeForLayout(layout);
+    const mKey = readingMode || 'mushaf';
+
+    if (isNight) {
+        const scopedNightKey = `current_theme_id_${layout}_${mKey}_night`;
+        try {
+            const savedNight = localStorage.getItem(scopedNightKey + modeSuffix) || 
+                               localStorage.getItem(scopedNightKey) || 
+                               localStorage.getItem(`current_theme_id_${mKey}_night${modeSuffix}`) ||
+                               localStorage.getItem(`current_theme_id_${mKey}_night`);
+            if (savedNight && (THEMES as any)[savedNight]) {
+                return savedNight;
+            }
+        } catch {}
+        return 'deep_black';
+    }
+
+    if (!isClassic) {
+        try {
+            const synced = localStorage.getItem('quran_synced_home_theme_variant');
+            const currentHomeVariant = localStorage.getItem('modern_home_theme_variant') || 'gold';
+            if (synced !== currentHomeVariant) {
+                applyQuranThemeForHomeVariant(currentHomeVariant);
+                return getLinkedQuranThemeForHomeVariant(currentHomeVariant);
+            }
+        } catch {}
+    }
+
+    const defaultTheme = isClassic ? 'black' : getLinkedQuranThemeForHomeVariant();
+
+    const scopedModeKey = `current_theme_id_${layout}_${mKey}`;
+    const altKey = `quran_layout_${layout}_${mKey}_theme${modeSuffix}`;
+
+    try {
+        const saved = localStorage.getItem(scopedModeKey + modeSuffix) || 
+                      localStorage.getItem(scopedModeKey) || 
+                      localStorage.getItem(altKey) ||
+                      localStorage.getItem(`current_theme_id_${mKey}${modeSuffix}`) ||
+                      localStorage.getItem(`current_theme_id_${mKey}`);
+        if (saved && (THEMES as any)[saved]) {
+            return saved;
+        }
+    } catch {}
+
+    return defaultTheme;
+};
+
+export const saveQuranThemeForLayout = (
+    themeId: string, 
+    layout: 'classic' | 'modern', 
+    modeSuffix: string = '', 
+    readingMode: string = 'mushaf'
+) => {
+    const isClassic = layout === 'classic';
+    const isNight = isNightModeForLayout(layout);
+    const mKey = readingMode || 'mushaf';
+    
+    const scopedModeKey = `current_theme_id_${layout}_${mKey}`;
+
+    try {
+        if (isNight) {
+            const scopedNightKey = `current_theme_id_${layout}_${mKey}_night`;
+            localStorage.setItem(scopedNightKey + modeSuffix, themeId);
+            localStorage.setItem(scopedNightKey, themeId);
+            localStorage.setItem(`current_theme_id_${mKey}_night${modeSuffix}`, themeId);
+            localStorage.setItem(`current_theme_id_${mKey}_night`, themeId);
+        } else {
+            localStorage.setItem(scopedModeKey + modeSuffix, themeId);
+            localStorage.setItem(scopedModeKey, themeId);
+            localStorage.setItem(`quran_layout_${layout}_${mKey}_theme${modeSuffix}`, themeId);
+            localStorage.setItem(`current_theme_id_${mKey}${modeSuffix}`, themeId);
+            localStorage.setItem(`current_theme_id_${mKey}`, themeId);
+        }
+        localStorage.setItem(`quran_user_chosen_theme_${layout}_${mKey}` + modeSuffix, themeId);
+        localStorage.setItem(`quran_user_chosen_theme_${layout}_${mKey}`, themeId);
+        if (mKey === 'mushaf') {
+            localStorage.setItem('current_theme_id' + modeSuffix, themeId);
+        }
+        localStorage.setItem('quran_theme_changed', 'true');
+    } catch {}
+};
+
+export const getToolbarColorsForTheme = (theme: any) => ({
+    'top-toolbar': { bg: theme.barBg, border: theme.barBorder },
+    'bottom-toolbar': { bg: theme.barBg, border: theme.barBorder },
+    'surah': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder, font: theme.font },
+    'juz': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder, font: theme.font },
+    'page': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder, font: theme.font },
+    'audio': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
+    'btn-settings': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
+    'btn-home': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
+    'btn-bookmark': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
+    'btn-bookmarks-list': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
+    'btn-themes': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
+    'btn-autoscroll': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
+    'btn-menu': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
+    'btn-search': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder },
+    'btn-share': { bg: theme.btnBg, text: theme.btnText, border: (theme as any).btnBorder || theme.barBorder }
+});
+
+export const syncQuranThemeToStorage = (theme: any, modeSuffix: string = '', readingMode: string = 'mushaf') => {
+    try {
+        const mKey = readingMode || 'mushaf';
+        localStorage.setItem(`current_theme_id_${mKey}` + modeSuffix, theme.id);
+        if (mKey === 'mushaf') {
+            localStorage.setItem('current_theme_id' + modeSuffix, theme.id);
+        }
+        const colors = getToolbarColorsForTheme(theme);
+        localStorage.setItem('toolbar_colors_v2' + modeSuffix, JSON.stringify(colors));
+        const saved = JSON.parse(localStorage.getItem('quran_settings' + modeSuffix) || '{}');
+        const updated = {
+            ...DEFAULT_SETTINGS,
+            ...saved,
+            bgColor: saved.bgColor || theme.bg,
+            textColor: saved.textColor || theme.text,
+            fontFamily: saved.fontFamily || theme.font,
+            highlightTextColor: saved.highlightTextColor || (saved.lockHighlightColor ? saved.highlightTextColor : (theme.highlightText || theme.accent)),
+            theme: saved.theme || theme.id
+        };
+        localStorage.setItem('quran_settings' + modeSuffix, JSON.stringify(updated));
+
+        const orient = modeSuffix.endsWith('_h') ? 'h' : 'v';
+        (['ar_only', 'en_only', 'bilingual'] as const).forEach(layout => {
+            const scopedKey = `quran_settings_${layout}_${mKey}_${orient}`;
+            const existingScoped = localStorage.getItem(scopedKey);
+            if (existingScoped) {
+                try {
+                    const parsedScoped = JSON.parse(existingScoped);
+                    if (!parsedScoped.theme || parsedScoped.theme === theme.id || localStorage.getItem(`quran_layout_${layout}_${mKey}_theme${modeSuffix}`) === theme.id) {
+                        localStorage.setItem(scopedKey, JSON.stringify({
+                            ...parsedScoped,
+                            bgColor: parsedScoped.bgColor || theme.bg,
+                            textColor: parsedScoped.textColor || theme.text,
+                            highlightTextColor: parsedScoped.highlightTextColor || (parsedScoped.lockHighlightColor ? parsedScoped.highlightTextColor : (theme.highlightText || theme.accent)),
+                            theme: parsedScoped.theme || theme.id
+                        }));
+                    }
+                } catch {}
+            }
+            const layoutSettingsKey = `quran_layout_${layout}_${mKey}_settings${modeSuffix}`;
+            if (localStorage.getItem(`quran_layout_${layout}_${mKey}_theme${modeSuffix}`) === theme.id) {
+                localStorage.setItem(`quran_layout_${layout}_${mKey}_toolbar_colors${modeSuffix}`, JSON.stringify(colors));
+                const existingLayoutSettings = localStorage.getItem(layoutSettingsKey);
+                if (existingLayoutSettings) {
+                    try {
+                        const parsedLayout = JSON.parse(existingLayoutSettings);
+                        localStorage.setItem(layoutSettingsKey, JSON.stringify({
+                            ...parsedLayout,
+                            bgColor: parsedLayout.bgColor || theme.bg,
+                            textColor: parsedLayout.textColor || theme.text,
+                            highlightTextColor: parsedLayout.highlightTextColor || (parsedLayout.lockHighlightColor ? parsedLayout.highlightTextColor : (theme.highlightText || theme.accent)),
+                            theme: parsedLayout.theme || theme.id
+                        }));
+                    } catch {}
+                }
+            }
+        });
+    } catch {}
 };

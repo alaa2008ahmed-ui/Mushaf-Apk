@@ -4,10 +4,12 @@ import { App } from '@capacitor/app';
 interface UseBackButtonProps {
     isThemeSelectorOpen: boolean;
     showExitConfirm: boolean;
+    isSideMenuOpen?: boolean;
     history: string[];
     navigateBack: () => void;
     setIsThemeSelectorOpen: (isOpen: boolean) => void;
     setShowExitConfirm: (show: boolean) => void;
+    setIsSideMenuOpen?: (isOpen: boolean) => void;
 }
 
 // Global stack of interceptors
@@ -26,10 +28,12 @@ export const registerBackInterceptor = (interceptor: () => boolean) => {
 export function useBackButton({
     isThemeSelectorOpen,
     showExitConfirm,
+    isSideMenuOpen,
     history,
     navigateBack,
     setIsThemeSelectorOpen,
     setShowExitConfirm,
+    setIsSideMenuOpen,
 }: UseBackButtonProps) {
     const historyRef = useRef(history);
     useEffect(() => {
@@ -46,55 +50,111 @@ export function useBackButton({
         showExitConfirmRef.current = showExitConfirm;
     }, [showExitConfirm]);
 
+    const isSideMenuOpenRef = useRef(isSideMenuOpen);
+    useEffect(() => {
+        isSideMenuOpenRef.current = isSideMenuOpen;
+    }, [isSideMenuOpen]);
+
+    const lastBackTimeRef = useRef(0);
+    const navigateBackRef = useRef(navigateBack);
+    navigateBackRef.current = navigateBack;
+    const setIsThemeSelectorOpenRef = useRef(setIsThemeSelectorOpen);
+    setIsThemeSelectorOpenRef.current = setIsThemeSelectorOpen;
+    const setShowExitConfirmRef = useRef(setShowExitConfirm);
+    setShowExitConfirmRef.current = setShowExitConfirm;
+    const setIsSideMenuOpenRef = useRef(setIsSideMenuOpen);
+    setIsSideMenuOpenRef.current = setIsSideMenuOpen;
+
     const handleBackButton = useCallback(() => {
+        const now = Date.now();
+        // Debounce duplicate synchronous back events (Capacitor backButton + document backbutton)
+        if (now - lastBackTimeRef.current < 150) {
+            return;
+        }
+        lastBackTimeRef.current = now;
+
+        // 1. Close exit confirmation dialog if open
         if (showExitConfirmRef.current) {
-            setShowExitConfirm(false);
+            setShowExitConfirmRef.current(false);
             return;
         }
 
+        // 2. Close side menu if open
+        if (isSideMenuOpenRef.current && setIsSideMenuOpenRef.current) {
+            setIsSideMenuOpenRef.current(false);
+            return;
+        }
+
+        // 3. Close theme selector if open
         if (isThemeSelectorOpenRef.current) {
-            setIsThemeSelectorOpen(false);
+            setIsThemeSelectorOpenRef.current(false);
             return;
         }
 
-        // Check if any interceptor handles the back button
+        // 4. Check in-page interceptors (LIFO: newest child modal/overlay runs first)
         for (let i = backButtonInterceptors.length - 1; i >= 0; i--) {
             const interceptor = backButtonInterceptors[i];
-            if (interceptor()) {
-                return; // Interceptor handled it
+            try {
+                if (interceptor()) {
+                    return; // In-page overlay handled the back button
+                }
+            } catch (err) {
+                console.error('Error executing back interceptor:', err);
             }
         }
 
+        // 5. Navigate back in history if not at root home screen
         if (historyRef.current.length > 1) {
-            navigateBack();
+            navigateBackRef.current();
         } else {
-            setShowExitConfirm(true);
+            // At root home screen (Classic or Modern Smart): prompt exit confirmation modal
+            setShowExitConfirmRef.current(true);
         }
-    }, [navigateBack, setIsThemeSelectorOpen, setShowExitConfirm]);
+    }, []);
 
     useEffect(() => {
-        const listener = App.addListener('backButton', () => {
-            handleBackButton();
-        });
+        let isMounted = true;
+        // 1. Capacitor native Android back button event (hardware button & back gestures)
+        let capacitorListener: Promise<{ remove: () => Promise<void> }> | null = null;
+        try {
+            capacitorListener = App.addListener('backButton', () => {
+                handleBackButton();
+            });
+            capacitorListener.then((handle) => {
+                if (!isMounted) {
+                    handle.remove().catch(() => {});
+                }
+            }).catch(() => {});
+        } catch (e) {
+            console.warn('Capacitor App backButton listener registration warning:', e);
+        }
 
+        // 2. Browser / Android WebView popstate event
         const handlePopState = (e: PopStateEvent) => {
             e.preventDefault();
-            // User pressed the browser back button
             handleBackButton();
-            // Push state again so the browser doesn't actually exit the page immediately
-            // We only want it to exit if the user confirms on the dialog.
-            window.history.pushState(null, '', window.location.href);
+            // Re-arm history trap state so WebView/browser back stays inside the app
+            try {
+                window.history.pushState({ page: 'mushaf_history', t: Date.now() }, '', window.location.href);
+            } catch {}
         };
 
-        // Push initial state to trap the user
-        window.history.pushState(null, '', window.location.href);
+        // Push initial state trap only if not already set
+        try {
+            if (window.history.state?.page !== 'mushaf_history') {
+                window.history.pushState({ page: 'mushaf_history', t: Date.now() }, '', window.location.href);
+            }
+        } catch {}
         window.addEventListener('popstate', handlePopState);
 
-        // Also keep the document listener for broader compatibility
+        // 3. Document backbutton event for Cordova / Android Capacitor WebView bridge
         document.addEventListener('backbutton', handleBackButton, false);
 
         return () => {
-            listener.then(l => l.remove());
+            isMounted = false;
+            if (capacitorListener && typeof capacitorListener.then === 'function') {
+                capacitorListener.then((l) => l.remove()).catch(() => {});
+            }
             document.removeEventListener('backbutton', handleBackButton, false);
             window.removeEventListener('popstate', handlePopState);
         };
