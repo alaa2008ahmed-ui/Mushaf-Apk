@@ -1,81 +1,165 @@
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import BottomBar from '../components/BottomBar';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import { toEnglishNumerals } from '../utils/tasbeehUtils';
 import { DEFAULT_PHRASES } from '../data/tasbeehData';
 import { registerBackInterceptor } from '../hooks/useBackButton';
-import ThreeDButton from '../components/Tasbeeh/ThreeDButton';
-import ModalWrapper from '../components/Tasbeeh/ModalWrapper';
 import TasbeehHeader from '../components/Tasbeeh/TasbeehHeader';
 import TasbeehControls from '../components/Tasbeeh/TasbeehControls';
 import TasbeehCounter from '../components/Tasbeeh/TasbeehCounter';
+import ThreeDButton from '../components/Tasbeeh/ThreeDButton';
 import TasbeehModals from '../components/Tasbeeh/TasbeehModals';
-import { toArabicNumerals, toEnglishNumerals, playSound, vibrate } from '../utils/tasbeehUtils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Check } from 'lucide-react';
+import { tTasbeeh } from '../utils/tasbeehTranslations';
+import { CommunitySpotlightGuide, getGuideSeen } from '../components/Community/CommunitySpotlightGuide';
+import { TASBEEH_PAGE_STEPS } from '../components/Community/communityTourSteps';
+import { markPageAsSeen } from '../utils/badgeManager';
+import { getToast3DStyles } from '../utils/toast3DStyles';
 
-// FIX: Renamed to be more specific to phrases
-const PHRASES_STORAGE_KEY = 'ahmed_laila_tasbeeh_phrases';
-// FIX: Added a new key for other settings like color
-const SETTINGS_STORAGE_KEY = 'ahmed_laila_tasbeeh_settings_v1';
+const PHRASES_STORAGE_KEY = 'mushaf_user_tasbeeh_phrases';
+const SETTINGS_STORAGE_KEY = 'mushaf_tasbeeh_settings';
 
-// --- Main Component ---
-function Tasbeeh({ onBack, onNavigate }) {
-    const { theme, themeKey } = useTheme();
-    const isBlackAndWhite = themeKey === 'deep_black';
-    const isBlackTheme = theme.bgColor === '#000000';
-    const primaryTextColor = isBlackTheme ? '#FFFFFF' : (themeKey === 'default' ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]));
-    const secondaryTextColor = isBlackTheme ? '#FFFFFF' : (themeKey === 'default' ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[1]));
+// Web Audio API for simple clicks
+let audioCtx: AudioContext | null = null;
+const playSound = (freq = 800, duration = 0.05) => {
+    try {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {
+        // Audio might fail if not allowed by browser yet
+    }
+};
 
-    const getDefaultCounterColor = useCallback((tKey: string, tObj: any) => {
-        return tKey === 'default' ? '#FFFFFF' : tObj.palette[0];
-    }, []);
+const vibrate = (pattern: number | number[] = 40) => {
+    if (navigator.vibrate) {
+        try {
+            navigator.vibrate(pattern);
+        } catch (e) {}
+    }
+};
 
-    const [phrases, setPhrases] = useState<{id: number, text: string}[]>([]);
+interface TasbeehProps {
+    onBack: () => void;
+    onNavigate: (pageId: string, params?: any) => void;
+}
+
+export function Tasbeeh({ onBack, onNavigate }: TasbeehProps) {
+    const { theme, themeKey, isNightMode, homeThemeVariant } = useTheme();
+    const { language, dir } = useLanguage();
+    
+    // Counter Colors and Themes
+    const isBlackTheme = theme.bgColor === '#000000' || theme.name === 'اسود' || theme.name === 'black';
+    const isWhiteTheme = theme.bgColor === '#FFFFFF' || theme.name === 'ابيض' || theme.name === 'white';
+    const isBlackAndWhite = isBlackTheme || isWhiteTheme;
+    const isDefaultTheme = themeKey === 'default' || !themeKey;
+
+    const primaryColor = isBlackTheme ? '#FFFFFF' : (theme.palette?.[0] || theme.accent || '#2E7D5E');
+    const primaryTextColor = primaryColor;
+    const secondaryTextColor = isBlackTheme ? '#A1A1AA' : (theme.palette?.[1] || '#059669');
+    const cardBorderColor = isBlackTheme ? 'rgba(255, 255, 255, 0.1)' : 'transparent';
+
+    const [phrases, setPhrases] = useState(DEFAULT_PHRASES);
+    const [activePhrase, setActivePhrase] = useState(DEFAULT_PHRASES[0].text);
     const [count, setCount] = useState(0);
     const [target, setTarget] = useState(33);
-    const [activePhrase, setActivePhrase] = useState('');
     const [isCountingStopped, setIsCountingStopped] = useState(false);
-    const [modals, setModals] = useState({ target: false, phrase: false, add: false, delete: false, color: false, stats: false, skins: false });
-    const [message, setMessage] = useState({ text: '', type: 'green', visible: false });
-    const targetInputRef = useRef<HTMLInputElement>(null);
-    const newPhraseInputRef = useRef<HTMLInputElement>(null);
-    
-    // Initial color from theme - we'll update it in useEffect after mounting
-    const [counterColor, setCounterColor] = useState(() => getDefaultCounterColor(themeKey, theme));
-    const prevThemeKeyRef = useRef<string | null>(null);
-    const [skin, setSkin] = useState<'modern' | 'classic' | 'beads'>('modern');
+    const [skin, setSkin] = useState<'modern' | 'classic' | 'beads' | 'wheel' | 'crystal' | 'mechanical'>('modern');
     const [dailyStats, setDailyStats] = useState<{date: string, count: number}[]>([]);
 
+    const getDefaultCounterColor = useCallback(() => {
+        return isBlackTheme ? '#FFFFFF' : (theme.palette?.[0] || theme.accent || '#2E7D5E');
+    }, [isBlackTheme, theme.palette, theme.accent]);
+
+    const [counterColor, setCounterColor] = useState(getDefaultCounterColor);
+
+    const [modals, setModals] = useState({
+        target: false,
+        phrase: false,
+        add: false,
+        delete: false,
+        color: false,
+        stats: false,
+        skins: false,
+    });
+
+    const [message, setMessage] = useState({ text: '', type: 'green', visible: false });
+    const [showGuide, setShowGuide] = useState(false);
+
+    const [showQuickTasbeehOnHome, setShowQuickTasbeehOnHome] = useState<boolean>(() => {
+        try {
+            return localStorage.getItem('show_quick_tasbeeh_home') === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    const handleToggleQuickTasbeehOnHome = useCallback(() => {
+        setShowQuickTasbeehOnHome(prev => {
+            const nextVal = !prev;
+            try {
+                localStorage.setItem('show_quick_tasbeeh_home', String(nextVal));
+            } catch {}
+            window.dispatchEvent(new CustomEvent('quick-tasbeeh-visibility-changed', { detail: { enabled: nextVal } }));
+            if (navigator.vibrate) {
+                try { navigator.vibrate(nextVal ? [30, 40, 30] : 30); } catch {}
+            }
+            setMessage({
+                text: nextVal
+                    ? (language === 'en' ? 'Enabled on Home ✓' : 'مفعّل بالرئيسية ✓')
+                    : (language === 'en' ? 'Disabled on Home' : 'معطّل بالرئيسية'),
+                type: 'theme',
+                visible: true
+            });
+            setTimeout(() => setMessage(m => ({ ...m, visible: false })), 1800);
+            return nextVal;
+        });
+    }, [language]);
+
     useEffect(() => {
-        // 1. Load settings and handle "Dominant Theme" logic
+        markPageAsSeen('tasbeeh');
+        if (!getGuideSeen('tasbeeh_page_spotlight')) {
+            setShowGuide(true);
+        }
+    }, []);
+    
+    const targetInputRef = useRef<HTMLInputElement>(null);
+    const newPhraseInputRef = useRef<HTMLInputElement>(null);
+    const prevThemeKeyRef = useRef(themeKey);
+
+    useEffect(() => {
         try {
             const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
-            let finalColor = getDefaultCounterColor(themeKey, theme);
-            
+            const defaultCol = getDefaultCounterColor();
+            let finalColor = defaultCol;
+
             if (savedSettings) {
                 const settings = JSON.parse(savedSettings);
                 
-                // If it's the first mount (prevThemeKeyRef is null) 
-                // OR if themeKey has actually changed since last time
-                const themeHasChanged = prevThemeKeyRef.current !== null && prevThemeKeyRef.current !== themeKey;
-                const wasSavedWithDifferentTheme = settings.lastThemeKey && settings.lastThemeKey !== themeKey;
-
-                if (themeHasChanged || wasSavedWithDifferentTheme || !settings.counterColor) {
-                    // Use theme color if theme changed or no saved color
-                    finalColor = getDefaultCounterColor(themeKey, theme);
-                    
-                    // Sync the change to storage immediately
-                    const newSettings = { ...settings, counterColor: finalColor, lastThemeKey: themeKey };
-                    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
-                } else {
-                    // Theme is the same, use saved manual color
+                if (prevThemeKeyRef.current !== themeKey) {
+                    finalColor = defaultCol;
+                    settings.counterColor = finalColor;
+                    settings.lastThemeKey = themeKey;
+                    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+                } else if (settings.counterColor) {
                     finalColor = settings.counterColor;
                 }
 
                 if (settings.skin) setSkin(settings.skin);
                 if (settings.dailyStats) setDailyStats(settings.dailyStats);
             } else {
-                // No settings at all, use default and save theme key
                 localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ 
                     counterColor: finalColor, 
                     lastThemeKey: themeKey 
@@ -91,17 +175,16 @@ function Tasbeeh({ onBack, onNavigate }) {
     }, [themeKey, theme, getDefaultCounterColor]);
 
     const activeCounterColor = counterColor;
-    const isCounterWhite = activeCounterColor === '#FFFFFF' || activeCounterColor === 'white' || activeCounterColor === '#fff';
 
     const loadPhrases = useCallback(() => {
         try {
             const stored = localStorage.getItem(PHRASES_STORAGE_KEY);
             const userChanges = stored ? JSON.parse(stored) : [];
-            const deletedTexts = userChanges.filter(c => c.deleted).map(c => c.text);
-            const addedPhrases = userChanges.filter(c => !c.deleted);
+            const deletedTexts = userChanges.filter((c: any) => c.deleted).map((c: any) => c.text);
+            const addedPhrases = userChanges.filter((c: any) => !c.deleted);
 
             let currentPhrases = DEFAULT_PHRASES.filter(p => !deletedTexts.includes(p.text));
-            addedPhrases.forEach(p => {
+            addedPhrases.forEach((p: any) => {
                 if (!currentPhrases.some(cp => cp.text === p.text)) {
                     currentPhrases.push({ id: Date.now() + Math.random(), text: p.text });
                 }
@@ -135,7 +218,6 @@ function Tasbeeh({ onBack, onNavigate }) {
     }, [modals]);
 
     useEffect(() => {
-        // Expose functions to window for swiping in TasbeehCounter without passing them down all the way, or we can just attach them.
         (window as any).handleNextPhrase = () => {
              const currentIndex = phrases.findIndex(p => p.text === activePhrase);
              if (currentIndex >= 0 && currentIndex < phrases.length - 1) {
@@ -175,8 +257,9 @@ function Tasbeeh({ onBack, onNavigate }) {
         vibrate(30);
         const newCount = count + 1;
 
-        // Update daily stats
-        const today = new Date().toISOString().split('T')[0];
+        // Update daily stats (local YYYY-MM-DD to match chart and home card)
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         setDailyStats(prev => {
             const newStats = [...prev];
             const todayStatIndex = newStats.findIndex(s => s.date === today);
@@ -199,7 +282,7 @@ function Tasbeeh({ onBack, onNavigate }) {
             setIsCountingStopped(true);
             vibrate([100, 50, 100]);
             playSound(660, 0.2);
-            showMessage('تم الوصول للهدف!');
+            showMessage(tTasbeeh('targetReached', language));
         } else {
             setCount(newCount);
         }
@@ -215,21 +298,21 @@ function Tasbeeh({ onBack, onNavigate }) {
             const deletedDefaults = DEFAULT_PHRASES.filter(dp => !currentPhrases.some(cp => cp.text === dp.text)).map(p => ({ text: p.text, deleted: true }));
             const addedUserPhrases = currentPhrases.filter(cp => !DEFAULT_PHRASES.some(dp => dp.text === cp.text));
             localStorage.setItem(PHRASES_STORAGE_KEY, JSON.stringify([...deletedDefaults, ...addedUserPhrases]));
-            loadPhrases(); // Reload to ensure consistency
+            loadPhrases();
         } catch (e) { console.error("Failed to save tasbeeh phrases", e); }
     };
     
     const handleAddPhrase = (newPhraseText: string) => {
         const trimmed = newPhraseText.trim();
-        if (!trimmed) { showMessage('لا يمكن إضافة ذكر فارغ.', 'red'); return; }
-        if (phrases.some(p => p.text === trimmed)) { showMessage('هذا الذكر موجود بالفعل.', 'red'); return; }
+        if (!trimmed) { showMessage(tTasbeeh('cannotAddEmpty', language), 'red'); return; }
+        if (phrases.some(p => p.text === trimmed)) { showMessage(tTasbeeh('phraseExists', language), 'red'); return; }
         
         const newPhrases = [...phrases, { id: Date.now(), text: trimmed }];
         saveChanges(newPhrases);
         setActivePhrase(trimmed);
         handleReset();
         setModals(p => ({...p, add: false, phrase: false}));
-        showMessage('تم إضافة الذكر بنجاح.');
+        showMessage(tTasbeeh('phraseAdded', language));
     };
     
     const handleDeletePhrase = (phraseText: string) => {
@@ -241,7 +324,7 @@ function Tasbeeh({ onBack, onNavigate }) {
             setActivePhrase(nextPhrase);
             handleReset();
         }
-        showMessage('تم حذف الذكر بنجاح.');
+        showMessage(tTasbeeh('phraseDeleted', language));
     };
 
     const handleSetTarget = () => {
@@ -253,23 +336,22 @@ function Tasbeeh({ onBack, onNavigate }) {
         setModals(p => ({...p, target: false}));
     };
     
-    // FIX: New function to handle setting and saving the counter color.
     const handleSetCounterColor = (color: string) => {
         setCounterColor(color);
         try {
             const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
             const settings = savedSettings ? JSON.parse(savedSettings) : {};
             settings.counterColor = color;
-            settings.lastThemeKey = themeKey; // Save current theme key with this color
+            settings.lastThemeKey = themeKey;
             localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
         } catch (e) {
             console.error("Failed to save counter color", e);
         }
-        showMessage('تم تغيير لون العداد.');
+        showMessage(tTasbeeh('colorChanged', language));
         setModals(p => ({...p, color: false}));
     };
 
-    const handleSetSkin = (newSkin: 'modern' | 'classic' | 'beads') => {
+    const handleSetSkin = (newSkin: 'modern' | 'classic' | 'beads' | 'wheel' | 'crystal' | 'mechanical') => {
         setSkin(newSkin);
         try {
             const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
@@ -279,11 +361,10 @@ function Tasbeeh({ onBack, onNavigate }) {
         } catch (e) {
             console.error("Failed to save skin", e);
         }
-        showMessage('تم تغيير شكل السبحة.');
+        showMessage(tTasbeeh('skinChanged', language));
         setModals(p => ({...p, skins: false}));
     };
 
-    // FIX: A list of predefined distinct color options for the color picker modal.
     const colorOptions = [
         themeKey === 'default' ? '#FFFFFF' : theme.palette[0],
         themeKey === 'default' ? theme.palette[0] : '#FFFFFF',
@@ -295,7 +376,7 @@ function Tasbeeh({ onBack, onNavigate }) {
         '#ec4899', // pink
     ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 8);
 
-    const handleHomeClick = () => {
+    const handleBack = () => {
         if (Object.values(modals).some(Boolean)) {
             setModals({ target: false, phrase: false, add: false, delete: false, color: false, stats: false, skins: false });
         } else {
@@ -303,17 +384,40 @@ function Tasbeeh({ onBack, onNavigate }) {
         }
     };
 
+    const handleGoHome = () => {
+        if (Object.values(modals).some(Boolean)) {
+            setModals({ target: false, phrase: false, add: false, delete: false, color: false, stats: false, skins: false });
+        }
+        onNavigate('home');
+    };
+
     return (
-        <div className="h-screen flex flex-col bg-transparent">
-            <TasbeehHeader title="السبحة الإلكترونية" subtitle="أضف أذكارك الخاصة وتتبع تسبيحك بدقة" />
+        <div
+            className="h-[100dvh] max-h-[100dvh] flex flex-col overflow-hidden transition-colors"
+            dir={dir}
+            style={{ backgroundColor: isBlackTheme ? '#000000' : (theme.bgColor || (theme.isDark ? '#0F172A' : '#F5F7FA')) }}
+        >
+            <TasbeehHeader 
+                title={tTasbeeh('title', language)} 
+                subtitle={tTasbeeh('subtitle', language)} 
+                onBack={handleBack}
+                onHome={handleGoHome}
+                onOpenGuide={() => setShowGuide(true)}
+                showQuickTasbeehOnHome={showQuickTasbeehOnHome}
+                onToggleQuickTasbeehOnHome={handleToggleQuickTasbeehOnHome}
+            />
             
-            <main className="px-4 pb-4 flex-grow relative flex flex-col items-center overflow-y-auto fade-in">
+            <main 
+                className="px-4 flex-1 min-h-0 relative overflow-y-auto overscroll-contain fade-in pt-1 app-scroll-safe"
+            >
+                 <div className="w-full flex flex-col items-center pb-5">
                  <TasbeehControls 
                     isBlackAndWhite={isBlackAndWhite}
                     theme={theme}
                     secondaryTextColor={secondaryTextColor}
                     activePhrase={activePhrase}
                     setModals={setModals}
+                    cardBorderColor={cardBorderColor}
                  />
 
                  <TasbeehCounter 
@@ -328,19 +432,42 @@ function Tasbeeh({ onBack, onNavigate }) {
                     skin={skin}
                     isDefaultTheme={themeKey === 'default'}
                     theme={theme}
+                    cardBorderColor={cardBorderColor}
                  />
                 
-                <div className="w-full max-w-lg px-4 mt-auto mb-2">
+                <div className="w-full max-w-lg px-4 mt-6 mb-0">
                     <div className="grid grid-cols-2 gap-3">
-                        <ThreeDButton label="تصفير" onClick={handleReset} color={isBlackAndWhite ? '#333' : theme.palette[1]} padding="py-2.5 text-base" theme={theme}>
-                            {/* No children */}
-                        </ThreeDButton>
-                        <ThreeDButton label="تعديل الهدف" onClick={() => setModals(p => ({...p, target: true}))} color={isBlackAndWhite ? '#000' : theme.palette[0]} padding="py-2.5 text-base" theme={theme}>
-                             {/* No children */}
-                        </ThreeDButton>
+                        <ThreeDButton 
+                            label={tTasbeeh('reset', language)} 
+                            onClick={handleReset} 
+                            color={isBlackTheme ? '#FFFFFF' : '#64748B'} 
+                            padding="py-3 text-sm sm:text-base" 
+                            theme={theme} 
+                        />
+                        <ThreeDButton 
+                            label={tTasbeeh('editTarget', language)} 
+                            onClick={() => setModals(p => ({...p, target: true}))} 
+                            color={primaryColor} 
+                            padding="py-3 text-sm sm:text-base" 
+                            theme={theme} 
+                        />
                     </div>
+
+                    {/* Quick Chart Trigger Card */}
+                    <button
+                        id="tasbeeh-chart-bottom-btn"
+                        type="button"
+                        onClick={() => setModals((p: any) => ({ ...p, stats: true }))}
+                        className="app-page-card border-0 w-full mt-3.5 py-3.5 px-4 rounded-2xl bg-white dark:bg-[#1E293B] flex items-center justify-center text-xs transition-all group cursor-pointer"
+                        title={tTasbeeh('chartTitle', language)}
+                        aria-label={tTasbeeh('chartTitle', language)}
+                    >
+                        <span className="font-bold text-sm text-slate-800 dark:text-white">
+                            {tTasbeeh('chartTitle', language)}
+                        </span>
+                    </button>
                 </div>
-                <div className="w-full h-24 shrink-0"></div>
+                 </div>
             </main>
             
             {/* Modals */}
@@ -364,22 +491,43 @@ function Tasbeeh({ onBack, onNavigate }) {
                 dailyStats={dailyStats}
                 skin={skin}
                 handleSetSkin={handleSetSkin}
+                themeKey={themeKey}
+                cardBorderColor={cardBorderColor}
+                onNavigate={onNavigate}
             />
 
-            <AnimatePresence>
-                {message.visible && (
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20, x: '-50%' }}
-                        animate={{ opacity: 1, y: 0, x: '-50%' }}
-                        exit={{ opacity: 0, y: 10, x: '-50%' }}
-                        className={`fixed bottom-24 left-1/2 p-3 text-white rounded-lg shadow-xl z-[200] font-bold ${message.type === 'green' ? (isBlackTheme ? 'bg-white text-black' : 'bg-emerald-500') : 'bg-red-500'}`}
+            {message.visible && (() => {
+                const toast3D = getToast3DStyles(
+                    theme,
+                    themeKey,
+                    isNightMode,
+                    homeThemeVariant,
+                    message.type === 'red' ? 'danger' : 'theme'
+                );
+                return (
+                    <div 
+                        className="app-3d-toast fixed bottom-[calc(var(--app-bottom-clearance,0px)+1rem)] left-1/2 -translate-x-1/2 max-w-[85vw] w-max px-4 py-2.5 rounded-2xl z-[200] font-bold text-xs sm:text-sm font-cairo flex items-center justify-center gap-2.5 text-center leading-normal break-words select-none pointer-events-none"
+                        style={toast3D.style}
                     >
-                        {message.text}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        <span
+                            className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                            style={toast3D.iconStyle}
+                        >
+                            <Check className="w-3 h-3 stroke-[3]" />
+                        </span>
+                        <span>{message.text}</span>
+                    </div>
+                );
+            })()}
 
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
+            {/* Spotlight Guide */}
+            <CommunitySpotlightGuide 
+                guideKey="tasbeeh_page_spotlight"
+                steps={TASBEEH_PAGE_STEPS}
+                isOpen={showGuide}
+                onClose={() => setShowGuide(false)}
+                isEn={language === 'en'}
+            />
         </div>
     );
 }

@@ -1,34 +1,82 @@
-import React, { FC } from 'react';
-import { TAFSEERS } from './constants';
-import { useTheme } from '../../context/ThemeContext';
+import React, { FC, useEffect } from 'react';
+import { X } from 'lucide-react';
+import { TAFSEERS, getTafseerDisplayName } from './constants';
+import { useLanguage } from '../../context/LanguageContext';
+import { registerBackInterceptor } from '../../hooks/useBackButton';
+import { resolveQuranModalPalette } from './modalThemeUtils';
 
 const TafseerSelectionModal: FC<{
     isOpen: boolean,
     onClose: () => void,
     onSelect: (tafseerId: string) => void,
     currentTafseerId: string,
-    isLandscape?: boolean
-}> = ({ isOpen, onClose, onSelect, currentTafseerId, isLandscape }) => {
-    const { theme } = useTheme();
+    isLandscape?: boolean,
+    currentTheme?: any
+}> = ({ isOpen, onClose, onSelect, currentTafseerId, isLandscape, currentTheme }) => {
+    const { language, dir } = useLanguage();
+    const isEn = language === 'en';
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const interceptor = () => {
+            onClose();
+            return true;
+        };
+        const unregister = registerBackInterceptor(interceptor);
+        return unregister;
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
+
+    const p = resolveQuranModalPalette(currentTheme);
+
     return (
-        <div className={`fixed inset-0 z-[1200] bg-transparent flex items-center justify-center ${isLandscape ? 'p-2' : 'p-4'} animate-fadeIn`} onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-[300px] max-h-[90vh] rounded-xl' : 'max-w-[280px] rounded-2xl max-h-[80vh]'} shadow-2xl flex flex-col animate-modal-enter`} 
-                style={{ backgroundColor: 'var(--qr-modal-bg, #FFF)', color: 'var(--qr-modal-text, #000)' }}
+        <div className={`fixed inset-0 z-[1200] bg-black/55 flex items-center justify-center ${isLandscape ? 'p-2' : 'p-4'}`} onClick={onClose}>
+            <div dir={dir} className={`modal-skinned settings-3d-adia-scope ${p.isDark ? 'settings-3d-dark quran-3d-dark' : ''} ${isLandscape ? 'w-[54%] max-w-[360px] max-h-[84%] rounded-3xl' : 'w-full max-w-[310px] rounded-3xl max-h-[85dvh]'} flex flex-col overflow-hidden border-0`} 
+                style={{ 
+                    fontFamily: p.fontFamily,
+                    backgroundColor: p.modalBg, 
+                    color: p.modalText, 
+                    border: 'none', 
+                    outline: 'none' 
+                }}
                 onClick={e => e.stopPropagation()}>
-                <div className={`${isLandscape ? 'p-2.5 gap-2' : 'p-5 gap-4'} overflow-y-auto flex-1 flex flex-col`}>
+                {/* Canonical Raised Header */}
+                <div className={isLandscape ? "p-2.5 pb-1.5 shrink-0" : "p-3.5 pb-2 shrink-0"}>
+                    <div 
+                        className={`${isLandscape ? 'py-1.5 px-3 rounded-xl' : 'py-2.5 px-3.5 rounded-2xl'} flex items-center justify-between quran-raised-card border-0`}
+                        style={{
+                            backgroundColor: p.headerBg,
+                        }}
+                    >
+                        <span className={`${isLandscape ? 'text-xs' : 'text-xs sm:text-sm'} font-black tracking-wide`} style={{ color: p.headerAccent }}>
+                            {isEn ? "Select Tafseer" : "اختيار التفسير"}
+                        </span>
+                        <button 
+                            type="button"
+                            onClick={onClose} 
+                            className={`${isLandscape ? 'w-7 h-7' : 'w-8 h-8'} quran-raised-btn rounded-full flex items-center justify-center border-0 cursor-pointer`}
+                            style={{ backgroundColor: p.closeBg, color: p.headerAccent }}
+                            aria-label={isEn ? "Close" : "إغلاق"}
+                        >
+                            <X size={isLandscape ? 14 : 16} />
+                        </button>
+                    </div>
+                </div>
+
+                <div 
+                    className={isLandscape ? "p-2.5 pt-1.5 pb-3 grid grid-cols-2 gap-2 overflow-y-auto flex-1 min-h-0" : "p-3.5 pt-2 pb-4 gap-3 overflow-y-auto flex-1 min-h-0 flex flex-col"}
+                >
                     {TAFSEERS.map(t => {
                         const isSelected = currentTafseerId === t.id;
                         return (
                             <button key={t.id} onClick={() => onSelect(t.id)} 
-                                className={`w-full ${isLandscape ? 'py-1.5 px-2 text-sm' : 'py-3 px-4 text-lg'} rounded-xl font-bold transition-transform hover:scale-105 flex items-center justify-center gap-2 ${isSelected ? '' : 'hover:opacity-80'}`} 
+                                className={`w-full ${isLandscape ? 'py-2 px-2.5 text-xs rounded-xl' : 'py-3 px-4 text-base rounded-2xl'} font-bold flex items-center justify-center text-center gap-2 cursor-pointer border-0 ${isSelected ? 'quran-raised-btn-selected' : 'quran-raised-btn'}`} 
                                 style={{ 
-                                    backgroundColor: isSelected ? 'color-mix(in srgb, var(--qr-accent) 15%, transparent)' : 'transparent', 
-                                    color: isSelected ? 'var(--qr-accent)' : 'var(--qr-card-text)', 
-                                    border: `2px solid ${isSelected ? 'var(--qr-accent)' : 'var(--qr-card-border)'}` 
+                                    backgroundColor: isSelected ? p.selectedBg : p.cardBg, 
+                                    color: isSelected ? p.selectedText : p.cardText
                                 }}>
-                                <span>{t.name}</span>
-                                {isSelected && <i className="fa-solid fa-check text-sm" style={{ color: 'var(--qr-accent)' }}></i>}
+                                <span className="font-bold truncate text-center flex-1">{getTafseerDisplayName(t.id, language as 'ar' | 'en')}</span>
                             </button>
                         );
                     })}

@@ -1,11 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { motion } from 'motion/react';
-import { CheckCircle, BookOpen, RotateCcw, Play, Settings, X, User, Plus, Trash2, ChevronDown, Edit2, Home } from 'lucide-react';
-import BottomBar from '../components/BottomBar';
-import ThemePageLock from '../components/ThemePageLock';
+import { useLanguage } from '../context/LanguageContext';
+import { CheckCircle, RotateCcw, Play, Settings, X, User, Plus, Trash2, ChevronDown, Edit2, Home, Check } from 'lucide-react';
 import ResetConfirmModal from '../components/DailyWird/ResetConfirmModal';
-import TutorialOverlay, { TutorialStep } from '../components/Tutorial/TutorialOverlay';
+import { CommunitySpotlightGuide, getGuideSeen } from '../components/Community/CommunitySpotlightGuide';
+import { DAILY_SETTINGS_STEPS, DAILY_PROGRESS_STEPS } from '../components/Community/communityTourSteps';
+import { useShowPageGuides } from '../utils/guideManager';
+import { syncDailyWirdNotifications, getWirdDayRange } from '../utils/dailyWirdNotificationService';
+import { registerBackInterceptor } from '../hooks/useBackButton';
+import { Preferences } from '@capacitor/preferences';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
+import { SURAH_NAMES_AR, SURAH_NAMES_EN, toArabic } from '../components/QuranReader/constants';
+import quranMetadata from '../data/quran-metadata.json';
 
 interface WirdSettings {
   id: string;
@@ -19,32 +26,157 @@ interface WirdSettings {
   startPage?: number;
   lastPage?: number;
   lastAyah?: { s: number; a: number };
+  reminderEnabled?: boolean;
+  reminderTime?: string; // e.g. "10:00"
+  lastCompletedDate?: string;
 }
 
 const TOTAL_PAGES = 604;
 
-import { registerBackInterceptor } from '../hooks/useBackButton';
+export interface WirdAyahInfo {
+  surahNumber: number;
+  surahNameAr: string;
+  surahNameEn: string;
+  ayahNumber: number;
+  juzNumber: number;
+  pageNumber: number;
+}
+
+export function getAyahDetails(page: number, ayahRef?: { s: number; a: number }): WirdAyahInfo {
+  const targetPage = Math.max(1, Math.min(TOTAL_PAGES, page));
+  if (ayahRef && ayahRef.s >= 1 && ayahRef.s <= 114) {
+    const surah = quranMetadata.surahs[ayahRef.s - 1];
+    if (surah) {
+      const ayah = surah.ayahs.find((ay: any) => ay.numberInSurah === ayahRef.a) || surah.ayahs[0];
+      return {
+        surahNumber: ayahRef.s,
+        surahNameAr: SURAH_NAMES_AR[ayahRef.s - 1] || surah.name,
+        surahNameEn: SURAH_NAMES_EN[ayahRef.s - 1] || surah.englishName,
+        ayahNumber: ayah?.numberInSurah || ayahRef.a || 1,
+        juzNumber: ayah?.juz || 1,
+        pageNumber: ayah?.page || targetPage
+      };
+    }
+  }
+
+  // If no specific ayah provided, find the first ayah on the page
+  for (const surah of quranMetadata.surahs) {
+    const ayah = surah.ayahs.find((ay: any) => ay.page === targetPage);
+    if (ayah) {
+      return {
+        surahNumber: surah.number,
+        surahNameAr: SURAH_NAMES_AR[surah.number - 1] || surah.name,
+        surahNameEn: SURAH_NAMES_EN[surah.number - 1] || surah.englishName,
+        ayahNumber: ayah.numberInSurah,
+        juzNumber: ayah.juz,
+        pageNumber: targetPage
+      };
+    }
+  }
+
+  return {
+    surahNumber: 1,
+    surahNameAr: SURAH_NAMES_AR[0],
+    surahNameEn: SURAH_NAMES_EN[0],
+    ayahNumber: 1,
+    juzNumber: 1,
+    pageNumber: targetPage
+  };
+}
+
+// Utility to convert hex colors to rgba for soft tinted badges and highlights
+function hexToRgba(hex: string, alpha: number = 1): string {
+  if (!hex) return `rgba(46, 125, 94, ${alpha})`;
+  let clean = hex.replace('#', '');
+  if (clean.length === 3) {
+    clean = clean.split('').map(c => c + c).join('');
+  }
+  const num = parseInt(clean, 16);
+  if (isNaN(num)) return `rgba(46, 125, 94, ${alpha})`;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Arabic ordinal adjective matching masculine genitive «اليومِ» (e.g. الأول، الثاني، ... العشرين، الثلاثين)
+function getArabicDayOrdinal(day: number): string {
+  const n = Math.max(1, Math.floor(day));
+  const units = [
+    '', 'الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس',
+    'السادس', 'السابع', 'الثامن', 'التاسع', 'العاشر'
+  ];
+  const teens = [
+    '', 'الحادي عشر', 'الثاني عشر', 'الثالث عشر', 'الرابع عشر', 'الخامس عشر',
+    'السادس عشر', 'السابع عشر', 'الثامن عشر', 'التاسع عشر'
+  ];
+  const decades = [
+    '', '', 'العشرين', 'الثلاثين', 'الأربعين', 'الخمسين',
+    'الستين', 'السبعين', 'الثمانين', 'التسعين'
+  ];
+  const compoundUnits = [
+    '', 'الحادي', 'الثاني', 'الثالث', 'الرابع', 'الخامس',
+    'السادس', 'السابع', 'الثامن', 'التاسع'
+  ];
+  const hundreds = [
+    '', 'المئة', 'المئتين', 'الثلاثمئة', 'الأربعمئة', 'الخمسمئة',
+    'الستمئة', 'السبعمئة', 'الثمانمئة', 'التسعمئة'
+  ];
+
+  if (n <= 10) return units[n];
+  if (n <= 19) return teens[n - 10];
+  if (n < 100) {
+    const u = n % 10;
+    const d = Math.floor(n / 10);
+    if (u === 0) return decades[d];
+    return `${compoundUnits[u]} و${decades[d]}`;
+  }
+  if (n < 1000) {
+    const h = Math.floor(n / 100);
+    const rem = n % 100;
+    if (rem === 0) return hundreds[h];
+    return `${hundreds[h]} و${getArabicDayOrdinal(rem)}`;
+  }
+  return toArabic(n);
+}
+
+function getEnglishOrdinal(day: number): string {
+  const n = Math.max(1, Math.floor(day));
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+  switch (n % 10) {
+    case 1: return `${n}st`;
+    case 2: return `${n}nd`;
+    case 3: return `${n}rd`;
+    default: return `${n}th`;
+  }
+}
 
 const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, params?: any) => void }> = ({ onBack, onNavigate }) => {
+  const showPageGuides = useShowPageGuides();
   const { theme, themeKey } = useTheme();
-  const isDefaultTheme = themeKey === 'default';
-  const isBlackAndWhite = themeKey === 'deep_black';
-  const isBlackTheme = theme.bgColor === '#000000';
-  const primaryColor = isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : theme.palette[0]));
-  const secondaryColor = isBlackTheme ? '#FFFFFF' : (isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#FFFFFF' : (theme.palette[1] || theme.palette[0])));
-  const btnTextColor = isBlackTheme ? '#000000' : (isDefaultTheme ? '#000000' : (isBlackAndWhite ? '#000000' : '#FFFFFF'));
+  const { language } = useLanguage();
+  const isEn = language === 'en';
+  const formatNum = (val: number | string) => (isEn ? String(val) : toArabic(val));
 
-  const btnBorderParts = React.useMemo(() => {
-    if (!theme.btnBorder || theme.btnBorder === 'none') {
-      return { borderWidth: 0, borderStyle: 'none' as const, borderColor: 'transparent' };
-    }
-    const parts = theme.btnBorder.split(' ');
-    return {
-      borderWidth: parts[0] || '1px',
-      borderStyle: (parts[1] || 'solid') as any,
-      borderColor: parts[2] || primaryColor
-    };
-  }, [theme.btnBorder, primaryColor]);
+  const isBlackTheme = theme.bgColor === '#000000' || theme.name === 'أبيض وأسود' || theme.name === 'اسود' || theme.name === 'black' || themeKey === 'deep_black';
+  const isBlackAndWhite = themeKey === 'deep_black' || theme.name === 'أبيض وأسود';
+  const isDarkSurface = Boolean(theme.isDark) || isBlackTheme || themeKey === 'black_gold';
+  const recessedInputShadow = isDarkSurface
+    ? 'inset 0 3px 6px rgba(0, 0, 0, 0.8), inset 0 -1px 1.5px rgba(255, 255, 255, 0.12)'
+    : 'inset 0 3px 6px rgba(15, 23, 42, 0.14), inset 0 -1.5px 2px rgba(255, 255, 255, 0.9), 0 1px 0 rgba(255, 255, 255, 0.85)';
+  
+  const primaryColor = isBlackTheme ? '#FFFFFF' : (theme.accent || (isBlackAndWhite ? '#FFFFFF' : (theme.palette?.[0] || '#2E7D5E')));
+  const btnTextColor = isBlackTheme ? '#000000' : '#FFFFFF';
+  const surfaceCardClass = isBlackTheme
+    ? 'bg-[#18181b] text-white'
+    : 'bg-white dark:bg-[#1E293B] text-slate-800 dark:text-white';
+  const innerButtonClass = isBlackTheme
+    ? 'bg-[#27272a] text-white'
+    : 'bg-white dark:bg-[#0F172A] text-slate-800 dark:text-white';
+  const recessedWellClass = isBlackTheme
+    ? 'bg-[#27272a]/55'
+    : 'bg-slate-50/90 dark:bg-[#0F172A]/60';
 
   const [allSettings, setAllSettings] = useState<WirdSettings[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -52,13 +184,30 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   const [tempMode, setTempMode] = useState<'days' | 'pages'>('days');
   const [tempValue, setTempValue] = useState<string>('30');
   const [tempName, setTempName] = useState<string>('');
+  const [tempReminderEnabled, setTempReminderEnabled] = useState<boolean>(true);
+  const [tempReminderTime, setTempReminderTime] = useState<string>('10:00');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [calcMethod, setCalcMethod] = useState<'remaining' | 'total'>('remaining');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const settings = allSettings.find(s => s.id === activeId) || null;
+  const [showSettingsTour, setShowSettingsTour] = useState(false);
+  const [showProgressTour, setShowProgressTour] = useState(false);
+
+  useEffect(() => {
+    if (settings && !showSettings && !getGuideSeen('daily_wird_progress_tour') && !showSettingsTour) {
+      setShowProgressTour(true);
+    }
+  }, [settings, showSettings, showSettingsTour]);
+
+  const handleOpenGuide = useCallback(() => {
+    if (showSettings || !settings) {
+      setShowSettingsTour(true);
+    } else {
+      setShowProgressTour(true);
+    }
+  }, [showSettings, settings]);
 
   const toEnglishDigits = (str: string) => {
     return str.replace(/[٠-٩]/g, (d) => (d.charCodeAt(0) - 1632).toString())
@@ -69,21 +218,71 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     const saved = localStorage.getItem('dailyWirdSettings_v2');
     if (saved) {
       const parsed = JSON.parse(saved);
-      const profiles = parsed.profiles || [];
+      let wasSanitized = false;
+      const profiles = (parsed.profiles || []).map((p: any) => {
+        let sanitizedStartPage = p.startPage || 1;
+        if (sanitizedStartPage > 1 && (p.completedDays?.includes(1) || p.currentDay > 1 || sanitizedStartPage > 600 || (p.mode === 'days' && p.value === 30))) {
+          sanitizedStartPage = 1;
+          wasSanitized = true;
+        }
+
+        const totalDays = p.mode === 'days' ? p.value : Math.ceil(TOTAL_PAGES / p.value);
+        let sanitizedCurrentDay = Math.min(Math.max(1, p.currentDay || 1), totalDays);
+        let sanitizedCompletedDays: number[] = Array.isArray(p.completedDays) ? [...p.completedDays] : [];
+
+
+        // Clean duplicates and sort completedDays
+        sanitizedCompletedDays = Array.from(new Set(sanitizedCompletedDays)).sort((a, b) => a - b);
+
+        // Ensure currentDay aligns with completedDays
+        if (sanitizedCompletedDays.length > 0) {
+          const maxCompleted = Math.max(...sanitizedCompletedDays);
+          const expectedNextDay = Math.min(maxCompleted + 1, totalDays);
+          if (sanitizedCurrentDay !== expectedNextDay) {
+            sanitizedCurrentDay = expectedNextDay;
+            wasSanitized = true;
+          }
+        }
+
+        // Check if lastPage is out of range for the current day
+        const dayRange = getWirdDayRange(sanitizedCurrentDay, { ...p, startPage: sanitizedStartPage });
+        let sanitizedLastPage = p.lastPage;
+        let sanitizedLastAyah = p.lastAyah;
+        if (sanitizedLastPage && (sanitizedLastPage < dayRange.start || sanitizedLastPage > dayRange.end)) {
+          sanitizedLastPage = undefined;
+          sanitizedLastAyah = undefined;
+          wasSanitized = true;
+        }
+
+        return {
+          ...p,
+          startPage: sanitizedStartPage,
+          currentDay: sanitizedCurrentDay,
+          completedDays: sanitizedCompletedDays,
+          lastPage: sanitizedLastPage,
+          lastAyah: sanitizedLastAyah,
+          reminderEnabled: p.reminderEnabled !== false
+        };
+      });
       const activeProfileId = parsed.activeId || (profiles.length > 0 ? profiles[0].id : null);
       
       setAllSettings(profiles);
       setActiveId(activeProfileId);
 
-      // Check if the active profile is completed and redirect to settings if so
+      if (wasSanitized) {
+        const dataStr = JSON.stringify({ profiles, activeId: activeProfileId });
+        localStorage.setItem('dailyWirdSettings_v2', dataStr);
+        try {
+          Preferences.set({ key: 'dailyWirdSettings_v2', value: dataStr });
+        } catch (e) {}
+      }
+
       if (activeProfileId) {
         const activeProfile = profiles.find((p: WirdSettings) => p.id === activeProfileId);
         if (activeProfile) {
           const totalDays = activeProfile.mode === 'days' ? activeProfile.value : Math.ceil(TOTAL_PAGES / activeProfile.value);
           if (activeProfile.completedDays.length >= totalDays) {
-            // Use a timeout to ensure state is settled before triggering reset/settings
             setTimeout(() => {
-              // We need to find the profile again from the latest state or just use the one we found
               const resetProfile: WirdSettings = {
                 ...activeProfile,
                 currentDay: 1,
@@ -100,21 +299,21 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
               setTempMode(activeProfile.mode);
               setTempValue(activeProfile.value.toString());
               setTempName(activeProfile.name);
-              setCalcMethod('remaining');
+              setCalcMethod('total');
               setShowSettings(true);
             }, 0);
           }
         }
       }
     } else {
-      // Migrate from old single settings if exists
       const oldSaved = localStorage.getItem('dailyWirdSettings');
       if (oldSaved) {
         const oldSettings = JSON.parse(oldSaved);
         const migrated: WirdSettings = {
           ...oldSettings,
           id: 'default',
-          name: 'المستخدم 1'
+          name: 'المستخدم 1',
+          startPage: 1
         };
         setAllSettings([migrated]);
         setActiveId('default');
@@ -128,23 +327,56 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   const saveAllSettings = (profiles: WirdSettings[], activeProfileId: string | null) => {
     setAllSettings(profiles);
     setActiveId(activeProfileId);
-    localStorage.setItem('dailyWirdSettings_v2', JSON.stringify({ profiles, activeId: activeProfileId }));
+    const dataStr = JSON.stringify({ profiles, activeId: activeProfileId });
+    localStorage.setItem('dailyWirdSettings_v2', dataStr);
+    try {
+      Preferences.set({ key: 'dailyWirdSettings_v2', value: dataStr });
+    } catch (e) {}
   };
 
-  const handleStart = () => {
+  useEffect(() => {
+    if (settings) {
+      setTempReminderEnabled(settings.reminderEnabled !== false);
+      setTempReminderTime(settings.reminderTime || '10:00');
+    }
+  }, [settings]);
+
+  const [nameError, setNameError] = useState(false);
+
+  const handleStart = async () => {
+    if (!tempName.trim()) {
+      setNameError(true);
+      return;
+    }
+    setNameError(false);
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await LocalNotifications.requestPermissions();
+      } catch (e) {}
+    }
+
     const inputVal = parseInt(tempValue) || (tempMode === 'days' ? 30 : 20);
     let finalValue = inputVal;
     let startPage = 1;
-    const profileName = tempName.trim() || `مستخدم ${allSettings.length + 1}`;
+    let currentDay = settings ? settings.currentDay : 1;
+    let completedDays = settings ? settings.completedDays : [];
+    const profileName = tempName.trim();
 
     if (settings && settings.completedDays.length > 0) {
-      const lastPageRead = Math.max(0, ...settings.completedDays.map(d => getDayRange(d).end));
-      startPage = lastPageRead + 1;
-
-      if (tempMode === 'days' && calcMethod === 'total') {
-        const completedDaysCount = settings.completedDays.length;
-        finalValue = Math.max(1, inputVal - completedDaysCount);
+      if (calcMethod === 'remaining') {
+        const lastPageRead = Math.max(0, ...settings.completedDays.map(d => getDayRange(d).end));
+        startPage = lastPageRead + 1;
+        currentDay = 1;
+        completedDays = [];
+        finalValue = inputVal;
+      } else {
+        // 'total': Keep existing Khatma startPage and retain days progress
+        startPage = settings.startPage || 1;
+        finalValue = inputVal;
       }
+    } else if (settings) {
+      startPage = settings.startPage || 1;
     }
 
     const newWird: WirdSettings = {
@@ -153,12 +385,15 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       mode: tempMode,
       value: finalValue,
       startDate: settings ? settings.startDate : new Date().toISOString(),
-      currentDay: 1,
-      completedDays: [],
+      currentDay: currentDay,
+      completedDays: completedDays,
       isActive: true,
       startPage: startPage,
-      lastPage: undefined,
-      lastAyah: undefined
+      lastPage: settings?.lastPage,
+      lastAyah: settings?.lastAyah,
+      reminderEnabled: tempReminderEnabled,
+      reminderTime: tempReminderTime,
+      lastCompletedDate: settings?.lastCompletedDate
     };
 
     let newProfiles: WirdSettings[];
@@ -170,13 +405,18 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
 
     saveAllSettings(newProfiles, newWird.id);
     setShowSettings(false);
+    await syncDailyWirdNotifications(language);
   };
 
   const handleAddNew = () => {
     setTempMode('days');
     setTempValue('30');
     setTempName('');
-    setActiveId(null); // This tells handleStart to create a new one
+    setNameError(false);
+    setTempReminderEnabled(true);
+    setTempReminderTime('10:00');
+    setCalcMethod('total');
+    setActiveId(null);
     setShowSettings(true);
   };
 
@@ -186,6 +426,10 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     setTempMode(profile.mode);
     setTempValue(profile.value.toString());
     setTempName(profile.name);
+    setNameError(false);
+    setTempReminderEnabled(profile.reminderEnabled !== false);
+    setTempReminderTime(profile.reminderTime || '10:00');
+    setCalcMethod('total');
     setShowSettings(true);
     setShowProfileMenu(false);
   };
@@ -204,6 +448,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       newActiveId = newProfiles.length > 0 ? newProfiles[0].id : null;
     }
     saveAllSettings(newProfiles, newActiveId);
+    syncDailyWirdNotifications(language);
     if (newProfiles.length === 0) {
       setShowSettings(true);
     }
@@ -215,6 +460,10 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
       setTempMode(settings.mode);
       setTempValue(settings.value.toString());
       setTempName(settings.name);
+      setNameError(false);
+      setTempReminderEnabled(settings.reminderEnabled !== false);
+      setTempReminderTime(settings.reminderTime || '10:00');
+      setCalcMethod('total');
       setShowSettings(true);
     }
   };
@@ -239,15 +488,22 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         currentDay: 1,
         completedDays: [],
         startPage: 1,
-        isActive: true
+        lastPage: undefined,
+        lastAyah: undefined,
+        startDate: new Date().toISOString(),
+        isActive: true,
+        reminderEnabled: tempReminderEnabled,
+        reminderTime: tempReminderTime
       };
       const newProfiles = allSettings.map(p => p.id === settings.id ? resetProfile : p);
       saveAllSettings(newProfiles, settings.id);
+      syncDailyWirdNotifications(language);
       
       setTempMode('days');
       setTempValue('30');
       setTempName(settings.name);
-      setCalcMethod('remaining'); // Reset to default
+      setNameError(false);
+      setCalcMethod('total');
       setShowSettings(true);
     }
     setShowResetConfirm(false);
@@ -260,105 +516,45 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         currentDay: 1,
         completedDays: [],
         startPage: 1,
-        isActive: true
+        lastPage: undefined,
+        lastAyah: undefined,
+        startDate: new Date().toISOString(),
+        isActive: true,
+        reminderEnabled: tempReminderEnabled,
+        reminderTime: tempReminderTime
       };
       const newProfiles = allSettings.map(p => p.id === settings.id ? resetProfile : p);
       saveAllSettings(newProfiles, settings.id);
+      syncDailyWirdNotifications(language);
       
       setTempMode(settings.mode);
       setTempValue(settings.value.toString());
       setTempName(settings.name);
-      setCalcMethod('remaining');
+      setNameError(false);
+      setCalcMethod('total');
       setShowSettings(true);
     }
   };
 
-  const setupTutorialSteps: TutorialStep[] = [
-    {
-      id: 'wird-setup-welcome',
-      title: 'إعداد الختمة الجديدة',
-      text: 'مرحباً بك! هنا يمكنك البدء بتنظيم وردك القرآني. سنقوم بإنشاء خطة مخصصة تناسب وقتك وقدرتك.',
-      icon: <Settings className="w-8 h-8 text-white" />
-    },
-    {
-      id: 'wird-setup-mode',
-      title: 'طريقة الختم',
-      text: 'اختر ما إذا كنت تفضل الختم خلال عدد معين من الأيام، أو قراءة عدد محدد من الصفحات يومياً.',
-      selector: '#wird-mode-container',
-      icon: <BookOpen className="w-8 h-8 text-white" />
-    },
-    {
-      id: 'wird-setup-value',
-      title: 'تحديد المقدار',
-      text: 'أدخل عدد الأيام الإجمالي للختمة، أو عدد الصفحات التي تلتزم بقراءتها كل يوم.',
-      selector: '#wird-value-container',
-      icon: <Edit2 className="w-8 h-8 text-white" />
-    },
-    {
-      id: 'wird-setup-start',
-      title: 'ابدأ رحلتك',
-      text: 'بعد الانتهاء من الإعدادات، اضغط هنا لتبدأ رحلتك المباركة مع القرآن الكريم.',
-      selector: '#wird-start-container',
-      icon: <Play className="w-8 h-8 text-white" />
-    }
-  ];
-
-  const progressTutorialSteps: TutorialStep[] = [
-    {
-      id: 'wird-progress-welcome',
-      title: 'متابعة إنجازك',
-      text: 'رائع! لقد بدأت ختمتك. هنا ستجد كل ما تحتاجه لمتابعة تقدمك اليومي والالتزام بوردك.',
-      icon: <CheckCircle className="w-8 h-8 text-white" />
-    },
-    {
-      id: 'wird-progress-bar',
-      title: 'مؤشر الإنجاز',
-      text: 'هذا الشريط يوضح لك النسبة المئوية لما أنجزته من الختمة حتى الآن. كلما قرأت أكثر، اقتربت من الهدف!',
-      selector: '#wird-progress-container',
-      icon: <CheckCircle className="w-8 h-8 text-white" />
-    },
-    {
-      id: 'wird-progress-today',
-      title: 'ورد اليوم',
-      text: 'هنا يظهر لك بالضبط الصفحات المطلوب قراءتها اليوم. اضغط على "افتح المصحف" لتبدأ القراءة مباشرة.',
-      selector: '#wird-today-container',
-      icon: <BookOpen className="w-8 h-8 text-white" />
-    },
-    {
-      id: 'wird-progress-actions',
-      title: 'إدارة الورد',
-      text: 'بعد الانتهاء من القراءة، لا تنسَ الضغط على "تمت القراءة" لتحديث تقدمك.',
-      selector: '#wird-actions-container',
-      icon: <Settings className="w-8 h-8 text-white" />
-    },
-    {
-      id: 'wird-edit-highlight',
-      title: 'تعديل الختمة',
-      text: 'إذا شعرت أن الخطة الحالية سريعة جداً أو بطيئة، يمكنك الضغط هنا لتعديل عدد الأيام أو الصفحات في أي وقت.',
-      selector: '#wird-edit-btn',
-      icon: <Settings className="w-8 h-8 text-white" />
-    },
-    {
-      id: 'wird-reset-highlight',
-      title: 'إعادة تعيين الختمة',
-      text: 'في حال أردت البدء من جديد تماماً أو تغيير نقطة البداية، استخدم هذا الزر لتصفير التقدم الحالي وإعادة ضبط الإعدادات.',
-      selector: '#wird-reset-btn',
-      icon: <RotateCcw className="w-8 h-8 text-white" />
-    }
-  ];
-
-  const markDayCompleted = () => {
+  const markDayCompleted = async () => {
     if (!settings) return;
-    const newCompleted = [...settings.completedDays, settings.currentDay];
-    const newWird = {
-      ...settings,
-      completedDays: newCompleted,
-      currentDay: settings.currentDay < getTotalDays() ? settings.currentDay + 1 : settings.currentDay,
-      lastPage: undefined,
-      lastAyah: undefined
-    };
-    const newProfiles = allSettings.map(p => p.id === settings.id ? newWird : p);
-    saveAllSettings(newProfiles, settings.id);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const totalDays = getTotalDays();
+    if (!settings.completedDays.includes(settings.currentDay)) {
+      const newCompleted = [...settings.completedDays, settings.currentDay];
+      const newCurrentDay = settings.currentDay < totalDays ? settings.currentDay + 1 : settings.currentDay;
+      const newWird: WirdSettings = {
+        ...settings,
+        completedDays: newCompleted,
+        currentDay: newCurrentDay,
+        lastPage: undefined,
+        lastAyah: undefined,
+        lastCompletedDate: todayStr
+      };
+      const newProfiles = allSettings.map(p => p.id === settings.id ? newWird : p);
+      saveAllSettings(newProfiles, settings.id);
+      await syncDailyWirdNotifications(language);
+    }
   };
 
   const getTotalDays = () => {
@@ -366,137 +562,215 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     return settings.mode === 'days' ? settings.value : Math.ceil(TOTAL_PAGES / settings.value);
   };
 
-  const getPagesPerDay = () => {
-    if (!settings) return 20;
-    return settings.mode === 'pages' ? settings.value : Math.ceil(TOTAL_PAGES / settings.value);
-  };
-
-  const handleOpenQuran = (page: number, initialAyah?: { s: number; a: number }) => {
+  const handleOpenQuran = (
+    page: number, 
+    initialAyah?: { s: number; a: number }, 
+    readingMode: 'mushaf' | 'translation' = 'mushaf'
+  ) => {
     const targetPage = Math.max(1, page);
     onNavigate('quran', { 
       page: targetPage, 
       surah: initialAyah?.s, 
       ayah: initialAyah?.a, 
-      isWird: true
+      isWird: true,
+      readingMode
     });
   };
 
+  const getDayRange = (day: number, profileOverride?: WirdSettings) => {
+    const active = profileOverride || settings;
+    if (!active) return { start: 1, end: 21 };
+    return getWirdDayRange(day, active);
+  };
+
+  // 3D Sculpted Settings Screen (Matching Tasbeeh & Memorization)
   const renderSettings = () => (
-    <div className="p-4 rounded-2xl shadow-lg border" style={{ backgroundColor: isDefaultTheme ? '#FFFFFF' : 'var(--card-bg)', borderColor: isDefaultTheme ? '#e5e7eb' : 'var(--card-border)', color: isDefaultTheme ? '#000000' : 'inherit' }}>
-      <h2 className="text-xl font-bold mb-4 text-center">{settings ? 'تعديل الختمة' : 'إعداد ختمة جديدة'}</h2>
+    <div 
+      className={`app-page-card border-0 p-5 rounded-3xl ${surfaceCardClass} ${isEn ? 'text-left' : 'text-right'}`}
+    >
+      <h2 className="text-xl font-black mb-4 text-center font-cairo" style={{ color: primaryColor, fontFamily: "'Cairo', sans-serif" }}>
+        {settings ? (isEn ? 'Edit Khatma Plan' : 'تعديل خطة الختمة') : (isEn ? 'New Khatma Setup' : 'إعداد ختمة جديدة')}
+      </h2>
       
       <div className="space-y-4">
-        <div id="wird-name-container">
-          <label className="block mb-2 font-semibold">اسم المستخدم / الختمة:</label>
+        {/* Profile Name */}
+        <div id="wird-name-container" className="space-y-1.5">
+          <label className="block text-xs font-bold opacity-80 px-1">
+            {isEn ? 'Khatma / User Name:' : 'اسم الختمة / المستخدم:'} <span className="text-red-500 font-bold">*</span>
+          </label>
           <input 
             type="text"
             value={tempName}
-            onChange={(e) => setTempName(e.target.value)}
-            className="w-full border rounded-xl p-3 text-right focus:outline-none focus:border-green-500"
-            style={{ backgroundColor: isDefaultTheme ? '#f9fafb' : (theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)'), borderColor: isDefaultTheme ? '#e5e7eb' : 'var(--card-border)', color: isDefaultTheme ? '#000000' : 'var(--text-color)' }}
-            placeholder="مثال: أحمد، ختمة رمضان..."
+            onChange={(e) => {
+              setTempName(e.target.value);
+              if (e.target.value.trim()) setNameError(false);
+            }}
+            className={`border-0 w-full rounded-2xl p-3.5 ${isEn ? 'text-left' : 'text-right'} font-bold text-sm focus:outline-none focus:ring-2 transition-all ${
+              nameError
+                ? 'ring-2 ring-red-500 bg-red-50/60 dark:bg-red-950/30'
+                : (isBlackTheme ? 'bg-[#27272a] text-white placeholder:text-zinc-500' : 'bg-slate-100/90 dark:bg-[#0F172A] text-slate-800 dark:text-white placeholder:text-slate-400')
+            }`}
+            style={{ boxShadow: recessedInputShadow }}
+            placeholder={isEn ? 'e.g. Ahmed, Ramadan Khatma...' : 'مثال: أحمد، ختمة رمضان...'}
           />
+          {nameError && (
+            <p className="text-xs font-bold text-red-500 px-1 pt-0.5 animate-bounce">
+              {isEn ? '⚠️ Please enter Khatma / User name before starting' : '⚠️ يرجى تسجيل اسم الختمة / المستخدم أولاً قبل البدء'}
+            </p>
+          )}
         </div>
 
-        <div id="wird-mode-container">
-          <label className="block mb-2 font-semibold">طريقة الختمة:</label>
-          <div className="flex gap-4">
+        {/* Khatma Method Segmented Chips */}
+        <div id="wird-mode-container" className="space-y-1.5">
+          <label className="block text-xs font-bold opacity-80 px-1">
+            {isEn ? 'Khatma Method:' : 'طريقة الختمة:'}
+          </label>
+          <div className={`grid grid-cols-2 p-2 pb-2.5 rounded-2xl gap-2.5 border-0 overflow-visible ${recessedWellClass}`}>
             <button 
+              type="button"
               onClick={() => setTempMode('days')}
-              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMode === 'days' ? (isDefaultTheme ? 'border-black bg-white text-black' : '') : (isDefaultTheme ? 'border-gray-200 bg-white text-black' : 'border-gray-300 dark:border-gray-600 opacity-60')}`}
-              style={!isDefaultTheme && tempMode === 'days' ? { 
-                borderColor: primaryColor, 
-                backgroundColor: `${primaryColor}20`, 
-                color: theme.isDark ? '#FFFFFF' : primaryColor 
-              } : {}}
+              className={`app-page-card border-0 py-3 rounded-xl text-sm transition-all cursor-pointer ${
+                tempMode === 'days' 
+                  ? 'font-black' 
+                  : `font-bold ${surfaceCardClass}`
+              }`}
+              style={tempMode === 'days' ? { backgroundColor: primaryColor, color: btnTextColor } : undefined}
             >
-              حسب الأيام
+              {isEn ? 'By Days' : 'حسب الأيام'}
             </button>
             <button 
+              type="button"
               onClick={() => setTempMode('pages')}
-              className={`flex-1 py-3 rounded-xl border-2 transition-all ${tempMode === 'pages' ? (isDefaultTheme ? 'border-black bg-white text-black' : '') : (isDefaultTheme ? 'border-gray-200 bg-white text-black' : 'border-gray-300 dark:border-gray-600 opacity-60')}`}
-              style={!isDefaultTheme && tempMode === 'pages' ? { 
-                borderColor: primaryColor, 
-                backgroundColor: `${primaryColor}20`, 
-                color: theme.isDark ? '#FFFFFF' : primaryColor 
-              } : {}}
+              className={`app-page-card border-0 py-3 rounded-xl text-sm transition-all cursor-pointer ${
+                tempMode === 'pages' 
+                  ? 'font-black' 
+                  : `font-bold ${surfaceCardClass}`
+              }`}
+              style={tempMode === 'pages' ? { backgroundColor: primaryColor, color: btnTextColor } : undefined}
             >
-              حسب الصفحات
+              {isEn ? 'By Pages' : 'حسب الصفحات'}
             </button>
           </div>
         </div>
 
-
-        <div id="wird-value-container">
-          <label className="block mb-2 font-semibold">
-            {tempMode === 'days' ? 'عدد الأيام للختمة:' : 'عدد الصفحات يومياً:'}
+        {/* Number of Days or Pages */}
+        <div id="wird-value-container" className="space-y-1.5">
+          <label className="block text-xs font-bold opacity-80 px-1">
+            {tempMode === 'days' 
+              ? (isEn ? 'Target Number of Days:' : 'عدد الأيام المستهدفة للختمة:') 
+              : (isEn ? 'Pages to Read Daily:' : 'عدد الصفحات للقراءة يومياً:')}
           </label>
           <input 
             type="text"
             inputMode="numeric"
-            value={tempValue}
+            value={isEn ? tempValue : toArabic(tempValue)}
             onFocus={() => {
-              setIsInputFocused(true);
               setTempValue('');
             }}
-            onBlur={() => setIsInputFocused(false)}
             onChange={(e) => {
               const val = toEnglishDigits(e.target.value);
               if (val === '' || /^\d*$/.test(val)) {
                 setTempValue(val);
               }
             }}
-            className="w-full border rounded-xl p-3 text-center text-xl font-bold focus:outline-none focus:border-green-500"
-            style={{ backgroundColor: isDefaultTheme ? '#f9fafb' : (theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)'), borderColor: isDefaultTheme ? '#e5e7eb' : 'var(--card-border)', color: isDefaultTheme ? '#000000' : 'var(--text-color)' }}
-            placeholder={tempMode === 'days' ? '30' : '20'}
+            className={`border-0 w-full rounded-2xl p-3.5 text-center text-2xl font-black focus:outline-none focus:ring-2 transition-all ${
+              isBlackTheme ? 'bg-[#27272a]' : 'bg-slate-100/90 dark:bg-[#0F172A]'
+            }`}
+            style={{ color: primaryColor, boxShadow: recessedInputShadow }}
+            placeholder={formatNum(tempMode === 'days' ? '30' : '20')}
           />
         </div>
 
+        {/* Calculation method for remaining */}
         {settings && settings.completedDays.length > 0 && (
-          <div className="p-4 rounded-xl border-2 border-dashed" style={{ borderColor: isDefaultTheme ? '#e5e7eb' : theme.cardBorder }}>
-            <label className={`block mb-3 font-bold text-sm ${isDefaultTheme ? 'text-black' : 'text-emerald-600 dark:text-emerald-400'}`}>طريقة احتساب المتبقي:</label>
-            <div className="space-y-3">
+          <div className={`p-3.5 rounded-2xl space-y-2.5 border-0 ${recessedWellClass}`}>
+            <label className="block font-black text-xs" style={{ color: primaryColor }}>
+              {isEn ? 'Remaining Calculation Method:' : 'طريقة احتساب المتبقي:'}
+            </label>
+            <div className="space-y-2.5 overflow-visible pb-1">
               <button 
+                type="button"
                 onClick={() => setCalcMethod('remaining')}
-                className={`w-full p-3 rounded-xl text-right text-sm flex items-center justify-between border transition-all ${calcMethod === 'remaining' ? 'border-emerald-500 bg-emerald-500/10' : (isDefaultTheme ? 'border-gray-200 bg-white' : 'border-gray-200 dark:border-gray-700')}`}
+                className={`app-page-card border-0 w-full p-3 rounded-xl ${isEn ? 'text-left' : 'text-right'} text-xs flex items-center justify-between gap-2 transition-all cursor-pointer ${
+                  calcMethod === 'remaining' 
+                    ? 'font-black' 
+                    : `font-bold opacity-85 hover:opacity-100 ${surfaceCardClass}`
+                }`}
+                style={calcMethod === 'remaining' ? { backgroundColor: primaryColor, color: btnTextColor } : undefined}
               >
-                <span className={isDefaultTheme ? 'text-black' : ''}>خطة جديدة للمتبقي (العدد المدخل هو للمستقبل)</span>
-                <div className={`w-4 h-4 rounded-full border-2 ${calcMethod === 'remaining' ? 'border-emerald-500 bg-emerald-500' : (isDefaultTheme ? 'border-gray-400' : 'border-gray-400')}`} />
+                <span>
+                  {isEn ? 'New plan for remaining (Input is future days)' : 'خطة جديدة للمتبقي (العدد المدخل هو للمستقبل)'}
+                </span>
+                <div 
+                  className={`${calcMethod === 'remaining' ? 'app-3d-badge' : 'app-3d-recessed-field'} border-0 w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all`} 
+                  style={{ 
+                    backgroundColor: calcMethod === 'remaining'
+                      ? (isBlackTheme ? '#18181b' : '#FFFFFF')
+                      : (isDarkSurface ? '#0f172a' : '#e2e8f0'),
+                    color: calcMethod === 'remaining' ? (isBlackTheme ? '#FFFFFF' : primaryColor) : 'transparent',
+                    boxShadow: calcMethod === 'remaining'
+                      ? '0 2.5px 0 rgba(0, 0, 0, 0.22), 0 4px 8px rgba(0, 0, 0, 0.18), inset 0 1.5px 1px rgba(255, 255, 255, 0.92)'
+                      : undefined
+                  }}
+                >
+                  {calcMethod === 'remaining' && <Check size={12} strokeWidth={3} />}
+                </div>
               </button>
+
               <button 
+                type="button"
                 onClick={() => setCalcMethod('total')}
-                className={`w-full p-3 rounded-xl text-right text-sm flex items-center justify-between border transition-all ${calcMethod === 'total' ? 'border-emerald-500 bg-emerald-500/10' : (isDefaultTheme ? 'border-gray-200 bg-white' : 'border-gray-200 dark:border-gray-700')}`}
+                className={`app-page-card border-0 w-full p-3 rounded-xl ${isEn ? 'text-left' : 'text-right'} text-xs flex items-center justify-between gap-2 transition-all cursor-pointer ${
+                  calcMethod === 'total' 
+                    ? 'font-black' 
+                    : `font-bold opacity-85 hover:opacity-100 ${surfaceCardClass}`
+                }`}
+                style={calcMethod === 'total' ? { backgroundColor: primaryColor, color: btnTextColor } : undefined}
               >
-                <span className={isDefaultTheme ? 'text-black' : ''}>تعديل الخطة الحالية (العدد المدخل هو الإجمالي)</span>
-                <div className={`w-4 h-4 rounded-full border-2 ${calcMethod === 'total' ? 'border-emerald-500 bg-emerald-500' : (isDefaultTheme ? 'border-gray-400' : 'border-gray-400')}`} />
+                <span>
+                  {isEn ? 'Modify current plan (Input is total)' : 'تعديل الخطة الحالية (العدد المدخل هو الإجمالي)'}
+                </span>
+                <div 
+                  className={`${calcMethod === 'total' ? 'app-3d-badge' : 'app-3d-recessed-field'} border-0 w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all`} 
+                  style={{ 
+                    backgroundColor: calcMethod === 'total'
+                      ? (isBlackTheme ? '#18181b' : '#FFFFFF')
+                      : (isDarkSurface ? '#0f172a' : '#e2e8f0'),
+                    color: calcMethod === 'total' ? (isBlackTheme ? '#FFFFFF' : primaryColor) : 'transparent',
+                    boxShadow: calcMethod === 'total'
+                      ? '0 2.5px 0 rgba(0, 0, 0, 0.22), 0 4px 8px rgba(0, 0, 0, 0.18), inset 0 1.5px 1px rgba(255, 255, 255, 0.92)'
+                      : undefined
+                  }}
+                >
+                  {calcMethod === 'total' && <Check size={12} strokeWidth={3} />}
+                </div>
               </button>
             </div>
-            <p className="text-[10px] mt-2 opacity-60 leading-tight">
-              * سيتم البدء من الصفحة التالية لآخر صفحة قرأتها.
+            <p className="text-[10px] opacity-65 leading-tight pt-1">
+              {isEn ? '* Will continue from the page following your last read page.' : '* سيتم البدء من الصفحة التالية لآخر صفحة قرأتها.'}
             </p>
           </div>
         )}
 
-        <div className="flex gap-3 mt-6" id="wird-start-container">
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-2 pb-1 overflow-visible" id="wird-start-container">
           <button 
+            type="button"
             onClick={handleStart}
-            className={`flex-1 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors border-b-4 ring-2 ${isDefaultTheme ? 'bg-white text-black border-gray-200 ring-gray-100' : ''}`}
-            style={(!isDefaultTheme ? { 
-              backgroundColor: primaryColor, 
-              color: btnTextColor,
-              borderColor: isBlackAndWhite ? '#E5E5E5' : secondaryColor,
-              '--tw-ring-color': `${primaryColor}40`
-            } : {}) as React.CSSProperties}
+            className="app-page-card border-0 flex-1 py-4 rounded-2xl font-black text-base flex items-center justify-center gap-2 transition-all cursor-pointer"
+            style={{ backgroundColor: primaryColor, color: btnTextColor }}
           >
-            <Play size={24} />
-            {settings ? 'حفظ' : 'ابدأ الختمة'}
+            <Play size={20} fill="currentColor" />
+            <span>{settings ? (isEn ? 'Save Plan' : 'حفظ الخطة') : (isEn ? 'Start Khatma' : 'ابدأ الختمة')}</span>
           </button>
+          
           {(settings || allSettings.length > 0) && (
             <button 
+              type="button"
               onClick={handleCancelEdit}
-              className={`py-4 px-6 ${isDefaultTheme ? 'bg-gray-100 text-black' : 'bg-gray-500 hover:bg-gray-400 text-white'} rounded-xl font-bold text-lg flex items-center justify-center transition-colors`}
+              className={`app-page-card border-0 py-4 px-5 rounded-2xl font-bold text-base flex items-center justify-center transition-all cursor-pointer ${surfaceCardClass}`}
             >
-              <X size={24} />
+              <X size={20} />
             </button>
           )}
         </div>
@@ -504,26 +778,7 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     </div>
   );
 
-  const getDayRange = (day: number) => {
-    if (!settings) return { start: 1, end: 20 };
-    
-    const startPage = settings.startPage || 1;
-    const pagesLeft = TOTAL_PAGES - startPage + 1;
-    const offset = startPage - 1;
-
-    if (settings.mode === 'days') {
-      const totalDays = settings.value;
-      const start = Math.floor(((day - 1) * pagesLeft) / totalDays) + 1 + offset;
-      const end = Math.floor((day * pagesLeft) / totalDays) + offset;
-      return { start, end: Math.max(start - 1, end) };
-    } else {
-      const pagesPerDay = settings.value;
-      const start = (day - 1) * pagesPerDay + 1 + offset;
-      const end = Math.min(day * pagesPerDay + offset, TOTAL_PAGES);
-      return { start: Math.min(start, TOTAL_PAGES + 1), end };
-    }
-  };
-
+  // Modern Flat Progress Screen
   const renderProgress = () => {
     if (!settings) return null;
     const totalDays = getTotalDays();
@@ -532,193 +787,293 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     const { start: startPage, end: endPage } = getDayRange(settings.currentDay);
     const isCompleted = settings.completedDays.includes(settings.currentDay);
     const hasPages = startPage <= endPage && startPage <= TOTAL_PAGES;
-    const canContinue = settings.lastPage && !isCompleted;
+    const canContinue = Boolean(
+      settings.lastPage && 
+      !isCompleted && 
+      settings.lastPage >= startPage && 
+      settings.lastPage <= endPage
+    );
+
+    const targetPage = canContinue ? settings.lastPage! : startPage;
+    let targetAyahRef = canContinue ? settings.lastAyah : undefined;
+
+    if (canContinue && !targetAyahRef) {
+      try {
+        const savedWird = localStorage.getItem('last_read_ayah_wird');
+        if (savedWird) {
+          const parsed = JSON.parse(savedWird);
+          if (parsed?.s && parsed?.a && (!parsed.page || parsed.page === targetPage)) {
+            targetAyahRef = { s: parsed.s, a: parsed.a };
+          }
+        }
+      } catch (e) {}
+    }
+
+    const ayahDetails = getAyahDetails(targetPage, targetAyahRef);
 
     return (
       <div className="space-y-4">
-        {/* Progress Bar */}
-        <div id="wird-progress-container" className="rounded-2xl p-4 shadow-lg border" style={{ backgroundColor: isDefaultTheme ? '#FFFFFF' : 'var(--card-bg)', borderColor: isDefaultTheme ? '#e5e7eb' : 'var(--card-border)', color: isDefaultTheme ? '#000000' : 'inherit' }}>
-          <div className="flex justify-between mb-1">
-            <span className="font-bold text-sm">نسبة الإنجاز</span>
-            <span className={`font-bold ${isDefaultTheme ? 'text-black' : (isBlackTheme ? 'text-white' : 'text-green-500 dark:text-green-400')} text-sm`}>{progress.toFixed(1)}%</span>
+        {/* Progress Card */}
+        <div 
+          id="wird-progress-container" 
+          className={`app-page-card border-0 rounded-3xl p-5 space-y-3 ${surfaceCardClass}`}
+        >
+          <div className="flex justify-between items-center">
+            <span className="font-black text-sm">
+              {isEn ? 'Completion Rate' : 'نسبة الإنجاز'}
+            </span>
+            <span 
+              className="app-3d-badge border-0 px-3 py-1 rounded-full font-black text-sm tabular-nums"
+              style={{
+                backgroundColor: hexToRgba(primaryColor, isBlackTheme ? 0.2 : 0.1),
+                color: primaryColor
+              }}
+            >
+              {formatNum(progress.toFixed(1))}%
+            </span>
           </div>
-          <div className="w-full h-3 rounded-full overflow-hidden" style={{ backgroundColor: isDefaultTheme ? '#f3f4f6' : (theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)') }}>
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              className={`h-full ${isDefaultTheme ? 'bg-black' : (isBlackTheme ? 'bg-white' : 'bg-gradient-to-r from-green-500 to-emerald-400')}`}
+
+          {/* Thick Rounded 3D Progress Bar */}
+          <div className={`app-3d-progress-track border-0 w-full h-4 rounded-full overflow-hidden p-0.5 ${isBlackTheme ? 'bg-[#09090b]' : 'bg-slate-100 dark:bg-[#0F172A]'}`}>
+            <div 
+              className="app-3d-progress-fill h-full rounded-full"
+              style={{ backgroundColor: primaryColor, width: `${progress}%` }}
             />
           </div>
-          <div className="flex justify-between mt-1 text-xs opacity-80">
-            <span>اليوم {settings.currentDay} من {totalDays}</span>
-            <span>{settings.completedDays.length} يوم مكتمل</span>
+
+          <div className="flex justify-between items-center text-xs opacity-75 font-bold pt-0.5">
+            <span>{isEn ? `Day ${settings.currentDay} of ${totalDays}` : `اليوم ${toArabic(settings.currentDay)} من ${toArabic(totalDays)}`}</span>
+            <span>{isEn ? `${settings.completedDays.length} days done` : `${toArabic(settings.completedDays.length)} يوم مكتمل`}</span>
           </div>
         </div>
 
-        {/* Current Wird */}
-        <div id="wird-today-container" className="rounded-2xl p-4 shadow-lg border text-center" style={{ backgroundColor: isDefaultTheme ? '#FFFFFF' : 'var(--card-bg)', borderColor: isDefaultTheme ? '#e5e7eb' : 'var(--card-border)', color: isDefaultTheme ? '#000000' : 'inherit' }}>
-          <h3 className={`text-lg font-bold mb-3 ${isDefaultTheme ? 'text-black' : 'text-emerald-600 dark:text-emerald-400'}`}>ورد اليوم ({settings.currentDay})</h3>
-          
-          <div className="flex justify-center items-center gap-3 mb-4">
+        {/* Current Day's Reading Card */}
+        <div 
+          id="wird-today-card" 
+          className={`app-page-card border-0 rounded-3xl p-4 sm:p-5 text-center space-y-3.5 ${surfaceCardClass}`}
+        >
+          <div id="wird-today-container" className={`p-3.5 rounded-2xl border-0 ${recessedWellClass}`}>
+            <div className="flex items-center justify-center mb-2.5">
+              <h3 className="text-sm font-black" style={{ color: primaryColor }}>
+                {isEn
+                  ? `Today's Wird ${getEnglishOrdinal(settings.currentDay)} - ${settings.currentDay}`
+                  : `ورد اليوم ${getArabicDayOrdinal(settings.currentDay)} - ${toArabic(settings.currentDay)}`}
+              </h3>
+            </div>
+            
             {hasPages ? (
-              <>
-                <div className="p-3 rounded-xl flex-1" style={{ backgroundColor: isDefaultTheme ? '#f9fafb' : (theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)') }}>
-                  <p className="text-xs opacity-80 mb-1">من صفحة</p>
-                  <p className="text-2xl font-bold">{startPage}</p>
-                </div>
-                <span className="text-xl opacity-50">-</span>
-                <div className="p-3 rounded-xl flex-1" style={{ backgroundColor: isDefaultTheme ? '#f9fafb' : (theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)') }}>
-                  <p className="text-xs opacity-80 mb-1">إلى صفحة</p>
-                  <p className="text-2xl font-bold">{endPage}</p>
-                </div>
-              </>
+              <div className="grid grid-cols-2 gap-2.5 w-full overflow-visible pb-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const startDetails = getAyahDetails(startPage);
+                    handleOpenQuran(
+                      startPage,
+                      { s: startDetails.surahNumber, a: startDetails.ayahNumber },
+                      isEn ? 'translation' : 'mushaf'
+                    );
+                  }}
+                  className={`app-page-card border-0 rounded-2xl py-2.5 px-3 flex items-center justify-center gap-1.5 text-center cursor-pointer ${surfaceCardClass}`}
+                >
+                  <span className="text-xs font-bold opacity-80">{isEn ? 'From Page' : 'من صفحة'}</span>
+                  <span className="text-sm font-black" style={{ color: primaryColor }}>{formatNum(startPage)}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const endDetails = getAyahDetails(endPage);
+                    handleOpenQuran(
+                      endPage,
+                      { s: endDetails.surahNumber, a: endDetails.ayahNumber },
+                      isEn ? 'translation' : 'mushaf'
+                    );
+                  }}
+                  className={`app-page-card border-0 rounded-2xl py-2.5 px-3 flex items-center justify-center gap-1.5 text-center cursor-pointer ${surfaceCardClass}`}
+                >
+                  <span className="text-xs font-bold opacity-80">{isEn ? 'To Page' : 'إلى صفحة'}</span>
+                  <span className="text-sm font-black" style={{ color: primaryColor }}>{formatNum(endPage)}</span>
+                </button>
+              </div>
             ) : (
-              <div className="p-3 rounded-xl flex-1" style={{ backgroundColor: isDefaultTheme ? '#f9fafb' : (theme.isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)') }}>
-                <p className="text-lg font-bold">لقد أكملت جميع الصفحات!</p>
+              <div className={`app-inner-3d-box border-0 p-3 rounded-2xl ${innerButtonClass}`}>
+                <p className="text-sm font-bold" style={{ color: primaryColor }}>
+                  {isEn ? 'You have completed all pages!' : 'لقد أكملت جميع الصفحات بارك الله فيك!'}
+                </p>
               </div>
             )}
           </div>
 
-          <div className="flex flex-col gap-2" id="wird-actions-container">
-            {hasPages && (
-              <button 
-                onClick={() => {
-                  if (canContinue) {
-                    handleOpenQuran(settings.lastPage!, settings.lastAyah);
-                  } else {
-                    handleOpenQuran(startPage);
-                  }
-                }}
-                className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md ${isDefaultTheme ? 'bg-white text-black border border-gray-200' : ''}`}
-                style={!isDefaultTheme ? { 
-                  backgroundColor: primaryColor, 
-                  color: btnTextColor, 
-                  borderWidth: btnBorderParts.borderWidth,
-                  borderStyle: btnBorderParts.borderStyle,
-                  borderColor: btnBorderParts.borderColor
-                } : {}}
-              >
-                <BookOpen size={20} />
-                {canContinue ? `تكملة الورد (صفحة ${settings.lastPage})` : 'افتح المصحف للقراءة'}
-              </button>
-            )}
-
-            {!isCompleted ? (
-              <button 
-                onClick={markDayCompleted}
-                className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md ${isDefaultTheme ? 'bg-white text-black border border-gray-200' : ''}`}
-                style={!isDefaultTheme ? { 
-                  backgroundColor: secondaryColor, 
-                  color: btnTextColor, 
-                  borderWidth: btnBorderParts.borderWidth,
-                  borderStyle: btnBorderParts.borderStyle,
-                  borderColor: btnBorderParts.borderColor
-                } : {}}
-              >
-                <CheckCircle size={20} />
-                تمت القراءة
-              </button>
-            ) : (
-              <div className="flex flex-col gap-2">
+          {/* Current Reading Position Card (4 Details Grid) */}
+          {hasPages && (
+            <div 
+              onClick={() => {
+                handleOpenQuran(
+                  ayahDetails.pageNumber, 
+                  { s: ayahDetails.surahNumber, a: ayahDetails.ayahNumber }, 
+                  isEn ? 'translation' : 'mushaf'
+                );
+              }}
+              className={`p-3.5 rounded-2xl border-0 cursor-pointer transition-all ${recessedWellClass}`}
+            >
+              <div className="text-xs font-bold opacity-65 mb-2 text-center">
+                {isEn ? 'Current Reading Position' : 'موضع القراءة الحالي'}
+              </div>
+              <div className="grid grid-cols-2 gap-2.5 w-full overflow-visible pb-0.5">
+                {/* اسم السورة */}
                 <div 
-                  className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-sm border shadow-sm ${isDefaultTheme ? 'bg-gray-50 text-black border-gray-200' : ''}`}
-                  style={!isDefaultTheme ? { 
-                    backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : `${secondaryColor}20`, 
-                    color: isBlackAndWhite ? '#FFFFFF' : secondaryColor,
-                    borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : `${secondaryColor}30`
-                  } : {}}
+                  className={`wird-inner-raised border-0 rounded-2xl py-2.5 px-3 flex items-center justify-center text-center ${innerButtonClass}`}
                 >
-                  <CheckCircle size={20} />
-                  انجزت الورد كاملا
+                  <span className="font-extrabold text-sm truncate max-w-full">
+                    {isEn ? ayahDetails.surahNameEn : `سورة ${ayahDetails.surahNameAr}`}
+                  </span>
                 </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={handleStartNewWird}
-                    className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm shadow-md ${isDefaultTheme ? 'bg-white text-black border border-gray-200' : ''}`}
-                    style={!isDefaultTheme ? { 
-                      backgroundColor: primaryColor, 
-                      color: btnTextColor, 
-                      borderWidth: btnBorderParts.borderWidth,
-                      borderStyle: btnBorderParts.borderStyle,
-                      borderColor: btnBorderParts.borderColor
-                    } : {}}
-                  >
-                    <Plus size={20} />
-                    بداية ورد جديد
-                  </button>
-                  <button 
-                    onClick={() => onNavigate('home')}
-                    className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm ${isDefaultTheme ? 'bg-white text-black border border-gray-200' : ''}`}
-                    style={isBlackTheme ? {
-                      backgroundColor: '#000000',
-                      color: '#FFFFFF',
-                      borderColor: '#FFFFFF'
-                    } : (!isDefaultTheme ? { 
-                      backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : `${secondaryColor}10`, 
-                      color: isBlackAndWhite ? '#FFFFFF' : secondaryColor,
-                      borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : `${secondaryColor}30`
-                    } : {})}
-                  >
-                    <Home size={20} />
-                    الرئيسية
-                  </button>
+
+                {/* رقم الآية */}
+                <div 
+                  className={`wird-inner-raised border-0 rounded-2xl py-2.5 px-3 flex items-center justify-center text-center ${innerButtonClass}`}
+                >
+                  <span className="font-extrabold text-sm">
+                    {isEn ? `Ayah ${ayahDetails.ayahNumber}` : `الآية ${toArabic(ayahDetails.ayahNumber)}`}
+                  </span>
+                </div>
+
+                {/* رقم الجزء */}
+                <div 
+                  className={`wird-inner-raised border-0 rounded-2xl py-2.5 px-3 flex items-center justify-center text-center ${innerButtonClass}`}
+                >
+                  <span className="font-extrabold text-sm">
+                    {isEn ? `Juz ${ayahDetails.juzNumber}` : `الجزء ${toArabic(ayahDetails.juzNumber)}`}
+                  </span>
+                </div>
+
+                {/* رقم الصفحة */}
+                <div 
+                  className={`wird-inner-raised border-0 rounded-2xl py-2.5 px-3 flex items-center justify-center text-center ${innerButtonClass}`}
+                >
+                  <span className="font-extrabold text-sm">
+                    {isEn ? `Page ${ayahDetails.pageNumber}` : `الصفحة ${toArabic(ayahDetails.pageNumber)}`}
+                  </span>
                 </div>
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Sculpted 3D Action Button */}
+          <div className="flex flex-col gap-2.5 pt-1 pb-1 items-center justify-center overflow-visible" id="wird-actions-container">
+            {hasPages ? (
+              !isCompleted ? (
+                <button 
+                  id="btn-wird-start-now"
+                  type="button"
+                  onClick={() => {
+                    handleOpenQuran(
+                      ayahDetails.pageNumber, 
+                      { s: ayahDetails.surahNumber, a: ayahDetails.ayahNumber }, 
+                      isEn ? 'translation' : 'mushaf'
+                    );
+                  }}
+                  className="app-page-card border-0 px-8 py-3.5 rounded-2xl font-black flex items-center justify-center transition-all cursor-pointer mx-auto"
+                  style={{ backgroundColor: primaryColor, color: btnTextColor }}
+                >
+                  <span className="text-base font-black tracking-wide font-cairo" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                    {canContinue 
+                      ? (isEn ? 'Continue Reading' : 'متابعة القراءة') 
+                      : (isEn ? 'Start Now' : 'ابدأ الآن')}
+                  </span>
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2.5 w-full overflow-visible pb-1">
+                  <div 
+                    className={`app-inner-3d-box border-0 w-full py-3.5 rounded-2xl font-black flex items-center justify-center gap-2 text-sm ${innerButtonClass}`}
+                    style={{ color: primaryColor }}
+                  >
+                    <CheckCircle size={18} />
+                    <span>{isEn ? 'Completed Today\'s Wird' : 'أنجزت الورد كاملاً لهذا اليوم'}</span>
+                  </div>
+                  <div className="flex gap-2.5 overflow-visible pb-1">
+                    <button 
+                      type="button"
+                      onClick={handleStartNewWird}
+                      className="app-page-card border-0 flex-1 py-3.5 rounded-2xl font-black flex items-center justify-center gap-2 transition-all text-xs cursor-pointer"
+                      style={{ backgroundColor: primaryColor, color: btnTextColor }}
+                    >
+                      <Plus size={16} />
+                      <span>{isEn ? 'Start New Wird' : 'بداية ورد جديد'}</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => onNavigate('home')}
+                      className={`app-page-card border-0 flex-1 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all text-xs cursor-pointer ${surfaceCardClass}`}
+                    >
+                      <Home size={16} />
+                      <span>{isEn ? 'Home' : 'الرئيسية'}</span>
+                    </button>
+                  </div>
+                </div>
+              )
+            ) : null}
           </div>
         </div>
 
-        <div className="flex gap-2">
+        {/* Action Controls (Matching Tasbeeh ThreeDButton Grid) */}
+        <div className="grid grid-cols-2 gap-3 overflow-visible pb-1">
           <button 
             id="wird-edit-btn"
+            type="button"
             onClick={handleEdit}
-            className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm ${isDefaultTheme ? 'bg-white text-black border-gray-200' : ''}`}
-            style={!isDefaultTheme ? { 
-              backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : `${primaryColor}10`, 
-              color: isBlackAndWhite ? '#FFFFFF' : primaryColor,
-              borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : `${primaryColor}30`
-            } : {}}
+            className={`app-page-card border-0 py-3.5 px-3 rounded-2xl font-black flex items-center justify-center gap-2 transition-all text-xs sm:text-sm cursor-pointer ${surfaceCardClass}`}
+            style={{ color: primaryColor }}
           >
-            <Settings size={18} />
-            تعديل الختمة
+            <Settings size={16} />
+            <span>{isEn ? 'Edit Khatma' : 'تعديل الختمة'}</span>
           </button>
+          
           <button 
             id="wird-reset-btn"
+            type="button"
             onClick={handleReset}
-            className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-sm border shadow-sm ${isDefaultTheme ? 'bg-white text-black border-gray-200' : ''}`}
-            style={!isDefaultTheme ? { 
-              backgroundColor: isBlackAndWhite ? 'rgba(255,255,255,0.1)' : '#ef444410', 
-              color: isBlackAndWhite ? '#FFFFFF' : '#ef4444',
-              borderColor: isBlackAndWhite ? 'rgba(255,255,255,0.2)' : '#ef444430'
-            } : {}}
+            className={`app-page-card border-0 py-3.5 px-3 rounded-2xl font-black flex items-center justify-center gap-2 transition-all text-xs sm:text-sm cursor-pointer text-red-500 ${surfaceCardClass}`}
           >
-            <RotateCcw size={18} />
-            إعادة تعيين
+            <RotateCcw size={16} />
+            <span>{isEn ? 'Reset' : 'إعادة تعيين'}</span>
           </button>
         </div>
       </div>
     );
   };
 
+  // 3D Sculpted Profile Selector
   const renderProfileSelector = () => {
     if (allSettings.length === 0) return null;
     return (
-      <div className="relative mb-6">
+      <div className="relative mb-3.5">
         <button 
+          id="wird-profile-selector"
+          type="button"
           onClick={() => setShowProfileMenu(!showProfileMenu)}
-          className="w-full p-4 rounded-2xl border flex items-center justify-between transition-all"
-          style={{ backgroundColor: isDefaultTheme ? '#FFFFFF' : 'var(--card-bg)', borderColor: isDefaultTheme ? '#e5e7eb' : 'var(--card-border)', color: isDefaultTheme ? '#000000' : 'inherit' }}
+          className={`app-page-card border-0 w-full p-4 rounded-2xl flex items-center justify-between transition-all cursor-pointer ${surfaceCardClass}`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDefaultTheme ? 'bg-black/5 text-black' : (isBlackTheme ? 'bg-white text-black' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400')}`}>
+            <div 
+              className={`app-3d-badge border-0 w-10 h-10 rounded-2xl flex items-center justify-center ${
+                isBlackTheme ? 'bg-white/10' : 'bg-slate-100 dark:bg-white/10'
+              }`}
+              style={{ color: primaryColor }}
+            >
               <User size={20} />
             </div>
-            <div className="text-right">
-              <p className="text-xs opacity-60">المستخدم الحالي</p>
-              <p className="font-bold">{settings?.name || 'اختر مستخدماً'}</p>
+            <div className={isEn ? 'text-left' : 'text-right'}>
+              <p className="text-[11px] opacity-60 font-semibold">{isEn ? 'Current User' : 'المستخدم الحالي'}</p>
+              <p className="font-black text-sm">{settings?.name || (isEn ? 'Select User' : 'اختر مستخدماً')}</p>
             </div>
           </div>
-          <ChevronDown size={20} className={`transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
+          <div 
+            className={`app-3d-badge border-0 w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+              isBlackTheme ? 'bg-white/10 text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-zinc-300'
+            }`}
+          >
+            <ChevronDown size={16} className={`transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
+          </div>
         </button>
 
         {showProfileMenu && (
@@ -728,54 +1083,66 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
               onClick={() => setShowProfileMenu(false)}
             />
             <div 
-              className="absolute top-full left-0 right-0 mt-2 rounded-2xl border shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200" 
-              style={{ 
-                backgroundColor: isDefaultTheme ? '#ffffff' : (theme.isDark ? '#1a1a1a' : '#ffffff'), 
-                borderColor: isDefaultTheme ? '#e5e7eb' : theme.cardBorder,
-                color: isDefaultTheme ? '#000000' : 'inherit'
-              }}
+              className={`app-page-card border-0 absolute top-full left-0 right-0 mt-2 rounded-2xl z-50 overflow-visible p-2.5 pb-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200 ${surfaceCardClass} ${isEn ? 'text-left' : 'text-right'}`}
             >
-              {allSettings.map(profile => (
-                <div 
-                  key={profile.id}
-                  onClick={() => {
-                    setActiveId(profile.id);
-                    setShowProfileMenu(false);
-                  }}
-                  className={`p-4 flex items-center justify-between border-b last:border-0 cursor-pointer transition-colors ${activeId === profile.id ? (isDefaultTheme ? 'bg-black/5' : (isBlackTheme ? 'bg-white/10' : 'bg-emerald-500/10')) : 'hover:bg-gray-500/5'}`}
-                  style={{ borderColor: isDefaultTheme ? '#f3f4f6' : theme.cardBorder }}
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <User size={18} className={activeId === profile.id ? (isDefaultTheme ? 'text-black' : (isBlackTheme ? 'text-white' : 'text-emerald-500')) : 'opacity-40'} />
-                    <span className={activeId === profile.id ? (isDefaultTheme ? 'font-bold' : (`font-bold ${isBlackTheme ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'}`)) : ''}>{profile.name}</span>
+              {allSettings.map(profile => {
+                const isProfileActive = activeId === profile.id;
+                return (
+                  <div 
+                    key={profile.id}
+                    onClick={() => {
+                      saveAllSettings(allSettings, profile.id);
+                      setShowProfileMenu(false);
+                      syncDailyWirdNotifications(language);
+                    }}
+                    className={`app-page-card border-0 p-3 rounded-xl flex items-center justify-between cursor-pointer transition-all overflow-visible ${
+                      isProfileActive 
+                        ? `${surfaceCardClass} font-black` 
+                        : `${surfaceCardClass} opacity-85 hover:opacity-100`
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <User 
+                        size={18} 
+                        className={isProfileActive ? 'shrink-0' : 'opacity-45 shrink-0'}
+                        style={isProfileActive ? { color: primaryColor } : {}}
+                      />
+                      <span className="truncate" style={isProfileActive ? { color: primaryColor } : {}}>
+                        {profile.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 overflow-visible pb-1">
+                      <button 
+                        type="button"
+                        onClick={(e) => handleEditProfile(profile, e)}
+                        className={`app-page-card border-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer ${surfaceCardClass}`}
+                        title={isEn ? 'Edit' : 'تعديل'}
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={(e) => handleDeleteProfile(profile.id, e)}
+                        className={`app-page-card border-0 w-8 h-8 rounded-xl flex items-center justify-center text-red-500 transition-all cursor-pointer ${surfaceCardClass}`}
+                        title={isEn ? 'Delete' : 'حذف'}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <button 
-                      onClick={(e) => handleEditProfile(profile, e)}
-                      className={`p-2 rounded-lg transition-colors ${isDefaultTheme ? 'text-gray-600 hover:bg-black/5' : 'text-blue-500 hover:bg-blue-500/10'}`}
-                      title="تعديل"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button 
-                      onClick={(e) => handleDeleteProfile(profile.id, e)}
-                      className={`p-2 rounded-lg transition-colors ${isDefaultTheme ? 'text-red-500 hover:bg-red-500/10' : 'text-red-500 hover:bg-red-500/10'}`}
-                      title="حذف"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               <button 
+                type="button"
                 onClick={() => {
                   handleAddNew();
                   setShowProfileMenu(false);
                 }}
-                className={`w-full p-4 flex items-center justify-center gap-2 font-bold transition-colors ${isDefaultTheme ? 'text-black hover:bg-black/5' : (isBlackTheme ? 'text-white hover:bg-white/10' : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/5')}`}
+                className="app-page-card border-0 w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-black text-sm transition-all cursor-pointer"
+                style={{ backgroundColor: primaryColor, color: btnTextColor }}
               >
-                <Plus size={20} />
-                إضافة مستخدم جديد
+                <Plus size={18} />
+                <span>{isEn ? 'Add New User' : 'إضافة مستخدم جديد'}</span>
               </button>
             </div>
           </>
@@ -792,45 +1159,50 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
     const isWirdIncomplete = !profileToDelete.completedDays.includes(profileToDelete.currentDay);
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="w-full max-w-sm p-8 rounded-[32px] shadow-2xl text-center border"
-          style={{ 
-            backgroundColor: isDefaultTheme ? '#FFFFFF' : 'var(--modal-bg)', 
-            borderColor: isDefaultTheme ? '#f3f4f6' : 'var(--card-border)', 
-            color: isDefaultTheme ? '#000000' : 'var(--modal-text)' 
-          }}
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/65" dir={isEn ? 'ltr' : 'rtl'}>
+        <div 
+          className={`app-page-card border-0 w-full max-w-sm p-6 rounded-3xl ${isEn ? 'text-left' : 'text-center'} ${surfaceCardClass}`}
         >
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm ${isDefaultTheme ? 'bg-red-500/10 text-red-500' : 'bg-red-500/10 text-red-500'}`}>
-            <Trash2 size={40} />
+          <div className="app-3d-badge border-0 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-red-500/15 text-red-500">
+            <Trash2 size={32} />
           </div>
-          <h3 className="text-2xl font-black mb-3">حذف المستخدم؟</h3>
-          <p className={`mb-6 ${isDefaultTheme ? 'text-gray-600' : 'opacity-70'}`}>هل أنت متأكد من حذف "{profileToDelete.name}"؟ لا يمكن التراجع عن هذه الخطوة.</p>
+          <h3 className="text-xl font-black mb-2">
+            {isEn ? 'Delete User?' : 'حذف المستخدم؟'}
+          </h3>
+          <p className="mb-4 text-xs opacity-70 leading-relaxed">
+            {isEn 
+              ? `Are you sure you want to delete "${profileToDelete.name}"? This action cannot be undone.` 
+              : `هل أنت متأكد من حذف "${profileToDelete.name}"؟ لا يمكن التراجع عن هذه الخطوة.`}
+          </p>
           
           {isWirdIncomplete && (
-            <div className="p-3 mb-6 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-sm font-bold flex items-center gap-2 text-right">
-              <span className="text-lg">⚠️</span>
-              تنبيه: لم يتم إكمال ورد اليوم لهذا المستخدم بعد.
+            <div className="app-inner-3d-box border-0 p-3 mb-5 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center gap-2">
+              <span className="text-base">⚠️</span>
+              <span>{isEn ? "Warning: Today's wird has not been completed for this user yet." : "تنبيه: لم يتم إكمال ورد اليوم لهذا المستخدم بعد."}</span>
             </div>
           )}
 
-          <div className="flex gap-4">
+          <div className="flex gap-3 overflow-visible pb-1">
             <button 
+              type="button"
               onClick={confirmDeleteProfile}
-              className={`flex-1 py-4 rounded-2xl font-bold font-kufi transition-all active:scale-95 shadow-md ${isDefaultTheme ? 'bg-red-500 text-white' : 'bg-red-600 hover:bg-red-500 text-white'}`}
+              className="app-page-card border-0 flex-1 py-3.5 rounded-2xl font-black text-sm transition-all text-white cursor-pointer"
+              style={{
+                backgroundColor: '#EF4444',
+                color: '#FFFFFF'
+              }}
             >
-              تأكيد الحذف
+              {isEn ? 'Confirm Delete' : 'تأكيد الحذف'}
             </button>
             <button 
+              type="button"
               onClick={() => setShowDeleteConfirm(null)}
-              className={`flex-1 py-4 rounded-2xl font-bold font-kufi transition-all active:scale-95 ${isDefaultTheme ? 'bg-gray-100 text-black' : 'bg-gray-500/10 hover:bg-gray-500/20'}`}
+              className={`app-page-card border-0 flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all cursor-pointer ${surfaceCardClass}`}
             >
-              إلغاء
+              {isEn ? 'Cancel' : 'إلغاء'}
             </button>
           </div>
-        </motion.div>
+        </div>
       </div>
     );
   };
@@ -875,31 +1247,70 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
   }, [showDeleteConfirm, showResetConfirm, showProfileMenu, showSettings, allSettings.length]);
 
   return (
-    <div className="h-screen flex flex-col bg-transparent" style={{ fontFamily: theme.font, backgroundColor: isDefaultTheme ? '#FFFFFF' : 'transparent', color: isDefaultTheme ? '#000000' : 'var(--text-color)' }}>
-      <header className="app-top-bar">
+    <div 
+      className="h-[100dvh] flex flex-col overflow-hidden" 
+      dir={isEn ? 'ltr' : 'rtl'} 
+      style={{ 
+        fontFamily: theme.font, 
+        backgroundColor: theme.bgColor || '#F8FAFC', 
+        color: 'var(--text-color)' 
+      }}
+    >
+      <header className="app-top-bar shrink-0 relative z-10" style={{ backgroundColor: 'var(--qr-bar-bg)', borderBottom: '1px solid var(--qr-bar-border)' }}>
         <div className="app-top-bar__inner">
-          <div className="relative flex items-center justify-center w-full">
-            <div className="absolute left-0">
-              <ThemePageLock />
+          <div className="relative flex items-center justify-center w-full min-h-[44px]">
+            {/* Back button */}
+            <div className={`absolute ${isEn ? 'left-0' : 'right-0'} flex items-center gap-1.5`}>
+              <button
+                onClick={handleHomeClick}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                title={isEn ? 'Go Back' : 'رجوع للخلف'}
+                aria-label={isEn ? 'Go Back' : 'رجوع للخلف'}
+              >
+                <i className={`fa-solid ${isEn ? 'fa-arrow-left' : 'fa-arrow-right'} text-xl`}></i>
+              </button>
             </div>
-            <h1 className="app-top-bar__title text-2xl font-kufi flex items-center justify-center gap-2">
-              <span>📅</span>
-              الورد اليومي
-            </h1>
+
+            {/* Title in center */}
+            <div className="text-center px-12 min-w-0">
+              <h1 className="app-top-bar__title text-lg sm:text-xl font-cairo truncate" style={{ color: 'var(--qr-bar-text)' }}>
+                {isEn ? 'Daily Wird' : 'الورد اليومي'}
+              </h1>
+            </div>
+
+            {/* Home / Page Lock / Guide icons */}
+            <div className={`absolute ${isEn ? 'right-0' : 'left-0'} flex items-center gap-1`}>
+              {showPageGuides && (
+                <button
+                  type="button"
+                  onClick={handleOpenGuide}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                  style={{ color: 'var(--qr-bar-text, var(--top-bar-text, inherit))' }}
+                  title={isEn ? "Daily Wird Guide" : "دليل الورد اليومي"}
+                  aria-label={isEn ? "Daily Wird Guide" : "دليل الورد اليومي"}
+                >
+                  <i className="fa-solid fa-circle-question text-lg"></i>
+                </button>
+              )}
+              <button
+                onClick={() => onNavigate('home')}
+                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                title={isEn ? 'Home Page' : 'الصفحة الرئيسية'}
+                aria-label={isEn ? 'Home Page' : 'الصفحة الرئيسية'}
+              >
+                <i className="fa-solid fa-house text-xl"></i>
+              </button>
+            </div>
           </div>
-          <p className="app-top-bar__subtitle text-center">تابع ختمتك للقرآن الكريم</p>
         </div>
       </header>
 
-      <main className={`flex-1 min-h-0 overflow-y-auto px-4 pb-4 flex flex-col items-center ${isInputFocused ? 'justify-start' : 'justify-center'}`}>
-        <div className="w-full max-w-md pb-10">
+      <main className="flex-1 min-h-0 overflow-y-auto px-4 pt-3 app-scroll-safe">
+        <div className="w-full max-w-md mx-auto space-y-3">
           {!showSettings && renderProfileSelector()}
           {showSettings || !settings ? renderSettings() : renderProgress()}
         </div>
-        <div className="shrink-0 w-full h-32"></div>
       </main>
-
-      {!isInputFocused && <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />}
 
       {renderDeleteConfirmModal()}
 
@@ -909,11 +1320,21 @@ const DailyWird: React.FC<{ onBack: () => void; onNavigate: (page: string, param
         onConfirm={confirmReset}
       />
 
-      {showSettings || !settings ? (
-        <TutorialOverlay tutorialId="daily-wird-setup-tutorial" steps={setupTutorialSteps} />
-      ) : (
-        <TutorialOverlay tutorialId="daily-wird-progress-tutorial" steps={progressTutorialSteps} />
-      )}
+      <CommunitySpotlightGuide
+        guideKey="daily_wird_settings_tour"
+        steps={DAILY_SETTINGS_STEPS}
+        isOpen={showSettingsTour}
+        onClose={() => setShowSettingsTour(false)}
+        isEn={isEn}
+      />
+
+      <CommunitySpotlightGuide
+        guideKey="daily_wird_progress_tour"
+        steps={DAILY_PROGRESS_STEPS}
+        isOpen={showProgressTour}
+        onClose={() => setShowProgressTour(false)}
+        isEn={isEn}
+      />
     </div>
   );
 };

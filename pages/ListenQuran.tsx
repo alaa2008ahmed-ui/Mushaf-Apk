@@ -1,17 +1,46 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import BottomBar from '../components/BottomBar';
-import ThemePageLock from '../components/ThemePageLock';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import {
+    getSurahDisplayName,
+    getReciterDisplayName,
+    formatListenNumber,
+    formatListenTime,
+    formatListenTimerCountdown,
+    tListen
+} from '../utils/listenQuranTranslations';
 import { SURAH_LIST, RECITERS } from '../data/listenQuranData';
 import ReciterSelectModal from '../components/QuranReader/ReciterSelectModal';
 import ListenSurahSelectModal from '../components/QuranReader/ListenSurahSelectModal';
 import { QuranDownloadModal } from '../components/QuranReader/DownloadModals';
-import Toast from '../components/QuranReader/Toast';
 import { SURAH_INFO } from '../components/QuranReader/constants';
 import { registerBackInterceptor } from '../hooks/useBackButton';
+import { estimateCurrentAyahAndJuz } from '../utils/listenQuranUtils';
+import { useListenQuranStore } from '../hooks/useListenQuranStore';
 import './QuranReader.css';
-
-const STORAGE_KEY = 'listen_quran_state_v7';
+import { 
+    Play, 
+    Pause, 
+    SkipBack, 
+    SkipForward, 
+    RotateCw, 
+    Moon, 
+    Heart, 
+    Download, 
+    ChevronDown, 
+    ChevronLeft, 
+    ChevronRight, 
+    Plus, 
+    Minus, 
+    Trash2, 
+    Repeat,
+    Gauge
+} from 'lucide-react';
+import { CommunitySpotlightGuide, getGuideSeen } from '../components/Community/CommunitySpotlightGuide';
+import { LISTEN_QURAN_PAGE_STEPS } from '../components/Community/communityTourSteps';
+import { markPageAsSeen } from '../utils/badgeManager';
+import { hexToRgba } from '../utils/flatDesignTokens';
+import { showGlobalAppToast } from '../utils/appNotificationSettings';
 
 const mockQuranData = {
     surahs: SURAH_LIST.map(s => ({
@@ -22,183 +51,158 @@ const mockQuranData = {
     }))
 };
 
-// FIX: Correctly convert digits to numbers for array indexing.
-const toArabicNumerals = (numStr) => String(numStr).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d]);
-
-// Normalize URL for consistent mapping
-const normalizeUrl = (url: string) => {
-    if (!url) return '';
-    return url.toLowerCase()
-        .replace(/^https?:\/\//, '')
-        .replace(/www\./, '')
-        .replace(/\/+/g, '/') // Group multiple slashes into one
-        .replace(/\/$/, '')
-        .trim();
-};
-
-// Simplify Arabic names for better matching
-const simplifyName = (name: string) => {
-    if (!name) return '';
-    return name
-        .toLowerCase()
-        .replace(/^(ال)/, '') // Remove prefix Al
-        .replace(/\s(ال)/g, ' ') // Remove Al after space
-        .replace(/[أإآا]/g, 'ا')
-        .replace(/ة/g, 'ه')
-        .replace(/ى/g, 'ي')
-        .replace(/ئ/g, 'ي')
-        .replace(/ؤ/g, 'و')
-        .replace(/[\u064B-\u065F]/g, '') // Remove harakat
-        .replace(/[^ا-ي0-9]/g, '') // Keep only Arabic letters and numbers
-        .trim();
-};
-
-function formatTime(seconds) {
-    if (isNaN(seconds) || seconds < 0) return toArabicNumerals('00:00');
-    const minutes = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return toArabicNumerals(`${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
+interface ListenFavorite {
+    id: string;
+    reciterId: string;
+    reciterName: string;
+    surahNumber: number;
+    surahName: string;
+    createdAt: number;
 }
 
-function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
+interface ListenQuranProps {
+    onBack: () => void;
+    onNavigate: (pageId: string, params?: any) => void;
+}
+
+function ListenQuran({ onBack, onNavigate }: ListenQuranProps) {
     const { theme, themeKey } = useTheme();
-    const isBlackTheme = theme.bgColor === '#000000';
-    const [reciterId, setReciterId] = useState(RECITERS[0].id);
-    const [surahNumber, setSurahNumber] = useState(1);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [isContinuousPlay, setIsContinuousPlay] = useState(true);
-    const [duration, setDuration] = useState(0);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
+    const { language, isRTL, dir } = useLanguage();
+    const isEn = language === 'en';
+    const [showGuide, setShowGuide] = useState(false);
+
+    useEffect(() => {
+        markPageAsSeen('listen_quran');
+        if (!getGuideSeen('listen_quran_page_spotlight')) {
+            setShowGuide(true);
+        }
+    }, []);
+
+    // --- Dynamic Theme Tokens ---
+    const isBlackTheme = themeKey === 'deep_black' || theme.bgColor === '#000000' || theme.name === 'اسود' || theme.name === 'black';
+    const isEffectiveDark = isBlackTheme || Boolean(theme.isDark);
+    const primaryColor = isBlackTheme ? '#FFFFFF' : (theme.palette?.[0] || theme.accent || theme.btnBg || '#2E7D5E');
+    const pageBgColor = isBlackTheme ? '#000000' : (theme.bgColor || '#F8FAFC');
+    const btnTextColor = isBlackTheme ? '#000000' : '#FFFFFF';
+    const innerSubBoxClass = `app-inner-3d-box border-0 ${isBlackTheme ? 'bg-[#27272a] text-white' : 'bg-white dark:bg-[#0F172A] text-slate-800 dark:text-white'}`;
+    const innerToggleRowClass = `wird-inner-raised border-0 ${isBlackTheme ? 'bg-[#27272a] text-white' : 'bg-white dark:bg-[#0F172A] text-slate-800 dark:text-white'}`;
+    const circleBadgeOnCardClass = `app-inner-3d-box border-0 ${isBlackTheme ? 'bg-[#27272a] text-white' : 'bg-white dark:bg-[#0F172A] text-slate-600 dark:text-zinc-200'}`;
+    const circleBadgeOnInnerClass = `app-inner-3d-box border-0 ${isBlackTheme ? 'bg-[#18181b] text-white' : 'bg-white dark:bg-[#1E293B] text-slate-600 dark:text-zinc-200'}`;
+    const primaryBadge3DStyle: React.CSSProperties = {
+        backgroundColor: primaryColor,
+        color: btnTextColor,
+        boxShadow: isEffectiveDark
+            ? '0 3px 0 #09090b, 0 5px 10px rgba(0, 0, 0, 0.55), inset 0 1.5px 1px rgba(255, 255, 255, 0.32), inset 0 -1.5px 2px rgba(0, 0, 0, 0.35)'
+            : '0 3px 0 rgba(0, 0, 0, 0.22), 0 5px 10px -2px rgba(0, 0, 0, 0.16), inset 0 1.5px 1px rgba(255, 255, 255, 0.42), inset 0 -1.5px 2px rgba(0, 0, 0, 0.12)',
+    };
+    const itemBadge3DStyle: React.CSSProperties = {
+        backgroundColor: isEffectiveDark ? (isBlackTheme ? '#18181b' : '#1E293B') : '#FFFFFF',
+        color: primaryColor,
+        boxShadow: isEffectiveDark
+            ? '0 2.5px 0 #09090b, 0 4px 8px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2), inset 0 -1px 2px rgba(0, 0, 0, 0.35)'
+            : '0 2.5px 0 rgba(0, 0, 0, 0.11), 0 4px 8px -1px rgba(0, 0, 0, 0.08), inset 0 1.5px 1px rgba(255, 255, 255, 0.98), inset 0 -1px 2px rgba(0, 0, 0, 0.05)',
+    };
+
+    const {
+        reciterId,
+        surahNumber,
+        isPlaying,
+        isLoading,
+        currentTime,
+        duration,
+        isContinuousPlay,
+        isRepeatSurah,
+        playbackRate,
+        reciterSurahs,
+        sleepTimerMode,
+        isSleepTimerActive,
+        sleepTimerRemainingSeconds,
+        customTimerMinutes,
+        initAudio,
+        fetchReciterSurahs,
+        getAvailableSurahs,
+        setReciterId,
+        setSurahNumber,
+        setReciterAndSurah,
+        togglePlay,
+        seek,
+        setPlaybackRate,
+        nextSurah,
+        prevSurah,
+        toggleContinuousPlay,
+        toggleRepeatSurah,
+        setPresetTimer,
+        setEndOfSurahTimer,
+        startCustomTimer,
+        cancelSleepTimer,
+        incrementTimer,
+        decrementTimer,
+    } = useListenQuranStore();
+
     const [showReciterModal, setShowReciterModal] = useState(false);
     const [showSurahModal, setShowSurahModal] = useState(false);
     const [showDownloadModal, setShowDownloadModal] = useState(false);
-    const [toast, setToast] = useState({ show: false, message: '' });
-    const [reciterSurahs, setReciterSurahs] = useState<Record<string, number[]>>({});
+    const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
-    const getAvailableSurahs = useCallback((id: string) => {
-        const fullList = Array.from({ length: 114 }, (_, i) => i + 1);
-        if (!Object.keys(reciterSurahs).length) {
-            return fullList;
-        }
-
-        // 1. Try URL exact match
-        const currentUrlKey = normalizeUrl(id);
-        if (reciterSurahs[currentUrlKey]) return reciterSurahs[currentUrlKey];
-
-        // 2. Try Name match
-        const rName = RECITERS.find(r => r.id === id)?.name;
-        if (rName) {
-            const currentNameKey = `name:${simplifyName(rName)}`;
-            if (reciterSurahs[currentNameKey]) return reciterSurahs[currentNameKey];
-            
-            // Loose name match
-            const simplifiedNameCurrent = simplifyName(rName);
-            const matchedNameKey = Object.keys(reciterSurahs).find(key => 
-                key.startsWith('name:') && (key.includes(simplifiedNameCurrent) || simplifiedNameCurrent.includes(key.replace('name:', '')))
-            );
-            if (matchedNameKey) return reciterSurahs[matchedNameKey];
-        }
-
-        // 3. Try URL loose match
-        const matchedUrlKey = Object.keys(reciterSurahs).find(key => 
-            !key.startsWith('name:') && (currentUrlKey.includes(key) || key.includes(currentUrlKey))
-        );
-        if (matchedUrlKey) return reciterSurahs[matchedUrlKey];
-        
-        return fullList;
-    }, [reciterSurahs]);
-
-    const availableSurahIds = useMemo(() => {
-        return getAvailableSurahs(reciterId);
-    }, [reciterId, getAvailableSurahs]);
-
-    const filteredQuranData = useMemo(() => {
-        return {
-            surahs: mockQuranData.surahs.filter(s => availableSurahIds.includes(s.number))
-        };
-    }, [availableSurahIds]);
-    
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    const autoPlayNextRef = useRef(false);
-    const objectUrlRef = useRef<string | null>(null);
-
-    // Fetch reciter availability mapping
     useEffect(() => {
-        const fetchSurahs = async () => {
-            try {
-                const CACHE_KEY = 'mp3quran_surahs_cache_v6';
-                const cached = localStorage.getItem(CACHE_KEY);
-                if (cached) {
-                    const { data, timestamp } = JSON.parse(cached);
-                    if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
-                        setReciterSurahs(data);
-                        return;
-                    }
-                }
+        initAudio();
+        fetchReciterSurahs();
+    }, [initAudio, fetchReciterSurahs]);
 
-                const res = await fetch('https://mp3quran.net/api/v3/reciters?language=ar');
-                if (!res.ok) throw new Error('Network response was not ok');
-                const data = await res.json();
-                const mapping: Record<string, number[]> = {};
-                
-                if (data.reciters && Array.isArray(data.reciters)) {
-                    data.reciters.forEach((r: any) => {
-                        const nameKey = `name:${simplifyName(r.name)}`;
-                        if (r.moshaf && Array.isArray(r.moshaf)) {
-                            r.moshaf.forEach((m: any) => {
-                                const rawSuras = m.suras || m.surah_list;
-                                if (m.server && rawSuras) {
-                                    const surasArray = typeof rawSuras === 'string' ? rawSuras.split(',').map(Number) : (Array.isArray(rawSuras) ? rawSuras : []);
-                                    const urlKey = normalizeUrl(m.server);
-                                    if (urlKey) mapping[urlKey] = surasArray;
-                                    
-                                    // Merge surahs for the same name to show all available across different moshafs
-                                    if (!mapping[nameKey]) {
-                                        mapping[nameKey] = surasArray;
-                                    } else {
-                                        const merged = Array.from(new Set([...mapping[nameKey], ...surasArray]));
-                                        mapping[nameKey] = merged;
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-                
-                setReciterSurahs(mapping);
-                localStorage.setItem(CACHE_KEY, JSON.stringify({
-                    data: mapping,
-                    timestamp: Date.now()
-                }));
-            } catch (e) {
-                console.error("Failed to fetch surahs mapping", e);
+    // قائمة المفضلات المحفوظة (حتى 10 تلاوات)
+    const [favorites, setFavorites] = useState<ListenFavorite[]>(() => {
+        try {
+            const saved = localStorage.getItem('listen_quran_favorites_v1');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) return parsed.slice(0, 10);
             }
-        };
-        fetchSurahs();
-    }, []);
+        } catch (e) {
+            console.error('Failed to load favorites', e);
+        }
+        return [];
+    });
 
     useEffect(() => {
         try {
-            const savedState = localStorage.getItem(STORAGE_KEY);
-            if (savedState) {
-                const { savedReciterId, savedSurahNumber, savedContinuousPlay } = JSON.parse(savedState);
-                if (RECITERS.some(r => r.id === savedReciterId)) setReciterId(savedReciterId);
-                if (SURAH_LIST.some(s => s.number === savedSurahNumber)) setSurahNumber(savedSurahNumber);
-                if (typeof savedContinuousPlay === 'boolean') setIsContinuousPlay(savedContinuousPlay);
-            }
+            localStorage.setItem('listen_quran_favorites_v1', JSON.stringify(favorites));
         } catch (e) {
-            console.error("Failed to load state from localStorage", e);
+            console.error('Failed to save favorites', e);
         }
-    }, []);
+    }, [favorites]);
 
-    const handleHomeClick = useCallback(() => {
+    const availableSurahIds = useMemo(() => {
+        return getAvailableSurahs(reciterId);
+    }, [reciterId, reciterSurahs, getAvailableSurahs]);
+
+    // Ensure selected surahNumber is valid for current reciter
+    useEffect(() => {
+        if (availableSurahIds.length > 0 && !availableSurahIds.includes(surahNumber)) {
+            setSurahNumber(availableSurahIds[0]);
+        }
+    }, [availableSurahIds, surahNumber, setSurahNumber]);
+
+    const handleToggleRepeatSurah = () => {
+        toggleRepeatSurah();
+    };
+
+    const handleToggleContinuousPlay = () => {
+        toggleContinuousPlay();
+    };
+
+    const handleBack = useCallback(() => {
         if (showReciterModal) { setShowReciterModal(false); }
         else if (showSurahModal) { setShowSurahModal(false); }
         else if (showDownloadModal) { setShowDownloadModal(false); }
         else { onBack(); }
     }, [showReciterModal, showSurahModal, showDownloadModal, onBack]);
+
+    const handleGoHome = useCallback(() => {
+        if (showReciterModal) { setShowReciterModal(false); }
+        if (showSurahModal) { setShowSurahModal(false); }
+        if (showDownloadModal) { setShowDownloadModal(false); }
+        onNavigate('home');
+    }, [showReciterModal, showSurahModal, showDownloadModal, onNavigate]);
 
     useEffect(() => {
         const interceptor = () => {
@@ -212,25 +216,14 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
     }, [showReciterModal, showSurahModal, showDownloadModal]);
 
     const handleNextSurah = useCallback(() => {
-        const available = getAvailableSurahs(reciterId);
-        const currentIndex = available.indexOf(surahNumber);
-        if (currentIndex !== -1 && currentIndex < available.length - 1) {
-            setSurahNumber(available[currentIndex + 1]);
-        } else {
-            setSurahNumber(available[0] || 1);
-        }
-    }, [getAvailableSurahs, reciterId, surahNumber]);
+        nextSurah();
+    }, [nextSurah]);
 
     const handlePrevSurah = useCallback(() => {
-        const available = getAvailableSurahs(reciterId);
-        const currentIndex = available.indexOf(surahNumber);
-        if (currentIndex !== -1 && currentIndex > 0) {
-            setSurahNumber(available[currentIndex - 1]);
-        } else {
-            setSurahNumber(available[available.length - 1] || 1);
-        }
-    }, [getAvailableSurahs, reciterId, surahNumber]);
+        prevSurah();
+    }, [prevSurah]);
 
+    // Apply CSS variables for the dynamic theme
     useEffect(() => {
         const root = document.documentElement;
         const t = theme;
@@ -242,322 +235,836 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
         root.style.setProperty('--qr-bar-bg', t.barBg || (isDark ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.7)'));
         root.style.setProperty('--qr-bar-text', t.textColor);
         root.style.setProperty('--qr-bar-border', t.barBorder || 'transparent');
-        root.style.setProperty('--qr-btn-bg', t.palette[0]);
-        root.style.setProperty('--qr-btn-text', '#ffffff');
-        root.style.setProperty('--qr-accent', themeKey === 'default' ? '#000000' : (t.palette[1] || t.palette[0]));
-        root.style.setProperty('--qr-accent-text', '#ffffff');
+        root.style.setProperty('--qr-btn-bg', primaryColor);
+        root.style.setProperty('--qr-btn-text', isBlackTheme ? '#000000' : '#ffffff');
+        root.style.setProperty('--qr-accent', primaryColor);
+        root.style.setProperty('--qr-accent-text', isBlackTheme ? '#000000' : '#ffffff');
         root.style.setProperty('--qr-modal-bg', t.bgColor || '#0D1B2A');
         root.style.setProperty('--qr-modal-text', t.textColor);
-        root.style.setProperty('--qr-header-bg', t.palette[0]);
-        root.style.setProperty('--qr-header-text', '#ffffff');
-        root.style.setProperty('--qr-card-bg', isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)');
+        root.style.setProperty('--qr-header-bg', primaryColor);
+        root.style.setProperty('--qr-header-text', isBlackTheme ? '#000000' : '#ffffff');
+        root.style.setProperty('--qr-card-bg', isDark ? 'rgba(255, 255, 255, 0.05)' : '#ffffff');
         root.style.setProperty('--qr-card-text', t.textColor);
-        root.style.setProperty('--qr-card-border', isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.07)');
-        root.style.setProperty('--qr-slider-thumb', themeKey === 'default' ? '#000000' : t.palette[0]);
-    }, [theme, themeKey]);
+        root.style.setProperty('--qr-card-border', isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)');
+        root.style.setProperty('--qr-slider-thumb', primaryColor);
+    }, [theme, themeKey, primaryColor, isBlackTheme]);
 
-    useEffect(() => {
-        audioRef.current = new Audio();
-        const audio = audioRef.current;
-
-        const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
-        const handleDurationChange = () => setDuration(audio.duration);
-        const handlePlay = () => setIsPlaying(true);
-        const handlePause = () => setIsPlaying(false);
-        const handleWaiting = () => setIsLoading(true);
-        const handlePlaying = () => setIsLoading(false);
-        const handleError = () => {
-            setError('خطأ في تحميل المقطع الصوتي. قد يكون غير متوفر حاليًا.');
-            setIsLoading(false);
-            setIsPlaying(false);
-        };
-
-        audio.addEventListener('timeupdate', handleTimeUpdate);
-        audio.addEventListener('durationchange', handleDurationChange);
-        audio.addEventListener('play', handlePlay);
-        audio.addEventListener('pause', handlePause);
-        audio.addEventListener('error', handleError);
-        audio.addEventListener('waiting', handleWaiting);
-        audio.addEventListener('playing', handlePlaying);
-
-        return () => {
-            audio.pause();
-            audio.src = '';
-            if (objectUrlRef.current) {
-                URL.revokeObjectURL(objectUrlRef.current);
-                objectUrlRef.current = null;
-            }
-            audio.removeEventListener('timeupdate', handleTimeUpdate);
-            audio.removeEventListener('durationchange', handleDurationChange);
-            audio.removeEventListener('play', handlePlay);
-            audio.removeEventListener('pause', handlePause);
-            audio.removeEventListener('error', handleError);
-            audio.removeEventListener('waiting', handleWaiting);
-            audio.removeEventListener('playing', handlePlaying);
-        };
-    }, []);
-
-    useEffect(() => {
-        const audio = audioRef.current;
-        if (!audio) return;
-
-        const handleEnded = () => {
-             if (isContinuousPlay) {
-                autoPlayNextRef.current = true;
-                handleNextSurah();
-             } else {
-                setIsPlaying(false);
-                setCurrentTime(0);
-             }
-        };
-
-        audio.addEventListener('ended', handleEnded);
-        return () => {
-            audio.removeEventListener('ended', handleEnded);
-        };
-    }, [isContinuousPlay, handleNextSurah]);
-
-    const showToast = (message: string) => {
-        setToast({ show: true, message });
+    const handleSetPresetTimer = (minutes: number) => {
+        setPresetTimer(minutes);
     };
 
-    useEffect(() => {
-        if (Object.keys(reciterSurahs).length > 0) {
-            const available = getAvailableSurahs(reciterId);
-            if (!available.includes(surahNumber)) {
-                setSurahNumber(available[0] || 1);
-            }
-        }
-    }, [reciterId, reciterSurahs, getAvailableSurahs, surahNumber]);
+    const handleSetEndOfSurahTimer = () => {
+        setEndOfSurahTimer();
+    };
 
-    useEffect(() => {
-        if (!reciterId || !surahNumber) return;
+    const handleStartCustomTimer = () => {
+        startCustomTimer();
+    };
 
-        const audio = audioRef.current;
-        if (!audio) return;
-        
-        const wasPlaying = !audio.paused;
-        audio.pause();
-        
-        setIsLoading(true);
-        setError('');
+    const handleCancelSleepTimer = () => {
+        cancelSleepTimer();
+    };
 
-        const surahFormatted = String(surahNumber).padStart(3, '0');
-        const baseUrl = reciterId.endsWith('/') ? reciterId.slice(0, -1) : reciterId;
-        const audioUrl = `${baseUrl}/${surahFormatted}.mp3`;
+    const handleIncrementTimer = () => {
+        incrementTimer();
+    };
 
-        const loadAudio = async () => {
-            try {
-                if (objectUrlRef.current) {
-                    URL.revokeObjectURL(objectUrlRef.current);
-                    objectUrlRef.current = null;
-                }
+    const handleDecrementTimer = () => {
+        decrementTimer();
+    };
 
-                const cache = await caches.open('quran-audio-cache');
-                const match = await cache.match(audioUrl);
-                
-                if (match) {
-                    const blob = await match.blob();
-                    const url = URL.createObjectURL(blob);
-                    objectUrlRef.current = url;
-                    audio.src = url;
-                } else {
-                    audio.src = audioUrl;
-                }
-                
-                audio.load();
+    const isCurrentFavorite = useMemo(() => {
+        return favorites.some(f => f.reciterId === reciterId && f.surahNumber === surahNumber);
+    }, [favorites, reciterId, surahNumber]);
 
-                if (wasPlaying || autoPlayNextRef.current) {
-                    audio.play().catch(err => {
-                        console.error("Failed to autoplay:", err);
-                        setError('فشل التشغيل التلقائي.');
-                        setIsLoading(false);
-                    });
-                    if (autoPlayNextRef.current) {
-                        autoPlayNextRef.current = false;
-                    }
-                } else {
-                    setIsLoading(false);
-                }
-            } catch (err) {
-                console.error("Error loading audio:", err);
-                audio.src = audioUrl;
-                audio.load();
-                setIsLoading(false);
-            }
-        };
+    const handleToggleFavorite = () => {
+        const currentReciter = RECITERS.find(r => r.id === reciterId)?.name || RECITERS[0].name;
+        const currentSurah = SURAH_LIST.find(s => s.number === surahNumber)?.name || SURAH_LIST[0].name;
 
-        loadAudio();
-        
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ 
-            savedReciterId: reciterId, 
-            savedSurahNumber: surahNumber,
-            savedContinuousPlay: isContinuousPlay,
-        }));
-
-    }, [reciterId, surahNumber]);
-    
-     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-             savedReciterId: reciterId, 
-             savedSurahNumber: surahNumber,
-             savedContinuousPlay: isContinuousPlay 
-        }));
-    }, [isContinuousPlay]);
-    
-    const handlePlayPause = async () => {
-        const audio = audioRef.current;
-        if (!audio || !audio.src) return;
-        setError('');
-        if (isPlaying) {
-            audio.pause();
+        if (isCurrentFavorite) {
+            setFavorites(prev => prev.filter(f => !(f.reciterId === reciterId && f.surahNumber === surahNumber)));
         } else {
-            try {
-                await audio.play();
-            } catch (err) {
-                setError("لم يتمكن المتصفح من تشغيل الصوت تلقائيًا.");
-            }
+            if (favorites.length >= 10) return;
+            const newFav: ListenFavorite = {
+                id: `${reciterId}_${surahNumber}`,
+                reciterId,
+                reciterName: currentReciter,
+                surahNumber,
+                surahName: currentSurah,
+                createdAt: Date.now()
+            };
+            setFavorites(prev => [newFav, ...prev]);
         }
+    };
+
+    const handleSelectFavorite = (fav: ListenFavorite) => {
+        setReciterAndSurah(fav.reciterId, fav.surahNumber);
+    };
+
+    const handleRemoveFavorite = (favId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setFavorites(prev => prev.filter(f => f.id !== favId));
+    };
+
+    const handlePlayPause = async () => {
+        await togglePlay();
     };
 
     const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const audio = audioRef.current;
-        if (audio) {
-            audio.currentTime = Number(e.target.value);
-            setCurrentTime(audio.currentTime);
-        }
+        seek(Number(e.target.value));
     };
-    
-    const reciterName = RECITERS.find(r => r.id === reciterId)?.name || 'غير معروف';
-    const surahName = SURAH_LIST.find(s => s.number === surahNumber)?.name || 'غير معروفة';
+
+    const currentReciter = useMemo(() => {
+        return RECITERS.find(r => r.id === reciterId) || RECITERS[0];
+    }, [reciterId]);
+    const reciterName = currentReciter.name;
+    const surahName = SURAH_LIST.find(s => s.number === surahNumber)?.name || SURAH_LIST[0].name;
+    const surahMeta = SURAH_INFO[surahNumber] || { ayahs: 7, type: 'مكية' };
+    const totalAyahs = surahMeta.ayahs;
+    const revelationType = isEn
+        ? (surahMeta.type === 'مدنية' ? 'Medinan' : 'Meccan')
+        : surahMeta.type;
+
+    const { ayahNumber: currentAyah, juzNumber: currentJuz } = useMemo(
+        () => estimateCurrentAyahAndJuz(surahNumber, currentTime, duration),
+        [surahNumber, currentTime, duration]
+    );
+
+    const progressPercent = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
 
     return (
-        <div className="h-screen flex flex-col font-cairo overflow-hidden" style={{ backgroundColor: 'transparent', color: theme.textColor }}>
-            <header className="app-top-bar">
-                <style>{`
-                    .quran-slider::-webkit-slider-thumb {
-                        appearance: none;
-                        width: 16px;
-                        height: 16px;
-                        background: var(--qr-slider-thumb);
-                        border-radius: 50%;
-                        cursor: pointer;
-                        border: 2px solid #FFFFFF;
-                        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-                    }
-                    .quran-slider::-moz-range-thumb {
-                        width: 16px;
-                        height: 16px;
-                        background: var(--qr-slider-thumb);
-                        border-radius: 50%;
-                        cursor: pointer;
-                        border: 2px solid #FFFFFF;
-                        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-                    }
-                `}</style>
+        <div 
+            dir={dir} 
+            className="h-[100dvh] flex flex-col font-cairo overflow-hidden select-none" 
+            style={{ 
+                backgroundColor: pageBgColor, 
+                color: isBlackTheme ? '#FFFFFF' : (theme.textColor || '#1E293B') 
+            }}
+        >
+            <header className="app-top-bar shrink-0 relative z-40" style={{ position: 'relative' }} dir={dir}>
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-center w-full">
-                        <div className="absolute left-0">
-                            <ThemePageLock />
-                        </div>
-                        <h1 className="app-top-bar__title text-2xl font-kufi">
-                            الاستماع للقرآن
-                        </h1>
-                    </div>
-                    <p className="app-top-bar__subtitle">تلاوات عطرة من أشهر القراء</p>
-                </div>
-            </header>
-
-            <main className="w-full max-w-md mx-auto flex-1 flex flex-col px-4 pb-4 z-10 overflow-y-auto">
-
-                <div className="space-y-3 flex-shrink-0 py-4">
-                    <button 
-                        onClick={() => setShowReciterModal(true)} 
-                        className="w-full p-3 text-center rounded-xl border font-bold themed-card flex justify-between items-center"
-                    >
-                        <span>{reciterName}</span>
-                        <i className="fa-solid fa-chevron-down opacity-50"></i>
-                    </button>
-                    <button 
-                        onClick={() => setShowSurahModal(true)} 
-                        className="w-full p-3 text-center rounded-xl border font-bold themed-card flex justify-between items-center"
-                    >
-                        <span>{surahNumber} - {surahName}</span>
-                        <i className="fa-solid fa-chevron-down opacity-50"></i>
-                    </button>
-                </div>
-
-
-
-                <div className="themed-card rounded-3xl p-6 space-y-5 flex-shrink-0">
-                    <div className="w-full space-y-1.5" dir="rtl">
-                        <input
-                            type="range"
-                            min="0"
-                            max={duration || 100}
-                            value={currentTime}
-                            onChange={handleSeek}
-                            className="w-full h-1.5 rounded-lg appearance-none cursor-pointer quran-slider"
-                            style={{ background: `linear-gradient(to left, ${theme.palette[0]} ${duration > 0 ? (currentTime / duration) * 100 : 0}%, ${theme.cardBorder} ${duration > 0 ? (currentTime / duration) * 100 : 0}%)` }}
-                        />
-                        <div className="flex justify-between text-xs font-mono" style={{ color: theme.textColor, opacity: 0.7 }}>
-                            <span>{formatTime(currentTime)}</span>
-                            <span>{formatTime(duration)}</span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                        <button onClick={handlePrevSurah} className="w-24 text-center hover:opacity-80 transition-opacity font-bold" style={{ color: theme.textColor }}>
-                            السابق
-                        </button>
-                        <button onClick={handlePlayPause} disabled={isLoading && !isPlaying} className="rounded-full w-20 h-20 flex items-center justify-center shadow-lg active:scale-95 transition disabled:opacity-70" style={{ backgroundColor: themeKey === 'default' ? '#000000' : (themeKey === 'deep_black' || isBlackTheme ? '#FFFFFF' : theme.palette[0]), color: (themeKey === 'deep_black' || isBlackTheme) ? '#000000' : '#FFFFFF' }}>
-                            {isLoading && !isPlaying ? <i className="fa-solid fa-spinner fa-spin fa-2x"></i> : <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'} fa-2x pl-1`}></i>}
-                        </button>
-                        <button onClick={handleNextSurah} className="w-24 text-center hover:opacity-80 transition-opacity font-bold" style={{ color: theme.textColor }}>
-                            التالى
-                        </button>
-                    </div>
-
-                </div>
-
-                <div className="pt-6 pb-2 flex-shrink-0 space-y-3">
-                    <div className="themed-card rounded-2xl p-4 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <label htmlFor="continuous-play-toggle" className="font-bold text-sm flex items-center gap-2" style={{ color: theme.textColor }}>
-                                <i className="fa-solid fa-repeat" style={{ color: (themeKey === 'default' || isBlackTheme) ? (isBlackTheme ? '#FFFFFF' : '#000000') : theme.palette[0] }}></i>
-                                <span>تشغيل متواصل</span>
-                            </label>
+                    <div className="relative flex items-center justify-between w-full min-h-[44px]">
+                        {/* زر الرجوع للخلف وأيقونة المفضلة وزر التفعيل ملاصقة بدون فجوات فارغة */}
+                        <div className="flex items-center gap-0 z-10 shrink-0">
                             <button
-                                id="continuous-play-toggle"
-                                onClick={() => setIsContinuousPlay(prev => !prev)}
-                                className={`relative w-12 h-7 rounded-full transition-colors`}
-                                style={{ backgroundColor: isContinuousPlay ? (themeKey === 'default' ? '#000000' : (isBlackTheme ? '#FFFFFF' : theme.palette[0])) : theme.cardBorder }}
-                                aria-checked={isContinuousPlay}
-                                role="switch"
+                                type="button"
+                                onClick={handleBack}
+                                className="w-8 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title={tListen('back', language)}
+                                aria-label={tListen('back', language)}
                             >
-                                <span className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ease-in-out ${isContinuousPlay ? 'left-6' : 'left-1'}`}></span>
+                                <i className={`fa-solid ${isRTL ? 'fa-arrow-right' : 'fa-arrow-left'} text-lg`}></i>
+                            </button>
+                            <button
+                                id="btn-listen-toggle-fav"
+                                type="button"
+                                onClick={handleToggleFavorite}
+                                className="w-8 h-9 rounded-full flex items-center justify-center transition-colors hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title={isCurrentFavorite ? tListen('removeFromFavorites', language) : tListen('addToFavorites', language)}
+                                aria-label={tListen('favorites', language)}
+                            >
+                                <Heart 
+                                    className={`w-5 h-5 transition-transform duration-200 ${isCurrentFavorite ? 'scale-110 fill-red-500 text-red-500' : 'opacity-70 hover:opacity-100'}`} 
+                                    fill={isCurrentFavorite ? 'currentColor' : 'none'}
+                                    strokeWidth={isCurrentFavorite ? 1.5 : 2}
+                                />
                             </button>
                         </div>
 
-                        <div className="h-px w-full bg-gray-200 dark:bg-gray-700 opacity-30"></div>
+                        {/* عنوان الصفحة في الوسط مع تباعُد آمن عن الأزرار الجانبية */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <h1 className="app-top-bar__title text-base sm:text-lg font-cairo font-bold truncate px-24 text-center">
+                                {tListen('pageTitle', language)}
+                            </h1>
+                        </div>
 
-                        <button 
-                            onClick={() => setShowDownloadModal(true)} 
-                            className="w-full flex justify-between items-center group"
+                        {/* قفل الثيم وأيقونة المنزل ودليل الاستخدام */}
+                        <div className="flex items-center gap-0 z-10 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setShowGuide(true)}
+                                className="w-8 h-9 rounded-full flex items-center justify-center transition-all hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                style={{ color: 'var(--top-bar-text, inherit)' }}
+                                title={tListen('guide', language)}
+                                aria-label={tListen('guide', language)}
+                            >
+                                <i className="fa-solid fa-circle-question text-base"></i>
+                            </button>
+                            <button
+                                onClick={handleGoHome}
+                                className="w-8 h-9 rounded-full flex items-center justify-center transition-all hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title={tListen('home', language)}
+                                aria-label={tListen('home', language)}
+                            >
+                                <i className="fa-solid fa-house text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main 
+                id="listen-scroll-container" 
+                className="w-full max-w-lg mx-auto flex-1 min-h-0 px-4 sm:px-6 pt-4 app-scroll-safe z-10 overflow-y-auto space-y-4"
+            >
+                {/* 1. مربعات الاختيار (القارئ والسورة) كبطاقات مجسمة مطابقة لصفحة التسبيح */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-shrink-0">
+                    {/* بطاقة اختيار القارئ */}
+                    <button 
+                        id="btn-listen-select-reciter"
+                        type="button"
+                        onClick={() => setShowReciterModal(true)} 
+                        className={`app-page-card border-0 w-full p-3.5 sm:p-4 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-start ${
+                            isBlackTheme 
+                                ? 'bg-[#18181b] text-white' 
+                                : 'bg-white dark:bg-[#1E293B] text-slate-800 dark:text-white'
+                        }`}
+                    >
+                        <div className="flex flex-col min-w-0 flex-1">
+                            <span className={`text-[11px] font-semibold leading-tight ${isBlackTheme ? 'text-zinc-400' : 'text-slate-400 dark:text-zinc-400'}`}>
+                                {language === 'en' ? 'Reciter' : 'القارئ'}
+                            </span>
+                            <span className="text-sm sm:text-base font-black truncate mt-0.5">
+                                {getReciterDisplayName(reciterId, reciterName, language)}
+                            </span>
+                        </div>
+                        <div 
+                            className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ms-2 ${circleBadgeOnCardClass}`}
                         >
-                            <div className="flex items-center gap-2">
-                                <i className="fa-solid fa-download" style={{ color: (themeKey === 'default' || isBlackTheme) ? (isBlackTheme ? '#FFFFFF' : '#000000') : theme.palette[0] }}></i>
-                                <span className="font-bold text-sm">تحميل المصحف</span>
-                            </div>
-                            <i className="fa-solid fa-chevron-left opacity-30 group-hover:opacity-100 transition-opacity"></i>
+                            <ChevronDown className="w-4 h-4" />
+                        </div>
+                    </button>
+
+                    {/* بطاقة اختيار السورة */}
+                    <button 
+                        id="btn-listen-select-surah"
+                        type="button"
+                        onClick={() => setShowSurahModal(true)} 
+                        className={`app-page-card border-0 w-full p-3.5 sm:p-4 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-start ${
+                            isBlackTheme 
+                                ? 'bg-[#18181b] text-white' 
+                                : 'bg-white dark:bg-[#1E293B] text-slate-800 dark:text-white'
+                        }`}
+                    >
+                        <div className="flex flex-col min-w-0 flex-1">
+                            <span className={`text-[11px] font-semibold leading-tight ${isBlackTheme ? 'text-zinc-400' : 'text-slate-400 dark:text-zinc-400'}`}>
+                                {language === 'en' ? 'Surah' : 'السورة'}
+                            </span>
+                            <span className="font-cairo text-sm sm:text-base font-black truncate mt-0.5" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                                {formatListenNumber(surahNumber, language)} - {getSurahDisplayName(surahNumber, surahName, language)}
+                            </span>
+                        </div>
+                        <div 
+                            className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ms-2 ${circleBadgeOnCardClass}`}
+                        >
+                            <ChevronDown className="w-4 h-4" />
+                        </div>
+                    </button>
+                </div>
+
+                {/* 2. بطاقة مشغل الصوت الرئيسية (Audio Player Card) */}
+                <div 
+                    id="listen-player-card"
+                    className={`app-page-card border-0 w-full rounded-3xl px-5 py-3.5 sm:px-7 sm:py-5 space-y-4 flex-shrink-0 transition-all duration-300 ${
+                        isBlackTheme 
+                            ? 'bg-[#18181b] text-white' 
+                            : 'bg-white dark:bg-[#1E293B] text-slate-800 dark:text-white'
+                    }`}
+                >
+                    {/* اسم السورة في أعلى بطاقة المشغل */}
+                    <div className="text-center">
+                        <h2 className="text-xl sm:text-2xl font-black font-cairo tracking-tight" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                            {tListen('surahPrefix', language)} {getSurahDisplayName(surahNumber, surahName, language)}
+                        </h2>
+                    </div>
+
+                    {/* شريط التقدم: سميك وواضح وأرقام الوقت مكبرة لتسهيل القراءة */}
+                    <div className="w-full space-y-1.5" dir={dir}>
+                        <div className="relative flex items-center w-full">
+                            <input
+                                type="range"
+                                min="0"
+                                max={duration || 100}
+                                value={currentTime}
+                                onChange={handleSeek}
+                                className="w-full h-2.5 sm:h-3 rounded-full appearance-none cursor-pointer quran-slider"
+                                style={{ 
+                                    background: `linear-gradient(to ${isRTL ? 'left' : 'right'}, ${primaryColor} ${progressPercent}%, ${isBlackTheme ? 'rgba(255,255,255,0.14)' : '#E2E8F0'} ${progressPercent}%)` 
+                                }}
+                            />
+                        </div>
+                        {/* أرقام الوقت بخط مكبر وواضح */}
+                        <div className="flex justify-between items-center px-1 text-sm sm:text-base font-bold tabular-nums tracking-wide" style={{ color: isBlackTheme ? '#A1A1AA' : '#64748B' }}>
+                            <span>{formatListenTime(currentTime, language)}</span>
+                            <span>{formatListenTime(duration, language)}</span>
+                        </div>
+                    </div>
+
+                    {/* أزرار التحكم بالصوت */}
+                    <div className="flex items-center justify-between px-3 sm:px-8 py-0.5 overflow-visible">
+                        {/* زر السابق: في العربية يظهر على اليمين وأيقونته تشير لليمين ▶| */}
+                        <button 
+                            type="button"
+                            onClick={handlePrevSurah} 
+                            className={`app-page-card border-0 w-[44px] h-[44px] sm:w-[48px] sm:h-[48px] rounded-[14px] flex items-center justify-center transition-all cursor-pointer ${
+                                isBlackTheme 
+                                    ? 'bg-[#27272a] text-white' 
+                                    : 'bg-white dark:bg-[#0F172A] text-slate-700 dark:text-white'
+                            }`}
+                            title={tListen('previous', language)}
+                            aria-label={tListen('previous', language)}
+                        >
+                            {isRTL ? (
+                                <SkipForward className="w-[17px] h-[17px] sm:w-5 sm:h-5" strokeWidth={2.3} />
+                            ) : (
+                                <SkipBack className="w-[17px] h-[17px] sm:w-5 sm:h-5" strokeWidth={2.3} />
+                            )}
+                        </button>
+
+                        {/* زر التشغيل والإيقاف الكبير */}
+                        <button 
+                            type="button"
+                            onClick={handlePlayPause} 
+                            className="app-page-card border-0 w-[68px] h-[68px] sm:w-[75px] sm:h-[75px] rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer" 
+                            style={{ 
+                                backgroundColor: primaryColor, 
+                                color: btnTextColor,
+                            }}
+                            title={isPlaying ? tListen('pause', language) : tListen('play', language)}
+                            aria-label={isPlaying ? tListen('pause', language) : tListen('play', language)}
+                        >
+                            {isPlaying ? (
+                                <Pause className="w-[27px] h-[27px] sm:w-[31px] sm:h-[31px]" strokeWidth={2.4} />
+                            ) : isLoading ? (
+                                <i className="fa-solid fa-spinner fa-spin text-[27px] sm:text-[31px]"></i>
+                            ) : (
+                                <Play className={`w-[27px] h-[27px] sm:w-[31px] sm:h-[31px] ${isRTL ? '-translate-x-0.5' : 'translate-x-0.5'}`} strokeWidth={2.4} fill="currentColor" />
+                            )}
+                        </button>
+
+                        {/* زر التالي: في العربية يظهر على اليسار وأيقونته تشير لليسار |◀ */}
+                        <button 
+                            type="button"
+                            onClick={handleNextSurah} 
+                            className={`app-page-card border-0 w-[44px] h-[44px] sm:w-[48px] sm:h-[48px] rounded-[14px] flex items-center justify-center transition-all cursor-pointer ${
+                                isBlackTheme 
+                                    ? 'bg-[#27272a] text-white' 
+                                    : 'bg-white dark:bg-[#0F172A] text-slate-700 dark:text-white'
+                            }`}
+                            title={tListen('next', language)}
+                            aria-label={tListen('next', language)}
+                        >
+                            {isRTL ? (
+                                <SkipBack className="w-[17px] h-[17px] sm:w-5 sm:h-5" strokeWidth={2.3} />
+                            ) : (
+                                <SkipForward className="w-[17px] h-[17px] sm:w-5 sm:h-5" strokeWidth={2.3} />
+                            )}
                         </button>
                     </div>
-                    <p className="text-xs text-center mt-2" style={{ color: theme.textColor, opacity: 0.6 }}>ملاحظة: لا تعمل هذه الصفحة إلا إذا كنت متصلاً بالإنترنت، ويفضل الواي فاي.</p>
-                </div>
-                <div className="w-full h-24 shrink-0"></div>
-            </main>
 
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={onOpenThemes} showThemes={false} />
+                    {/* معلومات الآية الحالية والجزء ونوع السورة تحت أزرار التحكم */}
+                    <div className="text-center">
+                        <p className={`text-xs sm:text-sm font-bold ${isBlackTheme ? 'text-zinc-300' : 'text-slate-600 dark:text-zinc-300'}`}>
+                            {isEn
+                                ? `Ayah ${formatListenNumber(currentAyah, language)}/${formatListenNumber(totalAyahs, language)} • Juz ${formatListenNumber(currentJuz, language)} • ${revelationType}`
+                                : `الآية (${formatListenNumber(currentAyah, language)}) • الجزء ${formatListenNumber(currentJuz, language)} • ${revelationType}`}
+                        </p>
+                    </div>
+
+                    {/* زر التحكم في سرعة التلاوة (بطيئة 0.50 و 0.75 / أسرع 1.25 و 1.5) */}
+                    <div className="pt-0.5 pb-0.5 flex flex-col items-center overflow-visible">
+                        <button
+                            id="btn-listen-speed"
+                            type="button"
+                            onClick={() => setShowSpeedMenu(prev => !prev)}
+                            aria-expanded={showSpeedMenu}
+                            className={`app-page-card border-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm transition-all cursor-pointer ${
+                                playbackRate !== 1 || showSpeedMenu
+                                    ? 'font-black'
+                                    : `font-bold ${isBlackTheme ? 'bg-[#27272a] text-white' : 'bg-white dark:bg-[#0F172A] text-slate-700 dark:text-zinc-200'}`
+                            }`}
+                            style={playbackRate !== 1 || showSpeedMenu ? { backgroundColor: primaryColor, color: btnTextColor } : undefined}
+                        >
+                            <Gauge className="w-4 h-4 shrink-0" strokeWidth={2.2} />
+                            <span>{tListen('playbackSpeed', language)}</span>
+                            <span
+                                dir="ltr"
+                                className="px-2 py-0.5 rounded-full text-[11px] font-extrabold tabular-nums"
+                                style={{
+                                    backgroundColor: playbackRate !== 1 || showSpeedMenu
+                                        ? (isBlackTheme ? 'rgba(0,0,0,0.16)' : 'rgba(255,255,255,0.22)')
+                                        : (isBlackTheme ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.08)'),
+                                    color: playbackRate !== 1 || showSpeedMenu
+                                        ? btnTextColor
+                                        : (isBlackTheme ? '#FFFFFF' : '#334155')
+                                }}
+                            >
+                                {playbackRate === 0.5 ? '0.50×' : `${playbackRate}×`}
+                            </span>
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showSpeedMenu ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {showSpeedMenu && (
+                            <div
+                                id="listen-speed-menu"
+                                className={`mt-3 w-full rounded-2xl p-3 space-y-2.5 overflow-visible ${innerSubBoxClass}`}
+                            >
+                                {/* السرعات البطيئة والأسرع */}
+                                <div className="grid grid-cols-2 gap-2.5 overflow-visible">
+                                    {/* سرعات بطيئة: 0.50 و 0.75 فقط */}
+                                    <div className="space-y-1.5 overflow-visible">
+                                        <span className={`block text-[11px] font-bold text-center ${isBlackTheme ? 'text-zinc-400' : 'text-slate-500 dark:text-zinc-400'}`}>
+                                            {tListen('slowerSpeeds', language)}
+                                        </span>
+                                        <div className="grid grid-cols-2 gap-2 pb-1 overflow-visible">
+                                            {[
+                                                { value: 0.5, label: '0.50×' },
+                                                { value: 0.75, label: '0.75×' }
+                                            ].map(opt => {
+                                                const isActive = Math.abs(playbackRate - opt.value) < 0.001;
+                                                return (
+                                                    <button
+                                                        key={opt.value}
+                                                        type="button"
+                                                        dir="ltr"
+                                                        onClick={() => {
+                                                            setPlaybackRate(opt.value);
+                                                            setShowSpeedMenu(false);
+                                                        }}
+                                                        className={`app-page-card border-0 py-2 px-1 rounded-xl text-xs tabular-nums transition-all cursor-pointer ${
+                                                            isActive
+                                                                ? 'font-black'
+                                                                : `font-extrabold ${isBlackTheme ? 'bg-[#18181b] text-zinc-200' : 'bg-white dark:bg-[#1E293B] text-slate-700 dark:text-zinc-200'}`
+                                                        }`}
+                                                        style={isActive ? { backgroundColor: primaryColor, color: btnTextColor } : undefined}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* سرعات أسرع: 1.25 و 1.5 فقط */}
+                                    <div className="space-y-1.5 overflow-visible">
+                                        <span className={`block text-[11px] font-bold text-center ${isBlackTheme ? 'text-zinc-400' : 'text-slate-500 dark:text-zinc-400'}`}>
+                                            {tListen('fasterSpeeds', language)}
+                                        </span>
+                                        <div className="grid grid-cols-2 gap-2 pb-1 overflow-visible">
+                                            {[
+                                                { value: 1.25, label: '1.25×' },
+                                                { value: 1.5, label: '1.5×' }
+                                            ].map(opt => {
+                                                const isActive = Math.abs(playbackRate - opt.value) < 0.001;
+                                                return (
+                                                    <button
+                                                        key={opt.value}
+                                                        type="button"
+                                                        dir="ltr"
+                                                        onClick={() => {
+                                                            setPlaybackRate(opt.value);
+                                                            setShowSpeedMenu(false);
+                                                        }}
+                                                        className={`app-page-card border-0 py-2 px-1 rounded-xl text-xs tabular-nums transition-all cursor-pointer ${
+                                                            isActive
+                                                                ? 'font-black'
+                                                                : `font-extrabold ${isBlackTheme ? 'bg-[#18181b] text-zinc-200' : 'bg-white dark:bg-[#1E293B] text-slate-700 dark:text-zinc-200'}`
+                                                        }`}
+                                                        style={isActive ? { backgroundColor: primaryColor, color: btnTextColor } : undefined}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* زر العودة للسرعة العادية 1× */}
+                                <div className="pb-1 overflow-visible">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setPlaybackRate(1);
+                                            setShowSpeedMenu(false);
+                                        }}
+                                        className={`app-page-card border-0 w-full py-2.5 px-3 rounded-xl text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                                            playbackRate === 1
+                                                ? 'font-black'
+                                                : `font-bold ${isBlackTheme ? 'bg-[#18181b] text-zinc-200' : 'bg-white dark:bg-[#1E293B] text-slate-700 dark:text-zinc-200'}`
+                                        }`}
+                                        style={playbackRate === 1 ? { backgroundColor: primaryColor, color: btnTextColor } : undefined}
+                                    >
+                                        <span>{tListen('normalSpeed', language)}</span>
+                                        <span dir="ltr">(1×)</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* 3. بطاقة مؤقت النوم (Sleep Timer) مجسمة بالكامل مع أزرار ثلاثية الأبعاد */}
+                <div 
+                    id="listen-sleep-timer-card"
+                    className={`app-page-card border-0 w-full rounded-2xl p-4 sm:p-5 space-y-4 flex-shrink-0 transition-all duration-300 ${
+                        isBlackTheme 
+                            ? 'bg-[#18181b] text-white' 
+                            : 'bg-white dark:bg-[#1E293B] text-slate-800 dark:text-white'
+                    }`}
+                >
+                    {/* عنوان ورأس البطاقة */}
+                    <div className="flex items-center justify-between gap-2 overflow-visible">
+                        <div className="flex items-center gap-2.5">
+                            <div 
+                                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${circleBadgeOnCardClass}`}
+                                style={{ color: primaryColor }}
+                            >
+                                <Moon className="w-4 h-4" strokeWidth={2.2} />
+                            </div>
+                            <span className="font-black text-sm sm:text-base">
+                                {tListen('sleepTimer', language)}
+                            </span>
+                        </div>
+                        
+                        {/* شارة حالة المؤقت */}
+                        {isSleepTimerActive ? (
+                            <div className="flex items-center gap-2 overflow-visible">
+                                <span 
+                                    className="text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1.5"
+                                    style={{
+                                        backgroundColor: hexToRgba(primaryColor, isBlackTheme ? 0.2 : 0.1),
+                                        color: primaryColor
+                                    }}
+                                >
+                                    <span className="w-2 h-2 rounded-full inline-block animate-ping" style={{ backgroundColor: primaryColor }}></span>
+                                    {sleepTimerMode === 'end_of_surah' ? tListen('atEndOfSurah', language) : `${tListen('remaining', language)} ${formatListenTimerCountdown(sleepTimerRemainingSeconds || 0, language)}`}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={handleCancelSleepTimer}
+                                    className="app-page-card border-0 text-xs px-2.5 py-1 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-500 transition-all cursor-pointer font-bold"
+                                    title={tListen('cancelTimer', language)}
+                                >
+                                    {tListen('cancel', language)}
+                                </button>
+                            </div>
+                        ) : (
+                            <span className={`text-xs font-semibold ${isBlackTheme ? 'text-zinc-500' : 'text-slate-400 dark:text-zinc-500'}`}>
+                                {tListen('timerOff', language)}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* خيارات التحديد السريع */}
+                    <div className="grid grid-cols-4 gap-2.5 text-xs pb-1 overflow-visible">
+                        {[
+                            { mode: '15', label: tListen('preset15', language), onClick: () => handleSetPresetTimer(15) },
+                            { mode: '30', label: tListen('preset30', language), onClick: () => handleSetPresetTimer(30) },
+                            { mode: '60', label: tListen('preset60', language), onClick: () => handleSetPresetTimer(60) },
+                            { mode: 'end_of_surah', label: tListen('endOfSurah', language), onClick: handleSetEndOfSurahTimer }
+                        ].map(chip => {
+                            const isActive = isSleepTimerActive && sleepTimerMode === chip.mode;
+                            return (
+                                <button
+                                    key={chip.mode}
+                                    type="button"
+                                    onClick={chip.onClick}
+                                    className={`app-page-card border-0 py-2.5 px-1.5 rounded-xl text-xs transition-all cursor-pointer flex items-center justify-center text-center ${
+                                        isActive 
+                                            ? 'font-black' 
+                                            : `font-bold ${isBlackTheme 
+                                                ? 'bg-[#27272a] text-zinc-200' 
+                                                : 'bg-white dark:bg-[#0F172A] text-slate-600 dark:text-zinc-200'}`
+                                    }`}
+                                    style={isActive ? { backgroundColor: primaryColor, color: btnTextColor } : undefined}
+                                >
+                                    <span className="truncate">{chip.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* صف أزرار زيادة ونقصان الوقت (+) و (-) مع زر بدء المؤقت */}
+                    <div className={`p-3 rounded-2xl flex items-center justify-between gap-3 overflow-visible ${innerSubBoxClass}`}>
+                        <div className="flex items-center gap-2 overflow-visible pb-1">
+                            {/* زر إنقاص الوقت (-) */}
+                            <button
+                                type="button"
+                                onClick={handleDecrementTimer}
+                                disabled={isSleepTimerActive && sleepTimerMode === 'end_of_surah'}
+                                className={`app-page-card border-0 w-9 h-9 rounded-xl flex items-center justify-center font-bold text-base transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer ${
+                                    isBlackTheme ? 'bg-[#18181b] text-white' : 'bg-white dark:bg-[#1E293B] text-slate-700 dark:text-white'
+                                }`}
+                                title={tListen('decreaseTimeTooltip', language)}
+                                aria-label={tListen('decreaseTimeAria', language)}
+                            >
+                                <Minus className="w-4 h-4" />
+                            </button>
+
+                            {/* عرض الوقت الحالي المحدد أو المتبقي */}
+                            <div 
+                                className={`app-inner-3d-box border-0 px-3 py-1.5 rounded-xl text-center font-black text-sm min-w-[95px] tabular-nums ${
+                                    isBlackTheme ? 'bg-[#18181b] text-white' : 'bg-white dark:bg-[#1E293B] text-slate-800 dark:text-white'
+                                }`}
+                            >
+                                {isSleepTimerActive && sleepTimerRemainingSeconds !== null ? (
+                                    <span>{formatListenTimerCountdown(sleepTimerRemainingSeconds, language)}</span>
+                                ) : (
+                                    <span>{formatListenNumber(customTimerMinutes, language)} {tListen('minShort', language)}</span>
+                                )}
+                            </div>
+
+                            {/* زر زيادة الوقت (+) */}
+                            <button
+                                type="button"
+                                onClick={handleIncrementTimer}
+                                disabled={isSleepTimerActive && sleepTimerMode === 'end_of_surah'}
+                                className={`app-page-card border-0 w-9 h-9 rounded-xl flex items-center justify-center font-bold text-base transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer ${
+                                    isBlackTheme ? 'bg-[#18181b] text-white' : 'bg-white dark:bg-[#1E293B] text-slate-700 dark:text-white'
+                                }`}
+                                title={tListen('increaseTimeTooltip', language)}
+                                aria-label={tListen('increaseTimeAria', language)}
+                            >
+                                <Plus className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* زر تفعيل أو إلغاء المؤقت */}
+                        {!isSleepTimerActive ? (
+                            <button
+                                type="button"
+                                onClick={handleStartCustomTimer}
+                                className="app-page-card border-0 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer"
+                                style={{ backgroundColor: primaryColor, color: btnTextColor }}
+                            >
+                                {tListen('startTimer', language)}
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={handleCancelSleepTimer}
+                                className="app-page-card border-0 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer bg-red-500 text-white"
+                            >
+                                {tListen('stopTimer', language)}
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* 4. بطاقة خيارات التشغيل (Options Card) المجسمة بدون إطارات */}
+                <div 
+                    id="listen-options-card"
+                    className={`app-page-card border-0 w-full rounded-2xl p-4 sm:p-5 space-y-3 flex-shrink-0 transition-all duration-300 ${
+                        isBlackTheme 
+                            ? 'bg-[#18181b] text-white' 
+                            : 'bg-white dark:bg-[#1E293B] text-slate-800 dark:text-white'
+                    }`}
+                >
+                    {/* خيار تكرار نفس السورة بعد انتهائها */}
+                    <div 
+                        onClick={handleToggleRepeatSurah}
+                        className={`p-3 rounded-2xl flex items-center justify-between cursor-pointer ${innerToggleRowClass}`}
+                    >
+                        <label htmlFor="repeat-surah-toggle" className="font-bold text-sm flex items-center gap-2.5 cursor-pointer" onClick={e => e.stopPropagation()}>
+                            <div 
+                                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${circleBadgeOnInnerClass}`}
+                                style={{ color: primaryColor }}
+                            >
+                                <RotateCw className="w-3.5 h-3.5" />
+                            </div>
+                            <span>{tListen('repeatSurahToggle', language)}</span>
+                        </label>
+                        <button
+                            id="repeat-surah-toggle"
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleRepeatSurah();
+                            }}
+                            className="app-3d-switch-track relative w-12 h-7 rounded-full transition-colors cursor-pointer border-0 shrink-0"
+                            style={{ 
+                                backgroundColor: isRepeatSurah 
+                                    ? primaryColor 
+                                    : (isBlackTheme ? '#3f3f46' : '#CBD5E1'),
+                            }}
+                            aria-checked={isRepeatSurah}
+                            role="switch"
+                        >
+                            <span 
+                                className={`app-3d-switch-thumb ${isBlackTheme && isRepeatSurah ? 'app-3d-switch-thumb-dark' : ''} absolute top-1 w-5 h-5 rounded-full transition-all duration-300 ease-in-out ${isRepeatSurah ? (isRTL ? 'right-6' : 'left-6') : (isRTL ? 'right-1' : 'left-1')}`}
+                                style={{
+                                    backgroundColor: isBlackTheme && isRepeatSurah ? '#000000' : '#FFFFFF',
+                                }}
+                            ></span>
+                        </button>
+                    </div>
+
+                    {/* خيار تشغيل متواصل */}
+                    <div 
+                        onClick={handleToggleContinuousPlay}
+                        className={`p-3 rounded-2xl flex items-center justify-between cursor-pointer ${innerToggleRowClass}`}
+                    >
+                        <label htmlFor="continuous-play-toggle" className="font-bold text-sm flex items-center gap-2.5 cursor-pointer" onClick={e => e.stopPropagation()}>
+                            <div 
+                                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${circleBadgeOnInnerClass}`}
+                                style={{ color: primaryColor }}
+                            >
+                                <Repeat className="w-3.5 h-3.5" />
+                            </div>
+                            <span>{tListen('continuousPlayToggle', language)}</span>
+                        </label>
+                        <button
+                            id="continuous-play-toggle"
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleContinuousPlay();
+                            }}
+                            className="app-3d-switch-track relative w-12 h-7 rounded-full transition-colors cursor-pointer border-0 shrink-0"
+                            style={{ 
+                                backgroundColor: isContinuousPlay 
+                                    ? primaryColor 
+                                    : (isBlackTheme ? '#3f3f46' : '#CBD5E1'),
+                            }}
+                            aria-checked={isContinuousPlay}
+                            role="switch"
+                        >
+                            <span 
+                                className={`app-3d-switch-thumb ${isBlackTheme && isContinuousPlay ? 'app-3d-switch-thumb-dark' : ''} absolute top-1 w-5 h-5 rounded-full transition-all duration-300 ease-in-out ${isContinuousPlay ? (isRTL ? 'right-6' : 'left-6') : (isRTL ? 'right-1' : 'left-1')}`}
+                                style={{
+                                    backgroundColor: isBlackTheme && isContinuousPlay ? '#000000' : '#FFFFFF',
+                                }}
+                            ></span>
+                        </button>
+                    </div>
+
+                    {/* زر تحميل السور */}
+                    <button 
+                        id="btn-listen-download"
+                        type="button"
+                        onClick={() => setShowDownloadModal(true)} 
+                        className={`app-page-card border-0 w-full p-3 rounded-2xl flex justify-between items-center group cursor-pointer transition-all ${
+                            isBlackTheme ? 'bg-[#27272a] text-white' : 'bg-white dark:bg-[#0F172A] text-slate-800 dark:text-white'
+                        }`}
+                    >
+                        <div className="flex items-center gap-2.5">
+                            <div 
+                                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${circleBadgeOnInnerClass}`}
+                                style={{ color: primaryColor }}
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="font-black text-sm">{tListen('downloadMushaf', language)}</span>
+                        </div>
+                        <div className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white transition-colors">
+                            {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                        </div>
+                    </button>
+                </div>
+
+                {/* 5. قسم المفضلات المحفوظة (Favorites Card) */}
+                <div 
+                    id="listen-favorites-card"
+                    className={`app-page-card border-0 w-full rounded-2xl p-4 sm:p-5 space-y-3.5 flex-shrink-0 transition-all duration-300 ${
+                        isBlackTheme 
+                            ? 'bg-[#18181b] text-white' 
+                            : 'bg-white dark:bg-[#1E293B] text-slate-800 dark:text-white'
+                    }`}
+                >
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                            <div 
+                                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${circleBadgeOnCardClass} text-red-500`}
+                            >
+                                <Heart className="w-4 h-4 fill-red-500" />
+                            </div>
+                            <span className="font-black text-sm sm:text-base">
+                                {tListen('savedFavorites', language)}
+                            </span>
+                        </div>
+                        <span 
+                            className="text-xs px-2.5 py-1 rounded-full font-bold"
+                            style={{
+                                backgroundColor: hexToRgba(primaryColor, isBlackTheme ? 0.2 : 0.1),
+                                color: primaryColor
+                            }}
+                        >
+                            {formatListenNumber(favorites.length, language)} / {formatListenNumber(10, language)}
+                        </span>
+                    </div>
+
+                    {favorites.length === 0 ? (
+                        <div className={`text-center py-6 px-3 rounded-2xl ${innerSubBoxClass} ${isBlackTheme ? 'text-zinc-400' : 'text-slate-400 dark:text-zinc-400'}`}>
+                            <Heart className="w-8 h-8 mx-auto mb-2 opacity-30 stroke-1" />
+                            <p 
+                                className="text-xs leading-relaxed font-medium"
+                                dangerouslySetInnerHTML={{ __html: tListen('noFavoritesDesc', language) }}
+                            />
+                        </div>
+                    ) : (
+                        <div className="space-y-2.5 overflow-visible pb-1">
+                            {favorites.map((fav) => {
+                                const isSelected = fav.reciterId === reciterId && fav.surahNumber === surahNumber;
+                                return (
+                                    <div
+                                        key={fav.id}
+                                        onClick={() => handleSelectFavorite(fav)}
+                                        className={`app-page-card tasbeeh-pressable border-0 p-3 rounded-2xl flex items-center justify-between cursor-pointer transition-all overflow-visible ${
+                                            isBlackTheme 
+                                                ? 'bg-[#27272a] text-white'
+                                                : 'bg-white dark:bg-[#0F172A] text-slate-800 dark:text-white'
+                                        }`}
+                                        title={tListen('tapToListen', language)}
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                            <div 
+                                                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-black text-xs"
+                                                style={isSelected ? primaryBadge3DStyle : itemBadge3DStyle}
+                                            >
+                                                {formatListenNumber(fav.surahNumber, language)}
+                                            </div>
+                                            <div className={`truncate ${isRTL ? 'text-right' : 'text-left'}`}>
+                                                <div className="font-cairo text-xs sm:text-sm font-black truncate" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                                                    {tListen('surahPrefix', language)} {getSurahDisplayName(fav.surahNumber, fav.surahName, language)}
+                                                </div>
+                                                <div className={`text-[11px] truncate font-medium mt-0.5 ${isBlackTheme ? 'text-zinc-400' : 'text-slate-500 dark:text-zinc-400'}`}>
+                                                    {tListen('reciterPrefix', language)} {getReciterDisplayName(fav.reciterId, fav.reciterName, language)}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className={`flex items-center gap-2 shrink-0 ${isRTL ? 'mr-2' : 'ml-2'} overflow-visible`}>
+                                            {isSelected && (
+                                                <span 
+                                                    className="text-[10px] px-2.5 py-1 rounded-full font-black"
+                                                    style={{ backgroundColor: primaryColor, color: btnTextColor }}
+                                                >
+                                                    {isPlaying ? tListen('playing', language) : tListen('selected', language)}
+                                                </span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleRemoveFavorite(fav.id, e)}
+                                                className="app-page-card border-0 w-8 h-8 rounded-xl flex items-center justify-center bg-red-50 dark:bg-red-950/40 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 transition-all cursor-pointer"
+                                                title={tListen('deleteFromFavorites', language)}
+                                                aria-label={tListen('delete', language)}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* ملاحظة الاتصال بالإنترنت */}
+                <p className={`text-xs text-center mt-2 mb-0 px-3 leading-relaxed ${isBlackTheme ? 'text-zinc-500' : 'text-slate-400'}`}>
+                    {tListen('internetNote', language)}
+                </p>
+            </main>
 
             {showReciterModal && (
                 <ReciterSelectModal
@@ -581,16 +1088,23 @@ function ListenQuran({ onBack, onOpenThemes, onNavigate }) {
             {showDownloadModal && (
                 <QuranDownloadModal
                     onClose={() => setShowDownloadModal(false)}
-                    quranData={filteredQuranData}
-                    showToast={showToast}
+                    quranData={mockQuranData}
+                    initialReaderId={reciterId}
+                    getAvailableSurahs={getAvailableSurahs}
+                    showToast={showGlobalAppToast}
                     mode="surah"
                     readersList={RECITERS}
                 />
             )}
-            <Toast 
-                show={toast.show} 
-                message={toast.message} 
-                onClose={() => setToast({ ...toast, show: false })} 
+            <CommunitySpotlightGuide
+                isOpen={showGuide}
+                onClose={() => {
+                    setShowGuide(false);
+                    markPageAsSeen('listen_quran');
+                }}
+                steps={LISTEN_QURAN_PAGE_STEPS}
+                guideKey="listen_quran_page_spotlight"
+                isEn={isEn}
             />
         </div>
     );

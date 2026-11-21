@@ -1,6 +1,7 @@
 import React from 'react';
-import { THEMES } from './constants';
 import { Type, Palette, Highlighter, X, Check } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
+import { resolveQuranModalPalette } from './modalThemeUtils';
 
 interface AyahContextMenuProps {
     isOpen: boolean;
@@ -8,7 +9,7 @@ interface AyahContextMenuProps {
     ayahContextColorField: 'textColor' | 'bgColor' | 'highlightTextColor' | null;
     setAyahContextColorField: (field: 'textColor' | 'bgColor' | 'highlightTextColor' | null) => void;
     setAyahContextMenu: React.Dispatch<React.SetStateAction<any>>;
-    onTempSettingsChange?: (newSettings: any) => void;
+    onTempSettingsChange?: (newSettings: any, fieldChanged?: 'textColor' | 'bgColor' | 'highlightTextColor') => void;
     renderCheckerboard: (color: string) => React.CSSProperties;
     PREDEFINED_COLORS: string[];
     currentTheme: any;
@@ -27,82 +28,161 @@ const AyahContextMenu: React.FC<AyahContextMenuProps> = ({
     currentTheme,
     isLandscape
 }) => {
+    const { language, dir } = useLanguage();
+    const isEn = language === 'en';
     if (!isOpen) return null;
 
+    const p = resolveQuranModalPalette(currentTheme);
+
     return (
-        <div className={`fixed inset-0 z-[1200] bg-transparent flex items-center justify-center ${isLandscape ? 'p-2' : 'p-4'} animate-fadeIn`} onClick={() => {
-            setAyahContextMenu((p: any) => ({...p, isOpen: false}));
+        <div className={`fixed inset-0 z-[1200] bg-black/55 flex items-center justify-center ${isLandscape ? 'p-2' : 'p-4'}`} onClick={() => {
+            setAyahContextMenu((prev: any) => ({...prev, isOpen: false}));
         }}>
             <div 
-                className={`ayah-context-menu w-full ${isLandscape ? 'max-w-[300px] max-h-[90vh]' : 'max-w-[320px] max-h-[70vh]'} bg-white rounded-2xl shadow-2xl transition-all duration-300 flex flex-col pointer-events-auto overflow-hidden animate-modal-enter`} 
+                dir={dir}
+                className={`ayah-context-menu modal-skinned ${isLandscape ? 'w-[54%] max-w-[330px] max-h-[85%]' : 'w-full max-w-[325px] max-h-[78dvh]'} rounded-3xl flex flex-col pointer-events-auto overflow-hidden border-0 ${p.isDark ? 'quran-3d-dark' : ''}`} 
                 style={{ 
-                    fontFamily: currentTheme.font,
-                    border: `2px solid ${currentTheme.barBorder || currentTheme.accent || '#000000'}`
+                    fontFamily: p.fontFamily,
+                    backgroundColor: p.modalBg,
+                    color: p.modalText,
+                    border: 'none',
+                    outline: 'none',
                 }}
                 onClick={e => e.stopPropagation()}
             >
-                <div className="p-4 overflow-y-auto flex-1 custom-scrollbar space-y-5">
+                {/* Canonical Raised Header */}
+                <div className={isLandscape ? "p-2.5 pb-1.5 shrink-0" : "p-3.5 pb-2 shrink-0"}>
+                    <div 
+                        className={`${isLandscape ? 'py-1.5 px-3 rounded-xl' : 'py-2.5 px-3.5 rounded-2xl'} flex items-center justify-between quran-raised-card border-0`}
+                        style={{
+                            backgroundColor: p.headerBg,
+                        }}
+                    >
+                        <span className={`${isLandscape ? 'text-xs' : 'text-xs sm:text-sm'} font-black tracking-wide`} style={{ color: p.headerAccent }}>
+                            {isEn ? "Colors & Customization" : "الألوان والتخصيص"}
+                        </span>
+                        <button 
+                            type="button"
+                            onClick={() => {
+                                setAyahContextMenu((prev: any) => ({...prev, isOpen: false}));
+                            }} 
+                            className={`${isLandscape ? 'w-7 h-7' : 'w-8 h-8'} quran-raised-btn rounded-full flex items-center justify-center border-0 cursor-pointer`}
+                            style={{ backgroundColor: p.closeBg, color: p.headerAccent }}
+                            aria-label={isEn ? "Close" : "إغلاق"}
+                        >
+                            <X size={isLandscape ? 14 : 16} />
+                        </button>
+                    </div>
+                </div>
+
+                <div className={`${isLandscape ? 'p-2.5 pt-1.5 pb-3 space-y-2.5' : 'p-3.5 pt-2 pb-4 space-y-4'} overflow-y-auto flex-1 min-h-0 custom-scrollbar`}>
                     {/* Colors Section */}
-                    <div className="space-y-3">
-                        <div className="bg-blue-50/50 py-1.5 px-3 rounded-md flex items-center justify-between">
-                            <button onClick={() => {
-                                setAyahContextMenu((p: any) => ({...p, isOpen: false}));
-                            }} className="p-1 hover:bg-gray-200 rounded-full transition-colors">
-                                <X size={18} className="text-gray-500" />
-                            </button>
-                            <span className="text-xs font-bold text-gray-700">الألوان</span>
-                        </div>
-                        
-                        <div className="grid grid-cols-3 gap-3">
+                    <div className={isLandscape ? "space-y-2.5" : "space-y-3"}>
+                        <div className={`grid grid-cols-3 ${isLandscape ? 'gap-2' : 'gap-3'}`}>
                             {[
-                                { id: 'textColor', label: 'النص', icon: <Type size={14} /> },
-                                { id: 'bgColor', label: 'الخلفية', icon: <Palette size={14} /> },
-                                { id: 'highlightTextColor', label: 'التحديد', icon: <Highlighter size={14} /> }
-                            ].map(field => (
-                                <div key={field.id} className="flex flex-col gap-1.5">
-                                    <button 
-                                        onClick={() => setAyahContextColorField(ayahContextColorField === field.id ? null : field.id as any)}
-                                        className={`h-12 w-full rounded-xl border-2 shadow-sm transition-all relative overflow-hidden flex items-center justify-center ${ayahContextColorField === field.id ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-gray-200 hover:border-gray-300'}`}
-                                        style={renderCheckerboard(tempSettings[field.id] || (field.id === 'highlightTextColor' ? THEMES['olive'].highlightText : ''))}
+                                { id: 'textColor', label: isEn ? 'Text' : 'النص', icon: <Type size={14} /> },
+                                { id: 'bgColor', label: isEn ? 'Background' : 'الخلفية', icon: <Palette size={14} /> },
+                                { id: 'highlightTextColor', label: isEn ? 'Highlight' : 'التحديد', icon: <Highlighter size={14} /> }
+                            ].map(field => {
+                                const isFieldActive = ayahContextColorField === field.id;
+                                const fieldColorValue = tempSettings[field.id] || (
+                                    field.id === 'highlightTextColor' 
+                                        ? (currentTheme?.highlightText || p.accentColor) 
+                                        : ''
+                                );
+
+                                return (
+                                    <div 
+                                        key={field.id} 
+                                        className={`flex flex-col ${isLandscape ? 'gap-1' : 'gap-1.5'} items-center`}
                                     >
-                                        {ayahContextColorField === field.id && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/5">
-                                                <Check size={16} className="text-white drop-shadow-md" />
-                                            </div>
-                                        )}
-                                    </button>
-                                    <span className="text-[10px] font-bold text-gray-500 text-center">{field.label}</span>
-                                </div>
-                            ))}
+                                        <span 
+                                            className={`${isLandscape ? 'text-[11px]' : 'text-xs'} font-bold text-center transition-colors select-none`}
+                                            style={{ 
+                                                color: isFieldActive ? p.headerAccent : p.mutedText
+                                            }}
+                                        >
+                                            {field.label}
+                                        </span>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setAyahContextColorField(isFieldActive ? null : field.id as any)}
+                                            className={`${isLandscape ? 'h-9 rounded-xl' : 'h-12 rounded-2xl'} w-full relative overflow-hidden flex items-center justify-center cursor-pointer border-0 ${isFieldActive ? 'quran-raised-btn-selected scale-[1.03]' : 'quran-raised-btn'}`}
+                                            style={{
+                                                ...renderCheckerboard(fieldColorValue),
+                                            }}
+                                            aria-label={field.label}
+                                        >
+                                            {isFieldActive && (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/15">
+                                                    <div 
+                                                        className={`${isLandscape ? 'w-5 h-5' : 'w-6 h-6'} rounded-full flex items-center justify-center`}
+                                                        style={{ 
+                                                            backgroundColor: p.selectedBg, 
+                                                            color: p.selectedText 
+                                                        }}
+                                                    >
+                                                        <Check size={isLandscape ? 11 : 14} className="stroke-[3]" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </button>
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         {ayahContextColorField && (
-                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 animate-fadeIn">
-                                <div className="flex justify-between items-center mb-2">
-                                    <span className="text-[10px] font-bold text-gray-600">
-                                        اختر لون {ayahContextColorField === 'bgColor' ? 'الخلفية' : ayahContextColorField === 'textColor' ? 'النص' : 'التحديد'}
+                            <div 
+                                className={`${isLandscape ? 'p-2.5 rounded-2xl' : 'p-3.5 rounded-2xl'} border-0 quran-raised-card`}
+                                style={{
+                                    backgroundColor: p.subtleBg,
+                                }}
+                            >
+                                <div className={`flex justify-between items-center ${isLandscape ? 'mb-1.5' : 'mb-2.5'}`}>
+                                    <span className={`${isLandscape ? 'text-[10px]' : 'text-[11px]'} font-bold`} style={{ color: p.headerAccent }}>
+                                        {isEn 
+                                            ? `Select ${ayahContextColorField === 'bgColor' ? 'background' : ayahContextColorField === 'textColor' ? 'text' : 'highlight'} color`
+                                            : `اختر لون ${ayahContextColorField === 'bgColor' ? 'الخلفية' : ayahContextColorField === 'textColor' ? 'النص' : 'التحديد'}`}
                                     </span>
                                 </div>
-                                <div className="grid grid-cols-6 gap-1.5">
-                                    {PREDEFINED_COLORS.map(c => (
-                                        <button
-                                            key={c}
-                                            onClick={() => {
-                                                const newTempSettings = { ...tempSettings, [ayahContextColorField!]: c };
-                                                setAyahContextMenu((prev: any) => ({
-                                                    ...prev,
-                                                    tempSettings: newTempSettings
-                                                }));
-                                                if (onTempSettingsChange) {
-                                                    onTempSettingsChange(newTempSettings);
-                                                }
-                                            }}
-                                            className={`h-7 rounded-lg border transition-all hover:scale-110 relative ${tempSettings[ayahContextColorField!] === c ? 'ring-2 ring-emerald-500 ring-offset-1' : 'border-gray-200'}`}
-                                            style={renderCheckerboard(c)}
-                                        >
-                                            {tempSettings[ayahContextColorField!] === c && <Check size={10} className="absolute inset-0 m-auto text-white drop-shadow-sm" />}
-                                        </button>
-                                    ))}
+                                <div className={`grid ${isLandscape ? 'grid-cols-8 gap-1.5' : 'grid-cols-6 gap-2.5'}`}>
+                                    {PREDEFINED_COLORS.map(c => {
+                                        const isSelected = tempSettings[ayahContextColorField!] === c;
+                                        return (
+                                            <button
+                                                type="button"
+                                                key={c}
+                                                onClick={() => {
+                                                    const currentField = ayahContextColorField!;
+                                                    const newTempSettings = { ...tempSettings, [currentField]: c };
+                                                    setAyahContextMenu((prev: any) => ({
+                                                        ...prev,
+                                                        tempSettings: newTempSettings
+                                                    }));
+                                                    if (onTempSettingsChange) {
+                                                        onTempSettingsChange(newTempSettings, currentField);
+                                                    }
+                                                }}
+                                                className={`${isLandscape ? 'h-6.5 rounded-lg' : 'h-8 rounded-xl'} relative flex items-center justify-center border-0 ${isSelected ? 'quran-raised-btn-selected scale-105' : 'quran-raised-btn'}`}
+                                                style={{
+                                                    ...renderCheckerboard(c),
+                                                }}
+                                            >
+                                                {isSelected && (
+                                                    <div 
+                                                        className={`${isLandscape ? 'w-3.5 h-3.5' : 'w-4 h-4'} rounded-full flex items-center justify-center`}
+                                                        style={{ 
+                                                            backgroundColor: p.selectedBg, 
+                                                            color: p.selectedText 
+                                                        }}
+                                                    >
+                                                        <Check size={isLandscape ? 9 : 10} className="stroke-[3]" />
+                                                    </div>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
