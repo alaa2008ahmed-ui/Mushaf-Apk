@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import { parseVoiceCommand, normalizeArabic } from '../utils/voiceParser';
+import { parseVoiceCommand, normalizeArabic } from '../utils/audio/voiceParser';
 import { SURAH_NAMES_AR } from '../components/QuranReader/constants';
+import { requestMicrophonePermission } from '../utils/notifications/permissionHelper';
+import { acquireListenInterruption, releaseListenInterruption } from '../utils/audio/listenAudioCoordinator';
 
 export interface VoiceCommand {
     id: string;
@@ -51,11 +53,6 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'nav_listen', phrase: 'الاستماع للقران', action: 'open_listen', isDefault: true },
     { id: 'open_settings', phrase: 'فتح الإعدادات', action: 'open_settings', isDefault: true },
     { id: 'nav_settings', phrase: 'الاعدادات', action: 'open_settings', isDefault: true },
-    { id: 'open_themes', phrase: 'فتح الثيمات', action: 'open_themes', isDefault: true },
-    { id: 'nav_themes', phrase: 'ثيمات', action: 'open_themes', isDefault: true },
-    { id: 'nav_themes_alt', phrase: 'السيمات', action: 'open_themes', isDefault: true },
-    { id: 'nav_themes_alt2', phrase: 'سيمات', action: 'open_themes', isDefault: true },
-    { id: 'nav_themes_alt3', phrase: 'الثيمات', action: 'open_themes', isDefault: true },
     { id: 'open_voice_control', phrase: 'فتح التحكم الصوتي', action: 'open_voice_control', isDefault: true },
     { id: 'nav_voice_control', phrase: 'التحكم الصوتى', action: 'open_voice_control', isDefault: true },
     { id: 'open_adia', phrase: 'فتح الادعيه', action: 'open_adia', isDefault: true },
@@ -68,8 +65,6 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
     { id: 'nav_daily_wird', phrase: 'الورد اليومي', action: 'open_daily_wird', isDefault: true },
     { id: 'open_memorization', phrase: 'فتح التحفيظ', action: 'open_memorization', isDefault: true },
     { id: 'nav_memorization', phrase: 'التحفيظ', action: 'open_memorization', isDefault: true },
-    { id: 'open_more', phrase: 'فتح قائمة التطبيقات', action: 'open_more', isDefault: true },
-    { id: 'nav_more', phrase: 'قائمة التطبيقات', action: 'open_more', isDefault: true },
     { id: 'open_nawawi', phrase: 'فتح الاربعون النوويه', action: 'open_nawawi', isDefault: true },
     { id: 'nav_nawawi', phrase: 'الاربعون النوويه', action: 'open_nawawi', isDefault: true },
     { id: 'go_back', phrase: 'رجوع', action: 'go_back', isDefault: true },
@@ -108,7 +103,13 @@ const DEFAULT_COMMANDS: VoiceCommand[] = [
 const VoiceControlContext = createContext<VoiceControlContextType | undefined>(undefined);
 
 export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onAction: (action: string, text: string, params?: any) => void }> = ({ children, onAction }) => {
-    const [isEnabled, setIsEnabled] = useState(false);
+    const [isEnabled, setIsEnabledState] = useState(() => {
+        try {
+            return localStorage.getItem('voice_control_enabled') === 'true';
+        } catch {
+            return false;
+        }
+    });
     const [showVoiceIcon, setShowVoiceIcon] = useState(() => localStorage.getItem('show_voice_icon') !== 'false');
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
@@ -258,7 +259,7 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         const startWebRecognition = () => {
             const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
             if (!SpeechRecognitionAPI) {
-                console.error("Speech Recognition API not supported in this browser.");
+                console.warn("Speech Recognition API not supported in this browser.");
                 setIsEnabled(false);
                 setIsListening(false);
                 isStartingRef.current = false;
@@ -286,12 +287,25 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
                 };
                 
                 recognition.onerror = (event: any) => {
-                    console.error('Web Speech API Error:', event.error);
-                    if (event.error === 'not-allowed') {
+                    const err = event?.error;
+                    if (err === 'not-allowed' || err === 'service-not-allowed') {
+                        console.warn('Web Speech API permission not allowed:', err);
                         setIsEnabled(false);
                         setIsListening(false);
+                        isStartingRef.current = false;
+                        if (webRecognitionRef.current) {
+                            try {
+                                webRecognitionRef.current.abort();
+                            } catch (_) {}
+                            webRecognitionRef.current = null;
+                        }
+                        return;
                     }
-                    // If error is no-speech, we can just let it continue or restart silently
+                    if (err === 'no-speech' || err === 'aborted') {
+                        // Expected benign browser events when user is silent or recognition is restarted
+                        return;
+                    }
+                    console.warn('Web Speech API Warning:', err);
                 };
                 
                 recognition.onend = () => {
@@ -323,8 +337,9 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             
             console.log('Voice Recognition Started. Active phrases:', commands.map(c => c.phrase));
             
-            // 1. Safely check and request permissions without blocking
+            // 1. Safely check and request permissions in-app without blocking
             try {
+                await requestMicrophonePermission();
                 const checkPerm = await SpeechRecognition.checkPermissions();
                 if (checkPerm.speechRecognition !== 'granted') {
                     await SpeechRecognition.requestPermissions();
@@ -401,6 +416,22 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         setIsListening(false);
     }, []);
 
+    const setIsEnabled = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+        setIsEnabledState(prev => {
+            const next = typeof value === 'function' ? value(prev) : value;
+            try {
+                localStorage.setItem('voice_control_enabled', String(next));
+            } catch (e) {
+                console.error('Error saving voice_control_enabled:', e);
+            }
+            return next;
+        });
+    }, []);
+
+    const toggleEnabled = useCallback(() => {
+        setIsEnabled(prev => !prev);
+    }, [setIsEnabled]);
+
     // Sync state changes to refs and trigger start/stop
     useEffect(() => {
         isEnabledRef.current = isEnabled;
@@ -412,17 +443,52 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
         }
     }, [isEnabled, startRecognition, stopRecognition]);
 
-    // Disable voice control when app goes to background
+    // Pause ListenQuran playback while voice control microphone is actively listening
+    useEffect(() => {
+        if (isListening) {
+            acquireListenInterruption('voice-control-mic');
+        } else {
+            releaseListenInterruption('voice-control-mic');
+        }
+        return () => {
+            releaseListenInterruption('voice-control-mic');
+        };
+    }, [isListening]);
+
+    // Pause recognition when app goes to background without clearing user preference
+    const wasEnabledBeforeBackgroundRef = useRef(false);
     useEffect(() => {
         const listener = CapacitorApp.addListener('appStateChange', ({ isActive }) => {
-            if (!isActive && isEnabledRef.current) {
-                setIsEnabled(false);
+            if (!isActive) {
+                if (isEnabledRef.current) {
+                    wasEnabledBeforeBackgroundRef.current = true;
+                    stopRecognition();
+                }
+            } else {
+                if (wasEnabledBeforeBackgroundRef.current && isEnabledRef.current) {
+                    wasEnabledBeforeBackgroundRef.current = false;
+                    startRecognition();
+                }
             }
         });
 
         return () => {
             listener.then(l => l.remove());
         };
+    }, [startRecognition, stopRecognition]);
+
+    // Listen for storage events (sync across tabs/windows)
+    useEffect(() => {
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'voice_control_enabled' && e.newValue !== null) {
+                setIsEnabledState(e.newValue === 'true');
+            }
+            if (e.key === 'show_voice_icon' && e.newValue !== null) {
+                setShowVoiceIcon(e.newValue !== 'false');
+            }
+        };
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
     // Handle pause/resume from audio playback
@@ -433,7 +499,7 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             if (isEnabledRef.current) {
                 console.log('Voice Control - Pausing for audio playback');
                 wasEnabledBeforePauseRef.current = true;
-                setIsEnabled(false);
+                stopRecognition();
             }
         };
 
@@ -441,7 +507,9 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             if (wasEnabledBeforePauseRef.current) {
                 console.log('Voice Control - Resuming after audio playback');
                 wasEnabledBeforePauseRef.current = false;
-                setIsEnabled(true);
+                if (isEnabledRef.current) {
+                    startRecognition();
+                }
             }
         };
 
@@ -453,10 +521,6 @@ export const VoiceControlProvider: React.FC<{ children: React.ReactNode, onActio
             window.removeEventListener('voice-control-resume', handleResume);
         };
     }, [startRecognition, stopRecognition]);
-
-    const toggleEnabled = useCallback(() => {
-        setIsEnabled(prev => !prev);
-    }, []);
 
     const updateCommand = (id: string, phrase: string) => {
         setCommands(prev => prev.map(c => c.id === id ? { ...c, phrase } : c));

@@ -1,9 +1,142 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, X, Smartphone, AppWindow, VolumeX, Clock, Shuffle } from 'lucide-react';
-import { toArabic } from './constants';
+import { Check, Smartphone, AppWindow, ShieldCheck, Zap } from 'lucide-react';
+import { toArabic, THEMES, isDarkQuranTheme } from './constants';
+import { getMadinahThemePalette } from './MadinahFrameSVG';
+import { IslamicTimePickerModal } from '../Common/IslamicTimePickerModal';
 import { usePrayerTimes } from '../../context/PrayerTimesContext';
-import { setupNotifications } from '../../utils/notifications';
+import PrayerAlertVolumeSlider from '../PrayerTimes/PrayerAlertVolumeSlider';
+import { setupNotifications } from '../../utils/notifications/notifications';
 import { useNotificationSettings, PhoneNotificationSettings } from '../../hooks/useNotificationSettings';
+import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
+import { syncWidgetThemeColors } from '../../utils/notifications/widgetUtils';
+import { WidgetDesignPreview } from '../PrayerTimes/WidgetDesignPreview';
+import { Preferences } from '@capacitor/preferences';
+import { Capacitor } from '@capacitor/core';
+import NotificationToneSelector, { NotificationToneState } from '../PrayerTimes/NotificationToneSelector';
+import { getActiveNotificationTone, setActiveNotificationTone } from '../../utils/prayerAndWorship/prayerTimesUtils';
+import {
+  setNativePersistentNotificationEnabled,
+  checkNativeBatteryOptimization,
+  requestNativeBatteryOptimization,
+  setNativeNotificationLanguage
+} from '../../utils/notifications/silentMode';
+import {
+    getAppNotificationSettings,
+    saveAppNotificationSettings,
+    APP_NOTIFICATION_CHANGE_EVENT,
+    AppNotificationSettings,
+    NOTIFICATION_LOCK_LANG_KEY,
+    NOTIFICATION_LOCK_LANG_CHANGE_EVENT,
+    getNotificationLockLanguage
+} from '../../utils/notifications/appNotificationSettings';
+import { registerBackInterceptor } from '../../hooks/useBackButton';
+
+const toEnglishDigits = (val: string | number): string =>
+    String(val ?? '')
+        .replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 1632))
+        .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 1776));
+
+const formatMuteDate = (timestamp: number, isEn: boolean): string => {
+    try {
+        return new Intl.DateTimeFormat(isEn ? 'en-US-u-nu-latn' : 'ar-EG-u-nu-arab', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        }).format(new Date(timestamp));
+    } catch {
+        const d = new Date(timestamp);
+        const raw = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+        return isEn ? toEnglishDigits(raw) : toArabic(raw);
+    }
+};
+
+interface ClickableTimeValueProps {
+    value: string;
+    onChange: (newTime: string) => void;
+    isEn: boolean;
+    className?: string;
+    style?: React.CSSProperties;
+    accentColor?: boolean;
+    pickerAccentColor?: string;
+    title?: string;
+}
+
+const ClickableTimeValue: React.FC<ClickableTimeValueProps> = ({
+    value,
+    onChange,
+    isEn,
+    className = '',
+    style,
+    accentColor = true,
+    pickerAccentColor,
+    title
+}) => {
+    const [isPickerOpen, setIsPickerOpen] = useState(false);
+    const cleaned = toEnglishDigits(value || '07:00').trim();
+    const parts = cleaned.split(':');
+    const parsedH = parseInt(parts[0], 10);
+    const parsedM = parseInt(parts[1] ?? '0', 10);
+    const h24 = isNaN(parsedH) ? 7 : parsedH;
+    const m = isNaN(parsedM) ? 0 : parsedM;
+    const isPM = h24 >= 12;
+    const h12 = h24 % 12 || 12;
+    const hhStr = String(h12).padStart(2, '0');
+    const mmStr = String(m).padStart(2, '0');
+    const normalizedInputValue = `${String(h24).padStart(2, '0')}:${mmStr}`;
+
+    return (
+        <>
+            <div
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsPickerOpen(true);
+                }}
+                role="button"
+                tabIndex={0}
+                className={`relative inline-flex items-center justify-center cursor-pointer select-none transition-transform ${className}`}
+                style={style}
+                title={isEn ? 'Click to change time' : 'انقر لتعديل الوقت'}
+            >
+                {isEn ? (
+                    <span
+                        dir="ltr"
+                        className="inline-flex items-center gap-1 font-bold tabular-nums"
+                        style={{
+                            color: accentColor ? (pickerAccentColor || 'var(--qr-accent)') : undefined,
+                            fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Cairo", sans-serif'
+                        }}
+                    >
+                        <span>{hhStr}:{mmStr}</span>
+                        <span>{isPM ? 'PM' : 'AM'}</span>
+                    </span>
+                ) : (
+                    <span
+                        dir="rtl"
+                        className="inline-flex items-center gap-1 font-bold tabular-nums"
+                        style={{ color: accentColor ? (pickerAccentColor || 'var(--qr-accent)') : undefined }}
+                    >
+                        <span dir="ltr">{toArabic(hhStr)}:{toArabic(mmStr)}</span>
+                        <span>{isPM ? 'م' : 'ص'}</span>
+                    </span>
+                )}
+            </div>
+
+            {isPickerOpen && (
+                <IslamicTimePickerModal
+                    isOpen={isPickerOpen}
+                    onClose={() => setIsPickerOpen(false)}
+                    initialTime={normalizedInputValue}
+                    onSave={(newTime24) => {
+                        onChange(newTime24);
+                    }}
+                    title={title}
+                    accentColor={pickerAccentColor || (typeof document !== 'undefined' ? getComputedStyle(document.documentElement).getPropertyValue('--qr-accent').trim() : undefined)}
+                />
+            )}
+        </>
+    );
+};
 
 interface NotificationSettingsModalProps {
     onClose: () => void;
@@ -11,40 +144,316 @@ interface NotificationSettingsModalProps {
     isLandscape: boolean;
     modeSuffix: string;
     initialTab?: 'app' | 'phone';
+    hideAppTab?: boolean;
+    hidePhoneTab?: boolean;
+    hideTabsBar?: boolean;
+    phoneTabTitle?: string;
+    isFromQuranReader?: boolean;
+    currentTheme?: any;
 }
 
-const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ onClose, showToast, isLandscape, modeSuffix, initialTab }) => {
-    const { config, updateConfig } = usePrayerTimes();
-    const { phoneSettings, updateSpecificSetting, updateRandomSettings } = useNotificationSettings();
-    const [activeTab, setActiveTab] = useState<'app' | 'phone'>(initialTab || 'app');
+const isNotifHexDark = (color?: string): boolean => {
+    if (!color || typeof color !== 'string') return false;
+    const c = color.trim().toLowerCase();
+    const hex = c.startsWith('#') ? c.slice(1) : '';
+    if (!hex) return false;
+    let r = 0, g = 0, b = 0;
+    if (hex.length === 3) {
+        r = parseInt(hex[0] + hex[0], 16);
+        g = parseInt(hex[1] + hex[1], 16);
+        b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length === 6) {
+        r = parseInt(hex.slice(0, 2), 16);
+        g = parseInt(hex.slice(2, 4), 16);
+        b = parseInt(hex.slice(4, 6), 16);
+    } else {
+        return false;
+    }
+    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return false;
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.45;
+};
 
-    const [appSettings, setAppSettings] = useState(() => {
-        const saved = localStorage.getItem('notification_settings' + modeSuffix);
-        if (saved) {
-            try {
-                return JSON.parse(saved);
-            } catch (e) {
-                console.error('Error parsing notification settings', e);
-            }
+const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ 
+    onClose, 
+    showToast, 
+    isLandscape, 
+    modeSuffix, 
+    initialTab,
+    hideAppTab = false,
+    hidePhoneTab = false,
+    hideTabsBar = false,
+    phoneTabTitle,
+    isFromQuranReader = false,
+    currentTheme: propCurrentTheme
+}) => {
+    const { language, dir, isRTL } = useLanguage();
+    const isEn = language === 'en';
+    const { config, updateConfig, alertVolume = 100, setAlertVolume } = usePrayerTimes();
+    const { phoneSettings, updateSpecificSetting, updateRandomSettings } = useNotificationSettings();
+    const [activeTab, setActiveTab] = useState<'app' | 'phone'>(
+        hideAppTab ? 'phone' : (hidePhoneTab ? 'app' : (initialTab || 'app'))
+    );
+
+    const [appSettings, setAppSettings] = useState<AppNotificationSettings>(() => getAppNotificationSettings());
+
+    useEffect(() => {
+        const syncAppSettings = () => setAppSettings(getAppNotificationSettings());
+        window.addEventListener(APP_NOTIFICATION_CHANGE_EVENT, syncAppSettings);
+        return () => window.removeEventListener(APP_NOTIFICATION_CHANGE_EVENT, syncAppSettings);
+    }, []);
+
+    const { theme, themeKey, homeThemeVariant, isNightMode } = useTheme();
+    const activeReaderTheme = isFromQuranReader ? (propCurrentTheme || THEMES.black) : null;
+    const readerPalette = activeReaderTheme ? getMadinahThemePalette(activeReaderTheme) : null;
+    const readerIsDark = activeReaderTheme ? isDarkQuranTheme(activeReaderTheme) : false;
+    const readerIsDeepBlack = activeReaderTheme?.id === 'deep_black';
+    const isBlackTheme = isFromQuranReader
+        ? readerIsDark
+        : (themeKey === 'deep_black' || theme?.bgColor === '#000000' || theme?.name === 'اسود' || theme?.name === 'black');
+
+    const themeStyles = (() => {
+        if (isFromQuranReader && activeReaderTheme && readerPalette) {
+            const accent = readerIsDeepBlack
+                ? '#e4e4e7'
+                : (readerPalette.primary || activeReaderTheme?.accent || '#b45309');
+            const selectedBg = readerIsDeepBlack ? '#3f3f46' : accent;
+            const selectedText = isNotifHexDark(selectedBg) ? '#ffffff' : '#09090b';
+            return {
+                modalBg: readerPalette.frameBg,
+                modalText: readerIsDark ? '#f8fafc' : readerPalette.bannerText,
+                cardBg: readerIsDark
+                    ? (activeReaderTheme?.cardBg && !activeReaderTheme.cardBg.startsWith('rgba') ? activeReaderTheme.cardBg : '#141418')
+                    : (readerPalette.cartoucheFill || '#ffffff'),
+                cardBorder: readerIsDark ? 'rgba(255, 255, 255, 0.16)' : `${accent}44`,
+                text: readerIsDark ? '#f8fafc' : readerPalette.bannerText,
+                subtext: readerIsDark ? '#a1a1aa' : readerPalette.metaText,
+                accent: accent,
+                btnBg: selectedBg,
+                btnText: selectedText
+            };
         }
+        if (isBlackTheme || themeKey === 'deep_black') {
+            return {
+                modalBg: '#121214',
+                modalText: '#ffffff',
+                cardBg: '#1e1e24',
+                cardBorder: 'rgba(255, 255, 255, 0.15)',
+                text: '#ffffff',
+                subtext: '#a1a1aa',
+                accent: '#ffffff',
+                btnBg: '#ffffff',
+                btnText: '#000000'
+            };
+        }
+        if (themeKey === 'shiny_gold' || themeKey === 'gold' || homeThemeVariant === 'gold') {
+            return {
+                modalBg: '#ffffff',
+                modalText: '#1f2937',
+                cardBg: '#fef08a', // vibrant golden yellow card
+                cardBorder: '#eab308',
+                text: '#713f12', // deep golden text
+                subtext: '#854d0e',
+                accent: '#ca8a04',
+                btnBg: '#ca8a04',
+                btnText: '#ffffff'
+            };
+        }
+        if (themeKey === 'sky_mode' || homeThemeVariant === 'sky') {
+            return {
+                modalBg: '#ffffff',
+                modalText: '#1f2937',
+                cardBg: '#e0f2fe', // sky blue card
+                cardBorder: '#7dd3fc',
+                text: '#0c4a6e', // deep sky blue text
+                subtext: '#0369a1',
+                accent: '#0284c7',
+                btnBg: '#0284c7',
+                btnText: '#ffffff'
+            };
+        }
+        if (themeKey === 'burgundy_mode' || homeThemeVariant === 'burgundy') {
+            return {
+                modalBg: '#ffffff',
+                modalText: '#1f2937',
+                cardBg: '#ffe4e6', // burgundy card
+                cardBorder: '#fda4af',
+                text: '#4c0519', // deep burgundy text
+                subtext: '#881337',
+                accent: '#be123c',
+                btnBg: '#be123c',
+                btnText: '#ffffff'
+            };
+        }
+        // Emerald / Default Green
         return {
-            quarter: true,
-            sajda: true,
-            themes: true,
-            downloads: true,
-            bookmarks: true,
-            juz: true,
-            general: true
+            modalBg: '#ffffff',
+            modalText: '#1f2937',
+            cardBg: '#dcfce7', // emerald green card
+            cardBorder: '#86efac',
+            text: '#064e3b', // deep emerald text
+            subtext: '#047857',
+            accent: '#059669',
+            btnBg: '#059669',
+            btnText: '#ffffff'
         };
+    })();
+
+    // Persistent Prayer Times Notification State
+    const [isPersistentNotificationEnabled, setIsPersistentNotificationEnabled] = useState<boolean>(() => {
+        const saved = localStorage.getItem('persistent_prayer_notification');
+        return saved !== 'false';
+    });
+    const [isBatteryIgnored, setIsBatteryIgnored] = useState<boolean>(true);
+
+    useEffect(() => {
+        if (Capacitor.getPlatform() === 'android') {
+            checkNativeBatteryOptimization().then(setIsBatteryIgnored).catch(() => {});
+        }
+    }, []);
+
+    // Notification Tone state for general reminders & athkar
+    const [activeNotificationTone, setActiveNotificationToneState] = useState<NotificationToneState>(() => getActiveNotificationTone());
+
+    const handleNotificationToneChange = (tone: NotificationToneState) => {
+        setActiveNotificationToneState(tone);
+        setActiveNotificationTone(tone);
+        setTimeout(() => {
+            setupNotifications(phoneSettings, isEn ? 'en' : 'ar');
+        }, 50);
+        showToast(isEn ? `Notification tone updated: ${tone.name}` : `تم تحديث نغمة الإشعارات: ${tone.name}`);
+    };
+
+    const togglePersistentNotification = async () => {
+        const nextState = !isPersistentNotificationEnabled;
+        setIsPersistentNotificationEnabled(nextState);
+        localStorage.setItem('persistent_prayer_notification', nextState ? 'true' : 'false');
+        await setNativePersistentNotificationEnabled(nextState);
+        showToast(nextState
+            ? (isEn ? 'Persistent prayer notification enabled' : 'تم تفعيل إشعار الصلاة المستمر')
+            : (isEn ? 'Persistent prayer notification disabled' : 'تم تعطيل إشعار الصلاة المستمر')
+        );
+    };
+
+    const handleRequestBatteryOptimization = async () => {
+        await requestNativeBatteryOptimization();
+        setTimeout(async () => {
+            const ignored = await checkNativeBatteryOptimization();
+            setIsBatteryIgnored(ignored);
+        }, 2000);
+    };
+
+    // Widget language lock: 'ar' | 'en' | null (both disabled by default)
+    const [widgetLockLang, setWidgetLockLang] = useState<'ar' | 'en' | null>(() => {
+        const saved = localStorage.getItem('widget_lock_lang');
+        return (saved === 'ar' || saved === 'en') ? saved : null;
     });
 
-    const toggleAppSetting = (key: string) => {
+    // Phone notifications language lock: 'ar' | 'en' | null (both disabled by default -> follow app language)
+    const [notifLockLang, setNotifLockLang] = useState<'ar' | 'en' | null>(() => getNotificationLockLanguage());
+
+    // Widget theme lock: boolean (disabled / false by default)
+    const [widgetLockTheme, setWidgetLockTheme] = useState<boolean>(() => {
+        return localStorage.getItem('widget_lock_theme') === 'true';
+    });
+    const [showWidgetsGuide, setShowWidgetsGuide] = useState<boolean>(false);
+    const [showWidgetDesignModal, setShowWidgetDesignModal] = useState<boolean>(false);
+
+    useEffect(() => {
+        const interceptor = () => {
+            if (showWidgetsGuide) {
+                setShowWidgetsGuide(false);
+                return true;
+            }
+            if (showWidgetDesignModal) {
+                setShowWidgetDesignModal(false);
+                return true;
+            }
+            onClose();
+            return true;
+        };
+        const unregister = registerBackInterceptor(interceptor);
+        return unregister;
+    }, [showWidgetsGuide, showWidgetDesignModal, onClose]);
+
+    const handleToggleWidgetArabic = async () => {
+        const next = widgetLockLang === 'ar' ? null : 'ar';
+        setWidgetLockLang(next);
+        if (next) {
+            localStorage.setItem('widget_lock_lang', next);
+            await Preferences.set({ key: 'widget_lock_lang', value: next }).catch(() => {});
+            showToast(isEn ? 'Widgets locked to Arabic' : 'تم تثبيت لغة الودجت: العربية');
+        } else {
+            localStorage.removeItem('widget_lock_lang');
+            await Preferences.remove({ key: 'widget_lock_lang' }).catch(() => {});
+            showToast(isEn ? 'Widgets follow app language' : 'لغة الودجت تتبع لغة التطبيق');
+        }
+        window.dispatchEvent(new CustomEvent('widget-settings-changed'));
+    };
+
+    const handleToggleWidgetEnglish = async () => {
+        const next = widgetLockLang === 'en' ? null : 'en';
+        setWidgetLockLang(next);
+        if (next) {
+            localStorage.setItem('widget_lock_lang', next);
+            await Preferences.set({ key: 'widget_lock_lang', value: next }).catch(() => {});
+            showToast(isEn ? 'Widgets locked to English' : 'تم تثبيت لغة الودجت: الإنجليزية');
+        } else {
+            localStorage.removeItem('widget_lock_lang');
+            await Preferences.remove({ key: 'widget_lock_lang' }).catch(() => {});
+            showToast(isEn ? 'Widgets follow app language' : 'لغة الودجت تتبع لغة التطبيق');
+        }
+        window.dispatchEvent(new CustomEvent('widget-settings-changed'));
+    };
+
+    const applyNotificationLanguageLock = async (next: 'ar' | 'en' | null) => {
+        setNotifLockLang(next);
+        if (next) {
+            localStorage.setItem(NOTIFICATION_LOCK_LANG_KEY, next);
+            await Preferences.set({ key: NOTIFICATION_LOCK_LANG_KEY, value: next }).catch(() => {});
+            showToast(next === 'ar'
+                ? (isEn ? 'Notifications locked to Arabic' : 'تم تثبيت لغة الإشعارات: العربية')
+                : (isEn ? 'Notifications locked to English' : 'تم تثبيت لغة الإشعارات: الإنجليزية')
+            );
+        } else {
+            localStorage.removeItem(NOTIFICATION_LOCK_LANG_KEY);
+            await Preferences.remove({ key: NOTIFICATION_LOCK_LANG_KEY }).catch(() => {});
+            showToast(isEn ? 'Notifications follow app language' : 'لغة الإشعارات تتبع لغة التطبيق');
+        }
+        window.dispatchEvent(new CustomEvent(NOTIFICATION_LOCK_LANG_CHANGE_EVENT));
+        await setNativeNotificationLanguage(next).catch(() => {});
+        setupNotifications(phoneSettings).catch(() => {});
+    };
+
+    const handleToggleNotificationArabic = async () => {
+        const next = notifLockLang === 'ar' ? null : 'ar';
+        await applyNotificationLanguageLock(next);
+    };
+
+    const handleToggleNotificationEnglish = async () => {
+        const next = notifLockLang === 'en' ? null : 'en';
+        await applyNotificationLanguageLock(next);
+    };
+
+    const handleToggleWidgetTheme = async () => {
+        const next = !widgetLockTheme;
+        setWidgetLockTheme(next);
+        localStorage.setItem('widget_lock_theme', next ? 'true' : 'false');
+        await Preferences.set({ key: 'widget_lock_theme', value: next ? 'true' : 'false' }).catch(() => {});
+        if (!next) {
+            await syncWidgetThemeColors(themeKey, theme).catch(() => {});
+            showToast(isEn ? 'Widget theme follows app' : 'الودجت يتبع ثيم التطبيق');
+        } else {
+            showToast(isEn ? 'Widget theme locked' : 'تم تثبيت ثيم الودجت الحالي');
+        }
+        window.dispatchEvent(new CustomEvent('widget-settings-changed'));
+    };
+
+    const toggleAppSetting = (key: keyof AppNotificationSettings) => {
         const newSettings = { ...appSettings, [key]: !appSettings[key] };
         setAppSettings(newSettings);
-        localStorage.setItem('notification_settings' + modeSuffix, JSON.stringify(newSettings));
-        window.dispatchEvent(new Event('notification-settings-change'));
+        saveAppNotificationSettings(newSettings);
         
-        const labels: Record<string, string> = {
+        const labelsAr: Record<string, string> = {
             quarter: 'تنبيهات الأحزاب والأرباع',
             sajda: 'تنبيهات السجدات',
             themes: 'تنبيهات تغيير الثيمات',
@@ -53,8 +462,23 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
             juz: 'تنبيهات بداية الأجزاء',
             general: 'التنبيهات العامة'
         };
+
+        const labelsEn: Record<string, string> = {
+            quarter: 'Hizb & Quarter Alerts',
+            sajda: 'Sajdah Alerts',
+            themes: 'Theme Change Alerts',
+            downloads: 'Download Alerts',
+            bookmarks: 'Bookmark Alerts',
+            juz: 'Juz Alerts',
+            general: 'General Alerts'
+        };
+
+        const label = isEn ? labelsEn[key] : labelsAr[key];
+        const status = newSettings[key] 
+            ? (isEn ? 'Enabled' : 'تم تفعيل') 
+            : (isEn ? 'Disabled' : 'تم تعطيل');
         
-        showToast(`${newSettings[key] ? 'تم تفعيل' : 'تم تعطيل'} ${labels[key]}`);
+        showToast(isEn ? `${label} ${status.toLowerCase()}` : `${status} ${label}`);
     };
 
     const togglePhoneSetting = (key: keyof Omit<PhoneNotificationSettings, 'randomAthkar'>) => {
@@ -66,10 +490,10 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
         updateSpecificSetting(key, { enabled: isEnabled });
         
         setTimeout(() => {
-            setupNotifications(newSettings);
+            setupNotifications(newSettings, isEn ? 'en' : 'ar');
         }, 100);
 
-        const labels: Record<string, string> = {
+        const labelsAr: Record<string, string> = {
             sabah: 'أذكار الصباح',
             masaa: 'أذكار المساء',
             dua: 'وقت الدعاء',
@@ -77,8 +501,22 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
             tasbeehEvening: 'التسبيح (مساءً)',
             kahf: 'سورة الكهف',
         };
+
+        const labelsEn: Record<string, string> = {
+            sabah: 'Morning Athkar',
+            masaa: 'Evening Athkar',
+            dua: 'Dua Time',
+            tasbeehMorning: 'Morning Tasbeeh',
+            tasbeehEvening: 'Evening Tasbeeh',
+            kahf: 'Surah Al-Kahf',
+        };
+
+        const label = isEn ? labelsEn[key] : labelsAr[key];
+        const status = isEnabled 
+            ? (isEn ? 'Enabled' : 'تم تفعيل') 
+            : (isEn ? 'Disabled' : 'تم تعطيل');
         
-        showToast(`${isEnabled ? 'تم تفعيل' : 'تم تعطيل'} ${labels[key]}`);
+        showToast(isEn ? `${label} ${status.toLowerCase()}` : `${status} ${label}`);
     };
 
     const handleTimeChange = (key: keyof Omit<PhoneNotificationSettings, 'randomAthkar'>, time: string) => {
@@ -88,7 +526,7 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
         };
         updateSpecificSetting(key, { time });
         setTimeout(() => {
-            setupNotifications(newSettings);
+            setupNotifications(newSettings, isEn ? 'en' : 'ar');
         }, 100);
     };
 
@@ -99,14 +537,17 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
         };
         updateRandomSettings(value);
         setTimeout(() => {
-            setupNotifications(newSettings);
+            setupNotifications(newSettings, isEn ? 'en' : 'ar');
         }, 100);
     };
 
     const toggleRandomAthkar = () => {
         const isEnabled = !phoneSettings.randomAthkar.enabled;
         handleRandomSettingChange({ enabled: isEnabled });
-        showToast(`${isEnabled ? 'تم تفعيل' : 'تم تعطيل'} الأذكار العشوائية`);
+        showToast(isEn 
+            ? `Random Athkar ${isEnabled ? 'enabled' : 'disabled'}` 
+            : `${isEnabled ? 'تم تفعيل' : 'تم تعطيل'} الأذكار العشوائية`
+        );
     };
 
     const toggleNightNotification = (key: 'firstThird' | 'midnight' | 'lastThird') => {
@@ -114,239 +555,637 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
         const newNightNotifs = { ...currentNightNotifs, [key]: !currentNightNotifs[key] };
         updateConfig({ nightNotifications: newNightNotifs });
         
-        const labels: Record<string, string> = {
+        const labelsAr: Record<string, string> = {
             firstThird: 'أول الليل',
             midnight: 'منتصف الليل',
             lastThird: 'الثلث الأخير'
         };
+
+        const labelsEn: Record<string, string> = {
+            firstThird: 'First Third of Night',
+            midnight: 'Midnight',
+            lastThird: 'Last Third of Night'
+        };
+
+        const label = isEn ? labelsEn[key] : labelsAr[key];
+        const status = newNightNotifs[key] 
+            ? (isEn ? 'Enabled' : 'تم تفعيل') 
+            : (isEn ? 'Disabled' : 'تم تعطيل');
         
-        showToast(`${newNightNotifs[key] ? 'تم تفعيل' : 'تم تعطيل'} إشعار ${labels[key]}`);
+        showToast(isEn ? `${label} notification ${status.toLowerCase()}` : `${status} إشعار ${label}`);
     };
 
     const muteAudioForDuration = (durationDays: number) => {
         const muteUntil = Date.now() + durationDays * 24 * 60 * 60 * 1000;
         updateConfig({ audioMutedUntil: muteUntil });
-        showToast(`تم تعطيل التنبيهات الصوتية للصلاة لمدة ${durationDays} يوم`);
+        showToast(isEn 
+            ? `Prayer audio alerts paused for ${toEnglishDigits(durationDays)} day(s)` 
+            : `تم تعطيل التنبيهات الصوتية للصلاة لمدة ${toArabic(durationDays)} يوم`
+        );
     };
 
     const unmuteAudio = () => {
         updateConfig({ audioMutedUntil: undefined });
-        showToast('تم تفعيل التنبيهات الصوتية للصلاة');
+        showToast(isEn ? 'Prayer audio alerts activated' : 'تم تفعيل التنبيهات الصوتية للصلاة');
     };
 
     const isAudioMuted = config.audioMutedUntil && Date.now() < config.audioMutedUntil;
 
+    const themeTopBarBg = isNightMode 
+        ? '#09090b' 
+        : (homeThemeVariant === 'sky' 
+            ? '#0284c7' 
+            : (homeThemeVariant === 'emerald' 
+                ? '#047857' 
+                : (homeThemeVariant === 'burgundy' 
+                    ? '#881337' 
+                    : '#b45309')));
+
+    const notifPageBg = isFromQuranReader && readerPalette
+        ? readerPalette.frameBg
+        : (isBlackTheme 
+            ? '#000000' 
+            : (theme?.bgColor && theme.bgColor.toLowerCase() !== '#ffffff' 
+                ? theme.bgColor 
+                : (homeThemeVariant === 'sky' 
+                    ? '#F0F9FF' 
+                    : (homeThemeVariant === 'emerald' 
+                        ? '#F0FDF4' 
+                        : (homeThemeVariant === 'burgundy' 
+                            ? '#FFF1F2' 
+                            : '#FEF9C3')))));
+
+    const topBarBg = isFromQuranReader && readerPalette ? readerPalette.frameBg : themeTopBarBg;
+    const topBarText = isFromQuranReader && readerPalette
+        ? (readerIsDark ? '#f8fafc' : readerPalette.bannerText)
+        : undefined;
+
+    const cardSurfaceBg = isFromQuranReader
+        ? themeStyles.cardBg
+        : (isBlackTheme ? '#18181b' : '#ffffff');
+    const cardTextColor = isFromQuranReader
+        ? themeStyles.text
+        : (isBlackTheme ? '#ffffff' : '#0f172a');
+    const cardSubTextColor = isFromQuranReader
+        ? themeStyles.subtext
+        : (isBlackTheme ? '#a1a1aa' : '#475569');
+    const innerBtnBg = isFromQuranReader
+        ? (readerIsDark ? '#18181b' : '#ffffff')
+        : (isBlackTheme ? '#27272a' : '#f8fafc');
+    const checkCircleOffBg = isBlackTheme ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
+    const checkIconColor = isFromQuranReader
+        ? themeStyles.btnText
+        : (isBlackTheme ? '#000000' : '#ffffff');
+
+    const readerCssVars: React.CSSProperties = isFromQuranReader && readerPalette
+        ? ({
+              '--qr-bg': notifPageBg,
+              '--qr-modal-bg': topBarBg,
+              '--qr-modal-text': topBarText,
+              '--qr-header-bg': topBarBg,
+              '--qr-header-text': topBarText,
+              '--qr-text': cardTextColor,
+              '--qr-card-bg': cardSurfaceBg,
+              '--qr-card-text': cardTextColor,
+              '--qr-accent': themeStyles.accent,
+              '--qr-accent-text': themeStyles.btnText,
+              '--qr-flat-accent': themeStyles.accent,
+              '--qr-flat-surface': cardSurfaceBg,
+              '--qr-flat-border-strong': readerIsDark ? 'rgba(255, 255, 255, 0.28)' : `${themeStyles.accent}99`,
+              '--qr-flat-border-subtle': readerIsDark ? 'rgba(255, 255, 255, 0.16)' : `${themeStyles.accent}44`,
+              '--madinah-menu-bg': notifPageBg,
+              '--madinah-topbar-bg': topBarBg,
+              '--madinah-menu-surface': cardSurfaceBg,
+              '--madinah-menu-text': topBarText,
+              '--madinah-menu-border': themeStyles.accent,
+              '--madinah-menu-border-strong': readerIsDark ? 'rgba(255, 255, 255, 0.28)' : `${themeStyles.accent}99`,
+              '--madinah-menu-border-subtle': readerIsDark ? 'rgba(255, 255, 255, 0.16)' : `${themeStyles.accent}44`,
+              '--madinah-menu-accent': themeStyles.accent,
+          } as React.CSSProperties)
+        : {};
+
     return (
-        <div className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[1200] flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} onClick={onClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md rounded-2xl max-h-[85vh]'} shadow-2xl overflow-hidden flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()}>
-
-                <div className="flex border-b border-black/10 dark:border-white/10">
-                    <button 
-                        className="flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 transition-colors"
-                        style={{ 
-                            color: activeTab === 'app' ? 'var(--qr-accent)' : 'inherit', 
-                            borderBottom: activeTab === 'app' ? '2px solid var(--qr-accent)' : 'none',
-                            opacity: activeTab === 'app' ? 1 : 0.6
-                        }}
-                        onClick={() => setActiveTab('app')}
+        <div 
+            dir={isEn ? 'ltr' : 'rtl'} 
+            lang={isEn ? 'en' : 'ar'} 
+            className={isLandscape
+                ? `settings-3d-adia-scope ${isBlackTheme ? 'settings-3d-dark' : ''} fixed inset-0 z-[9999999] bg-black/55 flex items-center justify-center p-2.5 font-cairo select-none overflow-hidden animate-fadeIn`
+                : `quran-fullscreen-modal-backdrop settings-3d-adia-scope ${isBlackTheme ? 'settings-3d-dark' : ''} fixed inset-0 z-[9999999] flex flex-col font-cairo select-none overflow-hidden animate-fadeIn`
+            }
+            style={isLandscape ? readerCssVars : { ...readerCssVars, backgroundColor: notifPageBg }}
+            onClick={isLandscape ? onClose : undefined}
+        >
+            <div
+                className={isLandscape
+                    ? `modal-skinned compact-landscape-modal ${isBlackTheme ? 'quran-3d-dark' : ''} w-[64%] max-w-[450px] h-[86%] max-h-[86%] rounded-3xl shadow-2xl flex flex-col overflow-hidden border-0`
+                    : "quran-fullscreen-modal-panel flex-1 min-h-0 w-full flex flex-col overflow-hidden"
+                }
+                style={{ backgroundColor: notifPageBg, border: 'none', outline: 'none' }}
+                onClick={isLandscape ? e => e.stopPropagation() : undefined}
+            >
+            {isLandscape ? (
+                <div className="pt-2.5 px-3 pb-1.5 shrink-0">
+                    <div
+                        className="py-1.5 px-3 rounded-xl flex items-center justify-between gap-2 quran-raised-card border-0"
+                        style={{ backgroundColor: isFromQuranReader ? topBarBg : cardSurfaceBg, color: isFromQuranReader ? topBarText : cardTextColor }}
                     >
-                        <AppWindow className="w-4 h-4" />
-                        إشعارات التطبيق
-                    </button>
-                    <button 
-                        className="flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 transition-colors"
-                        style={{ 
-                            color: activeTab === 'phone' ? 'var(--qr-accent)' : 'inherit', 
-                            borderBottom: activeTab === 'phone' ? '2px solid var(--qr-accent)' : 'none',
-                            opacity: activeTab === 'phone' ? 1 : 0.6
-                        }}
-                        onClick={() => setActiveTab('phone')}
-                    >
-                        <Smartphone className="w-4 h-4" />
-                        إشعارات الهاتف
-                    </button>
+                        <h1 className="text-xs font-extrabold truncate font-cairo" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                            {activeTab === 'app' ? (isEn ? 'App Notifications' : 'إشعارات التطبيق') : (phoneTabTitle || (isEn ? 'Phone Notifications' : 'إشعارات الهاتف'))}
+                        </h1>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="w-7 h-7 rounded-full quran-raised-btn flex items-center justify-center border-0 shrink-0 cursor-pointer"
+                            style={{ backgroundColor: innerBtnBg, color: isFromQuranReader ? topBarText : cardTextColor }}
+                            title={isEn ? "Close" : "إغلاق"}
+                            aria-label={isEn ? "Close" : "إغلاق"}
+                        >
+                            <i className="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                    </div>
                 </div>
+            ) : (
+            /* Standard Page Header - Identical to Adia */
+            <header
+                className={`app-top-bar settings-top-bar ${isFromQuranReader ? 'quran-context' : ''}`}
+                dir={isEn ? 'ltr' : 'rtl'}
+                style={isFromQuranReader ? { backgroundColor: topBarBg, color: topBarText } : undefined}
+            >
+                <div className="app-top-bar__inner">
+                    <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                        {/* Back button */}
+                        <div className={`absolute ${isEn ? 'left-0' : 'right-0'} flex items-center`}>
+                            <button
+                                onClick={onClose}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                style={isFromQuranReader ? { color: topBarText } : undefined}
+                                title={isEn ? "Go Back" : "رجوع للخلف"}
+                                aria-label={isEn ? "Go Back" : "رجوع للخلف"}
+                            >
+                                <i className={`fa-solid ${isEn ? 'fa-arrow-left' : 'fa-arrow-right'} text-xl`}></i>
+                            </button>
+                        </div>
 
-                <div className="p-4 space-y-3 overflow-y-auto flex-1 custom-scrollbar">
+                        {/* Title in center */}
+                        <div className="text-center px-12 min-w-0">
+                            <h1
+                                className="app-top-bar__title text-lg sm:text-xl font-cairo truncate"
+                                style={isFromQuranReader ? { color: topBarText, fontFamily: "'Cairo', sans-serif" } : { fontFamily: "'Cairo', sans-serif" }}
+                            >
+                                {activeTab === 'app' ? (isEn ? 'App Notifications' : 'إشعارات التطبيق') : (phoneTabTitle || (isEn ? 'Phone Notifications' : 'إشعارات الهاتف'))}
+                            </h1>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            )}
+
+            {/* Inner Content Container */}
+            <div className={`flex-1 min-h-0 overflow-hidden w-full flex flex-col ${isLandscape ? 'px-1.5 pt-1 space-y-2' : 'max-w-2xl mx-auto px-2 pt-4 space-y-3'}`}>
+                {!hideTabsBar && !hideAppTab && !hidePhoneTab && (
+                    <div className={`grid grid-cols-2 ${isLandscape ? 'gap-2 px-1.5 pb-1' : 'gap-3 px-2.5 pb-1.5'} shrink-0 overflow-visible`}>
+                        {!hideAppTab && (
+                            <button 
+                                className={`${isLandscape ? 'py-1.5 px-2 text-xs rounded-xl gap-1.5' : 'py-2.5 px-3 text-sm rounded-2xl gap-2'} font-bold flex items-center justify-center transition-all cursor-pointer app-page-card border-0`}
+                                style={{ 
+                                    backgroundColor: activeTab === 'app' ? themeStyles.accent : cardSurfaceBg,
+                                    color: activeTab === 'app' ? themeStyles.btnText : cardTextColor
+                                }}
+                                onClick={() => setActiveTab('app')}
+                            >
+                                <AppWindow className={`${isLandscape ? 'w-3.5 h-3.5' : 'w-4 h-4'} quran-3d-icon`} />
+                                <span className="truncate">{isEn ? 'App Notifications' : 'إشعارات التطبيق'}</span>
+                            </button>
+                        )}
+                        {!hidePhoneTab && (
+                            <button 
+                                className={`${isLandscape ? 'py-1.5 px-2 text-xs rounded-xl gap-1.5' : 'py-2.5 px-3 text-sm rounded-2xl gap-2'} font-bold flex items-center justify-center transition-all cursor-pointer app-page-card border-0`}
+                                style={{ 
+                                    backgroundColor: activeTab === 'phone' ? themeStyles.accent : cardSurfaceBg,
+                                    color: activeTab === 'phone' ? themeStyles.btnText : cardTextColor
+                                }}
+                                onClick={() => setActiveTab('phone')}
+                            >
+                                <Smartphone className={`${isLandscape ? 'w-3.5 h-3.5' : 'w-4 h-4'} quran-3d-icon`} />
+                                <span className="truncate">{phoneTabTitle || (isEn ? 'Phone Notifications' : 'إشعارات الهاتف')}</span>
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                <div 
+                    className={`${isLandscape ? 'px-2 pt-1 pb-4 space-y-2.5' : 'px-3 pt-1.5 pb-8 space-y-4 app-scroll-safe'} overflow-y-auto flex-1 min-h-0 custom-scrollbar`}
+                >
                     {activeTab === 'app' ? (
-                        <div className="space-y-2 animate-fadeIn">
-                            <p className="text-[11px] opacity-80 text-center mb-4">
-                                إشعارات تظهر داخل التطبيق أثناء الاستخدام
-                            </p>
+                        <div className="space-y-3.5 animate-fadeIn overflow-visible">
                             {[
-                                { id: 'quarter', label: 'الأحزاب والأرباع', desc: 'تنبيه عند الوصول لبداية حزب أو ربع جديد' },
-                                { id: 'juz', label: 'بداية الأجزاء', desc: 'تنبيه عند الانتقال لجزء جديد' },
-                                { id: 'sajda', label: 'مواضع السجدات', desc: 'تنبيه عند الوصول لآية بها سجدة تلاوة' },
-                                { id: 'themes', label: 'تغيير الثيمات', desc: 'تنبيه عند تطبيق لون أو ثيم جديد' },
-                                { id: 'downloads', label: 'التحميلات', desc: 'تنبيهات حالة تحميل السور أو التفاسير' },
-                                { id: 'bookmarks', label: 'الإشارات المرجعية', desc: 'تنبيه عند حفظ أو حذف إشارة مرجعية' },
-                                { id: 'general', label: 'تنبيهات عامة', desc: 'تنبيهات الحفظ، الاختبارات، والعمليات الأخرى' }
-                            ].map((item) => (
+                                { id: 'quarter', label: isEn ? 'Hizbs & Quarters' : 'الأحزاب والأرباع' },
+                                { id: 'juz', label: isEn ? 'Juz Beginnings' : 'بداية الأجزاء' },
+                                { id: 'sajda', label: isEn ? 'Sajdah Places' : 'مواضع السجدات' },
+                                { id: 'themes', label: isEn ? 'Theme Changes' : 'تغيير الثيمات' },
+                                { id: 'downloads', label: isEn ? 'Downloads' : 'التحميلات' },
+                                { id: 'bookmarks', label: isEn ? 'Bookmarks' : 'الإشارات المرجعية' },
+                                { id: 'general', label: isEn ? 'General Alerts' : 'تنبيهات عامة' }
+                            ].map((item) => {
+                                const settingKey = item.id as keyof AppNotificationSettings;
+                                return (
                                 <div 
                                     key={item.id}
-                                    onClick={() => toggleAppSetting(item.id)}
-                                    className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                                        appSettings[item.id] 
-                                        ? 'themed-card-bg shadow-sm' 
-                                        : 'bg-black/5 dark:bg-white/10 border-transparent opacity-70'
-                                    }`}
-                                    style={{ borderColor: appSettings[item.id] ? 'var(--qr-accent)' : undefined }}
+                                    onClick={() => toggleAppSetting(settingKey)}
+                                    className="flex items-center justify-between py-3 px-4 rounded-2xl transition-all cursor-pointer app-page-card tasbeeh-pressable border-0"
+                                    style={{ 
+                                        backgroundColor: cardSurfaceBg, 
+                                        color: cardTextColor
+                                    }}
                                 >
-                                    <div className="flex flex-col gap-0.5">
-                                        <span className="font-bold text-sm">{item.label}</span>
-                                        <span className="text-[10px] opacity-80">{item.desc}</span>
-                                    </div>
-                                    <div className="w-5 h-5 rounded-full flex items-center justify-center transition-colors" style={{ backgroundColor: appSettings[item.id] ? 'var(--qr-accent)' : 'rgba(0,0,0,0.1)', color: appSettings[item.id] ? 'var(--qr-accent-text, #fff)' : 'transparent' }}>
-                                        {appSettings[item.id] && <Check className="w-3 h-3" />}
+                                    <span className="font-bold text-sm" style={{ color: cardTextColor }}>{item.label}</span>
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors shrink-0 app-3d-checkbox ${appSettings[settingKey] ? 'app-3d-checkbox-checked' : ''}`} style={{ backgroundColor: appSettings[settingKey] ? themeStyles.accent : checkCircleOffBg, color: appSettings[settingKey] ? checkIconColor : 'transparent' }}>
+                                        {appSettings[settingKey] && <Check className="w-3.5 h-3.5 stroke-[3] quran-3d-icon" />}
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : (
-                        <div className="space-y-4 animate-fadeIn pb-16">
-                            <p className="text-[11px] opacity-80 text-center mb-2">
-                                إشعارات تظهر على شاشة الهاتف حتى لو كان التطبيق مغلقاً
-                            </p>
+                        <div className="space-y-4 animate-fadeIn overflow-visible">
+                            {/* Adhan Volume Level Card */}
+                            <div className="space-y-2 overflow-visible" id="prayer-alert-volume-card">
+                                <h4 className="font-bold text-xs sm:text-sm opacity-90 px-1" style={{ color: themeStyles.accent }}>
+                                    {isEn ? 'Adhan Volume Level' : 'مستوى صوت الأذان'}
+                                </h4>
+                                <PrayerAlertVolumeSlider 
+                                    volume={alertVolume}
+                                    onChange={(val) => setAlertVolume(val)}
+                                    currentTonePath={(() => {
+                                        const tones = config?.tones;
+                                        if (tones) {
+                                            for (const key of ['dhuhr', 'fajr', 'asr', 'maghrib', 'isha']) {
+                                                const data = tones[key]?.data;
+                                                if (data && data !== 'none') return data;
+                                            }
+                                        }
+                                        return '/assets/audio/takbeer1.mp3';
+                                    })()}
+                                    primaryColor={themeStyles.accent}
+                                    secondaryColor={themeStyles.subtext}
+                                    cardBorderColor={themeStyles.cardBorder}
+                                    isBlackTheme={isBlackTheme}
+                                    cardBg={cardSurfaceBg}
+                                    textColor={cardTextColor}
+                                    subtextColor={cardSubTextColor}
+                                    hideHeader={true}
+                                    showDescription={false}
+                                    use3dAdiaStyle={true}
+                                />
+                            </div>
 
-                            <div className="space-y-2">
-                                <h4 className="font-bold text-sm mb-2 opacity-90">أوقات الليل</h4>
+                            {/* Persistent Prayer Times Notification Card */}
+                            <div className="space-y-3 overflow-visible">
+                                <h4 className="font-bold text-xs sm:text-sm opacity-90 flex items-center gap-2 px-1" style={{ color: themeStyles.accent }}>
+                                    <span>{isEn ? 'Ongoing Prayer Notification' : 'الإشعار المستمر لمواقيت الصلاة'}</span>
+                                </h4>
+
+                                <div 
+                                    onClick={togglePersistentNotification}
+                                    className="flex items-center justify-between gap-2 py-3 px-4 rounded-2xl transition-all cursor-pointer app-page-card tasbeeh-pressable border-0"
+                                    style={{ 
+                                        backgroundColor: cardSurfaceBg, 
+                                        color: cardTextColor
+                                    }}
+                                >
+                                    <span className="font-bold text-xs sm:text-sm" style={{ color: cardTextColor }}>
+                                        {isEn ? 'Persistent Prayer Notification' : 'إشعار الصلاة المستمر'}
+                                    </span>
+                                    <div 
+                                        className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors flex-shrink-0 app-3d-checkbox ${isPersistentNotificationEnabled ? 'app-3d-checkbox-checked' : ''}`} 
+                                        style={{ 
+                                            backgroundColor: isPersistentNotificationEnabled ? themeStyles.accent : checkCircleOffBg, 
+                                            color: isPersistentNotificationEnabled ? checkIconColor : 'transparent' 
+                                        }}
+                                    >
+                                        {isPersistentNotificationEnabled && <Check className="w-3.5 h-3.5 stroke-[3] quran-3d-icon" />}
+                                    </div>
+                                </div>
+
+                                 {/* Battery Optimization Status (Android only) */}
+                                {Capacitor.getPlatform() === 'android' && isPersistentNotificationEnabled && (
+                                    <div 
+                                        className="py-3 px-4 rounded-2xl flex items-center justify-between gap-2 text-xs app-page-card border-0" 
+                                        style={{ 
+                                            backgroundColor: cardSurfaceBg, 
+                                            color: cardTextColor
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            {isBatteryIgnored ? (
+                                                <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 quran-3d-icon" />
+                                            ) : (
+                                                <Zap className="w-4 h-4 text-amber-600 flex-shrink-0 quran-3d-icon" />
+                                            )}
+                                            <span className="font-bold text-xs truncate" style={{ color: cardTextColor }}>
+                                                {isBatteryIgnored 
+                                                    ? (isEn ? 'Background: Unrestricted' : 'حالة البطارية: غير مقيد') 
+                                                    : (isEn ? 'Battery Optimization Active' : 'استثناء من توفير البطارية')}
+                                            </span>
+                                        </div>
+
+                                        {!isBatteryIgnored && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRequestBatteryOptimization();
+                                                }}
+                                                className="px-3 py-1.5 rounded-xl font-bold text-[11px] flex-shrink-0 transition-all app-page-card border-0 cursor-pointer"
+                                                style={{ backgroundColor: themeStyles.accent, color: themeStyles.btnText }}
+                                            >
+                                                {isEn ? 'Allow' : 'استثناء'}
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* نغمة إشعارات الأذكار والتنبيهات */}
+                            <div className="space-y-2 pt-1 overflow-visible" id="settings-notification-tone-section">
+                                <h4 className="font-bold text-xs sm:text-sm opacity-90 flex items-center gap-2 px-1" style={{ color: themeStyles.accent }}>
+                                    <span>{isEn ? 'Notification Tone (Athkar & Reminders)' : 'نغمة إشعارات الأذكار والتنبيهات'}</span>
+                                </h4>
+                                <NotificationToneSelector 
+                                    currentTone={activeNotificationTone}
+                                    onToneChange={handleNotificationToneChange}
+                                    secondaryColor={themeStyles.subtext}
+                                    primaryColor={themeStyles.accent}
+                                    cardBorderColor={themeStyles.cardBorder}
+                                    isDefaultTheme={true}
+                                    isBlackTheme={isBlackTheme}
+                                    hideLabel={true}
+                                    hidePreviewButton={true}
+                                    use3dAdiaStyle={true}
+                                    cardBg={cardSurfaceBg}
+                                    modalBg={isBlackTheme ? '#121214' : notifPageBg}
+                                />
+                            </div>
+
+                            {/* Home Screen Widgets Section */}
+                            <div className="space-y-2.5 pt-1 overflow-visible">
+                                <h4 className="font-bold text-xs sm:text-sm opacity-90 flex items-center gap-2 px-1" style={{ color: themeStyles.accent }}>
+                                    <span>{isEn ? 'Home Screen Widgets' : 'التطبيقات المصغرة (الودجت)'}</span>
+                                </h4>
+
+                                <div className="grid grid-cols-2 gap-3 overflow-visible">
+                                    <div
+                                        onClick={handleToggleWidgetArabic}
+                                        className="py-3 px-3.5 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-2 app-page-card tasbeeh-pressable border-0"
+                                        style={{ 
+                                            backgroundColor: cardSurfaceBg, 
+                                            color: cardTextColor
+                                        }}
+                                    >
+                                        <span className="font-bold text-xs" style={{ color: cardTextColor }}>{isEn ? 'Lock Arabic' : 'تثبيت العربية'}</span>
+                                        <div 
+                                            className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors shrink-0 app-3d-checkbox ${widgetLockLang === 'ar' ? 'app-3d-checkbox-checked' : ''}`}
+                                            style={{
+                                                backgroundColor: widgetLockLang === 'ar' ? themeStyles.accent : checkCircleOffBg,
+                                                color: widgetLockLang === 'ar' ? checkIconColor : 'transparent'
+                                            }}
+                                        >
+                                            {widgetLockLang === 'ar' && <Check className="w-3 h-3 stroke-[3] quran-3d-icon" />}
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        onClick={handleToggleWidgetEnglish}
+                                        className="py-3 px-3.5 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-2 app-page-card tasbeeh-pressable border-0"
+                                        style={{ 
+                                            backgroundColor: cardSurfaceBg, 
+                                            color: cardTextColor
+                                        }}
+                                    >
+                                        <span className="font-bold text-xs" style={{ color: cardTextColor }}>{isEn ? 'Lock English' : 'تثبيت الإنجليزية'}</span>
+                                        <div 
+                                            className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors shrink-0 app-3d-checkbox ${widgetLockLang === 'en' ? 'app-3d-checkbox-checked' : ''}`}
+                                            style={{
+                                                backgroundColor: widgetLockLang === 'en' ? themeStyles.accent : checkCircleOffBg,
+                                                color: widgetLockLang === 'en' ? checkIconColor : 'transparent'
+                                            }}
+                                        >
+                                            {widgetLockLang === 'en' && <Check className="w-3 h-3 stroke-[3] quran-3d-icon" />}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Phone Notifications Language Section */}
+                            <div className="space-y-2.5 pt-1 overflow-visible">
+                                <h4 className="font-bold text-xs sm:text-sm opacity-90 flex items-center gap-2 px-1" style={{ color: themeStyles.accent }}>
+                                    <span>{isEn ? 'Phone Notifications Language' : 'لغة إشعارات الهاتف'}</span>
+                                </h4>
+
+                                <div className="grid grid-cols-2 gap-3 overflow-visible">
+                                    <div
+                                        onClick={handleToggleNotificationArabic}
+                                        className="py-3 px-3.5 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-2 app-page-card tasbeeh-pressable border-0"
+                                        style={{ 
+                                            backgroundColor: cardSurfaceBg, 
+                                            color: cardTextColor
+                                        }}
+                                    >
+                                        <span className="font-bold text-xs" style={{ color: cardTextColor }}>{isEn ? 'Lock Arabic' : 'تثبيت العربية'}</span>
+                                        <div 
+                                            className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors shrink-0 app-3d-checkbox ${notifLockLang === 'ar' ? 'app-3d-checkbox-checked' : ''}`}
+                                            style={{
+                                                backgroundColor: notifLockLang === 'ar' ? themeStyles.accent : checkCircleOffBg,
+                                                color: notifLockLang === 'ar' ? checkIconColor : 'transparent'
+                                            }}
+                                        >
+                                            {notifLockLang === 'ar' && <Check className="w-3 h-3 stroke-[3] quran-3d-icon" />}
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        onClick={handleToggleNotificationEnglish}
+                                        className="py-3 px-3.5 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-2 app-page-card tasbeeh-pressable border-0"
+                                        style={{ 
+                                            backgroundColor: cardSurfaceBg, 
+                                            color: cardTextColor
+                                        }}
+                                    >
+                                        <span className="font-bold text-xs" style={{ color: cardTextColor }}>{isEn ? 'Lock English' : 'تثبيت الإنجليزية'}</span>
+                                        <div 
+                                            className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors shrink-0 app-3d-checkbox ${notifLockLang === 'en' ? 'app-3d-checkbox-checked' : ''}`}
+                                            style={{
+                                                backgroundColor: notifLockLang === 'en' ? themeStyles.accent : checkCircleOffBg,
+                                                color: notifLockLang === 'en' ? checkIconColor : 'transparent'
+                                            }}
+                                        >
+                                            {notifLockLang === 'en' && <Check className="w-3 h-3 stroke-[3] quran-3d-icon" />}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Night Times Section */}
+                            <div className="space-y-3 pt-1 overflow-visible">
+                                <h4 className="font-bold text-xs sm:text-sm opacity-90 px-1" style={{ color: themeStyles.accent }}>{isEn ? 'Night Times' : 'أوقات الليل'}</h4>
                                 {[
-                                    { id: 'firstThird', label: 'أول الليل', desc: 'تنبيه بدخول وقت أول الليل' },
-                                    { id: 'midnight', label: 'منتصف الليل', desc: 'تنبيه بدخول منتصف الليل الشرعي' },
-                                    { id: 'lastThird', label: 'الثلث الأخير', desc: 'تنبيه بدخول الثلث الأخير من الليل' }
+                                    { id: 'firstThird', label: isEn ? 'First Third of Night' : 'أول الليل' },
+                                    { id: 'midnight', label: isEn ? 'Midnight' : 'منتصف الليل' },
+                                    { id: 'lastThird', label: isEn ? 'Last Third of Night' : 'الثلث الأخير' }
                                 ].map((item) => {
                                     const isEnabled = config.nightNotifications?.[item.id as keyof typeof config.nightNotifications] ?? true;
                                     return (
                                         <div 
                                             key={item.id}
                                             onClick={() => toggleNightNotification(item.id as 'firstThird' | 'midnight' | 'lastThird')}
-                                            className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                                                isEnabled 
-                                                ? 'themed-card-bg shadow-sm' 
-                                                : 'bg-black/5 dark:bg-white/10 border-transparent opacity-70'
-                                            }`}
-                                            style={{ borderColor: isEnabled ? 'var(--qr-accent)' : undefined }}
+                                            className="flex items-center justify-between py-3 px-4 rounded-2xl transition-all cursor-pointer app-page-card tasbeeh-pressable border-0"
+                                            style={{ 
+                                                backgroundColor: cardSurfaceBg, 
+                                                color: cardTextColor
+                                            }}
                                         >
-                                            <div className="flex flex-col gap-0.5">
-                                                <span className="font-bold text-sm">{item.label}</span>
-                                                <span className="text-[10px] opacity-80">{item.desc}</span>
-                                            </div>
-                                            <div className="w-5 h-5 rounded-full flex items-center justify-center transition-colors" style={{ backgroundColor: isEnabled ? 'var(--qr-accent)' : 'rgba(0,0,0,0.1)', color: isEnabled ? 'var(--qr-accent-text, #fff)' : 'transparent' }}>
-                                                {isEnabled && <Check className="w-3 h-3" />}
+                                            <span className="font-bold text-xs sm:text-sm" style={{ color: cardTextColor }}>{item.label}</span>
+                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors shrink-0 app-3d-checkbox ${isEnabled ? 'app-3d-checkbox-checked' : ''}`} style={{ backgroundColor: isEnabled ? themeStyles.accent : checkCircleOffBg, color: isEnabled ? checkIconColor : 'transparent' }}>
+                                                {isEnabled && <Check className="w-3.5 h-3.5 stroke-[3] quran-3d-icon" />}
                                             </div>
                                         </div>
                                     );
                                 })}
                             </div>
 
-                            <div className="space-y-2 pt-2 border-t border-black/10 dark:border-white/10 text-right" dir="rtl">
-                                <h4 className="font-bold text-sm mb-2 opacity-90">الأذكار والتسبيح</h4>
+                            {/* Athkar & Tasbeeh Section */}
+                            <div className="space-y-3 pt-1 overflow-visible">
+                                <h4 className="font-bold text-xs sm:text-sm opacity-90 px-1" style={{ color: themeStyles.accent }}>{isEn ? 'Athkar & Tasbeeh' : 'الأذكار والتسبيح'}</h4>
                                 {[
-                                    { id: 'sabah', label: 'أذكار الصباح' },
-                                    { id: 'masaa', label: 'أذكار المساء' },
-                                    { id: 'dua', label: 'وقت الدعاء' },
-                                    { id: 'tasbeehMorning', label: 'التسبيح (صباحاً)' },
-                                    { id: 'tasbeehEvening', label: 'التسبيح (مساءً)' },
-                                    { id: 'kahf', label: 'سورة الكهف' }
+                                    { id: 'sabah', label: isEn ? 'Morning Athkar' : 'أذكار الصباح' },
+                                    { id: 'masaa', label: isEn ? 'Evening Athkar' : 'أذكار المساء' },
+                                    { id: 'dua', label: isEn ? 'Dua Time' : 'وقت الدعاء' },
+                                    { id: 'tasbeehMorning', label: isEn ? 'Morning Tasbeeh' : 'التسبيح (صباحاً)' },
+                                    { id: 'tasbeehEvening', label: isEn ? 'Evening Tasbeeh' : 'التسبيح (مساءً)' },
+                                    { id: 'kahf', label: isEn ? 'Surah Al-Kahf' : 'سورة الكهف' }
                                 ].map((item) => {
-                                    const setting = phoneSettings[item.id as keyof Omit<PhoneNotificationSettings, 'randomAthkar'>];
+                                    const settingKey = item.id as keyof Omit<PhoneNotificationSettings, 'randomAthkar'>;
+                                    const setting = phoneSettings[settingKey];
                                     return (
                                         <div 
                                             key={item.id}
-                                            className={`p-3 rounded-xl border-2 transition-all ${
-                                                setting.enabled 
-                                                ? 'themed-card-bg shadow-sm' 
-                                                : 'bg-black/5 dark:bg-white/10 border-transparent opacity-70'
-                                            }`}
-                                            style={{ borderColor: setting.enabled ? 'var(--qr-accent)' : undefined }}
+                                            onClick={() => togglePhoneSetting(settingKey)}
+                                            className="flex items-center justify-between py-3 px-4 rounded-2xl transition-all cursor-pointer app-page-card tasbeeh-pressable border-0"
+                                            style={{ 
+                                                backgroundColor: cardSurfaceBg, 
+                                                color: cardTextColor
+                                            }}
                                         >
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div 
-                                                    className="flex items-center gap-2 cursor-pointer"
-                                                    onClick={() => togglePhoneSetting(item.id as keyof Omit<PhoneNotificationSettings, 'randomAthkar'>)}
-                                                >
-                                                    <div className="w-5 h-5 rounded-full flex items-center justify-center transition-colors" style={{ backgroundColor: setting.enabled ? 'var(--qr-accent)' : 'rgba(0,0,0,0.1)', color: setting.enabled ? 'var(--qr-accent-text, #fff)' : 'transparent' }}>
-                                                        {setting.enabled && <Check className="w-3 h-3" />}
-                                                    </div>
-                                                    <span className="font-bold text-sm">{item.label}</span>
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors shrink-0 app-3d-checkbox ${setting.enabled ? 'app-3d-checkbox-checked' : ''}`} style={{ backgroundColor: setting.enabled ? themeStyles.accent : checkCircleOffBg, color: setting.enabled ? checkIconColor : 'transparent' }}>
+                                                    {setting.enabled && <Check className="w-3.5 h-3.5 stroke-[3] quran-3d-icon" />}
                                                 </div>
-                                                
-                                                {setting.enabled && (
-                                                    <div className="flex items-center gap-2 text-xs opacity-90">
-                                                        <Clock className="w-3 h-3" />
-                                                        <input 
-                                                            type="time" 
-                                                            value={setting.time}
-                                                            onChange={(e) => handleTimeChange(item.id as keyof Omit<PhoneNotificationSettings, 'randomAthkar'>, e.target.value)}
-                                                            className="bg-transparent border-none outline-none font-bold dark:[color-scheme:dark]"
-                                                            style={{ color: 'var(--qr-accent)' }}
-                                                        />
-                                                    </div>
-                                                )}
+                                                <span className="font-bold text-xs sm:text-sm truncate" style={{ color: cardTextColor }}>{item.label}</span>
                                             </div>
-                                            <p className="text-[10px] opacity-80">
-                                                {item.id === 'kahf' ? 'تنبيه أسبوعي يوم الجمعة' : 'تنبيه يومي في الوقت المحدد'}
-                                            </p>
+                                            
+                                            {setting.enabled && (
+                                                <ClickableTimeValue
+                                                    value={setting.time}
+                                                    onChange={(newTime) => handleTimeChange(settingKey, newTime)}
+                                                    isEn={isEn}
+                                                    title={item.label}
+                                                    accentColor={!isBlackTheme}
+                                                    pickerAccentColor={themeStyles.accent}
+                                                    className="text-xs px-2.5 py-1 rounded-xl app-page-card tasbeeh-inner-pressable border-0"
+                                                    style={{ backgroundColor: innerBtnBg, color: isBlackTheme ? '#ffffff' : undefined }}
+                                                />
+                                            )}
                                         </div>
                                     );
                                 })}
                             </div>
 
-                            <div className="space-y-3 pt-2 border-t border-black/10 dark:border-white/10 text-right" dir="rtl">
-                                <div className="flex items-center justify-between mb-1">
-                                    <h4 className="font-bold text-sm opacity-90 flex items-center gap-2">
-                                        <Shuffle className="w-4 h-4" />
-                                        أذكار عشوائية
+                            {/* Random Athkar Section */}
+                            <div className="space-y-3 pt-1 overflow-visible">
+                                <div 
+                                    onClick={toggleRandomAthkar}
+                                    className="flex items-center justify-between py-3 px-4 rounded-2xl cursor-pointer app-page-card tasbeeh-pressable border-0"
+                                    style={{ backgroundColor: cardSurfaceBg, color: cardTextColor }}
+                                >
+                                    <h4 className="font-bold text-xs sm:text-sm flex items-center gap-2" style={{ color: themeStyles.accent }}>
+                                        <span>{isEn ? 'Random Athkar' : 'أذكار عشوائية'}</span>
                                     </h4>
                                     <div 
-                                        onClick={toggleRandomAthkar}
-                                        className={`w-10 h-5 rounded-full relative transition-colors cursor-pointer ${phoneSettings.randomAthkar.enabled ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                        className="app-3d-switch-track border-0 w-11 h-6 rounded-full relative transition-all cursor-pointer shrink-0"
+                                        style={{ backgroundColor: phoneSettings.randomAthkar.enabled ? themeStyles.accent : (isBlackTheme ? '#3f3f46' : '#cbd5e1') }}
                                     >
-                                        <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${phoneSettings.randomAthkar.enabled ? 'right-6' : 'right-1'}`} />
+                                        <div
+                                            className={`app-3d-switch-thumb absolute top-1 w-4 h-4 rounded-full transition-all ${
+                                                isBlackTheme && phoneSettings.randomAthkar.enabled ? 'app-3d-switch-thumb-dark' : ''
+                                            } ${
+                                                phoneSettings.randomAthkar.enabled 
+                                                    ? (isRTL ? 'right-[24px]' : 'left-[24px]') 
+                                                    : (isRTL ? 'right-[4px]' : 'left-[4px]')
+                                            }`}
+                                            style={{ backgroundColor: (isBlackTheme && phoneSettings.randomAthkar.enabled) ? '#000000' : '#ffffff' }}
+                                        />
                                     </div>
                                 </div>
-                                <p className="text-[10px] opacity-80 -mt-2">
-                                    تلقي أذكار وتنبيهات عشوائية خلال اليوم لتذكيرك بذكر الله
-                                </p>
 
                                 {phoneSettings.randomAthkar.enabled && (
-                                    <div className="themed-card-bg p-3 rounded-xl border border-emerald-500/30 space-y-3 animate-fadeIn">
+                                    <div 
+                                        className="p-4 rounded-2xl space-y-3.5 animate-fadeIn app-page-card border-0 overflow-visible"
+                                        style={{ 
+                                            backgroundColor: cardSurfaceBg, 
+                                            color: cardTextColor
+                                        }}
+                                    >
                                         <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold">عدد المرات يومياً:</span>
-                                            <div className="flex items-center gap-3">
+                                            <span className="text-xs font-bold" style={{ color: cardTextColor }}>{isEn ? 'Daily Frequency:' : 'عدد المرات يومياً:'}</span>
+                                            <div className="flex items-center gap-3 overflow-visible py-1">
                                                 <button 
                                                     onClick={() => handleRandomSettingChange({ frequency: Math.max(1, phoneSettings.randomAthkar.frequency - 1) })}
-                                                    className="w-6 h-6 rounded-md bg-black/5 dark:bg-white/10 flex items-center justify-center font-bold"
+                                                    className="w-8 h-8 rounded-xl flex items-center justify-center font-bold cursor-pointer app-page-card border-0"
+                                                    style={{ backgroundColor: innerBtnBg, color: themeStyles.accent }}
                                                 >
                                                     -
                                                 </button>
-                                                <span className="text-sm font-bold text-emerald-600">{toArabic(phoneSettings.randomAthkar.frequency)}</span>
+                                                <span
+                                                    dir="ltr"
+                                                    className="text-sm font-bold tabular-nums min-w-[20px] text-center"
+                                                    style={{ color: themeStyles.accent }}
+                                                >
+                                                    {isEn ? toEnglishDigits(phoneSettings.randomAthkar.frequency) : toArabic(phoneSettings.randomAthkar.frequency)}
+                                                </span>
                                                 <button 
                                                     onClick={() => handleRandomSettingChange({ frequency: Math.min(20, phoneSettings.randomAthkar.frequency + 1) })}
-                                                    className="w-6 h-6 rounded-md bg-black/5 dark:bg-white/10 flex items-center justify-center font-bold"
+                                                    className="w-8 h-8 rounded-xl flex items-center justify-center font-bold cursor-pointer app-page-card border-0"
+                                                    style={{ backgroundColor: innerBtnBg, color: themeStyles.accent }}
                                                 >
                                                     +
                                                 </button>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1">
-                                                <span className="text-[10px] opacity-80">وقت البدء:</span>
-                                                <input 
-                                                    type="time" 
+                                        <div className="grid grid-cols-2 gap-3 overflow-visible pb-1">
+                                            <div className="space-y-1.5">
+                                                <span className="text-[10px] opacity-80 block" style={{ color: cardSubTextColor }}>{isEn ? 'Start Time:' : 'وقت البدء:'}</span>
+                                                <ClickableTimeValue
                                                     value={phoneSettings.randomAthkar.startTime}
-                                                    onChange={(e) => handleRandomSettingChange({ startTime: e.target.value })}
-                                                    className="w-full text-xs bg-black/5 dark:bg-white/10 text-inherit border border-transparent p-2 rounded-lg font-bold dark:[color-scheme:dark]"
+                                                    onChange={(newTime) => handleRandomSettingChange({ startTime: newTime })}
+                                                    isEn={isEn}
+                                                    title={isEn ? 'Start Time' : 'وقت البدء'}
+                                                    accentColor={false}
+                                                    pickerAccentColor={themeStyles.accent}
+                                                    className="w-full text-xs py-2.5 px-2.5 rounded-xl app-page-card tasbeeh-inner-pressable border-0"
+                                                    style={{ backgroundColor: innerBtnBg, color: cardTextColor }}
                                                 />
                                             </div>
-                                            <div className="space-y-1">
-                                                <span className="text-[10px] opacity-80">وقت الانتهاء:</span>
-                                                <input 
-                                                    type="time" 
+                                            <div className="space-y-1.5">
+                                                <span className="text-[10px] opacity-80 block" style={{ color: cardSubTextColor }}>{isEn ? 'End Time:' : 'وقت الانتهاء:'}</span>
+                                                <ClickableTimeValue
                                                     value={phoneSettings.randomAthkar.endTime}
-                                                    onChange={(e) => handleRandomSettingChange({ endTime: e.target.value })}
-                                                    className="w-full text-xs bg-black/5 dark:bg-white/10 text-inherit border border-transparent p-2 rounded-lg font-bold dark:[color-scheme:dark]"
+                                                    onChange={(newTime) => handleRandomSettingChange({ endTime: newTime })}
+                                                    isEn={isEn}
+                                                    title={isEn ? 'End Time' : 'وقت الانتهاء'}
+                                                    accentColor={false}
+                                                    pickerAccentColor={themeStyles.accent}
+                                                    className="w-full text-xs py-2.5 px-2.5 rounded-xl app-page-card tasbeeh-inner-pressable border-0"
+                                                    style={{ backgroundColor: innerBtnBg, color: cardTextColor }}
                                                 />
                                             </div>
                                         </div>
@@ -354,40 +1193,46 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                                 )}
                             </div>
 
-                            <div className="space-y-2 pt-2 border-t border-black/10 dark:border-white/10 text-right" dir="rtl">
-                                <div className="flex items-center justify-between mb-2">
-                                    <h4 className="font-bold text-sm opacity-90 flex items-center gap-2">
-                                        <VolumeX className="w-4 h-4" />
-                                        إيقاف التنبيهات الصوتية للصلاة
+                            {/* Pause Prayer Audio Alerts Section */}
+                            <div className="space-y-2.5 pt-1 overflow-visible">
+                                <div className="flex items-center justify-between px-1">
+                                    <h4 className="font-bold text-xs sm:text-sm opacity-90 flex items-center gap-2" style={{ color: themeStyles.accent }}>
+                                        <span>{isEn ? 'Pause Prayer Audio Alerts' : 'إيقاف التنبيهات الصوتية للصلاة'}</span>
                                     </h4>
                                     {isAudioMuted && (
-                                        <button onClick={unmuteAudio} className="text-xs bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-1 rounded-md font-bold">
-                                            تفعيل الصوت
+                                        <button onClick={unmuteAudio} className="text-xs bg-red-600 text-white px-3 py-1 rounded-xl font-bold cursor-pointer app-page-card border-0">
+                                            {isEn ? 'Unmute Audio' : 'تفعيل الصوت'}
                                         </button>
                                     )}
                                 </div>
                                 {isAudioMuted && config.audioMutedUntil && (
-                                    <p className="text-xs text-red-500 mb-2">
-                                        التنبيهات الصوتية متوقفة حتى: {new Date(config.audioMutedUntil).toLocaleDateString('ar-SA')}
+                                    <p className="text-xs text-red-500 px-1">
+                                        {isEn 
+                                            ? `Audio alerts paused until: ${formatMuteDate(config.audioMutedUntil, true)}` 
+                                            : `التنبيهات الصوتية متوقفة حتى: ${formatMuteDate(config.audioMutedUntil, false)}`}
                                     </p>
                                 )}
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-4 gap-2.5 overflow-visible pb-2">
                                     {[
-                                        { label: 'اليوم', days: 1 },
-                                        { label: 'غداً', days: 2 },
-                                        { label: 'يومين', days: 2 },
-                                        { label: '3 أيام', days: 3 },
-                                        { label: '4 أيام', days: 4 },
-                                        { label: 'أسبوع', days: 7 },
-                                        { label: 'أسبوعين', days: 14 },
-                                        { label: 'شهر', days: 30 }
+                                        { labelAr: 'اليوم', labelEn: 'Today', days: 1 },
+                                        { labelAr: 'غداً', labelEn: 'Tomorrow', days: 2 },
+                                        { labelAr: 'يومان', labelEn: '2 Days', days: 2 },
+                                        { labelAr: `${toArabic(3)} أيام`, labelEn: '3 Days', days: 3 },
+                                        { labelAr: `${toArabic(4)} أيام`, labelEn: '4 Days', days: 4 },
+                                        { labelAr: 'أسبوع', labelEn: '1 Week', days: 7 },
+                                        { labelAr: 'أسبوعين', labelEn: '2 Weeks', days: 14 },
+                                        { labelAr: 'شهر', labelEn: '1 Month', days: 30 }
                                     ].map((opt) => (
                                         <button
-                                            key={opt.label}
+                                            key={opt.labelEn}
                                             onClick={() => muteAudioForDuration(opt.days)}
-                                            className="py-2 px-1 text-xs font-bold rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                            className="py-2.5 px-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer app-page-card border-0"
+                                            style={{ 
+                                                backgroundColor: cardSurfaceBg, 
+                                                color: cardTextColor
+                                            }}
                                         >
-                                            {opt.label}
+                                            {isEn ? opt.labelEn : opt.labelAr}
                                         </button>
                                     ))}
                                 </div>
@@ -395,18 +1240,11 @@ const NotificationSettingsModal: React.FC<NotificationSettingsModalProps> = ({ o
                         </div>
                     )}
                 </div>
+            </div>
 
-                <div className="p-4 themed-card-bg border-t border-black/10 dark:border-white/10">
-                    <button 
-                        onClick={() => {
-                            setupNotifications();
-                            onClose();
-                        }}
-                        className="theme-accent-btn w-full font-bold py-3 rounded-xl shadow-lg transition-transform active:scale-95"
-                    >
-                        حفظ وإغلاق
-                    </button>
-                </div>
+            {showWidgetDesignModal && (
+                <WidgetDesignPreview onClose={() => setShowWidgetDesignModal(false)} />
+            )}
             </div>
         </div>
     );

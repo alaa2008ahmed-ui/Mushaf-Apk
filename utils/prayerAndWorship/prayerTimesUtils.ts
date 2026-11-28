@@ -1,0 +1,565 @@
+import { Capacitor } from '@capacitor/core';
+import { playNativeTone, stopNativeTone, setNativeAlertVolume, addNativeToneEndedListener } from '../notifications/silentMode';
+import { acquireListenInterruption, releaseListenInterruption } from '../audio/listenAudioCoordinator';
+
+export const checkSupportsDST = (combinedCode: string, fullCountry: string) => {
+    if (!combinedCode && !fullCountry) return false;
+    const dstCodes = ['+20', '+961', '+970', '+1', '+44', '+33', '+49', '+39', '+34', '+61', '+64'];
+    const dstCountries = ['مصر', 'لبنان', 'فلسطين', 'أمريكا', 'كندا', 'بريطانيا', 'فرنسا', 'ألمانيا', 'إيطاليا', 'إسبانيا', 'أستراليا'];
+    return dstCodes.some(c => combinedCode.startsWith(c)) || dstCountries.some(c => fullCountry.includes(c));
+};
+
+export const applyOffset = (timeStr: string, offsetMins: number) => {
+    if (!timeStr || timeStr.includes('--')) return "--:--";
+    let [h, m] = timeStr.split(':');
+    let date = new Date();
+    date.setHours(parseInt(h), parseInt(m), 0);
+    date.setMinutes(date.getMinutes() + (offsetMins || 0));
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+}
+
+const toEnglishDigits = (s: string | number) => String(s ?? '')
+    .replace(/[٠-٩]/g, d => (d.charCodeAt(0) - 1632).toString())
+    .replace(/[۰-۹]/g, d => (d.charCodeAt(0) - 1776).toString());
+
+const toArabicDigits = (s: string | number) => String(s ?? '').replace(/[0-9]/g, w => '٠١٢٣٤٥٦٧٨٩'[+w]);
+
+export const formatTime12 = (time: string, isAr: boolean = false) => {
+    if(!time || time.includes('--')) return "--:-- --";
+    const cleaned = toEnglishDigits(time);
+    let [h, m] = cleaned.split(':');
+    let hInt = parseInt(h);
+    const ap = hInt >= 12 ? (isAr ? 'م' : 'pm') : (isAr ? 'ص' : 'am');
+    hInt = hInt % 12 || 12;
+    const hStr = isAr ? toArabicDigits(hInt) : String(hInt);
+    const mStr = isAr ? toArabicDigits(m.toString().padStart(2, '0')) : m.toString().padStart(2, '0');
+    return `<span class="text-xl font-black">${hStr}:${mStr}</span> <span class="time-period">${ap}</span>`;
+};
+
+export const formatTime12_EN = (time: string) => {
+    if (!time || time.includes('--')) return "--:-- --";
+    const cleaned = toEnglishDigits(time);
+    let [h, m] = cleaned.split(':');
+    let hInt = parseInt(h);
+    const ap = hInt >= 12 ? 'pm' : 'am';
+    hInt = hInt % 12 || 12;
+    return `${hInt}:${m.toString().padStart(2, '0')} ${ap}`;
+}
+
+export const formatTime12_clean = (time: string) => {
+    if (!time || time.includes('--')) return "--:-- --";
+    const cleaned = toEnglishDigits(time);
+    let [h, m] = cleaned.split(':');
+    let hInt = parseInt(h);
+    const ap = hInt >= 12 ? 'pm' : 'am';
+    hInt = hInt % 12 || 12;
+    return `${hInt}:${m.toString().padStart(2, '0')} ${ap}`;
+}
+
+export const getMediaURL = (s: string) => {
+    if (!s) return '';
+    if (s.startsWith('file://')) {
+        return Capacitor.convertFileSrc(s);
+    }
+    if (s.startsWith('data:') || s.startsWith('blob:') || s.startsWith('http://') || s.startsWith('https://')) {
+        return s;
+    }
+    // Handle standalone filenames like "salah.mp3" or "salah"
+    let cleanPath = s;
+    if (!cleanPath.includes('/')) {
+        const withExt = cleanPath.endsWith('.mp3') ? cleanPath : `${cleanPath}.mp3`;
+        cleanPath = `/assets/audio/${withExt}`;
+    } else if (!cleanPath.startsWith('/')) {
+        cleanPath = `/${cleanPath}`;
+    }
+    // For bundled assets starting with '/', resolve with window.location.origin if available
+    if (typeof window !== 'undefined' && window.location && window.location.origin) {
+        return `${window.location.origin}${cleanPath}`;
+    }
+    return cleanPath;
+};
+
+// Global audio instance for playing and previewing tones
+let previewAudio: HTMLAudioElement | null = null;
+let activeBufferSource: AudioBufferSourceNode | null = null;
+let activeGainNode: GainNode | null = null;
+let currentAudioSource: string | null = null;
+let lastPlayTimestamp = 0;
+let audioContext: AudioContext | null = null;
+
+let activePlaySessionId = 0;
+
+const notifySoundEnded = () => {
+    if (typeof window !== 'undefined') {
+        try {
+            window.dispatchEvent(new CustomEvent('prayer-notification-sound-ended'));
+        } catch (e) {}
+    }
+};
+
+export const computeScaledVolume = (volumePercent: number): number => {
+    const clamped = Math.max(0, Math.min(100, Math.round(volumePercent)));
+    if (clamped <= 0) return 0;
+    if (clamped >= 100) return 1.0;
+    const normalized = clamped / 100;
+    return Math.max(0.005, Math.min(1.0, Math.pow(normalized, 2.2)));
+};
+
+export const updateActiveWebAudioVolume = (volumePercent: number) => {
+    const clamped = Math.max(0, Math.min(100, Math.round(volumePercent)));
+    const scaled = computeScaledVolume(clamped);
+    if (scaled <= 0) {
+        stopNotificationSound();
+        return;
+    }
+    if (Capacitor.isNativePlatform()) {
+        setNativeAlertVolume(clamped).catch(() => {});
+    }
+    if (activeGainNode && audioContext) {
+        try {
+            activeGainNode.gain.setValueAtTime(scaled, audioContext.currentTime);
+            activeGainNode.gain.value = scaled;
+        } catch (e) {}
+    }
+    if (previewAudio) {
+        try {
+            previewAudio.volume = scaled;
+        } catch (e) {}
+    }
+};
+
+const getAudioContext = () => {
+    if (typeof window === 'undefined') return null;
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return null;
+    if (!audioContext || audioContext.state === 'closed') {
+        audioContext = new AudioCtx();
+    }
+    if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(() => {});
+    }
+    return audioContext;
+};
+
+// Auto unlock audio on any user interaction
+if (typeof window !== 'undefined') {
+    const unlock = () => {
+        try {
+            const ctx = getAudioContext();
+            if (ctx && ctx.state === 'suspended') {
+                ctx.resume();
+            }
+        } catch (e) {}
+    };
+    window.addEventListener('click', unlock, { once: true, passive: true });
+    window.addEventListener('touchstart', unlock, { once: true, passive: true });
+    window.addEventListener('keydown', unlock, { once: true, passive: true });
+
+    addNativeToneEndedListener(() => {
+        currentAudioSource = null;
+        releaseListenInterruption('notification-sound');
+        notifySoundEnded();
+    }).catch(() => {});
+}
+
+export const getStoredAlertVolume = (): number => {
+    try {
+        const saved = localStorage.getItem('prayer_alert_volume');
+        if (saved !== null) {
+            const parsed = parseInt(saved, 10);
+            if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) return parsed;
+        }
+        const cfgStr = localStorage.getItem('prayerFinal_v34');
+        if (cfgStr) {
+            const parsedCfg = JSON.parse(cfgStr);
+            if (typeof parsedCfg?.alertVolume === 'number') {
+                return Math.max(0, Math.min(100, Math.round(parsedCfg.alertVolume)));
+            }
+        }
+    } catch (e) {}
+    return 100;
+};
+
+export const setStoredAlertVolume = (volume: number) => {
+    const clamped = Math.max(0, Math.min(100, Math.round(volume)));
+    try {
+        localStorage.setItem('prayer_alert_volume', String(clamped));
+    } catch (e) {}
+    if (Capacitor.isNativePlatform()) {
+        setNativeAlertVolume(clamped).catch(() => {});
+    }
+};
+
+export const playSyntheticChime = (volumeOverride?: number) => {
+    try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const volumePercent = typeof volumeOverride === 'number' ? volumeOverride : getStoredAlertVolume();
+        if (volumePercent <= 0) return;
+        const volRatio = computeScaledVolume(volumePercent);
+        
+        // Gentle melodic two-tone chime bell (D5 -> A5)
+        const notes = [
+            { freq: 587.33, start: now, duration: 1.0 },
+            { freq: 880.00, start: now + 0.35, duration: 1.4 }
+        ];
+
+        notes.forEach(({ freq, start, duration }) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, start);
+            
+            gain.gain.setValueAtTime(0, start);
+            gain.gain.linearRampToValueAtTime(0.35 * volRatio, start + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(start);
+            osc.stop(start + duration);
+        });
+    } catch (e) {
+        console.warn('Synthetic chime failed:', e);
+    }
+};
+
+export const playNotificationSound = async (source: string, force: boolean = false, volumeOverride?: number) => {
+    if (!source || source === 'none') return;
+
+    const volumePercent = typeof volumeOverride === 'number' ? volumeOverride : getStoredAlertVolume();
+    if (volumePercent <= 0) {
+        stopNotificationSound();
+        return;
+    }
+    const volRatio = computeScaledVolume(volumePercent);
+
+    const now = Date.now();
+    if (!force) {
+        // Prevent duplicate playback: If ANY sound was triggered less than 1500ms ago, ignore
+        if (now - lastPlayTimestamp < 1500) {
+            console.log(`[playNotificationSound] Ignored rapid duplicate playback (${now - lastPlayTimestamp}ms ago): ${source}`);
+            return;
+        }
+        // If the exact same sound was triggered less than 4000ms ago, ignore
+        if (currentAudioSource === source && (now - lastPlayTimestamp) < 4000) {
+            console.log(`[playNotificationSound] Ignored duplicate playback request for: ${source}`);
+            return;
+        }
+    }
+
+    // Stop and fully unload any currently playing audio cleanly before starting new one
+    stopNotificationSound();
+
+    const sessionId = ++activePlaySessionId;
+    lastPlayTimestamp = now;
+    currentAudioSource = source;
+    acquireListenInterruption('notification-sound');
+
+    // 1. Android Native APK Playback (Direct MediaPlayer volume without changing device ringer):
+    if (Capacitor.isNativePlatform()) {
+        try {
+            const played = await playNativeTone(source, volumePercent);
+            if (sessionId !== activePlaySessionId) {
+                if (played) stopNativeTone().catch(() => {});
+                return;
+            }
+            if (played) {
+                console.log(`[playNotificationSound] Played natively via Android MediaPlayer at ${volumePercent}%: ${source}`);
+                return;
+            }
+        } catch (nativeErr) {
+            console.warn('[playNotificationSound] Native player returned error, attempting web fallback:', nativeErr);
+        }
+    }
+
+    if (sessionId !== activePlaySessionId) return;
+    const mediaUrl = getMediaURL(source);
+
+    // 2. Web Audio API with fetch (Completely avoids Chromium Range-request bug in Android WebViews):
+    try {
+        const ctx = getAudioContext();
+        if (ctx) {
+            if (ctx.state === 'suspended') {
+                await ctx.resume().catch(() => {});
+            }
+            if (sessionId !== activePlaySessionId) return;
+
+            const response = await fetch(mediaUrl);
+            if (sessionId !== activePlaySessionId) return;
+            if (response.ok) {
+                const arrayBuffer = await response.arrayBuffer();
+                if (sessionId !== activePlaySessionId) return;
+                const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+                if (sessionId !== activePlaySessionId) return;
+
+                if (activeBufferSource) {
+                    try { activeBufferSource.stop(); activeBufferSource.disconnect(); } catch (e) {}
+                    activeBufferSource = null;
+                }
+
+                const sourceNode = ctx.createBufferSource();
+                const gainNode = ctx.createGain();
+                gainNode.gain.setValueAtTime(volRatio, ctx.currentTime);
+                gainNode.gain.value = volRatio;
+
+                sourceNode.buffer = audioBuffer;
+                sourceNode.connect(gainNode);
+                gainNode.connect(ctx.destination);
+
+                activeBufferSource = sourceNode;
+                activeGainNode = gainNode;
+                sourceNode.onended = () => {
+                    if (activeBufferSource === sourceNode) {
+                        activeBufferSource = null;
+                        activeGainNode = null;
+                        currentAudioSource = null;
+                    }
+                    releaseListenInterruption('notification-sound');
+                    if (sessionId === activePlaySessionId) {
+                        notifySoundEnded();
+                    }
+                };
+
+                sourceNode.start(0);
+                return;
+            }
+        }
+    } catch (webAudioErr) {
+        console.warn('[playNotificationSound] Web Audio API failed, falling back to HTML5 Audio:', webAudioErr);
+    }
+
+    if (sessionId !== activePlaySessionId) return;
+
+    // 3. Fallback to HTML5 Audio element:
+    try {
+        const audio = new Audio(mediaUrl);
+        audio.volume = volRatio;
+        previewAudio = audio;
+
+        audio.onended = () => {
+            if (previewAudio === audio) {
+                previewAudio = null;
+                currentAudioSource = null;
+            }
+            releaseListenInterruption('notification-sound');
+            if (sessionId === activePlaySessionId) {
+                notifySoundEnded();
+            }
+        };
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(e => {
+                if (e && (e.name === 'AbortError' || e.message?.includes('interrupted') || e.message?.includes('pause'))) {
+                    return;
+                }
+
+                console.warn("[playNotificationSound] Audio play failed on resolved mediaUrl:", e);
+
+                try {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    audio.src = '';
+                    audio.removeAttribute('src');
+                    audio.load();
+                } catch (ignored) {}
+
+                const altSource = source.startsWith('/') ? source.slice(1) : `/${source}`;
+                try {
+                    const fallbackAudio = new Audio(altSource);
+                    fallbackAudio.volume = volRatio;
+                    previewAudio = fallbackAudio;
+
+                    fallbackAudio.onended = () => {
+                        if (previewAudio === fallbackAudio) {
+                            previewAudio = null;
+                            currentAudioSource = null;
+                        }
+                        releaseListenInterruption('notification-sound');
+                        if (sessionId === activePlaySessionId) {
+                            notifySoundEnded();
+                        }
+                    };
+
+                    fallbackAudio.play().catch(err => {
+                        if (err && (err.name === 'AbortError' || err.message?.includes('interrupted'))) {
+                            releaseListenInterruption('notification-sound');
+                            return;
+                        }
+                        console.warn("[playNotificationSound] Fallback audio failed:", err);
+                        if (source.includes('chime')) {
+                            playSyntheticChime(volumePercent);
+                            setTimeout(() => {
+                                releaseListenInterruption('notification-sound');
+                                if (sessionId === activePlaySessionId) notifySoundEnded();
+                            }, 1500);
+                        } else {
+                            releaseListenInterruption('notification-sound');
+                            if (sessionId === activePlaySessionId) notifySoundEnded();
+                        }
+                    });
+                } catch (err2) {
+                    if (source.includes('chime')) {
+                        playSyntheticChime(volumePercent);
+                        setTimeout(() => {
+                            releaseListenInterruption('notification-sound');
+                            if (sessionId === activePlaySessionId) notifySoundEnded();
+                        }, 1500);
+                    } else {
+                        releaseListenInterruption('notification-sound');
+                        if (sessionId === activePlaySessionId) notifySoundEnded();
+                    }
+                }
+            });
+        }
+    } catch (e) {
+        console.error("Failed to play notification sound with HTML5 Audio:", e);
+        if (source.includes('chime')) {
+            playSyntheticChime(volumePercent);
+            setTimeout(() => {
+                releaseListenInterruption('notification-sound');
+                if (sessionId === activePlaySessionId) notifySoundEnded();
+            }, 1500);
+        } else {
+            releaseListenInterruption('notification-sound');
+            if (sessionId === activePlaySessionId) notifySoundEnded();
+        }
+    }
+};
+
+export const stopNotificationSound = () => {
+    activePlaySessionId++;
+
+    // 1. Stop Native Android MediaPlayer
+    if (Capacitor.isNativePlatform()) {
+        stopNativeTone().catch(() => {});
+    }
+
+    // 2. Stop Web Audio buffer source
+    if (activeBufferSource) {
+        try {
+            activeBufferSource.stop();
+            activeBufferSource.disconnect();
+        } catch (e) {}
+        activeBufferSource = null;
+    }
+    if (activeGainNode) {
+        try {
+            activeGainNode.disconnect();
+        } catch (e) {}
+        activeGainNode = null;
+    }
+
+    // 3. Stop HTML5 audio
+    if (previewAudio) {
+        try {
+            previewAudio.pause();
+            previewAudio.currentTime = 0;
+            previewAudio.src = '';
+            previewAudio.removeAttribute('src');
+            previewAudio.load();
+        } catch (e) {}
+        previewAudio = null;
+    }
+
+    currentAudioSource = null;
+    releaseListenInterruption('notification-sound');
+};
+
+export const isNotificationSoundPlaying = () => {
+    return !!currentAudioSource;
+};
+
+export const calculateNightTimes = (maghribTimeStr: string, fajrTimeStr: string) => {
+    if (!maghribTimeStr || !fajrTimeStr || maghribTimeStr.includes('--') || fajrTimeStr.includes('--')) {
+        return { midnight: "--:--", lastThird: "--:--", firstThird: "--:--" };
+    }
+    
+    const [mH, mM] = maghribTimeStr.split(':').map(Number);
+    const [fH, fM] = fajrTimeStr.split(':').map(Number);
+    
+    let maghribDate = new Date();
+    maghribDate.setHours(mH, mM, 0, 0);
+    
+    let fajrDate = new Date();
+    fajrDate.setHours(fH, fM, 0, 0);
+    
+    if (fajrDate <= maghribDate) {
+        fajrDate.setDate(fajrDate.getDate() + 1);
+    }
+    
+    const diffMs = fajrDate.getTime() - maghribDate.getTime();
+    
+    const firstThirdDate = new Date(maghribDate.getTime() + diffMs / 3);
+    const midnightDate = new Date(maghribDate.getTime() + diffMs / 2);
+    const lastThirdDate = new Date(maghribDate.getTime() + (diffMs * 2) / 3);
+    
+    const formatTime = (d: Date) => {
+        return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    };
+    
+    return {
+        firstThird: formatTime(firstThirdDate),
+        midnight: formatTime(midnightDate),
+        lastThird: formatTime(lastThirdDate)
+    };
+};
+
+export interface ActiveNotificationTone {
+    id: string;
+    name: string;
+    data: string;
+    fileName?: string;
+    channelId?: string;
+}
+
+export const getActiveNotificationTone = (): ActiveNotificationTone => {
+    try {
+        const raw = localStorage.getItem('app_notification_tone');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object' && parsed.id) return parsed;
+        }
+        const cfgRaw = localStorage.getItem('prayerFinal_v34');
+        if (cfgRaw) {
+            const cfg = JSON.parse(cfgRaw);
+            if (cfg && cfg.notificationTone && cfg.notificationTone.id) return cfg.notificationTone;
+        }
+    } catch (e) {}
+    return {
+        id: 'chime',
+        name: 'رنين هادئ',
+        data: '/assets/audio/chime.mp3',
+        fileName: 'chime.mp3'
+    };
+};
+
+export const setActiveNotificationTone = (tone: ActiveNotificationTone) => {
+    try {
+        localStorage.setItem('app_notification_tone', JSON.stringify(tone));
+    } catch (e) {}
+};
+
+export const getActiveNotificationSoundPath = (): string => {
+    const tone = getActiveNotificationTone();
+    if (tone.id === 'none' || tone.data === 'none') return 'none';
+    return tone.data || '/assets/audio/chime.mp3';
+};
+
+export const getActiveNotificationSoundFileName = (): string | undefined => {
+    const tone = getActiveNotificationTone();
+    if (tone.id === 'none' || tone.data === 'none') return undefined;
+    if (
+        tone.id === 'phone_ringtone' ||
+        tone.id === 'custom' ||
+        tone.data?.startsWith('content://') ||
+        tone.data?.startsWith('data:') ||
+        tone.data?.startsWith('file://')
+    ) {
+        return 'chime.mp3';
+    }
+    return tone.fileName || 'chime.mp3';
+};

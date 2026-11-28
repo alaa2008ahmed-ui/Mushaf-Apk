@@ -1,0 +1,1218 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { BookCheck, Sparkles, Presentation } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
+import { getTawafCounterState, saveTawafCounterState, subscribeTawafCounter, TawafCounterState } from '../../utils/prayerAndWorship/tawafCounterStorage';
+import NotificationSettingsModal from '../QuranReader/NotificationSettingsModal';
+import SettingsModal from '../QuranReader/SettingsModal';
+import FontSelectModal from '../QuranReader/FontSelectModal';
+import ReciterSelectModal from '../QuranReader/ReciterSelectModal';
+import TafseerSelectionModal from '../QuranReader/TafseerSelectionModal';
+import SurahDesignPickerModal from '../QuranReader/SurahDesignPickerModal';
+import ScrollSpeedModal from '../QuranReader/ScrollSpeedModal';
+import ApprovedSourcesModal from './ApprovedSourcesModal';
+import WhatsNewModal from './WhatsNewModal';
+import InteractiveAppTourModal from './InteractiveAppTourModal';
+import ShareDesignSelectorSection from './ShareDesignSelectorSection';
+import SmartEngineSettingsSection from './SmartEngineSettingsSection';
+import { READERS, ARABIC_READERS, MEMORIZATION_READERS, SURAH_INFO, THEMES, DEFAULT_SETTINGS, getValidReaderForMode } from '../QuranReader/constants';
+import { QuranDownloadModal, TafsirDownloadModal } from '../QuranReader/DownloadModals';
+import { quranData as rawQuranData } from '../../utils/quran/quranData';
+import { RECITERS, SURAH_LIST } from '../../data/listenQuran/listenQuranData';
+import { getQuranThemeIdForLayout } from '../../utils/quran/quranThemeHelper';
+import { normalizeMadinahFrameDesign, getSurahHeaderDesignForFrame } from '../QuranReader/madinahFrameDesigns';
+import { syncClusterSettings, getClusterSettings, getMadinahSettings, saveMadinahSettings } from '../../utils/quran/quranClusterSync';
+import { getShowPageGuides, setShowPageGuides } from '../../utils/app/guideManager';
+import { showGlobalAppToast } from '../../utils/notifications/appNotificationSettings';
+import { registerBackInterceptor } from '../../hooks/useBackButton';
+import {
+  useListenQuranStore,
+  isFloatingListenButtonEnabled,
+  setFloatingListenButtonEnabled,
+  FLOATING_LISTEN_BTN_VISIBILITY_EVENT,
+} from '../../hooks/useListenQuranStore';
+
+interface HomeScreenSettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onNavigate: (page: string, params?: any) => void;
+}
+
+export const HomeScreenSettingsModal: React.FC<HomeScreenSettingsModalProps> = ({
+  isOpen,
+  onClose,
+  onNavigate
+}) => {
+  const { language, t } = useLanguage();
+  const { theme, themeKey, isNightMode, homeThemeVariant } = useTheme();
+  const isEn = language === 'en';
+
+  // Active theme accent color for toggle switches
+  const isSkyTheme = homeThemeVariant === 'sky';
+  const isEmeraldTheme = homeThemeVariant === 'emerald';
+  const isBurgundyTheme = homeThemeVariant === 'burgundy';
+
+  const isBlackTheme = isNightMode || themeKey === 'deep_black' || theme?.bgColor === '#000000' || theme?.name === 'اسود' || theme?.name === 'black';
+
+  // Theme-matched background color identical to PrayerTimes & other pages
+  const pageBgColor = isBlackTheme 
+    ? '#000000' 
+    : (theme?.bgColor && theme.bgColor.toLowerCase() !== '#ffffff'
+        ? theme.bgColor 
+        : (isSkyTheme 
+            ? '#F0F9FF' 
+            : (isEmeraldTheme 
+                ? '#F0FDF4' 
+                : (isBurgundyTheme 
+                    ? '#FFF1F2' 
+                    : '#FEF9C3'))));
+
+  const themeAccentColor = isNightMode 
+    ? '#f59e0b' 
+    : (isSkyTheme 
+        ? '#0284c7' 
+        : (isEmeraldTheme 
+            ? '#047857' 
+            : (isBurgundyTheme 
+                ? '#881337' 
+                : (theme.palette?.[0] || '#ca8a04'))));
+
+  // Hide floating action button across entire settings page
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('settings-modal-open');
+    } else {
+      document.body.classList.remove('settings-modal-open');
+    }
+    return () => {
+      document.body.classList.remove('settings-modal-open');
+    };
+  }, [isOpen]);
+
+  // Sub-dialog states for full-screen pages
+  const [showAppNotificationModal, setShowAppNotificationModal] = useState<boolean>(false);
+  const [showPhoneNotificationModal, setShowPhoneNotificationModal] = useState<boolean>(false);
+  const [activeReadingSettingsMode, setActiveReadingSettingsMode] = useState<'mushaf' | 'madinah' | 'landscape' | null>(null);
+  const [showQuranDownloadMenu, setShowQuranDownloadMenu] = useState<boolean>(false);
+  const [showTafsirDownloadModal, setShowTafsirDownloadModal] = useState<boolean>(false);
+  const [showApprovedSourcesModal, setShowApprovedSourcesModal] = useState<boolean>(false);
+  const [showWhatsNewModal, setShowWhatsNewModal] = useState<boolean>(false);
+  const [showInteractiveTourModal, setShowInteractiveTourModal] = useState<boolean>(false);
+  const [showSmartInsightsModal, setShowSmartInsightsModal] = useState<boolean>(false);
+  const [activeDownloadType, setActiveDownloadType] = useState<'mushaf' | 'listen' | 'memorization' | null>(null);
+  const [activeQuranSubModal, setActiveQuranSubModal] = useState<string | null>(null);
+
+  const listenMockQuranData = React.useMemo(() => ({
+    surahs: SURAH_LIST.map((s) => ({
+      number: s.number,
+      name: s.name,
+      revelationType: SURAH_INFO[s.number]?.type === 'مكية' ? 'Meccan' : 'Medinan',
+      ayahs: new Array(SURAH_INFO[s.number]?.ayahs || 0),
+    })),
+  }), []);
+
+  // 1. Tawaf Counter Card state
+  const [tawafState, setTawafState] = useState<TawafCounterState>(() => getTawafCounterState());
+
+  // 2. Tasbeeh Card state
+  const [showTasbeehCard, setShowTasbeehCard] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('show_quick_tasbeeh_home') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // 3. Listen Quran Card state
+  const [showListenCard, setShowListenCard] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('show_listen_quran_home') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // 4. Floating Listen Button state (enabled by default)
+  const [showFloatingListenBtn, setShowFloatingListenBtn] = useState<boolean>(() => isFloatingListenButtonEnabled());
+
+  // 5. Show Page Guides button state
+  const [showPageGuides, setShowPageGuidesState] = useState<boolean>(() => getShowPageGuides());
+
+  // Keep state synced with external events and storage changes
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setTawafState(getTawafCounterState());
+    try {
+      setShowTasbeehCard(localStorage.getItem('show_quick_tasbeeh_home') === 'true');
+      setShowListenCard(localStorage.getItem('show_listen_quran_home') === 'true');
+      setShowFloatingListenBtn(isFloatingListenButtonEnabled());
+      setShowPageGuidesState(getShowPageGuides());
+    } catch {}
+
+    const unsubscribeTawaf = subscribeTawafCounter((updated) => {
+      setTawafState(updated);
+    });
+
+    const handleTasbeehChange = (e: any) => {
+      if (typeof e?.detail?.enabled === 'boolean') {
+        setShowTasbeehCard(e.detail.enabled);
+      } else {
+        try {
+          setShowTasbeehCard(localStorage.getItem('show_quick_tasbeeh_home') === 'true');
+        } catch {}
+      }
+    };
+
+    const handleListenChange = (e: any) => {
+      if (typeof e?.detail?.enabled === 'boolean') {
+        setShowListenCard(e.detail.enabled);
+      } else {
+        try {
+          setShowListenCard(localStorage.getItem('show_listen_quran_home') === 'true');
+        } catch {}
+      }
+    };
+
+    const handleFloatingListenBtnChange = (e: any) => {
+      if (typeof e?.detail?.enabled === 'boolean') {
+        setShowFloatingListenBtn(e.detail.enabled);
+      } else {
+        setShowFloatingListenBtn(isFloatingListenButtonEnabled());
+      }
+    };
+
+    const handleStorageChange = () => {
+      setTawafState(getTawafCounterState());
+      try {
+        setShowTasbeehCard(localStorage.getItem('show_quick_tasbeeh_home') === 'true');
+        setShowListenCard(localStorage.getItem('show_listen_quran_home') === 'true');
+        setShowFloatingListenBtn(isFloatingListenButtonEnabled());
+      } catch {}
+    };
+
+    window.addEventListener('quick-tasbeeh-visibility-changed', handleTasbeehChange);
+    window.addEventListener('quick_tasbeeh_visibility_changed', handleTasbeehChange);
+    window.addEventListener('listen-card-visibility-changed', handleListenChange);
+    window.addEventListener('listen_quran_visibility_changed', handleListenChange);
+    window.addEventListener(FLOATING_LISTEN_BTN_VISIBILITY_EVENT, handleFloatingListenBtnChange);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      unsubscribeTawaf();
+      window.removeEventListener('quick-tasbeeh-visibility-changed', handleTasbeehChange);
+      window.removeEventListener('quick_tasbeeh_visibility_changed', handleTasbeehChange);
+      window.removeEventListener('listen-card-visibility-changed', handleListenChange);
+      window.removeEventListener('listen_quran_visibility_changed', handleListenChange);
+      window.removeEventListener(FLOATING_LISTEN_BTN_VISIBILITY_EVENT, handleFloatingListenBtnChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [isOpen]);
+
+  // Handlers for Toggles
+  const handleToggleTawaf = () => {
+    const nextVal = !tawafState.showOnHome;
+    saveTawafCounterState({ showOnHome: nextVal });
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(25); } catch {}
+    }
+  };
+
+  const handleToggleTasbeeh = () => {
+    const nextVal = !showTasbeehCard;
+    setShowTasbeehCard(nextVal);
+    try {
+      localStorage.setItem('show_quick_tasbeeh_home', nextVal ? 'true' : 'false');
+    } catch {}
+    window.dispatchEvent(new CustomEvent('quick-tasbeeh-visibility-changed', { detail: { enabled: nextVal } }));
+    window.dispatchEvent(new CustomEvent('quick_tasbeeh_visibility_changed', { detail: { enabled: nextVal } }));
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(25); } catch {}
+    }
+  };
+
+  const handleToggleListen = () => {
+    const nextVal = !showListenCard;
+    setShowListenCard(nextVal);
+    try {
+      localStorage.setItem('show_listen_quran_home', nextVal ? 'true' : 'false');
+    } catch {}
+    window.dispatchEvent(new CustomEvent('listen-card-visibility-changed', { detail: { enabled: nextVal } }));
+    window.dispatchEvent(new CustomEvent('listen_quran_visibility_changed', { detail: { enabled: nextVal } }));
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(25); } catch {}
+    }
+  };
+
+  const handleToggleFloatingListenBtn = () => {
+    const nextVal = !showFloatingListenBtn;
+    setShowFloatingListenBtn(nextVal);
+    setFloatingListenButtonEnabled(nextVal);
+    if (!nextVal) {
+      const listenState = useListenQuranStore.getState();
+      if (listenState.currentPage !== 'listen' && listenState.hasFloatingSession && !showListenCard) {
+        listenState.stopFromFloating();
+      }
+    }
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(25); } catch {}
+    }
+  };
+
+  const handleTogglePageGuides = () => {
+    const nextVal = !showPageGuides;
+    setShowPageGuidesState(nextVal);
+    setShowPageGuides(nextVal);
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(25); } catch {}
+    }
+  };
+
+  // Helper for Quran / Madinah / Landscape reading settings
+  const isStorageLandscape = activeReadingSettingsMode === 'landscape';
+  const resolveLandscapeReadingMode = (): 'mushaf' | 'madinah' | 'bilingual' | 'translation' => {
+    try {
+      if (isEn) {
+        const savedEn = localStorage.getItem('quran_reading_mode_en_v2_h');
+        if (savedEn === 'bilingual' || savedEn === 'translation' || savedEn === 'madinah') {
+          return savedEn;
+        }
+        return 'translation';
+      }
+      const modernSaved = localStorage.getItem('quran_reading_mode_ar_h');
+      if (modernSaved === 'mushaf' || modernSaved === 'madinah' || modernSaved === 'bilingual') {
+        return modernSaved;
+      }
+      const legacySaved =
+        localStorage.getItem('last_arabic_reading_mode_h') ||
+        localStorage.getItem('last_reading_mode_h');
+      if (legacySaved === 'mushaf' || legacySaved === 'madinah' || legacySaved === 'bilingual') {
+        return legacySaved;
+      }
+    } catch {}
+    return 'mushaf';
+  };
+
+  const currentSettingsMode: 'mushaf' | 'madinah' | 'bilingual' | 'translation' =
+    activeReadingSettingsMode === 'landscape'
+      ? resolveLandscapeReadingMode()
+      : (activeReadingSettingsMode || 'mushaf');
+
+  const currentOrient = isStorageLandscape ? 'h' : 'v';
+  const currentModeSuffix =
+    currentSettingsMode === 'mushaf' ? `_${currentOrient}` : `_${currentSettingsMode}_${currentOrient}`;
+
+  const getQuranCurrentSettings = () => {
+    try {
+      if (currentSettingsMode === 'madinah') {
+        const madinahSaved = getMadinahSettings(isStorageLandscape);
+        return madinahSaved ? { ...DEFAULT_SETTINGS, ...madinahSaved } : DEFAULT_SETTINGS;
+      }
+      const modeSaved = getClusterSettings('unified', currentSettingsMode, isStorageLandscape);
+      return modeSaved ? { ...DEFAULT_SETTINGS, ...modeSaved } : DEFAULT_SETTINGS;
+    } catch {
+      return DEFAULT_SETTINGS;
+    }
+  };
+
+  const activeQuranThemeId = getQuranThemeIdForLayout(currentModeSuffix, undefined, currentSettingsMode) || 'black';
+  const activeQuranTheme = THEMES[activeQuranThemeId as keyof typeof THEMES] || THEMES.black;
+
+  const updateActiveReadingSubModalSettings = (updates: Record<string, any>, _shouldSyncClusterDesign = false) => {
+    try {
+      if (currentSettingsMode === 'madinah') {
+        const cur = getMadinahSettings(isStorageLandscape) || {};
+        const next = { ...cur, ...updates };
+        saveMadinahSettings(next, { isLandscape: isStorageLandscape });
+        return;
+      }
+      const cur = getClusterSettings('unified', currentSettingsMode, isStorageLandscape) || {};
+      const next = { ...cur, ...updates };
+      syncClusterSettings('unified', next, isStorageLandscape, { readingMode: currentSettingsMode });
+    } catch {}
+  };
+
+  const handleSelectFont = (fontId: string) => {
+    updateActiveReadingSubModalSettings({ fontFamily: fontId });
+    setActiveQuranSubModal(null);
+  };
+
+  const handleSelectReciter = (readerId: string) => {
+    updateActiveReadingSubModalSettings({ reader: readerId });
+    setActiveQuranSubModal(null);
+  };
+
+  const handleSelectTafseer = (tafseerId: string) => {
+    updateActiveReadingSubModalSettings({ tafseer: tafseerId });
+    setActiveQuranSubModal(null);
+  };
+
+  const handleSelectSurahDesign = (designNum: number) => {
+    const frameId = normalizeMadinahFrameDesign(designNum);
+    updateActiveReadingSubModalSettings(
+      {
+        madinahFrameDesign: frameId,
+        surahHeaderDesign: getSurahHeaderDesignForFrame(frameId),
+      },
+      true
+    );
+    setActiveQuranSubModal(null);
+  };
+
+  const handleSelectScrollSpeed = (minutes: number) => {
+    updateActiveReadingSubModalSettings({ scrollMinutes: minutes });
+    setActiveQuranSubModal(null);
+  };
+
+  // Hardware/System Back Button Interceptor for Settings Page & All its Sub-views
+  const backStateRef = useRef({
+    activeQuranSubModal,
+    activeDownloadType,
+    showTafsirDownloadModal,
+    showQuranDownloadMenu,
+    activeReadingSettingsMode,
+    showAppNotificationModal,
+    showPhoneNotificationModal,
+    showApprovedSourcesModal,
+    showWhatsNewModal,
+    showInteractiveTourModal,
+    showSmartInsightsModal,
+    onClose
+  });
+  backStateRef.current = {
+    activeQuranSubModal,
+    activeDownloadType,
+    showTafsirDownloadModal,
+    showQuranDownloadMenu,
+    activeReadingSettingsMode,
+    showAppNotificationModal,
+    showPhoneNotificationModal,
+    showApprovedSourcesModal,
+    showWhatsNewModal,
+    showInteractiveTourModal,
+    showSmartInsightsModal,
+    onClose
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const interceptor = () => {
+      const s = backStateRef.current;
+      // 1. If any sub-modal in Quran Settings is open (font, reciter, tafseer, design picker)
+      if (s.activeQuranSubModal) {
+        setActiveQuranSubModal(null);
+        return true;
+      }
+      // 2. If any download modal is open (Mushaf, Listen, Memorization)
+      if (s.activeDownloadType) {
+        setActiveDownloadType(null);
+        return true;
+      }
+      // 3. If Tafsir download modal is open
+      if (s.showTafsirDownloadModal) {
+        setShowTafsirDownloadModal(false);
+        return true;
+      }
+      // 4. If Download Quran Menu (the 3 cards) is open
+      if (s.showQuranDownloadMenu) {
+        setShowQuranDownloadMenu(false);
+        return true;
+      }
+      // 5. If Reading Settings modal is open
+      if (s.activeReadingSettingsMode) {
+        setActiveReadingSettingsMode(null);
+        return true;
+      }
+      // 6. If App notifications modal is open
+      if (s.showAppNotificationModal) {
+        setShowAppNotificationModal(false);
+        return true;
+      }
+      // 7. If Phone notifications modal is open
+      if (s.showPhoneNotificationModal) {
+        setShowPhoneNotificationModal(false);
+        return true;
+      }
+      // 8. If Approved Sources & References modal is open
+      if (s.showApprovedSourcesModal) {
+        setShowApprovedSourcesModal(false);
+        return true;
+      }
+      // 9. If Interactive App Tour modal is open
+      if (s.showInteractiveTourModal) {
+        setShowInteractiveTourModal(false);
+        return true;
+      }
+      // 10. If What's New modal is open
+      if (s.showWhatsNewModal) {
+        setShowWhatsNewModal(false);
+        return true;
+      }
+      // 11. If Smart Engine Insights modal is open
+      if (s.showSmartInsightsModal) {
+        setShowSmartInsightsModal(false);
+        return true;
+      }
+      // 12. If on the main settings screen, close settings modal
+      s.onClose();
+      return true;
+    };
+
+    const unregister = registerBackInterceptor(interceptor);
+    return unregister;
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+      <div
+        id="home-screen-settings-modal"
+        className="fixed inset-0 z-[999999] flex flex-col font-cairo select-none overflow-hidden"
+        style={{ 
+          backgroundColor: pageBgColor
+        }}
+        dir={isEn ? 'ltr' : 'rtl'}
+      >
+        {/* Standard Page Header - Identical to Adia.tsx */}
+        <header className="app-top-bar settings-top-bar shrink-0 w-full" dir={isEn ? 'ltr' : 'rtl'} style={{ display: 'block' }}>
+          <div className="app-top-bar__inner">
+            <div className="relative flex items-center justify-center w-full min-h-[44px]">
+              {/* Back button */}
+              <div className={`absolute ${isEn ? 'left-0' : 'right-0'} flex items-center`}>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                  title={isEn ? "Go Back" : "رجوع للخلف"}
+                  aria-label={isEn ? "Go Back" : "رجوع للخلف"}
+                >
+                  <i className={`fa-solid ${isEn ? 'fa-arrow-left' : 'fa-arrow-right'} text-xl`}></i>
+                </button>
+              </div>
+
+              {/* Title in center */}
+              <div className="text-center px-12 min-w-0">
+                <h1 className="app-top-bar__title text-lg sm:text-xl font-cairo truncate">
+                  {isEn ? 'Settings' : 'الإعدادات'}
+                </h1>
+              </div>
+
+              {/* Home button */}
+              <div className={`absolute ${isEn ? 'right-0' : 'left-0'} flex items-center gap-1`}>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                  title={isEn ? "Home" : "الصفحة الرئيسية"}
+                  aria-label={isEn ? "Home" : "الصفحة الرئيسية"}
+                >
+                  <i className="fa-solid fa-house text-xl"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Scrollable Settings Content with dynamic safe area */}
+        <div 
+          className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pt-5 app-scroll-safe space-y-4 no-scrollbar max-w-2xl mx-auto w-full"
+        >
+          
+          {/* SECTION 1: Action Cards */}
+          <div className="grid grid-cols-1 gap-3">
+            {/* Grouped Large Card: Notifications */}
+            <div className="p-4 sm:p-5 rounded-3xl transition-all white-3d-container-card space-y-3">
+              <div className="space-y-2">
+                <h3
+                  className="text-sm sm:text-base font-black tracking-wide"
+                  style={{ color: themeAccentColor }}
+                >
+                  {isEn ? 'Notifications' : 'الإشعارات'}
+                </h3>
+                <div className="app-3d-divider" />
+              </div>
+
+              <div className="space-y-2.5 pt-1">
+                {/* Card 1: App Notifications */}
+                <button
+                  type="button"
+                  onClick={() => setShowAppNotificationModal(true)}
+                  className="w-full text-start p-3.5 sm:p-4 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between white-3d-card-btn shadow-xs border-0"
+                >
+                  <h4 className="text-base sm:text-lg font-black truncate">
+                    {isEn ? 'App Notifications' : 'إشعارات التطبيق'}
+                  </h4>
+                </button>
+
+                {/* Card 2: Phone Notifications */}
+                <button
+                  type="button"
+                  onClick={() => setShowPhoneNotificationModal(true)}
+                  className="w-full text-start p-3.5 sm:p-4 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between white-3d-card-btn shadow-xs border-0"
+                >
+                  <h4 className="text-base sm:text-lg font-black truncate">
+                    {isEn ? 'Phone Notifications' : 'إشعارات الهاتف'}
+                  </h4>
+                </button>
+              </div>
+            </div>
+
+            {/* Grouped Large Card: Reading Settings */}
+            <div className="p-4 sm:p-5 rounded-3xl transition-all white-3d-container-card space-y-3">
+              <div className="space-y-2">
+                <h3
+                  className="text-sm sm:text-base font-black tracking-wide"
+                  style={{ color: themeAccentColor }}
+                >
+                  {isEn ? 'Reading Settings' : 'إعدادات القراءة'}
+                </h3>
+                <div className="app-3d-divider" />
+              </div>
+
+              <div className="space-y-2.5 pt-1">
+                {/* Card 1: Vertical Reading Settings (Mushaf) */}
+                <button
+                  type="button"
+                  onClick={() => setActiveReadingSettingsMode('mushaf')}
+                  className="w-full text-start p-3.5 sm:p-4 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between white-3d-card-btn shadow-xs border-0"
+                >
+                  <h4 className="text-base sm:text-lg font-black truncate">
+                    {isEn ? 'Vertical Reading Settings' : 'إعدادات القراءة الرأسية'}
+                  </h4>
+                </button>
+
+                {/* Card 2: Horizontal Reading Settings (Madinah Mushaf) */}
+                <button
+                  type="button"
+                  onClick={() => setActiveReadingSettingsMode('madinah')}
+                  className="w-full text-start p-3.5 sm:p-4 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between white-3d-card-btn shadow-xs border-0"
+                >
+                  <h4 className="text-base sm:text-lg font-black truncate">
+                    {isEn ? 'Horizontal Reading Settings' : 'إعدادات القراءة الأفقية'}
+                  </h4>
+                </button>
+
+                {/* Card 3: Landscape Reading Settings (3D menu here, flat in Landscape page) */}
+                <button
+                  type="button"
+                  onClick={() => setActiveReadingSettingsMode('landscape')}
+                  className="w-full text-start p-3.5 sm:p-4 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between white-3d-card-btn shadow-xs border-0"
+                >
+                  <h4 className="text-base sm:text-lg font-black truncate">
+                    {isEn ? 'Landscape Reading Settings' : 'إعدادات القراءة العرضية'}
+                  </h4>
+                </button>
+              </div>
+            </div>
+
+            {/* Share Card Designs Picker Section */}
+            <ShareDesignSelectorSection
+              isEn={isEn}
+              isNightMode={isNightMode}
+              themeAccentColor={themeAccentColor}
+            />
+
+            {/* Grouped Large Card: Downloads */}
+            <div className="p-4 sm:p-5 rounded-3xl transition-all white-3d-container-card space-y-3">
+              <div className="space-y-2">
+                <h3
+                  className="text-sm sm:text-base font-black tracking-wide"
+                  style={{ color: themeAccentColor }}
+                >
+                  {isEn ? 'Downloads' : 'التحميلات'}
+                </h3>
+                <div className="app-3d-divider" />
+              </div>
+
+              <div className="space-y-2.5 pt-1">
+                {/* Download Holy Quran */}
+                <button
+                  type="button"
+                  onClick={() => setShowQuranDownloadMenu(true)}
+                  className="w-full text-start p-3.5 sm:p-4 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between white-3d-card-btn shadow-xs border-0"
+                >
+                  <h4 className="text-base sm:text-lg font-black truncate">
+                    {isEn ? 'Download Holy Quran' : 'تحميل القرآن الكريم'}
+                  </h4>
+                </button>
+
+                {/* Download Tafseers */}
+                <button
+                  type="button"
+                  onClick={() => setShowTafsirDownloadModal(true)}
+                  className="w-full text-start p-3.5 sm:p-4 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between white-3d-card-btn shadow-xs border-0"
+                >
+                  <h4 className="text-base sm:text-lg font-black truncate">
+                    {isEn ? 'Download Tafseers' : 'تحميل التفاسير'}
+                  </h4>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION 2: Single-Tap Toggles (Only Main Large Titles, No Small Subtitles) */}
+          <div className="grid grid-cols-1 gap-3 pt-2">
+            {/* Grouped Large Card: Show on Home Screen */}
+            <div className="p-4 sm:p-5 rounded-3xl transition-all white-3d-container-card space-y-3">
+              <div className="space-y-2">
+                <h3
+                  className="text-sm sm:text-base font-black tracking-wide"
+                  style={{ color: themeAccentColor }}
+                >
+                  {isEn ? 'Show on Home Screen' : 'الظهور بالصفحة الرئيسية'}
+                </h3>
+                <div className="app-3d-divider" />
+              </div>
+
+              <div className="space-y-2.5 pt-1">
+                {/* Toggle 1: Listen to Quran Card */}
+                <button
+                  type="button"
+                  onClick={handleToggleListen}
+                  role="switch"
+                  aria-checked={showListenCard}
+                  title={showListenCard ? (isEn ? 'Disable' : 'تعطيل') : (isEn ? 'Enable' : 'تفعيل')}
+                  className="w-full text-start p-3.5 sm:p-4 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between gap-4 white-3d-card-btn shadow-xs border-0"
+                >
+                  <h4 className="text-base sm:text-lg font-black truncate min-w-0 flex-1">
+                    {isEn ? 'Show Listen to Quran Card' : 'بطاقة الاستماع للقرآن'}
+                  </h4>
+
+                  <div
+                    aria-hidden="true"
+                    className={`app-3d-switch-track relative w-13 h-7 rounded-full transition-colors duration-200 ease-in-out shrink-0 p-0.5 pointer-events-none ${
+                      !showListenCard ? (isNightMode ? 'bg-zinc-700' : 'bg-slate-300') : ''
+                    }`}
+                    style={{
+                      backgroundColor: showListenCard ? themeAccentColor : undefined
+                    }}
+                  >
+                    <motion.div
+                      layout
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className={`app-3d-switch-thumb w-6 h-6 rounded-full bg-white transform ${
+                        showListenCard ? (isEn ? 'translate-x-6' : '-translate-x-6') : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
+                </button>
+
+                {/* Toggle 2: Tasbeeh Card */}
+                <button
+                  type="button"
+                  onClick={handleToggleTasbeeh}
+                  role="switch"
+                  aria-checked={showTasbeehCard}
+                  title={showTasbeehCard ? (isEn ? 'Disable' : 'تعطيل') : (isEn ? 'Enable' : 'تفعيل')}
+                  className="w-full text-start p-3.5 sm:p-4 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between gap-4 white-3d-card-btn shadow-xs border-0"
+                >
+                  <h4 className="text-base sm:text-lg font-black truncate min-w-0 flex-1">
+                    {isEn ? 'Tasbeeh Card' : 'بطاقة التسبيح'}
+                  </h4>
+
+                  <div
+                    aria-hidden="true"
+                    className={`app-3d-switch-track relative w-13 h-7 rounded-full transition-colors duration-200 ease-in-out shrink-0 p-0.5 pointer-events-none ${
+                      !showTasbeehCard ? (isNightMode ? 'bg-zinc-700' : 'bg-slate-300') : ''
+                    }`}
+                    style={{
+                      backgroundColor: showTasbeehCard ? themeAccentColor : undefined
+                    }}
+                  >
+                    <motion.div
+                      layout
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className={`app-3d-switch-thumb w-6 h-6 rounded-full bg-white transform ${
+                        showTasbeehCard ? (isEn ? 'translate-x-6' : '-translate-x-6') : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
+                </button>
+
+                {/* Toggle 3: Tawaf Counter Card */}
+                <button
+                  type="button"
+                  onClick={handleToggleTawaf}
+                  role="switch"
+                  aria-checked={tawafState.showOnHome}
+                  title={tawafState.showOnHome ? (isEn ? 'Disable' : 'تعطيل') : (isEn ? 'Enable' : 'تفعيل')}
+                  className="w-full text-start p-3.5 sm:p-4 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between gap-4 white-3d-card-btn shadow-xs border-0"
+                >
+                  <h4 className="text-base sm:text-lg font-black truncate min-w-0 flex-1">
+                    {isEn ? 'Tawaf & Sa\'i Counter Card' : 'بطاقة عداد الأشواط'}
+                  </h4>
+
+                  <div
+                    aria-hidden="true"
+                    className={`app-3d-switch-track relative w-13 h-7 rounded-full transition-colors duration-200 ease-in-out shrink-0 p-0.5 pointer-events-none ${
+                      !tawafState.showOnHome ? (isNightMode ? 'bg-zinc-700' : 'bg-slate-300') : ''
+                    }`}
+                    style={{
+                      backgroundColor: tawafState.showOnHome ? themeAccentColor : undefined
+                    }}
+                  >
+                    <motion.div
+                      layout
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className={`app-3d-switch-thumb w-6 h-6 rounded-full bg-white transform ${
+                        tawafState.showOnHome ? (isEn ? 'translate-x-6' : '-translate-x-6') : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
+                </button>
+
+              </div>
+            </div>
+
+            {/* Grouped Large Card: Other */}
+            <div className="p-4 sm:p-5 rounded-3xl transition-all white-3d-container-card space-y-3">
+              <div className="space-y-2">
+                <h3
+                  className="text-sm sm:text-base font-black tracking-wide"
+                  style={{ color: themeAccentColor }}
+                >
+                  {isEn ? 'Other' : 'أخرى'}
+                </h3>
+                <div className="app-3d-divider" />
+              </div>
+
+              <div className="space-y-2.5 pt-1">
+                {/* Toggle: Floating Audio Button */}
+                <button
+                  type="button"
+                  onClick={handleToggleFloatingListenBtn}
+                  role="switch"
+                  aria-checked={showFloatingListenBtn}
+                  title={showFloatingListenBtn ? (isEn ? 'Disable' : 'تعطيل') : (isEn ? 'Enable' : 'تفعيل')}
+                  className="w-full text-start p-3.5 sm:p-4 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between gap-4 white-3d-card-btn shadow-xs border-0"
+                >
+                  <h4 className="text-base sm:text-lg font-black truncate min-w-0 flex-1">
+                    {isEn ? 'Floating Audio Button' : 'زر الصوت العائم'}
+                  </h4>
+
+                  <div
+                    aria-hidden="true"
+                    className={`app-3d-switch-track relative w-13 h-7 rounded-full transition-colors duration-200 ease-in-out shrink-0 p-0.5 pointer-events-none ${
+                      !showFloatingListenBtn ? (isNightMode ? 'bg-zinc-700' : 'bg-slate-300') : ''
+                    }`}
+                    style={{
+                      backgroundColor: showFloatingListenBtn ? themeAccentColor : undefined
+                    }}
+                  >
+                    <motion.div
+                      layout
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className={`app-3d-switch-thumb w-6 h-6 rounded-full bg-white transform ${
+                        showFloatingListenBtn ? (isEn ? 'translate-x-6' : '-translate-x-6') : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
+                </button>
+
+                {/* Toggle: Show Page Guides Button */}
+                <button
+                  type="button"
+                  onClick={handleTogglePageGuides}
+                  role="switch"
+                  aria-checked={showPageGuides}
+                  title={showPageGuides ? (isEn ? 'Disable' : 'تعطيل') : (isEn ? 'Enable' : 'تفعيل')}
+                  className="w-full text-start p-3.5 sm:p-4 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between gap-4 white-3d-card-btn shadow-xs border-0"
+                >
+                  <h4 className="text-base sm:text-lg font-black truncate min-w-0 flex-1">
+                    {isEn ? 'Guides Button' : 'زر الإرشادات'}
+                  </h4>
+
+                  <div
+                    aria-hidden="true"
+                    className={`app-3d-switch-track relative w-13 h-7 rounded-full transition-colors duration-200 ease-in-out shrink-0 p-0.5 pointer-events-none ${
+                      !showPageGuides ? (isNightMode ? 'bg-zinc-700' : 'bg-slate-300') : ''
+                    }`}
+                    style={{
+                      backgroundColor: showPageGuides ? themeAccentColor : undefined
+                    }}
+                  >
+                    <motion.div
+                      layout
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className={`app-3d-switch-thumb w-6 h-6 rounded-full bg-white transform ${
+                        showPageGuides ? (isEn ? 'translate-x-6' : '-translate-x-6') : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Grouped Large Card: Smart Adaptive Engine */}
+            <SmartEngineSettingsSection
+              isEn={isEn}
+              isNightMode={isNightMode}
+              isBlackTheme={isBlackTheme}
+              themeAccentColor={themeAccentColor}
+              pageBgColor={pageBgColor}
+              showInsightsModal={showSmartInsightsModal}
+              setShowInsightsModal={setShowSmartInsightsModal}
+              onHomeClose={onClose}
+            />
+
+            {/* Latest App Updates / What's New Button */}
+            <button
+              type="button"
+              id="btn-whats-new-updates"
+              onClick={() => setShowWhatsNewModal(true)}
+              className="w-full text-start p-4 sm:p-5 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between gap-3 white-3d-card-btn"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <Sparkles
+                  size={20}
+                  strokeWidth={2.2}
+                  className="shrink-0"
+                  style={{ color: isBlackTheme ? '#000000' : themeAccentColor }}
+                />
+                <h4 className="text-base sm:text-lg font-black truncate">
+                  {isEn ? "What's New & App Updates" : 'أحدث التحديثات والإضافات'}
+                </h4>
+              </div>
+            </button>
+
+            {/* Interactive App Tour Button */}
+            <button
+              type="button"
+              id="btn-interactive-app-tour"
+              onClick={() => setShowInteractiveTourModal(true)}
+              className="w-full text-start p-4 sm:p-5 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between gap-3 white-3d-card-btn"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <Presentation
+                  size={20}
+                  strokeWidth={2.2}
+                  className="shrink-0"
+                  style={{ color: isBlackTheme ? '#000000' : themeAccentColor }}
+                />
+                <h4 className="text-base sm:text-lg font-black truncate">
+                  {isEn ? 'Interactive App Tour' : 'الجولة التعريفية للتطبيق'}
+                </h4>
+              </div>
+            </button>
+
+            {/* Approved Sources & References Button */}
+            <button
+              type="button"
+              id="btn-approved-sources"
+              onClick={() => setShowApprovedSourcesModal(true)}
+              className="w-full text-start p-4 sm:p-5 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between gap-3 white-3d-card-btn"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <BookCheck
+                  size={20}
+                  strokeWidth={2.2}
+                  className="shrink-0"
+                  style={{ color: isBlackTheme ? '#000000' : themeAccentColor }}
+                />
+                <h4 className="text-base sm:text-lg font-black truncate">
+                  {t('settings.approved_sources')}
+                </h4>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Full-Screen Child Page 1: App Notifications */}
+        {showAppNotificationModal && (
+          <NotificationSettingsModal
+            onClose={() => setShowAppNotificationModal(false)}
+            showToast={showGlobalAppToast}
+            isLandscape={false}
+            modeSuffix=""
+            initialTab="app"
+            hidePhoneTab={true}
+          />
+        )}
+
+        {/* Full-Screen Child Page 2: Phone Notifications for System */}
+        {showPhoneNotificationModal && (
+          <NotificationSettingsModal
+            onClose={() => setShowPhoneNotificationModal(false)}
+            showToast={showGlobalAppToast}
+            isLandscape={false}
+            modeSuffix=""
+            initialTab="phone"
+            hideAppTab={true}
+            phoneTabTitle={isEn ? 'Phone Notifications' : 'إشعارات الهاتف'}
+          />
+        )}
+
+        {/* Full-Screen Child Page 3: Reading Settings (Vertical / Horizontal / Landscape in 3D style) */}
+        {activeReadingSettingsMode && (
+          <SettingsModal
+            onClose={() => setActiveReadingSettingsMode(null)}
+            onOpenModal={(modalName) => {
+              if (modalName === 'notification-settings-modal') {
+                setShowPhoneNotificationModal(true);
+              } else {
+                setActiveQuranSubModal(modalName);
+              }
+            }}
+            showToast={showGlobalAppToast}
+            isLandscape={false}
+            storageLandscape={isStorageLandscape}
+            readingMode={currentSettingsMode}
+            modeSuffix={currentModeSuffix}
+            isFromHomeScreenSettings={true}
+          />
+        )}
+
+        {/* Sub-modals triggered from Reading Settings */}
+        {activeQuranSubModal === 'font-modal' && (
+          <FontSelectModal
+            isOpen={true}
+            onClose={() => setActiveQuranSubModal(null)}
+            currentFontId={getQuranCurrentSettings().fontFamily}
+            onSelect={handleSelectFont}
+            isLandscape={false}
+            readingMode={currentSettingsMode}
+          />
+        )}
+
+        {activeQuranSubModal === 'reciter-modal' && (
+          <ReciterSelectModal
+            onClose={() => setActiveQuranSubModal(null)}
+            currentReader={getValidReaderForMode(currentSettingsMode, getQuranCurrentSettings().reader)}
+            isLandscape={false}
+            readersList={READERS}
+            readingMode={currentSettingsMode}
+            currentTheme={activeQuranTheme}
+            zIndexClass="z-[99999999]"
+            onSelect={handleSelectReciter}
+          />
+        )}
+
+        {activeQuranSubModal === 'tafseer-selection-modal' && (
+          <TafseerSelectionModal
+            isOpen={true}
+            onClose={() => setActiveQuranSubModal(null)}
+            currentTafseerId={getQuranCurrentSettings().tafseer}
+            onSelect={handleSelectTafseer}
+            isLandscape={false}
+            currentTheme={activeQuranTheme}
+          />
+        )}
+
+        {activeQuranSubModal === 'surah-design-picker' && (
+          <SurahDesignPickerModal
+            isOpen={true}
+            onClose={() => setActiveQuranSubModal(null)}
+            currentDesign={normalizeMadinahFrameDesign(getQuranCurrentSettings().madinahFrameDesign)}
+            onSelectDesign={handleSelectSurahDesign}
+            currentTheme={activeQuranTheme}
+            isLandscape={false}
+          />
+        )}
+
+        {activeQuranSubModal === 'scroll-speed-modal' && (
+          <ScrollSpeedModal
+            isOpen={true}
+            onClose={() => setActiveQuranSubModal(null)}
+            currentMinutes={Number(getQuranCurrentSettings().scrollMinutes) || 20}
+            onSelect={handleSelectScrollSpeed}
+            currentTheme={activeQuranTheme}
+            isLandscape={false}
+            zIndexClass="z-[99999999]"
+          />
+        )}
+
+        {activeQuranSubModal === 'quran-download-modal' && (
+          <QuranDownloadModal
+            onClose={() => setActiveQuranSubModal(null)}
+            quranData={rawQuranData}
+            showToast={showGlobalAppToast}
+            isLandscape={false}
+            mode="ayah"
+            readersList={ARABIC_READERS}
+            initialReaderId={getValidReaderForMode(currentSettingsMode, getQuranCurrentSettings().reader)}
+            zIndexClass="z-[99999999]"
+            title={isEn ? 'Download Holy Quran' : 'تحميل القرآن الكريم'}
+            isFromHomeScreenSettings={true}
+          />
+        )}
+
+        {activeQuranSubModal === 'tafsir-download-modal' && (
+          <TafsirDownloadModal
+            onClose={() => setActiveQuranSubModal(null)}
+            quranData={rawQuranData}
+            showToast={showGlobalAppToast}
+            isLandscape={false}
+            zIndexClass="z-[99999999]"
+            title={isEn ? 'Download Tafseers' : 'تحميل التفاسير'}
+            isFromHomeScreenSettings={true}
+          />
+        )}
+
+        {/* Full-Screen Child Page 4: Download Holy Quran (3 Options) */}
+        {showQuranDownloadMenu && (
+          <div
+            className="fixed inset-0 z-[9999999] flex flex-col font-cairo select-none overflow-hidden animate-fadeIn"
+            style={{ backgroundColor: pageBgColor }}
+            dir={isEn ? 'ltr' : 'rtl'}
+          >
+            <header className="app-top-bar settings-top-bar" dir={isEn ? 'ltr' : 'rtl'}>
+              <div className="app-top-bar__inner">
+                <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                  <div className={`absolute ${isEn ? 'left-0' : 'right-0'} flex items-center`}>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuranDownloadMenu(false)}
+                      className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                      title={isEn ? 'Go Back' : 'رجوع للخلف'}
+                      aria-label={isEn ? 'Go Back' : 'رجوع للخلف'}
+                    >
+                      <i className={`fa-solid ${isEn ? 'fa-arrow-left' : 'fa-arrow-right'} text-xl`}></i>
+                    </button>
+                  </div>
+
+                  <div className="text-center px-12 min-w-0">
+                    <h1 className="app-top-bar__title text-lg sm:text-xl font-cairo truncate">
+                      {isEn ? 'Download Holy Quran' : 'تحميل القرآن الكريم'}
+                    </h1>
+                  </div>
+
+                  <div className={`absolute ${isEn ? 'right-0' : 'left-0'} flex items-center gap-1`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowQuranDownloadMenu(false);
+                        onClose();
+                      }}
+                      className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                      title={isEn ? 'Home' : 'الصفحة الرئيسية'}
+                      aria-label={isEn ? 'Home' : 'الصفحة الرئيسية'}
+                    >
+                      <i className="fa-solid fa-house text-xl"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <div 
+              className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pt-5 app-scroll-safe space-y-3 no-scrollbar max-w-2xl mx-auto w-full"
+            >
+              {/* 1. Download Mushaf */}
+              <button
+                type="button"
+                onClick={() => setActiveDownloadType('mushaf')}
+                className="w-full text-start p-4 sm:p-5 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between white-3d-card-btn"
+              >
+                <h4 className="text-base sm:text-lg font-black truncate">
+                  {isEn ? 'Download Mushaf' : 'تحميل المصحف'}
+                </h4>
+              </button>
+
+              {/* 2. Download Listen to Quran */}
+              <button
+                type="button"
+                onClick={() => setActiveDownloadType('listen')}
+                className="w-full text-start p-4 sm:p-5 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between white-3d-card-btn"
+              >
+                <h4 className="text-base sm:text-lg font-black truncate">
+                  {isEn ? 'Download Listen to Quran' : 'تحميل الاستماع للقرآن'}
+                </h4>
+              </button>
+
+              {/* 3. Download Memorization */}
+              <button
+                type="button"
+                onClick={() => setActiveDownloadType('memorization')}
+                className="w-full text-start p-4 sm:p-5 rounded-2xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-between white-3d-card-btn"
+              >
+                <h4 className="text-base sm:text-lg font-black truncate">
+                  {isEn ? 'Download Memorization' : 'تحميل التحفيظ'}
+                </h4>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Active Download Modal (Mushaf / Listen / Memorization) */}
+        {activeDownloadType === 'mushaf' && (
+          <QuranDownloadModal
+            onClose={() => setActiveDownloadType(null)}
+            quranData={rawQuranData}
+            showToast={showGlobalAppToast}
+            isLandscape={false}
+            mode="ayah"
+            readersList={ARABIC_READERS}
+            zIndexClass="z-[99999999]"
+            title={isEn ? 'Download Mushaf' : 'تحميل المصحف'}
+            isFromHomeScreenSettings={true}
+          />
+        )}
+
+        {activeDownloadType === 'listen' && (
+          <QuranDownloadModal
+            onClose={() => setActiveDownloadType(null)}
+            quranData={listenMockQuranData}
+            showToast={showGlobalAppToast}
+            isLandscape={false}
+            mode="surah"
+            readersList={RECITERS}
+            zIndexClass="z-[99999999]"
+            title={isEn ? 'Download Listen to Quran' : 'تحميل الاستماع للقرآن'}
+            isFromHomeScreenSettings={true}
+          />
+        )}
+
+        {activeDownloadType === 'memorization' && (
+          <QuranDownloadModal
+            onClose={() => setActiveDownloadType(null)}
+            quranData={rawQuranData}
+            showToast={showGlobalAppToast}
+            isLandscape={false}
+            mode="ayah"
+            readersList={MEMORIZATION_READERS}
+            zIndexClass="z-[99999999]"
+            title={isEn ? 'Download Memorization' : 'تحميل التحفيظ'}
+            isFromHomeScreenSettings={true}
+          />
+        )}
+
+        {showTafsirDownloadModal && (
+          <TafsirDownloadModal
+            onClose={() => setShowTafsirDownloadModal(false)}
+            quranData={rawQuranData}
+            showToast={showGlobalAppToast}
+            isLandscape={false}
+            zIndexClass="z-[99999999]"
+            title={isEn ? 'Download Tafseers' : 'تحميل التفاسير'}
+            isFromHomeScreenSettings={true}
+          />
+        )}
+
+        {/* Full-Screen Child Page 5: Approved Sources & References */}
+        <ApprovedSourcesModal
+          isOpen={showApprovedSourcesModal}
+          onClose={() => setShowApprovedSourcesModal(false)}
+          onHome={() => {
+            setShowApprovedSourcesModal(false);
+            onClose();
+          }}
+        />
+
+        {/* Compact What's New & Updates Modal */}
+        <WhatsNewModal
+          isOpen={showWhatsNewModal}
+          onClose={() => setShowWhatsNewModal(false)}
+        />
+
+        {/* Full-Screen Interactive App Tour Showcase */}
+        <InteractiveAppTourModal
+          isOpen={showInteractiveTourModal}
+          onClose={() => setShowInteractiveTourModal(false)}
+        />
+      </div>
+  );
+};
+
+export default HomeScreenSettingsModal;

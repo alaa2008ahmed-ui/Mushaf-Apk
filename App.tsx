@@ -1,46 +1,192 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import ThemeSelector from './components/ThemesModal';
-import ExitConfirmModal from './components/ExitConfirmModal';
+import ExitConfirmModal from './components/System/ExitConfirmModal';
 import AppRouter from './router/AppRouter';
-import VideoSplash from './components/VideoSplash';
-import RateUs from './components/RateUs';
+import WelcomeSplash from './components/System/WelcomeSplash';
+import ImageSplash, { purgeBootSplashMemory } from './components/System/ImageSplash';
+import { setSplashFullscreenMode } from './utils/styles/statusBar';
+import { useLanguage } from './context/LanguageContext';
+import RateUs from './components/System/RateUs';
 import { useWakeLock } from './hooks/useWakeLock';
 import { useBackButton } from './hooks/useBackButton';
 import { App as CapacitorApp } from '@capacitor/app';
 import { PrayerTimesProvider } from './context/PrayerTimesContext';
-import { VoiceControlProvider } from './context/VoiceControlContext';
-import { TutorialProvider } from './context/TutorialContext';
-import SideMenu from './components/SideMenu';
-import MawlidNotification from './components/MawlidNotification';
-import { Mic, MicOff } from 'lucide-react';
-import { motion } from 'motion/react';
-import { useTheme } from './context/ThemeContext';
-import { normalizeArabic } from './utils/voiceParser';
+import { VoiceControlProvider, useVoiceControl } from './context/VoiceControlContext';
+import MawlidNotification from './components/System/MawlidNotification';
+import { useTheme, restoreHomeThemeDOMInstantly } from './context/ThemeContext';
+import { normalizeArabic } from './utils/audio/voiceParser';
 import { usePrayerTimes } from './context/PrayerTimesContext';
-import { setupNotifications } from './utils/notifications';
+import { setupNotifications } from './utils/notifications/notifications';
+import { setMainAppEntered, ensureNotificationPermission } from './utils/notifications/permissionHelper';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { Preferences } from '@capacitor/preferences';
 import { Capacitor } from '@capacitor/core';
 import { clearSearchCache } from './pages/GlobalSearch';
+import IqamaAlertModal from './components/PrayerTimes/IqamaAlertModal';
+import AdhanAlertModal from './components/PrayerTimes/AdhanAlertModal';
 import { ScreenOrientation } from '@capacitor/screen-orientation';
 import { APP_VERSION, REMOTE_VERSION_URL, GOOGLE_PLAY_URL } from './constants';
-import UpdateNotificationModal from './components/UpdateNotificationModal';
+import UpdateNotificationModal from './components/System/UpdateNotificationModal';
+import { recordAppLaunch, markPageAsSeen } from './utils/app/badgeManager';
+import { recordAppVisit } from './utils/app/favoriteAppsManager';
+import WirdAlertModal from './components/DailyWird/WirdAlertModal';
+import { 
+  WirdAlertData, 
+  getActiveWirdProfile, 
+  calculateWirdStatus, 
+  getWirdDayRange, 
+  getWirdTotalDays, 
+  buildWirdNotificationContent, 
+  checkAllWirdAlertsOnAppResume,
+  markWirdAlertShownToday 
+} from './services/dailyWirdNotificationService';
+import { getPendingShortcutInfo, markNativeShortcutConsumed, updateNativeAlertsGroupSummary } from './utils/notifications/silentMode';
+import ScrollToTopFAB from './components/System/ScrollToTopFAB';
+import GlobalAppToast from './components/Common/GlobalAppToast';
+import FloatingListenButton from './components/Listen/FloatingListenButton';
+import { useListenQuranStore } from './hooks/useListenQuranStore';
+import { isTourPreviewMode, getTourPreviewInitParams } from './utils/app/tourPreviewMode';
+import { triggerAlertVibration } from './utils/app/vibrationHelper';
+import { preloadQpcAndMadinahStartup } from './utils/quran/qpcMadinahData';
+import { showGlobalAppToast } from './utils/notifications/appNotificationSettings';
+import {
+  recordSmartInterestForPage,
+  SMART_ENGINE_CHANGED_EVENT,
+  isSmartFeatureActive,
+  getTopSmartInterests,
+  getInterestLabel,
+  getSmartBehaviorProfile,
+  saveSmartBehaviorProfile,
+} from './services/smartEngine/smartEngineService';
 
 // --- Main App Component ---
 function App() {
-  const { theme, applyPresetTheme, setCurrentPage } = useTheme();
-  const [showSplash, setShowSplash] = useState(true);
-  const [history, setHistory] = useState(['home']);
+  const isTourPreview = React.useMemo(() => isTourPreviewMode(), []);
+  const tourInit = React.useMemo(() => (isTourPreview ? getTourPreviewInitParams() : null), [isTourPreview]);
+  const { theme, setHomeThemeVariant, setNightModeActive, setCurrentPage } = useTheme();
+  const { setLanguage } = useLanguage();
+
+  // Helper to normalize shortcut targets to application page IDs
+  const normalizeShortcutTarget = useCallback((target: string): string => {
+    if (!target) return 'home';
+    let clean = target.toLowerCase().trim();
+    if (clean.includes('quran')) return 'quran';
+    if (clean.includes('prayer') || clean.includes('salah') || clean.includes('times')) return 'prayer-times';
+    if (clean.includes('qibla')) return 'qibla';
+    if (clean.includes('seerah')) return 'prophetic-seerah';
+    if (clean.includes('miracle')) return 'divine-miracles';
+    if (clean.includes('hisn') || clean.includes('azkar') || clean.includes('athkar')) return 'hisn-muslim';
+    if (clean.includes('tasbeeh')) return 'tasbeeh';
+    if (clean.includes('calendar')) return 'calendar';
+    return clean;
+  }, []);
+
+  const lastHandledShortcutSeqRef = React.useRef<number>(0);
+
+  // Synchronously check if launched directly from a launcher shortcut or deep link
+  const initialShortcut = React.useMemo(() => {
+    try {
+      const stored = localStorage.getItem('pending_shortcut_target');
+      const storedSeqStr = localStorage.getItem('pending_shortcut_seq');
+      localStorage.removeItem('pending_shortcut_target');
+      localStorage.removeItem('pending_shortcut_seq');
+      const storedSeq = storedSeqStr ? parseInt(storedSeqStr, 10) : 0;
+      if (storedSeq > 0) {
+        lastHandledShortcutSeqRef.current = storedSeq;
+      }
+      if (typeof window !== 'undefined' && (window as any).__pendingShortcut) {
+        const rawPending = (window as any).__pendingShortcut;
+        delete (window as any).__pendingShortcut;
+        if (typeof rawPending === 'object' && rawPending !== null) {
+          if (typeof rawPending.seq === 'number' && rawPending.seq > 0) {
+            lastHandledShortcutSeqRef.current = rawPending.seq;
+          }
+          if (rawPending.target) {
+            return normalizeShortcutTarget(String(rawPending.target));
+          }
+        } else if (typeof rawPending === 'string' && rawPending.trim()) {
+          return normalizeShortcutTarget(rawPending);
+        }
+      }
+      if (stored && stored.trim()) {
+        return normalizeShortcutTarget(stored);
+      }
+    } catch (e) {}
+    return null;
+  }, [normalizeShortcutTarget]);
+
+  const launchUrlHandledRef = React.useRef<boolean>(Boolean(initialShortcut));
+  const currentOrientationRef = React.useRef<'portrait' | 'landscape'>('portrait');
+
+  const [splashStage, setSplashStage] = useState<'splash' | 'welcome' | 'app'>(() => {
+    if (isTourPreview || initialShortcut) {
+      purgeBootSplashMemory();
+      return 'app';
+    }
+    return 'splash';
+  });
+
+  React.useLayoutEffect(() => {
+    setSplashFullscreenMode(splashStage === 'splash');
+  }, [splashStage]);
+
+  const [hasChosenInitialLanguage, setHasChosenInitialLanguage] = useState<boolean>(() => {
+    if (isTourPreview) return true;
+    try {
+      return localStorage.getItem('has_selected_initial_language') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+
+  // Track app launch count for "جديد" badge and sync first-time preferences
+  useEffect(() => {
+    if (isTourPreview) return;
+    recordAppLaunch();
+    try {
+      if (localStorage.getItem('home_layout_system') !== 'modern') {
+        localStorage.setItem('home_layout_system', 'modern');
+      }
+      Preferences.get({ key: 'has_selected_initial_language' }).then(({ value }) => {
+        if (value === 'true') {
+          setHasChosenInitialLanguage(true);
+          try {
+            localStorage.setItem('has_selected_initial_language', 'true');
+          } catch (e) {}
+        }
+      }).catch(() => {});
+      Preferences.set({ key: 'home_layout_system', value: 'modern' }).catch(() => {});
+    } catch (e) {}
+  }, [isTourPreview]);
+
+  const [history, setHistory] = useState<string[]>(() => {
+    if (isTourPreview) {
+      if (tourInit?.page && tourInit.page !== 'home') {
+        return ['home', tourInit.page];
+      }
+      return ['home'];
+    }
+    // Clear any previous saved history/page so fresh app launch from icon always opens directly on the home page
+    try {
+      localStorage.removeItem('last_active_history');
+      localStorage.removeItem('last_active_page');
+    } catch (e) {}
+
+    if (initialShortcut && initialShortcut !== 'home') {
+      return ['home', initialShortcut];
+    }
+    return ['home'];
+  });
   const [navParams, setNavParams] = useState<any>(null);
+  const [tourRouteKey, setTourRouteKey] = useState(0);
   const [lastMenuPage, setLastMenuPage] = useState('home');
-  const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   
   // --- Update Notification Logic ---
   const [updateInfo, setUpdateInfo] = useState<{ show: boolean; newVersion: string }>({ show: false, newVersion: '' });
 
   useEffect(() => {
+    if (isTourPreview) return;
     const checkUpdate = async () => {
       if (!REMOTE_VERSION_URL || REMOTE_VERSION_URL.includes('your-server.com')) return;
 
@@ -76,145 +222,272 @@ function App() {
     // فحص التحديث بعد ثانية واحدة من التشغيل
     const timeout = setTimeout(checkUpdate, 1000);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [isTourPreview]);
 
-  useEffect(() => {
-    const currentPage = history[history.length - 1];
-    setCurrentPage(currentPage);
-  }, [history, setCurrentPage]);
+  // Compute active page ID synchronously for 0ms delay theme synchronization
+  const activePageId = React.useMemo(() => {
+    const pageInHistory = history[history.length - 1];
+    const prevInHistory = history.length >= 2 ? history[history.length - 2] : undefined;
+    if (
+      pageInHistory === 'search' &&
+      (prevInHistory === 'quran' ||
+        prevInHistory === 'quran-landscape' ||
+        navParams?.from === 'quran' ||
+        navParams?.from === 'quran-landscape' ||
+        navParams?.fromSidebar)
+    ) {
+      const isLandscapeOrigin = prevInHistory === 'quran-landscape' || navParams?.from === 'quran-landscape';
+      return isLandscapeOrigin ? 'quran_search_landscape' : 'quran_search';
+    }
+    return pageInHistory || 'home';
+  }, [history, navParams]);
+
+  // Synchronize current page ID in ThemeContext safely in useEffect
+  React.useEffect(() => {
+    if (activePageId === 'home' && !isTourPreview) {
+      restoreHomeThemeDOMInstantly();
+    }
+    setCurrentPage(activePageId);
+    if (activePageId && activePageId !== 'home' && !isTourPreview) {
+      markPageAsSeen(activePageId);
+    }
+  }, [activePageId, setCurrentPage, isTourPreview]);
 
   useEffect(() => {
     if (!history.includes('search')) {
       clearSearchCache();
     }
     const currentPage = history[history.length - 1];
-    if (currentPage === 'home' || currentPage === 'more-menu') {
+    if (currentPage === 'home') {
       setLastMenuPage(currentPage);
     }
 
-    // --- Orientation Management ---
-    const handleOrientation = async () => {
-      if (!Capacitor.isNativePlatform()) return;
-      
-      try {
-        if (currentPage === 'quran-landscape') {
-          await ScreenOrientation.lock({ orientation: 'landscape' });
-        } else {
-          // If we are not in a landscape page, and we were previously in one (or just to be safe)
-          // we ensure portrait mode. 
-          // Note: ScreenOrientation.unlock() allows normal rotation, 
-          // but usually the main UI is better off in portrait.
-          await ScreenOrientation.lock({ orientation: 'portrait' });
-        }
-      } catch (e) {
-        console.error('Orientation management failed:', e);
+    // --- Orientation Management (سلاسة وسرعة لحظية بدون تكرار أو تعليق) ---
+    if (!isTourPreview && Capacitor.isNativePlatform()) {
+      const targetOrientation = (currentPage === 'quran-landscape' || activePageId === 'quran_search_landscape') ? 'landscape' : 'portrait';
+      if (currentOrientationRef.current !== targetOrientation) {
+        currentOrientationRef.current = targetOrientation;
+        ScreenOrientation.lock({ orientation: targetOrientation }).catch((e) => {
+          console.warn('Orientation management failed:', e);
+        });
       }
-    };
-    handleOrientation();
-  }, [history]);
+    }
+  }, [history, activePageId, isTourPreview]);
 
   const handleNavigate = useCallback((pageId: string, params?: any) => {
-    setIsSideMenuOpen(false);
+    const rawPageId = pageId;
+    // Normalize any legacy/alternative aliases to canonical page IDs
+    const pageAliasMap: Record<string, string> = {
+      'quran-search': 'search',
+      'global-search': 'search',
+      'athkar-salah': 'salah-adhkar',
+      'adhkar': 'sabah-masaa',
+      'athkar-sabah-massa': 'sabah-masaa',
+      'roqya': 'others',
+      'ruqyah': 'others',
+      'asma-allah': 'asmaul-husna',
+      'asmaa-allah': 'asmaul-husna',
+      'seerah': 'prophetic-seerah',
+      'hadith': 'nawawi',
+      'misbaha': 'tasbeeh',
+      'sebha': 'tasbeeh',
+      'miracles': 'divine-miracles',
+      'divine_miracles': 'divine-miracles',
+    };
+    pageId = pageAliasMap[pageId] || pageId;
+    if (rawPageId === 'quran-search') {
+      params = { ...(params || {}), from: params?.from || 'quran' };
+    }
+    if (rawPageId === 'quran-horizontal') {
+      pageId = 'quran';
+      params = { ...(params || {}), from: params?.from || 'modern_home', readingMode: 'madinah' };
+      if (!isTourPreview) {
+        markPageAsSeen('quran-horizontal');
+        recordAppVisit('quran-horizontal');
+        recordSmartInterestForPage('quran-horizontal');
+      }
+    }
+
     const validPages = [
-      'home', 'quran', 'quran-landscape', 'quran-download', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
-      'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'qibla', 
-      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'more-menu', 'daily-wird', 'memorization',
-      'phone-notifications', 'search', 'asmaul-husna', 'habit-tracker'
+      'home', 'quran', 'quran-landscape', 'salah-adhkar', 'calendar', 'listen', 'tasbeeh', 
+      'hajj-umrah', 'hisn-muslim', 'prayer-times', 'monthly-prayer-times', 'prayer-calculation-settings', 'prayer-calculation', 'calculation-settings', 'qibla', 
+      'sabah-masaa', 'adia', 'nawawi', 'calculators', 'voice-control', 'daily-wird', 'memorization',
+      'memorization-session', 'memorization-studio',
+      'phone-notifications', 'search', 'asmaul-husna', 'habit-tracker', 'others', 'islamic-sites',
+      'prophetic-seerah', 'ten-promised', 'divine-miracles'
     ];
 
     if (pageId === 'phone-notifications') {
       setNavParams({ openModal: 'notification-settings-modal' });
-      setHistory(prev => [...prev, 'quran']);
+      setHistory(['home', 'quran']);
       return;
     }
 
     if (pageId === 'settings') {
       setNavParams({ openModal: 'settings-modal' });
-      setHistory(prev => [...prev, 'quran']);
+      setHistory(['home', 'quran']);
       return;
     }
 
     if (pageId === 'home') {
-      // 0. If force is true, reset to home
-      if (params?.force) {
-        setHistory(['home']);
-        setNavParams(null);
-        return;
+      if (!isTourPreview) {
+        restoreHomeThemeDOMInstantly();
       }
-
-      // Logic for home button:
-      // 1. If currently in quran, go back (one step)
-      const current = history[history.length - 1];
-      if (current === 'quran' || current === 'quran-landscape') {
-        setHistory(prev => (prev.length > 1 ? prev.slice(0, -1) : prev));
-        return;
-      }
-      
-      // 2. If we are in more-menu, home should take us back to home
-      if (current === 'more-menu') {
-        setHistory(['home']);
-        setNavParams(null);
-        return;
-      }
-
-      // 3. Return to last menu
-      if (lastMenuPage === 'more-menu') {
-        const moreMenuIndex = history.lastIndexOf('more-menu');
-        if (moreMenuIndex !== -1) {
-          setHistory(prev => prev.slice(0, moreMenuIndex + 1));
-          return;
-        }
-      }
-
-      const quranIndex = history.lastIndexOf('quran');
-      const quranLandscapeIndex = history.lastIndexOf('quran-landscape');
-      const targetIndex = Math.max(quranIndex, quranLandscapeIndex);
-      
-      if (targetIndex !== -1 && targetIndex < history.length - 1) {
-        setHistory(prev => prev.slice(0, targetIndex + 1));
-        return;
-      }
-
       setHistory(['home']);
       setNavParams(null);
       return;
     }
 
     if (validPages.includes(pageId)) {
+      if (pageId !== 'home' && !isTourPreview) {
+        markPageAsSeen(pageId);
+        recordAppVisit(pageId);
+        recordSmartInterestForPage(pageId);
+      }
       setNavParams(params || null);
       setHistory(prev => {
         const current = prev[prev.length - 1];
-        
-        // If we are navigating to the same page, do nothing
         if (current === pageId) return prev;
 
-        return [...prev, pageId];
+
+        // If navigating from Search, preserve Search in history stack so back button returns directly to Search with cached results
+        if (current === 'search') {
+          return [...prev, pageId];
+        }
+
+        // 2. Monthly Prayer Times & Prayer Calculation Settings inside Prayer Times
+        if (pageId === 'monthly-prayer-times' || pageId === 'prayer-calculation-settings' || pageId === 'prayer-calculation' || pageId === 'calculation-settings') {
+          const prayerIdx = prev.lastIndexOf('prayer-times');
+          if (prayerIdx !== -1) {
+            return [...prev.slice(0, prayerIdx + 1), pageId];
+          }
+          return ['home', 'prayer-times', pageId];
+        }
+
+        // 3. Quran Landscape
+        if (pageId === 'quran-landscape') {
+          const quranIdx = prev.lastIndexOf('quran');
+          if (quranIdx !== -1) {
+            return [...prev.slice(0, quranIdx + 1), pageId];
+          }
+          if (params?.isWird) {
+            const wirdIdx = prev.lastIndexOf('daily-wird');
+            if (wirdIdx !== -1) {
+              return [...prev.slice(0, wirdIdx + 1), pageId];
+            }
+            return ['home', 'daily-wird', pageId];
+          }
+          if (params?.isMemorization || params?.isMemorizationMode || params?.memorizationSettings) {
+            const memIdx = prev.lastIndexOf('memorization');
+            if (memIdx !== -1) {
+              return [...prev.slice(0, memIdx + 1), pageId];
+            }
+            return ['home', 'memorization', pageId];
+          }
+          return ['home', pageId];
+        }
+
+        // 4. Quran from Daily Wird or Memorization
+        if (pageId === 'quran') {
+          if (params?.isWird) {
+            const wirdIdx = prev.lastIndexOf('daily-wird');
+            if (wirdIdx !== -1) {
+              return [...prev.slice(0, wirdIdx + 1), pageId];
+            }
+            return ['home', 'daily-wird', pageId];
+          }
+          if (params?.isMemorization || params?.isMemorizationMode || params?.memorizationSettings) {
+            const memIdx = prev.lastIndexOf('memorization');
+            if (memIdx !== -1) {
+              return [...prev.slice(0, memIdx + 1), pageId];
+            }
+            return ['home', 'memorization', pageId];
+          }
+          return ['home', pageId];
+        }
+
+        // 5. Memorization Studio Session
+        if (pageId === 'memorization-session' || pageId === 'memorization-studio') {
+          const memIdx = prev.lastIndexOf('memorization');
+          if (memIdx !== -1) {
+            return [...prev.slice(0, memIdx + 1), pageId];
+          }
+          return ['home', 'memorization', pageId];
+        }
+
+        // 6. Daily Wird
+        if (pageId === 'daily-wird') {
+          return ['home', 'daily-wird'];
+        }
+
+        // 6. Search (Advanced Search) - Preserve origin page (Quran, etc.) so back button returns properly
+        if (pageId === 'search') {
+          const quranLandscapeIdx = prev.lastIndexOf('quran-landscape');
+          if (quranLandscapeIdx !== -1 && (current === 'quran-landscape' || params?.from === 'quran-landscape')) {
+            return [...prev.slice(0, quranLandscapeIdx + 1), pageId];
+          }
+          const quranIdx = prev.lastIndexOf('quran');
+          if (quranIdx !== -1 && (current === 'quran' || params?.from === 'quran')) {
+            return [...prev.slice(0, quranIdx + 1), pageId];
+          }
+          if (params?.from === 'quran-landscape') {
+            return ['home', 'quran-landscape', pageId];
+          }
+          if (params?.from === 'quran') {
+            return ['home', 'quran', pageId];
+          }
+          if (current && current !== 'home') {
+            return [...prev, pageId];
+          }
+          return ['home', pageId];
+        }
+
+        return ['home', pageId];
       });
     } else {
       alert(`التنقل إلى قسم "${pageId}" قيد الإنشاء.`);
     }
-  }, [history, lastMenuPage]);
+  }, [isTourPreview]);
 
   useEffect(() => {
-    setupNotifications();
-
-    let listener: any = null;
+    if (isTourPreview) return;
+    // Notification listeners only on mount (permission prompt & scheduling are deferred until entering Home Page)
+    let actionListener: any = null;
+    let receivedListener: any = null;
     if (Capacitor.isNativePlatform()) {
-      listener = LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
-        const page = notificationAction.notification.extra?.page;
-        const params = notificationAction.notification.extra?.params;
-        if (page) {
+      // On native APK, notifications & alerts appear ONLY in the phone's top status bar.
+      // Tapping a notification in the status bar navigates directly without opening any in-app alert modal.
+      actionListener = LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
+        updateNativeAlertsGroupSummary();
+        const extra = notificationAction.notification.extra;
+        const page = extra?.page;
+        const params = extra?.params;
+        const type = extra?.type;
+        if (type === 'daily-wird' || page === 'daily-wird') {
+          handleNavigate('daily-wird');
+        } else if (page) {
           handleNavigate(page, params);
+        } else if (type === 'iqama') {
+          handleNavigate('prayer-times');
         }
+      });
+
+      receivedListener = LocalNotifications.addListener('localNotificationReceived', (notification) => {
+        updateNativeAlertsGroupSummary();
+        const notifType = notification?.extra?.type;
+        triggerAlertVibration(notifType === 'adhan' ? 'adhan' : 'alert');
       });
     }
 
     return () => {
-      if (listener) {
-        listener.then((l: any) => l.remove());
+      if (actionListener) {
+        actionListener.then((l: any) => l.remove());
+      }
+      if (receivedListener) {
+        receivedListener.then((l: any) => l.remove());
       }
     };
-  }, [handleNavigate]);
+  }, [handleNavigate, isTourPreview]);
 
   const performUiClick = useCallback((label: string) => {
     const normalizedLabel = normalizeArabic(label);
@@ -232,19 +505,232 @@ function App() {
   }, []);
 
   const navigateBack = useCallback(() => {
-    setHistory(prev => (prev.length > 1 ? prev.slice(0, -1) : prev));
-  }, []);
+    setHistory(prev => {
+      const current = prev[prev.length - 1];
+      let nextHistory: string[];
+      if (current === 'search') {
+        const fromTarget = navParams?.from;
+        const returnSidebar = navParams?.fromSidebar;
+        if (returnSidebar) {
+          setNavParams({ openSidebar: true, isWird: navParams?.isWird, readingMode: navParams?.readingMode });
+        } else {
+          setNavParams(null);
+        }
+        if ((fromTarget === 'quran' || fromTarget === 'quran-landscape') && !prev.includes(fromTarget)) {
+          nextHistory = ['home', fromTarget];
+        } else {
+          nextHistory = prev.length > 1 ? prev.slice(0, -1) : prev;
+        }
+      } else {
+        setNavParams(null);
+        nextHistory = prev.length > 1 ? prev.slice(0, -1) : prev;
+      }
+      return nextHistory;
+    });
+  }, [navParams]);
+
+  // --- Deep Linking from Android Widgets, Notifications & App Shortcuts ---
+  useEffect(() => {
+    if (isTourPreview) return;
+    let isMounted = true;
+
+    const consumeAndNavigate = (target: string, seq?: number) => {
+      if (!target) return;
+      if (typeof seq === 'number' && seq > 0) {
+        if (seq <= lastHandledShortcutSeqRef.current) {
+          try {
+            localStorage.removeItem('pending_shortcut_target');
+            localStorage.removeItem('pending_shortcut_seq');
+            delete (window as any).__pendingShortcut;
+          } catch (e) {}
+          return;
+        }
+        lastHandledShortcutSeqRef.current = seq;
+      }
+      try {
+        localStorage.removeItem('pending_shortcut_target');
+        localStorage.removeItem('pending_shortcut_seq');
+        delete (window as any).__pendingShortcut;
+        if (typeof window !== 'undefined' && window.location.hash) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      } catch (e) {}
+
+      // Notify native Android that shortcut has been consumed so any pending runnables cancel
+      markNativeShortcutConsumed(seq);
+
+      const cleanTarget = normalizeShortcutTarget(target);
+      console.log('[Shortcut] Navigating directly to target:', cleanTarget, 'seq:', seq);
+      setShowExitConfirm(false);
+      purgeBootSplashMemory();
+      setSplashStage('app');
+      handleNavigate(cleanTarget);
+    };
+
+    // Attach global handler directly to window for immediate execution from Android native code (onCreate / onNewIntent)
+    (window as any).handleNativeShortcut = (target: string, seq?: number) => {
+      if (isMounted && target) {
+        consumeAndNavigate(target, seq);
+        return 'handled';
+      }
+      return '';
+    };
+
+    const checkImmediateMemory = () => {
+      try {
+        const stored = localStorage.getItem('pending_shortcut_target');
+        const storedSeqStr = localStorage.getItem('pending_shortcut_seq');
+        const storedSeq = storedSeqStr ? parseInt(storedSeqStr, 10) : 0;
+        localStorage.removeItem('pending_shortcut_target');
+        localStorage.removeItem('pending_shortcut_seq');
+        if (stored && stored.trim()) {
+          consumeAndNavigate(stored.trim(), storedSeq > 0 ? storedSeq : undefined);
+        }
+        const rawPending = (window as any).__pendingShortcut;
+        if (rawPending) {
+          delete (window as any).__pendingShortcut;
+          if (typeof rawPending === 'object' && rawPending !== null && rawPending.target) {
+            consumeAndNavigate(String(rawPending.target), typeof rawPending.seq === 'number' ? rawPending.seq : undefined);
+          } else if (typeof rawPending === 'string' && rawPending.trim()) {
+            consumeAndNavigate(rawPending);
+          }
+        }
+      } catch (e) {}
+    };
+
+    const checkNativePendingShortcut = async () => {
+      checkImmediateMemory();
+
+      // Only check getLaunchUrl once during initial cold boot if not yet handled
+      if (Capacitor.isNativePlatform() && !launchUrlHandledRef.current) {
+        try {
+          const launch = await CapacitorApp.getLaunchUrl();
+          if (isMounted && launch && launch.url && !launchUrlHandledRef.current) {
+            launchUrlHandledRef.current = true;
+            consumeAndNavigate(launch.url);
+          }
+        } catch (e) {}
+      }
+
+      try {
+        const info = await getPendingShortcutInfo();
+        if (isMounted && info && info.target) {
+          consumeAndNavigate(info.target, info.seq);
+        }
+      } catch (e) {}
+
+      try {
+        const { value } = await Preferences.get({ key: 'pending_shortcut_target' });
+        if (isMounted && value && value.trim()) {
+          await Preferences.remove({ key: 'pending_shortcut_target' }).catch(() => {});
+          await Preferences.remove({ key: 'pending_shortcut_seq' }).catch(() => {});
+          consumeAndNavigate(value.trim());
+        }
+      } catch (e) {}
+    };
+
+    // 1. Initial check on mount
+    checkNativePendingShortcut();
+    const t1 = setTimeout(checkNativePendingShortcut, 150);
+
+    // 2. Listen for fresh native shortcut events dispatched on cold start or onNewIntent
+    const onNativeShortcut = (e: any) => {
+      const target = e?.detail?.target;
+      const seq = e?.detail?.seq;
+      if (target) {
+        consumeAndNavigate(target, typeof seq === 'number' ? seq : undefined);
+      }
+    };
+    window.addEventListener('nativeShortcutTriggered', onNativeShortcut);
+
+    // 3. Listen to appUrlOpen when a widget or deep link is tapped while app is running in background.
+    // NOTE: We deliberately do NOT listen to appStateChange to trigger shortcuts.
+    // Resuming from background (e.g. after minimizing the app to show phone screen) must always keep the user on their last opened page!
+    let urlSub: any = null;
+    if (Capacitor.isNativePlatform()) {
+      urlSub = CapacitorApp.addListener('appUrlOpen', (data: any) => {
+        if (data && data.url) {
+          consumeAndNavigate(data.url);
+        }
+      });
+    }
+
+    return () => {
+      isMounted = false;
+      delete (window as any).handleNativeShortcut;
+      clearTimeout(t1);
+      window.removeEventListener('nativeShortcutTriggered', onNativeShortcut);
+      if (urlSub) {
+        urlSub.then((listener: any) => listener.remove()).catch(() => {});
+      }
+    };
+  }, [handleNavigate, normalizeShortcutTarget, isTourPreview]);
+
+  // --- Interactive App Tour Preview Iframe Bridge ---
+  useEffect(() => {
+    if (!isTourPreview) return;
+
+    const handleTourSyncMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (!data || data.type !== 'TOUR_SYNC_STATE') return;
+
+      if (data.language === 'ar' || data.language === 'en') {
+        setLanguage(data.language);
+      }
+      if (typeof data.isNightMode === 'boolean') {
+        setNightModeActive(data.isNightMode);
+      }
+      if (
+        data.themeVariant === 'gold' ||
+        data.themeVariant === 'sky' ||
+        data.themeVariant === 'emerald' ||
+        data.themeVariant === 'burgundy'
+      ) {
+        setHomeThemeVariant(data.themeVariant);
+      }
+      if (typeof data.page === 'string' && data.page) {
+        setNavParams(data.navParams ?? null);
+        setHistory(data.page === 'home' ? ['home'] : ['home', data.page]);
+        setTourRouteKey((prev) => prev + 1);
+      }
+    };
+
+    window.addEventListener('message', handleTourSyncMessage);
+    try {
+      window.parent?.postMessage({ type: 'TOUR_PREVIEW_READY' }, window.location.origin);
+    } catch {}
+
+    return () => {
+      window.removeEventListener('message', handleTourSyncMessage);
+    };
+  }, [isTourPreview, setLanguage, setNightModeActive, setHomeThemeVariant]);
 
   const handleVoiceAction = useCallback((action: string, text: string, params?: any) => {
     console.log('Voice Action:', action, text, params);
     
     // 1. Handle Theme Change
     if (action === 'set_theme' && params?.theme) {
-      if (page === 'quran') {
+      if (page === 'quran' || page === 'quran-landscape') {
         window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
         return;
       } else {
-        applyPresetTheme(params.theme);
+        const t = params.theme;
+        if (t === 'deep_black' || t === 'black_gold') {
+          setNightModeActive(true);
+        } else if (t === 'night_sky' || t === 'sky_mode') {
+          setNightModeActive(false);
+          setHomeThemeVariant('sky');
+        } else if (t === 'green' || t === 'emerald_mode') {
+          setNightModeActive(false);
+          setHomeThemeVariant('emerald');
+        } else if (t === 'maroon' || t === 'burgundy_mode') {
+          setNightModeActive(false);
+          setHomeThemeVariant('burgundy');
+        } else {
+          setNightModeActive(false);
+          setHomeThemeVariant('gold');
+        }
         return;
       }
     }
@@ -255,7 +741,10 @@ function App() {
     }
 
     // 3. Global Navigation Actions
-    if (action === 'go_home') setHistory(['home']);
+    if (action === 'go_home') {
+      restoreHomeThemeDOMInstantly();
+      setHistory(['home']);
+    }
     else if (action === 'open_athkar' || (action === 'ui_click' && params?.label?.includes('اذكار'))) handleNavigate('sabah-masaa');
     else if (action === 'open_prayer' || (action === 'ui_click' && params?.label?.includes('صلاه'))) handleNavigate('prayer-times');
     else if (action === 'open_qibla' || (action === 'ui_click' && params?.label?.includes('قبله'))) handleNavigate('qibla');
@@ -269,22 +758,26 @@ function App() {
     else if (action === 'open_calendar' || (action === 'ui_click' && params?.label?.includes('تقويم'))) handleNavigate('calendar');
     else if (action === 'open_hajj_umrah' || (action === 'ui_click' && params?.label?.includes('حج'))) handleNavigate('hajj-umrah');
     else if (action === 'open_asmaul_husna' || (action === 'ui_click' && params?.label?.includes('اسماء الله'))) handleNavigate('asmaul-husna');
+    else if (action === 'open_islamic_sites' || (action === 'ui_click' && params?.label?.includes('مواقع'))) handleNavigate('islamic-sites');
+    else if (action === 'open_seerah' || (action === 'ui_click' && params?.label?.includes('سيره'))) handleNavigate('prophetic-seerah');
     else if (action === 'open_daily_wird' || (action === 'ui_click' && params?.label?.includes('ورد'))) handleNavigate('daily-wird');
     else if (action === 'open_memorization' || (action === 'ui_click' && params?.label?.includes('تحفيظ'))) handleNavigate('memorization');
     else if (action === 'open_quran' || (action === 'ui_click' && params?.label?.includes('مصحف'))) handleNavigate('quran');
     else if (action === 'open_voice_control' || (action === 'ui_click' && params?.label?.includes('تحكم صوتي'))) handleNavigate('voice-control');
-    else if (action === 'open_more' || (action === 'ui_click' && params?.label?.includes('مزيد'))) handleNavigate('more-menu');
     else if (action === 'set_orientation_horizontal' || action === 'set_orientation_vertical') {
       window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
     }
     else if (action === 'open_search' || (action === 'ui_click' && params?.label?.includes('بحث'))) {
-      handleNavigate('search');
-    }
-    else if (action === 'open_themes' || (action === 'ui_click' && params?.label?.includes('ثيم'))) {
-      if (page === 'quran') {
-        window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_themes' } }));
+      const currentActive = history[history.length - 1];
+      if (currentActive === 'quran' || currentActive === 'quran-landscape') {
+        const orient = currentActive === 'quran-landscape' ? 'h' : 'v';
+        const isEnglish = localStorage.getItem('app_language') === 'en';
+        const savedMode = isEnglish
+          ? (localStorage.getItem(`quran_reading_mode_en_${orient}`) || localStorage.getItem(`last_reading_mode_${orient}`) || 'translation')
+          : (localStorage.getItem(`quran_reading_mode_ar_${orient}`) || localStorage.getItem(`last_arabic_reading_mode_${orient}`) || localStorage.getItem(`last_reading_mode_${orient}`) || 'mushaf');
+        handleNavigate('search', { from: currentActive, readingMode: savedMode });
       } else {
-        setIsThemeSelectorOpen(true);
+        handleNavigate('search');
       }
     }
     else if (action === 'open_settings' || (action === 'ui_click' && params?.label?.includes('اعدادات'))) window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_settings' } }));
@@ -292,7 +785,7 @@ function App() {
     else if (action === 'go_back') navigateBack();
     
     // 4. Quran Specific Actions (Forwarded to QuranReader via Event)
-    else if (['next_page', 'prev_page', 'play_audio', 'stop_audio', 'quran_navigation', 'increase_font', 'decrease_font', 'change_theme', 'download_quran', 'download_tafsir', 'show_tafsir', 'open_bookmarks', 'go_to_page', 'go_to_juz', 'go_to_surah', 'go_to_ayah', 'set_font_size', 'contextual_number', 'download', 'cancel', 'ui_discovery', 'toggle_auto_scroll', 'pause_auto_scroll', 'stop_auto_scroll', 'close_modal', 'save_bookmark'].includes(action)) {
+    else if (['next_page', 'prev_page', 'play_audio', 'stop_audio', 'quran_navigation', 'increase_font', 'decrease_font', 'change_theme', 'download_quran', 'download_tafsir', 'show_tafsir', 'open_multi_tafseer', 'open_bookmarks', 'go_to_page', 'go_to_juz', 'go_to_surah', 'go_to_ayah', 'set_font_size', 'contextual_number', 'download', 'cancel', 'ui_discovery', 'toggle_auto_scroll', 'pause_auto_scroll', 'stop_auto_scroll', 'close_modal', 'save_bookmark'].includes(action)) {
       setHistory(prev => {
         if (prev[prev.length - 1] === 'quran') {
           window.dispatchEvent(new CustomEvent('voice-command', { detail: { action, text, params } }));
@@ -305,36 +798,67 @@ function App() {
         }
       });
     }
-  }, [handleNavigate, applyPresetTheme, performUiClick, navigateBack]);
+  }, [handleNavigate, setHomeThemeVariant, setNightModeActive, performUiClick, navigateBack, history]);
 
   const page = history[history.length - 1];
 
-  if (showSplash) {
-    return <VideoSplash onEnded={() => setShowSplash(false)} />;
-  }
+  const handleSplashEnded = useCallback(() => {
+    let hasChosen = false;
+    try {
+      hasChosen = localStorage.getItem('has_selected_initial_language') === 'true';
+    } catch (e) {}
+
+    if (hasChosen || hasChosenInitialLanguage) {
+      setSplashStage('app');
+    } else {
+      setSplashStage('welcome');
+    }
+  }, [hasChosenInitialLanguage]);
 
   return (
-    <TutorialProvider>
       <PrayerTimesProvider>
         <VoiceControlProvider onAction={handleVoiceAction}>
-          <AppContent 
-            page={page} 
-            history={history}
-            navParams={navParams}
-            isThemeSelectorOpen={isThemeSelectorOpen}
-            showExitConfirm={showExitConfirm}
-            isSideMenuOpen={isSideMenuOpen}
-            setIsSideMenuOpen={setIsSideMenuOpen}
-            handleNavigate={handleNavigate}
-            navigateBack={navigateBack}
-            setIsThemeSelectorOpen={setIsThemeSelectorOpen}
-            setShowExitConfirm={setShowExitConfirm}
-            updateInfo={updateInfo}
-            setUpdateInfo={setUpdateInfo}
-          />
+          {/* 1. محتوى التطبيق الرئيسي (التصميم الذكي الحديث): جاهز في الخلفية لانتقال فوري */}
+          {splashStage === 'app' && (
+            <AppContent 
+              page={page} 
+              history={history}
+              navParams={navParams}
+              showExitConfirm={showExitConfirm}
+              handleNavigate={handleNavigate}
+              navigateBack={navigateBack}
+              setShowExitConfirm={setShowExitConfirm}
+              updateInfo={updateInfo}
+              setUpdateInfo={setUpdateInfo}
+              isSplashActive={false}
+              isTourPreview={isTourPreview}
+              tourRouteKey={tourRouteKey}
+            />
+          )}
+
+          {/* 2. صفحة اختيار اللغة: تظهر للمرة الأولى فقط عند تشغيل التطبيق لأول مرة ولا تظهر لاحقاً */}
+          {!hasChosenInitialLanguage && splashStage === 'welcome' && (
+            <WelcomeSplash
+              onSelectLanguage={(lang) => {
+                try {
+                  localStorage.setItem('has_selected_initial_language', 'true');
+                  localStorage.setItem('home_layout_system', 'modern');
+                  Preferences.set({ key: 'has_selected_initial_language', value: 'true' }).catch(() => {});
+                  Preferences.set({ key: 'home_layout_system', value: 'modern' }).catch(() => {});
+                } catch (e) {}
+                setHasChosenInitialLanguage(true);
+                setLanguage(lang);
+                setSplashStage('app');
+              }}
+            />
+          )}
+
+          {/* 3. الشاشة الافتتاحية (الصورة المصممة): تظهر لحظياً عند التشغيل لمدة 3 ثوانٍ */}
+          {splashStage === 'splash' && (
+            <ImageSplash onEnded={handleSplashEnded} />
+          )}
         </VoiceControlProvider>
       </PrayerTimesProvider>
-    </TutorialProvider>
   );
 }
 
@@ -343,37 +867,207 @@ function AppContent({
   page, 
   history, 
   navParams,
-  isThemeSelectorOpen, 
   showExitConfirm, 
-  isSideMenuOpen,
-  setIsSideMenuOpen,
   handleNavigate, 
   navigateBack, 
-  setIsThemeSelectorOpen, 
   setShowExitConfirm,
   updateInfo,
-  setUpdateInfo
+  setUpdateInfo,
+  isSplashActive = false,
+  isTourPreview = false,
+  tourRouteKey = 0,
 }: any) {
+  const { language } = useLanguage();
+  const isEn = language === 'en';
   const { setCurrentPage: setVoicePage } = useVoiceControl();
-  const { theme, themeKey, applyPresetTheme, setCurrentPage: setThemePage } = useTheme();
+  const { theme } = useTheme();
+  const { activeIqamaAlert, dismissIqamaAlert, activeAdhanAlert, dismissAdhanAlert } = usePrayerTimes();
+  const [activeWirdAlert, setActiveWirdAlert] = useState<WirdAlertData | null>(null);
+
+  // Trigger notification permission prompt & scheduling ONLY after entering the Main App / Home Page
+  // (guarantees Splash screen and Language Selection screen appear cleanly without OS popup interruption)
+  useEffect(() => {
+    if (isTourPreview) return;
+    let isMounted = true;
+    const timer = window.setTimeout(async () => {
+      if (!isMounted) return;
+      setMainAppEntered(true);
+
+      const granted = await ensureNotificationPermission(true);
+      if (!isMounted) return;
+
+      window.dispatchEvent(new CustomEvent('notification-permission-resolved', { detail: { granted } }));
+      if (granted) {
+        setupNotifications().catch(() => {});
+      }
+    }, 450);
+
+    return () => {
+      isMounted = false;
+      window.clearTimeout(timer);
+      setMainAppEntered(false);
+    };
+  }, [isTourPreview]);
+
+  // Re-sync local notifications whenever Smart Engine settings/memory update
+  useEffect(() => {
+    if (isTourPreview || !Capacitor.isNativePlatform()) return;
+    const handleSmartSync = () => {
+      ensureNotificationPermission(false).then((ok) => {
+        if (ok) setupNotifications().catch(() => {});
+      });
+    };
+    window.addEventListener(SMART_ENGINE_CHANGED_EVENT, handleSmartSync);
+    return () => {
+      window.removeEventListener(SMART_ENGINE_CHANGED_EVENT, handleSmartSync);
+    };
+  }, [isTourPreview]);
+
+  // Subtle once-per-day in-app highlight reflecting user's dominant spiritual interest
+  useEffect(() => {
+    if (isTourPreview || isSplashActive || page !== 'home') return;
+    if (!isSmartFeatureActive('smartNotifications')) return;
+
+    const timer = window.setTimeout(() => {
+      try {
+        const top = getTopSmartInterests(1)[0];
+        if (!top || top.score < 3) return;
+        const todayStr = new Date().toISOString().split('T')[0];
+        const profile = getSmartBehaviorProfile();
+        if (profile.lastInAppNudgeDate === todayStr) return;
+
+        profile.lastInAppNudgeDate = todayStr;
+        saveSmartBehaviorProfile(profile);
+        const label = getInterestLabel(top.domain, isEn);
+        showGlobalAppToast(
+          isEn
+            ? `✨ Your top interest: ${label}`
+            : `✨ اهتمامك الأبرز اليوم: ${label}`
+        );
+      } catch {}
+    }, 2200);
+
+    return () => window.clearTimeout(timer);
+  }, [isTourPreview, isSplashActive, page, isEn]);
+
+  useEffect(() => {
+    if (isTourPreview) return;
+    const timer = window.setTimeout(() => {
+      const priorityPages: number[] = [];
+      try {
+        const candidates = [
+          localStorage.getItem('last_read_pos_madinah'),
+          localStorage.getItem('last_pos_madinah_v'),
+          localStorage.getItem('last_pos_madinah_h'),
+          localStorage.getItem('last_read_ayah_global'),
+        ];
+        for (let i = 0; i < candidates.length; i++) {
+          const raw = candidates[i];
+          if (!raw) continue;
+          const parsed = JSON.parse(raw);
+          const p = Number(parsed?.page);
+          if (p >= 1 && p <= 604) {
+            priorityPages.push(p, p - 1, p + 1);
+            break;
+          }
+        }
+      } catch (e) {}
+      preloadQpcAndMadinahStartup(priorityPages);
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [isTourPreview]);
+
+  useEffect(() => {
+    // Only listen for in-app modal alert on web/browser (never in native APK or tour preview)
+    if (isTourPreview || Capacitor.isNativePlatform()) return;
+
+    const handleWirdAlertEvent = (e: any) => {
+      const detail = e.detail;
+      if (detail) {
+        if (detail.title && detail.startPage !== undefined) {
+          setActiveWirdAlert(detail);
+          return;
+        }
+        const profile = getActiveWirdProfile();
+        if (profile) {
+          const status = calculateWirdStatus(profile);
+          const dayNum = detail.dayNumber || status.targetDayNumber;
+          const range = getWirdDayRange(dayNum, profile);
+          const missed = detail.missedCount !== undefined ? detail.missedCount : status.missedDaysCount;
+          const content = buildWirdNotificationContent(profile, dayNum, missed);
+          setActiveWirdAlert({
+            profileId: profile.id,
+            profileName: profile.name,
+            currentDay: dayNum,
+            totalDays: getWirdTotalDays(profile),
+            startPage: range.start,
+            endPage: range.end,
+            missedDaysCount: missed,
+            title: detail.title || content.title,
+            message: detail.message || detail.body || content.body,
+            soundFileName: 'chime.mp3'
+          });
+        }
+      }
+    };
+
+    window.addEventListener('show-wird-alert', handleWirdAlertEvent);
+    return () => window.removeEventListener('show-wird-alert', handleWirdAlertEvent);
+  }, [isTourPreview]);
+
+  // Check on app launch/resume for uncompleted wird alerts (browser/web only, never in native APK or tour preview)
+  // Emits active user first, followed by each additional unread user 10 seconds apart.
+  useEffect(() => {
+    if (isTourPreview || Capacitor.isNativePlatform()) return;
+
+    const scheduledTimers: number[] = [];
+    const startTimer = window.setTimeout(() => {
+      const alerts = checkAllWirdAlertsOnAppResume();
+      alerts.forEach((alertData, idx) => {
+        const showTimer = window.setTimeout(() => {
+          setActiveWirdAlert(prev => {
+            if (prev?.profileId && prev.profileId !== alertData.profileId) {
+              markWirdAlertShownToday(prev.profileId);
+            }
+            return alertData;
+          });
+          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+            try {
+              new Notification(alertData.title, {
+                body: alertData.message,
+                icon: '/icon.png',
+                tag: `daily_wird_${alertData.profileId}_${new Date().toISOString().split('T')[0]}`
+              });
+            } catch (e) {}
+          }
+        }, idx * 10000);
+        scheduledTimers.push(showTimer);
+      });
+    }, 2500);
+
+    return () => {
+      window.clearTimeout(startTimer);
+      scheduledTimers.forEach(t => window.clearTimeout(t));
+    };
+  }, [isTourPreview]);
 
   useEffect(() => {
     setVoicePage(page);
-    setThemePage(page);
-  }, [page, setVoicePage, setThemePage]);
+    useListenQuranStore.getState().setAppPage(page);
+  }, [page, setVoicePage]);
 
   useWakeLock();
 
   useBackButton({
     history,
-    isThemeSelectorOpen,
     showExitConfirm,
     navigateBack,
-    setIsThemeSelectorOpen,
-    setShowExitConfirm
+    setShowExitConfirm,
+    disabled: isTourPreview,
   });
 
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
+
 
   useEffect(() => {
     const handleResize = () => {
@@ -384,53 +1078,28 @@ function AppContent({
   }, []);
 
   const handleConfirmExit = () => {
+    useListenQuranStore.getState().endSessionOnAppClose();
     CapacitorApp.exitApp();
   };
-  
-  const handleOpenThemes = useCallback(() => {
-    if (page === 'quran' || page === 'quran-landscape') {
-      window.dispatchEvent(new CustomEvent('voice-command', { detail: { action: 'open_themes' } }));
-    } else {
-      setIsThemeSelectorOpen(prev => !prev);
-    }
-  }, [page]);
-
-  const closeThemeSelector = () => setIsThemeSelectorOpen(false);
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-[100dvh]">
       <AppRouter 
+        key={isTourPreview ? `tour-${page}-${tourRouteKey}` : undefined}
         page={page} 
         onBack={navigateBack} 
         onNavigate={handleNavigate} 
-        onOpenThemes={handleOpenThemes}
-        onOpenSideMenu={() => {
-          setIsSideMenuOpen(true);
-          window.dispatchEvent(new CustomEvent('quran-stop-audio'));
-        }}
-        navParams={navParams}
+        navParams={
+          page === 'search' &&
+          history.length >= 2 &&
+          (history[history.length - 2] === 'quran' || history[history.length - 2] === 'quran-landscape') &&
+          !navParams?.from
+            ? { ...(navParams || {}), from: history[history.length - 2] }
+            : navParams
+        }
       />
 
-      <SideMenu 
-        isOpen={isSideMenuOpen} 
-        onClose={() => setIsSideMenuOpen(false)} 
-        onNavigate={handleNavigate}
-        onOpenThemes={handleOpenThemes}
-        currentTheme={theme}
-        currentPage={page}
-      />
-
-      {/* Global Voice Control Toggle - Removed from here, moved to MainMenu */}
-      {/* {page === 'home' && <VoiceControlToggle />} */}
-
-      {isThemeSelectorOpen && (
-        <ThemeSelector 
-          onClose={closeThemeSelector} 
-          isLandscape={isLandscape}
-        />
-      )}
-
-      {showExitConfirm && (
+      {!isTourPreview && showExitConfirm && (
           <ExitConfirmModal
               isOpen={showExitConfirm}
               onConfirm={handleConfirmExit}
@@ -439,7 +1108,7 @@ function AppContent({
           />
       )}
 
-      {updateInfo?.show && (
+      {!isTourPreview && updateInfo?.show && (
           <UpdateNotificationModal 
               isOpen={updateInfo.show}
               onClose={() => setUpdateInfo({ ...updateInfo, show: false })}
@@ -449,13 +1118,68 @@ function AppContent({
           />
       )}
       
-      <RateUs />
-      <MawlidNotification />
+      {!isTourPreview && <RateUs />}
+      {!isTourPreview && !Capacitor.isNativePlatform() && <MawlidNotification />}
+
+      {!isTourPreview && !Capacitor.isNativePlatform() && activeAdhanAlert && (
+        <AdhanAlertModal
+          alert={activeAdhanAlert}
+          onDismiss={dismissAdhanAlert}
+        />
+      )}
+
+      {!isTourPreview && !Capacitor.isNativePlatform() && activeIqamaAlert && (
+        <IqamaAlertModal
+          alert={activeIqamaAlert}
+          onDismiss={dismissIqamaAlert}
+        />
+      )}
+
+      {!isTourPreview && !Capacitor.isNativePlatform() && activeWirdAlert && (
+        <WirdAlertModal
+          alert={activeWirdAlert}
+          onDismiss={() => {
+            if (activeWirdAlert?.profileId) {
+              markWirdAlertShownToday(activeWirdAlert.profileId);
+            }
+            setActiveWirdAlert(null);
+          }}
+          onStartReading={(startPage, mode = 'mushaf') => {
+            const chosenMushaf = activeWirdAlert?.readingMushaf || 'vertical';
+            if (activeWirdAlert?.profileId) {
+              markWirdAlertShownToday(activeWirdAlert.profileId);
+            }
+            setActiveWirdAlert(null);
+            if (chosenMushaf === 'landscape') {
+              handleNavigate('quran-landscape', {
+                page: startPage,
+                isWird: true,
+                ...(mode === 'translation' ? { readingMode: 'translation' } : {})
+              });
+            } else if (chosenMushaf === 'horizontal') {
+              handleNavigate('quran', { page: startPage, isWird: true, readingMode: 'madinah' });
+            } else {
+              handleNavigate('quran', { page: startPage, isWird: true, readingMode: mode });
+            }
+          }}
+          onOpenDailyWird={() => {
+            if (activeWirdAlert?.profileId) {
+              markWirdAlertShownToday(activeWirdAlert.profileId);
+            }
+            setActiveWirdAlert(null);
+            handleNavigate('daily-wird');
+          }}
+        />
+      )}
+
+      <ScrollToTopFAB 
+        currentPage={history[history.length - 1]} 
+        isSplashActive={isSplashActive}
+      />
+      <FloatingListenButton isSplashActive={isSplashActive} />
+      <GlobalAppToast />
     </div>
   );
 }
-
-import { useVoiceControl } from './context/VoiceControlContext';
-import { useTutorial } from './context/TutorialContext';
 
 export default App;

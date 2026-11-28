@@ -1,0 +1,1166 @@
+/* ==========================================================================
+   الوضع الليلي: ثيم الأسود والذهبي (Black & Gold Night Mode)
+   ========================================================================== */
+body.theme-black-gold,
+html.theme-black-gold {
+    background-color: #000000 !important;
+    background-image: none !important;
+    color: #ffffff !important;
+}
+
+body.theme-black-gold #app-title {
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+}
+
+/* أزرار وأيقونات الشريط العلوي بالوضع الليلي */
+body.theme-black-gold .app-top-bar:not(.quran-context) button,
+body.theme-black-gold .app-top-bar:not(.quran-context) button i,
+body.theme-black-gold .app-top-bar:not(.quran-context) button svg,
+body.theme-black-gold .app-top-bar:not(.quran-context) i,
+body.theme-black-gold .app-top-bar:not(.quran-context) svg,
+body.theme-black-gold header:not(.quran-reader-header):not(.quran-context):not(.share-studio-header) button,
+body.theme-black-gold header:not(.quran-reader-header):not(.quran-context):not(.share-studio-header) button i,
+body.theme-black-gold header:not(.quran-reader-header):not(.quran-context):not(.share-studio-header) button svg,
+body.theme-black-gold header:not(.quran-reader-header):not(.quran-context):not(.share-studio-header) i,
+body.theme-black-gold header:not(.quran-reader-header):not(.quran-context):not(.share-studio-header) svg,
+html.theme-black-gold .app-top-bar:not(.quran-context) button,
+html.theme-black-gold .app-top-bar:not(.quran-context) button i,
+html.theme-black-gold .app-top-bar:not(.quran-context) button svg,
+html.theme-black-gold .app-top-bar:not(.quran-context) i,
+html.theme-black-gold .app-top-bar:not(.quran-context) svg,
+html.theme-black-gold header:not(.quran-reader-header):not(.quran-context):not(.share-studio-header) button,
+html.theme-black-gold header:not(.quran-reader-header):not(.quran-context):not(.share-studio-header) button i,
+html.theme-black-gold header:not(.quran-reader-header):not(.quran-context):not(.share-studio-header) button svg,
+html.theme-black-gold header:not(.quran-reader-header):not(.quran-context):not(.share-studio-header) i,
+html.theme-black-gold header:not(.quran-reader-header):not(.quran-context):not(.share-studio-header) svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+}
+
+body.theme-black-gold .app-top-bar:not(.quran-context) svg[fill="none"],
+body.theme-black-gold header:not(.quran-reader-header):not(.quran-context):not(.share-studio-header) svg[fill="none"],
+html.theme-black-gold .app-top-bar:not(.quran-context) svg[fill="none"],
+html.theme-black-gold header:not(.quran-reader-header):not(.quran-context):not(.share-studio-header) svg[fill="none"] {
+    fill: none !important;
+}
+
+/* ==========================================================================
+   الوضع الليلي: ثيم الأسود والأبيض والذهبي المجسم ثلاثي الأبعاد بدون أي إطارات - التصميم الذكي
+   ========================================================================== */
+
+/* ١. البطاقات ثلاثية الأبعاد في الوضع الليلي */
+body.theme-black-gold .tactile-3d-card-light,
+body.theme-black-gold .tactile-3d-card-dark,
+body.theme-black-gold #tawaf-counter-card,
+html.theme-black-gold .tactile-3d-card-light,
+html.theme-black-gold .tactile-3d-card-dark,
+.dark .tactile-3d-card-dark,
+.dark .tactile-3d-card-light {
+    background: #141417 !important;
+    border: none !important;
+    box-shadow: 0 6px 0 #09090c, 0 14px 28px rgba(0, 0, 0, 0.85), inset 0 1.5px 1px rgba(255, 255, 255, 0.16), inset 0 -2.5px 5px rgba(0, 0, 0, 0.65) !important;
+    color: #ffffff !important;
+}
+
+/* ٢. البطاقات الكبيرة الرئيسية في التصميم الذكي بالوضع الليلي: بارزة ومجسمة 3D بدون أي إطار نهائياً */
+body.theme-black-gold .golden-3d-card,
+html.theme-black-gold .golden-3d-card,
+.dark .golden-3d-card,
+.dark [data-layout="modern"] .golden-3d-card {
+    background: linear-gradient(168deg, #282832 0%, #1b1b23 48%, #131319 100%) !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow:
+        0 6.5px 0 #0b0b10,
+        0 7.5px 0 rgba(255, 255, 255, 0.05),
+        0 18px 34px -4px rgba(0, 0, 0, 0.92),
+        inset 0 2px 1.5px rgba(255, 255, 255, 0.22),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.72) !important;
+    color: #ffffff !important;
+}
+
+body.theme-black-gold .golden-3d-card:hover,
+html.theme-black-gold .golden-3d-card:hover,
+.dark .golden-3d-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 8.5px 0 #0b0b10,
+        0 9.5px 0 rgba(255, 255, 255, 0.06),
+        0 22px 38px -4px rgba(0, 0, 0, 0.95),
+        inset 0 2px 1.5px rgba(255, 255, 255, 0.25),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.72) !important;
+}
+
+/* ٣. البطاقات والحاويات الداخلية الداكنة: بارزة ومجسمة 3D فوق البطاقة الأم وبدون أي إطار نهائياً */
+body.theme-black-gold .white-3d-container-card,
+html.theme-black-gold .white-3d-container-card,
+.dark .white-3d-container-card,
+body.theme-black-gold .golden-3d-inset.rounded-2xl,
+html.theme-black-gold .golden-3d-inset.rounded-2xl,
+.dark .golden-3d-inset.rounded-2xl {
+    background: linear-gradient(180deg, #363644 0%, #2a2a35 55%, #202029 100%) !important;
+    border: none !important;
+    outline: none !important;
+    color: #ffffff !important;
+    box-shadow:
+        0 5px 0 #0e0e14,
+        0 12px 22px -2px rgba(0, 0, 0, 0.72),
+        inset 0 2px 1px rgba(255, 255, 255, 0.22),
+        inset 0 -2.5px 4px rgba(0, 0, 0, 0.52) !important;
+}
+
+/* الشارات والكبسولات الداخلية الداكنة الصغيرة (التاريخ، عدد التطبيقات، مبدل الأشواط): مجسمة 3D بدون إطار */
+body.theme-black-gold .golden-3d-inset:not(.rounded-2xl),
+html.theme-black-gold .golden-3d-inset:not(.rounded-2xl),
+.dark .golden-3d-inset:not(.rounded-2xl) {
+    background: linear-gradient(180deg, #363644 0%, #292934 60%, #202029 100%) !important;
+    border: none !important;
+    outline: none !important;
+    color: #ffffff !important;
+    box-shadow:
+        0 3.5px 0 #0e0e14,
+        0 7px 14px rgba(0, 0, 0, 0.6),
+        inset 0 1.5px 1px rgba(255, 255, 255, 0.2),
+        inset 0 -1.5px 3px rgba(0, 0, 0, 0.45) !important;
+}
+
+body.theme-black-gold .golden-3d-inset > svg,
+html.theme-black-gold .golden-3d-inset > svg,
+.dark .golden-3d-inset > svg {
+    color: #F59E0B !important;
+    stroke: #F59E0B !important;
+}
+
+/* الفواصل الأفقية الداخلية فقط (بدون أي إطار حول البطاقات) */
+body.theme-black-gold [data-layout="modern"] .border-t,
+html.theme-black-gold [data-layout="modern"] .border-t,
+.dark [data-layout="modern"] .border-t {
+    border-top-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* بروز إضافي للأيقونات ثلاثية الأبعاد داخل البطاقات بالوضع الليلي */
+body.theme-black-gold [data-layout="modern"] .white-3d-container-card img,
+html.theme-black-gold [data-layout="modern"] .white-3d-container-card img,
+.dark [data-layout="modern"] .white-3d-container-card img {
+    filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.65)) !important;
+}
+
+body.theme-black-gold [data-layout="modern"] .white-3d-card-btn img,
+html.theme-black-gold [data-layout="modern"] .white-3d-card-btn img,
+.dark [data-layout="modern"] .white-3d-card-btn img {
+    filter: drop-shadow(0 5px 6px rgba(0, 0, 0, 0.22)) !important;
+}
+
+/* إلغاء الطبقات اللامعة (3D Gloss overlays) الزائدة داخل البطاقات والأزرار في الوضع الليلي */
+body.theme-black-gold .pointer-events-none.bg-gradient-to-b,
+body.theme-black-gold .pointer-events-none.bg-gradient-to-r,
+body.theme-black-gold .pointer-events-none.bg-black\/10,
+body.theme-black-gold .pointer-events-none.bg-black\/15,
+body.theme-black-gold .pointer-events-none.bg-black\/20,
+html.theme-black-gold .pointer-events-none.bg-gradient-to-b,
+html.theme-black-gold .pointer-events-none.bg-gradient-to-r,
+html.theme-black-gold .pointer-events-none.bg-black\/10,
+html.theme-black-gold .pointer-events-none.bg-black\/15,
+html.theme-black-gold .pointer-events-none.bg-black\/20,
+.dark [data-layout="modern"] .pointer-events-none.bg-gradient-to-b,
+.dark [data-layout="modern"] .pointer-events-none.bg-gradient-to-r,
+.dark [data-layout="modern"] .pointer-events-none[class*="bg-gradient"] {
+    display: none !important;
+}
+
+/* النصوص الافتراضية فوق الخلفيات السوداء/الداكنة باللون الأبيض الناصع (مع استثناء البطاقات والأزرار البيضاء والعناصر الذهبية) */
+body.theme-black-gold .golden-3d-card *:not(.card-header-title):not(.app-name-label):not(.gold-accent-text):not(.gold-accent-icon):not(.gold-accent-icon *):not(.golden-3d-btn):not(.golden-3d-btn *):not(.golden-3d-pill-btn):not(.golden-3d-pill-btn *):not(.golden-3d-btn-light):not(.golden-3d-btn-light *):not(.white-3d-pill-btn):not(.white-3d-pill-btn *):not(.white-3d-card-btn):not(.white-3d-card-btn *):not(.night-white-surface):not(.night-white-surface *):not(.prayer-name-label):not(#modern-voice-control-btn):not(#modern-voice-control-btn *),
+body.theme-black-gold .white-3d-container-card *:not(.card-header-title):not(.app-name-label):not(.gold-accent-text):not(.gold-accent-icon):not(.gold-accent-icon *):not(.golden-3d-btn):not(.golden-3d-btn *):not(.golden-3d-pill-btn):not(.golden-3d-pill-btn *):not(.golden-3d-btn-light):not(.golden-3d-btn-light *):not(.white-3d-pill-btn):not(.white-3d-pill-btn *):not(.white-3d-card-btn):not(.white-3d-card-btn *):not(.night-white-surface):not(.night-white-surface *):not(.prayer-name-label):not(#modern-voice-control-btn):not(#modern-voice-control-btn *),
+.dark .golden-3d-card *:not(.card-header-title):not(.app-name-label):not(.gold-accent-text):not(.gold-accent-icon):not(.gold-accent-icon *):not(.golden-3d-btn):not(.golden-3d-btn *):not(.golden-3d-pill-btn):not(.golden-3d-pill-btn *):not(.golden-3d-btn-light):not(.golden-3d-btn-light *):not(.white-3d-pill-btn):not(.white-3d-pill-btn *):not(.white-3d-card-btn):not(.white-3d-card-btn *):not(.night-white-surface):not(.night-white-surface *):not(.prayer-name-label):not(#modern-voice-control-btn):not(#modern-voice-control-btn *),
+.dark [data-layout="modern"] .golden-3d-card *:not(.card-header-title):not(.app-name-label):not(.gold-accent-text):not(.gold-accent-icon):not(.gold-accent-icon *):not(.golden-3d-btn):not(.golden-3d-btn *):not(.golden-3d-pill-btn):not(.golden-3d-pill-btn *):not(.golden-3d-btn-light):not(.golden-3d-btn-light *):not(.white-3d-pill-btn):not(.white-3d-pill-btn *):not(.white-3d-card-btn):not(.white-3d-card-btn *):not(.night-white-surface):not(.night-white-surface *):not(.prayer-name-label):not(#modern-voice-control-btn):not(#modern-voice-control-btn *) {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* النص الرئيسي للبطاقة باللون الذهبي في الوضع الليلي */
+body.theme-black-gold .card-header-title,
+html.theme-black-gold .card-header-title,
+.dark .card-header-title,
+.dark [data-layout="modern"] .card-header-title,
+body.theme-black-gold .golden-3d-card .card-header-title,
+html.theme-black-gold .golden-3d-card .card-header-title,
+.dark .golden-3d-card .card-header-title {
+    color: #FBBF24 !important;
+    -webkit-text-fill-color: #FBBF24 !important;
+    text-shadow: none !important;
+}
+
+/* أسماء الصفحات والتطبيقات باللون الأبيض الناصع في الوضع الليلي */
+body.theme-black-gold .app-name-label,
+html.theme-black-gold .app-name-label,
+body.theme-black-gold .modern-home-layout .app-name-label,
+html.theme-black-gold .modern-home-layout .app-name-label,
+body.theme-black-gold [data-layout="modern"] .app-name-label,
+body.theme-black-gold [data-item-id] button:not(.golden-3d-pill-btn),
+body.theme-black-gold [data-item-id] span:not(.golden-3d-pill-btn *),
+.dark .app-name-label,
+.dark [data-layout="modern"] .app-name-label {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-shadow: none !important;
+}
+
+body.theme-black-gold .gold-accent-text,
+html.theme-black-gold .gold-accent-text,
+.dark .gold-accent-text,
+.dark [data-layout="modern"] .gold-accent-text,
+body.theme-black-gold .gold-accent-icon,
+body.theme-black-gold .gold-accent-icon svg,
+html.theme-black-gold .gold-accent-icon,
+html.theme-black-gold .gold-accent-icon svg,
+.dark .gold-accent-icon,
+.dark .gold-accent-icon svg {
+    color: #F59E0B !important;
+    -webkit-text-fill-color: #F59E0B !important;
+    text-shadow: none !important;
+}
+
+/* مربعات الأيقونات الذهبية الداكنة فوق البطاقات: مجسمة 3D بدون إطار */
+body.theme-black-gold .modern-gold-icon-box,
+html.theme-black-gold .modern-gold-icon-box,
+.dark .modern-gold-icon-box,
+.dark [data-layout="modern"] .modern-gold-icon-box {
+    background: linear-gradient(180deg, #322a18 0%, #1e1910 100%) !important;
+    border: none !important;
+    outline: none !important;
+    color: #F59E0B !important;
+    box-shadow: 0 3px 0 #100d08, 0 6px 12px rgba(0, 0, 0, 0.55), inset 0 1.5px 1px rgba(245, 158, 11, 0.35) !important;
+}
+
+body.theme-black-gold .modern-gold-icon-box svg,
+html.theme-black-gold .modern-gold-icon-box svg,
+.dark .modern-gold-icon-box svg {
+    color: #F59E0B !important;
+    stroke: #F59E0B !important;
+}
+
+/* ==========================================================================
+   ٤. البطاقات الداخلية البيضاء والأزرار البيضاء في الوضع الليلي والأسود والذهبي: تجسيم 3D متناسق بدون أي إطار + نص أسود ناصع
+   ========================================================================== */
+body.theme-black-gold:not(.quran-context) .white-3d-card-btn,
+body.theme-black-gold:not(.quran-context) .golden-3d-btn,
+body.theme-black-gold:not(.quran-context) .golden-3d-pill-btn,
+body.theme-black-gold:not(.quran-context) .golden-3d-btn-light,
+body.theme-black-gold:not(.quran-context) .white-3d-pill-btn,
+body.theme-black-gold:not(.quran-context) .night-white-surface,
+body.theme-black-gold:not(.quran-context) .white-3d-card-btn.prayer-card-done,
+html.theme-black-gold body:not(.quran-context) .white-3d-card-btn,
+html.theme-black-gold body:not(.quran-context) .golden-3d-btn,
+html.theme-black-gold body:not(.quran-context) .golden-3d-pill-btn,
+html.theme-black-gold body:not(.quran-context) .golden-3d-btn-light,
+html.theme-black-gold body:not(.quran-context) .white-3d-pill-btn,
+html.theme-black-gold body:not(.quran-context) .night-white-surface,
+html.theme-black-gold body:not(.quran-context) .white-3d-card-btn.prayer-card-done,
+body.dark:not(.quran-context) .white-3d-card-btn,
+body.dark:not(.quran-context) .golden-3d-btn,
+body.dark:not(.quran-context) .golden-3d-pill-btn,
+body.dark:not(.quran-context) .golden-3d-btn-light,
+body.dark:not(.quran-context) .white-3d-pill-btn,
+body.dark:not(.quran-context) .night-white-surface,
+body.dark:not(.quran-context) .white-3d-card-btn.prayer-card-done,
+html.dark body:not(.quran-context) .white-3d-card-btn,
+html.dark body:not(.quran-context) .golden-3d-btn,
+html.dark body:not(.quran-context) .golden-3d-pill-btn,
+html.dark body:not(.quran-context) .golden-3d-btn-light,
+html.dark body:not(.quran-context) .white-3d-pill-btn,
+html.dark body:not(.quran-context) .night-white-surface,
+html.dark body:not(.quran-context) .white-3d-card-btn.prayer-card-done {
+    background: linear-gradient(180deg, #ffffff 0%, #fbf8f0 65%, #f3ece0 100%) !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: 0 4px 0 #09090d, 0 8px 16px -2px rgba(0, 0, 0, 0.55), inset 0 2px 1.5px rgba(255, 255, 255, 0.98), inset 0 -2px 3px rgba(0, 0, 0, 0.08) !important;
+    text-shadow: none !important;
+    transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.16s cubic-bezier(0.2, 0.8, 0.4, 1), background 0.16s ease !important;
+}
+
+body.theme-black-gold:not(.quran-context) .white-3d-card-btn:hover,
+body.theme-black-gold:not(.quran-context) .golden-3d-btn:hover,
+body.theme-black-gold:not(.quran-context) .golden-3d-pill-btn:hover,
+body.theme-black-gold:not(.quran-context) .golden-3d-btn-light:hover,
+body.theme-black-gold:not(.quran-context) .white-3d-pill-btn:hover,
+body.theme-black-gold:not(.quran-context) button.night-white-surface:hover,
+html.theme-black-gold body:not(.quran-context) .white-3d-card-btn:hover,
+html.theme-black-gold body:not(.quran-context) .golden-3d-btn:hover,
+html.theme-black-gold body:not(.quran-context) .golden-3d-pill-btn:hover,
+html.theme-black-gold body:not(.quran-context) .golden-3d-btn-light:hover,
+html.theme-black-gold body:not(.quran-context) .white-3d-pill-btn:hover,
+html.theme-black-gold body:not(.quran-context) button.night-white-surface:hover,
+body.dark:not(.quran-context) .white-3d-card-btn:hover,
+body.dark:not(.quran-context) .golden-3d-btn:hover,
+body.dark:not(.quran-context) .golden-3d-pill-btn:hover,
+body.dark:not(.quran-context) .golden-3d-btn-light:hover,
+body.dark:not(.quran-context) .white-3d-pill-btn:hover,
+body.dark:not(.quran-context) button.night-white-surface:hover,
+html.dark body:not(.quran-context) .white-3d-card-btn:hover,
+html.dark body:not(.quran-context) .golden-3d-btn:hover,
+html.dark body:not(.quran-context) .golden-3d-pill-btn:hover,
+html.dark body:not(.quran-context) .golden-3d-btn-light:hover,
+html.dark body:not(.quran-context) .white-3d-pill-btn:hover,
+html.dark body:not(.quran-context) button.night-white-surface:hover {
+    background: linear-gradient(180deg, #ffffff 0%, #fdfaf2 68%, #f6efe3 100%) !important;
+    box-shadow: 0 5.5px 0 #09090d, 0 12px 22px -2px rgba(0, 0, 0, 0.65), inset 0 2px 1.5px rgba(255, 255, 255, 0.98), inset 0 -2px 3px rgba(0, 0, 0, 0.07) !important;
+    transform: translateY(-1.5px) !important;
+}
+
+body.theme-black-gold:not(.quran-context) button.white-3d-card-btn:active,
+body.theme-black-gold:not(.quran-context) .white-3d-card-btn.cursor-pointer:active,
+body.theme-black-gold:not(.quran-context) .golden-3d-btn:active,
+body.theme-black-gold:not(.quran-context) .golden-3d-pill-btn:active,
+body.theme-black-gold:not(.quran-context) .golden-3d-btn-light:active,
+body.theme-black-gold:not(.quran-context) .white-3d-pill-btn:active,
+body.theme-black-gold:not(.quran-context) button.night-white-surface:active,
+html.theme-black-gold body:not(.quran-context) button.white-3d-card-btn:active,
+html.theme-black-gold body:not(.quran-context) .white-3d-card-btn.cursor-pointer:active,
+html.theme-black-gold body:not(.quran-context) .golden-3d-btn:active,
+html.theme-black-gold body:not(.quran-context) .golden-3d-pill-btn:active,
+html.theme-black-gold body:not(.quran-context) .golden-3d-btn-light:active,
+html.theme-black-gold body:not(.quran-context) .white-3d-pill-btn:active,
+html.theme-black-gold body:not(.quran-context) button.night-white-surface:active,
+body.dark:not(.quran-context) button.white-3d-card-btn:active,
+body.dark:not(.quran-context) .white-3d-card-btn.cursor-pointer:active,
+body.dark:not(.quran-context) .golden-3d-btn:active,
+body.dark:not(.quran-context) .golden-3d-pill-btn:active,
+body.dark:not(.quran-context) .golden-3d-btn-light:active,
+body.dark:not(.quran-context) .white-3d-pill-btn:active,
+body.dark:not(.quran-context) button.night-white-surface:active,
+html.dark body:not(.quran-context) button.white-3d-card-btn:active,
+html.dark body:not(.quran-context) .white-3d-card-btn.cursor-pointer:active,
+html.dark body:not(.quran-context) .golden-3d-btn:active,
+html.dark body:not(.quran-context) .golden-3d-pill-btn:active,
+html.dark body:not(.quran-context) .golden-3d-btn-light:active,
+html.dark body:not(.quran-context) .white-3d-pill-btn:active,
+html.dark body:not(.quran-context) button.night-white-surface:active {
+    background: linear-gradient(180deg, #f5f0e4 0%, #ebe3d3 100%) !important;
+    box-shadow: 0 1.5px 0 #09090d, 0 3px 8px rgba(0, 0, 0, 0.45), inset 0 2px 3px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(2.5px) scale(0.97) !important;
+}
+
+/* ضمان ظهور جميع النصوص والأيقونات باللون الأسود الصريح داخل البطاقات والأزرار البيضاء بأعلى أولوية */
+body.theme-black-gold .golden-3d-card .golden-3d-btn *,
+body.theme-black-gold .golden-3d-card .golden-3d-pill-btn *,
+body.theme-black-gold .golden-3d-card .golden-3d-btn-light *,
+body.theme-black-gold .golden-3d-card .white-3d-pill-btn *,
+body.theme-black-gold .golden-3d-card .white-3d-card-btn *:not(.prayer-done-badge):not(.prayer-done-badge *):not(.search-icon-badge-inner):not(.search-icon-badge-inner *),
+body.theme-black-gold .golden-3d-card .night-white-surface *,
+body.theme-black-gold .golden-3d-card .prayer-name-label,
+html.theme-black-gold .golden-3d-card .golden-3d-btn *,
+html.theme-black-gold .golden-3d-card .golden-3d-pill-btn *,
+html.theme-black-gold .golden-3d-card .golden-3d-btn-light *,
+html.theme-black-gold .golden-3d-card .white-3d-pill-btn *,
+html.theme-black-gold .golden-3d-card .white-3d-card-btn *:not(.prayer-done-badge):not(.prayer-done-badge *):not(.search-icon-badge-inner):not(.search-icon-badge-inner *),
+html.theme-black-gold .golden-3d-card .night-white-surface *,
+html.theme-black-gold .golden-3d-card .prayer-name-label,
+.dark .golden-3d-card .golden-3d-btn *,
+.dark .golden-3d-card .golden-3d-pill-btn *,
+.dark .golden-3d-card .golden-3d-btn-light *,
+.dark .golden-3d-card .white-3d-pill-btn *,
+.dark .golden-3d-card .white-3d-card-btn *:not(.prayer-done-badge):not(.prayer-done-badge *):not(.search-icon-badge-inner):not(.search-icon-badge-inner *),
+.dark .golden-3d-card .night-white-surface *,
+.dark .golden-3d-card .prayer-name-label {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    text-shadow: none !important;
+}
+
+/* النص الفرعي داخل بطاقة البحث البيضاء بلون رمادي فحمي داكن واضح */
+body.theme-black-gold .golden-3d-card .white-3d-card-btn .white-card-subtext,
+html.theme-black-gold .golden-3d-card .white-3d-card-btn .white-card-subtext,
+.dark .golden-3d-card .white-3d-card-btn .white-card-subtext {
+    color: #3f3f46 !important;
+    -webkit-text-fill-color: #3f3f46 !important;
+}
+
+/* مربع أيقونة البحث داخل البطاقة البيضاء: مجسم 3D بدون إطار مع أيقونة ذهبية */
+body.theme-black-gold .golden-3d-card .search-icon-badge-inner,
+html.theme-black-gold .golden-3d-card .search-icon-badge-inner,
+.dark .golden-3d-card .search-icon-badge-inner {
+    background: linear-gradient(180deg, #2b2b35 0%, #15151a 100%) !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: 0 3px 0 #09090d, 0 5px 10px rgba(0, 0, 0, 0.28), inset 0 1.5px 1px rgba(255, 255, 255, 0.22) !important;
+    color: #F59E0B !important;
+}
+
+body.theme-black-gold .golden-3d-card .search-icon-badge-inner svg,
+html.theme-black-gold .golden-3d-card .search-icon-badge-inner svg,
+.dark .golden-3d-card .search-icon-badge-inner svg {
+    color: #F59E0B !important;
+    stroke: #F59E0B !important;
+}
+
+/* شارة إتمام الصلاة (علامة الصح) فوق بطاقة الصلاة البيضاء: مجسمة بدون إطار */
+body.theme-black-gold .golden-3d-card .prayer-done-badge,
+html.theme-black-gold .golden-3d-card .prayer-done-badge,
+.dark .golden-3d-card .prayer-done-badge {
+    background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.45) !important;
+}
+
+body.theme-black-gold .golden-3d-card .prayer-done-badge svg,
+html.theme-black-gold .golden-3d-card .prayer-done-badge svg,
+.dark .golden-3d-card .prayer-done-badge svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+}
+
+
+/* Hide Floating Action Button when QR Modal or Settings is open */
+body.qr-modal-active #scroll-to-top-fab,
+body.settings-modal-open #scroll-to-top-fab,
+body:has(#home-screen-settings-modal) #scroll-to-top-fab,
+body.settings-modal-open #floating-listen-quran-btn,
+body:has(#home-screen-settings-modal) #floating-listen-quran-btn,
+body.settings-modal-open #whatsapp-button-container,
+body:has(#home-screen-settings-modal) #whatsapp-button-container,
+body:has(#share-app-qr-modal) #scroll-to-top-fab,
+#share-app-qr-modal ~ #scroll-to-top-fab {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* الزر العائم - الثيم الأسود / الليلي: تجسيم داكن مع حافة عاكسة وزر أبيض */
+body.dark #scroll-to-top-fab button,
+html.dark #scroll-to-top-fab button {
+  border: none !important;
+  box-shadow: 0 5px 0 #3f3f46, 0 12px 24px rgba(0, 0, 0, 0.85), 0 0 12px rgba(255, 255, 255, 0.2), inset 0 1.5px 1.5px rgba(255, 255, 255, 0.38), inset 0 -2px 4px rgba(0, 0, 0, 0.65) !important;
+}
+
+body.dark #scroll-to-top-fab button svg,
+html.dark #scroll-to-top-fab button svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
+
+/* الزر العائم - الثيم العنابي: تجسيم ثلاثي الأبعاد بحافة سفلية داكنة */
+body.theme-burgundy #scroll-to-top-fab button,
+html.theme-burgundy #scroll-to-top-fab button {
+  background: linear-gradient(160deg, #be123c 0%, #9f1239 55%, #881337 100%) !important;
+  border: none !important;
+  box-shadow: 0 5px 0 #4c0519, 0 12px 22px -2px rgba(136, 19, 55, 0.48), inset 0 2px 1.5px rgba(255, 255, 255, 0.45), inset 0 -2px 4px rgba(0, 0, 0, 0.22) !important;
+}
+
+body.theme-burgundy #scroll-to-top-fab button svg,
+html.theme-burgundy #scroll-to-top-fab button svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+}
+
+/* ==========================================================================
+   قائمة التكبير لبطاقة إشراقات وذاكرة اليوم (ثيمات السماوي، الزمردي، العنابي)
+   ========================================================================== */
+
+/* 1. الثيم السماوي */
+body.theme-sky #unified-event-zoom-modal-backdrop .zoom-modal-sheet,
+html.theme-sky #unified-event-zoom-modal-backdrop .zoom-modal-sheet {
+  background: linear-gradient(170deg, #F0F9FF 0%, #E0F2FE 20%, #BAE6FD 50%, #7DD3FC 80%, #38BDF8 100%) !important;
+  border-color: rgba(56, 189, 248, 0.85) !important;
+}
+
+body.theme-sky #unified-event-zoom-modal-backdrop .zoom-category-badge,
+html.theme-sky #unified-event-zoom-modal-backdrop .zoom-category-badge {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(2, 132, 199, 0.5) !important;
+  color: #0369a1 !important;
+  -webkit-text-fill-color: #0369a1 !important;
+}
+
+body.theme-sky #unified-event-zoom-modal-backdrop .zoom-subtitle-badge,
+html.theme-sky #unified-event-zoom-modal-backdrop .zoom-subtitle-badge {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(2, 132, 199, 0.5) !important;
+  color: #0369a1 !important;
+  -webkit-text-fill-color: #0369a1 !important;
+}
+
+body.theme-sky #unified-event-zoom-modal-backdrop .zoom-modal-action-bar,
+html.theme-sky #unified-event-zoom-modal-backdrop .zoom-modal-action-bar {
+  background: linear-gradient(180deg, rgba(224, 242, 254, 0.55) 0%, rgba(186, 230, 253, 0.85) 100%) !important;
+  border-top-color: rgba(56, 189, 248, 0.7) !important;
+}
+
+body.theme-sky #unified-event-zoom-modal-backdrop .zoom-action-btn:not(.bg-red-500):not(.zoom-action-btn-active):not(.zoom-action-btn-playing),
+html.theme-sky #unified-event-zoom-modal-backdrop .zoom-action-btn:not(.bg-red-500):not(.zoom-action-btn-active):not(.zoom-action-btn-playing) {
+  background: linear-gradient(180deg, #FFFFFF 0%, #E0F2FE 65%, #BAE6FD 100%) !important;
+  border: none !important;
+  box-shadow: 0 5px 0 rgba(2, 132, 199, 0.34), 0 10px 18px -2px rgba(2, 132, 199, 0.24), inset 0 2px 1.5px rgba(255, 255, 255, 0.96), inset 0 -2px 3px rgba(2, 132, 199, 0.12) !important;
+}
+
+body.theme-sky #unified-event-zoom-modal-backdrop .zoom-action-btn:not(.zoom-action-btn-active):not(.zoom-action-btn-playing) svg,
+html.theme-sky #unified-event-zoom-modal-backdrop .zoom-action-btn:not(.zoom-action-btn-active):not(.zoom-action-btn-playing) svg {
+  color: #0369a1 !important;
+  stroke: #0369a1 !important;
+}
+
+/* 2. الثيم الزمردي */
+body.theme-emerald #unified-event-zoom-modal-backdrop .zoom-modal-sheet,
+html.theme-emerald #unified-event-zoom-modal-backdrop .zoom-modal-sheet {
+  background: linear-gradient(170deg, #F0FDF4 0%, #DCFCE7 20%, #BBF7D0 50%, #86EFAC 80%, #34D399 100%) !important;
+  border-color: rgba(52, 211, 153, 0.85) !important;
+}
+
+body.theme-emerald #unified-event-zoom-modal-backdrop .zoom-category-badge,
+html.theme-emerald #unified-event-zoom-modal-backdrop .zoom-category-badge {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(5, 150, 105, 0.5) !important;
+  color: #047857 !important;
+  -webkit-text-fill-color: #047857 !important;
+}
+
+body.theme-emerald #unified-event-zoom-modal-backdrop .zoom-subtitle-badge,
+html.theme-emerald #unified-event-zoom-modal-backdrop .zoom-subtitle-badge {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(5, 150, 105, 0.5) !important;
+  color: #047857 !important;
+  -webkit-text-fill-color: #047857 !important;
+}
+
+body.theme-emerald #unified-event-zoom-modal-backdrop .zoom-modal-action-bar,
+html.theme-emerald #unified-event-zoom-modal-backdrop .zoom-modal-action-bar {
+  background: linear-gradient(180deg, rgba(220, 252, 231, 0.55) 0%, rgba(187, 247, 208, 0.85) 100%) !important;
+  border-top-color: rgba(52, 211, 153, 0.7) !important;
+}
+
+body.theme-emerald #unified-event-zoom-modal-backdrop .zoom-action-btn:not(.bg-red-500):not(.zoom-action-btn-active):not(.zoom-action-btn-playing),
+html.theme-emerald #unified-event-zoom-modal-backdrop .zoom-action-btn:not(.bg-red-500):not(.zoom-action-btn-active):not(.zoom-action-btn-playing) {
+  background: linear-gradient(180deg, #FFFFFF 0%, #DCFCE7 65%, #BBF7D0 100%) !important;
+  border: none !important;
+  box-shadow: 0 5px 0 rgba(5, 150, 105, 0.34), 0 10px 18px -2px rgba(5, 150, 105, 0.24), inset 0 2px 1.5px rgba(255, 255, 255, 0.96), inset 0 -2px 3px rgba(5, 150, 105, 0.12) !important;
+}
+
+body.theme-emerald #unified-event-zoom-modal-backdrop .zoom-action-btn:not(.zoom-action-btn-active):not(.zoom-action-btn-playing) svg,
+html.theme-emerald #unified-event-zoom-modal-backdrop .zoom-action-btn:not(.zoom-action-btn-active):not(.zoom-action-btn-playing) svg {
+  color: #047857 !important;
+  stroke: #047857 !important;
+}
+
+/* 3. الثيم العنابي */
+body.theme-burgundy #unified-event-zoom-modal-backdrop .zoom-modal-sheet,
+html.theme-burgundy #unified-event-zoom-modal-backdrop .zoom-modal-sheet {
+  background: linear-gradient(170deg, #FFF1F2 0%, #FFE4E6 20%, #FECDD3 50%, #FDA4AF 80%, #FB7185 100%) !important;
+  border-color: rgba(251, 113, 133, 0.85) !important;
+}
+
+body.theme-burgundy #unified-event-zoom-modal-backdrop .zoom-category-badge,
+html.theme-burgundy #unified-event-zoom-modal-backdrop .zoom-category-badge {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(225, 29, 72, 0.5) !important;
+  color: #881337 !important;
+  -webkit-text-fill-color: #881337 !important;
+}
+
+body.theme-burgundy #unified-event-zoom-modal-backdrop .zoom-subtitle-badge,
+html.theme-burgundy #unified-event-zoom-modal-backdrop .zoom-subtitle-badge {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(225, 29, 72, 0.5) !important;
+  color: #881337 !important;
+  -webkit-text-fill-color: #881337 !important;
+}
+
+body.theme-burgundy #unified-event-zoom-modal-backdrop .zoom-modal-action-bar,
+html.theme-burgundy #unified-event-zoom-modal-backdrop .zoom-modal-action-bar {
+  background: linear-gradient(180deg, rgba(255, 228, 230, 0.55) 0%, rgba(254, 205, 211, 0.85) 100%) !important;
+  border-top-color: rgba(251, 113, 133, 0.7) !important;
+}
+
+body.theme-burgundy #unified-event-zoom-modal-backdrop .zoom-action-btn:not(.bg-red-500):not(.zoom-action-btn-active):not(.zoom-action-btn-playing),
+html.theme-burgundy #unified-event-zoom-modal-backdrop .zoom-action-btn:not(.bg-red-500):not(.zoom-action-btn-active):not(.zoom-action-btn-playing) {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFE4E6 65%, #FECDD3 100%) !important;
+  border: none !important;
+  box-shadow: 0 5px 0 rgba(159, 18, 57, 0.36), 0 10px 18px -2px rgba(159, 18, 57, 0.24), inset 0 2px 1.5px rgba(255, 255, 255, 0.96), inset 0 -2px 3px rgba(159, 18, 57, 0.12) !important;
+}
+
+body.theme-burgundy #unified-event-zoom-modal-backdrop .zoom-action-btn:not(.zoom-action-btn-active):not(.zoom-action-btn-playing) svg,
+html.theme-burgundy #unified-event-zoom-modal-backdrop .zoom-action-btn:not(.zoom-action-btn-active):not(.zoom-action-btn-playing) svg {
+  color: #881337 !important;
+  stroke: #881337 !important;
+}
+
+#unified-event-zoom-modal-backdrop .zoom-action-btn:active {
+  transform: translateY(3px) scale(0.95) !important;
+}
+
+/* ==========================================================================
+   أيقونات القائمة الجانبية في المصحف - أيقونات حادة وواضحة بدون أي تظليل
+   ========================================================================== */
+#floating-menu .quran-3d-icon,
+#floating-menu svg,
+#floating-menu i {
+    filter: none !important;
+    drop-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-filter: none !important;
+}
+
+/* ==========================================================================
+   Global Dynamic Safe Area, Scroll Bottom Clearance & Modal Bottom Sheets
+   ========================================================================== */
+:root {
+  --native-safe-top: 0px;
+  --native-safe-bottom: 0px;
+  --app-safe-top: max(env(safe-area-inset-top, 0px), var(--native-safe-top, 0px));
+  --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--native-safe-bottom, 0px));
+  --app-bottom-bar-height: 0px;
+  --app-bottom-clearance: var(--app-safe-bottom);
+  --app-scroll-gap: clamp(0.75rem, 1.8dvh, 1.125rem);
+  --app-scroll-safe-bottom: calc(var(--app-bottom-clearance) + var(--app-scroll-gap));
+  --app-modal-safe-bottom: calc(var(--app-safe-bottom) + var(--app-scroll-gap));
+}
+
+.app-scroll-safe {
+  padding-bottom: var(--app-scroll-safe-bottom) !important;
+}
+
+.app-scroll-safe-fab {
+  padding-bottom: calc(var(--app-safe-bottom) + clamp(4.75rem, 8.5dvh, 5.5rem)) !important;
+}
+
+.app-fab-bottom {
+  bottom: calc(var(--app-safe-bottom) + clamp(1rem, 2.2dvh, 1.5rem)) !important;
+}
+
+.modal-sheet-safe-bottom,
+.pb-safe {
+  padding-bottom: var(--app-modal-safe-bottom) !important;
+}
+
+/* Chromium/Android WebView drops padding-bottom on flex-col scroll containers when children overflow;
+   use a non-shrinking ::after flex spacer so bottom safe-area clearance is always preserved. */
+.app-scroll-safe.flex-col,
+.app-scroll-safe-fab.flex-col,
+.modal-sheet-safe-bottom.flex-col.overflow-y-auto,
+.modal-sheet-safe-bottom.flex-col.overflow-auto {
+  padding-bottom: 0 !important;
+}
+
+.app-scroll-safe.flex-col::after {
+  content: "";
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  height: var(--app-scroll-safe-bottom);
+  pointer-events: none;
+}
+
+.app-scroll-safe-fab.flex-col::after {
+  content: "";
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  height: calc(var(--app-safe-bottom) + clamp(4.75rem, 8.5dvh, 5.5rem));
+  pointer-events: none;
+}
+
+.modal-sheet-safe-bottom.flex-col.overflow-y-auto::after,
+.modal-sheet-safe-bottom.flex-col.overflow-auto::after {
+  content: "";
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  height: var(--app-modal-safe-bottom);
+  pointer-events: none;
+}
+
+/* Listen Quran range slider styling (kept out of header DOM to prevent header repaints) */
+.quran-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 11px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.22), inset 0 -1px 1px rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+}
+.dark .quran-slider,
+body.theme-black-gold .quran-slider {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.72), inset 0 -1px 1px rgba(255, 255, 255, 0.14);
+}
+.quran-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+  border: 3.5px solid var(--qr-slider-thumb, #2E7D5E);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 3.5px 0 rgba(0, 0, 0, 0.2), 0 6px 12px rgba(0, 0, 0, 0.24), inset 0 2px 1.5px rgba(255, 255, 255, 1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.quran-slider::-webkit-slider-thumb:hover {
+  transform: translateY(-1px) scale(1.1);
+  box-shadow: 0 4.5px 0 rgba(0, 0, 0, 0.22), 0 8px 16px rgba(0, 0, 0, 0.28), inset 0 2px 1.5px rgba(255, 255, 255, 1);
+}
+.quran-slider::-webkit-slider-thumb:active {
+  transform: translateY(1.5px) scale(0.96);
+  box-shadow: 0 1.5px 0 rgba(0, 0, 0, 0.22), 0 3px 6px rgba(0, 0, 0, 0.2), inset 0 2px 1.5px rgba(255, 255, 255, 1);
+}
+.quran-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+  border: 3.5px solid var(--qr-slider-thumb, #2E7D5E);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 3.5px 0 rgba(0, 0, 0, 0.2), 0 6px 12px rgba(0, 0, 0, 0.24), inset 0 2px 1.5px rgba(255, 255, 255, 1);
+}
+
+/* ==========================================================================
+   Unified Tactile 3D Utilities (Context-independent: works in modals, drawers, & quran-context)
+   ========================================================================== */
+.unified-3d-btn {
+  transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.16s cubic-bezier(0.2, 0.8, 0.4, 1), filter 0.16s ease;
+}
+.unified-3d-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+.unified-3d-btn:active {
+  transform: translateY(2.5px) scale(0.97) !important;
+}
+
+.unified-3d-fab {
+  position: relative;
+  transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.16s cubic-bezier(0.2, 0.8, 0.4, 1), filter 0.16s ease;
+}
+.unified-3d-fab:hover {
+  transform: translateY(-1.5px) scale(1.04);
+}
+.unified-3d-fab:active {
+  transform: translateY(2.5px) scale(0.94) !important;
+}
+
+/* Unified 3D styles for Auto-Scroll Duration Modal (Adia 6.5px standard) */
+.scroll-speed-3d-header {
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 6.5px 0 rgba(0, 0, 0, 0.13), 0 12px 24px -2px rgba(0, 0, 0, 0.11), inset 0 2px 2px rgba(255, 255, 255, 0.95), inset 0 -2.5px 4px rgba(0, 0, 0, 0.05) !important;
+}
+.scroll-speed-3d-header.is-dark {
+  box-shadow: 0 6.5px 0 #0d0d10, 0 14px 28px rgba(0, 0, 0, 0.85), inset 0 2px 2px rgba(255, 255, 255, 0.22), inset 0 -2.5px 5px rgba(0, 0, 0, 0.65) !important;
+}
+.scroll-speed-3d-close {
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 6.5px 0 rgba(0, 0, 0, 0.13), 0 12px 24px -2px rgba(0, 0, 0, 0.11), inset 0 2px 2px rgba(255, 255, 255, 0.95), inset 0 -2.5px 4px rgba(0, 0, 0, 0.05) !important;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.18s cubic-bezier(0.2, 0.8, 0.4, 1) !important;
+}
+.scroll-speed-3d-close.is-dark {
+  box-shadow: 0 6.5px 0 #0d0d10, 0 14px 28px rgba(0, 0, 0, 0.85), inset 0 2px 2px rgba(255, 255, 255, 0.22), inset 0 -2.5px 5px rgba(0, 0, 0, 0.65) !important;
+}
+.scroll-speed-3d-close:active {
+  transform: translateY(4px) scale(0.95) !important;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.14), 0 4px 10px rgba(0, 0, 0, 0.08) !important;
+}
+.scroll-speed-3d-btn {
+  border: none !important;
+  outline: none !important;
+  box-shadow: 0 6.5px 0 rgba(0, 0, 0, 0.13), 0 12px 24px -2px rgba(0, 0, 0, 0.11), inset 0 2px 2px rgba(255, 255, 255, 0.95), inset 0 -2.5px 4px rgba(0, 0, 0, 0.05) !important;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.18s cubic-bezier(0.2, 0.8, 0.4, 1) !important;
+}
+.scroll-speed-3d-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8.5px 0 rgba(0, 0, 0, 0.14), 0 16px 30px -3px rgba(0, 0, 0, 0.14), inset 0 2px 2px rgba(255, 255, 255, 0.95), inset 0 -2.5px 4px rgba(0, 0, 0, 0.05) !important;
+}
+.scroll-speed-3d-btn.is-selected {
+  box-shadow: 0 6.5px 0 rgba(0, 0, 0, 0.22), 0 12px 24px -2px rgba(0, 0, 0, 0.18), inset 0 2px 2px rgba(255, 255, 255, 0.48), inset 0 -2.5px 4px rgba(0, 0, 0, 0.18) !important;
+}
+.scroll-speed-3d-btn:active {
+  transform: translateY(4px) scale(0.99) !important;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.14), 0 4px 10px rgba(0, 0, 0, 0.08), inset 0 2px 2px rgba(255, 255, 255, 0.95), inset 0 -1.5px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Tactile 3D Range Sliders (Prayer Volume & Widget Opacity) */
+.app-3d-range {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 9999px;
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.2), inset 0 -1px 1px rgba(255, 255, 255, 0.6);
+}
+.dark .app-3d-range,
+body.theme-black-gold .app-3d-range {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.72), inset 0 -1px 1px rgba(255, 255, 255, 0.14);
+}
+.app-3d-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+  border: none;
+  box-shadow: 0 3.5px 0 rgba(0, 0, 0, 0.2), 0 6px 12px rgba(0, 0, 0, 0.22), inset 0 2px 1.5px rgba(255, 255, 255, 1);
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+.app-3d-range::-webkit-slider-thumb:active {
+  transform: translateY(1.5px) scale(1.06);
+  box-shadow: 0 1.5px 0 rgba(0, 0, 0, 0.22), 0 3px 6px rgba(0, 0, 0, 0.2), inset 0 2px 1.5px rgba(255, 255, 255, 1);
+}
+.app-3d-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+  border: none;
+  box-shadow: 0 3.5px 0 rgba(0, 0, 0, 0.2), 0 6px 12px rgba(0, 0, 0, 0.22), inset 0 2px 1.5px rgba(255, 255, 255, 1);
+  cursor: pointer;
+}
+
+/* Landscape Advanced Search (Horizontal Full-Width Layout + Portrait-Viewport Fallback Rotation) */
+.global-search-landscape {
+  --search-safe-top: var(--app-safe-top, env(safe-area-inset-top, 0px));
+  --search-safe-bottom: var(--app-safe-bottom, env(safe-area-inset-bottom, 0px));
+  --search-safe-left: env(safe-area-inset-left, 0px);
+  --search-safe-right: env(safe-area-inset-right, 0px);
+}
+
+.global-search-landscape .app-top-bar {
+  padding-top: var(--search-safe-top);
+  padding-left: var(--search-safe-left);
+  padding-right: var(--search-safe-right);
+  min-height: calc(52px + var(--search-safe-top));
+}
+
+.global-search-landscape .app-top-bar__inner {
+  max-width: none !important;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.global-search-landscape .global-search-subheader {
+  padding-left: calc(1rem + var(--search-safe-left));
+  padding-right: calc(1rem + var(--search-safe-right));
+}
+
+.global-search-landscape .global-search-results-inner {
+  padding-left: calc(1rem + var(--search-safe-left));
+  padding-right: calc(1rem + var(--search-safe-right));
+}
+
+.global-search-landscape .app-scroll-safe {
+  padding-bottom: calc(var(--search-safe-bottom) + var(--app-scroll-gap)) !important;
+}
+
+@media (orientation: portrait) {
+  .global-search-landscape {
+    --search-safe-top: env(safe-area-inset-right, 0px);
+    --search-safe-bottom: env(safe-area-inset-left, 0px);
+    --search-safe-left: var(--app-safe-top, env(safe-area-inset-top, 0px));
+    --search-safe-right: var(--app-safe-bottom, env(safe-area-inset-bottom, 0px));
+    transform: rotate(90deg);
+    transform-origin: center center;
+    width: 100dvh !important;
+    height: 100dvw !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    margin-top: -50dvw;
+    margin-left: -50dvh;
+    z-index: 40;
+  }
+}
+
+/* ==========================================================================
+   Visual Qibla 3D Diorama Map & Living Bobbing 3D Location Markers
+   ========================================================================== */
+@keyframes qiblaMarkerBob {
+  0%, 100% {
+    transform: translate3d(0, 0px, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -11px, 0) scale(1.045);
+  }
+}
+
+@keyframes qiblaMarkerShadow {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.46;
+  }
+  50% {
+    transform: translateX(-50%) scale(0.68);
+    opacity: 0.18;
+  }
+}
+
+@keyframes qiblaBeaconPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.42);
+    opacity: 0.82;
+  }
+  75%, 100% {
+    transform: translate(-50%, -50%) scale(1.85);
+    opacity: 0;
+  }
+}
+
+@keyframes qiblaDashFlow {
+  from {
+    stroke-dashoffset: 40;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.qibla-3d-map-stage {
+  position: relative;
+}
+
+.qibla-3d-floor-shadow {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: -10px;
+  height: 22px;
+  border-radius: 9999px;
+  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.34) 0%, rgba(15, 23, 42, 0.12) 55%, rgba(15, 23, 42, 0) 78%);
+  filter: blur(7px);
+  transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 0;
+}
+
+.qibla-3d-map-board {
+  transform: translateY(0px);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.qibla-3d-map-board.qibla-3d-active {
+  transform: translateY(-3px);
+}
+
+.qibla-3d-map-viewport {
+  transition: box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.4s ease;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 6px 0 rgba(148, 163, 184, 0.45),
+    0 14px 26px rgba(15, 23, 42, 0.14),
+    inset 0 2px 4px rgba(255, 255, 255, 0.85);
+}
+
+.qibla-3d-active .qibla-3d-map-viewport {
+  border: 3px solid rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 10px 0 #cbd5e1,
+    0 20px 36px rgba(15, 23, 42, 0.24),
+    inset 0 5px 14px rgba(15, 23, 42, 0.2),
+    inset 0 -3px 8px rgba(255, 255, 255, 0.72);
+}
+
+.dark .qibla-3d-map-viewport,
+body.theme-black-gold .qibla-3d-map-viewport {
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 6px 0 #09090b,
+    0 16px 28px rgba(0, 0, 0, 0.68),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.14);
+}
+
+.dark .qibla-3d-active .qibla-3d-map-viewport,
+body.theme-black-gold .qibla-3d-active .qibla-3d-map-viewport {
+  border: 3px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 10px 0 #050507,
+    0 22px 38px rgba(0, 0, 0, 0.86),
+    inset 0 6px 16px rgba(0, 0, 0, 0.78),
+    inset 0 -3px 8px rgba(255, 255, 255, 0.14);
+}
+
+.qibla-3d-map-viewport .leaflet-tile-pane {
+  filter: contrast(1.16) saturate(1.65) brightness(0.97);
+}
+
+.qibla-3d-map-dark .leaflet-tile-pane {
+  filter: brightness(0.86) contrast(1.14) saturate(1.25);
+}
+
+.qibla-3d-map-viewport .leaflet-control-attribution {
+  font-size: 9px;
+  opacity: 0.65;
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(4px);
+  border-top-left-radius: 8px;
+}
+
+.qibla-3d-map-dark .qibla-3d-map-viewport .leaflet-control-attribution {
+  background: rgba(15, 23, 42, 0.72) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.qibla-3d-map-viewport .maplibregl-map {
+  width: 100%;
+  height: 100%;
+  font-family: 'Cairo', sans-serif;
+}
+
+.qibla-3d-map-viewport .maplibregl-canvas {
+  outline: none;
+}
+
+.qibla-3d-map-viewport .maplibregl-marker {
+  z-index: 10;
+}
+
+.qibla-3d-map-viewport .maplibregl-ctrl-bottom-right,
+.qibla-3d-map-viewport .maplibregl-ctrl-bottom-left {
+  z-index: 15;
+}
+
+.qibla-3d-map-viewport .maplibregl-ctrl-attrib {
+  font-size: 9px;
+  opacity: 0.68;
+  background: rgba(255, 255, 255, 0.76) !important;
+  backdrop-filter: blur(4px);
+  border-top-left-radius: 10px;
+  padding: 1px 6px;
+}
+
+.qibla-3d-map-dark .qibla-3d-map-viewport .maplibregl-ctrl-attrib {
+  background: rgba(15, 23, 42, 0.78) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.qibla-3d-map-dark .qibla-3d-map-viewport .maplibregl-ctrl-attrib a {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.qibla-3d-divicon {
+  background: transparent !important;
+  border: none !important;
+  overflow: visible !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  width: 78px;
+  height: 92px;
+}
+
+.qibla-3d-divicon.is-user-marker {
+  width: 70px;
+  height: 86px;
+}
+
+.qibla-3d-marker-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  cursor: pointer;
+  overflow: visible;
+}
+
+.qibla-3d-marker-stand {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: center 100%;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.qibla-3d-active .qibla-3d-marker-stand {
+  transform: scale(1.06);
+}
+
+.qibla-3d-marker-root.is-focused .qibla-3d-marker-stand {
+  transform: scale(1.12);
+}
+
+.qibla-3d-marker-bob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  height: 100%;
+  padding-bottom: 4px;
+  animation: qiblaMarkerBob 2.35s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  will-change: transform;
+}
+
+.qibla-3d-marker-bob.is-user {
+  padding-bottom: 1px;
+  animation-delay: -1.15s;
+}
+
+.qibla-3d-exact-dot {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  border: 2px solid #ffffff;
+  transform: translate(-50%, 50%);
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.25), 0 2px 6px rgba(0, 0, 0, 0.4);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.qibla-3d-marker-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 28px;
+  height: 9px;
+  border-radius: 9999px;
+  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.55) 0%, rgba(15, 23, 42, 0) 72%);
+  animation: qiblaMarkerShadow 2.35s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  pointer-events: none;
+}
+
+.qibla-3d-marker-shadow.is-user {
+  width: 22px;
+  height: 8px;
+  animation-delay: -1.15s;
+}
+
+.qibla-3d-beacon-ring {
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 28px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  animation: qiblaBeaconPulse 2.35s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  pointer-events: none;
+}
+
+.qibla-3d-beacon-ring.is-user {
+  bottom: -6px;
+  width: 24px;
+  height: 12px;
+  animation-delay: -1.15s;
+}
+
+.qibla-3d-marker-root.is-focused .qibla-3d-beacon-ring {
+  border-width: 3px;
+}
+
+.qibla-3d-marker-tag {
+  margin-bottom: 2px;
+  padding: 1.5px 7px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+}
+
+.qibla-3d-arc-flow {
+  animation: qiblaDashFlow 1.4s linear infinite;
+}

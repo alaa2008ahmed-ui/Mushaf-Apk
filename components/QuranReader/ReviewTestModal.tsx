@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle2, XCircle, HelpCircle, ArrowRight } from 'lucide-react';
-import { toArabic } from './constants';
+import { toArabic, isDarkQuranTheme } from './constants';
+import { registerBackInterceptor } from '../../hooks/useBackButton';
 
 const stripTajweed = (text: string) => {
     if (!text) return '';
@@ -18,6 +19,7 @@ interface ReviewTestModalProps {
     toAyah: number;
     currentTheme: any;
     onComplete: (success: boolean) => void;
+    isLandscape?: boolean;
 }
 
 const ReviewTestModal: React.FC<ReviewTestModalProps> = ({
@@ -29,7 +31,8 @@ const ReviewTestModal: React.FC<ReviewTestModalProps> = ({
     toSurah,
     toAyah,
     currentTheme,
-    onComplete
+    onComplete,
+    isLandscape = false
 }) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [options, setOptions] = useState<any[]>([]);
@@ -37,6 +40,16 @@ const ReviewTestModal: React.FC<ReviewTestModalProps> = ({
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
     const [score, setScore] = useState(0);
     const [testAyahs, setTestAyahs] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const interceptor = () => {
+            onClose();
+            return true;
+        };
+        const unregister = registerBackInterceptor(interceptor);
+        return unregister;
+    }, [isOpen, onClose]);
 
     useEffect(() => {
         if (isOpen) {
@@ -68,12 +81,24 @@ const ReviewTestModal: React.FC<ReviewTestModalProps> = ({
         const correctAyah = ayahs[step];
         const distractors: any[] = [];
         
-        // Pick random distractors from the same surah or nearby
+        // Pick random distractors from the same surah or nearby safely
         const surah = quranData.surahs[correctAyah.surahNumber - 1];
-        while (distractors.length < 3) {
-            const randomAyah = surah.ayahs[Math.floor(Math.random() * surah.ayahs.length)];
-            if (randomAyah.numberInSurah !== correctAyah.ayahNumber && !distractors.find(d => d.numberInSurah === randomAyah.numberInSurah)) {
-                distractors.push(randomAyah);
+        let attempts = 0;
+        while (distractors.length < 3 && attempts < 100) {
+            attempts++;
+            const targetSurah = (surah && surah.ayahs.length >= 4 && attempts < 30)
+                ? surah
+                : quranData.surahs[Math.floor(Math.random() * quranData.surahs.length)];
+            
+            if (targetSurah?.ayahs?.length) {
+                const randomAyah = targetSurah.ayahs[Math.floor(Math.random() * targetSurah.ayahs.length)];
+                if (
+                    randomAyah && 
+                    !(targetSurah.number === correctAyah.surahNumber && randomAyah.numberInSurah === correctAyah.ayahNumber) &&
+                    !distractors.some(d => d.number === randomAyah.number)
+                ) {
+                    distractors.push(randomAyah);
+                }
             }
         }
         
@@ -111,53 +136,71 @@ const ReviewTestModal: React.FC<ReviewTestModalProps> = ({
     const currentAyah = testAyahs[currentStep];
     const prevAyah = currentStep > 0 ? testAyahs[currentStep - 1] : null;
 
+    const isDarkTheme = isDarkQuranTheme(currentTheme);
+
     return (
-        <div className="fixed inset-0 z-[1200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn" dir="rtl">
-            <div className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-modal-enter" style={{ backgroundColor: currentTheme.bg, color: currentTheme.text }}>
+        <div className={`fixed inset-0 z-[1200] bg-black/65 flex items-center justify-center ${isLandscape ? 'p-2.5' : 'p-0 sm:p-4'}`} dir="rtl" onClick={onClose}>
+            <div
+                className={`modal-skinned font-cairo ${isLandscape ? 'compact-landscape-modal w-[62%] max-w-[430px] h-auto max-h-[86%] rounded-3xl' : 'w-full max-w-lg h-full sm:h-auto max-h-[100dvh] sm:max-h-[90dvh] rounded-none sm:rounded-3xl'} ${isDarkTheme ? 'quran-3d-dark' : ''} bg-white shadow-2xl overflow-hidden flex flex-col border-0`}
+                style={{ backgroundColor: currentTheme.bg, color: currentTheme.text, fontFamily: "'Cairo', sans-serif", border: 'none', outline: 'none' }}
+                onClick={e => e.stopPropagation()}
+            >
                 {/* Header */}
-                <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-                    <button onClick={onClose} className="p-2 hover:bg-black/5 rounded-full transition-colors">
-                        <X size={20} />
+                <div 
+                    className={`${isLandscape ? 'px-3 py-2' : 'px-4 pb-4'} border-0 flex items-center justify-between shrink-0`} 
+                    style={isLandscape ? undefined : { 
+                        paddingTop: 'calc(var(--app-safe-top, 0px) + 1rem)'
+                    }}
+                >
+                    <button onClick={onClose} className={`${isLandscape ? 'p-1.5 rounded-lg' : 'p-2 rounded-xl'} quran-raised-btn transition-colors border-0 text-slate-700 dark:text-slate-200`} title="رجوع">
+                        <ArrowRight size={isLandscape ? 16 : 20} className="quran-3d-icon" />
                     </button>
-                    <div className="text-center">
-                        <div className="font-bold text-sm">اختبار الحفظ</div>
-                        <div className="text-[10px] opacity-50">الخطوة {currentStep + 1} من {testAyahs.length}</div>
+                    <div className="text-center flex-1">
+                        <div className={`font-bold ${isLandscape ? 'text-xs' : 'text-sm'}`}>اختبار الحفظ</div>
+                        <div className="text-[10px] opacity-60">الخطوة {currentStep + 1} من {testAyahs.length}</div>
                     </div>
-                    <div className="w-10"></div>
+                    <button onClick={onClose} className={`${isLandscape ? 'p-1.5 rounded-lg' : 'p-2 rounded-xl'} quran-raised-btn transition-colors border-0 text-slate-400`} title="إغلاق">
+                        <X size={isLandscape ? 16 : 20} className="quran-3d-icon" />
+                    </button>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="h-1 w-full bg-black/5">
-                    <div 
-                        className="h-full bg-emerald-500 transition-all duration-500" 
-                        style={{ width: `${((currentStep + 1) / testAyahs.length) * 100}%` }}
-                    ></div>
+                <div className={`${isLandscape ? 'px-3 pb-1' : 'px-4 pb-1'} shrink-0`}>
+                    <div className="app-3d-progress-track h-2 w-full bg-slate-200/80 dark:bg-zinc-800 rounded-full overflow-hidden p-[1.5px]">
+                        <div 
+                            className="app-3d-progress-fill h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                            style={{ 
+                                width: `${((currentStep + 1) / testAyahs.length) * 100}%`,
+                                backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 60%)'
+                            }}
+                        ></div>
+                    </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className={`flex-1 min-h-0 overflow-y-auto ${isLandscape ? 'p-3 space-y-2.5' : 'p-6 modal-sheet-safe-bottom space-y-6'}`}>
                     {/* Question Context */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
-                            <HelpCircle size={18} />
+                    <div className={isLandscape ? 'space-y-2' : 'space-y-4'}>
+                        <div className={`flex items-center gap-1.5 text-emerald-600 font-bold ${isLandscape ? 'text-xs' : 'text-sm'}`}>
+                            <HelpCircle size={isLandscape ? 15 : 18} className="quran-3d-icon" />
                             <span>ما هي الآية التالية؟</span>
                         </div>
                         
                         {prevAyah && (
-                            <div className="p-4 rounded-2xl bg-black/5 border border-dashed opacity-60" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-                                <div className="text-xs mb-2 opacity-50">الآية السابقة:</div>
-                                <div className="text-lg leading-relaxed font-trad" style={{ fontFamily: 'Amiri' }}>
+                            <div className={`${isLandscape ? 'p-2.5 rounded-xl' : 'p-4 rounded-2xl'} quran-raised-card border-0 opacity-80`}>
+                                <div className="text-[11px] mb-1 opacity-60 font-bold">الآية السابقة:</div>
+                                <div className={`${isLandscape ? 'text-sm' : 'text-lg'} leading-relaxed font-trad`} style={{ fontFamily: 'Amiri' }}>
                                     {stripTajweed(prevAyah.text)}
-                                    <span className="inline-flex items-center justify-center w-6 h-6 mr-2 rounded-full border border-current text-[10px]">
+                                    <span className="inline-flex items-center justify-center w-5 h-5 mr-1.5 rounded-full border-0 quran-raised-card text-[10px] font-bold">
                                         {toArabic(prevAyah.ayahNumber)}
                                     </span>
                                 </div>
                             </div>
                         )}
 
-                        <div className="p-6 rounded-2xl border-2 border-emerald-500/20 bg-emerald-500/5 text-center">
-                            <div className="text-2xl leading-relaxed font-bold font-trad" style={{ color: currentTheme.accent, fontFamily: 'Amiri' }}>
+                        <div className={`${isLandscape ? 'p-3 rounded-2xl' : 'p-6 rounded-3xl'} border-0 quran-raised-card text-center`}>
+                            <div className={`${isLandscape ? 'text-lg' : 'text-2xl'} leading-relaxed font-bold font-trad`} style={{ color: currentTheme.accent, fontFamily: 'Amiri' }}>
                                 ؟؟؟
-                                <span className="inline-flex items-center justify-center w-8 h-8 mr-2 rounded-full border border-current text-sm">
+                                <span className={`inline-flex items-center justify-center ${isLandscape ? 'w-7 h-7 text-xs' : 'w-9 h-9 text-sm'} mr-2 rounded-full border-0 quran-raised-card font-bold`}>
                                     {toArabic(currentAyah?.ayahNumber || 0)}
                                 </span>
                             </div>
@@ -165,7 +208,7 @@ const ReviewTestModal: React.FC<ReviewTestModalProps> = ({
                     </div>
 
                     {/* Options */}
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className={`grid ${isLandscape ? 'grid-cols-2 gap-2' : 'grid-cols-1 gap-3'}`}>
                         {options.map((option, index) => {
                             const isSelected = selectedOption === index;
                             const isCorrectOption = isCorrect !== null && option.numberInSurah === currentAyah.ayahNumber;
@@ -176,20 +219,20 @@ const ReviewTestModal: React.FC<ReviewTestModalProps> = ({
                                     key={index}
                                     disabled={selectedOption !== null}
                                     onClick={() => handleOptionClick(option, index)}
-                                    className={`p-4 rounded-2xl border-2 text-right transition-all duration-300 flex items-center justify-between gap-4 ${
-                                        isCorrectOption ? 'border-emerald-500 bg-emerald-50' : 
-                                        isWrongSelection ? 'border-red-500 bg-red-50' : 
-                                        isSelected ? 'border-blue-500 bg-blue-50' : 
-                                        'border-black/5 hover:border-emerald-500/30'
+                                    className={`${isLandscape ? 'p-2.5 rounded-xl gap-2' : 'p-4 rounded-2xl gap-4'} border-0 text-right transition-all duration-300 flex items-center justify-between ${
+                                        isCorrectOption ? 'quran-raised-btn-selected bg-emerald-500 text-white shadow-lg scale-[1.02]' : 
+                                        isWrongSelection ? 'quran-raised-btn-selected bg-red-500 text-white shadow-lg scale-[1.02]' : 
+                                        isSelected ? 'quran-raised-btn-selected shadow-md' : 
+                                        'quran-raised-btn hover:scale-[1.01]'
                                     }`}
                                 >
-                                    <div className="flex-1 text-base leading-relaxed font-medium">
+                                    <div className={`flex-1 ${isLandscape ? 'text-xs' : 'text-base'} leading-relaxed font-medium`}>
                                         {stripTajweed(option.text)}
                                     </div>
                                     <div className="shrink-0">
-                                        {isCorrectOption ? <CheckCircle2 className="text-emerald-500" size={20} /> : 
-                                         isWrongSelection ? <XCircle className="text-red-500" size={20} /> : 
-                                         <div className="w-5 h-5 rounded-full border-2 border-black/10"></div>}
+                                        {isCorrectOption ? <CheckCircle2 className="text-white" size={isLandscape ? 18 : 22} /> : 
+                                         isWrongSelection ? <XCircle className="text-white" size={isLandscape ? 18 : 22} /> : 
+                                         <div className={`${isLandscape ? 'w-4 h-4' : 'w-5 h-5'} rounded-full border-0 quran-raised-card`}></div>}
                                     </div>
                                 </button>
                             );

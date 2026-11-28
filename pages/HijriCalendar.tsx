@@ -1,28 +1,43 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import BottomBar from '../components/BottomBar';
 import { registerBackInterceptor } from '../hooks/useBackButton';
 import { useTheme } from '../context/ThemeContext';
-import ThemePageLock from '../components/ThemePageLock';
-import { gregorianMonths, hijriMonths, islamicEvents, IslamicEvent } from '../data/calendarData';
-import { ChevronRight, ChevronLeft, Calendar as CalendarIcon, Info, RefreshCw, ZoomIn, Copy, Share2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { shareAsImage } from '../utils/shareAsImage';
+import { useLanguage } from '../context/LanguageContext';
+import IslamicHistoryMemoryBottomSheet from '../components/MainMenu/IslamicHistoryMemoryBottomSheet';
+import { hijriMonths, islamicEvents } from '../data/worshipAndHistory/calendarData';
+import {
+    tCalendar,
+    formatCalendarNumber,
+    getCalendarMonthName,
+    getCalendarWeekdayName,
+    CALENDAR_WEEKDAYS,
+    CALENDAR_GREGORIAN_MONTHS,
+    CALENDAR_HIJRI_MONTHS,
+    HISTORICAL_EVENTS_TRANSLATED,
+    ISLAMIC_EVENTS_TRANSLATED,
+    HistoricalEventLocalized,
+    Language
+} from '../utils/app/calendarTranslations';
+import { ChevronRight, ChevronLeft, Calendar as CalendarIcon, RefreshCw, ZoomIn, Copy, Share2, Check } from 'lucide-react';
+import { shareAsImage } from '../utils/share/shareAsImage';
+import { CommunitySpotlightGuide, getGuideSeen } from '../components/Community/CommunitySpotlightGuide';
+import { CALENDAR_PAGE_STEPS } from '../components/Community/communityTourSteps';
+import { markPageAsSeen } from '../utils/app/badgeManager';
+import { getCalculator3DStyles, Calculator3DStyles } from '../utils/styles/calculator3DStyles';
+import { getToast3DStyles } from '../utils/styles/toast3DStyles';
 
-// --- Helper Functions ---
-const ARABIC_TO_ENGLISH_NUMERALS = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
-
-function toArabicNumerals(num: string | number) {
-    if (num === null || num === undefined) return '';
-    return String(num).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d]);
-}
-
-function toEnglishNumerals(str: string | number) {
-    if (str === null || str === undefined) return '';
-    let result = str.toString();
-    for (const [arabic, english] of Object.entries(ARABIC_TO_ENGLISH_NUMERALS)) {
-        result = result.split(arabic).join(english);
+// Helper to convert hex colors to RGBA for smooth dynamic theme tints
+function hexToRgba(hex: string, alpha: number = 1): string {
+    if (!hex) return `rgba(46, 125, 94, ${alpha})`;
+    let clean = hex.replace('#', '');
+    if (clean.length === 3) {
+        clean = clean.split('').map(c => c + c).join('');
     }
-    return result;
+    const num = parseInt(clean, 16);
+    if (isNaN(num)) return `rgba(46, 125, 94, ${alpha})`;
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 // Convert Gregorian to Hijri for a given date
@@ -103,12 +118,10 @@ function g2h(year: number, month: number, day: number) {
  * Uses iterative search for precision.
  */
 function h2g(y: number, m: number, d: number): Date {
-    // Start with a rough estimate based on days per Hijri year
     const daysSinceEpoch = Math.floor((y - 1) * 354.367) + (m - 1) * 29.5 + d;
     const estimateDate = new Date(622, 6, 19); // Hijri AH 1-1-1 epoch
     estimateDate.setDate(estimateDate.getDate() + daysSinceEpoch);
     
-    // Search in a window to find the exact match for our g2h function
     let bestDate = new Date(estimateDate);
     
     for (let i = -5; i <= 5; i++) {
@@ -123,410 +136,23 @@ function h2g(y: number, m: number, d: number): Date {
     return bestDate;
 }
 
-const WEEKDAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-
-const historicalEvents = [
-    {
-        title: "الهجرة النبوية الشريفة",
-        hijriYear: "1 هـ",
-        gregorianYear: "622 م",
-        description: "هجرة النبي محمد ﷺ من مكة إلى المدينة المنورة (يثرب). تعتبر نقطة التحول الكبرى في التاريخ الإسلامي، حيث تأسست أول دولة إسلامية، وبها بدأ التأريخ الهجري الذي اعتمده عمر بن الخطاب رضي الله عنه."
-    },
-    {
-        title: "تحويل القبلة",
-        hijriYear: "2 هـ",
-        gregorianYear: "624 م",
-        description: "تحويل القبلة من بيت المقدس إلى الكعبة المشرفة في مكة المكرمة، وذلك استجابة لرغبة النبي ﷺ، وكان ذلك في شهر شعبان من السنة الثانية للهجرة."
-    },
-    {
-        title: "غزوة بدر الكبرى",
-        hijriYear: "2 هـ",
-        gregorianYear: "624 م",
-        description: "أول معركة فاصلة في تاريخ الإسلام. التقى فيها المسلمون (313 مقاتل) بجيش قريش (1000 مقاتل). انتهت بنصر مؤزر للمسلمين، مما عزز مكانة الدولة الإسلامية الناشئة في شبه الجزيرة العربية."
-    },
-    {
-        title: "غزوة أحد",
-        hijriYear: "3 هـ",
-        gregorianYear: "625 م",
-        description: "وقعت بين المسلمين وقوات قريش عند جبل أحد. كانت المعركة اختباراً كبيراً للمسلمين، وتعلموا منها دروساً عظيمة في الطاعة والثبات، واستشهد فيها حمزة بن عبد المطلب رضي الله عنه."
-    },
-    {
-        title: "غزوة الخندق (الأحزاب)",
-        hijriYear: "5 هـ",
-        gregorianYear: "627 م",
-        description: "حصار ضربته قبائل العرب واليهود (الأحزاب) على المدينة. أشار سلمان الفارسي بحفر خندق لحماية المدينة. انتهى الحصار بهزيمة الأحزاب بفضل الله ثم الرياح الشديدة التي اقتلعت خيامهم."
-    },
-    {
-        title: "صلح الحديبية",
-        hijriYear: "6 هـ",
-        gregorianYear: "628 م",
-        description: "معاهدة سلام بين المسلمين وقريش لمدة 10 سنوات. رغم شروطها التي بدت مجحفة ظاهرياً، اعتبرها القرآن 'فتحاً مبيناً' لأنها أتاحت للمسلمين نشر الدعوة بأمان وتفرغوا لدعوة القبائل والملوك."
-    },
-    {
-        title: "غزوة خيبر",
-        hijriYear: "7 هـ",
-        gregorianYear: "628 م",
-        description: "فتح فيها المسلمون حصون خيبر التي كانت مركزاً لمؤامرات اليهود ضد الدولة الإسلامية، وشهدت المعركة بطولات كبيرة لعلي بن أبي طالب رضي الله عنه."
-    },
-    {
-        title: "غزوة مؤتة",
-        hijriYear: "8 هـ",
-        gregorianYear: "629 م",
-        description: "أول مواجهة عسكرية كبيرة بين المسلمين والإمبراطورية البيزنطية وحلفائها. استشهد فيها القادة الثلاثة: زيد بن حارثة، جعفر بن أبي طالب، وعبد الله بن رواحة، وأظهر فيها خالد بن الوليد عبقرية عسكرية في الانسحاب."
-    },
-    {
-        title: "فتح مكة",
-        hijriYear: "8 هـ",
-        gregorianYear: "630 م",
-        description: "دخول النبي ﷺ مكة بجيش قوامه 10 آلاف مقاتل دون إراقة دماء بعد نقض قريش لصلح الحديبية. تم تطهير الكعبة من الأصنام، وأعلن النبي العفو العام قائلاً: 'اذهبوا فأنتم الطلقاء'."
-    },
-    {
-        title: "غزوة تبوك",
-        hijriYear: "9 هـ",
-        gregorianYear: "630 م",
-        description: "آخر غزوة خرج فيها النبي ﷺ بنفسه، وتسمى 'غزوة العسرة' لصعوبتها. خرج المسلمون لملاقاة الروم، لكن الروم تراجعوا، وعقد النبي ﷺ معاهدات مع القبائل المجاورة."
-    },
-    {
-        title: "وفاة النبي ﷺ",
-        hijriYear: "11 هـ",
-        gregorianYear: "632 م",
-        description: "انتقل النبي محمد ﷺ إلى الرفيق الأعلى في يوم الاثنين 12 ربيع الأول بعد أداء حجة الوداع وإتمام الدين، وخلفه أبو بكر الصديق في قيادة المسلمين."
-    },
-    {
-        title: "جمع القرآن الكريم",
-        hijriYear: "12 هـ",
-        gregorianYear: "633 م",
-        description: "تم جمع القرآن الكريم في مصحف واحد لأول مرة في عهد الخليفة أبي بكر الصديق وبإشارة من عمر بن الخطاب، وذلك بعد استشهاد عدد كبير من حفاظ القرآن في حروب الردة."
-    },
-    {
-        title: "معركة اليرموك",
-        hijriYear: "15 هـ",
-        gregorianYear: "636 م",
-        description: "معركة حاسمة بقيادة خالد بن الوليد ضد الإمبراطورية البيزنطية. استمرت 6 أيام وانتهت بانتصار ساحق للمسلمين، مما أدى إلى إنهاء السيطرة الرومانية على بلاد الشام وفتح أبواب القدس."
-    },
-    {
-        title: "معركة القادسية",
-        hijriYear: "15 هـ",
-        gregorianYear: "636 م",
-        description: "معركة كبرى بقيادة سعد بن أبي وقاص ضد الإمبراطورية الساسانية الفارسية. انتهت بانتصار المسلمين وسقوط عاصمة الفرس (المدائن)، وافتتاح بلاد العراق للعرب المسلمين."
-    },
-    {
-        title: "فتح بيت المقدس",
-        hijriYear: "16 هـ",
-        gregorianYear: "637 م",
-        description: "تسلم عمر بن الخطاب رضي الله عنه مفاتيح القدس من البطريرك صفرونيوس، وكتب 'العهدة العمرية' التي منحت المسيحيين الأمان على أنفسهم وكنائسهم وممتلكاتهم."
-    },
-    {
-        title: "عام الرمادة",
-        hijriYear: "18 هـ",
-        gregorianYear: "639 م",
-        description: "سنة قحط وجفاف شديد أصابت بلاد الحجاز في عهد عمر بن الخطاب، وأبلى فيها الفاروق بلاءً حسناً في إدارة الأزمة وإغاثة الناس من الأمصار المجاورة."
-    },
-    {
-        title: "فتح مصر",
-        hijriYear: "20 هـ",
-        gregorianYear: "641 م",
-        description: "دخول الإسلام إلى مصر بقيادة عمرو بن العاص، حيث سقط حصن بابليون وفتحت الإسكندرية، وبدأت مرحلة جديدة من تاريخ مصر تحت الحكم الإسلامي."
-    },
-    {
-        title: "معارك ذات الصواري",
-        hijriYear: "34 هـ",
-        gregorianYear: "654 م",
-        description: "أول معركة بحرية كبرى في تاريخ المسلمين، وقعت بين الأسطول الإسلامي والأسطول البيزنطي في البحر المتوسط، وانتهت بانتصار المسلمين وسيطرتهم البحرية."
-    },
-    {
-        title: "تأسيس الدولة الأموية",
-        hijriYear: "41 هـ",
-        gregorianYear: "661 م",
-        description: "بدء حكم الدولة الأموية بتولي معاوية بن أبي سفيان رضي الله عنه الخلافة، واتخاذ دمشق عاصمة لها، لتبدأ مرحلة الفتوحات الواسعة شرقاً وغرباً."
-    },
-    {
-        title: "بناء القيروان",
-        hijriYear: "50 هـ",
-        gregorianYear: "670 م",
-        description: "أسسها القائد عقبة بن نافع في تونس لتكون أول قاعدة عسكرية ومدنية للمسلمين في إفريقيا ومنطلقاً لنشر الإسلام في المغرب العربي."
-    },
-    {
-        title: "بناء مسجد قبة الصخرة",
-        hijriYear: "72 هـ",
-        gregorianYear: "691 م",
-        description: "أتم بناءه الخليفة الأموي عبد الملك بن مروان في المسجد الأقصى بالقدس، ويعد أحد أقدم وأجمل المعالم المعمارية الإسلامية الباقية حتى اليوم."
-    },
-    {
-        title: "تعريب الدواوين",
-        hijriYear: "81 هـ",
-        gregorianYear: "700 م",
-        description: "أمر الخليفة عبد الملك بن مروان بتحويل لغة السجلات الرسمية (الدواوين) إلى اللغة العربية بدلاً من الفارسية واليونانية، مما عزز الهوية العربية للدولة."
-    },
-    {
-        title: "بناء الجامع الأموي",
-        hijriYear: "86 هـ",
-        gregorianYear: "705 م",
-        description: "بدأ الخليفة الوليد بن عبد الملك بناء الجامع الكبير في دمشق، والذي يعد من أعظم المساجد في تاريخ الإسلام وفخر العمارة الأموية."
-    },
-    {
-        title: "فتح الأندلس",
-        hijriYear: "92 هـ",
-        gregorianYear: "711 م",
-        description: "بدأ بقيادة طارق بن زياد وموسى بن نصير. عبرت القوات المضيق وانتهت بفتح معظم شبه الجزيرة الأيبيرية وبداية الحضارة الأندلسية العريقة."
-    },
-    {
-        title: "معركة بلاط الشهداء",
-        hijriYear: "114 هـ",
-        gregorianYear: "732 م",
-        description: "وقعت في فرنسا بقيادة عبد الرحمن الغافقي ضد قوات الفرنجة، وتعتبر من أهم المعارك التي أوقفت التمدد الإسلامي في أوربا."
-    },
-    {
-        title: "تأسيس الدولة العباسية",
-        hijriYear: "132 هـ",
-        gregorianYear: "750 م",
-        description: "سقوط الدولة الأموية وقيام الدولة العباسية بعد معركة الزاب، وانتقال مركز الخلافة إلى العراق."
-    },
-    {
-        title: "بناء مدينة بغداد",
-        hijriYear: "145 هـ",
-        gregorianYear: "762 م",
-        description: "أنشأها الخليفة العباسي أبو جعفر المنصور وسماها 'دار السلام'. أصبحت عاصمة الخلافة العباسية ومركزاً عالمياً للعلم والترجمة والازدهار الحضاري."
-    },
-    {
-        title: "تأسيس إمارة الأندلس",
-        hijriYear: "138 هـ",
-        gregorianYear: "756 م",
-        description: "نجاح عبد الرحمن الداخل (صقر قريش) في دخول الأندلس وتأسيس إمارة أموية مستقلة فيها بعد سقوط الدولة الأموية في المشرق."
-    },
-    {
-        title: "فتح جزيرة صقلية",
-        hijriYear: "212 هـ",
-        gregorianYear: "827 م",
-        description: "بدأ الفتح بقيادة القاضي أسد بن الفرات في عهد الأغالبة، واستمرت الجزيرة تحت الحكم الإسلامي لعدة قرون كمركز حضاري هام."
-    },
-    {
-        title: "فتح عمورية",
-        hijriYear: "223 هـ",
-        gregorianYear: "838 م",
-        description: "قادها الخليفة المعتصم بالله رداً على اعتداء البيزنطيين على المسلمين، وتخلدت ببيت أبي تمام: 'السيف أصدق أنباء من الكتب'."
-    },
-    {
-        title: "بناء جامعة القرويين",
-        hijriYear: "245 هـ",
-        gregorianYear: "859 م",
-        description: "أسستها فاطمة الفهرية في مدينة فاس بالمغرب، وتعتبر أقدم جامعة مستمرة في منح الدرجات العلمية في العالم حسب اليونسكو."
-    },
-    {
-        title: "بناء الجامع الأزهر",
-        hijriYear: "359 هـ",
-        gregorianYear: "970 م",
-        description: "أسسه جوهر الصقلي القائد الفاطمي في القاهرة. تحول لاحقاً إلى أهم مدرسة ومعلم علمي في العالم الإسلامي لتدريس العلوم الشرعية واللغة العربية."
-    },
-    {
-        title: "معركة ملاذكرد",
-        hijriYear: "463 هـ",
-        gregorianYear: "1071 م",
-        description: "انتصار السلاجقة بقيادة ألب أرسلان على الإمبراطورية البيزنطية، مما مهد الطريق لدخول الأتراك المسلمين إلى بلاد الأناضول."
-    },
-    {
-        title: "معركة الزلاقة",
-        hijriYear: "479 هـ",
-        gregorianYear: "1086 م",
-        description: "انتصار كبير للمرابطين بقيادة يوسف بن تاشفين مع ملوك الطوائف ضد قوات ألفونسو السادس ملك قشتالة، مما أدى إلى تأخير سقوط الأندلس لأكثر من قرنين."
-    },
-    {
-        title: "معركة حطين",
-        hijriYear: "583 هـ",
-        gregorianYear: "1187 م",
-        description: "معركة فاصلة بقيادة صلاح الدين الأيوبي ضد الصليبيين. تم فيها تدمير الجيش الصليبي وأسر ملك القدس، مما مهد الطريق لاستعادة القدس وشريفها."
-    },
-    {
-        title: "وفاة صلاح الدين الأيوبي",
-        hijriYear: "589 هـ",
-        gregorianYear: "1193 م",
-        description: "وفاة الناصر صلاح الدين في دمشق بعد حياة حافلة بالبطولات والعدل والجهاد ضد الصليبيين، ودفن في منزله بجانب المسجد الأموي."
-    },
-    {
-        title: "معركة المنصورة",
-        hijriYear: "648 هـ",
-        gregorianYear: "1250 م",
-        description: "هزيمة الحملة الصليبية السابعة بقيادة الملك لويس التاسع في مصر، وأسره في دار ابن لقمان، مما مثل نهاية للحروب الصليبية الكبرى."
-    },
-    {
-        title: "معركة عين جالوت",
-        hijriYear: "658 هـ",
-        gregorianYear: "1260 م",
-        description: "معركة تاريخية كبرى بقيادة سيف الدين قطز والظاهر بيبرس. انتهت بهزيمة جيش المغول، وأنقذت العالم الإسلامي من الزوال ومهدت لدولة المماليك."
-    },
-    {
-        title: "استعادة عكا",
-        hijriYear: "690 هـ",
-        gregorianYear: "1291 م",
-        description: "نجاح المماليك بقيادة الأشرف خليل بن قلاوون في فتح مدينة عكا، وبذلك انتهى الوجود الصليبي في بلاد الشام بشكل نهائي."
-    },
-    {
-        title: "فتح القسطنطينية",
-        hijriYear: "857 هـ",
-        gregorianYear: "1453 م",
-        description: "نجاح السلطان العثماني محمد الفاتح في فتح القسطنطينية، تحقق بذلك حديث النبي ﷺ، وتم تحويل اسمها إلى إسطنبول لتصبح عاصمة العثمانيين."
-    },
-    {
-        title: "سقوط غرناطة",
-        hijriYear: "897 هـ",
-        gregorianYear: "1492 م",
-        description: "سلم أبو عبد الله محمد الصغير مفاتيح غرناطة للملوك الكاثوليك، وبذلك سقطت آخر ممالك المسلمين في الأندلس بعد 8 قرون."
-    },
-    {
-        title: "معركة مرج دابق",
-        hijriYear: "922 هـ",
-        gregorianYear: "1516 م",
-        description: "معركة بين العثمانيين والمماليك بقيادة سليم الأول وقنصوة الغوري. انتهت بضم بلاد الشام ومصر لاحقاً إلى السيادة العثمانية."
-    },
-    {
-        title: "بناء المسجد السليماني",
-        hijriYear: "964 هـ",
-        gregorianYear: "1557 م",
-        description: "تحفة معمارية صممها المهندس سنان في عهد السلطان سليمان القانوني في إسطنبول، تعبيراً عن قوة الدولة العثمانية في عصرها الذهبي."
-    },
-    {
-        title: "معركة ليبانتو",
-        hijriYear: "979 هـ",
-        gregorianYear: "1571 م",
-        description: "معركة بحرية ضخمة بين الأسطول العثماني والتحالف المسيحي في البحر المتوسط، وتعتبر هزة قوية للبحرية العثمانية في ذلك الوقت."
-    },
-    {
-        title: "حصار فيينا الثاني",
-        hijriYear: "1094 هـ",
-        gregorianYear: "1683 م",
-        description: "محاولة العثمانيين الكبرى لفتح فيينا بقيادة مرزيفونلو قره مصطفى باشا، وانتهت بتراجع العثمانيين وبدء مرحلة انحسار نفوذهم في أوربا."
-    },
-    {
-        title: "تأسيس الدولة السعودية الأولى",
-        hijriYear: "1157 هـ",
-        gregorianYear: "1744 م",
-        description: "بدأ التحالف التاريخي بين الإمام محمد بن سعود والشيخ محمد بن عبد الوهاب في الدرعية، لتبدأ مرحلة جديدة في تاريخ الجزيرة العربية."
-    },
-    {
-        title: "بناء مسجد قباء",
-        hijriYear: "1 هـ",
-        gregorianYear: "622 م",
-        description: "أول مسجد أسسه النبي ﷺ عند وصوله إلى المدينة المنورة في رحلة الهجرة، ويمثل أول لبنة في العمارة الإسلامية المسجدية."
-    },
-    {
-        title: "بناء مسجد القبلتين",
-        hijriYear: "2 هـ",
-        gregorianYear: "624 م",
-        description: "المكان الذي شهد نزول الوحي على النبي ﷺ بتحويل القبلة من بيت المقدس إلى الكعبة المشرفة بمكة أثناء صلاة الظهر."
-    },
-    {
-        title: "فتح جزيرة قبرص",
-        hijriYear: "28 هـ",
-        gregorianYear: "649 م",
-        description: "أول غزو بحري للمسلمين في عهد الخليفة عثمان بن عفان، بقيادة معاوية بن أبي سفيان، مما مهد للسيادة البحرية الإسلامية."
-    },
-    {
-        title: "معركة نهاوند",
-        hijriYear: "21 هـ",
-        gregorianYear: "642 م",
-        description: "تسمى 'فتح الفتوح'؛ حيث انتصر المسلمون بقيادة النعمان بن مقرن على الفرس، وكانت المعركة الفاصلة التي أنهت حكم الساسانيين."
-    },
-    {
-        title: "فتح بلاد النوبة",
-        hijriYear: "31 هـ",
-        gregorianYear: "652 م",
-        description: "بقيادة عمرو بن العاص ثم عبد الله بن أبي السرح؛ حيث تم توقيع معاهدة 'البقط' التي نظمت العلاقة بين المسلمين وأهل النوبة لقرون."
-    },
-    {
-        title: "فتح بلاد السند",
-        hijriYear: "92 هـ",
-        gregorianYear: "711 م",
-        description: "بقيادة البطل الشاب محمد بن القاسم الثقفي، الذي تمكن من دخول الهند ونشر الإسلام في تلك الربوع بفضل عدله وشجاعته."
-    },
-    {
-        title: "فتح سمرقند",
-        hijriYear: "93 هـ",
-        gregorianYear: "712 م",
-        description: "نجح القائد قتيبة بن مسلم الباهلي في فتح سمرقند، لتصبح لاحقاً واحدة من أعظم مراكز العلم والحضارة في تاريخ الإسلام."
-    },
-    {
-        title: "تأسيس مدينة القاهرة",
-        hijriYear: "358 هـ",
-        gregorianYear: "969 م",
-        description: "وضع حجر أساسها القائد جوهر الصقلي في عهد الخليفة المعز لدين الله الفاطمي، وسُميت 'القاهرة' تيمناً بالكوكب القاهر."
-    },
-    {
-        title: "فتح كابل",
-        hijriYear: "367 هـ",
-        gregorianYear: "977 م",
-        description: "بدأ دخول الإسلام الفعلي لأفغانستان في عهد الدولة الغزنوية بقيادة سبكتكين، مما مهد الطريق لنشر الإسلام في شبه القارة الهندية."
-    },
-    {
-        title: "استعادة دمشق",
-        hijriYear: "549 هـ",
-        gregorianYear: "1154 م",
-        description: "نجح نور الدين زنكي في ضم دمشق، موحداً بذلك الجبهة الإسلامية ضد الصليبيين، مما مهد الطريق لاحقاً لانتصارات صلاح الدين."
-    },
-    {
-        title: "معركة العقاب",
-        hijriYear: "609 هـ",
-        gregorianYear: "1212 م",
-        description: "معركة كبرى في الأندلس بين الموحدين والتحالف الصليبي الإسباني؛ وتعتبر نقطة البداية لتفكك دولة الموحدين وضياع الأندلس."
-    },
-    {
-        title: "سقوط بغداد",
-        hijriYear: "656 هـ",
-        gregorianYear: "1258 م",
-        description: "اجتياح هولاكو وجيوش المغول لبغداد، عاصمة الخلافة العباسية، مما أدى إلى دمار هائل للمكتبات والمساجد ونهاية حقبة حضارية."
-    },
-    {
-        title: "معركة وادي الخزندار",
-        hijriYear: "699 هـ",
-        gregorianYear: "1299 م",
-        description: "اشتباك عنيف بين المماليك وإيلخانات المغول في الشام؛ ورغم الهزيمة الظاهرية، إلا أنها استنزفت المغول ومنعتهم من الاستقرار."
-    },
-    {
-        title: "معركة نيقوبوليس",
-        hijriYear: "798 هـ",
-        gregorianYear: "1396 م",
-        description: "انتصار العثمانيين بقيادة بايزيد الأول (الصاعقة) على تحالف صليبي أوروبي ضخم، مما أثبت قوة العثمانيين في قلب القارة الأوروبية."
-    },
-    {
-        title: "معركة أنقرة",
-        hijriYear: "804 هـ",
-        gregorianYear: "1402 م",
-        description: "وقعت بين تيمورلنك وبايزيد الأول؛ أدت لهزيمة العثمانيين ودخول الدولة في مرحلة 'الفترة' الانتقالية قبل أن تعود أقوى مما كانت."
-    },
-    {
-        title: "معركة تشالديران",
-        hijriYear: "920 هـ",
-        gregorianYear: "1514 م",
-        description: "انتصار السلطان سليم الأول على الصفويين؛ مما أدى إلى تأمين الحدود الشرقية للدولة العثمانية والسيطرة على المناطق الحيوية."
-    },
-    {
-        title: "معركة وادي المخازن",
-        hijriYear: "986 هـ",
-        gregorianYear: "1578 م",
-        description: "أو معركة الملوك الثلاثة في المغرب؛ حيث انتصر المغاربة على البرتغاليين، مما حفظ استقلال المغرب وحماه من الاستعمار لعدة قرون."
-    },
-    {
-        title: "تأسيس الدار البيضاء",
-        hijriYear: "710 هـ تقريباً",
-        gregorianYear: "1310 م",
-        description: "بداية تشكل النواة الأولى للمدينة في العهد المريني، حيث بدأت تبرز كمركز تجاري وبحري هام على المحيط الأطلسي."
-    },
-    {
-        title: "بناء تاج محل",
-        hijriYear: "1041 هـ",
-        gregorianYear: "1632 م",
-        description: "بدأ الإمبراطور شاه جهان بناء ضريح 'تاج محل' في أغرة بالهند، والذي يعد من أروع نماذج العمارة الإسلامية الفنية في العالم."
-    },
-    {
-        title: "رحلة الإمام البخاري",
-        hijriYear: "210 هـ تقريباً",
-        gregorianYear: "825 م",
-        description: "بدأ الإمام البخاري رحلته الكبرى في طلب الحديث عبر الأمصار، والتي أثمرت عن 'صحيح البخاري' أصح كتاب بعد كتاب الله."
-    }
-];
-
 // --- Sub-components ---
 
-const CalendarGrid = ({ viewDate, onSelectDay, selectedDay, theme, primaryColor, secondaryColor, isBlackAndWhite, isDefaultTheme }: any) => {
+interface CalendarGridProps {
+    viewDate: Date;
+    onSelectDay: (date: Date) => void;
+    selectedDay: Date;
+    s3d: Calculator3DStyles;
+    language: Language;
+}
+
+const CalendarGrid = ({
+    viewDate,
+    onSelectDay,
+    selectedDay,
+    s3d,
+    language
+}: CalendarGridProps) => {
     const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
     const firstDayOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay(); // 0 is Sunday
     
@@ -569,95 +195,81 @@ const CalendarGrid = ({ viewDate, onSelectDay, selectedDay, theme, primaryColor,
     today.setHours(0, 0, 0, 0);
 
     return (
-        <div className="grid grid-cols-7 gap-1.5 sm:gap-2 w-full p-1 sm:p-2">
-            {WEEKDAYS.map(day => (
-                <div key={day} className="text-center py-2 text-[10px] sm:text-xs font-black themed-text-muted opacity-40 uppercase tracking-tighter">
-                    {day}
+        <div className="grid grid-cols-7 gap-1.5 sm:gap-2 w-full">
+            {CALENDAR_WEEKDAYS.map((_, dayIdx) => (
+                <div
+                    key={dayIdx}
+                    className="text-center py-2 text-[10px] sm:text-xs font-extrabold uppercase tracking-tight"
+                    style={{ color: s3d.subtextColor }}
+                >
+                    {getCalendarWeekdayName(dayIdx, true, language)}
                 </div>
             ))}
             {cells.map((cell, idx) => {
                 const dayDate = new Date(cell.date);
-                dayDate.setHours(0,0,0,0);
+                dayDate.setHours(0, 0, 0, 0);
                 const isToday = dayDate.getTime() === today.getTime();
-                const isSelected = selectedDay && dayDate.getTime() === new Date(selectedDay).setHours(0,0,0,0);
+                const isSelected = selectedDay && dayDate.getTime() === new Date(selectedDay).setHours(0, 0, 0, 0);
                 const hijri = getHijriDetails(cell.date);
                 const event = islamicEvents.find(e => e.day === hijri.day && e.month === hijri.month);
-                const isRamadan = hijri.month === 9;
 
-                let dynamicBgClass = 'bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/5 shadow-sm';
-                let dynamicTextClass = '';
-                let dynamicDotClass = '';
-                
-                if (event?.isPrimary) {
-                    if (isSelected) {
-                        dynamicBgClass = 'bg-red-500 text-white shadow-lg border-transparent';
-                        dynamicDotClass = 'bg-white';
-                    } else {
-                        dynamicBgClass = 'bg-red-500/15 dark:bg-red-500/25 border border-red-500/30 shadow-sm text-red-500';
-                        dynamicTextClass = 'text-red-600 dark:text-red-400';
-                        dynamicDotClass = 'bg-red-500';
-                    }
-                } else if (event) {
-                    if (isSelected) {
-                        dynamicBgClass = 'bg-blue-500 text-white shadow-lg border-transparent';
-                        dynamicDotClass = 'bg-white';
-                    } else {
-                        dynamicBgClass = 'bg-blue-500/15 dark:bg-blue-500/25 border border-blue-500/30 shadow-sm text-blue-500';
-                        dynamicTextClass = 'text-blue-600 dark:text-blue-400';
-                        dynamicDotClass = 'bg-blue-500';
-                    }
-                } else if (isRamadan) {
-                    if (isSelected) {
-                        dynamicBgClass = 'bg-emerald-500 text-white shadow-lg border-transparent';
-                    } else {
-                        dynamicBgClass = 'bg-emerald-500/15 dark:bg-emerald-500/25 border border-emerald-500/30 shadow-sm text-emerald-600 dark:text-emerald-400';
-                        dynamicTextClass = 'text-emerald-700 dark:text-emerald-400';
-                    }
+                let dayContainerStyle: React.CSSProperties = {};
+                let buttonClass = '';
+                let mainTextColor = s3d.textColor;
+                let hijriTextColor = s3d.subtextColor;
+
+                if (isToday) {
+                    dayContainerStyle = {
+                        backgroundColor: s3d.primaryColor,
+                        color: s3d.btnTextColor,
+                        ...(isSelected ? { outline: `2px solid ${s3d.isBlackTheme ? '#F59E0B' : s3d.primaryColor}`, outlineOffset: '2px' } : {})
+                    };
+                    buttonClass = 'app-page-card border-0 z-10';
+                    mainTextColor = s3d.btnTextColor;
+                    hijriTextColor = s3d.btnTextColor;
+                } else if (isSelected) {
+                    dayContainerStyle = {
+                        backgroundColor: s3d.activeTintBg,
+                        boxShadow: s3d.isBlackTheme
+                            ? '0 0 0 2px #FFFFFF'
+                            : `0 0 0 2px ${s3d.primaryColor}`
+                    };
+                    buttonClass = 'app-page-card border-0 z-10';
+                    mainTextColor = s3d.isBlackTheme ? '#FFFFFF' : s3d.primaryColor;
+                    hijriTextColor = s3d.isBlackTheme ? 'rgba(255,255,255,0.85)' : s3d.primaryColor;
+                } else if (cell.isCurrentMonth) {
+                    buttonClass = `app-page-card border-0 ${s3d.surfaceCardClass}`;
                 } else {
-                    if (isSelected) {
-                        dynamicBgClass = 'shadow-xl text-white';
-                    }
-                }
-
-                let cellStyle: React.CSSProperties = {};
-                if (!event && !isRamadan) {
-                    if (isSelected) {
-                        cellStyle.backgroundColor = isDefaultTheme ? '#000000' : secondaryColor;
-                        cellStyle.color = isBlackAndWhite ? '#000' : '#FFF';
-                    } else if (isToday) {
-                        if (isDefaultTheme) {
-                            cellStyle.backgroundColor = '#000000';
-                            cellStyle.color = '#FFFFFF';
-                        }
-                    }
-                } else if (isToday && !isSelected) {
-                    // Just put a colored ring if it's today and an event
-                    dynamicBgClass += ' ring-2 ring-offset-1 ' + (event?.isPrimary ? 'ring-red-500 dark:ring-offset-gray-900' : (event ? 'ring-blue-500 dark:ring-offset-gray-900' : 'ring-emerald-500 dark:ring-offset-gray-900'));
+                    buttonClass = `app-inner-3d-box border-0 opacity-45 hover:opacity-75 active:scale-95 ${s3d.isBlackTheme ? 'bg-[#18181b]/75' : 'bg-slate-100/80 dark:bg-zinc-900/50'}`;
                 }
 
                 return (
                     <button
+                        type="button"
                         key={idx}
                         onClick={() => onSelectDay(cell.date)}
-                        className={`relative flex flex-col items-center justify-center rounded-xl sm:rounded-2xl transition-all aspect-square 
-                            ${cell.isCurrentMonth ? dynamicBgClass : 'opacity-30 ' + dynamicBgClass}
-                            ${isSelected ? 'scale-110 z-10 shadow-xl' : 'hover:scale-[1.02] hover:bg-white/80 dark:hover:bg-white/10'}
-                        `}
-                        style={cellStyle}
+                        className={`relative flex flex-col items-center justify-center rounded-2xl transition-all duration-150 aspect-square cursor-pointer ${buttonClass}`}
+                        style={dayContainerStyle}
                     >
-                        <span className={`text-sm sm:text-lg font-black leading-none ${!isSelected ? dynamicTextClass : ''}`}>
-                            {toArabicNumerals(cell.day)}
+                        <span className="text-sm sm:text-base font-black leading-none" style={{ color: mainTextColor }}>
+                            {formatCalendarNumber(cell.day, language)}
                         </span>
-                        <span className={`text-[9px] sm:text-[10px] mt-1 font-bold ${isSelected || isToday ? 'opacity-100' : 'opacity-40'} ${event ? 'opacity-100 font-black' : ''}`}>
-                            {toArabicNumerals(hijri.day)}
+
+                        <span
+                            className="text-[9px] sm:text-[10px] mt-1 font-bold leading-none"
+                            style={{ color: hijriTextColor, opacity: isToday ? 0.85 : 0.8 }}
+                        >
+                            {formatCalendarNumber(hijri.day, language)}
                         </span>
-                        
-                        {isToday && !isSelected && !isDefaultTheme && !event && !isRamadan && (
-                            <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full border-2 border-white dark:border-gray-900" style={{ backgroundColor: secondaryColor }}></div>
-                        )}
 
                         {event && (
-                            <div className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${dynamicDotClass}`}></div>
+                            <span
+                                className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${
+                                    isToday ? '' : (event.isPrimary ? 'bg-red-500' : 'bg-blue-500')
+                                }`}
+                                style={isToday ? { backgroundColor: s3d.btnTextColor } : undefined}
+                                title={event.name}
+                            />
                         )}
                     </button>
                 );
@@ -667,19 +279,19 @@ const CalendarGrid = ({ viewDate, onSelectDay, selectedDay, theme, primaryColor,
 };
 
 // --- Main Component ---
-function HijriCalendar({ onBack , onNavigate }: { onBack: () => void, onNavigate: (id: string, params?: any) => void; }) {
-    const { theme, themeKey } = useTheme();
-    const isBlackAndWhite = themeKey === 'deep_black';
-    const isDefaultTheme = themeKey === 'default';
-    const primaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[0];
-    const secondaryColor = isBlackAndWhite ? '#FFFFFF' : theme.palette[1];
-    
+function HijriCalendar({ onBack, onNavigate }: { onBack: () => void; onNavigate: (id: string, params?: any) => void; }) {
+    const { theme, themeKey, isNightMode, homeThemeVariant } = useTheme();
+    const { language, isRTL, dir } = useLanguage();
+    const s3d = getCalculator3DStyles(theme, themeKey, isNightMode, homeThemeVariant);
+    const toast3D = getToast3DStyles(theme, themeKey, isNightMode, homeThemeVariant);
+    const primaryColor = s3d.primaryColor;
+
     const [viewDate, setViewDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [activeTab, setActiveTab] = useState('calendar'); // 'calendar' or 'converter'
-    const [convTab, setConvTab] = useState('hijriToGregorian');
-    const [historicalEvent, setHistoricalEvent] = useState<any>(null);
-    const [historyFontSize, setHistoryFontSize] = useState(1);
+    const [activeTab, setActiveTab] = useState<'calendar' | 'converter'>('calendar');
+    const [convTab, setConvTab] = useState<'hijriToGregorian' | 'gregorianToHijri'>('hijriToGregorian');
+    const [historicalEvent, setHistoricalEvent] = useState<HistoricalEventLocalized | null>(null);
+    const [historyFontSize] = useState(1);
     const [showZoomModal, setShowZoomModal] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
 
@@ -695,30 +307,41 @@ function HijriCalendar({ onBack , onNavigate }: { onBack: () => void, onNavigate
     const [inputs, setInputs] = useState(() => {
         const h = getHijriDetails(new Date());
         return {
-            gDay: new Date().getDate(), 
-            gMonth: new Date().getMonth() + 1, 
+            gDay: new Date().getDate(),
+            gMonth: new Date().getMonth() + 1,
             gYear: String(new Date().getFullYear()),
-            hDay: h.day, 
-            hMonth: h.month, 
+            hDay: h.day,
+            hMonth: h.month,
             hYear: String(h.year)
         };
     });
     const [convResult, setConvResult] = useState('');
     const [convMessage, setConvMessage] = useState('');
+    const [showGuide, setShowGuide] = useState(false);
 
     useEffect(() => {
-        const randomIndex = Math.floor(Math.random() * historicalEvents.length);
-        setHistoricalEvent(historicalEvents[randomIndex]);
+        markPageAsSeen('hijri_calendar');
+        if (!getGuideSeen('hijri_calendar_page_spotlight')) {
+            setShowGuide(true);
+        }
+        const randomIndex = Math.floor(Math.random() * HISTORICAL_EVENTS_TRANSLATED.length);
+        setHistoricalEvent(HISTORICAL_EVENTS_TRANSLATED[randomIndex]);
     }, []);
 
     const selectedHijri = useMemo(() => getHijriDetails(selectedDate), [selectedDate]);
-    const refreshEvent = () => {
-        const randomIndex = Math.floor(Math.random() * historicalEvents.length);
-        setHistoricalEvent(historicalEvents[randomIndex]);
-    };
-    const selectedEvent = useMemo(() => islamicEvents.find(e => e.day === selectedHijri.day && e.month === selectedHijri.month), [selectedHijri]);
 
-    const handleHomeClick = () => {
+    const refreshEvent = () => {
+        if (HISTORICAL_EVENTS_TRANSLATED.length <= 1) return;
+        setHistoricalEvent(prev => {
+            let randomIndex = Math.floor(Math.random() * HISTORICAL_EVENTS_TRANSLATED.length);
+            if (prev && HISTORICAL_EVENTS_TRANSLATED[randomIndex]?.titleAr === prev.titleAr) {
+                randomIndex = (randomIndex + 1) % HISTORICAL_EVENTS_TRANSLATED.length;
+            }
+            return HISTORICAL_EVENTS_TRANSLATED[randomIndex];
+        });
+    };
+
+    const handleBack = () => {
         if (showZoomModal) {
             setShowZoomModal(false);
         } else if (pickerConfig.isOpen) {
@@ -726,6 +349,16 @@ function HijriCalendar({ onBack , onNavigate }: { onBack: () => void, onNavigate
         } else {
             onBack();
         }
+    };
+
+    const handleGoHome = () => {
+        if (showZoomModal) {
+            setShowZoomModal(false);
+        }
+        if (pickerConfig.isOpen) {
+            setPickerConfig({ ...pickerConfig, isOpen: false });
+        }
+        onNavigate('home');
     };
 
     useEffect(() => {
@@ -746,61 +379,64 @@ function HijriCalendar({ onBack , onNavigate }: { onBack: () => void, onNavigate
         setSelectedDate(date);
     };
 
-    useEffect(() => {
-        handleConversion();
-    }, [inputs, convTab, activeTab]);
-
     // Converter Logic
-    const handleConversion = () => {
+    useEffect(() => {
         if (convTab === 'gregorianToHijri') {
             const gY = parseInt(String(inputs.gYear));
             const gM = parseInt(String(inputs.gMonth));
             const gD = parseInt(String(inputs.gDay));
 
             if (isNaN(gY) || isNaN(gM) || isNaN(gD)) {
-                setConvResult('تاريخ غير صالح');
+                setConvResult(tCalendar('invalidDate', language));
                 setConvMessage('');
                 return;
             }
 
             const hijri = g2h(gY, gM, gD);
-            setConvResult(`${toArabicNumerals(hijri.day)} ${hijri.monthName} ${toArabicNumerals(hijri.year)} هـ`);
-            setConvMessage('النتيجة هجرياً:');
+            const mName = getCalendarMonthName(hijri.month - 1, true, language);
+            setConvResult(`${formatCalendarNumber(hijri.day, language)} ${mName} ${formatCalendarNumber(hijri.year, language)} ${tCalendar('hijriYearSuffix', language)}`);
+            setConvMessage(tCalendar('hijriResultPrefix', language));
         } else {
             const hY = parseInt(String(inputs.hYear));
             const hM = parseInt(String(inputs.hMonth));
             const hD = parseInt(String(inputs.hDay));
             
             if (isNaN(hY) || isNaN(hM) || isNaN(hD) || hY < 1 || hM < 1 || hM > 12 || hD < 1 || hD > 30) {
-                 setConvResult('تاريخ هجري غير صالح');
+                 setConvResult(tCalendar('invalidHijriDate', language));
                  setConvMessage('');
                  return;
             }
 
             const date = h2g(hY, hM, hD);
             if (isNaN(date.getTime())) {
-                setConvResult('خطأ في التحويل');
+                setConvResult(tCalendar('conversionError', language));
                 setConvMessage('');
             } else {
-                setConvResult(new Intl.DateTimeFormat('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }).format(date) + ' م');
-                setConvMessage('النتيجة ميلادياً:');
+                const dayNum = formatCalendarNumber(date.getDate(), language);
+                const monthName = getCalendarMonthName(date.getMonth(), false, language);
+                const yearNum = formatCalendarNumber(date.getFullYear(), language);
+                setConvResult(`${dayNum} ${monthName} ${yearNum} ${tCalendar('gregorianYearSuffix', language)}`);
+                setConvMessage(tCalendar('gregorianResultPrefix', language));
             }
         }
-    };
+    }, [inputs, convTab, activeTab, language]);
 
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text).then(() => {
-            setToastMessage('تم النسخ إلى الحافظة');
+            setToastMessage(tCalendar('copiedToClipboard', language));
             setTimeout(() => setToastMessage(''), 2000);
         });
     };
 
     const handleShare = async (title: string, desc: string) => {
-        const dateStr = `${toArabicNumerals(historicalEvent.hijriYear)} • ${toArabicNumerals(historicalEvent.gregorianYear)}`;
+        if (!historicalEvent) return;
+        const hijriY = language === 'en' ? historicalEvent.hijriYearEn : historicalEvent.hijriYearAr;
+        const gregY = language === 'en' ? historicalEvent.gregorianYearEn : historicalEvent.gregorianYearAr;
+        const dateStr = `${hijriY} • ${gregY}`;
         await shareAsImage({
             text: desc,
             source: `${title} (${dateStr})`,
-            category: 'ذاكرة التاريخ',
+            category: tCalendar('historyTitle', language),
             theme,
             setToastMessage
         });
@@ -812,42 +448,37 @@ function HijriCalendar({ onBack , onNavigate }: { onBack: () => void, onNavigate
 
         switch (type) {
             case 'gDay':
-                options = Array.from({ length: 31 }, (_, i) => ({ label: toArabicNumerals(i + 1), value: i + 1 }));
-                title = 'اختر اليوم (ميلادي)';
+                options = Array.from({ length: 31 }, (_, i) => ({ label: formatCalendarNumber(i + 1, language), value: i + 1 }));
+                title = tCalendar('selectGDay', language);
                 break;
             case 'gMonth':
-                options = gregorianMonths.map(m => ({ label: m.name, value: m.id }));
-                title = 'اختر الشهر (ميلادي)';
+                options = CALENDAR_GREGORIAN_MONTHS.map(m => ({ label: language === 'en' ? m.en : m.ar, value: m.id }));
+                title = tCalendar('selectGMonth', language);
                 break;
             case 'gYear':
-                const curGY = new Date().getFullYear();
-                // Range from 622 AD (approx 1 AH) to 2100 AD
-                options = Array.from({ length: 2100 - 622 + 1 }, (_, i) => ({ label: toArabicNumerals(622 + i), value: 622 + i }));
-                title = 'اختر السنة (ميلادي)';
+                options = Array.from({ length: 2100 - 622 + 1 }, (_, i) => ({ label: formatCalendarNumber(622 + i, language), value: 622 + i }));
+                title = tCalendar('selectGYear', language);
                 break;
             case 'hDay':
-                options = Array.from({ length: 30 }, (_, i) => ({ label: toArabicNumerals(i + 1), value: i + 1 }));
-                title = 'اختر اليوم (هجري)';
+                options = Array.from({ length: 30 }, (_, i) => ({ label: formatCalendarNumber(i + 1, language), value: i + 1 }));
+                title = tCalendar('selectHDay', language);
                 break;
             case 'hMonth':
-                options = hijriMonths.map(m => ({ label: m.name, value: m.id }));
-                title = 'اختر الشهر (هجري)';
+                options = CALENDAR_HIJRI_MONTHS.map(m => ({ label: language === 'en' ? m.en : m.ar, value: m.id }));
+                title = tCalendar('selectHMonth', language);
                 break;
             case 'hYear':
-                const curHY = getHijriDetails(new Date()).year;
-                // Range from 1 AH to 1600 AH
-                options = Array.from({ length: 1600 }, (_, i) => ({ label: toArabicNumerals(i + 1), value: i + 1 }));
-                title = 'اختر السنة (هجري)';
+                options = Array.from({ length: 1600 }, (_, i) => ({ label: formatCalendarNumber(i + 1, language), value: i + 1 }));
+                title = tCalendar('selectHYear', language);
                 break;
             case 'calendarMonth':
-                options = gregorianMonths.map(m => ({ label: m.name, value: m.id - 1 }));
-                title = 'اختر الشهر';
+                options = CALENDAR_GREGORIAN_MONTHS.map(m => ({ label: language === 'en' ? m.en : m.ar, value: m.id - 1 }));
+                title = tCalendar('selectMonth', language);
                 break;
             case 'calendarYear':
-                // Range from 1900 to 2100 for the main calendar (can be adjusted if they want historical main calendar too)
                 const startGY = 1800;
-                options = Array.from({ length: 2100 - 1800 + 1 }, (_, i) => ({ label: toArabicNumerals(startGY + i), value: startGY + i }));
-                title = 'اختر السنة';
+                options = Array.from({ length: 2100 - 1800 + 1 }, (_, i) => ({ label: formatCalendarNumber(startGY + i, language), value: startGY + i }));
+                title = tCalendar('selectYear', language);
                 break;
         }
 
@@ -874,353 +505,517 @@ function HijriCalendar({ onBack , onNavigate }: { onBack: () => void, onNavigate
         } else {
             setInputs(prev => ({ ...prev, [type]: value }));
         }
-        // Use a small timeout to allow the click feedback before closing, but keeping it snappy
         setPickerConfig(prev => ({ ...prev, isOpen: false }));
     };
 
     return (
-        <div className="h-screen flex flex-col bg-transparent font-sans overflow-hidden">
+        <div
+            className="h-[100dvh] flex flex-col font-sans overflow-hidden"
+            style={{ backgroundColor: s3d.pageBgColor, color: s3d.textColor, fontFamily: theme.font }}
+            dir={dir}
+        >
+            {/* Top Bar */}
             <header className="app-top-bar shrink-0">
                 <div className="app-top-bar__inner">
-                    <div className="relative flex items-center justify-center w-full">
-                        <div className="absolute left-0">
-                            <ThemePageLock />
+                    <div className="relative flex items-center justify-center w-full min-h-[44px]">
+                        {/* Back button */}
+                        <div className="absolute right-0 flex items-center rtl:right-0 rtl:left-auto ltr:right-auto ltr:left-0">
+                            <button
+                                onClick={handleBack}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title={tCalendar('back', language)}
+                                aria-label={tCalendar('back', language)}
+                            >
+                                <i className={`fa-solid ${isRTL ? 'fa-arrow-right' : 'fa-arrow-left'} text-xl`}></i>
+                            </button>
                         </div>
-                        <h1 className="app-top-bar__title text-2xl font-kufi">التقويم</h1>
+
+                        {/* Page Title */}
+                        <div className="text-center px-12 min-w-0">
+                            <h1 className="app-top-bar__title text-lg sm:text-xl font-cairo truncate">
+                                {tCalendar('pageTitle', language)}
+                            </h1>
+                        </div>
+
+                        {/* Guide, Home button & Theme Lock */}
+                        <div className="absolute left-0 flex items-center gap-1 rtl:left-0 rtl:right-auto ltr:left-auto ltr:right-0">
+                            <button
+                                type="button"
+                                onClick={() => setShowGuide(true)}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                style={{ color: 'var(--top-bar-text, inherit)' }}
+                                title={language === 'en' ? "Calendar Guide" : "دليل التقويم"}
+                                aria-label={language === 'en' ? "Calendar Guide" : "دليل التقويم"}
+                            >
+                                <i className="fa-solid fa-circle-question text-lg"></i>
+                            </button>
+                            <button
+                                onClick={handleGoHome}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-90 cursor-pointer"
+                                title={tCalendar('home', language)}
+                                aria-label={tCalendar('home', language)}
+                            >
+                                <i className="fa-solid fa-house text-xl"></i>
+                            </button>
+                        </div>
                     </div>
-                    <p className="app-top-bar__subtitle shrink-0">الميلادي والهجري في مكان واحد</p>
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto px-3 pb-24 shadow-inner">
-                <div className="w-full max-w-lg mx-auto space-y-3">
+            <main className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 pt-3 app-scroll-safe">
+                <div className="w-full max-w-lg mx-auto space-y-3.5">
                     
-                    {/* Mode Toggles */}
-                    <div className="flex p-1 rounded-2xl themed-bg-alt shadow-inner bg-white border border-gray-100">
+                    {/* Main 3D Segmented Control: Calendar / Date Converter */}
+                    <div className={`app-page-card border-0 flex p-2 pb-2.5 rounded-2xl gap-2 overflow-visible ${s3d.surfaceCardClass}`}>
                         <button 
+                            type="button"
                             onClick={() => setActiveTab('calendar')}
-                            className={`flex-1 py-2 px-1 rounded-xl font-bold transition-all flex items-center justify-center gap-2 duration-300 ${activeTab === 'calendar' ? 'shadow-lg' : (isDefaultTheme ? 'text-black opacity-60' : 'themed-text-muted hover:bg-black/5')}`}
-                            style={activeTab === 'calendar' ? { backgroundColor: isDefaultTheme ? '#000000' : primaryColor, color: isDefaultTheme ? '#FFFFFF' : (isBlackAndWhite ? '#000' : '#FFF') } : (isDefaultTheme ? { backgroundColor: '#FFFFFF', color: '#000000' } : {})}
+                            className={`app-page-card border-0 flex-1 py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer ${
+                                activeTab === 'calendar' 
+                                    ? 'font-black' 
+                                    : `font-bold ${s3d.surfaceCardClass}`
+                            }`}
+                            style={activeTab === 'calendar' ? { backgroundColor: s3d.primaryColor, color: s3d.btnTextColor } : { color: s3d.subtextColor }}
                         >
                             <CalendarIcon size={16} />
-                            عرض التقويم
+                            <span>{tCalendar('calendarView', language)}</span>
                         </button>
                         <button 
+                            type="button"
                             onClick={() => setActiveTab('converter')}
-                            className={`flex-1 py-2 px-1 rounded-xl font-bold transition-all flex items-center justify-center gap-2 duration-300 ${activeTab === 'converter' ? 'shadow-lg' : (isDefaultTheme ? 'text-black opacity-60' : 'themed-text-muted hover:bg-black/5')}`}
-                            style={activeTab === 'converter' ? { backgroundColor: isDefaultTheme ? '#000000' : primaryColor, color: isDefaultTheme ? '#FFFFFF' : (isBlackAndWhite ? '#000' : '#FFF') } : (isDefaultTheme ? { backgroundColor: '#FFFFFF', color: '#000000' } : {})}
+                            className={`app-page-card border-0 flex-1 py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer ${
+                                activeTab === 'converter' 
+                                    ? 'font-black' 
+                                    : `font-bold ${s3d.surfaceCardClass}`
+                            }`}
+                            style={activeTab === 'converter' ? { backgroundColor: s3d.primaryColor, color: s3d.btnTextColor } : { color: s3d.subtextColor }}
                         >
                             <RefreshCw size={16} />
-                            محول التاريخ
+                            <span>{tCalendar('dateConverter', language)}</span>
                         </button>
                     </div>
 
                     {activeTab === 'calendar' ? (
-                        <div className="space-y-2">
-                            {/* Calendar Header Card */}
-                            <div className="themed-card rounded-2xl shadow-lg overflow-hidden relative">
-                                <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: isDefaultTheme ? '#000000' : primaryColor }}></div>
-                                <div className="flex items-center justify-between p-3">
-                                    <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all group active:scale-90">
-                                        <ChevronRight size={22} style={{ color: isDefaultTheme ? '#000000' : primaryColor }} />
+                        <div className="space-y-4">
+                            {/* Calendar Card: 3D Tasbeeh Card */}
+                            <div className={`app-page-card border-0 rounded-3xl overflow-hidden ${s3d.surfaceCardClass}`}>
+                                {/* Month Navigation Header */}
+                                <div className={`flex items-center justify-between gap-2 p-3.5 sm:p-4 pb-4.5 border-b overflow-visible ${s3d.dividerClass}`}>
+                                    <button 
+                                        type="button"
+                                        onClick={() => changeMonth(isRTL ? -1 : 1)} 
+                                        className={`app-page-card border-0 w-10 h-10 flex items-center justify-center rounded-2xl transition-all cursor-pointer shrink-0 ${s3d.surfaceCardClass}`}
+                                        title={isRTL ? tCalendar('prevMonth', language) : tCalendar('nextMonth', language)}
+                                    >
+                                        <ChevronRight size={20} style={{ color: primaryColor }} />
                                     </button>
-                                    <div className="flex-1 flex flex-col items-center justify-center cursor-pointer group" onClick={() => openPicker('calendarMonth')}>
-                                        <h2 className="text-lg font-black tracking-tight group-active:scale-95 transition-transform" style={{ color: isDefaultTheme ? '#000000' : primaryColor }}>
-                                            {gregorianMonths[viewDate.getMonth()].name} <span onClick={(e) => { e.stopPropagation(); openPicker('calendarYear'); }}>{toArabicNumerals(viewDate.getFullYear())}</span>
+                                    <button
+                                        type="button"
+                                        className={`app-page-card border-0 flex-1 max-w-[230px] px-3.5 py-2 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all ${s3d.surfaceCardClass}`}
+                                        onClick={() => openPicker('calendarMonth')}
+                                    >
+                                        <h2 
+                                            className="text-sm sm:text-base font-black tracking-tight text-center leading-tight" 
+                                            style={{ color: primaryColor }}
+                                        >
+                                            {getCalendarMonthName(viewDate.getMonth(), false, language)}{' '}
+                                            <span onClick={(e) => { e.stopPropagation(); openPicker('calendarYear'); }} className="hover:underline">
+                                                {formatCalendarNumber(viewDate.getFullYear(), language)}
+                                            </span>
                                         </h2>
-                                        <p className="text-xs font-bold opacity-70 mt-0.5">
-                                            {hijriMonths[getHijriDetails(viewDate).month - 1].name} {toArabicNumerals(getHijriDetails(viewDate).year)} هـ
+                                        <p className="text-[11px] font-bold mt-0.5 leading-tight" style={{ color: s3d.subtextColor }}>
+                                            {getCalendarMonthName(getHijriDetails(viewDate).month - 1, true, language)}{' '}
+                                            {formatCalendarNumber(getHijriDetails(viewDate).year, language)} {tCalendar('hijriYearSuffix', language)}
                                         </p>
-                                    </div>
-                                    <button onClick={() => changeMonth(1)} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all group active:scale-90">
-                                        <ChevronLeft size={22} style={{ color: isDefaultTheme ? '#000000' : primaryColor }} />
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => changeMonth(isRTL ? 1 : -1)} 
+                                        className={`app-page-card border-0 w-10 h-10 flex items-center justify-center rounded-2xl transition-all cursor-pointer shrink-0 ${s3d.surfaceCardClass}`}
+                                        title={isRTL ? tCalendar('nextMonth', language) : tCalendar('prevMonth', language)}
+                                    >
+                                        <ChevronLeft size={20} style={{ color: primaryColor }} />
                                     </button>
                                 </div>
 
-                                {/* Calendar Grid */}
-                                <div className="px-2 pb-3">
+                                {/* Calendar Days Grid */}
+                                <div className="p-3 sm:p-4 pb-4.5 overflow-visible">
                                     <CalendarGrid 
                                         viewDate={viewDate} 
                                         onSelectDay={handleSelectDay} 
                                         selectedDay={selectedDate}
-                                        theme={theme}
-                                        primaryColor={primaryColor}
-                                        secondaryColor={secondaryColor}
-                                        isBlackAndWhite={isBlackAndWhite}
-                                        isDefaultTheme={isDefaultTheme}
+                                        s3d={s3d}
+                                        language={language}
                                     />
                                 </div>
                             </div>
 
-                            {/* Event List Section */}
-                            <div className="themed-card p-5 rounded-2xl shadow-md">
-                                <h3 className="font-kufi font-black text-lg mb-4 flex items-center gap-2">
-                                    <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: secondaryColor }}></div>
-                                    أبرز المناسبات هذا الشهر
+                            {/* Event List Section (أبرز المناسبات): 3D Tasbeeh Card */}
+                            <div className={`app-page-card border-0 p-5 rounded-3xl ${s3d.surfaceCardClass}`}>
+                                <h3
+                                    className="font-cairo font-black text-base sm:text-lg mb-4 flex items-center gap-2.5"
+                                    style={{ fontFamily: "'Cairo', sans-serif" }}
+                                >
+                                    <div className="w-1.5 h-5 rounded-full" style={{ backgroundColor: primaryColor }}></div>
+                                    <span style={{ color: primaryColor }}>{tCalendar('eventsTitle', language)}</span>
                                 </h3>
-                            <div className="space-y-3">
-                                {(() => {
-                                    const mYear = viewDate.getFullYear();
-                                    const mMonth = viewDate.getMonth();
-                                    const daysInMonth = new Date(mYear, mMonth + 1, 0).getDate();
-                                    
-                                    const eventsToShow: any[] = [];
-                                    for (let i = 1; i <= daysInMonth; i++) {
-                                        const dayDate = new Date(mYear, mMonth, i);
-                                        const hInfo = getHijriDetails(dayDate);
-                                        const e = islamicEvents.find(ev => ev.day === hInfo.day && ev.month === hInfo.month);
-                                        if (e) {
-                                            if (!eventsToShow.find(existing => existing.id === e.id)) {
-                                                eventsToShow.push({ ...e, gDate: dayDate });
+                                <div className="space-y-3">
+                                    {(() => {
+                                        const mYear = viewDate.getFullYear();
+                                        const mMonth = viewDate.getMonth();
+                                        const daysInMonth = new Date(mYear, mMonth + 1, 0).getDate();
+                                        
+                                        const eventsToShow: any[] = [];
+                                        for (let i = 1; i <= daysInMonth; i++) {
+                                            const dayDate = new Date(mYear, mMonth, i);
+                                            const hInfo = getHijriDetails(dayDate);
+                                            const e = islamicEvents.find(ev => ev.day === hInfo.day && ev.month === hInfo.month);
+                                            if (e) {
+                                                if (!eventsToShow.find(existing => existing.id === e.id)) {
+                                                    eventsToShow.push({ ...e, gDate: dayDate });
+                                                }
                                             }
                                         }
-                                    }
-                                    
-                                    if (eventsToShow.length > 0) {
-                                        return eventsToShow.map((event: any) => {
-                                            const gDate = event.gDate;
-                                            const dayName = WEEKDAYS[gDate.getDay()];
-                                            const gFormatted = `${toArabicNumerals(gDate.getDate())} ${gregorianMonths[gDate.getMonth()].name}`;
+                                        
+                                        if (eventsToShow.length > 0) {
+                                            return eventsToShow.map((event: any) => {
+                                                const gDate = event.gDate;
+                                                const dayName = getCalendarWeekdayName(gDate.getDay(), false, language);
+                                                const gFormatted = `${formatCalendarNumber(gDate.getDate(), language)} ${getCalendarMonthName(gDate.getMonth(), false, language)}`;
+                                                const eventLocalizedName = language === 'en' && ISLAMIC_EVENTS_TRANSLATED[event.name]
+                                                    ? ISLAMIC_EVENTS_TRANSLATED[event.name].enName
+                                                    : event.name;
 
-                                            return (
-                                                <div key={event.id} className="flex items-center gap-4 p-3 hover:bg-black/5 dark:hover:bg-white/5 rounded-2xl transition-all border border-black/5 dark:border-white/5 shadow-sm">
-                                                    <div className={`w-2.5 h-2.5 rounded-full shadow-sm shrink-0 ${event.isPrimary ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`}></div>
-                                                    <div className="flex-1">
-                                                        <p className="font-black text-base opacity-95 mb-1" style={{ color: primaryColor }}>{event.name}</p>
-                                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                                            <span className="text-sm font-black" style={{ color: 'var(--text-color)' }}>
-                                                                {toArabicNumerals(event.day)} {hijriMonths[event.month - 1].name}
-                                                            </span>
-                                                            <span className="text-xs opacity-30">|</span>
-                                                            <div className="flex items-center gap-1.5">
-                                                                <span className="text-sm font-black" style={{ color: secondaryColor }}>{dayName}</span>
-                                                                <span className="text-xs font-black" style={{ color: 'var(--text-color)' }}>{gFormatted}</span>
+                                                return (
+                                                    <div 
+                                                        key={event.id} 
+                                                        className={`app-inner-3d-box border-0 flex items-center gap-3.5 p-3.5 rounded-2xl transition-all ${s3d.innerCardClass}`}
+                                                    >
+                                                        <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${event.isPrimary ? 'bg-red-500' : 'bg-blue-500'}`}></div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-extrabold text-sm sm:text-base mb-1 truncate" style={{ color: primaryColor }}>
+                                                                {eventLocalizedName}
+                                                            </p>
+                                                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs" style={{ color: s3d.subtextColor }}>
+                                                                <span className="font-black" style={{ color: s3d.textColor }}>
+                                                                    {formatCalendarNumber(event.day, language)} {getCalendarMonthName(event.month - 1, true, language)}
+                                                                </span>
+                                                                <span className="opacity-30">|</span>
+                                                                <div className="flex items-center gap-1.5 font-medium">
+                                                                    <span className="font-bold" style={{ color: primaryColor }}>{dayName}</span>
+                                                                    <span>{gFormatted}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            );
-                                        });
-                                    }
-                                    return (
-                                        <div className="text-center py-6 opacity-40 grayscale">
-                                            <CalendarIcon size={36} className="mx-auto mb-2" />
-                                            <p className="text-sm font-bold">لا توجد مناسبات مسجلة</p>
-                                        </div>
-                                    );
-                                })()}
-                            </div>
+                                                );
+                                            });
+                                        }
+                                        return (
+                                            <div className={`app-3d-recessed-field border-0 text-center py-8 rounded-2xl ${s3d.recessedInputClass}`} style={{ color: s3d.subtextColor }}>
+                                                <CalendarIcon size={32} className="mx-auto mb-2 opacity-50" />
+                                                <p className="text-xs sm:text-sm font-bold">{tCalendar('noEvents', language)}</p>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
                             </div>
                         </div>
                     ) : (
-                        /* Converter View */
-                        <div className="space-y-3">
-                            <div className="themed-card p-5 rounded-2xl shadow-lg space-y-5 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-24 h-24 blur-3xl opacity-10 -mr-12 -mt-12" style={{ backgroundColor: isDefaultTheme ? '#000000' : primaryColor }}></div>
+                        /* Converter View (محول التاريخ): 3D Tasbeeh Card */
+                        <div className="space-y-4">
+                            <div className={`app-page-card border-0 p-5 rounded-3xl space-y-5 relative ${s3d.surfaceCardClass}`}>
                                 
-                                <div className="flex p-1 rounded-xl bg-black/5 dark:bg-white/5 text-[10px] font-bold ring-1 ring-black/5">
+                                {/* Mode Toggles: Hijri <-> Gregorian 3D Segmented Control */}
+                                <div className={`app-3d-recessed-field border-0 flex p-2 pb-2.5 rounded-2xl gap-2 text-xs font-bold overflow-visible ${s3d.recessedInputClass}`}>
                                     <button 
+                                        type="button"
                                         onClick={() => setConvTab('hijriToGregorian')}
-                                        className={`flex-1 py-2 px-1 rounded-lg transition-all duration-300 ${convTab === 'hijriToGregorian' ? 'themed-card shadow-md transform scale-100' : 'themed-text-muted opacity-50 scale-95'}`}
-                                    >هجري ← ميلادي</button>
+                                        className={`app-page-card border-0 flex-1 py-2.5 px-2 rounded-xl transition-all cursor-pointer ${
+                                            convTab === 'hijriToGregorian' 
+                                                ? 'font-black' 
+                                                : `font-bold ${s3d.surfaceCardClass}`
+                                        }`}
+                                        style={convTab === 'hijriToGregorian' ? { backgroundColor: s3d.primaryColor, color: s3d.btnTextColor } : { color: s3d.subtextColor }}
+                                    >
+                                        {tCalendar('hijriToGregorian', language)}
+                                    </button>
                                     <button 
+                                        type="button"
                                         onClick={() => setConvTab('gregorianToHijri')}
-                                        className={`flex-1 py-2 px-1 rounded-lg transition-all duration-300 ${convTab === 'gregorianToHijri' ? 'themed-card shadow-md transform scale-100' : 'themed-text-muted opacity-50 scale-95'}`}
-                                    >ميلادي ← هجري</button>
+                                        className={`app-page-card border-0 flex-1 py-2.5 px-2 rounded-xl transition-all cursor-pointer ${
+                                            convTab === 'gregorianToHijri' 
+                                                ? 'font-black' 
+                                                : `font-bold ${s3d.surfaceCardClass}`
+                                        }`}
+                                        style={convTab === 'gregorianToHijri' ? { backgroundColor: s3d.primaryColor, color: s3d.btnTextColor } : { color: s3d.subtextColor }}
+                                    >
+                                        {tCalendar('gregorianToHijri', language)}
+                                    </button>
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-3">
+                                {/* Convert Date Section Label */}
+                                <div className="flex items-center justify-center gap-2.5 pt-0.5">
+                                    <div className="h-px flex-1 opacity-20" style={{ backgroundColor: primaryColor }} />
+                                    <span
+                                        className="font-cairo text-xs sm:text-sm font-black tracking-wide"
+                                        style={{ color: primaryColor, fontFamily: "'Cairo', sans-serif" }}
+                                    >
+                                        {language === 'en' ? 'Convert Date' : 'تحويل التاريخ'}
+                                    </span>
+                                    <div className="h-px flex-1 opacity-20" style={{ backgroundColor: primaryColor }} />
+                                </div>
+
+                                {/* 3D Sculpted Picker Fields for Day / Month / Year */}
+                                <div className="grid grid-cols-3 gap-2.5 sm:gap-3 overflow-visible pb-1">
                                     {convTab === 'gregorianToHijri' ? (
                                         <>
-                                            <div className="space-y-1 text-center cursor-pointer" onClick={() => openPicker('gDay')}>
-                                                <label className="text-[10px] themed-text-muted font-black">اليوم</label>
-                                                <div className="w-full p-2.5 themed-bg-alt rounded-xl font-black text-center shadow-inner border border-black/5 text-xs">
-                                                    {toArabicNumerals(inputs.gDay)}
-                                                </div>
+                                            <div className="space-y-1.5 text-center overflow-visible">
+                                                <label className="text-[11px] font-bold block" style={{ color: s3d.subtextColor }}>
+                                                    {tCalendar('dayLabel', language)}
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openPicker('gDay')}
+                                                    className={`app-page-card border-0 w-full p-3 sm:p-3.5 rounded-2xl font-black text-center text-sm sm:text-base transition-all cursor-pointer ${s3d.surfaceCardClass}`}
+                                                >
+                                                    {formatCalendarNumber(inputs.gDay, language)}
+                                                </button>
                                             </div>
-                                            <div className="space-y-1 text-center cursor-pointer" onClick={() => openPicker('gMonth')}>
-                                                <label className="text-[10px] themed-text-muted font-black">الشهر</label>
-                                                <div className="w-full p-2.5 themed-bg-alt rounded-xl font-black text-center shadow-inner text-[10px] border border-black/5">
-                                                    {gregorianMonths[inputs.gMonth - 1].name}
-                                                </div>
+                                            <div className="space-y-1.5 text-center overflow-visible">
+                                                <label className="text-[11px] font-bold block" style={{ color: s3d.subtextColor }}>
+                                                    {tCalendar('monthLabel', language)}
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openPicker('gMonth')}
+                                                    className={`app-page-card border-0 w-full p-3 sm:p-3.5 rounded-2xl font-black text-center text-xs sm:text-sm transition-all truncate cursor-pointer ${s3d.surfaceCardClass}`}
+                                                >
+                                                    {getCalendarMonthName(inputs.gMonth - 1, false, language)}
+                                                </button>
                                             </div>
-                                            <div className="space-y-1 text-center cursor-pointer" onClick={() => openPicker('gYear')}>
-                                                <label className="text-[10px] themed-text-muted font-black">السنة</label>
-                                                <div className="w-full p-2.5 themed-bg-alt rounded-xl font-black text-center shadow-inner border border-black/5 text-xs">
-                                                    {toArabicNumerals(inputs.gYear)}
-                                                </div>
+                                            <div className="space-y-1.5 text-center overflow-visible">
+                                                <label className="text-[11px] font-bold block" style={{ color: s3d.subtextColor }}>
+                                                    {tCalendar('yearLabel', language)}
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openPicker('gYear')}
+                                                    className={`app-page-card border-0 w-full p-3 sm:p-3.5 rounded-2xl font-black text-center text-sm sm:text-base transition-all cursor-pointer ${s3d.surfaceCardClass}`}
+                                                >
+                                                    {formatCalendarNumber(inputs.gYear, language)}
+                                                </button>
                                             </div>
                                         </>
                                     ) : (
                                         <>
-                                            <div className="space-y-1 text-center cursor-pointer" onClick={() => openPicker('hDay')}>
-                                                <label className="text-[10px] themed-text-muted font-black">اليوم</label>
-                                                <div className="w-full p-2.5 themed-bg-alt rounded-xl font-black text-center shadow-inner border border-black/5 text-xs">
-                                                    {toArabicNumerals(inputs.hDay)}
-                                                </div>
+                                            <div className="space-y-1.5 text-center overflow-visible">
+                                                <label className="text-[11px] font-bold block" style={{ color: s3d.subtextColor }}>
+                                                    {tCalendar('dayLabel', language)}
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openPicker('hDay')}
+                                                    className={`app-page-card border-0 w-full p-3 sm:p-3.5 rounded-2xl font-black text-center text-sm sm:text-base transition-all cursor-pointer ${s3d.surfaceCardClass}`}
+                                                >
+                                                    {formatCalendarNumber(inputs.hDay, language)}
+                                                </button>
                                             </div>
-                                            <div className="space-y-1 text-center cursor-pointer" onClick={() => openPicker('hMonth')}>
-                                                <label className="text-[10px] themed-text-muted font-black">الشهر</label>
-                                                <div className="w-full p-2.5 themed-bg-alt rounded-xl font-black text-center shadow-inner text-[10px] border border-black/5">
-                                                    {hijriMonths[inputs.hMonth - 1].name}
-                                                </div>
+                                            <div className="space-y-1.5 text-center overflow-visible">
+                                                <label className="text-[11px] font-bold block" style={{ color: s3d.subtextColor }}>
+                                                    {tCalendar('monthLabel', language)}
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openPicker('hMonth')}
+                                                    className={`app-page-card border-0 w-full p-3 sm:p-3.5 rounded-2xl font-black text-center text-xs sm:text-sm transition-all truncate cursor-pointer ${s3d.surfaceCardClass}`}
+                                                >
+                                                    {getCalendarMonthName(inputs.hMonth - 1, true, language)}
+                                                </button>
                                             </div>
-                                            <div className="space-y-1 text-center cursor-pointer" onClick={() => openPicker('hYear')}>
-                                                <label className="text-[10px] themed-text-muted font-black">السنة</label>
-                                                <div className="w-full p-2.5 themed-bg-alt rounded-xl font-black text-center shadow-inner border border-black/5 text-xs">
-                                                    {toArabicNumerals(inputs.hYear)}
-                                                </div>
+                                            <div className="space-y-1.5 text-center overflow-visible">
+                                                <label className="text-[11px] font-bold block" style={{ color: s3d.subtextColor }}>
+                                                    {tCalendar('yearLabel', language)}
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openPicker('hYear')}
+                                                    className={`app-page-card border-0 w-full p-3 sm:p-3.5 rounded-2xl font-black text-center text-sm sm:text-base transition-all cursor-pointer ${s3d.surfaceCardClass}`}
+                                                >
+                                                    {formatCalendarNumber(inputs.hYear, language)}
+                                                </button>
                                             </div>
                                         </>
                                     )}
                                 </div>
 
-                                <AnimatePresence>
-                                    {convResult && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, y: 10 }} 
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className="text-center p-4 rounded-2xl bg-black/5 dark:bg-white/5 border-2 border-dashed relative"
-                                            style={{ borderColor: `${secondaryColor}30` }}
+                                {/* 3D Conversion Result Container */}
+                                {convResult && (
+                                    <div 
+                                        className="app-inner-3d-box border-0 text-center p-5 rounded-2xl relative"
+                                        style={{ backgroundColor: s3d.softResultBg }}
+                                    >
+                                        <p 
+                                            className="text-xs font-bold mb-1 tracking-wider opacity-85"
+                                            style={{ color: primaryColor }}
                                         >
-                                            <p className="text-[10px] themed-text-muted font-black mb-1 tracking-widest">{convMessage}</p>
-                                            <p className="text-xl font-black" style={{ color: isDefaultTheme ? '#000000' : primaryColor }}>{convResult}</p>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                            {convMessage}
+                                        </p>
+                                        <p 
+                                            className="text-lg sm:text-2xl font-black" 
+                                            style={{ color: primaryColor }}
+                                        >
+                                            {convResult}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
+                            {/* Historical Event Card (بطاقة ذاكرة التاريخ): 3D Tasbeeh Card */}
                             {historicalEvent && (
-                                <motion.div 
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="themed-card p-4 rounded-2xl shadow-md relative mt-1 group"
+                                <div 
+                                    className={`app-page-card border-0 p-5 rounded-3xl relative group ${s3d.surfaceCardClass} ${language === 'ar' ? 'font-cairo' : 'font-sans'}`}
+                                    style={{ fontFamily: language === 'en' ? 'sans-serif' : "'Cairo', sans-serif" }}
                                 >
-                                    <div className="absolute top-0 right-0 w-12 h-1 bg-gradient-to-l from-transparent" style={{ backgroundColor: isDefaultTheme ? '#000000' : secondaryColor, borderTopRightRadius: '999px' }}></div>
-                                    <div className="flex justify-between items-center mb-3">
-                                        <div className="flex items-center gap-3">
+                                    <div className="flex justify-between items-center mb-3.5 pb-1 overflow-visible">
+                                        <div className="flex items-center gap-2.5 overflow-visible">
                                             <button 
+                                                type="button"
                                                 onClick={refreshEvent}
-                                                className="p-1.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-all active:scale-90"
+                                                className={`app-page-card border-0 w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${s3d.surfaceCardClass}`}
+                                                title={tCalendar('anotherEvent', language)}
                                             >
-                                                <RefreshCw size={12} className="hover:rotate-180 transition-transform duration-500" style={{ color: secondaryColor }} />
+                                                <RefreshCw size={14} className="hover:rotate-180 transition-transform duration-500" style={{ color: s3d.textColor }} />
                                             </button>
-                                            <h4 className="text-[10px] sm:text-xs font-black opacity-30 uppercase tracking-widest">ذاكرة التاريخ</h4>
+                                            <h4 className={`text-[11px] font-bold uppercase tracking-widest ${language === 'ar' ? 'font-cairo' : 'font-sans'}`} style={{ color: s3d.subtextColor }}>
+                                                {tCalendar('historyTitle', language)}
+                                            </h4>
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-2 overflow-visible">
                                             <button 
+                                                type="button"
                                                 onClick={() => setShowZoomModal(true)}
-                                                className="w-7 h-7 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors"
+                                                className={`app-page-card border-0 w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${s3d.surfaceCardClass}`}
+                                                title={tCalendar('zoomIn', language)}
                                             >
-                                                <ZoomIn size={14} style={{ color: secondaryColor }} />
+                                                <ZoomIn size={15} style={{ color: s3d.textColor }} />
                                             </button>
                                             <button 
-                                                onClick={() => handleCopy(historicalEvent.description)}
-                                                className="w-7 h-7 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors"
+                                                type="button"
+                                                onClick={() => handleCopy(language === 'en' ? historicalEvent.descriptionEn : historicalEvent.descriptionAr)}
+                                                className={`app-page-card border-0 w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${s3d.surfaceCardClass}`}
+                                                title={tCalendar('copy', language)}
                                             >
-                                                <Copy size={14} style={{ color: secondaryColor }} />
+                                                <Copy size={15} style={{ color: s3d.textColor }} />
                                             </button>
                                             <button 
-                                                onClick={() => handleShare(historicalEvent.title, historicalEvent.description)}
-                                                className="w-7 h-7 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors"
+                                                type="button"
+                                                onClick={() => handleShare(
+                                                    language === 'en' ? historicalEvent.titleEn : historicalEvent.titleAr,
+                                                    language === 'en' ? historicalEvent.descriptionEn : historicalEvent.descriptionAr
+                                                )}
+                                                className={`app-page-card border-0 w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${s3d.surfaceCardClass}`}
+                                                title={tCalendar('share', language)}
                                             >
-                                                <Share2 size={14} style={{ color: secondaryColor }} />
+                                                <Share2 size={15} style={{ color: s3d.textColor }} />
                                             </button>
                                         </div>
                                     </div>
-                                    <h5 className="text-lg sm:text-xl font-black mb-1.5" style={{ color: isDefaultTheme ? '#000000' : primaryColor }}>{historicalEvent.title}</h5>
-                                    <div className="flex gap-4 text-xs font-bold themed-text-muted mb-3 justify-end">
-                                        <span className="flex items-center gap-1.5"><CalendarIcon size={13} /> {toArabicNumerals(historicalEvent.hijriYear)}</span>
-                                        <span className="flex items-center gap-1.5"><CalendarIcon size={13} /> {toArabicNumerals(historicalEvent.gregorianYear)}</span>
-                                    </div>
-                                    <p 
-                                        className="leading-relaxed font-amiri themed-text-muted border-r-2 pr-4 text-justify" 
-                                        style={{ 
-                                            borderRightColor: `${secondaryColor}40`,
-                                            fontSize: `${1.0 * historyFontSize}rem`
-                                        }}
+                                    <h5 
+                                        className={`text-lg sm:text-xl font-black mb-2.5 ${language === 'ar' ? 'font-cairo' : 'font-sans'}`} 
+                                        style={{ color: primaryColor }}
                                     >
-                                        {historicalEvent.description}
-                                    </p>
-                                </motion.div>
+                                        {language === 'en' ? historicalEvent.titleEn : historicalEvent.titleAr}
+                                    </h5>
+                                    <div className={`flex flex-wrap gap-2 text-xs font-bold mb-3.5 justify-end ${language === 'ar' ? 'font-cairo' : 'font-sans'}`} style={{ color: s3d.subtextColor }}>
+                                        <span className={`app-3d-badge border-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl ${s3d.innerCardClass}`}>
+                                            <CalendarIcon size={13} style={{ color: primaryColor }} /> {language === 'en' ? historicalEvent.hijriYearEn : historicalEvent.hijriYearAr}
+                                        </span>
+                                        <span className={`app-3d-badge border-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl ${s3d.innerCardClass}`}>
+                                            <CalendarIcon size={13} style={{ color: primaryColor }} /> {language === 'en' ? historicalEvent.gregorianYearEn : historicalEvent.gregorianYearAr}
+                                        </span>
+                                    </div>
+                                    <div className={`app-inner-3d-box border-0 p-4 rounded-2xl ${s3d.recessedInputClass}`}>
+                                        <p 
+                                            className={`leading-relaxed text-center font-medium ${
+                                                language === 'ar' ? 'font-cairo' : 'font-sans'
+                                            }`} 
+                                            style={{ 
+                                                color: s3d.textColor,
+                                                fontSize: `${1.0 * historyFontSize}rem`
+                                            }}
+                                        >
+                                            {(language === 'en' ? historicalEvent.descriptionEn : historicalEvent.descriptionAr)?.replace(/[ \t]+/g, ' ').trim()}
+                                        </p>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     )}
 
-                    {/* Final Spacer to ensure bottom content clears the nav bar */}
-                    <div className="h-24" />
+                    {/* Final Spacer */}
+                    <div className="h-6" />
                 </div>
             </main>
 
-            <BottomBar onHomeClick={handleHomeClick} onThemesClick={() => {}} showThemes={false} />
-
             {/* Toast Notification */}
-            <AnimatePresence>
-                {toastMessage && (
-                    <motion.div 
-                        initial={{ opacity: 0, y: 50, x: '-50%' }}
-                        animate={{ opacity: 1, y: 0, x: '-50%' }}
-                        exit={{ opacity: 0, y: 50, x: '-50%' }}
-                        className="fixed bottom-24 left-1/2 z-[200] bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg font-bold text-sm text-center whitespace-nowrap"
+            {toastMessage && (
+                <div 
+                    className="app-3d-toast fixed bottom-[calc(var(--app-bottom-clearance,0px)+1rem)] left-1/2 -translate-x-1/2 z-[200] max-w-[85vw] w-max px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm text-center leading-normal break-words pointer-events-none flex items-center justify-center gap-2.5"
+                    style={toast3D.style}
+                >
+                    <span
+                        className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                        style={toast3D.iconStyle}
                     >
-                        {toastMessage}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        <Check className="w-3 h-3 stroke-[3]" />
+                    </span>
+                    <span>{toastMessage}</span>
+                </div>
+            )}
 
-            {/* Zoom Modal */}
-            <AnimatePresence>
-                {showZoomModal && historicalEvent && (
-                    <div className="fixed inset-0 bg-black/80 z-[100] flex justify-center items-center p-4 backdrop-blur-sm" onClick={() => setShowZoomModal(false)}>
-                        <motion.div 
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="themed-card p-8 rounded-3xl w-full max-w-2xl text-center relative shadow-2xl flex flex-col max-h-[90vh] overflow-hidden" 
-                            onClick={e => e.stopPropagation()}
-                        >
-                            <div className="overflow-y-auto hide-scrollbar flex-1 py-4">
-                                <h3 className="text-2xl font-black mb-6" style={{ color: isDefaultTheme ? '#000000' : primaryColor }}>{historicalEvent.title}</h3>
-                                <div 
-                                    className="text-2xl md:text-3xl leading-relaxed font-amiri themed-text"
-                                >
-                                    {historicalEvent.description}
-                                </div>
-                                <div className="flex gap-6 text-sm font-bold themed-text-muted mt-8 justify-center">
-                                    <span className="flex items-center gap-2"><CalendarIcon size={18} /> {toArabicNumerals(historicalEvent.hijriYear)}</span>
-                                    <span className="flex items-center gap-2"><CalendarIcon size={18} /> {toArabicNumerals(historicalEvent.gregorianYear)}</span>
-                                </div>
-                            </div>
+            {/* Zoom Bottom Sheet (ذاكرة التاريخ الإسلامي) */}
+            <IslamicHistoryMemoryBottomSheet
+                isOpen={showZoomModal}
+                onClose={() => setShowZoomModal(false)}
+                event={historicalEvent}
+                onNextEvent={(e) => {
+                    e.stopPropagation();
+                    refreshEvent();
+                }}
+                onShare={(e) => {
+                    e.stopPropagation();
+                    if (historicalEvent) {
+                        handleShare(
+                            language === 'en' ? historicalEvent.titleEn : historicalEvent.titleAr,
+                            language === 'en' ? historicalEvent.descriptionEn : historicalEvent.descriptionAr
+                        );
+                    }
+                }}
+                onCopy={(e) => {
+                    e.stopPropagation();
+                    if (historicalEvent) {
+                        handleCopy(language === 'en' ? historicalEvent.descriptionEn : historicalEvent.descriptionAr);
+                    }
+                }}
+            />
 
-                            <div className="mt-8 shrink-0 flex gap-3">
-                                <button onClick={() => setShowZoomModal(false)} className="flex-1 py-4 rounded-2xl font-black bg-black/5 dark:bg-white/5 hover:bg-black/10 transition-colors">إغلاق</button>
-                                <button 
-                                    onClick={() => handleShare(historicalEvent.title, historicalEvent.description)}
-                                    className="flex-1 py-4 rounded-2xl font-black text-white"
-                                    style={{ backgroundColor: primaryColor }}
-                                >مشاركة الحدث</button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-
-            {/* Custom Picker Modal */}
+            {/* Custom Picker Modal - 3D Sculpted */}
             {pickerConfig.isOpen && (
                 <div 
-                    className="fixed inset-0 bg-black/40 z-[300] flex items-center justify-center p-6 backdrop-blur-[1px]"
+                    className="fixed inset-0 bg-black/60 z-[300] flex items-center justify-center p-6"
                     onClick={() => setPickerConfig(p => ({ ...p, isOpen: false }))}
+                    dir={dir}
                 >
                     <div 
-                        className="themed-card w-full max-w-[280px] rounded-[2.5rem] shadow-2xl flex flex-col max-h-[450px] overflow-hidden border border-white/20"
+                        className={`app-page-card border-0 w-full max-w-[295px] rounded-3xl flex flex-col max-h-[72dvh] overflow-hidden ${s3d.surfaceCardClass}`}
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="p-5 border-b border-black/5 dark:border-white/5 text-center shrink-0 bg-black/[0.03] dark:bg-white/[0.03]">
-                            <h3 className="text-sm font-black opacity-80" style={{ color: primaryColor }}>{pickerConfig.title}</h3>
+                        <div className={`p-4 border-b ${s3d.dividerClass} text-center shrink-0`}>
+                            <h3 className="text-sm font-black" style={{ color: primaryColor }}>{pickerConfig.title}</h3>
                         </div>
 
-                        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 hide-scrollbar">
+                        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3.5 py-3 space-y-2.5 hide-scrollbar">
                             {pickerConfig.options.map((opt, i) => {
                                 const currentValue = pickerConfig.type === 'calendarMonth' ? viewDate.getMonth() 
                                                     : pickerConfig.type === 'calendarYear' ? viewDate.getFullYear()
@@ -1229,15 +1024,18 @@ function HijriCalendar({ onBack , onNavigate }: { onBack: () => void, onNavigate
 
                                 return (
                                     <button
+                                        type="button"
                                         key={i}
                                         data-selected={isSelected}
                                         onClick={() => handlePickerSelect(opt.value)}
-                                        className={`w-full flex items-center justify-center p-3 rounded-2xl transition-all active:scale-[0.94] ${
-                                            isSelected ? 'shadow-md z-10' : 'hover:bg-black/5 dark:hover:bg-white/5'
+                                        className={`app-page-card border-0 w-full flex items-center justify-center p-3 rounded-2xl transition-all cursor-pointer ${
+                                            isSelected 
+                                                ? 'z-10 font-black' 
+                                                : `font-bold ${s3d.surfaceCardClass}`
                                         }`}
-                                        style={isSelected ? { backgroundColor: secondaryColor, color: isBlackAndWhite ? '#000' : '#FFF' } : {}}
+                                        style={isSelected ? { backgroundColor: s3d.primaryColor, color: s3d.btnTextColor } : { color: s3d.textColor }}
                                     >
-                                        <span className={`text-base ${isSelected ? 'font-black scale-110' : 'font-bold opacity-60'}`}>
+                                        <span className="text-sm sm:text-base">
                                             {opt.label}
                                         </span>
                                     </button>
@@ -1247,6 +1045,15 @@ function HijriCalendar({ onBack , onNavigate }: { onBack: () => void, onNavigate
                     </div>
                 </div>
             )}
+
+            {/* Spotlight Guide */}
+            <CommunitySpotlightGuide 
+                guideKey="hijri_calendar_page_spotlight"
+                steps={CALENDAR_PAGE_STEPS}
+                isOpen={showGuide}
+                onClose={() => setShowGuide(false)}
+                isEn={language === 'en'}
+            />
         </div>
     );
 }

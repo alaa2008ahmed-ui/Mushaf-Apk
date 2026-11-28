@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source not "./android";
+@source not "./public";
 @custom-variant dark (&:where(.dark, .dark *));
 @plugin "@tailwindcss/typography";
 
@@ -36,127 +38,6 @@
 @import "@fontsource/kufam/400.css";
 @import "@fontsource/kufam/700.css";
 
-/* Tajweed Colors */
-.tajweed-n { color: #16a34a; } /* Ghunna (Green) */
-.tajweed-q { color: #2563eb; } /* Qalqalah (Blue) */
-.tajweed-m { color: #16a34a; } /* Idgham (Green) */
-.tajweed-i { color: #16a34a; } /* Ikhfa (Green) */
-.tajweed-w { color: #9ca3af; } /* Idgham without Ghunna (Gray) */
-.tajweed-f { color: #16a34a; } /* Ikhfa Shafawi (Green) */
-.tajweed-a { color: #2563eb; } /* Iqlab (Blue) */
-.tajweed-p { color: #dc2626; } /* Madd (Red) */
-.tajweed-o { color: #dc2626; } /* Madd (Red) */
-.tajweed-c { color: #16a34a; } /* Ikhfa (Green) */
-.tajweed-s { color: #9ca3af; } /* Silent (Gray) */
-.tajweed-h { color: #9ca3af; } /* Hamzat Wasl (Gray) */
-.tajweed-l { color: #9ca3af; } /* Lam Shamsiyyah (Gray) */
-
-@font-face {
-  font-family: 'KFGQPC Uthman Taha Naskh';
-  src: url('https://cdn.jsdelivr.net/gh/Guepard/quran-fonts@master/fonts/KFGQPC-HAFS.woff2') format('woff2');
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Me Quran';
-  src: url('https://cdn.jsdelivr.net/gh/Guepard/quran-fonts@master/fonts/me_quran.woff2') format('woff2');
-  font-display: swap;
-}
-
-@theme {
-  --color-primary: var(--color-primary, #10b981);
-  --color-secondary: var(--color-secondary, #8b5cf6);
-  --color-card-bg: var(--card-bg, #ffffff);
-  --color-card-border: var(--card-border, #e2e8f0);
-  --color-modal-bg: var(--modal-bg, #ffffff);
-  --color-modal-text: var(--modal-text, #000000);
-  --color-modal-border: var(--modal-border, #10b981);
-  --color-bg-light: var(--color-bg-light, #f3f4f6);
-  --color-quran-text: var(--color-quran-text, #065f46);
-  --color-brand-purple: var(--color-brand-purple, #7c3aed);
-  --color-brand-teal: var(--color-brand-teal, #14b8a6);
-  --color-accent-orange: var(--color-accent-orange, #f59e0b);
-  --color-royal-gold: var(--color-royal-gold, #d97706);
-
-  --font-cairo: "Cairo", sans-serif;
-  --font-amiri: "Amiri", serif;
-  --font-amiri-quran: "Amiri Quran", serif;
-  --font-noto: "Noto Naskh Arabic", serif;
-  --font-hafs: 'KFGQPC Uthman Taha Naskh', serif;
-  --font-tajawal: "Tajawal", sans-serif;
-  --font-marhey: "Marhey", sans-serif;
-  --font-kufi: "Reem Kufi", sans-serif;
-  --font-scheherazade: "Scheherazade New", serif;
-  --font-aref: "Aref Ruqaa", serif;
-  --font-gulzar: "Gulzar", serif;
-  --font-mirza: "Mirza", serif;
-  --font-lateef: "Lateef", serif;
-  --font-messiri: "El Messiri", sans-serif;
-  --font-lalezar: "Lalezar", system-ui;
-  --font-rakkas: "Rakkas", system-ui;
-  --font-katibeh: "Katibeh", system-ui;
-
-  @keyframes spin-slow {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  --animate-spin-slow: spin-slow 3s linear infinite;
-
-  @keyframes fadeIn {
-    from { opacity: 1; }
-    to { opacity: 1; }
-  }
-  --animate-fadeIn: fadeIn 0s ease-out;
-
-  @keyframes modal-enter {
-    from { opacity: 0; transform: scale(0.9) translateY(20px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
-  }
-  --animate-modal-enter: modal-enter 0.2s cubic-bezier(0.34, 1.3, 0.64, 1);
-}
-
-/* Hide number input arrows (spinners) */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-input[type=number] {
-  -moz-appearance: textfield;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.font-quran {
-  font-family: "Amiri Quran", serif;
-  direction: rtl;
-  unicode-bidi: isolate;
-}
-
-/* Theme font overrides for all pages EXCEPT Quran reader */
-body:not(.quran-context) .font-cairo, 
-body:not(.quran-context) .font-amiri, 
-body:not(.quran-context) .font-kufi,
-body:not(.quran-context) .font-kufi-bold,
-body:not(.quran-context) .font-tajawal,
-body:not(.quran-context) .font-scheherazade,
-body:not(.quran-context) .font-amiri-quran,
-body:not(.quran-context) .font-noto,
-body:not(.quran-context) .font-messiri,
-body:not(.quran-context) .font-quran,
-body:not(.quran-context) .font-aref,
-body:not(.quran-context) .font-lateef,
-body:not(.quran-context) .font-hafs,
-body:not(.quran-context) .font-reem,
-body:not(.quran-context) .font-kufam,
-body:not(.quran-context) .font-mirza,
-body:not(.quran-context) .font-gulzar {
-    font-family: var(--theme-font) !important;
-}
+@import "./styles/global/baseAnd3DCards.css";
+@import "./styles/global/lightThemes.css";
+@import "./styles/global/nightThemeAndUtilities.css";

@@ -1,4 +1,12 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Search, X } from 'lucide-react';
+import { THEMES } from './constants';
+import { useLanguage } from '../../context/LanguageContext';
+import { useTheme } from '../../context/ThemeContext';
+import { getQuranThemeIdForLayout } from '../../utils/quran/quranThemeHelper';
+import { getSurahDisplayName, formatListenNumber, tListen } from '../../utils/quran/listenQuranTranslations';
+import { registerBackInterceptor } from '../../hooks/useBackButton';
+import { resolveQuranModalPalette } from './modalThemeUtils';
 
 interface ListenSurahSelectModalProps {
     onClose: () => void;
@@ -6,10 +14,63 @@ interface ListenSurahSelectModalProps {
     onSelect: (surahNumber: number) => void;
     isLandscape?: boolean;
     surahsList: { number: number, name: string }[];
+    zIndexClass?: string;
+    currentTheme?: any;
 }
 
-const ListenSurahSelectModal: React.FC<ListenSurahSelectModalProps> = ({ onClose, currentSurah, onSelect, isLandscape, surahsList }) => {
+const resolveFallbackTheme = (themeKey: string, isNightMode: boolean, homeThemeVariant: string) => {
+    if (isNightMode || themeKey === 'black' || themeKey === 'black_gold') return THEMES.deep_black;
+    if (homeThemeVariant === 'gold' || themeKey === 'shiny_gold' || themeKey === 'gold') return THEMES.gold;
+    if (homeThemeVariant === 'sky' || themeKey === 'sky') return THEMES.night_sky;
+    if (homeThemeVariant === 'emerald' || themeKey === 'emerald') return THEMES.green;
+    if (homeThemeVariant === 'burgundy' || themeKey === 'burgundy') return THEMES.maroon;
+    return THEMES.black;
+};
+
+const normalizeArabicSearch = (text: string) =>
+    text
+        .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+        .replace(/[أإآٱ]/g, 'ا')
+        .replace(/ة/g, 'ه')
+        .replace(/ى/g, 'ي')
+        .toLowerCase()
+        .trim();
+
+const ListenSurahSelectModal: React.FC<ListenSurahSelectModalProps> = ({
+    onClose,
+    currentSurah,
+    onSelect,
+    isLandscape,
+    surahsList,
+    zIndexClass = 'z-[1200]',
+    currentTheme
+}) => {
+    const { language, isRTL, dir } = useLanguage();
+    const { themeKey, isNightMode, homeThemeVariant } = useTheme();
+    const isEn = language === 'en';
+    const [searchTerm, setSearchTerm] = useState('');
     const selectedRef = useRef<HTMLButtonElement>(null);
+
+    useEffect(() => {
+        const interceptor = () => {
+            onClose();
+            return true;
+        };
+        const unregister = registerBackInterceptor(interceptor);
+        return unregister;
+    }, [onClose]);
+
+    const effectiveTheme = useMemo(() => {
+        if (currentTheme) return currentTheme;
+        const modeSuffix = isLandscape ? '_h' : '_v';
+        const activeQuranThemeId = getQuranThemeIdForLayout(modeSuffix, undefined, 'mushaf');
+        if (activeQuranThemeId && THEMES[activeQuranThemeId as keyof typeof THEMES]) {
+            return THEMES[activeQuranThemeId as keyof typeof THEMES];
+        }
+        return resolveFallbackTheme(themeKey, isNightMode, homeThemeVariant);
+    }, [currentTheme, isLandscape, themeKey, isNightMode, homeThemeVariant]);
+
+    const p = useMemo(() => resolveQuranModalPalette(effectiveTheme), [effectiveTheme]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -29,23 +90,124 @@ const ListenSurahSelectModal: React.FC<ListenSurahSelectModalProps> = ({ onClose
         handleClose();
     };
 
+    const searchLower = searchTerm.toLowerCase().trim();
+    const normalizedQuery = normalizeArabicSearch(searchTerm);
+    const filteredSurahs = useMemo(() => {
+        return surahsList.filter(s => {
+            if (!searchLower) return true;
+            const arName = s.name.toLowerCase();
+            const normalizedArName = normalizeArabicSearch(s.name);
+            const enName = getSurahDisplayName(s.number, 'en').toLowerCase();
+            const numStr = String(s.number);
+            return (
+                arName.includes(searchLower) ||
+                normalizedArName.includes(normalizedQuery) ||
+                enName.includes(searchLower) ||
+                numStr.includes(searchLower)
+            );
+        });
+    }, [surahsList, searchLower, normalizedQuery]);
+
+    const modalVars = {
+        '--qr-modal-bg': p.modalBg,
+        '--qr-modal-text': p.cardText,
+        '--qr-card-bg': p.cardBg,
+        '--qr-card-text': p.cardText,
+        '--qr-accent': p.selectedBg,
+        '--qr-accent-text': p.selectedText,
+        backgroundColor: p.modalBg,
+        color: p.modalText,
+    } as React.CSSProperties;
+
     return (
-        <div className={`fixed inset-0 bg-transparent z-[1200] flex items-center justify-center ${isLandscape ? 'p-0' : 'p-4'} animate-fadeIn`} onClick={handleClose}>
-            <div className={`modal-skinned w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-screen' : 'max-w-md sm:max-w-2xl rounded-2xl max-h-[90vh]'} shadow-2xl overflow-hidden flex flex-col animate-modal-enter`} onClick={e => e.stopPropagation()}>
-                <div className={`p-3 overflow-y-auto flex-1 grid ${isLandscape ? 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2'}`}>
-                    {surahsList.map(s => (
-                        <button 
-                            key={s.number} 
-                            ref={currentSurah === s.number ? selectedRef : null}
-                            onClick={() => handleSelect(s.number)}
-                            className={`w-full text-right p-3 rounded-xl border-2 transition-all font-bold flex flex-col justify-center items-center text-center ${currentSurah === s.number ? 'theme-accent-btn' : 'border-transparent hover:opacity-80'}`}
-                            style={currentSurah !== s.number ? { backgroundColor: 'var(--qr-card-bg)', color: 'var(--qr-card-text)', borderColor: 'var(--qr-card-border)' } : {}}
-                        >
-                            <div className="flex flex-col justify-center items-center w-full gap-2">
-                                <span className="text-sm">{s.number} - {s.name}</span>
-                            </div>
-                        </button>
-                    ))}
+        <div
+            className={`fixed inset-0 bg-black/55 ${zIndexClass} flex items-center justify-center ${isLandscape ? 'p-0' : 'p-3 sm:p-4'} font-cairo select-none`}
+            onClick={handleClose}
+        >
+            <div
+                dir={dir}
+                className={`modal-skinned settings-3d-adia-scope ${p.isDark ? 'settings-3d-dark quran-3d-dark' : ''} font-cairo w-full ${isLandscape ? 'max-w-4xl h-full rounded-none max-h-[100dvh]' : 'max-w-md sm:max-w-2xl rounded-3xl max-h-[88dvh]'} shadow-2xl overflow-hidden flex flex-col relative border-0`}
+                style={{
+                    fontFamily: p.fontFamily,
+                    backgroundColor: p.modalBg,
+                    color: p.modalText,
+                    border: 'none',
+                    outline: 'none',
+                    ...modalVars
+                }}
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Search & Close Row (Header removed as requested) */}
+                <div className={`${isLandscape ? 'p-2.5 pb-1.5 gap-2' : 'p-3.5 pb-2 gap-2.5'} flex items-center shrink-0 border-0`}>
+                    <div
+                        className={`relative flex-1 min-w-0 ${isLandscape ? 'rounded-xl' : 'rounded-2xl'} quran-raised-card border-0`}
+                        style={{ backgroundColor: p.cardBg }}
+                    >
+                        <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-3.5 h-3.5 opacity-55`} style={{ color: p.cardText }} />
+                        <input
+                            type="text"
+                            placeholder={language === 'en' ? 'Search Surah (name or number)...' : 'ابحث عن سورة بالاسم أو الرقم...'}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className={`w-full bg-transparent border-none ${isLandscape ? 'py-1.5 text-xs rounded-xl' : 'py-2.5 text-sm rounded-2xl'} ${isRTL ? 'pr-9 pl-3 text-right' : 'pl-9 pr-3 text-left'} font-bold focus:outline-none`}
+                            style={{
+                                color: p.cardText
+                            }}
+                        />
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={handleClose}
+                        className={`${isLandscape ? 'w-8 h-8' : 'w-10 h-10'} quran-raised-btn rounded-full flex items-center justify-center border-0 cursor-pointer shrink-0`}
+                        style={{ backgroundColor: p.closeBg, color: p.headerAccent }}
+                        aria-label={isEn ? 'Close' : 'إغلاق'}
+                    >
+                        <X size={isLandscape ? 15 : 17} />
+                    </button>
+                </div>
+
+                {/* Body: Surahs Grid */}
+                <div className="relative flex-1 flex overflow-hidden min-h-0">
+                    <div
+                        className={`overflow-y-auto overflow-x-hidden no-scrollbar flex-1 min-h-0 p-3.5 pt-2 pb-5 ${isLandscape ? 'modal-sheet-safe-bottom' : ''}`}
+                    >
+                        <div className={`grid ${isLandscape ? 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3'} py-1`}>
+                            {filteredSurahs.map(s => {
+                                const isCurrent = currentSurah === s.number;
+                                const surahLabel = `${formatListenNumber(s.number, language)} - ${getSurahDisplayName(s.number, language)}`;
+                                return (
+                                    <button
+                                        key={s.number}
+                                        ref={isCurrent ? selectedRef : null}
+                                        onClick={() => handleSelect(s.number)}
+                                        className={`w-full px-2.5 py-3 rounded-2xl border-0 transition-all font-bold flex flex-col items-center justify-center text-center cursor-pointer scroll-mt-3 min-h-[60px] overflow-hidden ${
+                                            isCurrent
+                                                ? 'quran-raised-btn quran-raised-btn-selected scale-[1.01]'
+                                                : 'quran-raised-btn'
+                                        }`}
+                                        style={{
+                                            backgroundColor: isCurrent ? p.selectedBg : p.cardBg,
+                                            color: isCurrent ? p.selectedText : p.cardText,
+                                            border: 'none'
+                                        }}
+                                    >
+                                        <span
+                                            className="font-cairo text-sm sm:text-[15px] font-extrabold line-clamp-2 break-words w-full text-center leading-snug"
+                                            style={{ fontFamily: "'Cairo', sans-serif" }}
+                                        >
+                                            {surahLabel}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                            {filteredSurahs.length === 0 && (
+                                <div className="col-span-full py-12 text-center opacity-50 text-sm">
+                                    {tListen('noSearchResults', language)}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -53,3 +215,4 @@ const ListenSurahSelectModal: React.FC<ListenSurahSelectModalProps> = ({ onClose
 };
 
 export default ListenSurahSelectModal;
+
